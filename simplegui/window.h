@@ -132,5 +132,27 @@ void window_set_resizable(main__WindowInfo *info, int enabled);
 void window_set_minimizable(main__WindowInfo *info, int enabled);
 void window_set_maximizable(main__WindowInfo *info, int enabled);
 
+// Additional Window Operations
+void window_close(main__WindowInfo *info);
+void window_hide(main__WindowInfo *info);
+void window_center(main__WindowInfo *info);
+void window_set_size(main__WindowInfo *info, int width, int height);
+int window_get_width(main__WindowInfo *info);
+int window_get_height(main__WindowInfo *info);
+void window_set_position(main__WindowInfo *info, int x, int y);
+int window_get_x(main__WindowInfo *info);
+int window_get_y(main__WindowInfo *info);
+void window_set_opacity(main__WindowInfo *info, double opacity);
+double window_get_opacity(main__WindowInfo *info);
+void window_toggle_fullscreen(main__WindowInfo *info);
+void window_minimize(main__WindowInfo *info);
+void window_deminimize(main__WindowInfo *info);
+void window_maximize(main__WindowInfo *info);
+int window_is_minimized(main__WindowInfo *info);
+int window_is_maximized(main__WindowInfo *info);
+int window_is_fullscreen(main__WindowInfo *info);
+int window_is_active(main__WindowInfo *info);
+void window_set_titlebar_visible(main__WindowInfo *info, int visible);
+
 #endif
 

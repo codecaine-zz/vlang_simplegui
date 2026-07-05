@@ -125,6 +125,70 @@ Enables or disables the native minimize window titlebar button.
 
 Enables or disables the native zoom/maximize window titlebar button.
 
+### `win.close()` / `win.close_window()` &SimpleWindow
+
+Programmatically closes the native window delegate.
+
+### `win.hide()` / `win.hide_window()` &SimpleWindow
+
+Temporarily hides the window from view.
+
+### `win.center()` / `win.center_window()` &SimpleWindow
+
+Centers the window on the active display.
+
+### `win.set_size(width int, height int)` / `win.resize(width int, height int)` &SimpleWindow
+
+Programmatically resizes the active window content area.
+
+### `win.get_width() int` / `win.get_height() int`
+
+Gets the current width/height of the window.
+
+### `win.set_position(x int, y int)` &SimpleWindow
+
+Repositions the top-left corner of the window on the desktop.
+
+### `win.get_x() int` / `win.get_y() int`
+
+Gets the current screen coordinates of the window position.
+
+### `win.set_opacity(opacity f64)` &SimpleWindow
+
+Applies window transparency / alpha opacity channel (range `0.0` to `1.0`).
+
+### `win.get_opacity() f64`
+
+Gets the current window translucency.
+
+### `win.set_titlebar_visible(visible bool)` &SimpleWindow
+
+Toggles titlebar visibility for custom clean-bordered or borderless overlay look.
+
+### `win.toggle_fullscreen()` &SimpleWindow
+
+Toggles native macOS full screen mode programmatically.
+
+### `win.minimize()` &SimpleWindow
+
+Minimizes the window to the dock.
+
+### `win.deminimize()` &SimpleWindow
+
+Restores the window from the dock.
+
+### `win.maximize()` / `win.zoom()` &SimpleWindow
+
+Toggles native maximized/zoomed window scale.
+
+### `win.is_minimized() bool` / `win.is_maximized() bool` / `win.is_fullscreen() bool`
+
+Queries the active window states to check if it's minimized, maximized, or in full-screen mode.
+
+### `win.is_active() bool`
+
+Returns whether simplegui's window is currently the key focused window on the desktop.
+
 ### `win.run()`
 
 Launches the native NSApplication event loop and displays the centered window.

@@ -338,6 +338,80 @@ fn test_new_control_helpers_and_window_constraints() {
 	assert win.get_resizable() == false
 	assert win.get_minimizable() == false
 	assert win.get_maximizable() == false
+
+	// Test new window operations
+	win.set_opacity(0.85)
+	assert win.get_opacity() == 0.85
+
+	win.set_size(640, 480)
+	assert win.get_width() == 640
+	assert win.get_height() == 480
+
+	win.set_position(150, 150)
+	assert win.get_x() >= 0
+	assert win.get_y() >= 0
+
+	win.set_titlebar_visible(false)
+	_ = win.is_minimized()
+	_ = win.is_maximized()
+	_ = win.is_fullscreen()
+	_ = win.is_active()
+
+	win.center()
+	win.minimize()
+	win.maximize()
+	win.toggle_fullscreen()
+}
+
+fn test_native_macos_control_wrappers_are_available() {
+	mut win := simplegui.new_simple_window('Test Window', 100, 100)
+	win.add_dropdown('priority', ['Low', 'Medium', 'High'], 'Medium')
+	win.add_segmented_control('analysis_mode', ['Simple', 'Advanced', 'Expert'], 'Advanced')
+	win.add_radio_group('role', ['Viewer', 'Editor', 'Admin'], 'Editor')
+	win.add_switch('notifications', 'Notify', true)
+	win.add_search_field('search', 'Find')
+	win.add_group_box('profile_box', 'Profile')
+	win.add_tabs('workspace_tabs', ['Overview', 'Details'])
+	win.add_scroll_view('details', 140)
+	win.add_list_box('items', ['One', 'Two'])
+	win.add_image('preview', 'screenshots/stack_style.png')
+	win.add_table('events', ['Action', 'Value'])
+
+	assert win.has_control('priority') == true
+	assert win.has_control('analysis_mode') == true
+	assert win.has_control('role') == true
+	assert win.has_control('notifications') == true
+	assert win.has_control('search') == true
+	assert win.has_control('profile_box') == true
+	assert win.has_control('workspace_tabs') == true
+	assert win.has_control('details') == true
+	assert win.has_control('items') == true
+	assert win.has_control('preview') == true
+	assert win.has_control('events') == true
+
+	assert win.get_control_kind('priority') == 'dropdown'
+	assert win.get_control_kind('analysis_mode') == 'segmented'
+	assert win.get_control_kind('role') == 'radiogroup'
+	assert win.get_control_kind('notifications') == 'switch'
+	assert win.get_control_kind('search') == 'search'
+	assert win.get_control_kind('profile_box') == 'groupbox'
+	assert win.get_control_kind('workspace_tabs') == 'tabs'
+	assert win.get_control_kind('details') == 'scrollview'
+	assert win.get_control_kind('items') == 'listbox'
+	assert win.get_control_kind('preview') == 'image'
+	assert win.get_control_kind('events') == 'table'
+
+	win.set_text('priority', 'High')
+	win.set_text('analysis_mode', 'Expert')
+	win.set_text('role', 'Admin')
+	win.set_checked('notifications', false)
+	win.set_text('search', 'demo')
+
+	assert win.get_text('priority') == 'High'
+	assert win.get_text('analysis_mode') == 'Expert'
+	assert win.get_text('role') == 'Admin'
+	assert win.get_checked('notifications') == false
+	assert win.get_text('search') == 'demo'
 }
 
 fn test_auto_naming() {

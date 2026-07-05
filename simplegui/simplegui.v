@@ -128,6 +128,28 @@ fn C.window_set_resizable(&WindowInfo, int)
 fn C.window_set_minimizable(&WindowInfo, int)
 fn C.window_set_maximizable(&WindowInfo, int)
 
+// Additional Window Operations
+fn C.window_close(&WindowInfo)
+fn C.window_hide(&WindowInfo)
+fn C.window_center(&WindowInfo)
+fn C.window_set_size(&WindowInfo, int, int)
+fn C.window_get_width(&WindowInfo) int
+fn C.window_get_height(&WindowInfo) int
+fn C.window_set_position(&WindowInfo, int, int)
+fn C.window_get_x(&WindowInfo) int
+fn C.window_get_y(&WindowInfo) int
+fn C.window_set_opacity(&WindowInfo, f64)
+fn C.window_get_opacity(&WindowInfo) f64
+fn C.window_toggle_fullscreen(&WindowInfo)
+fn C.window_minimize(&WindowInfo)
+fn C.window_deminimize(&WindowInfo)
+fn C.window_maximize(&WindowInfo)
+fn C.window_is_minimized(&WindowInfo) int
+fn C.window_is_maximized(&WindowInfo) int
+fn C.window_is_fullscreen(&WindowInfo) int
+fn C.window_is_active(&WindowInfo) int
+fn C.window_set_titlebar_visible(&WindowInfo, int)
+
 pub type StringEventCallback = fn (mut win SimpleWindow, value string)
 
 pub type VoidEventCallback = fn (mut win SimpleWindow)
@@ -161,6 +183,9 @@ pub struct WindowParams {
 	spacing           int
 	always_on_top     int
 	responsive_layout int
+	resizable         int
+	minimizable       int
+	maximizable       int
 }
 
 pub struct WindowInfo {
@@ -255,6 +280,9 @@ fn (win &SimpleWindow) ensure_window() {
 			spacing:           win.spacing
 			always_on_top:     if win.always_on_top { 1 } else { 0 }
 			responsive_layout: if win.responsive_layout { 1 } else { 0 }
+			resizable:         if win.resizable { 1 } else { 0 }
+			minimizable:       if win.minimizable { 1 } else { 0 }
+			maximizable:       if win.maximizable { 1 } else { 0 }
 		}
 		unsafe {
 			mut w := &SimpleWindow(win)
@@ -1525,6 +1553,171 @@ pub fn (win &SimpleWindow) get_minimizable() bool {
 
 pub fn (win &SimpleWindow) get_maximizable() bool {
 	return win.maximizable
+}
+
+pub fn (win &SimpleWindow) close() &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_close(win.window_info)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) close_window() &SimpleWindow {
+	return win.close()
+}
+
+pub fn (win &SimpleWindow) hide() &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_hide(win.window_info)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) hide_window() &SimpleWindow {
+	return win.hide()
+}
+
+pub fn (win &SimpleWindow) center() &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_center(win.window_info)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) center_window() &SimpleWindow {
+	return win.center()
+}
+
+pub fn (win &SimpleWindow) set_size(width int, height int) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.width = width
+		w.height = height
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_set_size(win.window_info, width, height)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) resize(width int, height int) &SimpleWindow {
+	return win.set_size(width, height)
+}
+
+pub fn (win &SimpleWindow) get_width() int {
+	if win.window_info != unsafe { nil } {
+		return C.window_get_width(win.window_info)
+	}
+	return win.width
+}
+
+pub fn (win &SimpleWindow) get_height() int {
+	if win.window_info != unsafe { nil } {
+		return C.window_get_height(win.window_info)
+	}
+	return win.height
+}
+
+pub fn (win &SimpleWindow) set_position(x int, y int) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_position(win.window_info, x, y)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) get_x() int {
+	if win.window_info != unsafe { nil } {
+		return C.window_get_x(win.window_info)
+	}
+	return 0
+}
+
+pub fn (win &SimpleWindow) get_y() int {
+	if win.window_info != unsafe { nil } {
+		return C.window_get_y(win.window_info)
+	}
+	return 0
+}
+
+pub fn (win &SimpleWindow) set_opacity(opacity f64) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_opacity(win.window_info, opacity)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) get_opacity() f64 {
+	if win.window_info != unsafe { nil } {
+		return C.window_get_opacity(win.window_info)
+	}
+	return 1.0
+}
+
+pub fn (win &SimpleWindow) toggle_fullscreen() &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_toggle_fullscreen(win.window_info)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) minimize() &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_minimize(win.window_info)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) deminimize() &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_deminimize(win.window_info)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) maximize() &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_maximize(win.window_info)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) zoom() &SimpleWindow {
+	return win.maximize()
+}
+
+pub fn (win &SimpleWindow) is_minimized() bool {
+	if win.window_info != unsafe { nil } {
+		return C.window_is_minimized(win.window_info) == 1
+	}
+	return false
+}
+
+pub fn (win &SimpleWindow) is_maximized() bool {
+	if win.window_info != unsafe { nil } {
+		return C.window_is_maximized(win.window_info) == 1
+	}
+	return false
+}
+
+pub fn (win &SimpleWindow) is_fullscreen() bool {
+	if win.window_info != unsafe { nil } {
+		return C.window_is_fullscreen(win.window_info) == 1
+	}
+	return false
+}
+
+pub fn (win &SimpleWindow) is_active() bool {
+	if win.window_info != unsafe { nil } {
+		return C.window_is_active(win.window_info) == 1
+	}
+	return false
+}
+
+pub fn (win &SimpleWindow) set_titlebar_visible(visible bool) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_titlebar_visible(win.window_info, if visible { 1 } else { 0 })
+	}
+	return win
 }
 
 pub fn (win &SimpleWindow) set_background_color(color string) &SimpleWindow {

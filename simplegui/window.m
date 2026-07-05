@@ -19,6 +19,9 @@ typedef struct main__WindowParams {
   int spacing;
   int always_on_top;
   int responsive_layout;
+  int resizable;
+  int minimizable;
+  int maximizable;
 } main__WindowParams;
 
 typedef struct main__WindowInfo {
@@ -376,7 +379,13 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   }
 
   NSRect frame = NSMakeRect(100, 100, self.params.width, self.params.height);
-  NSUInteger style = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable | NSWindowStyleMaskFullSizeContentView;
+  NSUInteger style = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskFullSizeContentView;
+  if (self.params.resizable) {
+    style |= NSWindowStyleMaskResizable;
+  }
+  if (self.params.minimizable) {
+    style |= NSWindowStyleMaskMiniaturizable;
+  }
   self.window = [[CustomWindow alloc] initWithContentRect:frame
                                             styleMask:style
                                               backing:NSBackingStoreBuffered
@@ -392,6 +401,13 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [self.window setDelegate:self];
   [self.window setReleasedWhenClosed:NO];
   [self.window registerForDraggedTypes:@[NSPasteboardTypeFileURL]];
+  
+  // Apply maximizable setting
+  NSButton *zoomButton = [self.window standardWindowButton:NSWindowZoomButton];
+  if (zoomButton) {
+    [zoomButton setEnabled:self.params.maximizable != 0];
+  }
+  
   [self buildUI];
   [self.window center];
   self.windowController = [[NSWindowController alloc] initWithWindow:self.window];
@@ -527,7 +543,6 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [self.mainStackView.leadingAnchor constraintEqualToAnchor:clipView.leadingAnchor].active = YES;
   [self.mainStackView.trailingAnchor constraintEqualToAnchor:clipView.trailingAnchor].active = YES;
   [self.mainStackView.widthAnchor constraintEqualToAnchor:clipView.widthAnchor].active = YES;
-  [self.mainStackView.bottomAnchor constraintEqualToAnchor:clipView.bottomAnchor].active = YES;
 
   [self applyColors:modernSurfaceColor() fontColor:modernTextColor()];
 }
@@ -2959,5 +2974,273 @@ void window_set_maximizable(main__WindowInfo *info, int enabled) {
     runBlock();
   } else {
     dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+void window_close(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate.window close];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_async(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+void window_hide(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate.window orderOut:nil];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_async(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+void window_center(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate.window center];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_async(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+void window_set_size(main__WindowInfo *info, int width, int height) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate.window setContentSize:NSMakeSize(width, height)];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+int window_get_width(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block int result = 0;
+  void (^runBlock)(void) = ^{
+    result = (int)delegate.window.frame.size.width;
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return result;
+}
+
+int window_get_height(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block int result = 0;
+  void (^runBlock)(void) = ^{
+    result = (int)delegate.window.frame.size.height;
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return result;
+}
+
+void window_set_position(main__WindowInfo *info, int x, int y) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    NSRect frame = delegate.window.frame;
+    NSRect screenFrame = [[NSScreen mainScreen] frame];
+    CGFloat flippedY = screenFrame.size.height - y - frame.size.height;
+    [delegate.window setFrameOrigin:NSMakePoint(x, flippedY)];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_async(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+int window_get_x(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block int result = 0;
+  void (^runBlock)(void) = ^{
+    result = (int)delegate.window.frame.origin.x;
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return result;
+}
+
+int window_get_y(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block int result = 0;
+  void (^runBlock)(void) = ^{
+    NSRect screenFrame = [[NSScreen mainScreen] frame];
+    result = (int)(screenFrame.size.height - delegate.window.frame.origin.y - delegate.window.frame.size.height);
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return result;
+}
+
+void window_set_opacity(main__WindowInfo *info, double opacity) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate.window setAlphaValue:opacity];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+double window_get_opacity(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block double result = 1.0;
+  void (^runBlock)(void) = ^{
+    result = (double)delegate.window.alphaValue;
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return result;
+}
+
+void window_toggle_fullscreen(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate.window toggleFullScreen:nil];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_async(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+void window_minimize(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate.window miniaturize:nil];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_async(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+void window_deminimize(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate.window deminiaturize:nil];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_async(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+void window_maximize(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate.window zoom:nil];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_async(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+int window_is_minimized(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block int result = 0;
+  void (^runBlock)(void) = ^{
+    result = delegate.window.isMiniaturized ? 1 : 0;
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return result;
+}
+
+int window_is_maximized(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block int result = 0;
+  void (^runBlock)(void) = ^{
+    result = delegate.window.isZoomed ? 1 : 0;
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return result;
+}
+
+int window_is_fullscreen(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block int result = 0;
+  void (^runBlock)(void) = ^{
+    result = (delegate.window.styleMask & NSWindowStyleMaskFullScreen) ? 1 : 0;
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return result;
+}
+
+int window_is_active(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block int result = 0;
+  void (^runBlock)(void) = ^{
+    result = delegate.window.isKeyWindow ? 1 : 0;
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return result;
+}
+
+void window_set_titlebar_visible(main__WindowInfo *info, int visible) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    if (visible) {
+      [delegate.window setTitlebarAppearsTransparent:NO];
+      [delegate.window setTitleVisibility:NSWindowTitleVisible];
+    } else {
+      [delegate.window setTitlebarAppearsTransparent:YES];
+      [delegate.window setTitleVisibility:NSWindowTitleHidden];
+    }
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_async(dispatch_get_main_queue(), runBlock);
   }
 }
