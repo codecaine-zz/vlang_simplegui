@@ -490,6 +490,12 @@ v run demos/grid_data_editor.v
 v run demos/markdown_editor.v
 ```
 
+### Run the Interactive Web HTML Studio demo
+
+```bash
+v run demos/web_studio_demo.v
+```
+
 ### Run the Native Switch & Custom Controls Showcase
 
 ```bash
@@ -551,6 +557,7 @@ v test .
 - [demos/vertical_stack_starter.v](demos/vertical_stack_starter.v) — starter template demonstrating best practices for vertical stack forms
 - [demos/grid_column_starter.v](demos/grid_column_starter.v) — starter template demonstrating horizontal row layouts and event handling
 - [demos/state_controller_pattern.v](demos/state_controller_pattern.v) — interactive design pattern illustrating state manipulation and reactive controls
+- [demos/web_studio_demo.v](demos/web_studio_demo.v) — real-world business intelligence (BI) KPI & Fintech analytics board integrating native V widgets, responsive HTML structures, CSS custom layout properties, and Javascript currency loaders
 
 ## Notes
 
