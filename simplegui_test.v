@@ -19,6 +19,19 @@ fn test_named_controls_are_stored_and_accessible() {
 	assert win.get_bool('ready') == false
 }
 
+fn test_control_discovery_helpers_are_available() {
+	mut win := simplegui.SimpleWindow{}
+	win.add_input('name', 'Ada')
+	win.add_button('run', 'Run')
+
+	assert win.has_control('name') == true
+	assert win.has_control('missing') == false
+	assert win.list_controls().contains('name')
+	assert win.list_controls().contains('run')
+	assert win.get_control_kind('name') == 'input'
+	assert win.get_control_kind('missing') == ''
+}
+
 fn test_event_callbacks_can_be_registered_and_dispatched() {
 	mut win := simplegui.SimpleWindow{}
 	win.add_input('default_input', 'Ada')

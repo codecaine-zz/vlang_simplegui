@@ -24,8 +24,10 @@ It is intended to make GUI programming feel more direct and less manual than the
 ## Example
 
 ```v
+import simplegui
+
 fn main() {
-    mut gui := new_simple_window('My App', 700, 500)
+    mut gui := simplegui.new_simple_window('My App', 700, 500)
 
     gui.add_input('name', 'Ada')
     gui.add_button('run', 'Run')
@@ -36,14 +38,38 @@ fn main() {
     gui.run()
 }
 
-fn on_name_changed(value string) {
+fn on_name_changed(mut win simplegui.SimpleWindow, value string) {
     println('name changed: ${value}')
 }
 
-fn on_run_clicked() {
+fn on_run_clicked(mut win simplegui.SimpleWindow) {
     println('run clicked')
 }
 ```
+
+## Quick start template
+
+```v
+module main
+
+import simplegui
+
+fn main() {
+    mut win := simplegui.new_simple_window('Starter', 640, 420)
+    win.add_input('name', 'Ada')
+    win.add_button('save', 'Save')
+    win.on_click('save', fn (mut win simplegui.SimpleWindow) {
+        println("saved: ${win.get_text('name')}")
+    })
+    win.run()
+}
+```
+
+## Developer tips
+
+- Use the built-in control discovery helpers: `has_control`, `list_controls`, and `get_control_kind`.
+- Calling `get_value`, `set_value`, `get_checked`, or similar on a missing control now raises a clear panic to make mistakes visible early.
+- The API is intentionally lightweight; start with the named control helpers and add layout helpers only when needed.
 
 ## Screenshots
 
@@ -110,6 +136,12 @@ v run demos/stack_style.v
 v run demos/grid_style.v
 ```
 
+### Run the starter template:
+
+```bash
+v run demos/starter_template.v
+```
+
 ### Run the Calculator demo:
 
 ```bash
@@ -167,6 +199,7 @@ v test .
 ## Project files
 
 - [main.v](main.v) — example app and demo entry point
+- [demos/starter_template.v](demos/starter_template.v) — minimal starter app for new developers
 - [simplegui/simplegui.v](simplegui/simplegui.v) — beginner-friendly wrapper API module
 - [simplegui/window.m](simplegui/window.m) — native macOS bridge implementation
 - [simplegui/window.h](simplegui/window.h) — bridge declarations used by V

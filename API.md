@@ -6,6 +6,31 @@
 
 ## 1. Window Operations
 
+### Quick Start
+
+```v
+module main
+
+import simplegui
+
+fn main() {
+    mut win := simplegui.new_simple_window('Starter', 640, 420)
+    win.add_input('name', 'Ada')
+    win.add_button('save', 'Save')
+    win.on_click('save', fn (mut win simplegui.SimpleWindow) {
+        println("saved: ${win.get_text('name')}")
+    })
+    win.run()
+}
+```
+
+### Developer Helpers
+
+- `has_control(name string) bool` checks whether a named control exists.
+- `list_controls() []string` returns the registered control names.
+- `get_control_kind(name string) string` reports the control type.
+- Missing control access now raises a clear panic so mistakes surface early.
+
 ### `new_simple_window(title string, width int, height int) &SimpleWindow`
 
 Initializes a new macOS window delegate.

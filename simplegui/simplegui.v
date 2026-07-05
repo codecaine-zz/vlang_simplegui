@@ -205,6 +205,33 @@ fn (mut win SimpleWindow) ensure_window() {
 	}
 }
 
+pub fn (win SimpleWindow) has_control(name string) bool {
+	return win.find_control(name) >= 0
+}
+
+pub fn (win SimpleWindow) list_controls() []string {
+	mut names := []string{}
+	for control in win.controls {
+		names << control.name
+	}
+	return names
+}
+
+pub fn (win SimpleWindow) get_control_kind(name string) string {
+	idx := win.find_control(name)
+	if idx >= 0 {
+		return win.controls[idx].kind
+	}
+	return ''
+}
+
+pub fn (win SimpleWindow) require_control(name string) string {
+	if win.has_control(name) {
+		return name
+	}
+	panic('Control "${name}" was not found. Create it first with add_input/add_button/etc.')
+}
+
 fn (win SimpleWindow) find_control(name string) int {
 	for i, control in win.controls {
 		if control.name == name {
@@ -371,6 +398,7 @@ pub fn (mut win SimpleWindow) add_progress_indicator(name string, value int) {
 
 // Value setters and getters calling the generic name-based C bridge
 pub fn (mut win SimpleWindow) set_value(name string, value string) {
+	win.require_control(name)
 	idx := win.find_control(name)
 	if idx >= 0 {
 		mut entry := win.controls[idx]
@@ -384,6 +412,7 @@ pub fn (mut win SimpleWindow) set_value(name string, value string) {
 }
 
 pub fn (win SimpleWindow) get_value(name string) string {
+	win.require_control(name)
 	if win.window_info != unsafe { nil } {
 		res := C.window_get_control_text_by_name(win.window_info, name.str)
 		return unsafe { res.vstring() }
@@ -396,6 +425,7 @@ pub fn (win SimpleWindow) get_value(name string) string {
 }
 
 pub fn (mut win SimpleWindow) set_bool(name string, checked bool) {
+	win.require_control(name)
 	idx := win.find_control(name)
 	if idx >= 0 {
 		mut entry := win.controls[idx]
@@ -410,6 +440,7 @@ pub fn (mut win SimpleWindow) set_bool(name string, checked bool) {
 }
 
 pub fn (win SimpleWindow) get_bool(name string) bool {
+	win.require_control(name)
 	if win.window_info != unsafe { nil } {
 		return C.window_get_control_bool_by_name(win.window_info, name.str) != 0
 	}
@@ -421,6 +452,7 @@ pub fn (win SimpleWindow) get_bool(name string) bool {
 }
 
 pub fn (mut win SimpleWindow) set_number_value(name string, value int) {
+	win.require_control(name)
 	idx := win.find_control(name)
 	if idx >= 0 {
 		mut entry := win.controls[idx]
@@ -434,6 +466,7 @@ pub fn (mut win SimpleWindow) set_number_value(name string, value int) {
 }
 
 pub fn (win SimpleWindow) get_number_value(name string) int {
+	win.require_control(name)
 	if win.window_info != unsafe { nil } {
 		return C.window_get_control_int_by_name(win.window_info, name.str)
 	}
@@ -605,6 +638,9 @@ pub fn (mut win SimpleWindow) set_focus(name string) {
 
 pub fn (mut win SimpleWindow) clear(name string) {
 	idx := win.find_control(name)
+	if idx < 0 {
+		return
+	}
 	if idx >= 0 {
 		entry := win.controls[idx]
 		if entry.kind == 'checkbox' {
