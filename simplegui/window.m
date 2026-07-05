@@ -225,9 +225,9 @@ static NSColor *modernAccentColor(void) {
 static NSColor *modernSurfaceColor(void) {
   NSAppearance *appearance = [NSApp effectiveAppearance];
   if ([appearance bestMatchFromAppearancesWithNames:@[NSAppearanceNameDarkAqua, NSAppearanceNameAqua]] == NSAppearanceNameDarkAqua) {
-    return [NSColor colorWithSRGBRed:0.10 green:0.11 blue:0.15 alpha:1.0];
+    return [NSColor colorWithSRGBRed:0.095 green:0.10 blue:0.13 alpha:1.0];
   }
-  return [NSColor colorWithSRGBRed:0.98 green:0.98 blue:0.99 alpha:1.0];
+  return [NSColor colorWithSRGBRed:0.97 green:0.97 blue:0.985 alpha:1.0];
 }
 
 static NSColor *modernElevatedSurfaceColor(void) {
@@ -235,7 +235,7 @@ static NSColor *modernElevatedSurfaceColor(void) {
 }
 
 static NSColor *modernBorderColor(void) {
-  return [NSColor colorWithWhite:0.0 alpha:0.12];
+  return [NSColor separatorColor];
 }
 
 static NSColor *modernTextColor(void) {
@@ -276,12 +276,12 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
     return;
   }
 
-  NSColor *effectiveBackground = backgroundColor ?: [NSColor clearColor];
+  NSColor *effectiveBackground = backgroundColor ?: ([view isKindOfClass:[NSTextField class]] || [view isKindOfClass:[NSTextView class]] || [view isKindOfClass:[NSDatePicker class]] || [view isKindOfClass:[NSPopUpButton class]]) ? [NSColor textBackgroundColor] : [NSColor clearColor];
   NSColor *effectiveFont = fontColor ?: modernTextColor();
 
   if ([view isKindOfClass:[NSTextField class]]) {
     NSTextField *field = (NSTextField *)view;
-    [field setFont:[NSFont systemFontOfSize:13 weight:NSFontWeightRegular]];
+    [field setFont:[NSFont systemFontOfSize:12 weight:NSFontWeightRegular]];
     [field setControlSize:NSControlSizeRegular];
     [field setFocusRingType:NSFocusRingTypeExterior];
     [field setBordered:YES];
@@ -290,9 +290,6 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
     [field setDrawsBackground:YES];
     [field setBackgroundColor:effectiveBackground];
     [field setTextColor:effectiveFont];
-    field.layer.cornerRadius = 8.0;
-    field.layer.borderWidth = 1.0;
-    field.layer.borderColor = [modernBorderColor() CGColor];
   } else if ([view isKindOfClass:[NSTextView class]]) {
     NSTextView *textView = (NSTextView *)view;
     [textView setFont:[NSFont systemFontOfSize:13]];
@@ -300,25 +297,19 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
     [textView setBackgroundColor:effectiveBackground];
     [textView setTextColor:effectiveFont];
     [textView setWantsLayer:YES];
-    textView.layer.cornerRadius = 8.0;
-    textView.layer.borderWidth = 1.0;
-    textView.layer.borderColor = [modernBorderColor() CGColor];
   } else if ([view isKindOfClass:[NSButton class]]) {
     NSButton *button = (NSButton *)view;
-    [button setFont:[NSFont systemFontOfSize:13 weight:NSFontWeightMedium]];
+    [button setFont:[NSFont systemFontOfSize:12 weight:NSFontWeightMedium]];
     [button setControlSize:NSControlSizeRegular];
     [button setBezelStyle:NSBezelStyleRounded];
     [button setWantsLayer:YES];
-    [button setContentTintColor:effectiveFont];
+    [button setContentTintColor:fontColor ?: modernAccentColor()];
   } else if ([view isKindOfClass:[NSPopUpButton class]]) {
     NSPopUpButton *popup = (NSPopUpButton *)view;
-    [popup setFont:[NSFont systemFontOfSize:13 weight:NSFontWeightMedium]];
+    [popup setFont:[NSFont systemFontOfSize:12 weight:NSFontWeightRegular]];
     [popup setControlSize:NSControlSizeRegular];
     [popup setBezelStyle:NSBezelStyleRounded];
     [popup setWantsLayer:YES];
-    popup.layer.cornerRadius = 8.0;
-    popup.layer.borderWidth = 1.0;
-    popup.layer.borderColor = [modernBorderColor() CGColor];
     popup.layer.backgroundColor = (backgroundColor ?: modernElevatedSurfaceColor()).CGColor;
     if ([popup respondsToSelector:@selector(setContentTintColor:)]) {
       [popup setContentTintColor:effectiveFont];
@@ -327,11 +318,8 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
     NSSegmentedControl *segment = (NSSegmentedControl *)view;
     [segment setSegmentStyle:NSSegmentStyleTexturedRounded];
     [segment setControlSize:NSControlSizeRegular];
-    [segment setFont:[NSFont systemFontOfSize:13 weight:NSFontWeightMedium]];
+    [segment setFont:[NSFont systemFontOfSize:12 weight:NSFontWeightRegular]];
     [segment setWantsLayer:YES];
-    segment.layer.cornerRadius = 8.0;
-    segment.layer.borderWidth = 1.0;
-    segment.layer.borderColor = [modernBorderColor() CGColor];
     if ([segment respondsToSelector:@selector(setContentTintColor:)]) {
       [segment setContentTintColor:fontColor ?: modernAccentColor()];
     }
@@ -348,9 +336,6 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
     NSDatePicker *picker = (NSDatePicker *)view;
     [picker setControlSize:NSControlSizeRegular];
     [picker setWantsLayer:YES];
-    picker.layer.cornerRadius = 8.0;
-    picker.layer.borderWidth = 1.0;
-    picker.layer.borderColor = [modernBorderColor() CGColor];
     picker.layer.backgroundColor = (backgroundColor ?: modernElevatedSurfaceColor()).CGColor;
   } else if ([view isKindOfClass:[NSScrollView class]]) {
     [view setWantsLayer:YES];
@@ -391,8 +376,10 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
                                                 defer:NO];
   const char *title = self.params.title.str ? self.params.title.str : "";
   [self.window setTitle:nsstring(title)];
-  [self.window setTitlebarAppearsTransparent:YES];
-  [self.window setTitleVisibility:NSWindowTitleHidden];
+  [self.window setTitlebarAppearsTransparent:NO];
+  [self.window setTitleVisibility:NSWindowTitleVisible];
+  [self.window setToolbar:nil];
+  [self.window setShowsToolbarButton:NO];
   [self.window setBackgroundColor:[NSColor clearColor]];
   [self.window setLevel:self.params.always_on_top ? NSFloatingWindowLevel : NSNormalWindowLevel];
   [self.window setDelegate:self];
@@ -504,12 +491,11 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [backgroundView setState:NSVisualEffectStateActive];
   [backgroundView setWantsLayer:YES];
   [backgroundView.layer setBackgroundColor:modernSurfaceColor().CGColor];
-  [backgroundView.layer setCornerRadius:16.0];
-  [backgroundView.layer setBorderWidth:1.0];
-  [backgroundView.layer setBorderColor:[modernBorderColor() CGColor]];
-  [backgroundView.layer setMasksToBounds:YES];
+  [backgroundView.layer setCornerRadius:0.0];
+  [backgroundView.layer setBorderWidth:0.0];
+  [backgroundView.layer setMasksToBounds:NO];
 
-  self.scrollView = [[NSScrollView alloc] initWithFrame:NSInsetRect(backgroundView.bounds, 12, 12)];
+  self.scrollView = [[NSScrollView alloc] initWithFrame:NSInsetRect(backgroundView.bounds, 8, 8)];
   [self.scrollView setHasVerticalScroller:YES];
   [self.scrollView setHasHorizontalScroller:NO];
   [self.scrollView setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
@@ -520,8 +506,8 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [self.mainStackView setOrientation:NSUserInterfaceLayoutOrientationVertical];
   [self.mainStackView setAlignment:NSLayoutAttributeLeading];
   [self.mainStackView setDistribution:NSStackViewDistributionFill];
-  [self.mainStackView setSpacing:10.0];
-  [self.mainStackView setEdgeInsets:NSEdgeInsetsMake(20, 20, 20, 20)];
+  [self.mainStackView setSpacing:5.0];
+  [self.mainStackView setEdgeInsets:NSEdgeInsetsMake(10, 16, 10, 16)];
   [self.mainStackView setWantsLayer:YES];
   [self.mainStackView setTranslatesAutoresizingMaskIntoConstraints:NO];
   
@@ -569,7 +555,7 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
 - (NSView *)makeLabelWithName:(NSString *)name text:(NSString *)text {
   NSTextField *label = [NSTextField labelWithString:text];
   [label setTextColor:self.currentFontColor ?: [NSColor labelColor]];
-  [label setFont:[NSFont systemFontOfSize:14 weight:NSFontWeightMedium]];
+  [label setFont:[NSFont systemFontOfSize:10.5 weight:NSFontWeightMedium]];
   [label setLineBreakMode:NSLineBreakByWordWrapping];
   [label setWantsLayer:YES];
   
@@ -646,7 +632,7 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
 
   NSTextField *labelField = [NSTextField labelWithString:label ?: @"Drop files here"];
   [labelField setAlignment:NSTextAlignmentCenter];
-  [labelField setFont:[NSFont systemFontOfSize:13 weight:NSFontWeightMedium]];
+  [labelField setFont:[NSFont systemFontOfSize:10.5 weight:NSFontWeightMedium]];
   [labelField setTextColor:[NSColor secondaryLabelColor]];
   [labelField setTranslatesAutoresizingMaskIntoConstraints:NO];
   [box addSubview:labelField];
