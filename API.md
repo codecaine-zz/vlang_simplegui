@@ -142,6 +142,11 @@ Temporarily hides the window from view.
 
 Centers the window on the active display.
 
+### `win.align(position string)` / `win.align_window(position string)` &SimpleWindow
+
+Repositions the window relative to the active display/screen visible frame.
+Supports flexible, case-insensitive placement names (e.g., `'top-left'`, `'top-center'`, `'top-right'`, `'middle-left'`, `'center'` or `'middle-center'`, `'middle-right'`, `'bottom-left'`, `'bottom-center'`, `'bottom-right'`).
+
 ### `win.set_size(width int, height int)` / `win.resize(width int, height int)` &SimpleWindow
 
 Programmatically resizes the active window content area.

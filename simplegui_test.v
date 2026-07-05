@@ -358,6 +358,11 @@ fn test_new_control_helpers_and_window_constraints() {
 	_ = win.is_active()
 
 	win.center()
+	win.align('top-left')
+	win.align('top-right')
+	win.align('bottom-left')
+	win.align('bottom-right')
+	win.align('center')
 	win.minimize()
 	win.maximize()
 	win.toggle_fullscreen()

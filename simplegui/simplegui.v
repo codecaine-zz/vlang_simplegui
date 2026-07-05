@@ -149,6 +149,7 @@ fn C.window_set_maximizable(&WindowInfo, int)
 fn C.window_close(&WindowInfo)
 fn C.window_hide(&WindowInfo)
 fn C.window_center(&WindowInfo)
+fn C.window_align(&WindowInfo, &u8)
 fn C.window_set_size(&WindowInfo, int, int)
 fn C.window_get_width(&WindowInfo) int
 fn C.window_get_height(&WindowInfo) int
@@ -1727,6 +1728,17 @@ pub fn (win &SimpleWindow) center() &SimpleWindow {
 
 pub fn (win &SimpleWindow) center_window() &SimpleWindow {
 	return win.center()
+}
+
+pub fn (win &SimpleWindow) align(position string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_align(win.window_info, position.str)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) align_window(position string) &SimpleWindow {
+	return win.align(position)
 }
 
 pub fn (win &SimpleWindow) set_size(width int, height int) &SimpleWindow {

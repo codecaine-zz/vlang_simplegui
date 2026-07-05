@@ -4238,6 +4238,51 @@ void window_center(main__WindowInfo *info) {
   }
 }
 
+void window_align(main__WindowInfo *info, const char *alignment) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *alignStr = [[[NSString stringWithUTF8String:alignment] lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  void (^runBlock)(void) = ^{
+    NSScreen *screen = [delegate.window screen];
+    if (!screen) {
+      screen = [NSScreen mainScreen];
+    }
+    NSRect screenFrame = [screen visibleFrame];
+    NSRect windowFrame = [delegate.window frame];
+    
+    CGFloat sw = screenFrame.size.width;
+    CGFloat sh = screenFrame.size.height;
+    CGFloat sx = screenFrame.origin.x;
+    CGFloat sy = screenFrame.origin.y;
+    CGFloat ww = windowFrame.size.width;
+    CGFloat wh = windowFrame.size.height;
+    
+    // Default to center
+    CGFloat x = sx + (sw - ww) / 2.0;
+    CGFloat y = sy + (sh - wh) / 2.0;
+    
+    // Parse horizontal
+    if ([alignStr rangeOfString:@"left"].location != NSNotFound) {
+      x = sx;
+    } else if ([alignStr rangeOfString:@"right"].location != NSNotFound) {
+      x = sx + sw - ww;
+    }
+    
+    // Parse vertical
+    if ([alignStr rangeOfString:@"top"].location != NSNotFound) {
+      y = sy + sh - wh;
+    } else if ([alignStr rangeOfString:@"bottom"].location != NSNotFound) {
+      y = sy;
+    }
+    
+    [delegate.window setFrameOrigin:NSMakePoint(x, y)];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_async(dispatch_get_main_queue(), runBlock);
+  }
+}
+
 void window_set_size(main__WindowInfo *info, int width, int height) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
   void (^runBlock)(void) = ^{

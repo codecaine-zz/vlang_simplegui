@@ -28,7 +28,16 @@ fn main() {
 		win.add_button('apply_pos', 'apply pos')
 	win.end_row()
 
-	win.add_button('center_win', 'center window on screen')
+	win.begin_row('row_align')
+		win.add_label('lbl_align', 'align preset:')
+		win.add_dropdown('align_preset', [
+			'Center', 
+			'Top Left', 'Top Center', 'Top Right', 
+			'Middle Left', 'Middle Right', 
+			'Bottom Left', 'Bottom Center', 'Bottom Right'
+		], 'Center')
+		win.add_button('apply_align', 'apply align')
+	win.end_row()
 
 	win.add_heading('effects & style')
 
@@ -79,9 +88,10 @@ fn main() {
 		win.set_status('Moved window position to coord: (${x}, ${y})')
 	})
 
-	win.on_click('center_win', fn (mut win &simplegui.SimpleWindow) {
-		win.center()
-		win.set_status('Centered window on main display.')
+	win.on_click('apply_align', fn (mut win &simplegui.SimpleWindow) {
+		preset := win.get_text('align_preset')
+		win.align(preset)
+		win.set_status('Aligned window to ${preset}.')
 	})
 
 	win.on_change('win_opacity', fn (mut win &simplegui.SimpleWindow, value string) {

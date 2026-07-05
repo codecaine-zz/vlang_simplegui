@@ -153,6 +153,7 @@ void window_set_maximizable(main__WindowInfo *info, int enabled);
 void window_close(main__WindowInfo *info);
 void window_hide(main__WindowInfo *info);
 void window_center(main__WindowInfo *info);
+void window_align(main__WindowInfo *info, const char *alignment);
 void window_set_size(main__WindowInfo *info, int width, int height);
 int window_get_width(main__WindowInfo *info);
 int window_get_height(main__WindowInfo *info);
