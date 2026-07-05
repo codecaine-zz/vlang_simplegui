@@ -218,6 +218,30 @@ static NSColor *colorFromString(const char *colorString) {
   return [NSColor controlAccentColor];
 }
 
+static NSColor *modernAccentColor(void) {
+  return [NSColor controlAccentColor];
+}
+
+static NSColor *modernSurfaceColor(void) {
+  NSAppearance *appearance = [NSApp effectiveAppearance];
+  if ([appearance bestMatchFromAppearancesWithNames:@[NSAppearanceNameDarkAqua, NSAppearanceNameAqua]] == NSAppearanceNameDarkAqua) {
+    return [NSColor colorWithSRGBRed:0.10 green:0.11 blue:0.15 alpha:1.0];
+  }
+  return [NSColor colorWithSRGBRed:0.98 green:0.98 blue:0.99 alpha:1.0];
+}
+
+static NSColor *modernElevatedSurfaceColor(void) {
+  return [NSColor controlBackgroundColor];
+}
+
+static NSColor *modernBorderColor(void) {
+  return [NSColor colorWithWhite:0.0 alpha:0.12];
+}
+
+static NSColor *modernTextColor(void) {
+  return [NSColor labelColor];
+}
+
 static NSColor *currentFontColorForView(NSView *view) {
   if (!view) {
     return nil;
@@ -252,6 +276,9 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
     return;
   }
 
+  NSColor *effectiveBackground = backgroundColor ?: [NSColor clearColor];
+  NSColor *effectiveFont = fontColor ?: modernTextColor();
+
   if ([view isKindOfClass:[NSTextField class]]) {
     NSTextField *field = (NSTextField *)view;
     [field setFont:[NSFont systemFontOfSize:13 weight:NSFontWeightRegular]];
@@ -259,66 +286,78 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
     [field setFocusRingType:NSFocusRingTypeExterior];
     [field setBordered:YES];
     [field setBezelStyle:NSTextFieldRoundedBezel];
-    if (backgroundColor) {
-      [field setDrawsBackground:YES];
-      [field setBackgroundColor:backgroundColor];
-    } else {
-      [field setDrawsBackground:NO];
-    }
-    if (fontColor) {
-      [field setTextColor:fontColor];
-    }
+    [field setWantsLayer:YES];
+    [field setDrawsBackground:YES];
+    [field setBackgroundColor:effectiveBackground];
+    [field setTextColor:effectiveFont];
+    field.layer.cornerRadius = 8.0;
+    field.layer.borderWidth = 1.0;
+    field.layer.borderColor = [modernBorderColor() CGColor];
   } else if ([view isKindOfClass:[NSTextView class]]) {
     NSTextView *textView = (NSTextView *)view;
     [textView setFont:[NSFont systemFontOfSize:13]];
-    if (backgroundColor) {
-      [textView setDrawsBackground:YES];
-      [textView setBackgroundColor:backgroundColor];
-    } else {
-      [textView setDrawsBackground:NO];
-    }
-    if (fontColor) {
-      [textView setTextColor:fontColor];
-    }
+    [textView setDrawsBackground:YES];
+    [textView setBackgroundColor:effectiveBackground];
+    [textView setTextColor:effectiveFont];
+    [textView setWantsLayer:YES];
+    textView.layer.cornerRadius = 8.0;
+    textView.layer.borderWidth = 1.0;
+    textView.layer.borderColor = [modernBorderColor() CGColor];
   } else if ([view isKindOfClass:[NSButton class]]) {
     NSButton *button = (NSButton *)view;
     [button setFont:[NSFont systemFontOfSize:13 weight:NSFontWeightMedium]];
     [button setControlSize:NSControlSizeRegular];
-    if (fontColor && [button respondsToSelector:@selector(setContentTintColor:)]) {
-      [button setContentTintColor:fontColor];
-    }
     [button setBezelStyle:NSBezelStyleRounded];
     [button setWantsLayer:YES];
-    NSColor *fillColor = backgroundColor && ![backgroundColor isEqual:[NSColor clearColor]] ? backgroundColor : [NSColor controlAccentColor];
-    button.layer.cornerRadius = 8.0;
-    button.layer.borderWidth = 1.0;
-    button.layer.borderColor = [[NSColor colorWithWhite:1.0 alpha:0.16] CGColor];
-    button.layer.backgroundColor = fillColor.CGColor;
+    [button setContentTintColor:effectiveFont];
   } else if ([view isKindOfClass:[NSPopUpButton class]]) {
     NSPopUpButton *popup = (NSPopUpButton *)view;
-    [popup setFont:[NSFont systemFontOfSize:13]];
+    [popup setFont:[NSFont systemFontOfSize:13 weight:NSFontWeightMedium]];
     [popup setControlSize:NSControlSizeRegular];
     [popup setBezelStyle:NSBezelStyleRounded];
+    [popup setWantsLayer:YES];
+    popup.layer.cornerRadius = 8.0;
+    popup.layer.borderWidth = 1.0;
+    popup.layer.borderColor = [modernBorderColor() CGColor];
+    popup.layer.backgroundColor = (backgroundColor ?: modernElevatedSurfaceColor()).CGColor;
+    if ([popup respondsToSelector:@selector(setContentTintColor:)]) {
+      [popup setContentTintColor:effectiveFont];
+    }
   } else if ([view isKindOfClass:[NSSegmentedControl class]]) {
     NSSegmentedControl *segment = (NSSegmentedControl *)view;
     [segment setSegmentStyle:NSSegmentStyleTexturedRounded];
     [segment setControlSize:NSControlSizeRegular];
-    [segment setFont:[NSFont systemFontOfSize:13]];
+    [segment setFont:[NSFont systemFontOfSize:13 weight:NSFontWeightMedium]];
+    [segment setWantsLayer:YES];
+    segment.layer.cornerRadius = 8.0;
+    segment.layer.borderWidth = 1.0;
+    segment.layer.borderColor = [modernBorderColor() CGColor];
+    if ([segment respondsToSelector:@selector(setContentTintColor:)]) {
+      [segment setContentTintColor:fontColor ?: modernAccentColor()];
+    }
   } else if ([view isKindOfClass:[NSSlider class]]) {
     NSSlider *slider = (NSSlider *)view;
     [slider setControlSize:NSControlSizeRegular];
     [slider setWantsLayer:YES];
+    [slider setFocusRingType:NSFocusRingTypeNone];
+    slider.layer.cornerRadius = 6.0;
     if (fontColor && [slider respondsToSelector:@selector(setContentTintColor:)]) {
       [slider setContentTintColor:fontColor];
     }
   } else if ([view isKindOfClass:[NSDatePicker class]]) {
     NSDatePicker *picker = (NSDatePicker *)view;
     [picker setControlSize:NSControlSizeRegular];
+    [picker setWantsLayer:YES];
+    picker.layer.cornerRadius = 8.0;
+    picker.layer.borderWidth = 1.0;
+    picker.layer.borderColor = [modernBorderColor() CGColor];
+    picker.layer.backgroundColor = (backgroundColor ?: modernElevatedSurfaceColor()).CGColor;
   } else if ([view isKindOfClass:[NSScrollView class]]) {
     [view setWantsLayer:YES];
     [view.layer setCornerRadius:10.0];
     [view.layer setBorderWidth:1.0];
-    [view.layer setBorderColor:[[NSColor colorWithWhite:1.0 alpha:0.12] CGColor]];
+    [view.layer setBorderColor:[modernBorderColor() CGColor]];
+    [view.layer setBackgroundColor:(backgroundColor ?: modernElevatedSurfaceColor()).CGColor];
   } else {
     if (backgroundColor) {
       [view setWantsLayer:YES];
@@ -460,12 +499,14 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   self.controlsByName = [NSMutableDictionary dictionary];
 
   NSVisualEffectView *backgroundView = [[NSVisualEffectView alloc] initWithFrame:NSMakeRect(0, 0, self.params.width, self.params.height)];
-  [backgroundView setMaterial:NSVisualEffectMaterialSidebar];
+  [backgroundView setMaterial:NSVisualEffectMaterialWindowBackground];
   [backgroundView setBlendingMode:NSVisualEffectBlendingModeBehindWindow];
   [backgroundView setState:NSVisualEffectStateActive];
   [backgroundView setWantsLayer:YES];
-  [backgroundView.layer setBackgroundColor:CGColorCreateGenericRGB(0.08, 0.10, 0.14, 0.94)];
+  [backgroundView.layer setBackgroundColor:modernSurfaceColor().CGColor];
   [backgroundView.layer setCornerRadius:16.0];
+  [backgroundView.layer setBorderWidth:1.0];
+  [backgroundView.layer setBorderColor:[modernBorderColor() CGColor]];
   [backgroundView.layer setMasksToBounds:YES];
 
   self.scrollView = [[NSScrollView alloc] initWithFrame:NSInsetRect(backgroundView.bounds, 12, 12)];
@@ -479,7 +520,7 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [self.mainStackView setOrientation:NSUserInterfaceLayoutOrientationVertical];
   [self.mainStackView setAlignment:NSLayoutAttributeLeading];
   [self.mainStackView setDistribution:NSStackViewDistributionFill];
-  [self.mainStackView setSpacing:8.0];
+  [self.mainStackView setSpacing:10.0];
   [self.mainStackView setEdgeInsets:NSEdgeInsetsMake(20, 20, 20, 20)];
   [self.mainStackView setWantsLayer:YES];
   [self.mainStackView setTranslatesAutoresizingMaskIntoConstraints:NO];
@@ -495,7 +536,7 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [self.mainStackView.widthAnchor constraintEqualToAnchor:clipView.widthAnchor].active = YES;
   [self.mainStackView.bottomAnchor constraintEqualToAnchor:clipView.bottomAnchor].active = YES;
 
-  [self applyColors:[NSColor colorWithCalibratedWhite:0.12 alpha:1.0] fontColor:[NSColor whiteColor]];
+  [self applyColors:modernSurfaceColor() fontColor:modernTextColor()];
 }
 
 - (void)addControlToLayout:(NSView *)view {
