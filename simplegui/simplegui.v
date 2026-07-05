@@ -15,6 +15,7 @@ fn C.window_get_always_on_top(&WindowInfo) int
 fn C.window_set_background_color(&WindowInfo, &u8)
 fn C.window_set_padding(&WindowInfo, int)
 fn C.window_set_spacing(&WindowInfo, int)
+fn C.window_set_responsive_layout(&WindowInfo, int)
 fn C.window_add_group_box_control(&WindowInfo, &u8, &u8) voidptr
 fn C.window_add_tabs_control(&WindowInfo, &u8, &&u8, int) voidptr
 fn C.window_add_scroll_view_control(&WindowInfo, &u8, int) voidptr
@@ -120,13 +121,14 @@ pub type VoidEventCallback = fn (mut win SimpleWindow)
 pub type FileDropCallback = fn (mut win SimpleWindow, files []string)
 
 pub struct WindowParams {
-	title         string
-	width         int
-	height        int
-	win_ptr       voidptr
-	padding       int
-	spacing       int
-	always_on_top int
+	title             string
+	width             int
+	height            int
+	win_ptr           voidptr
+	padding           int
+	spacing           int
+	always_on_top     int
+	responsive_layout int
 }
 
 pub struct WindowInfo {
@@ -136,21 +138,22 @@ pub struct WindowInfo {
 
 pub struct SimpleWindow {
 mut:
-	window_info      &WindowInfo = unsafe { nil }
-	width            int
-	height           int
-	title            string
-	controls         []ControlEntry
-	status_text      string
-	handlers         []ControlEventHandler
-	background_color string
-	font_color       string
-	padding          int
-	spacing          int
-	always_on_top    bool
-	placeholders     map[string]string
-	errors           map[string]string
-	default_button   string
+	window_info       &WindowInfo = unsafe { nil }
+	width             int
+	height            int
+	title             string
+	controls          []ControlEntry
+	status_text       string
+	handlers          []ControlEventHandler
+	background_color  string
+	font_color        string
+	padding           int
+	spacing           int
+	always_on_top     bool
+	responsive_layout bool = true
+	placeholders      map[string]string
+	errors            map[string]string
+	default_button    string
 }
 
 struct ControlEntry {
@@ -185,9 +188,10 @@ mut:
 
 pub fn new_simple_window(title string, width int, height int) &SimpleWindow {
 	mut win := &SimpleWindow{
-		width:  width
-		height: height
-		title:  title
+		width:             width
+		height:            height
+		title:             title
+		responsive_layout: true
 	}
 	win.placeholders = map[string]string{}
 	win.errors = map[string]string{}
@@ -198,13 +202,14 @@ pub fn new_simple_window(title string, width int, height int) &SimpleWindow {
 fn (mut win SimpleWindow) ensure_window() {
 	if win.window_info == unsafe { nil } {
 		params := WindowParams{
-			title:         win.title
-			width:         win.width
-			height:        win.height
-			win_ptr:       win
-			padding:       win.padding
-			spacing:       win.spacing
-			always_on_top: if win.always_on_top { 1 } else { 0 }
+			title:             win.title
+			width:             win.width
+			height:            win.height
+			win_ptr:           win
+			padding:           win.padding
+			spacing:           win.spacing
+			always_on_top:     if win.always_on_top { 1 } else { 0 }
+			responsive_layout: if win.responsive_layout { 1 } else { 0 }
 		}
 		win.window_info = C.window_app_init(&params)
 	}
@@ -613,6 +618,17 @@ pub fn (mut win SimpleWindow) button(title string) {
 
 pub fn (mut win SimpleWindow) set_button(title string) {
 	win.set_value('run', title)
+}
+
+pub fn (mut win SimpleWindow) set_responsive_layout(enabled bool) {
+	win.responsive_layout = enabled
+	if win.window_info != unsafe { nil } {
+		C.window_set_responsive_layout(win.window_info, if enabled { 1 } else { 0 })
+	}
+}
+
+pub fn (win SimpleWindow) get_responsive_layout() bool {
+	return win.responsive_layout
 }
 
 pub fn (mut win SimpleWindow) set_padding(padding int) {

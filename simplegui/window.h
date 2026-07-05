@@ -25,6 +25,7 @@ void window_set_control_height_by_name(main__WindowInfo *info, const char *name,
 void window_set_control_font_size_by_name(main__WindowInfo *info, const char *name, int size);
 void window_set_padding(main__WindowInfo *info, int padding);
 void window_set_spacing(main__WindowInfo *info, int spacing);
+void window_set_responsive_layout(main__WindowInfo *info, int enabled);
 void *window_add_group_box_control(main__WindowInfo *info, const char *name, const char *title);
 void *window_add_tabs_control(main__WindowInfo *info, const char *name, const char **titles, int titles_count);
 void *window_add_scroll_view_control(main__WindowInfo *info, const char *name, int height);

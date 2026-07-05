@@ -18,6 +18,7 @@ typedef struct main__WindowParams {
   int padding;
   int spacing;
   int always_on_top;
+  int responsive_layout;
 } main__WindowParams;
 
 typedef struct main__WindowInfo {
@@ -99,6 +100,7 @@ extern void vlang_dispatch_event(void *win_ptr, const char *name, const char *ev
 @property (nonatomic, strong) NSColor *currentFontColor;
 @property (nonatomic, strong) NSStatusItem *statusItem;
 @property (nonatomic, strong) NSMenu *statusBarMenu;
+@property (nonatomic, assign) BOOL responsiveLayoutEnabled;
 
 - (NSString *)nameForControl:(NSView *)control;
 - (void)addControlToLayout:(NSView *)view;
@@ -331,6 +333,7 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   if (self) {
     _params = params;
     _win_ptr = params.win_ptr;
+    _responsiveLayoutEnabled = params.responsive_layout != 0;
     [self setupWindow];
   }
   return self;
@@ -436,6 +439,11 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
 
 - (void)makeStretchableView:(NSView *)view minimumWidth:(CGFloat)minimumWidth {
   [view setTranslatesAutoresizingMaskIntoConstraints:NO];
+  if (!self.responsiveLayoutEnabled) {
+    [view setContentHuggingPriority:NSLayoutPriorityDefaultHigh forOrientation:NSLayoutConstraintOrientationHorizontal];
+    [view setContentCompressionResistancePriority:NSLayoutPriorityDefaultHigh forOrientation:NSLayoutConstraintOrientationHorizontal];
+    return;
+  }
   [view setContentHuggingPriority:NSLayoutPriorityDefaultLow forOrientation:NSLayoutConstraintOrientationHorizontal];
   [view setContentCompressionResistancePriority:NSLayoutPriorityDefaultHigh forOrientation:NSLayoutConstraintOrientationHorizontal];
   [view.widthAnchor constraintGreaterThanOrEqualToConstant:minimumWidth].active = YES;
@@ -1468,6 +1476,17 @@ void window_set_spacing(main__WindowInfo *info, int spacing) {
   dispatch_async(dispatch_get_main_queue(), ^{
     if (delegate.mainStackView) {
       [delegate.mainStackView setSpacing:(double)spacing];
+      [delegate.mainStackView setNeedsLayout:YES];
+    }
+  });
+}
+
+void window_set_responsive_layout(main__WindowInfo *info, int enabled) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  if (!delegate) return;
+  delegate.responsiveLayoutEnabled = enabled != 0;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    if (delegate.mainStackView) {
       [delegate.mainStackView setNeedsLayout:YES];
     }
   });

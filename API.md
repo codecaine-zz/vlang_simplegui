@@ -65,6 +65,14 @@ Sets the default font text color for labels and form controls.
 
 - **Values**: `'white'`, `'black'`, or hex format.
 
+### `win.set_responsive_layout(enabled bool)`
+
+Enables or disables responsive auto-layout so controls grow and shrink with the window.
+
+### `win.get_responsive_layout() bool`
+
+Returns whether responsive auto-layout is currently enabled.
+
 ### `win.run()`
 
 Launches the native NSApplication event loop and displays the centered window.

@@ -19,6 +19,15 @@ fn test_named_controls_are_stored_and_accessible() {
 	assert win.get_bool('ready') == false
 }
 
+fn test_responsive_layout_api_is_available() {
+	mut win := simplegui.SimpleWindow{}
+	assert win.get_responsive_layout() == true
+	win.set_responsive_layout(false)
+	assert win.get_responsive_layout() == false
+	win.set_responsive_layout(true)
+	assert win.get_responsive_layout() == true
+}
+
 fn test_control_discovery_helpers_are_available() {
 	mut win := simplegui.SimpleWindow{}
 	win.add_input('name', 'Ada')
@@ -104,6 +113,11 @@ struct BindingExample {
 	username         string
 	age              int
 	wants_newsletter bool
+}
+
+struct CallbackState {
+mut:
+	called bool
 }
 
 fn test_qol_helpers_support_struct_binding_and_tables() {
@@ -214,17 +228,17 @@ fn test_high_level_form_helpers_are_available() {
 
 fn test_file_drop_events_are_forwarded_to_window_handlers() {
 	mut win := simplegui.SimpleWindow{}
-	mut called := false
+	mut state := &CallbackState{}
 
-	win.on_file_drop(fn [mut called] (mut w simplegui.SimpleWindow, files []string) {
-		called = true
+	win.on_file_drop(fn [mut state] (mut w simplegui.SimpleWindow, files []string) {
+		state.called = true
 		assert files.len == 2
 		assert files[0] == '/tmp/a.txt'
 		assert files[1] == '/tmp/b.txt'
 	})
 
 	assert win.dispatch_event('dropzone', 'file_drop', '/tmp/a.txt|/tmp/b.txt') == true
-	assert called == true
+	assert state.called == true
 }
 
 fn on_test_change(mut win simplegui.SimpleWindow, value string) {
