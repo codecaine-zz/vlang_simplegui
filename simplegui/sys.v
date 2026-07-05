@@ -613,3 +613,26 @@ pub fn (mut sp SimpleProcess) close() {
 		sp.proc.close()
 	}
 }
+
+// Uname represents kernel and operating system description details.
+pub struct Uname {
+pub:
+	sysname  string
+	nodename string
+	release  string
+	version  string
+	machine  string
+}
+
+// get_uname retrieves system operating system and kernel architecture details.
+pub fn (win &SimpleWindow) get_uname() Uname {
+	u := os.uname()
+	return Uname{
+		sysname: u.sysname
+		nodename: u.nodename
+		release: u.release
+		version: u.version
+		machine: u.machine
+	}
+}
+

@@ -646,6 +646,8 @@ To simplify system integrations and mirror key features from NeutralinoJS, `simp
 - `win.exists_in_path(cmd string) bool`: Checks if a given command binary is present in the system's PATH.
 - `win.find_executable(cmd string) string`: Returns the absolute path of the specified command binary if it exists in the system's PATH.
 - `win.get_executable_path() string`: Returns the absolute path of the current running executable.
+- `win.get_uname() Uname`: Retrieves system operating system and kernel architecture details.
+  - **Returned Type**: `Uname` contains `sysname`, `nodename`, `release`, `version`, and `machine` string fields.
 
 ### System Notifications (`os.showNotification`)
 
@@ -766,6 +768,13 @@ To simplify system integrations and mirror key features from NeutralinoJS, `simp
 - `win.crypto_hmac_sha256(text string, key string) string`: Computes the hex-encoded HMAC-SHA256 signature of a string with a key.
 - `win.crypto_encrypt_aes(plain_text string, key_hex string) string`: Encrypts text using 128-bit AES block cipher under CBC mode, returning hex-encoded ciphertext.
 - `win.crypto_decrypt_aes(cipher_hex string, key_hex string) string`: Decrypts a hex-encoded AES CBC block string, returning the unpadded plaintext string.
+
+### Encoding (`encoding.hex`, `encoding.base64`)
+
+- `win.hex_encode(text string) string`: Converts a raw text string into its hex-encoded representation.
+- `win.hex_decode(hex_str string) string`: Decodes a hex-encoded string back into raw text.
+- `win.base64_encode(text string) string`: Converts a raw text string into its Base64-encoded representation.
+- `win.base64_decode(b64_str string) string`: Decodes a Base64-encoded string back into raw text.
 
 ### Compression (`compress.gzip`, `compress.zlib`, `compress.deflate`, & `compress.zstd`)
 

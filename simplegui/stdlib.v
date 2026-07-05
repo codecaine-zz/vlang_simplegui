@@ -15,6 +15,7 @@ import toml
 import semver
 import json
 import encoding.hex
+import encoding.base64
 import crypto.sha512
 import crypto.sha1
 import crypto.bcrypt
@@ -1133,4 +1134,51 @@ pub fn lorem_generate(corpus_name string, paragraphs int, sentences int, words i
 pub fn (win &SimpleWindow) lorem_generate(corpus_name string, paragraphs int, sentences int, words int) string {
 	return lorem_generate(corpus_name, paragraphs, sentences, words)
 }
+
+// ==========================================
+// 27. Encoding Utilities (Chapter 13: encoding.hex, encoding.base64)
+// ==========================================
+
+// hex_encode converts a raw string to a hex-encoded string.
+pub fn hex_encode(text string) string {
+	return hex.encode(text.bytes())
+}
+
+// hex_encode delegates to standalone hex_encode.
+pub fn (win &SimpleWindow) hex_encode(text string) string {
+	return hex_encode(text)
+}
+
+// hex_decode converts a hex-encoded string back to raw text.
+pub fn hex_decode(hex_str string) string {
+	decoded := hex.decode(hex_str) or { return '' }
+	return decoded.bytestr()
+}
+
+// hex_decode delegates to standalone hex_decode.
+pub fn (win &SimpleWindow) hex_decode(hex_str string) string {
+	return hex_decode(hex_str)
+}
+
+// base64_encode converts a raw string to a base64-encoded string.
+pub fn base64_encode(text string) string {
+	return base64.encode(text.bytes())
+}
+
+// base64_encode delegates to standalone base64_encode.
+pub fn (win &SimpleWindow) base64_encode(text string) string {
+	return base64_encode(text)
+}
+
+// base64_decode converts a base64-encoded string back to raw text.
+pub fn base64_decode(b64_str string) string {
+	decoded := base64.decode(b64_str)
+	return decoded.bytestr()
+}
+
+// base64_decode delegates to standalone base64_decode.
+pub fn (win &SimpleWindow) base64_decode(b64_str string) string {
+	return base64_decode(b64_str)
+}
+
 

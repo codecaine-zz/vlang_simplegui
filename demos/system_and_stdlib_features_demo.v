@@ -74,7 +74,7 @@ fn main() {
 
 	// Create a beautiful macOS SimpleGUI window
 	mut gui := simplegui.new_simple_window('System & Standard Library Showcase', 750,
-		1320)
+		1380)
 	gui.set_title('SimpleGUI System & Standard Library Showcase')
 
 	// Set layout characteristics
@@ -119,6 +119,11 @@ fn main() {
 	gui.add_label('lbl_paths', 'Config Dir: ' + config_dir + '\nCache Dir:  ' + cache_dir +
 		'\nData Dir:   ' + data_dir)
 	gui.set_control_font_size('lbl_paths', 11)
+
+	u := gui.get_uname()
+	gui.add_label('lbl_uname', 'Kernel: ' + u.sysname + ' ' + u.release + ' (' + u.machine +
+		')\nKernel Version: ' + u.version)
+	gui.set_control_font_size('lbl_uname', 11)
 
 	// --------------------------------------------------
 	// 2. Filesystem & Stat Metadata Group Box
@@ -339,6 +344,13 @@ Permissions:    Owner: R=${meta.owner_r} W=${meta.owner_w} X=${meta.owner_x}
 	gui.add_button('btn_benchmark', 'Stopwatch Benchmarker')
 	gui.end_row()
 
+	gui.begin_row('row_crypto_4')
+	gui.add_button('btn_hex_encode', 'Hex Encode')
+	gui.add_button('btn_hex_decode', 'Hex Decode')
+	gui.add_button('btn_b64_encode', 'Base64 Encode')
+	gui.add_button('btn_b64_decode', 'Base64 Decode')
+	gui.end_row()
+
 	gui.add_textarea('txt_crypto_output', 'Cryptographic, compression and stopwatch benchmarking output will print here...')
 	gui.set_control_height('txt_crypto_output', 100)
 
@@ -433,6 +445,36 @@ Verification Check:
   Decompressed text:  "${decompressed}"'
 		win.set_text('txt_crypto_output', formatted)
 		win.set_status('Zstd compression verified.')
+	})
+
+	// Hex Encoding
+	gui.on_click('btn_hex_encode', fn (mut win simplegui.SimpleWindow) {
+		input := win.get_text('input_crypt_text')
+		encoded := win.hex_encode(input)
+		win.set_text('txt_crypto_output', 'Hex Encoded:\n' + encoded)
+		win.set_status('Hex encoding completed.')
+	})
+
+	gui.on_click('btn_hex_decode', fn (mut win simplegui.SimpleWindow) {
+		input := win.get_text('input_crypt_text').trim_space()
+		decoded := win.hex_decode(input)
+		win.set_text('txt_crypto_output', 'Hex Decoded:\n' + decoded)
+		win.set_status('Hex decoding completed.')
+	})
+
+	// Base64 Encoding
+	gui.on_click('btn_b64_encode', fn (mut win simplegui.SimpleWindow) {
+		input := win.get_text('input_crypt_text')
+		encoded := win.base64_encode(input)
+		win.set_text('txt_crypto_output', 'Base64 Encoded:\n' + encoded)
+		win.set_status('Base64 encoding completed.')
+	})
+
+	gui.on_click('btn_b64_decode', fn (mut win simplegui.SimpleWindow) {
+		input := win.get_text('input_crypt_text').trim_space()
+		decoded := win.base64_decode(input)
+		win.set_text('txt_crypto_output', 'Base64 Decoded:\n' + decoded)
+		win.set_status('Base64 decoding completed.')
 	})
 
 	// JSON Map List
