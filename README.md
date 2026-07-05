@@ -217,6 +217,12 @@ v run demos/always_on_top_demo.v
 v run demos/ergonomic_demo.v
 ```
 
+### Run the developer experience (DX) showcase demo:
+
+```bash
+v run demos/dx_features_demo.v
+```
+
 ### Run the High-Level Helpers demo:
 
 ```bash
@@ -254,6 +260,7 @@ v test .
 - [demos/all_controls_demo.v](demos/all_controls_demo.v) — single-window demo that exercises many controls in one place
 - [demos/high_level_demo.v](demos/high_level_demo.v) — showcases the new beginner-friendly helper API for forms and actions
 - [demos/menu_demo.v](demos/menu_demo.v) — demo of standard macOS application menus and text editing shortcuts
+- [demos/dx_features_demo.v](demos/dx_features_demo.v) — showcases the developer experience (DX) ergonomics improvements (reflection form building, chaining, nameless controls, action rows, and debug mode)
 
 ## Notes
 

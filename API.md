@@ -2,6 +2,8 @@
 
 `simplegui` is a beginner-friendly, rapid application development (RAD) framework for building native macOS Cocoa applications in V. It uses a dynamic auto-layout engine to automatically build, size, and layout controls.
 
+All layout, control creation, styling, and event registration APIs support a **fluent builder pattern** (method chaining) to keep your code clean and concise.
+
 ---
 
 ## 1. Window Operations
@@ -14,13 +16,13 @@ module main
 import simplegui
 
 fn main() {
-    mut win := simplegui.new_simple_window('Starter', 640, 420)
-    win.add_input('name', 'Ada')
-    win.add_button('save', 'Save')
-    win.on_click('save', fn (mut win simplegui.SimpleWindow) {
-        println("saved: ${win.get_text('name')}")
-    })
-    win.run()
+    simplegui.new_simple_window('Starter', 640, 420)
+        .add_input('name', 'Ada')
+        .add_button('save', 'Save')
+        .on_click('save', fn (mut win simplegui.SimpleWindow) {
+            println("saved: ${win.get_text('name')}")
+        })
+        .run()
 }
 ```
 
@@ -40,6 +42,14 @@ Initializes a new macOS window delegate.
   - `width`: Default initial width.
   - `height`: Default initial height.
 - **Notes**: By default, the window automatically resizes its height/width to wrap snugly around the registered controls at startup.
+
+### `win.set_debug_mode(enabled bool)`
+
+Enables or disables visual debug logging in stdout and prints events to the window status footer.
+
+### `win.get_debug_mode() bool`
+
+Returns whether debug mode is currently enabled.
 
 ### `win.set_title(title string)`
 
@@ -96,11 +106,19 @@ Starts a horizontal layout container. Any subsequent widgets added will align ho
 
 Closes the active horizontal container. Subsequent controls return to vertical stacking.
 
+### `win.add_action_row(actions map[string]VoidEventCallback)`
+
+Lays out a set of buttons horizontally in a single call, binding each to its respective click event callback.
+
+### `win.add_fields_row(fields map[string]string)`
+
+Lays out a set of labeled input fields side-by-side. The map maps label text to input control name (e.g. `{"First Name": "fn"}`).
+
 ---
 
 ## 3. Adding Controls
 
-Each control requires a unique `name` handle to get/set its value or listen to events.
+Each control requires a `name` handle to get/set its value or listen to events. If you pass an empty string `""` as the `name`, a unique control name (e.g. `'auto_input_1'`) will be auto-generated under the hood.
 
 ### High-level form helpers
 
@@ -111,6 +129,22 @@ For common forms, these helpers reduce boilerplate and keep the API friendly for
 - `win.add_toggle(name string, label string, checked bool)` creates a checkbox.
 - `win.add_number_field(name string, value int)` creates a numeric input.
 - `win.add_action(name string, title string, callback VoidEventCallback)` creates a button and wires its click handler.
+- `win.add_form_from_struct[T](default_data T)` automatically generates input/checkbox/numeric fields side-by-side and vertically from a V struct using compile-time reflection.
+
+### Nameless default control helpers
+
+If your application only needs a single control of a specific type (or you do not want to manage control names), you can use nameless helpers which default to pre-configured keys (`'default_input'`, `'default_textarea'`, `'default_checkbox'`, `'default_number'`, `'default_button'`):
+
+- `win.input(value string)`
+- `win.set_input(value string)` / `win.get_input() string`
+- `win.textarea(text string)`
+- `win.set_textarea(text string)` / `win.get_textarea() string`
+- `win.checkbox(title string, checked bool)`
+- `win.set_checkbox(checked bool)` / `win.get_checkbox() bool`
+- `win.number(value int)`
+- `win.set_number(value int)` / `win.get_number() int`
+- `win.button(title string)`
+- `win.set_button(title string)`
 
 ### `win.add_label(name string, text string)`
 

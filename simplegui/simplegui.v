@@ -136,6 +136,7 @@ pub struct WindowInfo {
 	app_delegate voidptr
 }
 
+@[heap]
 pub struct SimpleWindow {
 mut:
 	window_info       &WindowInfo = unsafe { nil }
@@ -154,6 +155,7 @@ mut:
 	placeholders      map[string]string
 	errors            map[string]string
 	default_button    string
+	debug_mode        bool
 }
 
 struct ControlEntry {
@@ -271,6 +273,10 @@ fn (win SimpleWindow) find_handler_by_filter(control_name string, event_name str
 	return -1
 }
 
+fn (win &SimpleWindow) auto_name(kind string) string {
+	return 'auto_${kind}_${win.controls.len}'
+}
+
 fn (mut win SimpleWindow) upsert_control(name string, kind string, label string, value string, checked bool, number int) {
 	idx := win.find_control(name)
 	mut entry := ControlEntry{
@@ -300,159 +306,365 @@ fn (mut win SimpleWindow) upsert_control(name string, kind string, label string,
 }
 
 // Control creation methods
-pub fn (mut win SimpleWindow) add_label(name string, text string) {
-	win.upsert_control(name, 'label', text, text, false, 0)
-	if win.window_info != unsafe { nil } {
-		C.window_add_label_control(win.window_info, name.str, text.str)
+pub fn (win &SimpleWindow) add_label(name string, text string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('label')
 	}
+	if win.debug_mode {
+		println('[simplegui DEBUG] Created Control: "${real_name}" (Type: "label", Value: "${text}")')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.upsert_control(real_name, 'label', text, text, false, 0)
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_label_control(win.window_info, real_name.str, text.str)
+	}
+	return win
 }
 
-pub fn (mut win SimpleWindow) add_input(name string, value string) {
-	win.upsert_control(name, 'input', '', value, false, 0)
-	if win.window_info != unsafe { nil } {
-		C.window_add_input_control(win.window_info, name.str, value.str)
+pub fn (win &SimpleWindow) add_input(name string, value string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('input')
 	}
+	if win.debug_mode {
+		println('[simplegui DEBUG] Created Control: "${real_name}" (Type: "input", Value: "${value}")')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.upsert_control(real_name, 'input', '', value, false, 0)
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_input_control(win.window_info, real_name.str, value.str)
+	}
+	return win
 }
 
-pub fn (mut win SimpleWindow) add_password(name string, value string) {
-	win.upsert_control(name, 'password', '', value, false, 0)
-	if win.window_info != unsafe { nil } {
-		C.window_add_password_control(win.window_info, name.str, value.str)
+pub fn (win &SimpleWindow) add_password(name string, value string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('password')
 	}
+	if win.debug_mode {
+		println('[simplegui DEBUG] Created Control: "${real_name}" (Type: "password")')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.upsert_control(real_name, 'password', '', value, false, 0)
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_password_control(win.window_info, real_name.str, value.str)
+	}
+	return win
 }
 
-pub fn (mut win SimpleWindow) add_textarea(name string, value string) {
-	win.upsert_control(name, 'textarea', '', value, false, 0)
-	if win.window_info != unsafe { nil } {
-		C.window_add_textarea_control(win.window_info, name.str, value.str)
+pub fn (win &SimpleWindow) add_textarea(name string, value string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('textarea')
 	}
+	if win.debug_mode {
+		println('[simplegui DEBUG] Created Control: "${real_name}" (Type: "textarea", Value: "${value}")')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.upsert_control(real_name, 'textarea', '', value, false, 0)
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_textarea_control(win.window_info, real_name.str, value.str)
+	}
+	return win
 }
 
-pub fn (mut win SimpleWindow) add_html_view(name string, html string) {
-	win.upsert_control(name, 'htmlview', '', html, false, 0)
-	if win.window_info != unsafe { nil } {
-		C.window_add_html_view_control(win.window_info, name.str, html.str)
+pub fn (win &SimpleWindow) add_html_view(name string, html string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('htmlview')
 	}
+	if win.debug_mode {
+		println('[simplegui DEBUG] Created Control: "${real_name}" (Type: "htmlview")')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.upsert_control(real_name, 'htmlview', '', html, false, 0)
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_html_view_control(win.window_info, real_name.str, html.str)
+	}
+	return win
 }
 
-pub fn (mut win SimpleWindow) add_drop_zone(name string, label string) {
-	win.upsert_control(name, 'dropzone', label, '', false, 0)
-	if win.window_info != unsafe { nil } {
-		C.window_add_drop_zone_control(win.window_info, name.str, label.str)
+pub fn (win &SimpleWindow) add_drop_zone(name string, label string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('dropzone')
 	}
+	if win.debug_mode {
+		println('[simplegui DEBUG] Created Control: "${real_name}" (Type: "dropzone", Label: "${label}")')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.upsert_control(real_name, 'dropzone', label, '', false, 0)
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_drop_zone_control(win.window_info, real_name.str, label.str)
+	}
+	return win
 }
 
-pub fn (mut win SimpleWindow) add_button(name string, title string) {
-	win.upsert_control(name, 'button', title, '', false, 0)
-	if win.window_info != unsafe { nil } {
-		C.window_add_button_control(win.window_info, name.str, title.str)
+pub fn (win &SimpleWindow) add_button(name string, title string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('button')
 	}
+	if win.debug_mode {
+		println('[simplegui DEBUG] Created Control: "${real_name}" (Type: "button", Title: "${title}")')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.upsert_control(real_name, 'button', title, '', false, 0)
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_button_control(win.window_info, real_name.str, title.str)
+	}
+	return win
 }
 
-pub fn (mut win SimpleWindow) add_checkbox(name string, label string, checked bool) {
-	win.upsert_control(name, 'checkbox', label, '', checked, 0)
+pub fn (win &SimpleWindow) add_checkbox(name string, label string, checked bool) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('checkbox')
+	}
+	if win.debug_mode {
+		println('[simplegui DEBUG] Created Control: "${real_name}" (Type: "checkbox", Label: "${label}", Checked: ${checked})')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.upsert_control(real_name, 'checkbox', label, '', checked, 0)
+	}
 	if win.window_info != unsafe { nil } {
 		checked_val := if checked { 1 } else { 0 }
-		C.window_add_checkbox_control(win.window_info, name.str, label.str, checked_val)
+		C.window_add_checkbox_control(win.window_info, real_name.str, label.str, checked_val)
 	}
+	return win
 }
 
-pub fn (mut win SimpleWindow) add_number(name string, value int) {
-	win.upsert_control(name, 'number', '', '', false, value)
-	if win.window_info != unsafe { nil } {
-		C.window_add_number_control(win.window_info, name.str, value)
+pub fn (win &SimpleWindow) add_number(name string, value int) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('number')
 	}
+	if win.debug_mode {
+		println('[simplegui DEBUG] Created Control: "${real_name}" (Type: "number", Value: ${value})')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.upsert_control(real_name, 'number', '', '', false, value)
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_number_control(win.window_info, real_name.str, value)
+	}
+	return win
 }
 
-pub fn (mut win SimpleWindow) add_slider(name string, value int) {
-	win.upsert_control(name, 'slider', '', value.str(), false, value)
-	if win.window_info != unsafe { nil } {
-		C.window_add_slider_control(win.window_info, name.str, value)
+pub fn (win &SimpleWindow) add_slider(name string, value int) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('slider')
 	}
+	if win.debug_mode {
+		println('[simplegui DEBUG] Created Control: "${real_name}" (Type: "slider", Value: ${value})')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.upsert_control(real_name, 'slider', '', value.str(), false, value)
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_slider_control(win.window_info, real_name.str, value)
+	}
+	return win
 }
 
-pub fn (mut win SimpleWindow) add_theme_menu(name string, selected string) {
-	win.upsert_control(name, 'theme', '', selected, false, 0)
-	if win.window_info != unsafe { nil } {
-		C.window_add_theme_menu_control(win.window_info, name.str, selected.str)
+pub fn (win &SimpleWindow) add_theme_menu(name string, selected string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('theme')
 	}
+	if win.debug_mode {
+		println('[simplegui DEBUG] Created Control: "${real_name}" (Type: "theme", Selected: "${selected}")')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.upsert_control(real_name, 'theme', '', selected, false, 0)
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_theme_menu_control(win.window_info, real_name.str, selected.str)
+	}
+	return win
 }
 
-pub fn (mut win SimpleWindow) add_color_well(name string, color string) {
-	win.upsert_control(name, 'color', '', color, false, 0)
-	if win.window_info != unsafe { nil } {
-		C.window_add_color_well_control(win.window_info, name.str, color.str)
+pub fn (win &SimpleWindow) add_color_well(name string, color string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('color')
 	}
+	if win.debug_mode {
+		println('[simplegui DEBUG] Created Control: "${real_name}" (Type: "color", Color: "${color}")')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.upsert_control(real_name, 'color', '', color, false, 0)
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_color_well_control(win.window_info, real_name.str, color.str)
+	}
+	return win
 }
 
-pub fn (mut win SimpleWindow) add_date_picker(name string, date string) {
-	win.upsert_control(name, 'date', '', date, false, 0)
-	if win.window_info != unsafe { nil } {
-		C.window_add_date_picker_control(win.window_info, name.str, date.str)
+pub fn (win &SimpleWindow) add_date_picker(name string, date string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('date')
 	}
+	if win.debug_mode {
+		println('[simplegui DEBUG] Created Control: "${real_name}" (Type: "date", Date: "${date}")')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.upsert_control(real_name, 'date', '', date, false, 0)
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_date_picker_control(win.window_info, real_name.str, date.str)
+	}
+	return win
 }
 
-pub fn (mut win SimpleWindow) add_mode_control(name string, selected string) {
-	win.upsert_control(name, 'mode', '', selected, false, 0)
-	if win.window_info != unsafe { nil } {
-		C.window_add_mode_control_control(win.window_info, name.str, selected.str)
+pub fn (win &SimpleWindow) add_mode_control(name string, selected string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('mode')
 	}
+	if win.debug_mode {
+		println('[simplegui DEBUG] Created Control: "${real_name}" (Type: "mode", Selected: "${selected}")')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.upsert_control(real_name, 'mode', '', selected, false, 0)
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_mode_control_control(win.window_info, real_name.str, selected.str)
+	}
+	return win
 }
 
-pub fn (mut win SimpleWindow) add_progress_indicator(name string, value int) {
-	win.upsert_control(name, 'progress', '', value.str(), false, value)
-	if win.window_info != unsafe { nil } {
-		C.window_add_progress_indicator_control(win.window_info, name.str, value)
+pub fn (win &SimpleWindow) add_progress_indicator(name string, value int) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('progress')
 	}
+	if win.debug_mode {
+		println('[simplegui DEBUG] Created Control: "${real_name}" (Type: "progress", Value: ${value})')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.upsert_control(real_name, 'progress', '', value.str(), false, value)
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_progress_indicator_control(win.window_info, real_name.str, value)
+	}
+	return win
 }
 
 // High-level helpers for common beginner-friendly form building
-pub fn (mut win SimpleWindow) add_form_field(label string, name string, value string) {
-	win.begin_row('${name}_row')
-	win.add_label('${name}_label', label)
-	win.add_input(name, value)
+pub fn (win &SimpleWindow) add_form_field(label string, name string, value string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('field')
+	}
+	win.begin_row('${real_name}_row')
+	win.add_label('${real_name}_label', label)
+	win.add_input(real_name, value)
 	win.end_row()
+	return win
 }
 
-pub fn (mut win SimpleWindow) add_form_textarea(label string, name string, value string) {
-	win.begin_row('${name}_row')
-	win.add_label('${name}_label', label)
-	win.add_textarea(name, value)
+pub fn (win &SimpleWindow) add_form_textarea(label string, name string, value string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('textarea')
+	}
+	win.begin_row('${real_name}_row')
+	win.add_label('${real_name}_label', label)
+	win.add_textarea(real_name, value)
 	win.end_row()
+	return win
 }
 
-pub fn (mut win SimpleWindow) add_toggle(name string, label string, checked bool) {
+pub fn (win &SimpleWindow) add_toggle(name string, label string, checked bool) &SimpleWindow {
 	win.add_checkbox(name, label, checked)
+	return win
 }
 
-pub fn (mut win SimpleWindow) add_number_field(name string, value int) {
+pub fn (win &SimpleWindow) add_number_field(name string, value int) &SimpleWindow {
 	win.add_number(name, value)
+	return win
 }
 
-pub fn (mut win SimpleWindow) add_action(name string, title string, callback VoidEventCallback) {
-	win.add_button(name, title)
-	win.on_click(name, callback)
+pub fn (win &SimpleWindow) add_action(name string, title string, callback VoidEventCallback) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('action')
+	}
+	win.add_button(real_name, title)
+	win.on_click(real_name, callback)
+	return win
 }
 
-pub fn (mut win SimpleWindow) add_heading(title string) {
+pub fn (win &SimpleWindow) add_heading(title string) &SimpleWindow {
 	heading_name := 'heading_${win.controls.len}'
 	win.add_label(heading_name, title)
 	win.add_separator()
+	return win
 }
 
 // Value setters and getters calling the generic name-based C bridge
-pub fn (mut win SimpleWindow) set_value(name string, value string) {
+pub fn (win &SimpleWindow) set_debug_mode(enabled bool) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.debug_mode = enabled
+	}
+	return win
+}
+
+pub fn (win SimpleWindow) get_debug_mode() bool {
+	return win.debug_mode
+}
+
+// Value setters and getters calling the generic name-based C bridge
+pub fn (win &SimpleWindow) set_value(name string, value string) &SimpleWindow {
+	if win.debug_mode {
+		println('[simplegui DEBUG] set_value("${name}", "${value}")')
+	}
 	win.require_control(name)
 	idx := win.find_control(name)
 	if idx >= 0 {
-		mut entry := win.controls[idx]
-		entry.value = value
-		win.controls[idx] = entry
+		unsafe {
+			mut w := &SimpleWindow(win)
+			mut entry := w.controls[idx]
+			entry.value = value
+			w.controls[idx] = entry
+		}
 	}
 	if win.window_info != unsafe { nil } {
 		C.window_set_control_text_by_name(win.window_info, name.str, value.str)
 	}
-	win.dispatch_event(name, 'change', value)
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.dispatch_event(name, 'change', value)
+	}
+	return win
 }
 
 pub fn (win SimpleWindow) get_value(name string) string {
@@ -468,19 +680,29 @@ pub fn (win SimpleWindow) get_value(name string) string {
 	return ''
 }
 
-pub fn (mut win SimpleWindow) set_bool(name string, checked bool) {
+pub fn (win &SimpleWindow) set_bool(name string, checked bool) &SimpleWindow {
+	if win.debug_mode {
+		println('[simplegui DEBUG] set_bool("${name}", ${checked})')
+	}
 	win.require_control(name)
 	idx := win.find_control(name)
 	if idx >= 0 {
-		mut entry := win.controls[idx]
-		entry.checked = checked
-		win.controls[idx] = entry
+		unsafe {
+			mut w := &SimpleWindow(win)
+			mut entry := w.controls[idx]
+			entry.checked = checked
+			w.controls[idx] = entry
+		}
 	}
 	if win.window_info != unsafe { nil } {
 		C.window_set_control_bool_by_name(win.window_info, name.str, int(checked))
 	}
 	value := if checked { 'true' } else { 'false' }
-	win.dispatch_event(name, 'change', value)
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.dispatch_event(name, 'change', value)
+	}
+	return win
 }
 
 pub fn (win SimpleWindow) get_bool(name string) bool {
@@ -495,18 +717,28 @@ pub fn (win SimpleWindow) get_bool(name string) bool {
 	return false
 }
 
-pub fn (mut win SimpleWindow) set_number_value(name string, value int) {
+pub fn (win &SimpleWindow) set_number_value(name string, value int) &SimpleWindow {
+	if win.debug_mode {
+		println('[simplegui DEBUG] set_number_value("${name}", ${value})')
+	}
 	win.require_control(name)
 	idx := win.find_control(name)
 	if idx >= 0 {
-		mut entry := win.controls[idx]
-		entry.number = value
-		win.controls[idx] = entry
+		unsafe {
+			mut w := &SimpleWindow(win)
+			mut entry := w.controls[idx]
+			entry.number = value
+			w.controls[idx] = entry
+		}
 	}
 	if win.window_info != unsafe { nil } {
 		C.window_set_control_int_by_name(win.window_info, name.str, value)
 	}
-	win.dispatch_event(name, 'change', value.str())
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.dispatch_event(name, 'change', value.str())
+	}
+	return win
 }
 
 pub fn (win SimpleWindow) get_number_value(name string) int {
@@ -522,36 +754,43 @@ pub fn (win SimpleWindow) get_number_value(name string) int {
 }
 
 // High-level Delphi/VB/C# style properties/helpers
-pub fn (mut win SimpleWindow) set_text(name string, text string) {
+pub fn (win &SimpleWindow) set_text(name string, text string) &SimpleWindow {
 	win.set_value(name, text)
+	return win
 }
 
-pub fn (mut win SimpleWindow) set_html(name string, html string) {
+pub fn (win &SimpleWindow) set_html(name string, html string) &SimpleWindow {
 	idx := win.find_control(name)
 	if idx >= 0 {
-		mut entry := win.controls[idx]
-		entry.value = html
-		win.controls[idx] = entry
+		unsafe {
+			mut w := &SimpleWindow(win)
+			mut entry := w.controls[idx]
+			entry.value = html
+			w.controls[idx] = entry
+		}
 	}
 	if win.window_info != unsafe { nil } {
 		C.window_set_control_text_by_name(win.window_info, name.str, html.str)
 	}
+	return win
 }
 
 pub fn (win SimpleWindow) get_text(name string) string {
 	return win.get_value(name)
 }
 
-pub fn (mut win SimpleWindow) set_checked(name string, checked bool) {
+pub fn (win &SimpleWindow) set_checked(name string, checked bool) &SimpleWindow {
 	win.set_bool(name, checked)
+	return win
 }
 
 pub fn (win SimpleWindow) get_checked(name string) bool {
 	return win.get_bool(name)
 }
 
-pub fn (mut win SimpleWindow) set_value_int(name string, val int) {
+pub fn (win &SimpleWindow) set_value_int(name string, val int) &SimpleWindow {
 	win.set_number_value(name, val)
+	return win
 }
 
 pub fn (win SimpleWindow) get_value_int(name string) int {
@@ -559,108 +798,141 @@ pub fn (win SimpleWindow) get_value_int(name string) int {
 }
 
 // Input Control Helper
-pub fn (mut win SimpleWindow) input(value string) {
+pub fn (win &SimpleWindow) input(value string) &SimpleWindow {
 	win.add_input('default_input', value)
-	win.set_input(value)
+	return win
 }
 
-pub fn (mut win SimpleWindow) set_input(value string) {
-	win.set_value('name', value)
+pub fn (win &SimpleWindow) set_input(value string) &SimpleWindow {
+	win.set_value('default_input', value)
+	return win
 }
 
 pub fn (win SimpleWindow) get_input() string {
-	return win.get_value('name')
+	return win.get_value('default_input')
 }
 
 // Textarea Control Helper
-pub fn (mut win SimpleWindow) textarea(text string) {
+pub fn (win &SimpleWindow) textarea(text string) &SimpleWindow {
 	win.add_textarea('default_textarea', text)
-	win.set_textarea(text)
+	return win
 }
 
-pub fn (mut win SimpleWindow) set_textarea(text string) {
-	win.set_value('notes', text)
+pub fn (win &SimpleWindow) set_textarea(text string) &SimpleWindow {
+	win.set_value('default_textarea', text)
+	return win
 }
 
 pub fn (win SimpleWindow) get_textarea() string {
-	return win.get_value('notes')
+	return win.get_value('default_textarea')
 }
 
 // Checkbox Control Helper
-pub fn (mut win SimpleWindow) checkbox(title string, checked bool) {
+pub fn (win &SimpleWindow) checkbox(title string, checked bool) &SimpleWindow {
 	win.add_checkbox('default_checkbox', title, checked)
-	win.set_checkbox(title, checked)
+	return win
 }
 
-pub fn (mut win SimpleWindow) set_checkbox(title string, checked bool) {
-	win.set_bool('ready', checked)
-	win.set_value('ready', title)
+pub fn (win &SimpleWindow) set_checkbox(checked bool) &SimpleWindow {
+	win.set_bool('default_checkbox', checked)
+	return win
 }
 
 pub fn (win SimpleWindow) get_checkbox() bool {
-	return win.get_bool('ready')
+	return win.get_bool('default_checkbox')
 }
 
 // Number Control Helper
-pub fn (mut win SimpleWindow) set_number(value int) {
-	win.set_number_value('number', value)
+pub fn (win &SimpleWindow) number(value int) &SimpleWindow {
+	win.add_number('default_number', value)
+	return win
+}
+
+pub fn (win &SimpleWindow) set_number(value int) &SimpleWindow {
+	win.set_number_value('default_number', value)
+	return win
 }
 
 pub fn (win SimpleWindow) get_number() int {
-	return win.get_number_value('number')
+	return win.get_number_value('default_number')
 }
 
 // Button Control Helper
-pub fn (mut win SimpleWindow) button(title string) {
+pub fn (win &SimpleWindow) button(title string) &SimpleWindow {
 	win.add_button('default_button', title)
-	win.set_button(title)
+	return win
 }
 
-pub fn (mut win SimpleWindow) set_button(title string) {
-	win.set_value('run', title)
+pub fn (win &SimpleWindow) set_button(title string) &SimpleWindow {
+	win.set_value('default_button', title)
+	return win
 }
 
-pub fn (mut win SimpleWindow) set_responsive_layout(enabled bool) {
-	win.responsive_layout = enabled
+pub fn (win &SimpleWindow) set_responsive_layout(enabled bool) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.responsive_layout = enabled
+	}
 	if win.window_info != unsafe { nil } {
 		C.window_set_responsive_layout(win.window_info, if enabled { 1 } else { 0 })
 	}
+	return win
 }
 
 pub fn (win SimpleWindow) get_responsive_layout() bool {
 	return win.responsive_layout
 }
 
-pub fn (mut win SimpleWindow) set_padding(padding int) {
-	win.padding = padding
+pub fn (win &SimpleWindow) set_padding(padding int) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.padding = padding
+	}
 	if win.window_info != unsafe { nil } {
 		C.window_set_padding(win.window_info, padding)
 	}
+	return win
 }
 
 pub fn (win SimpleWindow) get_padding() int {
 	return win.padding
 }
 
-pub fn (mut win SimpleWindow) set_spacing(spacing int) {
-	win.spacing = spacing
+pub fn (win &SimpleWindow) set_spacing(spacing int) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.spacing = spacing
+	}
 	if win.window_info != unsafe { nil } {
 		C.window_set_spacing(win.window_info, spacing)
 	}
+	return win
 }
 
 pub fn (win SimpleWindow) get_spacing() int {
 	return win.spacing
 }
 
-pub fn (mut win SimpleWindow) add_group_box(name string, title string) {
-	win.upsert_control(name, 'groupbox', title, '', false, 0)
-	if win.window_info != unsafe { nil } {
-		C.window_add_group_box_control(win.window_info, name.str, title.str)
+pub fn (win &SimpleWindow) add_group_box(name string, title string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('groupbox')
 	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.upsert_control(real_name, 'groupbox', title, '', false, 0)
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_group_box_control(win.window_info, real_name.str, title.str)
+	}
+	return win
 }
 
-pub fn (mut win SimpleWindow) add_tabs(name string, titles []string) {
+pub fn (win &SimpleWindow) add_tabs(name string, titles []string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('tabs')
+	}
 	mut joined := ''
 	for i, title in titles {
 		if i > 0 {
@@ -668,155 +940,199 @@ pub fn (mut win SimpleWindow) add_tabs(name string, titles []string) {
 		}
 		joined += title
 	}
-	win.upsert_control(name, 'tabs', joined, '', false, 0)
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.upsert_control(real_name, 'tabs', joined, '', false, 0)
+	}
 	if win.window_info != unsafe { nil } {
 		mut c_titles := []&u8{}
 		for title in titles {
 			c_titles << title.str
 		}
-		C.window_add_tabs_control(win.window_info, name.str, c_titles.data, titles.len)
+		C.window_add_tabs_control(win.window_info, real_name.str, c_titles.data, titles.len)
 	}
+	return win
 }
 
-pub fn (mut win SimpleWindow) add_scroll_view(name string, height int) {
-	win.upsert_control(name, 'scrollview', '', '', false, 0)
+pub fn (win &SimpleWindow) add_scroll_view(name string, height int) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('scrollview')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.upsert_control(real_name, 'scrollview', '', '', false, 0)
+	}
 	if win.window_info != unsafe { nil } {
-		C.window_add_scroll_view_control(win.window_info, name.str, height)
+		C.window_add_scroll_view_control(win.window_info, real_name.str, height)
 	}
+	return win
 }
 
-pub fn (mut win SimpleWindow) set_focus(name string) {
+pub fn (win &SimpleWindow) set_focus(name string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_focus_control(win.window_info, name.str)
 	}
+	return win
 }
 
-pub fn (mut win SimpleWindow) clear(name string) {
+pub fn (win &SimpleWindow) clear(name string) &SimpleWindow {
 	idx := win.find_control(name)
 	if idx < 0 {
-		return
+		return win
 	}
-	if idx >= 0 {
-		entry := win.controls[idx]
-		if entry.kind == 'checkbox' {
-			win.set_checked(name, false)
-		} else if entry.kind in ['number', 'slider', 'progress'] {
-			win.set_value_int(name, 0)
-		} else {
-			win.set_text(name, '')
-		}
-		return
+	entry := win.controls[idx]
+	if entry.kind == 'checkbox' {
+		win.set_checked(name, false)
+	} else if entry.kind in ['number', 'slider', 'progress'] {
+		win.set_value_int(name, 0)
+	} else if entry.kind in ['input', 'password', 'textarea', 'date', 'mode', 'theme', 'listbox', 'color'] {
+		win.set_text(name, '')
 	}
-	win.set_text(name, '')
+	return win
 }
 
-pub fn (mut win SimpleWindow) clear_all() {
+pub fn (win &SimpleWindow) clear_all() &SimpleWindow {
 	for control in win.controls {
 		win.clear(control.name)
 	}
+	return win
 }
 
-pub fn (mut win SimpleWindow) reset_form() {
+pub fn (win &SimpleWindow) reset_form() &SimpleWindow {
 	for i in 0 .. win.controls.len {
-		mut entry := win.controls[i]
+		entry := win.controls[i]
 		if entry.kind == 'checkbox' {
 			win.set_checked(entry.name, entry.initial_checked)
 		} else if entry.kind in ['number', 'slider', 'progress'] {
 			win.set_value_int(entry.name, entry.initial_number)
-		} else {
+		} else if entry.kind in ['input', 'password', 'textarea', 'date', 'mode', 'theme', 'listbox', 'color'] {
 			win.set_text(entry.name, entry.initial_value)
 		}
 	}
+	return win
 }
 
-pub fn (mut win SimpleWindow) set_placeholder(name string, text string) {
-	if win.placeholders.len == 0 {
-		win.placeholders = map[string]string{}
+pub fn (win &SimpleWindow) set_placeholder(name string, text string) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		if w.placeholders.len == 0 {
+			w.placeholders = map[string]string{}
+		}
+		w.placeholders[name] = text
 	}
-	win.placeholders[name] = text
 	if win.window_info != unsafe { nil } {
 		C.window_set_placeholder_by_name(win.window_info, name.str, text.str)
 	}
+	return win
 }
 
-pub fn (mut win SimpleWindow) set_error(name string, text string) {
-	if win.errors.len == 0 {
-		win.errors = map[string]string{}
+pub fn (win &SimpleWindow) set_error(name string, text string) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		if w.errors.len == 0 {
+			w.errors = map[string]string{}
+		}
+		w.errors[name] = text
 	}
-	win.errors[name] = text
 	if win.window_info != unsafe { nil } {
 		C.window_set_error_by_name(win.window_info, name.str, text.str)
 	}
+	return win
 }
 
-pub fn (mut win SimpleWindow) set_tooltip(name string, text string) {
+pub fn (win &SimpleWindow) set_tooltip(name string, text string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_set_tooltip_by_name(win.window_info, name.str, text.str)
 	}
+	return win
 }
 
-pub fn (mut win SimpleWindow) set_default_button(name string) {
-	win.default_button = name
+pub fn (win &SimpleWindow) set_default_button(name string) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.default_button = name
+	}
 	if win.window_info != unsafe { nil } {
 		C.window_set_default_button_by_name(win.window_info, name.str)
 	}
+	return win
 }
 
-pub fn (mut win SimpleWindow) on_enter(name string, callback VoidEventCallback) {
-	win.handlers << ControlEventHandler{
-		control_name: name
-		event_name:   'enter'
-		void_cb:      callback
+pub fn (win &SimpleWindow) on_enter(name string, callback VoidEventCallback) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.handlers << ControlEventHandler{
+			control_name: name
+			event_name:   'enter'
+			void_cb:      callback
+		}
 	}
+	return win
 }
 
-pub fn (mut win SimpleWindow) on_key(key string, callback StringEventCallback) {
-	win.handlers << ControlEventHandler{
-		control_name: 'window'
-		event_name:   'key'
-		filter_value: key
-		string_cb:    callback
+pub fn (win &SimpleWindow) on_key(key string, callback StringEventCallback) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.handlers << ControlEventHandler{
+			control_name: 'window'
+			event_name:   'key'
+			filter_value: key
+			string_cb:    callback
+		}
 	}
+	return win
 }
 
-pub fn (mut win SimpleWindow) on_close(callback VoidEventCallback) {
-	win.handlers << ControlEventHandler{
-		control_name: 'window'
-		event_name:   'close'
-		void_cb:      callback
+pub fn (win &SimpleWindow) on_close(callback VoidEventCallback) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.handlers << ControlEventHandler{
+			control_name: 'window'
+			event_name:   'close'
+			void_cb:      callback
+		}
 	}
+	return win
 }
 
-pub fn (mut win SimpleWindow) run_after(ms int, callback VoidEventCallback) {
-	win.handlers << ControlEventHandler{
-		control_name: 'window'
-		event_name:   'run_after'
-		void_cb:      callback
+pub fn (win &SimpleWindow) run_after(ms int, callback VoidEventCallback) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.handlers << ControlEventHandler{
+			control_name: 'window'
+			event_name:   'run_after'
+			void_cb:      callback
+		}
 	}
 	if win.window_info != unsafe { nil } {
 		C.window_run_after(win.window_info, ms, c'window')
 	}
+	return win
 }
 
-pub fn (mut win SimpleWindow) toast(message string) {
+pub fn (win &SimpleWindow) toast(message string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_show_toast(win.window_info, message.str)
 	}
+	return win
 }
 
-pub fn (mut win SimpleWindow) open_url(url string) {
+pub fn (win &SimpleWindow) open_url(url string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_open_url(win.window_info, url.str)
 	}
+	return win
 }
 
-pub fn (mut win SimpleWindow) copy_to_clipboard(text string) {
+pub fn (win &SimpleWindow) copy_to_clipboard(text string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_copy_to_clipboard(win.window_info, text.str)
 	}
+	return win
 }
 
-pub fn (win SimpleWindow) inspect_controls() string {
+pub fn (win &SimpleWindow) inspect_controls() string {
 	mut names := []string{}
 	for control in win.controls {
 		names << control.name
@@ -831,68 +1147,88 @@ pub fn (win SimpleWindow) inspect_controls() string {
 	return joined
 }
 
-pub fn (mut win SimpleWindow) dump_values() map[string]string {
+pub fn (win &SimpleWindow) dump_values() map[string]string {
 	return win.get_values()
 }
 
 // Window styling
-pub fn (mut win SimpleWindow) set_title(text string) {
-	win.title = text
+pub fn (win &SimpleWindow) set_title(text string) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.title = text
+	}
 	if win.window_info != unsafe { nil } {
 		C.window_set_title_text(win.window_info, text.str)
 	}
+	return win
 }
 
-pub fn (mut win SimpleWindow) set_always_on_top(enabled bool) {
-	win.always_on_top = enabled
+pub fn (win &SimpleWindow) set_always_on_top(enabled bool) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.always_on_top = enabled
+	}
 	if win.window_info != unsafe { nil } {
 		val := if enabled { 1 } else { 0 }
 		C.window_set_always_on_top(win.window_info, val)
 	}
+	return win
 }
 
-pub fn (win SimpleWindow) get_always_on_top() bool {
+pub fn (win &SimpleWindow) get_always_on_top() bool {
 	if win.window_info != unsafe { nil } {
 		return C.window_get_always_on_top(win.window_info) == 1
 	}
 	return win.always_on_top
 }
 
-pub fn (mut win SimpleWindow) set_background_color(color string) {
-	win.background_color = color
+pub fn (win &SimpleWindow) set_background_color(color string) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.background_color = color
+	}
 	if win.window_info != unsafe { nil } {
 		C.window_set_background_color(win.window_info, color.str)
 	}
+	return win
 }
 
-pub fn (win SimpleWindow) get_background_color() string {
+pub fn (win &SimpleWindow) get_background_color() string {
 	return win.background_color
 }
 
-pub fn (mut win SimpleWindow) set_font_color(color string) {
-	win.font_color = color
+pub fn (win &SimpleWindow) set_font_color(color string) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.font_color = color
+	}
 	if win.window_info != unsafe { nil } {
 		C.window_set_font_color(win.window_info, color.str)
 	}
+	return win
 }
 
-pub fn (win SimpleWindow) get_font_color() string {
+pub fn (win &SimpleWindow) get_font_color() string {
 	return win.font_color
 }
 
-pub fn (mut win SimpleWindow) set_control_background_color(name string, color string) {
+pub fn (win &SimpleWindow) set_control_background_color(name string, color string) &SimpleWindow {
 	idx := win.find_control(name)
 	if idx >= 0 {
-		mut entry := win.controls[idx]
-		entry.background_color = color
-		win.controls[idx] = entry
+		unsafe {
+			mut w := &SimpleWindow(win)
+			mut entry := w.controls[idx]
+			entry.background_color = color
+			w.controls[idx] = entry
+		}
 	}
 	if win.window_info != unsafe { nil } {
 		C.window_set_control_background_color_by_name(win.window_info, name.str, color.str)
 	}
+	return win
 }
 
-pub fn (win SimpleWindow) get_control_background_color(name string) string {
+pub fn (win &SimpleWindow) get_control_background_color(name string) string {
 	idx := win.find_control(name)
 	if idx >= 0 {
 		return win.controls[idx].background_color
@@ -900,19 +1236,23 @@ pub fn (win SimpleWindow) get_control_background_color(name string) string {
 	return ''
 }
 
-pub fn (mut win SimpleWindow) set_control_font_color(name string, color string) {
+pub fn (win &SimpleWindow) set_control_font_color(name string, color string) &SimpleWindow {
 	idx := win.find_control(name)
 	if idx >= 0 {
-		mut entry := win.controls[idx]
-		entry.font_color = color
-		win.controls[idx] = entry
+		unsafe {
+			mut w := &SimpleWindow(win)
+			mut entry := w.controls[idx]
+			entry.font_color = color
+			w.controls[idx] = entry
+		}
 	}
 	if win.window_info != unsafe { nil } {
 		C.window_set_control_font_color_by_name(win.window_info, name.str, color.str)
 	}
+	return win
 }
 
-pub fn (win SimpleWindow) get_control_font_color(name string) string {
+pub fn (win &SimpleWindow) get_control_font_color(name string) string {
 	idx := win.find_control(name)
 	if idx >= 0 {
 		return win.controls[idx].font_color
@@ -920,19 +1260,23 @@ pub fn (win SimpleWindow) get_control_font_color(name string) string {
 	return ''
 }
 
-pub fn (mut win SimpleWindow) set_control_width(name string, width int) {
+pub fn (win &SimpleWindow) set_control_width(name string, width int) &SimpleWindow {
 	idx := win.find_control(name)
 	if idx >= 0 {
-		mut entry := win.controls[idx]
-		entry.width = width
-		win.controls[idx] = entry
+		unsafe {
+			mut w := &SimpleWindow(win)
+			mut entry := w.controls[idx]
+			entry.width = width
+			w.controls[idx] = entry
+		}
 	}
 	if win.window_info != unsafe { nil } {
 		C.window_set_control_width_by_name(win.window_info, name.str, width)
 	}
+	return win
 }
 
-pub fn (win SimpleWindow) get_control_width(name string) int {
+pub fn (win &SimpleWindow) get_control_width(name string) int {
 	idx := win.find_control(name)
 	if idx >= 0 {
 		return win.controls[idx].width
@@ -940,19 +1284,23 @@ pub fn (win SimpleWindow) get_control_width(name string) int {
 	return 0
 }
 
-pub fn (mut win SimpleWindow) set_control_height(name string, height int) {
+pub fn (win &SimpleWindow) set_control_height(name string, height int) &SimpleWindow {
 	idx := win.find_control(name)
 	if idx >= 0 {
-		mut entry := win.controls[idx]
-		entry.height = height
-		win.controls[idx] = entry
+		unsafe {
+			mut w := &SimpleWindow(win)
+			mut entry := w.controls[idx]
+			entry.height = height
+			w.controls[idx] = entry
+		}
 	}
 	if win.window_info != unsafe { nil } {
 		C.window_set_control_height_by_name(win.window_info, name.str, height)
 	}
+	return win
 }
 
-pub fn (win SimpleWindow) get_control_height(name string) int {
+pub fn (win &SimpleWindow) get_control_height(name string) int {
 	idx := win.find_control(name)
 	if idx >= 0 {
 		return win.controls[idx].height
@@ -960,19 +1308,23 @@ pub fn (win SimpleWindow) get_control_height(name string) int {
 	return 0
 }
 
-pub fn (mut win SimpleWindow) set_control_font_size(name string, size int) {
+pub fn (win &SimpleWindow) set_control_font_size(name string, size int) &SimpleWindow {
 	idx := win.find_control(name)
 	if idx >= 0 {
-		mut entry := win.controls[idx]
-		entry.font_size = size
-		win.controls[idx] = entry
+		unsafe {
+			mut w := &SimpleWindow(win)
+			mut entry := w.controls[idx]
+			entry.font_size = size
+			w.controls[idx] = entry
+		}
 	}
 	if win.window_info != unsafe { nil } {
 		C.window_set_control_font_size_by_name(win.window_info, name.str, size)
 	}
+	return win
 }
 
-pub fn (win SimpleWindow) get_control_font_size(name string) int {
+pub fn (win &SimpleWindow) get_control_font_size(name string) int {
 	idx := win.find_control(name)
 	if idx >= 0 {
 		return win.controls[idx].font_size
@@ -981,51 +1333,68 @@ pub fn (win SimpleWindow) get_control_font_size(name string) int {
 }
 
 // Status text
-pub fn (mut win SimpleWindow) set_status(text string) {
-	win.status_text = text
+pub fn (win &SimpleWindow) set_status(text string) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.status_text = text
+	}
 	if win.window_info != unsafe { nil } {
 		C.window_set_status_text(win.window_info, text.str)
 	}
+	return win
 }
 
 pub fn (win SimpleWindow) get_status() string {
 	return win.status_text
 }
 
-pub fn (mut win SimpleWindow) status(text string) {
+pub fn (win &SimpleWindow) status(text string) &SimpleWindow {
 	win.set_status(text)
+	return win
 }
 
 // Event registration
-pub fn (mut win SimpleWindow) on_click(name string, callback VoidEventCallback) {
+pub fn (win &SimpleWindow) on_click(name string, callback VoidEventCallback) &SimpleWindow {
 	idx := win.find_handler(name, 'click')
 	mut handler := ControlEventHandler{
 		control_name: name
 		event_name:   'click'
 		void_cb:      callback
 	}
-	if idx >= 0 {
-		win.handlers[idx] = handler
-	} else {
-		win.handlers << handler
+	unsafe {
+		mut w := &SimpleWindow(win)
+		if idx >= 0 {
+			w.handlers[idx] = handler
+		} else {
+			w.handlers << handler
+		}
 	}
+	return win
 }
 
-pub fn (mut win SimpleWindow) on_change(name string, callback StringEventCallback) {
+pub fn (win &SimpleWindow) on_change(name string, callback StringEventCallback) &SimpleWindow {
 	idx := win.find_handler(name, 'change')
 	mut handler := ControlEventHandler{
 		control_name: name
 		event_name:   'change'
 		string_cb:    callback
 	}
-	if idx >= 0 {
-		win.handlers[idx] = handler
-	} else {
-		win.handlers << handler
+	unsafe {
+		mut w := &SimpleWindow(win)
+		if idx >= 0 {
+			w.handlers[idx] = handler
+		} else {
+			w.handlers << handler
+		}
 	}
+	return win
 }
 
-pub fn (mut win SimpleWindow) dispatch_event(name string, event_name string, value string) bool {
+pub fn (win &SimpleWindow) dispatch_event(name string, event_name string, value string) bool {
+	if win.debug_mode {
+		println('[simplegui DEBUG] Dispatching Event: "${event_name}" on Control: "${name}" (Value: "${value}")')
+		win.set_status('[DEBUG] ${event_name} on "${name}" -> "${value}"')
+	}
 	mut handler_idx := -1
 	if event_name == 'file_drop' {
 		handler_idx = win.find_handler_by_filter(name, event_name, value)
@@ -1041,24 +1410,38 @@ pub fn (mut win SimpleWindow) dispatch_event(name string, event_name string, val
 	handler := win.handlers[handler_idx]
 	if event_name == 'file_drop' {
 		files := value.split('|')
-		handler.file_drop_cb(mut win, files)
+		unsafe {
+			mut w := &SimpleWindow(win)
+			handler.file_drop_cb(mut w, files)
+		}
 		return true
 	} else if handler.void_cb != unsafe { nil } {
-		handler.void_cb(mut win)
+		unsafe {
+			mut w := &SimpleWindow(win)
+			handler.void_cb(mut w)
+		}
 		return true
 	} else if handler.string_cb != unsafe { nil } {
-		handler.string_cb(mut win, value)
+		unsafe {
+			mut w := &SimpleWindow(win)
+			handler.string_cb(mut w, value)
+		}
 		return true
 	}
 	return false
 }
 
-pub fn (mut win SimpleWindow) click(name string) bool {
+pub fn (win &SimpleWindow) click(name string) bool {
 	return win.dispatch_event(name, 'click', '')
 }
 
-pub fn (mut win SimpleWindow) run() {
-	win.ensure_window()
+pub fn (win &SimpleWindow) run() {
+	if win.window_info == unsafe { nil } {
+		unsafe {
+			mut w := &SimpleWindow(win)
+			w.ensure_window()
+		}
+	}
 	C.window_app_run(win.window_info)
 }
 
@@ -1087,33 +1470,36 @@ fn vlang_dispatch_event(win_ptr voidptr, name_str &u8, event_str &u8, value_str 
 	win.dispatch_event(name, event, value)
 }
 
-pub fn (mut win SimpleWindow) begin_row(name string) {
+pub fn (win &SimpleWindow) begin_row(name string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_begin_row(win.window_info, name.str)
 	}
+	return win
 }
 
-pub fn (mut win SimpleWindow) end_row() {
+pub fn (win &SimpleWindow) end_row() &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_end_row(win.window_info)
 	}
+	return win
 }
 
 // Dialogs & Popups
-pub fn (mut win SimpleWindow) alert(title string, message string) {
+pub fn (win &SimpleWindow) alert(title string, message string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_show_alert(win.window_info, title.str, message.str)
 	}
+	return win
 }
 
-pub fn (mut win SimpleWindow) confirm(title string, message string) bool {
+pub fn (win &SimpleWindow) confirm(title string, message string) bool {
 	if win.window_info != unsafe { nil } {
 		return C.window_show_confirm(win.window_info, title.str, message.str) == 1
 	}
 	return false
 }
 
-pub fn (mut win SimpleWindow) prompt(title string, message string, default_val string) string {
+pub fn (win &SimpleWindow) prompt(title string, message string, default_val string) string {
 	if win.window_info != unsafe { nil } {
 		res := C.window_show_prompt(win.window_info, title.str, message.str, default_val.str)
 		return unsafe { res.vstring() }
@@ -1122,7 +1508,7 @@ pub fn (mut win SimpleWindow) prompt(title string, message string, default_val s
 }
 
 // File and Folder Panels
-pub fn (mut win SimpleWindow) select_file() string {
+pub fn (win &SimpleWindow) select_file() string {
 	if win.window_info != unsafe { nil } {
 		res := C.window_select_file(win.window_info)
 		return unsafe { res.vstring() }
@@ -1130,7 +1516,7 @@ pub fn (mut win SimpleWindow) select_file() string {
 	return ''
 }
 
-pub fn (mut win SimpleWindow) select_folder() string {
+pub fn (win &SimpleWindow) select_folder() string {
 	if win.window_info != unsafe { nil } {
 		res := C.window_select_folder(win.window_info)
 		return unsafe { res.vstring() }
@@ -1138,7 +1524,7 @@ pub fn (mut win SimpleWindow) select_folder() string {
 	return ''
 }
 
-pub fn (mut win SimpleWindow) save_file_picker() string {
+pub fn (win &SimpleWindow) save_file_picker() string {
 	if win.window_info != unsafe { nil } {
 		res := C.window_save_file_picker(win.window_info)
 		return unsafe { res.vstring() }
@@ -1147,28 +1533,30 @@ pub fn (mut win SimpleWindow) save_file_picker() string {
 }
 
 // Visibility & Enabled state controls
-pub fn (mut win SimpleWindow) set_control_visible(name string, visible bool) {
+pub fn (win &SimpleWindow) set_control_visible(name string, visible bool) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		vis_val := if visible { 1 } else { 0 }
 		C.window_set_control_visible_by_name(win.window_info, name.str, vis_val)
 	}
+	return win
 }
 
-pub fn (win SimpleWindow) get_control_visible(name string) bool {
+pub fn (win &SimpleWindow) get_control_visible(name string) bool {
 	if win.window_info != unsafe { nil } {
 		return C.window_get_control_visible_by_name(win.window_info, name.str) == 1
 	}
 	return true
 }
 
-pub fn (mut win SimpleWindow) set_control_enabled(name string, enabled bool) {
+pub fn (win &SimpleWindow) set_control_enabled(name string, enabled bool) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		en_val := if enabled { 1 } else { 0 }
 		C.window_set_control_enabled_by_name(win.window_info, name.str, en_val)
 	}
+	return win
 }
 
-pub fn (win SimpleWindow) get_control_enabled(name string) bool {
+pub fn (win &SimpleWindow) get_control_enabled(name string) bool {
 	if win.window_info != unsafe { nil } {
 		return C.window_get_control_enabled_by_name(win.window_info, name.str) == 1
 	}
@@ -1176,40 +1564,53 @@ pub fn (win SimpleWindow) get_control_enabled(name string) bool {
 }
 
 // Timers
-pub fn (mut win SimpleWindow) set_interval(timer_name string, ms int, callback VoidEventCallback) {
-	win.handlers << ControlEventHandler{
-		control_name: timer_name
-		event_name:   'timer'
-		void_cb:      callback
+pub fn (win &SimpleWindow) set_interval(timer_name string, ms int, callback VoidEventCallback) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.handlers << ControlEventHandler{
+			control_name: timer_name
+			event_name:   'timer'
+			void_cb:      callback
+		}
 	}
 	if win.window_info != unsafe { nil } {
 		C.window_set_interval(win.window_info, ms, timer_name.str)
 	}
+	return win
 }
 
-pub fn (mut win SimpleWindow) stop_interval(timer_name string) {
+pub fn (win &SimpleWindow) stop_interval(timer_name string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_stop_interval(win.window_info, timer_name.str)
 	}
+	return win
 }
 
 // List Box and Image View Controls
-pub fn (mut win SimpleWindow) add_list_box(name string, items []string) {
-	win.controls << ControlEntry{
-		name:  name
-		kind:  'listbox'
-		value: ''
+pub fn (win &SimpleWindow) add_list_box(name string, items []string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('listbox')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name:  real_name
+			kind:  'listbox'
+			value: ''
+		}
 	}
 	if win.window_info != unsafe { nil } {
 		mut c_items := []&u8{}
 		for item in items {
 			c_items << item.str
 		}
-		C.window_add_list_box_control(win.window_info, name.str, c_items.data, items.len)
+		C.window_add_list_box_control(win.window_info, real_name.str, c_items.data, items.len)
 	}
+	return win
 }
 
-pub fn (mut win SimpleWindow) update_list_items(name string, items []string) {
+pub fn (win &SimpleWindow) update_list_items(name string, items []string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		mut c_items := []&u8{}
 		for item in items {
@@ -1217,150 +1618,200 @@ pub fn (mut win SimpleWindow) update_list_items(name string, items []string) {
 		}
 		C.window_update_list_items(win.window_info, name.str, c_items.data, items.len)
 	}
+	return win
 }
 
-pub fn (mut win SimpleWindow) set_list_selected(name string, index int) {
+pub fn (win &SimpleWindow) set_list_selected(name string, index int) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_set_list_selected(win.window_info, name.str, index)
 	}
+	return win
 }
 
-pub fn (win SimpleWindow) get_list_selected(name string) int {
+pub fn (win &SimpleWindow) get_list_selected(name string) int {
 	if win.window_info != unsafe { nil } {
 		return C.window_get_list_selected(win.window_info, name.str)
 	}
 	return -1
 }
 
-pub fn (mut win SimpleWindow) add_image(name string, file_path string) {
-	win.controls << ControlEntry{
-		name:  name
-		kind:  'image'
-		value: file_path
+pub fn (win &SimpleWindow) add_image(name string, file_path string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('image')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name:  real_name
+			kind:  'image'
+			value: file_path
+		}
 	}
 	if win.window_info != unsafe { nil } {
-		C.window_add_image_control(win.window_info, name.str, file_path.str)
+		C.window_add_image_control(win.window_info, real_name.str, file_path.str)
 	}
+	return win
 }
 
-pub fn (mut win SimpleWindow) set_image_path(name string, file_path string) {
+pub fn (win &SimpleWindow) set_image_path(name string, file_path string) &SimpleWindow {
 	idx := win.find_control(name)
 	if idx >= 0 {
-		mut entry := win.controls[idx]
-		entry.value = file_path
-		win.controls[idx] = entry
+		unsafe {
+			mut w := &SimpleWindow(win)
+			mut entry := w.controls[idx]
+			entry.value = file_path
+			w.controls[idx] = entry
+		}
 	}
 	if win.window_info != unsafe { nil } {
 		C.window_set_image_path(win.window_info, name.str, file_path.str)
 	}
+	return win
 }
 
 // Focus & Blur Event Listeners (for text field inputs)
-pub fn (mut win SimpleWindow) on_focus(name string, callback VoidEventCallback) {
-	win.handlers << ControlEventHandler{
-		control_name: name
-		event_name:   'focus'
-		void_cb:      callback
+pub fn (win &SimpleWindow) on_focus(name string, callback VoidEventCallback) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.handlers << ControlEventHandler{
+			control_name: name
+			event_name:   'focus'
+			void_cb:      callback
+		}
 	}
+	return win
 }
 
 // Focus lost (blur)
-pub fn (mut win SimpleWindow) on_blur(name string, callback VoidEventCallback) {
-	win.handlers << ControlEventHandler{
-		control_name: name
-		event_name:   'blur'
-		void_cb:      callback
+pub fn (win &SimpleWindow) on_blur(name string, callback VoidEventCallback) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.handlers << ControlEventHandler{
+			control_name: name
+			event_name:   'blur'
+			void_cb:      callback
+		}
 	}
+	return win
 }
 
 // Hover Event Listeners (Mouse Entered & Mouse Exited)
-pub fn (mut win SimpleWindow) on_hover(name string, callback VoidEventCallback) {
-	win.handlers << ControlEventHandler{
-		control_name: name
-		event_name:   'hover_enter'
-		void_cb:      callback
+pub fn (win &SimpleWindow) on_hover(name string, callback VoidEventCallback) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.handlers << ControlEventHandler{
+			control_name: name
+			event_name:   'hover_enter'
+			void_cb:      callback
+		}
 	}
 	if win.window_info != unsafe { nil } {
 		C.window_enable_hover_events(win.window_info, name.str)
 	}
+	return win
 }
 
-pub fn (mut win SimpleWindow) on_hover_exit(name string, callback VoidEventCallback) {
-	win.handlers << ControlEventHandler{
-		control_name: name
-		event_name:   'hover_exit'
-		void_cb:      callback
+pub fn (win &SimpleWindow) on_hover_exit(name string, callback VoidEventCallback) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.handlers << ControlEventHandler{
+			control_name: name
+			event_name:   'hover_exit'
+			void_cb:      callback
+		}
 	}
 	if win.window_info != unsafe { nil } {
 		C.window_enable_hover_events(win.window_info, name.str)
 	}
+	return win
 }
 
 // Window Resize Event Listener
-pub fn (mut win SimpleWindow) on_resize(callback StringEventCallback) {
-	win.handlers << ControlEventHandler{
-		control_name: 'window'
-		event_name:   'resize'
-		string_cb:    callback
+pub fn (win &SimpleWindow) on_resize(callback StringEventCallback) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.handlers << ControlEventHandler{
+			control_name: 'window'
+			event_name:   'resize'
+			string_cb:    callback
+		}
 	}
+	return win
 }
 
 // Custom Menu Items
-pub fn (mut win SimpleWindow) add_menu_item(menu_name string, item_title string, shortcut string, callback VoidEventCallback) {
+pub fn (win &SimpleWindow) add_menu_item(menu_name string, item_title string, shortcut string, callback VoidEventCallback) &SimpleWindow {
 	handler_name := 'menu_${menu_name}_${item_title}'
 	win.on_click(handler_name, callback)
 	if win.window_info != unsafe { nil } {
 		C.window_add_menu_item(win.window_info, menu_name.str, item_title.str, shortcut.str,
 			handler_name.str)
 	}
+	return win
 }
 
-pub fn (mut win SimpleWindow) on_file_drop(callback FileDropCallback) {
-	win.handlers << ControlEventHandler{
-		control_name: 'window'
-		event_name:   'file_drop'
-		file_drop_cb: callback
+pub fn (win &SimpleWindow) on_file_drop(callback FileDropCallback) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.handlers << ControlEventHandler{
+			control_name: 'window'
+			event_name:   'file_drop'
+			file_drop_cb: callback
+		}
 	}
+	return win
 }
 
-pub fn (mut win SimpleWindow) add_vertical_spacer(height int) {
+pub fn (win &SimpleWindow) add_vertical_spacer(height int) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_add_vertical_spacer(win.window_info, height)
 	}
+	return win
 }
 
-pub fn (mut win SimpleWindow) add_horizontal_spacer(width int) {
+pub fn (win &SimpleWindow) add_horizontal_spacer(width int) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_add_horizontal_spacer(win.window_info, width)
 	}
+	return win
 }
 
-pub fn (mut win SimpleWindow) add_separator() {
+pub fn (win &SimpleWindow) add_separator() &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_add_separator(win.window_info)
 	}
+	return win
 }
 
-pub fn (mut win SimpleWindow) add_table(name string, columns []string) {
-	win.controls << ControlEntry{
-		name:  name
-		kind:  'table'
-		value: ''
+pub fn (win &SimpleWindow) add_table(name string, columns []string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('table')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name:  real_name
+			kind:  'table'
+			value: ''
+		}
 	}
 	if win.window_info != unsafe { nil } {
 		mut c_cols := []&u8{}
 		for col in columns {
 			c_cols << col.str
 		}
-		C.window_add_table_control(win.window_info, name.str, c_cols.data, columns.len)
+		C.window_add_table_control(win.window_info, real_name.str, c_cols.data, columns.len)
 	}
+	return win
 }
 
-pub fn (mut win SimpleWindow) set_table_rows(name string, rows [][]string) {
+pub fn (win &SimpleWindow) set_table_rows(name string, rows [][]string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		if rows.len == 0 {
 			C.window_set_table_rows(win.window_info, name.str, unsafe { nil }, 0, 0)
-			return
+			return win
 		}
 		cols_count := rows[0].len
 		mut flat := []&u8{}
@@ -1371,9 +1822,10 @@ pub fn (mut win SimpleWindow) set_table_rows(name string, rows [][]string) {
 		}
 		C.window_set_table_rows(win.window_info, name.str, flat.data, flat.len, cols_count)
 	}
+	return win
 }
 
-pub fn (win SimpleWindow) get_values() map[string]string {
+pub fn (win &SimpleWindow) get_values() map[string]string {
 	mut values := map[string]string{}
 	for control in win.controls {
 		if control.kind in ['table', 'image', 'progress'] {
@@ -1384,13 +1836,14 @@ pub fn (win SimpleWindow) get_values() map[string]string {
 	return values
 }
 
-pub fn (mut win SimpleWindow) set_values(values map[string]string) {
+pub fn (win &SimpleWindow) set_values(values map[string]string) &SimpleWindow {
 	for name, val in values {
 		win.set_text(name, val)
 	}
+	return win
 }
 
-pub fn (mut win SimpleWindow) bind_to_struct[T](mut data T) {
+pub fn (win &SimpleWindow) bind_to_struct[T](mut data T) &SimpleWindow {
 	$for field in T.fields {
 		name := field.name
 		$if field.typ is string {
@@ -1401,9 +1854,10 @@ pub fn (mut win SimpleWindow) bind_to_struct[T](mut data T) {
 			data.$(field.name) = win.get_checked(name)
 		}
 	}
+	return win
 }
 
-pub fn (mut win SimpleWindow) load_from_struct[T](data T) {
+pub fn (win &SimpleWindow) load_from_struct[T](data T) &SimpleWindow {
 	$for field in T.fields {
 		name := field.name
 		$if field.typ is string {
@@ -1414,18 +1868,64 @@ pub fn (mut win SimpleWindow) load_from_struct[T](data T) {
 			win.set_checked(name, data.$(field.name))
 		}
 	}
+	return win
 }
 
-pub fn (mut win SimpleWindow) enable_status_bar(icon_path string) {
+// Layout Rows and Form Generation Helpers
+pub fn (win &SimpleWindow) add_action_row(actions map[string]VoidEventCallback) &SimpleWindow {
+	row_name := win.auto_name('action_row')
+	win.begin_row(row_name)
+	for title, cb in actions {
+		btn_name := win.auto_name('btn')
+		win.add_action(btn_name, title, cb)
+	}
+	win.end_row()
+	return win
+}
+
+pub fn (win &SimpleWindow) add_fields_row(fields map[string]string) &SimpleWindow {
+	row_name := win.auto_name('fields_row')
+	win.begin_row(row_name)
+	for label, name in fields {
+		win.add_form_field(label, name, '')
+	}
+	win.end_row()
+	return win
+}
+
+pub fn (win &SimpleWindow) add_form_from_struct[T](default_data T) &SimpleWindow {
+	$for field in T.fields {
+		name := field.name
+		label := name.capitalize()
+		$if field.typ is string {
+			val := default_data.$(field.name)
+			win.add_form_field(label, name, val)
+		} $else $if field.typ is int {
+			val := default_data.$(field.name)
+			win.begin_row('${name}_row')
+			win.add_label('${name}_label', label)
+			win.add_number(name, val)
+			win.end_row()
+		} $else $if field.typ is bool {
+			val := default_data.$(field.name)
+			win.add_toggle(name, label, val)
+		}
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) enable_status_bar(icon_path string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_enable_status_bar(win.window_info, icon_path.str)
 	}
+	return win
 }
 
-pub fn (mut win SimpleWindow) show_window() {
+pub fn (win &SimpleWindow) show_window() &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_show(win.window_info)
 	}
+	return win
 }
 
 struct MainThreadCallback {
@@ -1444,7 +1944,7 @@ fn vlang_main_thread_dispatcher(ctx voidptr) {
 	}
 }
 
-pub fn (mut win SimpleWindow) run_on_main_thread(callback VoidEventCallback) {
+pub fn (win &SimpleWindow) run_on_main_thread(callback VoidEventCallback) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		data := &MainThreadCallback{
 			win: win
@@ -1452,4 +1952,5 @@ pub fn (mut win SimpleWindow) run_on_main_thread(callback VoidEventCallback) {
 		}
 		C.window_run_on_main_thread(vlang_main_thread_dispatcher, data)
 	}
+	return win
 }

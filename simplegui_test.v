@@ -248,3 +248,120 @@ fn on_test_change(mut win simplegui.SimpleWindow, value string) {
 fn on_test_click(mut win simplegui.SimpleWindow) {
 	println('test click')
 }
+
+fn test_method_chaining() {
+	mut win := simplegui.new_simple_window('Test Window', 100, 100)
+	win.add_input('first', 'Ada')
+		.add_input('second', 'Lovelace')
+		.set_text('first', 'Grace')
+		.set_text('second', 'Hopper')
+		.add_vertical_spacer(10)
+		.add_separator()
+	
+	assert win.get_text('first') == 'Grace'
+	assert win.get_text('second') == 'Hopper'
+}
+
+fn test_auto_naming() {
+	mut win := simplegui.new_simple_window('Test Window', 100, 100)
+	win.add_label('', 'Hello')
+		.add_input('', 'World')
+	
+	assert win.list_controls().len == 2
+	assert win.list_controls()[0].starts_with('auto_label_')
+	assert win.list_controls()[1].starts_with('auto_input_')
+}
+
+fn test_consistent_nameless_helpers() {
+	mut win := simplegui.new_simple_window('Test Window', 100, 100)
+	win.input('My Input')
+		.textarea('My Textarea')
+		.checkbox('My Checkbox', true)
+		.number(123)
+		.button('My Button')
+	
+	assert win.get_input() == 'My Input'
+	assert win.get_textarea() == 'My Textarea'
+	assert win.get_checkbox() == true
+	assert win.get_number() == 123
+	
+	win.set_input('Updated Input')
+		.set_textarea('Updated Textarea')
+		.set_checkbox(false)
+		.set_number(456)
+		.set_button('Updated Button')
+	
+	assert win.get_input() == 'Updated Input'
+	assert win.get_textarea() == 'Updated Textarea'
+	assert win.get_checkbox() == false
+	assert win.get_number() == 456
+}
+
+fn test_layout_rows() {
+	mut win := simplegui.new_simple_window('Test Window', 100, 100)
+	win.add_fields_row({
+		'First Name': 'fn'
+		'Last Name': 'ln'
+	})
+	
+	assert win.has_control('fn') == true
+	assert win.has_control('ln') == true
+	assert win.has_control('fn_label') == true
+	assert win.has_control('ln_label') == true
+}
+
+struct TestProfile {
+	username string
+	score    int
+	active   bool
+}
+
+fn test_form_generation_from_struct() {
+	mut win := simplegui.new_simple_window('Test Window', 100, 100)
+	p := TestProfile{
+		username: 'Grace'
+		score: 100
+		active: true
+	}
+	win.add_form_from_struct(p)
+	
+	assert win.has_control('username') == true
+	assert win.has_control('score') == true
+	assert win.has_control('active') == true
+	
+	assert win.get_text('username') == 'Grace'
+	assert win.get_value_int('score') == 100
+	assert win.get_checked('active') == true
+}
+
+fn test_debug_mode() {
+	mut win := simplegui.new_simple_window('Test Window', 100, 100)
+	win.set_debug_mode(true)
+	assert win.get_debug_mode() == true
+	
+	win.add_input('username', 'Ada')
+	win.dispatch_event('username', 'change', 'Grace')
+	assert win.get_status().contains('[DEBUG] change on "username"')
+}
+
+fn test_reset_form_does_not_clear_buttons_or_labels() {
+	mut win := simplegui.new_simple_window('Test Window', 100, 100)
+	win.add_button('my_button', 'Button Title')
+	win.add_input('my_input', 'Input Value')
+
+	// Modify their values manually to simulate change
+	win.set_text('my_button', 'Changed Title')
+	win.set_text('my_input', 'Changed Value')
+
+	win.reset_form()
+	// Button was not reset because it is not an input control
+	assert win.get_text('my_button') == 'Changed Title'
+	// Input was reset to its initial value
+	assert win.get_text('my_input') == 'Input Value'
+
+	win.clear_all()
+	// Button was not cleared because it is not an input control
+	assert win.get_text('my_button') == 'Changed Title'
+	// Input was cleared
+	assert win.get_text('my_input') == ''
+}

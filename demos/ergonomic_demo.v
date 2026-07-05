@@ -2,90 +2,88 @@ module main
 
 import simplegui
 
+struct DeveloperProfile {
+	name             string
+	wants_newsletter bool
+	years_experience int
+}
+
 fn main() {
-	mut win := simplegui.new_simple_window('Ergonomic Helpers Demo', 720, 760)
-	win.set_background_color('#101820')
-	win.set_font_color('white')
-	win.set_padding(16)
-	win.set_spacing(10)
+	// 1. Setup the window with style chaining and debug mode
+	mut win := simplegui.new_simple_window('Ergonomic Helpers Demo', 720, 780)
+		.set_background_color('#101820')
+		.set_font_color('white')
+		.set_padding(16)
+		.set_spacing(10)
+		.set_debug_mode(true)
 
-	win.add_label('title', 'Ergonomic helpers showcase')
-	win.set_control_font_size('title', 18)
+	// 2. Add an auto-generated title heading (nameless label + separator)
+	win.add_heading('Ergonomic Developer Form')
 
-	win.add_input('name', 'Ada Lovelace')
-	win.add_password('password', 'secret123')
-	win.set_placeholder('name', 'Type your name')
-	win.set_error('name', 'Validation hint: use letters')
-	win.set_tooltip('password', 'Use a strong password')
+	// 3. Automatically build the form fields from the DeveloperProfile struct!
+	default_profile := DeveloperProfile{
+		name:             'Ada Lovelace'
+		wants_newsletter: true
+		years_experience: 12
+	}
+	win.add_form_from_struct(default_profile)
+
+	// 4. Chain layout rows and actions
+	win.add_heading('Actions')
+		.add_action_row({
+			'Save Profile': on_save
+			'Reset Form':   on_reset
+			'Clear All':    on_clear
+		})
+		.add_heading('Utility Links')
+		.add_action_row({
+			'Copy Name': on_copy
+			'Open Repo': on_docs
+		})
+
+	// 5. Stylings & placeholders
 	win.set_control_width('name', 320)
-	win.set_focus('name')
+		.set_control_width('years_experience', 100)
+		.set_placeholder('name', 'Type your name')
+		.set_tooltip('wants_newsletter', 'Subscribe to get simplegui updates')
+		.set_focus('name')
 
-	win.add_group_box('profile', 'Profile')
-	win.add_tabs('mode', ['Simple', 'Advanced', 'Expert'])
-	win.add_scroll_view('notes', 120)
+	// 6. Set status footer
+	win.set_status('Ready. Form generated automatically via struct reflection.')
 
-	win.begin_row('buttons')
-	win.add_button('run', 'Run Demo')
-	win.add_button('clear', 'Clear')
-	win.add_button('reset', 'Reset')
-	win.end_row()
-
-	win.begin_row('extras')
-	win.add_button('copy', 'Copy Name')
-	win.add_button('docs', 'Open Repo')
-	win.end_row()
-
-	win.add_checkbox('subscribe', 'Subscribe to updates', true)
-	win.add_number('age', 36)
-	win.add_label('status', 'Ready to demonstrate the helper API')
-	win.set_control_width('status', 600)
-	win.set_default_button('run')
-
-	win.on_click('run', fn (mut w simplegui.SimpleWindow) {
-		w.set_status('Demo triggered')
-		w.toast('Helpers are working')
-		w.set_text('status', 'Values: ${w.dump_values()}')
-		w.set_value_int('age', w.get_value_int('age') + 1)
-	})
-
-	win.on_click('clear', fn (mut w simplegui.SimpleWindow) {
-		w.clear('name')
-		w.clear('age')
-		w.set_status('Cleared the form fields')
-	})
-
-	win.on_click('reset', fn (mut w simplegui.SimpleWindow) {
-		w.reset_form()
-		w.set_status('Form reset to its initial values')
-	})
-
-	win.on_click('copy', fn (mut w simplegui.SimpleWindow) {
-		w.copy_to_clipboard(w.get_text('name'))
-		w.set_status('Copied the current name to the clipboard')
-	})
-
-	win.on_click('docs', fn (mut w simplegui.SimpleWindow) {
-		w.open_url('https://github.com/codecaine-zz/vlang_simplegui')
-		w.set_status('Opened the repository page')
-	})
-
+	// 7. Add enter key & close hooks
 	win.on_enter('name', fn (mut w simplegui.SimpleWindow) {
-		w.set_status('Enter pressed in the input field')
+		w.set_status('Enter pressed in name field')
 	})
-
-	win.on_key('e', fn (mut w simplegui.SimpleWindow, value string) {
-		w.set_status('Key handler fired: ${value}')
-	})
-
 	win.on_close(fn (mut w simplegui.SimpleWindow) {
-		println('Ergonomic demo closed')
+		println('Ergonomic demo window closed')
 	})
 
-	win.run_after(400, fn (mut w simplegui.SimpleWindow) {
-		w.set_status('Auto-run helper fired')
-		w.set_text('status', 'Controls: ${w.inspect_controls()}')
-	})
-
-	win.set_status('Ready.')
 	win.run()
+}
+
+fn on_save(mut win simplegui.SimpleWindow) {
+	mut profile := DeveloperProfile{}
+	win.bind_to_struct(mut profile)
+	newsletter := if profile.wants_newsletter { 'Yes' } else { 'No' }
+	win.alert('Saved Profile', 'Name: ${profile.name}\nExperience: ${profile.years_experience} years\nNewsletter: ${newsletter}')
+}
+
+fn on_reset(mut win simplegui.SimpleWindow) {
+	win.reset_form()
+	win.set_status('Form reset to initial struct values.')
+}
+
+fn on_clear(mut win simplegui.SimpleWindow) {
+	win.clear_all()
+	win.set_status('Cleared all form fields.')
+}
+
+fn on_copy(mut win simplegui.SimpleWindow) {
+	win.copy_to_clipboard(win.get_text('name'))
+	win.toast('Copied name to clipboard!')
+}
+
+fn on_docs(mut win simplegui.SimpleWindow) {
+	win.open_url('https://github.com/codecaine-zz/vlang_simplegui')
 }
