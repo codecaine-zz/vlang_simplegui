@@ -1,6 +1,7 @@
 module main
 
 import simplegui
+import os
 
 fn test_named_controls_are_stored_and_accessible() {
 	mut win := simplegui.SimpleWindow{}
@@ -735,4 +736,130 @@ fn test_reflection_table_loading_and_styles() {
 
 	// Test file picker signature
 	_ = win.select_file_with_extensions('.txt, .png')
+}
+
+fn test_sys_apis() {
+	win := simplegui.SimpleWindow{}
+	
+	// Test environment
+	win.set_env('SIMPLEGUI_TEST_KEY', 'simplegui_val')
+	assert win.get_env('SIMPLEGUI_TEST_KEY') == 'simplegui_val'
+	assert win.get_env_opt('SIMPLEGUI_TEST_KEY') or { '' } == 'simplegui_val'
+	envs := win.get_envs()
+	assert envs['SIMPLEGUI_TEST_KEY'] == 'simplegui_val'
+	win.unset_env('SIMPLEGUI_TEST_KEY')
+	assert win.get_env('SIMPLEGUI_TEST_KEY') == ''
+
+	// Test system lookups
+	_ := win.get_hostname()
+	_ := win.get_username()
+	_ := win.get_user_os()
+	assert win.get_pid() > 0
+	_ := win.get_ppid()
+	_ := win.get_uid()
+	_ := win.get_gid()
+	_ := win.get_euid()
+	_ := win.get_egid()
+
+	// Paths
+	assert win.get_system_path('home').len > 0
+	assert win.get_system_path('temp').len > 0
+	assert win.get_system_path('desktop').len > 0
+	assert win.get_system_path('downloads').len > 0
+	assert win.get_system_path('cache').len > 0
+	assert win.get_system_path('config').len > 0
+	assert win.get_system_path('data').len > 0
+
+	// Path parsing
+	assert win.path_dir('/usr/bin/v') == '/usr/bin'
+	assert win.path_base('/usr/bin/v') == 'v'
+	assert win.path_ext('/usr/bin/v.exe') == '.exe'
+	assert win.path_name('/usr/bin/v.exe') == 'v.exe'
+	assert win.path_is_abs('/usr/bin/v') == true
+	assert win.path_norm('/usr/../usr/bin').len > 0
+	dir_part, file_part, ext_part := win.path_split('/usr/bin/v.exe')
+	assert dir_part == '/usr/bin'
+	assert file_part == 'v'
+	assert ext_part == '.exe'
+
+	// Files and Directories
+	test_dir := 'temp_test_sys_dir'
+	test_file := 'temp_test_sys_dir/test_file.txt'
+	
+	if win.file_exists(test_dir) {
+		win.delete_directory(test_dir) or {}
+	}
+	
+	// single directory
+	win.create_single_directory(test_dir) or { panic(err) }
+	assert win.is_dir(test_dir) == true
+	
+	// write/read lines
+	win.write_lines(test_file, ['hello', 'world']) or { panic(err) }
+	assert win.file_exists(test_file) == true
+	assert win.is_file(test_file) == true
+	
+	lines := win.read_lines(test_file) or { panic(err) }
+	assert lines.len == 2
+	assert lines[0] == 'hello'
+	assert lines[1] == 'world'
+
+	// read/write bytes
+	bytes_file := 'temp_test_sys_dir/bytes.bin'
+	win.write_bytes(bytes_file, [u8(65), 66, 67]) or { panic(err) }
+	read_bytes := win.read_bytes(bytes_file) or { panic(err) }
+	assert read_bytes.len == 3
+	assert read_bytes[0] == 65
+
+	// file metadata (stat)
+	meta := win.get_file_metadata(test_file) or { panic(err) }
+	assert meta.size > 0
+	assert meta.file_type == 'regular'
+
+	// check helper functions
+	assert win.get_file_size(test_file) or { 0 } == meta.size
+	assert win.get_last_modified(test_file) > 0
+	assert win.is_readable(test_file) == true
+
+	// copy/move
+	copied_file := 'temp_test_sys_dir/copied.txt'
+	win.copy_file(test_file, copied_file) or { panic(err) }
+	assert win.file_exists(copied_file) == true
+
+	moved_file := 'temp_test_sys_dir/moved.txt'
+	win.move_file(copied_file, moved_file) or { panic(err) }
+	assert win.file_exists(moved_file) == true
+	assert win.file_exists(copied_file) == false
+
+	// glob
+	matches := win.glob('temp_test_sys_dir/*.txt') or { []string{} }
+	assert matches.len > 0
+
+	// walk
+	win.walk('temp_test_sys_dir', fn (p string) {
+		os.write_file('temp_test_sys_dir/walked.txt', p) or {}
+	})
+	assert win.file_exists('temp_test_sys_dir/walked.txt') == true
+
+	walk_ext_files := win.walk_ext('temp_test_sys_dir', '.txt')
+	assert walk_ext_files.len > 0
+
+	// Disk usage
+	_ := win.get_disk_usage('.') or { simplegui.DiskStats{} }
+
+	// Subprocess
+	mut cmd_path := '/bin/echo'
+	if !win.file_exists(cmd_path) {
+		cmd_path = '/usr/bin/echo'
+	}
+	
+	mut p := win.spawn_process(cmd_path, ['hello_process'], map[string]string{}) or { panic(err) }
+	p.wait()
+	out := p.read()
+	assert out.trim_space() == 'hello_process'
+	p.close()
+
+	// Clean up
+	win.delete_directory(test_dir) or { panic(err) }
+	assert win.file_exists(test_dir) == false
 }
