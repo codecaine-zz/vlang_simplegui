@@ -134,6 +134,24 @@ pub type VoidEventCallback = fn (mut win SimpleWindow)
 
 pub type FileDropCallback = fn (mut win SimpleWindow, files []string)
 
+pub type ControlValidator = fn (value string) string
+
+pub struct WindowConfig {
+	pub mut:
+		title             string
+		width             int
+		height            int
+		padding           int
+		spacing           int
+		background_color  string
+		font_color        string
+		always_on_top     bool
+		responsive_layout bool
+		resizable         bool
+		minimizable       bool
+		maximizable       bool
+}
+
 pub struct WindowParams {
 	title             string
 	width             int
@@ -728,6 +746,76 @@ pub fn (win &SimpleWindow) add_search_field(name string, placeholder string) &Si
 		C.window_add_search_field_control(win.window_info, real_name.str, placeholder.str)
 	}
 	return win
+}
+
+pub fn (win &SimpleWindow) configure(callback fn (mut cfg WindowConfig)) &SimpleWindow {
+	mut cfg := WindowConfig{
+		title:             win.title
+		width:             win.width
+		height:            win.height
+		padding:           win.padding
+		spacing:           win.spacing
+		background_color:  win.background_color
+		font_color:        win.font_color
+		always_on_top:     win.always_on_top
+		responsive_layout: win.responsive_layout
+		resizable:         win.resizable
+		minimizable:       win.minimizable
+		maximizable:       win.maximizable
+	}
+	callback(mut cfg)
+	win.set_title(cfg.title)
+	win.set_padding(cfg.padding)
+	win.set_spacing(cfg.spacing)
+	win.set_background_color(cfg.background_color)
+	win.set_font_color(cfg.font_color)
+	win.set_always_on_top(cfg.always_on_top)
+	win.set_responsive_layout(cfg.responsive_layout)
+	win.set_resizable(cfg.resizable)
+	win.set_minimizable(cfg.minimizable)
+	win.set_maximizable(cfg.maximizable)
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.width = cfg.width
+		w.height = cfg.height
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) form(title string, callback VoidEventCallback) &SimpleWindow {
+	win.group('form_${win.controls.len}', title, callback)
+	return win
+}
+
+pub fn (win &SimpleWindow) section(title string, callback VoidEventCallback) &SimpleWindow {
+	win.group('section_${win.controls.len}', title, callback)
+	return win
+}
+
+pub fn (win &SimpleWindow) validate_controls(validators map[string]ControlValidator) map[string]string {
+	mut results := map[string]string{}
+	for name, validator in validators {
+		if !win.has_control(name) {
+			results[name] = ''
+			continue
+		}
+		value := win.get_text(name)
+		err := validator(value)
+		results[name] = err
+		if err != '' {
+			win.set_error(name, err)
+		} else {
+			win.clear_error(name)
+		}
+	}
+	return results
+}
+
+pub fn validate_not_empty(value string) string {
+	if value.trim_space() == '' {
+		return 'Required'
+	}
+	return ''
 }
 
 // High-level helpers for common beginner-friendly form building
@@ -1336,6 +1424,10 @@ pub fn (win &SimpleWindow) dump_values() map[string]string {
 }
 
 // Window styling
+pub fn (win &SimpleWindow) get_title() string {
+	return win.title
+}
+
 pub fn (win &SimpleWindow) set_title(text string) &SimpleWindow {
 	unsafe {
 		mut w := &SimpleWindow(win)
@@ -1590,6 +1682,9 @@ pub fn (win &SimpleWindow) set_status(text string) &SimpleWindow {
 	unsafe {
 		mut w := &SimpleWindow(win)
 		w.status_text = text
+	}
+	if !win.has_control('status') {
+		win.add_label('status', text)
 	}
 	if win.window_info != unsafe { nil } {
 		C.window_set_status_text(win.window_info, text.str)

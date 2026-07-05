@@ -72,13 +72,22 @@ For common forms, a few high-level helpers keep the code short:
 
 ```v
 mut win := simplegui.new_simple_window('Profile', 640, 420)
-win.add_form_field('Name', 'name', 'Ada')
-win.add_form_field('City', 'city', 'London')
-win.add_form_textarea('Notes', 'notes', 'Hello')
-win.add_toggle('ready', 'Ready', true)
-win.add_number_field('age', 32)
+win.configure(fn (mut cfg simplegui.WindowConfig) {
+    cfg.title = 'Profile'
+    cfg.padding = 18
+    cfg.spacing = 10
+})
+win.form('Account', fn (mut w &simplegui.SimpleWindow) {
+    w.add_input('email', 'ada@example.com')
+    w.add_checkbox('newsletter', 'Subscribe', true)
+})
+win.section('Preferences', fn (mut w &simplegui.SimpleWindow) {
+    w.add_number('experience', 8)
+})
 win.add_action('save', 'Save', fn (mut win &simplegui.SimpleWindow) {
-    println(win.get_values())
+    println(win.validate_controls({
+        'email': simplegui.validate_not_empty
+    }))
 })
 ```
 

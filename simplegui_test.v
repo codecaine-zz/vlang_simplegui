@@ -54,6 +54,15 @@ fn test_event_callbacks_can_be_registered_and_dispatched() {
 	assert win.dispatch_event('missing', 'click', '') == false
 }
 
+fn test_status_updates_create_a_status_control() {
+	mut win := simplegui.SimpleWindow{}
+	win.set_status('Saving...')
+
+	assert win.get_status() == 'Saving...'
+	assert win.has_control('status') == true
+	assert win.get_control_kind('status') == 'label'
+}
+
 fn test_color_methods_store_values() {
 	mut win := simplegui.SimpleWindow{}
 	win.set_background_color('#112233')
@@ -224,6 +233,45 @@ fn test_high_level_form_helpers_are_available() {
 	assert win.get_checked('ready') == true
 	assert win.get_value_int('age') == 42
 	assert win.dispatch_event('run', 'click', '') == true
+}
+
+fn test_config_form_and_validation_helpers_are_available() {
+	mut win := simplegui.new_simple_window('Test Window', 100, 100)
+	win.configure(fn (mut cfg simplegui.WindowConfig) {
+		cfg.title = 'Configured Window'
+		cfg.width = 420
+		cfg.height = 320
+		cfg.padding = 18
+		cfg.spacing = 8
+		cfg.background_color = '#112233'
+		cfg.font_color = 'white'
+		cfg.resizable = false
+	})
+	win.form('Profile', fn (mut w simplegui.SimpleWindow) {
+		w.add_input('email', 'ada@example.com')
+		w.add_checkbox('newsletter', 'Newsletter', true)
+	})
+	win.section('Account', fn (mut w simplegui.SimpleWindow) {
+		w.add_input('username', 'ada')
+	})
+
+	assert win.get_title() == 'Configured Window'
+	assert win.get_padding() == 18
+	assert win.get_spacing() == 8
+	assert win.get_background_color() == '#112233'
+	assert win.get_font_color() == 'white'
+	assert win.get_resizable() == false
+	assert win.has_control('email') == true
+	assert win.has_control('username') == true
+
+	win.set_text('email', '')
+	errs := win.validate_controls({
+		'email':    simplegui.validate_not_empty
+		'username': simplegui.validate_not_empty
+	})
+	assert errs['email'] == 'Required'
+	assert errs['username'] == ''
+	assert win.get_error('email') == 'Required'
 }
 
 fn test_file_drop_events_are_forwarded_to_window_handlers() {
