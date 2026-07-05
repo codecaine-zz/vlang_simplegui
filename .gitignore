@@ -25,3 +25,6 @@ bin/
 
 # Ignore installed modules through `v install --local`:
 modules/
+
+# Ignore build output folder
+dist/

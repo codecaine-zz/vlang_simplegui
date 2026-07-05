@@ -336,6 +336,65 @@ The following native macOS windows were captured dynamically by building and run
 - **Dirty Form Change Tracking**: `v run demos/dirty_form_demo.v`
   ![Dirty Form Demo](screenshots/dirty_form_demo.png)
 
+## Compiling & Packaging as a macOS App
+
+To build and package your V project into a standalone, native macOS application bundle (`.app`) with custom icons, use the pure V tool script `build.vsh`. The builder uses macOS native utilities (`sips` and `iconutil`) with zero JavaScript runtime dependencies.
+
+### 1. Default Build
+
+To compile `main.v` with release optimization (`-prod`) and bundle it as a macOS application using the default app name:
+
+```bash
+v run build.vsh
+```
+
+This compiles your V code and creates:
+
+```
+dist/Vlang Macos Native Window.app
+```
+
+### 2. Custom App Packaging
+
+You can build the app with a custom entry point, a custom name, a custom icon PNG, and a custom bundle ID:
+
+```bash
+v run build.vsh [entry_file.v] --name "My Custom App" --icon icon.png --identifier "com.example.myapp"
+```
+
+### 3. Compilation Examples with Premium Icons
+
+This project comes packaged with **101 premium, futuristic Apple-style obsidian/glassmorphism high-fidelity icons** in the `resources/` folder. Below are practical examples showcasing how to compile existing demos as standalone native `.app` bundles styled with their corresponding theme-matched icons:
+
+```bash
+# 1. Compile the Calculator Demo with the native Calculator Tile icon
+v run build.vsh demos/calculator.v --name "Interactive Calculator" --icon resources/calculator.png
+
+# 2. Compile the Markdown Editor with the native Markdown Editor Tile icon
+v run build.vsh demos/markdown_editor.v --name "Markdown Studio" --icon resources/markdown_editor.png
+
+# 3. Compile the System Monitor Demo with the native System Monitor Tile icon
+v run build.vsh demos/timer_demo.v --name "Task Timer" --icon resources/clock.png
+
+# 4. Compile the Data Viewer / Database Catalog with the Database Admin Tile icon
+v run build.vsh demos/data_viewer.v --name "DB Browser" --icon resources/database_admin.png
+
+# 5. Compile the Settings Configuration Editor with the Password manager / Security Tile icon
+v run build.vsh demos/settings_editor.v --name "Preferences Panel" --icon resources/password_manager.png
+
+# 6. Compile the Web Studio Demo with the high-fidelity Browser / DOM Explorer Tile icon
+v run build.vsh demos/web_studio_demo.v --name "Web BI Studio" --icon resources/browser.png
+```
+
+#### CLI Options:
+
+- `-i, --icon <path>`: Path to a PNG icon. Defaults to `resources/icon.png` or `icon.png`. (If no icon is found, the builder will gracefully assemble the `.app` bundle using a default macOS application icon).
+- `-n, --name <name>`: Custom display name for the `.app` bundle.
+- `-d, --identifier <id>`: CFBundleIdentifier (e.g., `com.example.myapp`).
+- `-v, --version <version>`: App version (defaults to version in `v.mod`, or `1.0.0`).
+- `-o, --out <dir>`: Output folder (defaults to `dist`).
+- `-h, --help`: Show help message.
+
 ## Requirements
 
 - macOS
@@ -555,6 +614,7 @@ v test .
 
 ## Project files
 
+- [build.vsh](build.vsh) — macOS binary compilation and packaging script for `.app` bundle with icons
 - [main.v](main.v) — example app and demo entry point
 - [demos/starter_template.v](demos/starter_template.v) — minimal starter app for new developers
 - [simplegui/simplegui.v](simplegui/simplegui.v) — beginner-friendly wrapper API module
