@@ -226,6 +226,12 @@ v run demos/always_on_top_demo.v
 v run demos/ergonomic_demo.v
 ```
 
+### Run the Delphi & C# Inspired RAD Showcase demo:
+
+```bash
+v run demos/delphi_inspired_demo.v
+```
+
 ### Run the developer experience (DX) showcase demo:
 
 ```bash

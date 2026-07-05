@@ -74,11 +74,13 @@ void window_end_row(main__WindowInfo *info);
 
 // Popups and Dialogs
 void window_show_alert(main__WindowInfo *info, const char *title, const char *message);
+void window_show_alert_with_style(main__WindowInfo *info, const char *title, const char *message, const char *style);
 int window_show_confirm(main__WindowInfo *info, const char *title, const char *message);
 char *window_show_prompt(main__WindowInfo *info, const char *title, const char *message, const char *default_val);
 
 // File and Folder Pickers
 char *window_select_file(main__WindowInfo *info);
+char *window_select_file_with_extensions(main__WindowInfo *info, const char *extensions);
 char *window_select_folder(main__WindowInfo *info);
 char *window_save_file_picker(main__WindowInfo *info);
 

@@ -41,11 +41,13 @@ fn C.window_add_context_menu_item(&WindowInfo, &u8, &u8, &u8)
 
 // Dialogs and Message boxes
 fn C.window_show_alert(&WindowInfo, &u8, &u8)
+fn C.window_show_alert_with_style(&WindowInfo, &u8, &u8, &u8)
 fn C.window_show_confirm(&WindowInfo, &u8, &u8) int
 fn C.window_show_prompt(&WindowInfo, &u8, &u8, &u8) &u8
 
 // File Panels
 fn C.window_select_file(&WindowInfo) &u8
+fn C.window_select_file_with_extensions(&WindowInfo, &u8) &u8
 fn C.window_select_folder(&WindowInfo) &u8
 fn C.window_save_file_picker(&WindowInfo) &u8
 
@@ -2054,6 +2056,13 @@ pub fn (win &SimpleWindow) alert(title string, message string) &SimpleWindow {
 	return win
 }
 
+pub fn (win &SimpleWindow) alert_with_style(title string, message string, style string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_show_alert_with_style(win.window_info, title.str, message.str, style.str)
+	}
+	return win
+}
+
 pub fn (win &SimpleWindow) confirm(title string, message string) bool {
 	if win.window_info != unsafe { nil } {
 		return C.window_show_confirm(win.window_info, title.str, message.str) == 1
@@ -2084,6 +2093,14 @@ pub fn (win &SimpleWindow) choice_dialog(title string, message string, choices [
 pub fn (win &SimpleWindow) select_file() string {
 	if win.window_info != unsafe { nil } {
 		res := C.window_select_file(win.window_info)
+		return unsafe { res.vstring() }
+	}
+	return ''
+}
+
+pub fn (win &SimpleWindow) select_file_with_extensions(extensions string) string {
+	if win.window_info != unsafe { nil } {
+		res := C.window_select_file_with_extensions(win.window_info, extensions.str)
 		return unsafe { res.vstring() }
 	}
 	return ''
@@ -2404,6 +2421,25 @@ pub fn (win &SimpleWindow) set_table_rows(name string, rows [][]string) &SimpleW
 		}
 		C.window_set_table_rows(win.window_info, name.str, flat.data, flat.len, cols_count)
 	}
+	return win
+}
+
+pub fn (win &SimpleWindow) load_table_from_structs[T](name string, items []T) &SimpleWindow {
+	mut rows := [][]string{}
+	for item in items {
+		mut row := []string{}
+		$for field in T.fields {
+			$if field.typ is string {
+				row << item.$(field.name)
+			} $else $if field.typ is int {
+				row << item.$(field.name).str()
+			} $else $if field.typ is bool {
+				row << item.$(field.name).str()
+			}
+		}
+		rows << row
+	}
+	win.set_table_rows(name, rows)
 	return win
 }
 

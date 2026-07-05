@@ -687,3 +687,27 @@ fn test_control_font_customization_and_dialog_choices() {
 	assert win.dispatch_event('context_header_Do Action', 'click', '') == true
 	assert state.called == true
 }
+
+struct ProjectRow {
+	id          int
+	name        string
+	is_active   bool
+}
+
+fn test_reflection_table_loading_and_styles() {
+	mut win := simplegui.new_simple_window('Test Window', 100, 100)
+	win.add_table('projects', ['ID', 'Name', 'Active'])
+	
+	items_list := [
+		ProjectRow{ id: 101, name: "Delphi Compiler", is_active: true },
+		ProjectRow{ id: 102, name: "Turbo Pascal", is_active: false },
+	]
+	win.load_table_from_structs('projects', items_list)
+	
+	// Test alert style compilability
+	win.alert_with_style('Warning Title', 'Warning Message', 'warning')
+	win.alert_with_style('Error Title', 'Critical Error', 'error')
+
+	// Test file picker signature
+	_ = win.select_file_with_extensions('.txt, .png')
+}
