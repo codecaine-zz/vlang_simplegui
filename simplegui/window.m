@@ -240,6 +240,96 @@ extern void vlang_dispatch_event(void *win_ptr, const char *name, const char *ev
 }
 @end
 
+@interface ModernSearchFieldCell : NSSearchFieldCell
+@end
+
+@implementation ModernSearchFieldCell
+- (NSRect)drawingRectForBounds:(NSRect)rect {
+  NSRect titleRect = [super drawingRectForBounds:rect];
+  CGFloat horizontalPadding = 0.0;
+  CGFloat verticalPadding = (titleRect.size.height - 18.0) / 2.0;
+  if (verticalPadding < 0) verticalPadding = 2.0;
+  return NSMakeRect(titleRect.origin.x + horizontalPadding,
+                    titleRect.origin.y + verticalPadding,
+                    titleRect.size.width - (horizontalPadding * 2.0),
+                    titleRect.size.height - (verticalPadding * 2.0));
+}
+- (void)selectWithFrame:(NSRect)rect inView:(NSView *)controlView editor:(NSText *)textObj delegate:(id)anObject start:(NSInteger)selStart length:(NSInteger)selLength {
+  NSRect textFrame = [self drawingRectForBounds:rect];
+  [super selectWithFrame:textFrame inView:controlView editor:textObj delegate:anObject start:selStart length:selLength];
+}
+- (void)editWithFrame:(NSRect)rect inView:(NSView *)controlView editor:(NSText *)textObj delegate:(id)anObject event:(NSEvent *)theEvent {
+  NSRect textFrame = [self drawingRectForBounds:rect];
+  [super editWithFrame:textFrame inView:controlView editor:textObj delegate:anObject event:theEvent];
+}
+@end
+
+@interface ModernSearchField : NSSearchField
+@end
+
+@implementation ModernSearchField
+- (instancetype)initWithFrame:(NSRect)frameRect {
+  self = [super initWithFrame:frameRect];
+  if (self) {
+    ModernSearchFieldCell *cell = [[ModernSearchFieldCell alloc] init];
+    [cell setEditable:YES];
+    [cell setSelectable:YES];
+    [cell setScrollable:YES];
+    [cell setDrawsBackground:YES];
+    self.cell = cell;
+    self.wantsLayer = YES;
+    self.layer.cornerRadius = 8.0;
+    self.layer.borderWidth = 1.0;
+    self.layer.borderColor = [NSColor separatorColor].CGColor;
+    self.focusRingType = NSFocusRingTypeNone;
+    
+    // Bind the clear/cancel button cell to trigger the event action
+    NSButtonCell *cancelButtonCell = [cell cancelButtonCell];
+    [cancelButtonCell setTarget:self];
+    [cancelButtonCell setAction:@selector(handleCancelButtonClicked:)];
+  }
+  return self;
+}
+
+- (void)handleCancelButtonClicked:(id)sender {
+  [self setStringValue:@""];
+  [self resignFirstResponder];
+  if (self.target && self.action) {
+    [self sendAction:self.action to:self.target];
+  }
+}
+
+- (void)layout {
+  [super layout];
+  NSColor *bgColor = self.backgroundColor ?: [NSColor textBackgroundColor];
+  self.layer.backgroundColor = bgColor.CGColor;
+  BOOL hasFocus = NO;
+  if (self.window && self.window.firstResponder) {
+    id responder = self.window.firstResponder;
+    if ([responder isKindOfClass:[NSView class]] && [(NSView *)responder isDescendantOf:self]) {
+      hasFocus = YES;
+    }
+  }
+  if (hasFocus) {
+    self.layer.borderColor = [NSColor controlAccentColor].CGColor;
+    self.layer.borderWidth = 1.5;
+  } else {
+    self.layer.borderColor = [NSColor separatorColor].CGColor;
+    self.layer.borderWidth = 1.0;
+  }
+}
+- (BOOL)becomeFirstResponder {
+  BOOL result = [super becomeFirstResponder];
+  [self setNeedsLayout:YES];
+  return result;
+}
+- (BOOL)resignFirstResponder {
+  BOOL result = [super resignFirstResponder];
+  [self setNeedsLayout:YES];
+  return result;
+}
+@end
+
 @interface AppDelegate : NSObject <NSApplicationDelegate, NSWindowDelegate, NSTextFieldDelegate, NSTextViewDelegate, NSTableViewDataSource, NSTableViewDelegate>
 @property (nonatomic, assign) main__WindowParams params;
 @property (nonatomic, assign) void *win_ptr;
@@ -388,9 +478,9 @@ static NSColor *modernAccentColor(void) {
 static NSColor *modernSurfaceColor(void) {
   NSAppearance *appearance = [NSApp effectiveAppearance];
   if ([appearance bestMatchFromAppearancesWithNames:@[NSAppearanceNameDarkAqua, NSAppearanceNameAqua]] == NSAppearanceNameDarkAqua) {
-    return [NSColor colorWithSRGBRed:0.095 green:0.10 blue:0.13 alpha:1.0];
+    return [NSColor colorWithSRGBRed:0.095 green:0.10 blue:0.13 alpha:0.85];
   }
-  return [NSColor colorWithSRGBRed:0.97 green:0.97 blue:0.985 alpha:1.0];
+  return [NSColor colorWithSRGBRed:0.97 green:0.97 blue:0.985 alpha:0.85];
 }
 
 static NSColor *modernElevatedSurfaceColor(void) {
@@ -552,7 +642,11 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
     }
   } else if ([view isKindOfClass:[NSSegmentedControl class]]) {
     NSSegmentedControl *segment = (NSSegmentedControl *)view;
-    [segment setSegmentStyle:NSSegmentStyleTexturedRounded];
+    if (@available(macOS 10.15, *)) {
+      [segment setSegmentStyle:NSSegmentStyleAutomatic];
+    } else {
+      [segment setSegmentStyle:NSSegmentStyleRounded];
+    }
     [segment setControlSize:NSControlSizeRegular];
     [segment setFont:[NSFont systemFontOfSize:12 weight:NSFontWeightRegular]];
     [segment setWantsLayer:YES];
@@ -622,11 +716,18 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
                                                 defer:NO];
   const char *title = self.params.title.str ? self.params.title.str : "";
   [self.window setTitle:nsstring(title)];
-  [self.window setTitlebarAppearsTransparent:NO];
+  [self.window setTitlebarAppearsTransparent:YES];
   [self.window setTitleVisibility:NSWindowTitleVisible];
+  
+  if ([self.window respondsToSelector:@selector(setTitlebarSeparatorStyle:)]) {
+    // NSTitlebarSeparatorStyleNone (0) removes standard divider lines for unified macOS Sonoma/Tahoe sidebar look
+    [self.window setTitlebarSeparatorStyle:0];
+  }
+  
   [self.window setToolbar:nil];
   [self.window setShowsToolbarButton:NO];
   [self.window setBackgroundColor:[NSColor clearColor]];
+  [self.window setOpaque:NO];
   [self.window setLevel:self.params.always_on_top ? NSFloatingWindowLevel : NSNormalWindowLevel];
   [self.window setDelegate:self];
   [self.window setReleasedWhenClosed:NO];
@@ -741,18 +842,23 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   self.currentFontColor = fontColor;
 
   if (self.window) {
-    [self.window setBackgroundColor:backgroundColor];
+    if (backgroundColor.alphaComponent < 1.0) {
+      [self.window setBackgroundColor:[NSColor clearColor]];
+      [self.window setOpaque:NO];
+    } else {
+      [self.window setBackgroundColor:backgroundColor];
+    }
     if (self.window.contentView) {
       [self.window.contentView setWantsLayer:YES];
       [self.window.contentView.layer setBackgroundColor:backgroundColor.CGColor];
     }
   }
   if (self.scrollView) {
-    [self.scrollView setBackgroundColor:backgroundColor];
+    [self.scrollView setBackgroundColor:[NSColor clearColor]];
   }
   if (self.mainStackView) {
     [self.mainStackView setWantsLayer:YES];
-    [self.mainStackView.layer setBackgroundColor:backgroundColor.CGColor];
+    [self.mainStackView.layer setBackgroundColor:[NSColor clearColor].CGColor];
   }
   
   if (self.mainStackView) {
@@ -792,10 +898,10 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [backgroundView.layer setBorderWidth:0.0];
   [backgroundView.layer setMasksToBounds:NO];
 
-  self.scrollView = [[NSScrollView alloc] initWithFrame:NSInsetRect(backgroundView.bounds, 8, 8)];
+  self.scrollView = [[NSScrollView alloc] initWithFrame:NSZeroRect];
   [self.scrollView setHasVerticalScroller:YES];
   [self.scrollView setHasHorizontalScroller:NO];
-  [self.scrollView setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
+  [self.scrollView setTranslatesAutoresizingMaskIntoConstraints:NO];
   [self.scrollView setDrawsBackground:NO];
   [self.scrollView setBackgroundColor:[NSColor clearColor]];
 
@@ -811,6 +917,14 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [self.scrollView setDocumentView:self.mainStackView];
   [backgroundView addSubview:self.scrollView];
   [self.window setContentView:backgroundView];
+  
+  // High-precision modern AutoLayout constraints to clear transparent titlebar area
+  [NSLayoutConstraint activateConstraints:@[
+    [self.scrollView.topAnchor constraintEqualToAnchor:backgroundView.topAnchor constant:40.0],
+    [self.scrollView.leadingAnchor constraintEqualToAnchor:backgroundView.leadingAnchor constant:8.0],
+    [self.scrollView.trailingAnchor constraintEqualToAnchor:backgroundView.trailingAnchor constant:-8.0],
+    [self.scrollView.bottomAnchor constraintEqualToAnchor:backgroundView.bottomAnchor constant:-8.0]
+  ]];
   
   NSView *clipView = self.scrollView.contentView;
   [self.mainStackView.topAnchor constraintEqualToAnchor:clipView.topAnchor].active = YES;
@@ -898,6 +1012,17 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   WKWebView *webView = [[WKWebView alloc] initWithFrame:NSZeroRect configuration:[[WKWebViewConfiguration alloc] init]];
   [self makeStretchableView:webView minimumWidth:320];
   [webView.heightAnchor constraintEqualToConstant:180].active = YES;
+  [webView setWantsLayer:YES];
+  webView.layer.cornerRadius = 8.0;
+  webView.layer.masksToBounds = YES;
+  webView.layer.borderWidth = 1.0;
+  webView.layer.borderColor = [modernBorderColor() CGColor];
+  
+  // Make WKWebView background transparent to blend in beautifully with dark/light themes
+  if ([webView respondsToSelector:@selector(setValue:forKey:)]) {
+    [webView setValue:@NO forKey:@"drawsBackground"];
+  }
+  
   [webView loadHTMLString:html baseURL:nil];
   [self addControlToLayout:webView];
   self.controlsByName[[name lowercaseString]] = webView;
@@ -1084,6 +1209,12 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [well.widthAnchor constraintEqualToConstant:60].active = YES;
   [well.heightAnchor constraintEqualToConstant:30].active = YES;
   [well setWantsLayer:YES];
+  well.layer.cornerRadius = 6.0;
+  
+  if ([well respondsToSelector:@selector(setColorWellStyle:)]) {
+    // 1 is NSColorWellStyleMinimal, which looks incredibly slick and modern (like the Safari web inspector / system settings circles)
+    [well setColorWellStyle:1];
+  }
   
   self.controlsByName[[name lowercaseString]] = well;
   [self addControlToLayout:well];
@@ -1131,6 +1262,8 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [seg setAction:@selector(handleSegmentedChanged:)];
   [self makeStretchableView:seg minimumWidth:220];
   [seg setWantsLayer:YES];
+  
+  applyStyleToView(seg, self.currentBackgroundColor, self.currentFontColor);
   
   self.controlsByName[[name lowercaseString]] = seg;
   [self addControlToLayout:seg];
@@ -1285,12 +1418,12 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
 }
 
 - (NSView *)makeSearchFieldWithName:(NSString *)name placeholder:(NSString *)placeholder {
-  NSSearchField *searchField = [[NSSearchField alloc] initWithFrame:NSZeroRect];
+  ModernSearchField *searchField = [[ModernSearchField alloc] initWithFrame:NSZeroRect];
   [[searchField cell] setPlaceholderString:placeholder];
+  [searchField setDelegate:self];
   [searchField setTarget:self];
   [searchField setAction:@selector(handleInputChanged:)];
   [self makeStretchableView:searchField minimumWidth:180];
-  [searchField setWantsLayer:YES];
   [searchField.heightAnchor constraintEqualToConstant:34.0].active = YES;
   
   applyStyleToView(searchField, self.currentBackgroundColor, self.currentFontColor);
