@@ -294,6 +294,8 @@ The following native macOS windows were captured dynamically by building and run
   ![Settings Editor](screenshots/settings_editor.png)
 - **Single-Window All Controls**: `v run demos/all_controls_demo.v`
   ![All Controls Demo](screenshots/all_controls_demo.png)
+- **Hierarchical Tree View**: `v run demos/tree_view_demo.v`
+  ![Tree View Demo](screenshots/tree_view_demo.png)
 
 ### Built-in Interactive Utilities
 
@@ -426,6 +428,12 @@ v run demos/all_controls_demo.v
 
 ```bash
 v run demos/always_on_top_demo.v
+```
+
+### Run the Hierarchical Tree View demo
+
+```bash
+v run demos/tree_view_demo.v
 ```
 
 ### Run the Ergonomic Helpers demo

@@ -117,6 +117,12 @@ void window_add_separator(main__WindowInfo *info);
 void *window_add_table_control(main__WindowInfo *info, const char *name, const char **columns, int columns_count);
 void window_set_table_rows(main__WindowInfo *info, const char *name, const char **flat_items, int total_count, int columns_count);
 
+// Tree View Controls
+void *window_add_tree_view_control(main__WindowInfo *info, const char *name, int height);
+void window_set_tree_nodes(main__WindowInfo *info, const char *name, const char **flat_items, int total_count);
+char *window_get_tree_selected(main__WindowInfo *info, const char *name);
+void window_set_tree_selected(main__WindowInfo *info, const char *name, const char *node_id);
+
 // System Menu Bar/Tray App Mode
 void window_enable_status_bar(main__WindowInfo *info, const char *icon_path);
 void window_show(main__WindowInfo *info);

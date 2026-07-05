@@ -113,6 +113,12 @@ fn C.window_add_separator(&WindowInfo)
 fn C.window_add_table_control(&WindowInfo, &u8, &&u8, int) voidptr
 fn C.window_set_table_rows(&WindowInfo, &u8, &&u8, int, int)
 
+// Tree View Controls
+fn C.window_add_tree_view_control(&WindowInfo, &u8, int) voidptr
+fn C.window_set_tree_nodes(&WindowInfo, &u8, &&u8, int)
+fn C.window_get_tree_selected(&WindowInfo, &u8) &u8
+fn C.window_set_tree_selected(&WindowInfo, &u8, &u8)
+
 // System Menu Bar/Tray App Mode
 fn C.window_enable_status_bar(&WindowInfo, &u8)
 fn C.window_show(&WindowInfo)
@@ -2379,6 +2385,64 @@ pub fn (win &SimpleWindow) add_horizontal_spacer(width int) &SimpleWindow {
 pub fn (win &SimpleWindow) add_separator() &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_add_separator(win.window_info)
+	}
+	return win
+}
+
+pub struct TreeNode {
+pub mut:
+	id        string
+	parent_id string
+	text      string
+}
+
+pub fn (win &SimpleWindow) add_tree_view(name string, height int) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('treeview')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name:  real_name
+			kind:  'treeview'
+			value: ''
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_tree_view_control(win.window_info, real_name.str, height)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) set_tree_nodes(name string, nodes []TreeNode) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		if nodes.len == 0 {
+			C.window_set_tree_nodes(win.window_info, name.str, unsafe { nil }, 0)
+			return win
+		}
+		mut flat := []&u8{}
+		for node in nodes {
+			flat << node.id.str
+			flat << node.parent_id.str
+			flat << node.text.str
+		}
+		C.window_set_tree_nodes(win.window_info, name.str, flat.data, flat.len)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) get_tree_selected(name string) string {
+	if win.window_info != unsafe { nil } {
+		res := C.window_get_tree_selected(win.window_info, name.str)
+		return unsafe { res.vstring() }
+	}
+	return ''
+}
+
+pub fn (win &SimpleWindow) set_tree_selected(name string, node_id string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_tree_selected(win.window_info, name.str, node_id.str)
 	}
 	return win
 }

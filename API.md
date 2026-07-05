@@ -752,6 +752,45 @@ Populates and renders a scrollable multi-column table widget automatically using
 
 ---
 
+## 12b. Hierarchical Tree View
+
+### `TreeNode` struct
+
+Describes a single node in the tree hierarchy:
+
+- `id`: Unique identifier string.
+- `parent_id`: ID of parent node (leave empty `""` for root nodes).
+- `text`: Label/text displayed for the node.
+
+```v
+pub struct TreeNode {
+pub mut:
+    id        string
+    parent_id string
+    text      string
+}
+```
+
+### `win.add_tree_view(name string, height int) &SimpleWindow`
+
+Adds a scrollable, native hierarchal tree view control with a defined vertical height.
+
+### `win.set_tree_nodes(name string, nodes []TreeNode) &SimpleWindow`
+
+Builds and populates the tree hierarchy from a flat array of nodes. It automatically resolves parent-child relations and expands the nodes by default.
+
+### `win.get_tree_selected(name string) string`
+
+Returns the `id` of the currently selected tree view node, or `""` if no cell is selected.
+
+### `win.set_tree_selected(name string, node_id string) &SimpleWindow`
+
+Programmatically expands parent items as needed, selects the specified node by its `node_id`, and scrolls it into view.
+
+---
+
+---
+
 ## 13. Bulk Data Binding
 
 ### `win.get_values() map[string]string`

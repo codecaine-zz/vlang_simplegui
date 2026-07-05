@@ -330,7 +330,30 @@ extern void vlang_dispatch_event(void *win_ptr, const char *name, const char *ev
 }
 @end
 
-@interface AppDelegate : NSObject <NSApplicationDelegate, NSWindowDelegate, NSTextFieldDelegate, NSTextViewDelegate, NSTableViewDataSource, NSTableViewDelegate>
+@interface TreeItem : NSObject
+@property (nonatomic, copy) NSString *itemId;
+@property (nonatomic, copy) NSString *text;
+@property (nonatomic, assign) TreeItem *parent;
+@property (nonatomic, retain) NSMutableArray<TreeItem *> *children;
+@end
+
+@implementation TreeItem
+- (instancetype)init {
+  self = [super init];
+  if (self) {
+    _children = [[NSMutableArray alloc] init];
+  }
+  return self;
+}
+- (void)dealloc {
+  [_itemId release];
+  [_text release];
+  [_children release];
+  [super dealloc];
+}
+@end
+
+@interface AppDelegate : NSObject <NSApplicationDelegate, NSWindowDelegate, NSTextFieldDelegate, NSTextViewDelegate, NSTableViewDataSource, NSTableViewDelegate, NSOutlineViewDataSource, NSOutlineViewDelegate>
 @property (nonatomic, assign) main__WindowParams params;
 @property (nonatomic, assign) void *win_ptr;
 @property (nonatomic, strong) NSWindow *window;
@@ -341,12 +364,14 @@ extern void vlang_dispatch_event(void *win_ptr, const char *name, const char *ev
 @property (nonatomic, strong) NSMutableDictionary *controlsByName;
 @property (nonatomic, strong) NSMutableDictionary *listItemsByName;
 @property (nonatomic, strong) NSMutableDictionary *tableItemsByName;
+@property (nonatomic, strong) NSMutableDictionary *treeItemsByName;
 @property (nonatomic, strong) NSColor *currentBackgroundColor;
 @property (nonatomic, strong) NSColor *currentFontColor;
 @property (nonatomic, strong) NSStatusItem *statusItem;
 @property (nonatomic, strong) NSMenu *statusBarMenu;
 @property (nonatomic, assign) BOOL responsiveLayoutEnabled;
 
+- (TreeItem *)findTreeItemWithId:(NSString *)targetId inItems:(NSArray<TreeItem *> *)items;
 - (NSString *)nameForControl:(NSView *)control;
 - (void)addControlToLayout:(NSView *)view;
 - (void)beginRowWithName:(NSString *)name;
@@ -909,6 +934,7 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
 - (void)buildUI {
   NSLog(@"buildUI called");
   self.controlsByName = [NSMutableDictionary dictionary];
+  self.treeItemsByName = [NSMutableDictionary dictionary];
 
   NSVisualEffectView *backgroundView = [[NSVisualEffectView alloc] initWithFrame:NSMakeRect(0, 0, self.params.width, self.params.height)];
   [backgroundView setMaterial:NSVisualEffectMaterialWindowBackground];
@@ -1575,8 +1601,109 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   NSTableView *tableView = notification.object;
   NSString *name = tableView.identifier;
   if (name && self.win_ptr) {
+    if ([tableView isKindOfClass:[NSOutlineView class]]) {
+      return; // Handled by outlineViewSelectionDidChange
+    }
     NSInteger selectedRow = [tableView selectedRow];
     NSString *value = [NSString stringWithFormat:@"%ld", (long)selectedRow];
+    vlang_dispatch_event(self.win_ptr, [name UTF8String], "change", [value UTF8String]);
+  }
+}
+
+- (TreeItem *)findTreeItemWithId:(NSString *)targetId inItems:(NSArray<TreeItem *> *)items {
+  for (TreeItem *item in items) {
+    if ([item.itemId isEqualToString:targetId]) {
+      return item;
+    }
+    TreeItem *found = [self findTreeItemWithId:targetId inItems:item.children];
+    if (found) {
+      return found;
+    }
+  }
+  return nil;
+}
+
+// NSOutlineViewDataSource methods
+- (NSInteger)outlineView:(NSOutlineView *)outlineView numberOfChildrenOfItem:(id)item {
+  NSString *name = outlineView.identifier;
+  if (!name) return 0;
+  NSString *key = [[name lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  
+  if (item == nil) {
+    NSArray<TreeItem *> *roots = self.treeItemsByName[key];
+    return roots ? roots.count : 0;
+  } else {
+    TreeItem *treeItem = (TreeItem *)item;
+    return treeItem.children.count;
+  }
+}
+
+- (id)outlineView:(NSOutlineView *)outlineView child:(NSInteger)index ofItem:(id)item {
+  NSString *name = outlineView.identifier;
+  if (!name) return nil;
+  NSString *key = [[name lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  
+  if (item == nil) {
+    NSArray<TreeItem *> *roots = self.treeItemsByName[key];
+    return (roots && index >= 0 && index < roots.count) ? roots[index] : nil;
+  } else {
+    TreeItem *treeItem = (TreeItem *)item;
+    return (index >= 0 && index < treeItem.children.count) ? treeItem.children[index] : nil;
+  }
+}
+
+- (BOOL)outlineView:(NSOutlineView *)outlineView isItemExpandable:(id)item {
+  if (item == nil) {
+    return YES;
+  }
+  TreeItem *treeItem = (TreeItem *)item;
+  return treeItem.children.count > 0;
+}
+
+- (id)outlineView:(NSOutlineView *)outlineView objectValueForTableColumn:(NSTableColumn *)tableColumn byItem:(id)item {
+  TreeItem *treeItem = (TreeItem *)item;
+  return treeItem.text;
+}
+
+// NSOutlineViewDelegate methods
+- (NSView *)outlineView:(NSOutlineView *)outlineView viewForTableColumn:(NSTableColumn *)tableColumn item:(id)item {
+  NSTableCellView *cell = [outlineView makeViewWithIdentifier:@"TreeCell" owner:self];
+  if (!cell) {
+    cell = [[NSTableCellView alloc] initWithFrame:NSMakeRect(0, 0, 100, 20)];
+    NSTextField *textField = [[NSTextField alloc] initWithFrame:NSMakeRect(0, 0, 100, 20)];
+    [textField setBezeled:NO];
+    [textField setDrawsBackground:NO];
+    [textField setEditable:NO];
+    [textField setSelectable:NO];
+    [cell addSubview:textField];
+    cell.textField = textField;
+    
+    textField.translatesAutoresizingMaskIntoConstraints = NO;
+    [NSLayoutConstraint activateConstraints:@[
+      [textField.leadingAnchor constraintEqualToAnchor:cell.leadingAnchor constant:4],
+      [textField.trailingAnchor constraintEqualToAnchor:cell.trailingAnchor constant:-4],
+      [textField.topAnchor constraintEqualToAnchor:cell.topAnchor constant:2],
+      [textField.bottomAnchor constraintEqualToAnchor:cell.bottomAnchor constant:-2]
+    ]];
+  }
+  
+  TreeItem *treeItem = (TreeItem *)item;
+  [cell.textField setStringValue:treeItem.text];
+  [cell.textField setTextColor:self.currentFontColor ?: [NSColor labelColor]];
+  [cell.textField setFont:[NSFont systemFontOfSize:13]];
+  [cell.textField setDrawsBackground:NO];
+  [cell.textField setBackgroundColor:[NSColor clearColor]];
+  [cell setBackgroundStyle:NSBackgroundStyleNormal];
+  return cell;
+}
+
+- (void)outlineViewSelectionDidChange:(NSNotification *)notification {
+  NSOutlineView *outlineView = notification.object;
+  NSString *name = outlineView.identifier;
+  if (name && self.win_ptr) {
+    NSInteger selectedRow = [outlineView selectedRow];
+    TreeItem *item = [outlineView itemAtRow:selectedRow];
+    NSString *value = item ? item.itemId : @"";
     vlang_dispatch_event(self.win_ptr, [name UTF8String], "change", [value UTF8String]);
   }
 }
@@ -2562,6 +2689,8 @@ char *window_get_control_text(void *control) {
     NSView *doc = [(NSScrollView *)view documentView];
     if ([doc isKindOfClass:[NSTextView class]]) {
       view = doc;
+    } else if ([doc isKindOfClass:[NSOutlineView class]]) {
+      view = doc;
     } else if ([doc isKindOfClass:[NSTableView class]]) {
       view = doc;
     }
@@ -2604,6 +2733,15 @@ char *window_get_control_text(void *control) {
     }
   } else if ([view isKindOfClass:[NSProgressIndicator class]]) {
     result = [NSString stringWithFormat:@"%.0f", [(NSProgressIndicator *)view doubleValue]];
+  } else if ([view isKindOfClass:[NSOutlineView class]]) {
+    NSOutlineView *outlineView = (NSOutlineView *)view;
+    NSInteger selectedRow = [outlineView selectedRow];
+    if (selectedRow != -1) {
+      TreeItem *item = [outlineView itemAtRow:selectedRow];
+      if (item) {
+        result = item.itemId;
+      }
+    }
   } else if ([view isKindOfClass:[NSTableView class]]) {
     NSTableView *tableView = (NSTableView *)view;
     AppDelegate *delegate = (AppDelegate *)tableView.delegate;
@@ -3445,6 +3583,180 @@ void window_set_table_rows(main__WindowInfo *info, const char *name, const char 
       if ([scroll.documentView isKindOfClass:[NSTableView class]]) {
         NSTableView *tableView = (NSTableView *)scroll.documentView;
         [tableView reloadData];
+      }
+    }
+  });
+}
+
+void *window_add_tree_view_control(main__WindowInfo *info, const char *name, int height) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSScrollView *scrollView = nil;
+  void (^runBlock)(void) = ^{
+    scrollView = [[NSScrollView alloc] initWithFrame:NSZeroRect];
+    [scrollView setHasVerticalScroller:YES];
+    [scrollView setHasHorizontalScroller:YES];
+    [scrollView setBorderType:NSNoBorder];
+    [scrollView setWantsLayer:YES];
+    scrollView.layer.cornerRadius = 8.0;
+    scrollView.layer.borderWidth = 1.0;
+    scrollView.layer.borderColor = [modernBorderColor() CGColor];
+    
+    [scrollView.widthAnchor constraintEqualToConstant:350].active = YES;
+    [scrollView.heightAnchor constraintEqualToConstant:height].active = YES;
+    
+    NSOutlineView *outlineView = [[NSOutlineView alloc] initWithFrame:NSMakeRect(0, 0, 350, height)];
+    [outlineView setAllowsMultipleSelection:NO];
+    [outlineView setIdentifier:nsstring(name)];
+    [outlineView setRowHeight:26];
+    [outlineView setHeaderView:nil];
+    
+    if (@available(macOS 11.0, *)) {
+      [outlineView setStyle:NSTableViewStyleFullWidth];
+    }
+    
+    NSTableColumn *column = [[NSTableColumn alloc] initWithIdentifier:@"OutlineColumn"];
+    [column setResizingMask:NSTableColumnAutoresizingMask];
+    [column setWidth:330.0];
+    [outlineView addTableColumn:column];
+    [outlineView setOutlineTableColumn:column];
+    
+    [outlineView setDataSource:delegate];
+    [outlineView setDelegate:delegate];
+    
+    [scrollView setDocumentView:outlineView];
+    
+    applyStyleToView(scrollView, delegate.currentBackgroundColor, delegate.currentFontColor);
+    
+    NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    [delegate addControlToLayout:scrollView];
+    delegate.controlsByName[key] = scrollView;
+  };
+  
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return (__bridge void *)scrollView;
+}
+
+void window_set_tree_nodes(main__WindowInfo *info, const char *name, const char **flat_items, int total_count) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  
+  dispatch_async(dispatch_get_main_queue(), ^{
+    NSMutableDictionary<NSString *, TreeItem *> *nodesById = [NSMutableDictionary dictionary];
+    NSMutableArray<TreeItem *> *roots = [NSMutableArray array];
+    
+    if (flat_items && total_count > 0) {
+      int item_count = total_count / 3;
+      // First pass: create all TreeItem instances
+      for (int i = 0; i < item_count; i++) {
+        NSString *itemId = nsstring(flat_items[i * 3]);
+        NSString *parentId = nsstring(flat_items[i * 3 + 1]);
+        NSString *text = nsstring(flat_items[i * 3 + 2]);
+        
+        TreeItem *item = [[[TreeItem alloc] init] autorelease];
+        item.itemId = itemId;
+        item.text = text;
+        
+        nodesById[itemId] = item;
+      }
+      
+      // Second pass: establish hierarchy
+      for (int i = 0; i < item_count; i++) {
+        NSString *itemId = nsstring(flat_items[i * 3]);
+        NSString *parentId = nsstring(flat_items[i * 3 + 1]);
+        
+        TreeItem *item = nodesById[itemId];
+        if (parentId.length == 0) {
+          [roots addObject:item];
+        } else {
+          TreeItem *parent = nodesById[parentId];
+          if (parent) {
+            item.parent = parent;
+            [parent.children addObject:item];
+          } else {
+            [roots addObject:item];
+          }
+        }
+      }
+    }
+    
+    delegate.treeItemsByName[key] = roots;
+    
+    NSView *view = delegate.controlsByName[key];
+    if ([view isKindOfClass:[NSScrollView class]]) {
+      NSScrollView *scroll = (NSScrollView *)view;
+      if ([scroll.documentView isKindOfClass:[NSOutlineView class]]) {
+        NSOutlineView *outlineView = (NSOutlineView *)scroll.documentView;
+        [outlineView reloadData];
+        [outlineView expandItem:nil expandChildren:YES];
+      }
+    }
+  });
+}
+
+char *window_get_tree_selected(main__WindowInfo *info, const char *name) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  
+  __block NSString *result = nil;
+  void (^runBlock)(void) = ^{
+    NSView *view = delegate.controlsByName[key];
+    if ([view isKindOfClass:[NSScrollView class]]) {
+      NSScrollView *scroll = (NSScrollView *)view;
+      if ([scroll.documentView isKindOfClass:[NSOutlineView class]]) {
+        NSOutlineView *outlineView = (NSOutlineView *)scroll.documentView;
+        NSInteger selectedRow = [outlineView selectedRow];
+        if (selectedRow != -1) {
+          TreeItem *item = [outlineView itemAtRow:selectedRow];
+          if (item) {
+            result = item.itemId;
+          }
+        }
+      }
+    }
+  };
+  
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return result ? strdup([result UTF8String]) : strdup("");
+}
+
+void window_set_tree_selected(main__WindowInfo *info, const char *name, const char *node_id) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  NSString *targetId = nsstring(node_id);
+  
+  dispatch_async(dispatch_get_main_queue(), ^{
+    NSView *view = delegate.controlsByName[key];
+    if ([view isKindOfClass:[NSScrollView class]]) {
+      NSScrollView *scroll = (NSScrollView *)view;
+      if ([scroll.documentView isKindOfClass:[NSOutlineView class]]) {
+        NSOutlineView *outlineView = (NSOutlineView *)scroll.documentView;
+        NSArray<TreeItem *> *roots = delegate.treeItemsByName[key];
+        TreeItem *item = [delegate findTreeItemWithId:targetId inItems:roots];
+        if (item) {
+          TreeItem *parent = item.parent;
+          NSMutableArray<TreeItem *> *parentsToExpand = [NSMutableArray array];
+          while (parent) {
+            [parentsToExpand insertObject:parent atIndex:0];
+            parent = parent.parent;
+          }
+          for (TreeItem *p in parentsToExpand) {
+            [outlineView expandItem:p];
+          }
+          
+          NSInteger row = [outlineView rowForItem:item];
+          if (row != -1) {
+            [outlineView selectRowIndexes:[NSIndexSet indexSetWithIndex:row] byExtendingSelection:NO];
+            [outlineView scrollRowToVisible:row];
+          }
+        }
       }
     }
   });
