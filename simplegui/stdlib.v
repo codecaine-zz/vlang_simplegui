@@ -15,6 +15,12 @@ import toml
 import semver
 import json
 import encoding.hex
+import crypto.sha512
+import crypto.sha1
+import crypto.bcrypt
+import crypto.hmac
+import compress.zlib
+import term
 
 // stdlib.v - Extended High-Level Standard Library Wrappers for SimpleGUI
 // Provides extremely simple, beginner-friendly, and safe wrappers around V's Core Standard Library.
@@ -469,4 +475,168 @@ pub fn (win &SimpleWindow) websocket_client(url string, on_msg SimpleWSMessageCa
 		println('[simplegui STDLIB] Spawning WebSocket connection to: ${url}')
 	}
 	return websocket_client(url, on_msg)
+}
+
+// ==========================================
+// 12. More Cryptography and Password Security (Chapter 13: crypto)
+// ==========================================
+
+// crypto_sha512 computes the hex-encoded SHA-512 hash of a string.
+pub fn crypto_sha512(text string) string {
+	return sha512.hexhash(text)
+}
+
+// crypto_sha512 delegates to standalone crypto_sha512.
+pub fn (win &SimpleWindow) crypto_sha512(text string) string {
+	return crypto_sha512(text)
+}
+
+// crypto_sha1 computes the hex-encoded SHA-1 hash of a string.
+pub fn crypto_sha1(text string) string {
+	return sha1.hexhash(text)
+}
+
+// crypto_sha1 delegates to standalone crypto_sha1.
+pub fn (win &SimpleWindow) crypto_sha1(text string) string {
+	return crypto_sha1(text)
+}
+
+// crypto_bcrypt_hash generates a secure bcrypt password hash of a string.
+pub fn crypto_bcrypt_hash(password string) !string {
+	hash := bcrypt.generate_from_password(password.bytes(), bcrypt.default_cost)!
+	return hash
+}
+
+// crypto_bcrypt_hash delegates to standalone crypto_bcrypt_hash.
+pub fn (win &SimpleWindow) crypto_bcrypt_hash(password string) !string {
+	return crypto_bcrypt_hash(password)
+}
+
+// crypto_bcrypt_verify verifies a password against a bcrypt hash.
+pub fn crypto_bcrypt_verify(password string, hash string) bool {
+	bcrypt.compare_hash_and_password(password.bytes(), hash.bytes()) or {
+		return false
+	}
+	return true
+}
+
+// crypto_bcrypt_verify delegates to standalone crypto_bcrypt_verify.
+pub fn (win &SimpleWindow) crypto_bcrypt_verify(password string, hash string) bool {
+	return crypto_bcrypt_verify(password, hash)
+}
+
+// crypto_hmac_sha256 computes the hex-encoded HMAC-SHA256 signature of a string with a key.
+pub fn crypto_hmac_sha256(text string, key string) string {
+	sum := hmac.new(key.bytes(), text.bytes(), sha256.sum, sha256.block_size)
+	return sum.hex()
+}
+
+// crypto_hmac_sha256 delegates to standalone crypto_hmac_sha256.
+pub fn (win &SimpleWindow) crypto_hmac_sha256(text string, key string) string {
+	return crypto_hmac_sha256(text, key)
+}
+
+// ==========================================
+// 13. Zlib Compression (Chapter 13: compress.zlib)
+// ==========================================
+
+// compress_zlib compresses flat plaintext string using zlib compression format.
+pub fn compress_zlib(text string) []u8 {
+	compressed := zlib.compress(text.bytes()) or { return []u8{} }
+	return compressed
+}
+
+// compress_zlib delegates to standalone compress_zlib.
+pub fn (win &SimpleWindow) compress_zlib(text string) []u8 {
+	return compress_zlib(text)
+}
+
+// decompress_zlib extracts standard zlib compressed binary bytes back into a human-readable string.
+pub fn decompress_zlib(data []u8) string {
+	decompressed := zlib.decompress(data) or { return '' }
+	return decompressed.bytestr()
+}
+
+// decompress_zlib delegates to standalone decompress_zlib.
+pub fn (win &SimpleWindow) decompress_zlib(data []u8) string {
+	return decompress_zlib(data)
+}
+
+// ==========================================
+// 14. JSON Map List Helpers (Chapter 13: json)
+// ==========================================
+
+// json_encode_map_list serializes an array of maps into a JSON string.
+pub fn json_encode_map_list(m []map[string]string) string {
+	return json.encode(m)
+}
+
+// json_encode_map_list delegates to standalone json_encode_map_list.
+pub fn (win &SimpleWindow) json_encode_map_list(m []map[string]string) string {
+	return json_encode_map_list(m)
+}
+
+// json_decode_map_list deserializes a JSON string into an array of flat key-value maps.
+pub fn json_decode_map_list(json_str string) []map[string]string {
+	res := json.decode([]map[string]string, json_str) or { return []map[string]string{} }
+	return res
+}
+
+// json_decode_map_list delegates to standalone json_decode_map_list.
+pub fn (win &SimpleWindow) json_decode_map_list(json_str string) []map[string]string {
+	return json_decode_map_list(json_str)
+}
+
+// ==========================================
+// 15. Stopwatch Utility (Chapter 13: time)
+// ==========================================
+
+// SimpleStopwatch provides a high-level wrapper to measure high-precision elapsed execution time.
+pub struct SimpleStopwatch {
+pub mut:
+	sw time.StopWatch = time.new_stopwatch()
+}
+
+// elapsed_ms returns the elapsed time in milliseconds.
+pub fn (mut sw SimpleStopwatch) elapsed_ms() int {
+	return int(sw.sw.elapsed().milliseconds())
+}
+
+// elapsed_sec returns the elapsed time in seconds.
+pub fn (mut sw SimpleStopwatch) elapsed_sec() f64 {
+	return sw.sw.elapsed().seconds()
+}
+
+// restart resets and restarts the stopwatch.
+pub fn (mut sw SimpleStopwatch) restart() {
+	sw.sw.restart()
+}
+
+// start_stopwatch constructs and starts a new high-precision stopwatch.
+pub fn (win &SimpleWindow) start_stopwatch() &SimpleStopwatch {
+	return &SimpleStopwatch{
+		sw: time.new_stopwatch()
+	}
+}
+
+// ==========================================
+// 16. Terminal Text Styling (Chapter 13: term)
+// ==========================================
+
+// term_color styles terminal console text output (supports red, green, blue, yellow, bold, underline).
+pub fn term_color(text string, style string) string {
+	return match style.to_lower() {
+		'red' { term.red(text) }
+		'green' { term.green(text) }
+		'blue' { term.blue(text) }
+		'yellow' { term.yellow(text) }
+		'bold' { term.bold(text) }
+		'underline' { term.underline(text) }
+		else { text }
+	}
+}
+
+// term_color delegates to standalone term_color.
+pub fn (win &SimpleWindow) term_color(text string, style string) string {
+	return term_color(text, style)
 }

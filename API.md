@@ -614,7 +614,7 @@ Copies the specified text to the macOS system clipboard.
 
 ---
 
-## 6b. Neutralino-Inspired System Calls & Platform API
+### 6b. Neutralino-Inspired System Calls & Platform API
 
 To simplify system integrations and mirror key features from NeutralinoJS, `simplegui` includes fluent-style wrappers around the V standard library's `os` and core system actions. These methods extend `SimpleWindow` and are readily available inside event handlers.
 
@@ -624,11 +624,28 @@ To simplify system integrations and mirror key features from NeutralinoJS, `simp
 - `win.exec_or(command string, fallback string) string`: Runs a command, returning its stdout if successful (code 0) or the `fallback` value if it failed.
 - `win.exec_bg(command string) &SimpleWindow`: Spawns a shell command in the background (asynchronous concurrent thread) so the application GUI doesn't block or freeze.
 
-### Environment variables
+### Environment Variables
 
 - `win.get_env(key string) string`: Retrieves the value of a system environment variable.
+- `win.get_env_opt(key string) ?string`: Retrieves the optional value of an environment variable, returning `none` if not defined.
+- `win.get_envs() map[string]string`: Retrieves all system environment variables as a key-value map.
 - `win.set_env(key string, val string) &SimpleWindow`: Sets or overrides an environment variable for the running app.
 - `win.unset_env(key string) &SimpleWindow`: Removes an environment variable.
+
+### System Diagnostics
+
+- `win.get_hostname() string`: Retrieves the network hostname of the current machine.
+- `win.get_username() string`: Retrieves the active username running the application.
+- `win.get_user_os() string`: Returns the host operating system name (e.g. `macos`, `linux`, `windows`).
+- `win.get_pid() int`: Returns the current Process ID (PID).
+- `win.get_ppid() int`: Returns the Parent Process ID (PPID).
+- `win.get_uid() int`: Returns the real User ID (UID).
+- `win.get_gid() int`: Returns the real Group ID (GID).
+- `win.get_euid() int`: Returns the effective User ID (EUID).
+- `win.get_egid() int`: Returns the effective Group ID (EGID).
+- `win.exists_in_path(cmd string) bool`: Checks if a given command binary is present in the system's PATH.
+- `win.find_executable(cmd string) string`: Returns the absolute path of the specified command binary if it exists in the system's PATH.
+- `win.get_executable_path() string`: Returns the absolute path of the current running executable.
 
 ### System Notifications (`os.showNotification`)
 
@@ -639,29 +656,166 @@ To simplify system integrations and mirror key features from NeutralinoJS, `simp
 - `win.get_cpu_info() string`: Returns the local processor model string (e.g., `Apple M2 Max` or `Intel Core i7`).
 - `win.get_cpu_cores() int`: Returns the physical + virtual core count of the processor.
 - `win.get_memory_info() string`: Returns the total capacity of system physical memory (e.g., `16.0 GB RAM`).
+- `win.get_disk_usage(path string) !DiskStats`: Retrieves disk space usage statistics for the given folder path.
+  - **Returned Type**: `DiskStats` has `total`, `available`, and `used` as `u64` fields representing size in bytes.
 
 ### System Paths Lookup
 
 - `win.get_system_path(name string) string`: Resolves canonical folders:
   - `'home'`: User's home folder.
-  - `'temp'`: System temporary location.
+  - `'temp'`, `'tmp'`: System temporary location.
   - `'desktop'`: Desktop folder.
   - `'documents'`: Documents folder.
   - `'downloads'`: Downloads folder.
-  - `'cache'`: User caches folder (`~/Library/Caches`).
+  - `'cache'`: User caches folder.
+  - `'config'`: User config folder.
+  - `'data'`: User data folder.
   - `'app'`: App executable folder.
 
 ### Filesystem IO Utilities (`NL_FILESYSTEM`)
 
 - `win.file_exists(path string) bool`: Reports true if the file or folder exists.
 - `win.is_dir(path string) bool`: Reports true if the target path is a directory.
+- `win.is_file(path string) bool`: Reports true if the target path is a regular file.
+- `win.is_dir_empty(path string) bool`: Reports true if the directory has no files or subfolders.
 - `win.read_file(path string) string`: Reads file contents, returning an empty string if reading fails.
-- `win.read_file_opt(path string) !string`: Reads file contents with V's `!` error-handling/propagation capabilities.
-- `win.write_file(path string, content string) &SimpleWindow`: Writes content to a file, returning the fluent window pointer.
-- `win.write_file_opt(path string, content string) !&SimpleWindow`: Writes content to a file with V's `!` error-handling/propagation capabilities.
-- `win.delete_file(path string) &SimpleWindow`: Deletes a target file or folder paths.
+- `win.read_file_opt(path string) !string`: Reads file contents with V's `!` error-handling/propagation.
+- `win.read_lines(path string) ![]string`: Reads a file line-by-line and returns an array of strings.
+- `win.read_bytes(path string) ![]u8`: Reads a file's content as a byte array.
+- `win.write_file(path string, content string) &SimpleWindow`: Writes content to a file.
+- `win.write_file_opt(path string, content string) !&SimpleWindow`: Writes content to a file with V's `!` error-handling/propagation.
+- `win.write_lines(path string, lines []string) !&SimpleWindow`: Writes an array of strings to a file, separating them with newlines.
+- `win.write_bytes(path string, bytes []u8) !&SimpleWindow`: Writes a byte array to a file.
 - `win.create_directory(path string) &SimpleWindow`: Recursively creates/ensures all directories in the given path.
+- `win.create_single_directory(path string) !&SimpleWindow`: Creates a single new directory (non-recursive).
+- `win.delete_file(path string) &SimpleWindow`: Deletes a target file or folder path.
+- `win.delete_single_directory(path string) !&SimpleWindow`: Deletes a single empty directory.
+- `win.delete_directory(path string) !&SimpleWindow`: Recursively removes a directory and all of its contents.
+- `win.copy_file(src string, dest string) !&SimpleWindow`: Copies a file from a source path to a destination path.
+- `win.move_file(src string, dest string) !&SimpleWindow`: Moves or renames a file.
+- `win.create_symlink(target string, linkpath string) !&SimpleWindow`: Creates a symbolic link pointing to a target path.
+- `win.is_symlink(path string) bool`: Checks if a path points to a symbolic link.
+- `win.get_working_directory() string`: Returns the current active working directory.
+- `win.set_working_directory(path string) !&SimpleWindow`: Changes the current active working directory.
+- `win.get_file_size(path string) !i64`: Returns the size of a file in bytes.
+- `win.get_last_modified(path string) i64`: Returns the Unix timestamp when the file was last modified.
+- `win.glob(pattern string) ![]string`: Finds all files matching a wildcard pattern (e.g. `*.txt`).
+- `win.walk(path string, callback fn (string))`: Recursively traverses a directory, executing a callback function for each file found.
+- `win.walk_ext(path string, ext string) []string`: Traverses a directory, returning a list of files that match a file extension filter (e.g. `.txt`).
+- `win.set_permissions(path string, mode int) !&SimpleWindow`: Changes the permission bits on a file.
+- `win.set_ownership(path string, uid int, gid int) !&SimpleWindow`: Changes the owner user ID (UID) and group ID (GID) of a file.
+- `win.is_readable(path string) bool`: Checks if a path is readable.
+- `win.is_writable(path string) bool`: Checks if a path is writable.
+- `win.is_executable(path string) bool`: Checks if a path is executable.
 - `win.read_dir(path string) []string`: Returns a string array of items within the directory.
+
+### Path String Parsing
+
+- `win.path_dir(path string) string`: Returns the parent directory of the path.
+- `win.path_base(path string) string`: Returns the last element of the path.
+- `win.path_ext(path string) string`: Returns the file extension of the path (including the dot).
+- `win.path_name(path string) string`: Returns the filename with its extension.
+- `win.path_is_abs(path string) bool`: Checks if the path is an absolute path.
+- `win.path_real(path string) string`: Resolves all symbolic links and relative references to return an absolute canonical path.
+- `win.path_norm(path string) string`: Normalizes path separators.
+- `win.path_split(path string) (string, string, string)`: Splits a path into `(directory, filename, extension)`.
+
+### File Metadata
+
+- `win.get_file_metadata(path string) !FileMetadata`: Retrieves detailed metadata for the file at the given path.
+  - **Returned Type**: `FileMetadata` contains size, inode, nlink, dev, uid, gid, atime, mtime, ctime, file_type, mode_bitmask, and individual boolean permission fields for owner, group, and others (e.g. `owner_r`, `owner_w`, `owner_x`).
+
+### Asynchronous Subprocesses
+
+- `win.spawn_process(path string, args []string, env map[string]string) !&SimpleProcess`: Starts a background subprocess with redirected stdin/stdout.
+  - **Returned Type**: `SimpleProcess` pointer supports:
+    - `proc.is_alive() bool`: Checks if the child process is still running.
+    - `proc.write(data string)`: Sends input data to the process's standard input.
+    - `proc.read() string`: Reads any output currently available in the process's stdout/stderr pipe.
+    - `proc.stop()`: Suspends the process using a POSIX SIGSTOP signal.
+    - `proc.resume()`: Resumes a suspended process using a POSIX SIGCONT signal.
+    - `proc.terminate()`: Terminates the process using a POSIX SIGTERM signal.
+    - `proc.wait()`: Waits for the subprocess to exit and blocks until completion.
+    - `proc.close()`: Cleans up and releases process resources.
+
+---
+
+## 6c. V Standard Library High-Level Wrappers
+
+`simplegui` provides beginner-friendly, safe high-level wrappers around complex V standard library structures, which are exposed both as static helpers under `simplegui` namespace and as methods on `SimpleWindow`.
+
+### HTTP Client (`net.http`)
+
+- `win.http_get(url string) string`: Sends a synchronous GET request and returns the response body (empty on failure).
+- `win.http_post(url string, data string) string`: Sends a synchronous POST request with the specified body, returning the response (empty on failure).
+
+### Regular Expressions (`regex`)
+
+- `win.regex_match(text string, pattern string) bool`: Checks if a target string contains matches for a regular expression pattern.
+- `win.regex_find(text string, pattern string) []string`: Extracts all substrings matching a regular expression pattern.
+- `win.regex_replace(text string, pattern string, replacement string) string`: Replaces any pattern matches inside a string with a replacement text.
+
+### Cryptography & Hash Functions (`crypto`)
+
+- `win.crypto_sha256(text string) string`: Computes the hex-encoded SHA-256 hash of a string.
+- `win.crypto_sha512(text string) string`: Computes the hex-encoded SHA-512 hash of a string.
+- `win.crypto_sha1(text string) string`: Computes the hex-encoded SHA-1 hash of a string.
+- `win.crypto_md5(text string) string`: Computes the hex-encoded MD5 hash of a string.
+- `win.crypto_bcrypt_hash(password string) !string`: Generates a secure bcrypt password hash of a string.
+- `win.crypto_bcrypt_verify(password string, hash string) bool`: Verifies a password against a bcrypt hash.
+- `win.crypto_hmac_sha256(text string, key string) string`: Computes the hex-encoded HMAC-SHA256 signature of a string with a key.
+- `win.crypto_encrypt_aes(plain_text string, key_hex string) string`: Encrypts text using 128-bit AES block cipher under CBC mode, returning hex-encoded ciphertext.
+- `win.crypto_decrypt_aes(cipher_hex string, key_hex string) string`: Decrypts a hex-encoded AES CBC block string, returning the unpadded plaintext string.
+
+### Compression (`compress.gzip` & `compress.zlib`)
+
+- `win.compress_gzip(text string) []u8`: Compresses a string using Gzip format.
+- `win.decompress_gzip(data []u8) string`: Decompresses Gzip-compressed binary bytes back to a string.
+- `win.compress_zlib(text string) []u8`: Compresses a string using Zlib format.
+- `win.decompress_zlib(data []u8) string`: Decompresses Zlib-compressed binary bytes back to a string.
+
+### Random Numbers (`rand`)
+
+- `win.rand_int(min int, max int) int`: Generates a secure random integer between min (inclusive) and max (exclusive).
+- `win.rand_string(length int) string`: Produces a random alphanumeric string token of target length.
+- `win.rand_shuffle_strings(mut arr []string) &SimpleWindow`: Shuffles the items within a string array in-place.
+
+### Time & Measuring Duration (`time`)
+
+- `win.time_now() string`: Returns the formatted current timestamp (`YYYY-MM-DD HH:MM:SS`).
+- `win.time_elapsed(ms int) string`: Formats a millisecond counter into a friendly custom duration (e.g. `1200ms` or `1.20s`).
+
+### URL Escaping (`net.urllib`)
+
+- `win.url_encode(text string) string`: Outputs a secure, percent-encoded string for URL query parameters.
+- `win.url_decode(text string) string`: Translates a percent-encoded URL query string back to plain text.
+
+### Config Parsers (TOML & JSON)
+
+- `win.toml_parse(content string) &TOMLWrapperDoc`: Parses TOML text and wraps query details inside an easy helper.
+  - **Returned Type**: `TOMLWrapperDoc` supports `doc.get_string(key)`, `doc.get_string_default(key, def)`, `doc.get_int(key)`, and `doc.get_bool(key)`.
+- `win.json_decode_map(json_str string) map[string]string`: Deserializes a JSON string into a flat key-value map.
+- `win.json_encode_map_list(m []map[string]string) string`: Serializes an array of maps into a JSON string.
+- `win.json_decode_map_list(json_str string) []map[string]string`: Deserializes a JSON string into an array of flat key-value maps.
+
+### WebSocket Client (`net.websocket`)
+
+- `win.websocket_client(url string, on_msg SimpleWSMessageCallback) ?&SimpleWSClient`: Spawns a WebSocket client on a background thread.
+  - **Returned Type**: `SimpleWSClient` supports:
+    - `ws.write_string(msg string) !`: Sends a text payload to the active WebSocket server.
+    - `ws.close()`: Cleanly disconnects from the remote WebSocket server.
+
+### Stopwatch Utility (`time`)
+
+- `win.start_stopwatch() &SimpleStopwatch`: Constructs and starts a new high-precision stopwatch.
+  - **Returned Type**: `SimpleStopwatch` supports:
+    - `sw.elapsed_ms() int`: Returns elapsed duration in milliseconds.
+    - `sw.elapsed_sec() f64`: Returns elapsed duration in seconds.
+    - `sw.restart()`: Resets and restarts the stopwatch in-place.
+
+### Console Text Styling (`term`)
+
+- `win.term_color(text string, style string) string`: Styles console text outputs (supports `'red'`, `'green'`, `'blue'`, `'yellow'`, `'bold'`, `'underline'`).
 
 ---
 

@@ -2,6 +2,7 @@ module main
 
 import simplegui
 import os
+import time
 
 fn test_named_controls_are_stored_and_accessible() {
 	mut win := simplegui.SimpleWindow{}
@@ -862,4 +863,51 @@ fn test_sys_apis() {
 	// Clean up
 	win.delete_directory(test_dir) or { panic(err) }
 	assert win.file_exists(test_dir) == false
+}
+
+fn test_stdlib_apis() {
+	win := simplegui.SimpleWindow{}
+
+	// Test Hashing
+	assert win.crypto_sha512('hello') == '9b71d224bd62f3785d96d46ad3ea3d73319bfbc2890caadae2dff72519673ca72323c3d99ba5c11d7c7acc6e14b8c5da0c4663475c2e5c3adef46f73bcdec043'
+	assert win.crypto_sha1('hello') == 'aaf4c61ddcc5e8a2dabede0f3b482cd9aea9434d'
+
+	// Test Bcrypt
+	hash := win.crypto_bcrypt_hash('mypassword') or { panic(err) }
+	assert hash.len > 0
+	assert win.crypto_bcrypt_verify('mypassword', hash) == true
+	assert win.crypto_bcrypt_verify('wrongpassword', hash) == false
+
+	// Test HMAC
+	hmac_val := win.crypto_hmac_sha256('message', 'key')
+	assert hmac_val.len > 0
+
+	// Test Zlib
+	zlib_compressed := win.compress_zlib('zlib data')
+	assert zlib_compressed.len > 0
+	zlib_decompressed := win.decompress_zlib(zlib_compressed)
+	assert zlib_decompressed == 'zlib data'
+
+	// Test JSON Map Lists
+	map_list := [
+		{'name': 'Alice', 'role': 'admin'},
+		{'name': 'Bob', 'role': 'user'}
+	]
+	json_str := win.json_encode_map_list(map_list)
+	decoded_list := win.json_decode_map_list(json_str)
+	assert decoded_list.len == 2
+	assert decoded_list[0]['name'] == 'Alice'
+	assert decoded_list[1]['role'] == 'user'
+
+	// Test Stopwatch
+	mut sw := win.start_stopwatch()
+	time.sleep(10 * time.millisecond)
+	assert sw.elapsed_ms() >= 10
+	assert sw.elapsed_sec() >= 0.01
+	sw.restart()
+	assert sw.elapsed_ms() < 5
+
+	// Test Term Colors
+	colored := win.term_color('colored text', 'red')
+	assert colored.len > 0
 }
