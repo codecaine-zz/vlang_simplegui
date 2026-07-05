@@ -10,6 +10,8 @@ fn C.window_app_init(&WindowParams) &WindowInfo
 fn C.window_app_run(&WindowInfo)
 fn C.window_set_title_text(&WindowInfo, &u8)
 fn C.window_set_status_text(&WindowInfo, &u8)
+fn C.window_set_always_on_top(&WindowInfo, int)
+fn C.window_get_always_on_top(&WindowInfo) int
 fn C.window_set_background_color(&WindowInfo, &u8)
 fn C.window_set_padding(&WindowInfo, int)
 fn C.window_set_spacing(&WindowInfo, int)
@@ -118,12 +120,13 @@ pub type VoidEventCallback = fn (mut win SimpleWindow)
 pub type FileDropCallback = fn (mut win SimpleWindow, files []string)
 
 pub struct WindowParams {
-	title   string
-	width   int
-	height  int
-	win_ptr voidptr
-	padding int
-	spacing int
+	title         string
+	width         int
+	height        int
+	win_ptr       voidptr
+	padding       int
+	spacing       int
+	always_on_top int
 }
 
 pub struct WindowInfo {
@@ -144,6 +147,7 @@ mut:
 	font_color       string
 	padding          int
 	spacing          int
+	always_on_top    bool
 	placeholders     map[string]string
 	errors           map[string]string
 	default_button   string
@@ -194,12 +198,13 @@ pub fn new_simple_window(title string, width int, height int) &SimpleWindow {
 fn (mut win SimpleWindow) ensure_window() {
 	if win.window_info == unsafe { nil } {
 		params := WindowParams{
-			title:   win.title
-			width:   win.width
-			height:  win.height
-			win_ptr: win
-			padding: win.padding
-			spacing: win.spacing
+			title:         win.title
+			width:         win.width
+			height:        win.height
+			win_ptr:       win
+			padding:       win.padding
+			spacing:       win.spacing
+			always_on_top: if win.always_on_top { 1 } else { 0 }
 		}
 		win.window_info = C.window_app_init(&params)
 	}
@@ -820,6 +825,21 @@ pub fn (mut win SimpleWindow) set_title(text string) {
 	if win.window_info != unsafe { nil } {
 		C.window_set_title_text(win.window_info, text.str)
 	}
+}
+
+pub fn (mut win SimpleWindow) set_always_on_top(enabled bool) {
+	win.always_on_top = enabled
+	if win.window_info != unsafe { nil } {
+		val := if enabled { 1 } else { 0 }
+		C.window_set_always_on_top(win.window_info, val)
+	}
+}
+
+pub fn (win SimpleWindow) get_always_on_top() bool {
+	if win.window_info != unsafe { nil } {
+		return C.window_get_always_on_top(win.window_info) == 1
+	}
+	return win.always_on_top
 }
 
 pub fn (mut win SimpleWindow) set_background_color(color string) {

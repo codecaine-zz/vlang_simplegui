@@ -54,6 +54,16 @@ fn test_color_methods_store_values() {
 	assert win.get_font_color() == 'white'
 }
 
+fn test_window_always_on_top_state_is_stored() {
+	mut win := simplegui.SimpleWindow{}
+
+	assert win.get_always_on_top() == false
+	win.set_always_on_top(true)
+	assert win.get_always_on_top() == true
+	win.set_always_on_top(false)
+	assert win.get_always_on_top() == false
+}
+
 fn test_control_color_methods_store_values() {
 	mut win := simplegui.SimpleWindow{}
 	win.add_input('name', 'Ada')

@@ -15,6 +15,9 @@ typedef struct main__WindowParams {
   int width;
   int height;
   void *win_ptr;
+  int padding;
+  int spacing;
+  int always_on_top;
 } main__WindowParams;
 
 typedef struct main__WindowInfo {
@@ -349,6 +352,7 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [self.window setTitlebarAppearsTransparent:YES];
   [self.window setTitleVisibility:NSWindowTitleHidden];
   [self.window setBackgroundColor:[NSColor clearColor]];
+  [self.window setLevel:self.params.always_on_top ? NSFloatingWindowLevel : NSNormalWindowLevel];
   [self.window setDelegate:self];
   [self.window setReleasedWhenClosed:NO];
   [self.window registerForDraggedTypes:@[NSPasteboardTypeFileURL]];
@@ -1293,6 +1297,22 @@ void window_set_status_text(main__WindowInfo *info, const char *text) {
 void window_set_title_text(main__WindowInfo *info, const char *text) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
   [delegate.window setTitle:nsstring(text)];
+}
+
+void window_set_always_on_top(main__WindowInfo *info, int enabled) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  if (!delegate.window) {
+    return;
+  }
+  [delegate.window setLevel:enabled ? NSFloatingWindowLevel : NSNormalWindowLevel];
+}
+
+int window_get_always_on_top(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  if (!delegate.window) {
+    return 0;
+  }
+  return delegate.window.level == NSFloatingWindowLevel ? 1 : 0;
 }
 
 void window_set_button_title(main__WindowInfo *info, const char *text) {

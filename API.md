@@ -45,6 +45,14 @@ Initializes a new macOS window delegate.
 
 Updates the window title bar text.
 
+### `win.set_always_on_top(enabled bool)`
+
+Keeps the window above other application windows while the app is running.
+
+### `win.get_always_on_top() bool`
+
+Returns whether the window is currently configured to stay on top.
+
 ### `win.set_background_color(hex_color string)`
 
 Applies a background theme color to the window content view.

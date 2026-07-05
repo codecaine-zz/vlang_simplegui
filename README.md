@@ -20,6 +20,7 @@ It is intended to make GUI programming feel more direct and less manual than the
 - Attach simple event handlers for clicks and value changes
 - Open a real native macOS window with a built-in demo
 - Support native keyboard shortcuts: **CMD + F** to toggle full screen, **CMD + Q** to quit the application
+- Pin a window above other windows with the new always-on-top API
 
 ## Example
 
@@ -202,6 +203,12 @@ v run demos/events_demo.v
 
 ```bash
 v run demos/all_controls_demo.v
+```
+
+### Run the always-on-top demo:
+
+```bash
+v run demos/always_on_top_demo.v
 ```
 
 ### Run the Ergonomic Helpers demo:

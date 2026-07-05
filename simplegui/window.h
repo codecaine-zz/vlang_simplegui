@@ -12,6 +12,8 @@ void window_set_input_text(main__WindowInfo *info, const char *text);
 void window_set_text_area(main__WindowInfo *info, const char *text);
 void window_set_status_text(main__WindowInfo *info, const char *text);
 void window_set_title_text(main__WindowInfo *info, const char *text);
+void window_set_always_on_top(main__WindowInfo *info, int enabled);
+int window_get_always_on_top(main__WindowInfo *info);
 void window_set_checkbox_state(main__WindowInfo *info, int checked);
 void window_set_number_value(main__WindowInfo *info, int value);
 void window_set_background_color(main__WindowInfo *info, const char *color);
