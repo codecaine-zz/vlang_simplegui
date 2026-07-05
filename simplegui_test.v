@@ -363,6 +363,26 @@ fn test_new_control_helpers_and_window_constraints() {
 	win.align('bottom-left')
 	win.align('bottom-right')
 	win.align('center')
+
+	// Test request attention
+	win.request_attention(false)
+	win.request_attention(true)
+	win.bounce_dock(false)
+
+	// Test window focus/blur/minimize/restore events
+	win.on_window_focus(fn (mut w &simplegui.SimpleWindow) {
+		println('focused!')
+	})
+	win.on_window_blur(fn (mut w &simplegui.SimpleWindow) {
+		println('blurred!')
+	})
+	win.on_window_minimize(fn (mut w &simplegui.SimpleWindow) {
+		println('minimized!')
+	})
+	win.on_window_restore(fn (mut w &simplegui.SimpleWindow) {
+		println('restored!')
+	})
+
 	win.minimize()
 	win.maximize()
 	win.toggle_fullscreen()

@@ -59,6 +59,11 @@ fn main() {
 		win.add_button('trigger_maximize', 'zoom / maximize')
 	win.end_row()
 
+	win.begin_row('row_attention')
+		win.add_button('bounce_info', 'bounce dock (info)')
+		win.add_button('bounce_critical', 'bounce dock (critical)')
+	win.end_row()
+
 	win.add_label('info_label', 'live telemetry (updated every 150ms):')
 	win.set_control_font_size('info_label', 14)
 	win.set_control_font_color('info_label', '#38bdf8')
@@ -124,6 +129,33 @@ fn main() {
 
 	win.on_click('trigger_maximize', fn (mut win &simplegui.SimpleWindow) {
 		win.maximize()
+	})
+
+	win.on_click('bounce_info', fn (mut win &simplegui.SimpleWindow) {
+		win.bounce_dock(false)
+		win.set_status('Requested informational user attention (one bounce).')
+	})
+
+	win.on_click('bounce_critical', fn (mut win &simplegui.SimpleWindow) {
+		win.bounce_dock(true)
+		win.set_status('Requested critical user attention (repeated bouncing).')
+	})
+
+	// Register Window-wide delegate event listeners
+	win.on_window_focus(fn (mut win &simplegui.SimpleWindow) {
+		win.set_status('Window focusing event triggered!')
+	})
+
+	win.on_window_blur(fn (mut win &simplegui.SimpleWindow) {
+		println('Window lost key focus!')
+	})
+
+	win.on_window_minimize(fn (mut win &simplegui.SimpleWindow) {
+		println('Window miniaturized!')
+	})
+
+	win.on_window_restore(fn (mut win &simplegui.SimpleWindow) {
+		win.set_status('Window restored from dock!')
 	})
 
 	// Setup low-latency interval timer for live telemetry updates!

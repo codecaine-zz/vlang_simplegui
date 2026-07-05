@@ -167,6 +167,7 @@ fn C.window_is_maximized(&WindowInfo) int
 fn C.window_is_fullscreen(&WindowInfo) int
 fn C.window_is_active(&WindowInfo) int
 fn C.window_set_titlebar_visible(&WindowInfo, int)
+fn C.window_request_attention(&WindowInfo, int)
 
 pub type StringEventCallback = fn (mut win SimpleWindow, value string)
 
@@ -1873,6 +1874,17 @@ pub fn (win &SimpleWindow) set_titlebar_visible(visible bool) &SimpleWindow {
 	return win
 }
 
+pub fn (win &SimpleWindow) request_attention(critical bool) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_request_attention(win.window_info, if critical { 1 } else { 0 })
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) bounce_dock(critical bool) &SimpleWindow {
+	return win.request_attention(critical)
+}
+
 pub fn (win &SimpleWindow) set_background_color(color string) &SimpleWindow {
 	unsafe {
 		mut w := &SimpleWindow(win)
@@ -2472,6 +2484,58 @@ pub fn (win &SimpleWindow) on_resize(callback StringEventCallback) &SimpleWindow
 			control_name: 'window'
 			event_name:   'resize'
 			string_cb:    callback
+		}
+	}
+	return win
+}
+
+// Window Focus / Activation Event Listener
+pub fn (win &SimpleWindow) on_window_focus(callback VoidEventCallback) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.handlers << ControlEventHandler{
+			control_name: 'window'
+			event_name:   'window_focus'
+			void_cb:      callback
+		}
+	}
+	return win
+}
+
+// Window Blur / Deactivation Event Listener
+pub fn (win &SimpleWindow) on_window_blur(callback VoidEventCallback) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.handlers << ControlEventHandler{
+			control_name: 'window'
+			event_name:   'window_blur'
+			void_cb:      callback
+		}
+	}
+	return win
+}
+
+// Window Minimize Event Listener
+pub fn (win &SimpleWindow) on_window_minimize(callback VoidEventCallback) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.handlers << ControlEventHandler{
+			control_name: 'window'
+			event_name:   'window_minimize'
+			void_cb:      callback
+		}
+	}
+	return win
+}
+
+// Window Restore (deminimize) Event Listener
+pub fn (win &SimpleWindow) on_window_restore(callback VoidEventCallback) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.handlers << ControlEventHandler{
+			control_name: 'window'
+			event_name:   'window_restore'
+			void_cb:      callback
 		}
 	}
 	return win

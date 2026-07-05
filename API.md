@@ -199,6 +199,10 @@ Queries the active window states to check if it's minimized, maximized, or in fu
 
 Returns whether simplegui's window is currently the key focused window on the desktop.
 
+### `win.request_attention(critical bool)` / `win.bounce_dock(critical bool)` &SimpleWindow
+
+Bounces the application icon in the macOS Dock to catch the user's attention. If `critical` is true, the icon bounces repeatedly until the application is activated; otherwise, it bounces once.
+
 ### `win.run()`
 
 Launches the native NSApplication event loop and displays the centered window.
@@ -765,6 +769,22 @@ Attaches an event handler executed right before the window is closed and termina
 Attaches an event handler when the application window is resized by the user.
 
 - **Callback Signature**: `fn (mut win &simplegui.SimpleWindow, new_size string)` (where `new_size` has format `"widthxheight"`, e.g. `"640x480"`)
+
+### `win.on_window_focus(callback VoidEventCallback) &SimpleWindow`
+
+Attaches an event handler triggered when the application window gains focus (becomes key).
+
+### `win.on_window_blur(callback VoidEventCallback) &SimpleWindow`
+
+Attaches an event handler triggered when the application window loses focus (resigns key).
+
+### `win.on_window_minimize(callback VoidEventCallback) &SimpleWindow`
+
+Attaches an event handler triggered when the window is minimized / miniaturized to the macOS Dock.
+
+### `win.on_window_restore(callback VoidEventCallback) &SimpleWindow`
+
+Attaches an event handler triggered when the window is restored / deminiaturized from the macOS Dock.
 
 ### `win.on_file_drop(callback FileDropCallback) &SimpleWindow`
 

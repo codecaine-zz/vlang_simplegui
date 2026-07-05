@@ -171,6 +171,7 @@ int window_is_maximized(main__WindowInfo *info);
 int window_is_fullscreen(main__WindowInfo *info);
 int window_is_active(main__WindowInfo *info);
 void window_set_titlebar_visible(main__WindowInfo *info, int visible);
+void window_request_attention(main__WindowInfo *info, int critical);
 
 #endif
 

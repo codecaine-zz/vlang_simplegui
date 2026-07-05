@@ -1868,6 +1868,30 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   }
 }
 
+- (void)windowDidBecomeKey:(NSNotification *)notification {
+  if (self.win_ptr) {
+    vlang_dispatch_event(self.win_ptr, "window", "window_focus", "");
+  }
+}
+
+- (void)windowDidResignKey:(NSNotification *)notification {
+  if (self.win_ptr) {
+    vlang_dispatch_event(self.win_ptr, "window", "window_blur", "");
+  }
+}
+
+- (void)windowDidMiniaturize:(NSNotification *)notification {
+  if (self.win_ptr) {
+    vlang_dispatch_event(self.win_ptr, "window", "window_minimize", "");
+  }
+}
+
+- (void)windowDidDeminiaturize:(NSNotification *)notification {
+  if (self.win_ptr) {
+    vlang_dispatch_event(self.win_ptr, "window", "window_restore", "");
+  }
+}
+
 // Hover Event Tracking Delegates
 - (void)mouseEntered:(NSEvent *)event {
   NSTrackingArea *area = [event trackingArea];
@@ -4513,4 +4537,11 @@ void window_set_titlebar_visible(main__WindowInfo *info, int visible) {
   } else {
     dispatch_async(dispatch_get_main_queue(), runBlock);
   }
+}
+
+void window_request_attention(main__WindowInfo *info, int critical) {
+  (void)info;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [NSApp requestUserAttention:critical ? NSCriticalRequest : NSInformationalRequest];
+  });
 }
