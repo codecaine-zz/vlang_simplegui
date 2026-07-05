@@ -456,6 +456,20 @@ v run build.vsh demos/settings_editor.v --name "Preferences Panel" --icon resour
 v run build.vsh demos/web_studio_demo.v --name "Web BI Studio" --icon resources/browser.png
 ```
 
+### 4. Batch Compile All Demos
+
+To compile and package all available demos concurrently in a single command, run:
+
+```bash
+v run build_demos.vsh
+```
+
+This script:
+1. **Pre-compiles** `build.vsh` to a temporary `./build_app` binary to bypass redundant compilations and prevent C/V compiler concurrency conflicts.
+2. **Scans** `demos/` and maps each application to its corresponding premium icon in `resources/` (e.g., `calculator.png` for the Calculator, `database.png` for SQLite CRUD, etc.).
+3. **Runs** the packaging pipeline concurrently in parallel batches (6 tasks by default), significantly speeding up the build process.
+4. **Cleans up** the temporary compiler helper when finished.
+
 #### CLI Options:
 
 - `-i, --icon <path>`: Path to a PNG icon. Defaults to `resources/icon.png` or `icon.png`. (If no icon is found, the builder will gracefully assemble the `.app` bundle using a default macOS application icon).
@@ -464,6 +478,33 @@ v run build.vsh demos/web_studio_demo.v --name "Web BI Studio" --icon resources/
 - `-v, --version <version>`: App version (defaults to version in `v.mod`, or `1.0.0`).
 - `-o, --out <dir>`: Output folder (defaults to `dist`).
 - `-h, --help`: Show help message.
+
+## Capturing Demo Screenshots
+
+To automatically launch every demo, capture a screenshot of its window, and save the result to the `screenshots/` folder, use the pure V shell script `capture_demos.vsh`. It requires no Python or external runtime — only V and the macOS Clang toolchain.
+
+### Capture All Demos
+
+```bash
+v run capture_demos.vsh
+```
+
+### Capture a Single Demo
+
+Pass the demo filename (with or without the `.v` extension) as an argument:
+
+```bash
+v run capture_demos.vsh beginner_demo
+```
+
+### How It Works
+
+1. **Compiles** the `list_windows.m` Objective-C helper using `clang` to enumerate on-screen windows and their coordinates.
+2. **Iterates** over all `.v` files in the `demos/` folder (or the single specified demo).
+3. **Compiles and launches** each demo, then waits 2 seconds for the window to appear.
+4. **Locates the window** by matching the process PID or binary name against the live window list.
+5. **Captures a cropped screenshot** of the window rect using macOS `screencapture -R`.
+6. **Saves** the PNG to `screenshots/<demo_name>.png`, then terminates the demo and cleans up the compiled binary.
 
 ## Requirements
 
@@ -685,6 +726,7 @@ v test .
 ## Project files
 
 - [build.vsh](build.vsh) — macOS binary compilation and packaging script for `.app` bundle with icons
+- [build_demos.vsh](build_demos.vsh) — batch compilation script to package all demos concurrently with their premium icons
 - [main.v](main.v) — example app and demo entry point
 - [demos/starter_template.v](demos/starter_template.v) — minimal starter app for new developers
 - [simplegui/simplegui.v](simplegui/simplegui.v) — beginner-friendly wrapper API module
