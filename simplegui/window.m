@@ -397,6 +397,11 @@ extern void vlang_dispatch_event(void *win_ptr, const char *name, const char *ev
 - (NSView *)makeRadioGroupWithName:(NSString *)name items:(NSArray<NSString *> *)items selected:(NSString *)selected;
 - (NSView *)makeSwitchWithName:(NSString *)name label:(NSString *)label checked:(BOOL)checked;
 - (NSView *)makeSearchFieldWithName:(NSString *)name placeholder:(NSString *)placeholder;
+- (NSView *)makeComboBoxWithName:(NSString *)name items:(NSArray<NSString *> *)items selected:(NSString *)selected;
+- (NSView *)makeLevelIndicatorWithName:(NSString *)name style:(int)style minValue:(double)minValue maxValue:(double)maxValue value:(double)value;
+- (NSView *)makeSpinnerWithName:(NSString *)name active:(BOOL)active;
+- (NSView *)makePathControlWithName:(NSString *)name path:(NSString *)pathString;
+- (NSView *)makeTokenFieldWithName:(NSString *)name value:(NSString *)value;
 - (void)handleRadioChanged:(id)sender;
 - (void)handleSwitchChanged:(id)sender;
 - (void)setupMenuBar;
@@ -1479,6 +1484,135 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   self.controlsByName[[name lowercaseString]] = searchField;
   [self addControlToLayout:searchField];
   return searchField;
+}
+
+- (NSView *)makeComboBoxWithName:(NSString *)name items:(NSArray<NSString *> *)items selected:(NSString *)selected {
+  NSComboBox *combo = [[NSComboBox alloc] initWithFrame:NSZeroRect];
+  [combo addItemsWithObjectValues:items];
+  [combo setStringValue:selected ?: @""];
+  [combo setDelegate:self];
+  [combo setTarget:self];
+  [combo setAction:@selector(handleInputChanged:)];
+  [self makeStretchableView:combo minimumWidth:180];
+  [combo.heightAnchor constraintEqualToConstant:34.0].active = YES;
+  
+  applyStyleToView(combo, self.currentBackgroundColor, self.currentFontColor);
+  
+  self.controlsByName[[name lowercaseString]] = combo;
+  [self addControlToLayout:combo];
+  return combo;
+}
+
+- (void)comboBoxSelectionDidChange:(NSNotification *)notification {
+  NSComboBox *combo = (NSComboBox *)notification.object;
+  NSString *name = [self nameForControl:combo];
+  if (name && self.win_ptr) {
+    NSInteger selectedIdx = [combo indexOfSelectedItem];
+    if (selectedIdx >= 0) {
+      NSString *val = [combo itemObjectValueAtIndex:selectedIdx];
+      vlang_dispatch_event(self.win_ptr, [name UTF8String], "change", [val UTF8String]);
+    }
+  }
+}
+
+- (NSView *)makeLevelIndicatorWithName:(NSString *)name style:(int)style minValue:(double)minValue maxValue:(double)maxValue value:(double)value {
+  NSLevelIndicator *indicator = [[NSLevelIndicator alloc] initWithFrame:NSZeroRect];
+  
+  if (@available(macOS 10.13, *)) {
+    indicator.levelIndicatorStyle = style;
+  }
+  
+  indicator.minValue = minValue;
+  indicator.maxValue = maxValue;
+  indicator.doubleValue = value;
+  indicator.editable = YES;
+  indicator.target = self;
+  indicator.action = @selector(handleLevelIndicatorChanged:);
+  
+  [self makeStretchableView:indicator minimumWidth:120];
+  [indicator.heightAnchor constraintEqualToConstant:24.0].active = YES;
+  
+  self.controlsByName[[name lowercaseString]] = indicator;
+  [self addControlToLayout:indicator];
+  return indicator;
+}
+
+- (void)handleLevelIndicatorChanged:(id)sender {
+  NSLevelIndicator *indicator = (NSLevelIndicator *)sender;
+  NSString *name = [self nameForControl:indicator];
+  if (name && self.win_ptr) {
+    double value = [indicator doubleValue];
+    NSString *valStr = [NSString stringWithFormat:@"%.1f", value];
+    vlang_dispatch_event(self.win_ptr, [name UTF8String], "change", [valStr UTF8String]);
+  }
+}
+
+- (NSView *)makeSpinnerWithName:(NSString *)name active:(BOOL)active {
+  NSProgressIndicator *spinner = [[NSProgressIndicator alloc] initWithFrame:NSZeroRect];
+  [spinner setStyle:NSProgressIndicatorStyleSpinning];
+  [spinner setControlSize:NSControlSizeRegular];
+  [spinner setIndeterminate:YES];
+  if (active) {
+    [spinner startAnimation:nil];
+  } else {
+    [spinner stopAnimation:nil];
+  }
+  [spinner setHidden:!active];
+  
+  [spinner setTranslatesAutoresizingMaskIntoConstraints:NO];
+  [spinner.widthAnchor constraintEqualToConstant:32.0].active = YES;
+  [spinner.heightAnchor constraintEqualToConstant:32.0].active = YES;
+  
+  self.controlsByName[[name lowercaseString]] = spinner;
+  [self addControlToLayout:spinner];
+  return spinner;
+}
+
+- (NSView *)makePathControlWithName:(NSString *)name path:(NSString *)pathString {
+  NSPathControl *pathControl = [[NSPathControl alloc] initWithFrame:NSZeroRect];
+  [pathControl setPathStyle:NSPathStyleStandard];
+  if (pathString && pathString.length > 0) {
+    [pathControl setURL:[NSURL fileURLWithPath:pathString]];
+  }
+  [pathControl setEditable:YES];
+  [pathControl setTarget:self];
+  [pathControl setAction:@selector(handlePathControlChanged:)];
+  
+  [self makeStretchableView:pathControl minimumWidth:240];
+  [pathControl.heightAnchor constraintEqualToConstant:28.0].active = YES;
+  
+  self.controlsByName[[name lowercaseString]] = pathControl;
+  [self addControlToLayout:pathControl];
+  return pathControl;
+}
+
+- (void)handlePathControlChanged:(id)sender {
+  NSPathControl *pathControl = (NSPathControl *)sender;
+  NSString *name = [self nameForControl:pathControl];
+  if (name && self.win_ptr) {
+    NSURL *url = [pathControl URL];
+    NSString *path = url ? [url path] : @"";
+    vlang_dispatch_event(self.win_ptr, [name UTF8String], "change", [path UTF8String]);
+  }
+}
+
+- (NSView *)makeTokenFieldWithName:(NSString *)name value:(NSString *)value {
+  NSTokenField *tokenField = [[NSTokenField alloc] initWithFrame:NSZeroRect];
+  [tokenField setStringValue:value ?: @""];
+  [tokenField setDelegate:self];
+  [tokenField setTarget:self];
+  [tokenField setAction:@selector(handleInputChanged:)];
+  
+  [tokenField setTokenizingCharacterSet:[NSCharacterSet characterSetWithCharactersInString:@","]];
+  
+  [self makeStretchableView:tokenField minimumWidth:220];
+  [tokenField.heightAnchor constraintEqualToConstant:34.0].active = YES;
+  
+  applyStyleToView(tokenField, self.currentBackgroundColor, self.currentFontColor);
+  
+  self.controlsByName[[name lowercaseString]] = tokenField;
+  [self addControlToLayout:tokenField];
+  return tokenField;
 }
 
 - (void)handleInputChanged:(id)sender {
@@ -2666,6 +2800,14 @@ void window_set_control_text(void *control, const char *text) {
     }
   } else if ([view isKindOfClass:[NSProgressIndicator class]]) {
     [(NSProgressIndicator *)view setDoubleValue:[nsText doubleValue]];
+  } else if ([view isKindOfClass:[NSLevelIndicator class]]) {
+    [(NSLevelIndicator *)view setDoubleValue:[nsText doubleValue]];
+  } else if ([view isKindOfClass:[NSPathControl class]]) {
+    if (nsText.length > 0) {
+      [(NSPathControl *)view setURL:[NSURL fileURLWithPath:nsText]];
+    } else {
+      [(NSPathControl *)view setURL:nil];
+    }
   } else if ([view isKindOfClass:[NSSwitch class]]) {
     [(NSSwitch *)view setState:[nsText isEqualToString:@"true"] || [nsText isEqualToString:@"1"] ? NSControlStateValueOn : NSControlStateValueOff];
   } else if ([view isKindOfClass:[NSStackView class]]) {
@@ -2733,6 +2875,11 @@ char *window_get_control_text(void *control) {
     }
   } else if ([view isKindOfClass:[NSProgressIndicator class]]) {
     result = [NSString stringWithFormat:@"%.0f", [(NSProgressIndicator *)view doubleValue]];
+  } else if ([view isKindOfClass:[NSLevelIndicator class]]) {
+    result = [NSString stringWithFormat:@"%.1f", [(NSLevelIndicator *)view doubleValue]];
+  } else if ([view isKindOfClass:[NSPathControl class]]) {
+    NSURL *url = [(NSPathControl *)view URL];
+    result = url ? [url path] : @"";
   } else if ([view isKindOfClass:[NSOutlineView class]]) {
     NSOutlineView *outlineView = (NSOutlineView *)view;
     NSInteger selectedRow = [outlineView selectedRow];
@@ -2775,6 +2922,17 @@ void window_set_control_bool(void *control, int checked) {
     [(NSButton *)view setState:checked ? NSOnState : NSOffState];
   } else if ([view isKindOfClass:[NSSwitch class]]) {
     [(NSSwitch *)view setState:checked ? NSControlStateValueOn : NSControlStateValueOff];
+  } else if ([view isKindOfClass:[NSProgressIndicator class]]) {
+    NSProgressIndicator *prog = (NSProgressIndicator *)view;
+    if (prog.style == NSProgressIndicatorStyleSpinning) {
+      if (checked) {
+        [prog startAnimation:nil];
+        [prog setHidden:NO];
+      } else {
+        [prog stopAnimation:nil];
+        [prog setHidden:YES];
+      }
+    }
   }
 }
 
@@ -2784,6 +2942,11 @@ int window_get_control_bool(void *control) {
     return [(NSButton *)view state] == NSOnState ? 1 : 0;
   } else if ([view isKindOfClass:[NSSwitch class]]) {
     return [(NSSwitch *)view state] == NSControlStateValueOn ? 1 : 0;
+  } else if ([view isKindOfClass:[NSProgressIndicator class]]) {
+    NSProgressIndicator *prog = (NSProgressIndicator *)view;
+    if (prog.style == NSProgressIndicatorStyleSpinning) {
+      return [prog isHidden] ? 0 : 1;
+    }
   }
   return 0;
 }
@@ -2798,6 +2961,8 @@ void window_set_control_int(void *control, int value) {
     [(NSSegmentedControl *)view setSelectedSegment:value];
   } else if ([view isKindOfClass:[NSProgressIndicator class]]) {
     [(NSProgressIndicator *)view setDoubleValue:(double)value];
+  } else if ([view isKindOfClass:[NSLevelIndicator class]]) {
+    [(NSLevelIndicator *)view setIntValue:value];
   } else if ([view isKindOfClass:[NSStackView class]]) {
     NSStackView *radioStack = (NSStackView *)view;
     NSInteger idx = 0;
@@ -2825,6 +2990,8 @@ int window_get_control_int(void *control) {
     return (int)[(NSSegmentedControl *)view selectedSegment];
   } else if ([view isKindOfClass:[NSProgressIndicator class]]) {
     return (int)[(NSProgressIndicator *)view doubleValue];
+  } else if ([view isKindOfClass:[NSLevelIndicator class]]) {
+    return (int)[(NSLevelIndicator *)view intValue];
   } else if ([view isKindOfClass:[NSStackView class]]) {
     NSStackView *radioStack = (NSStackView *)view;
     NSInteger idx = 0;
@@ -3877,6 +4044,80 @@ void *window_add_search_field_control(main__WindowInfo *info, const char *name, 
   __block NSView *control = nil;
   void (^runBlock)(void) = ^{
     control = [delegate makeSearchFieldWithName:nsstring(name) placeholder:nsstring(placeholder)];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return (__bridge void *)control;
+}
+
+void *window_add_combo_box_control(main__WindowInfo *info, const char *name, const char **items, int items_count, const char *selected) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    NSMutableArray *arr = [NSMutableArray array];
+    for (int i = 0; i < items_count; i++) {
+      [arr addObject:nsstring(items[i])];
+    }
+    control = [delegate makeComboBoxWithName:nsstring(name) items:arr selected:nsstring(selected)];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return (__bridge void *)control;
+}
+
+void *window_add_level_indicator_control(main__WindowInfo *info, const char *name, int style, int min_val, int max_val, int value) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeLevelIndicatorWithName:nsstring(name) style:style minValue:(double)min_val maxValue:(double)max_val value:(double)value];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return (__bridge void *)control;
+}
+
+void *window_add_spinner_control(main__WindowInfo *info, const char *name, int active) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeSpinnerWithName:nsstring(name) active:active != 0];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return (__bridge void *)control;
+}
+
+void *window_add_path_control(main__WindowInfo *info, const char *name, const char *path) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makePathControlWithName:nsstring(name) path:nsstring(path)];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return (__bridge void *)control;
+}
+
+void *window_add_token_field_control(main__WindowInfo *info, const char *name, const char *value) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeTokenFieldWithName:nsstring(name) value:nsstring(value)];
   };
   if ([NSThread isMainThread]) {
     runBlock();

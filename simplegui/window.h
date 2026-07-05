@@ -136,6 +136,11 @@ void *window_add_segmented_control_custom(main__WindowInfo *info, const char *na
 void *window_add_radio_group_control(main__WindowInfo *info, const char *name, const char **items, int items_count, const char *selected);
 void *window_add_switch_control(main__WindowInfo *info, const char *name, const char *label, int checked);
 void *window_add_search_field_control(main__WindowInfo *info, const char *name, const char *placeholder);
+void *window_add_combo_box_control(main__WindowInfo *info, const char *name, const char **items, int items_count, const char *selected);
+void *window_add_level_indicator_control(main__WindowInfo *info, const char *name, int style, int min_val, int max_val, int value);
+void *window_add_spinner_control(main__WindowInfo *info, const char *name, int active);
+void *window_add_path_control(main__WindowInfo *info, const char *name, const char *path);
+void *window_add_token_field_control(main__WindowInfo *info, const char *name, const char *value);
 
 // Window constraints and behavior options
 void window_set_min_size(main__WindowInfo *info, int width, int height);

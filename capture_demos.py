@@ -74,8 +74,15 @@ def main():
 
     # Get all .v files in demos/
     demo_dir = "demos"
-    all_files = [f for f in os.listdir(demo_dir) if f.endswith(".v")]
-    all_files.sort()
+    if len(sys.argv) > 1:
+        arg = sys.argv[1]
+        if not arg.endswith(".v"):
+            arg = arg + ".v"
+        filename = os.path.basename(arg)
+        all_files = [filename]
+    else:
+        all_files = [f for f in os.listdir(demo_dir) if f.endswith(".v")]
+        all_files.sort()
 
     print(f"Found {len(all_files)} demos to process.")
 

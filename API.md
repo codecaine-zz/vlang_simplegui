@@ -285,6 +285,11 @@ If your application only needs a single control of a specific type (or you do no
 - `win.radio_group(items []string, selected string) &SimpleWindow`
 - `win.toggle_switch(label string, checked bool) &SimpleWindow`
 - `win.search_field(placeholder string) &SimpleWindow`
+- `win.combo_box(items []string, selected string) &SimpleWindow`
+- `win.rating(value int) &SimpleWindow`
+- `win.spinner(active bool) &SimpleWindow`
+- `win.path_control(path string) &SimpleWindow`
+- `win.token_field(value string) &SimpleWindow`
 
 ### `win.add_label(name string, text string) &SimpleWindow`
 
@@ -373,6 +378,46 @@ Adds a native horizontal toggle switch. Its active state can be got/set using `w
 ### `win.add_search_field(name string, placeholder string) &SimpleWindow`
 
 Adds a native magnifying glass search bar textfield.
+
+### `win.add_combo_box(name string, items []string, selected string) &SimpleWindow`
+
+Adds an editable combobox dropdown choice selector containing custom `items`. Users can both type freeform choices and choose from suggestions list. The input text can be get/set using `win.get_text()` or `win.set_text()`.
+
+### `win.add_level_indicator(name string, style int, min_val int, max_val int, value int) &SimpleWindow`
+
+Adds a versatile native macOS level and capacity gauge indicator.
+
+- **Styles**:
+  - `0`: Relevancy indicator
+  - `1`: Continuous capacity meter
+  - `2`: Discrete capacity meter (ticks block)
+  - `3`: Star Rating selector
+
+### `win.add_rating(name string, value int) &SimpleWindow`
+
+Convenient shorthand wrapper for `add_level_indicator` that creates an interactive 5-star rating control (min = 0, max = 5, style = 3). Users can click stars directly to change values, which triggers and registers change event callbacks.
+
+### `win.add_spinner(name string, active bool) &SimpleWindow`
+
+Adds an indeterminate activity loading spinner.
+
+- **Parameters**:
+  - `active`: If true, the spinner immediately visible and plays its spinning animation loop. If false, the animation stops and the control hides.
+- **Toggling**: You can turn the animation on or off programmatically using `win.set_bool(name, true/false)`.
+
+### `win.add_path_control(name string, path string) &SimpleWindow`
+
+Adds a modern breadcrumb path control.
+
+- **Features**: Displays folder tracks beautifully using standard macOS system icons. If `editable` is set to true (default), users can click on links or double-click to invoke standard file dialogues, or drag files direct into the field to populate it.
+- **Accessing**: Retrieve or update path text directly using the standard `win.get_text(name)` vs `win.set_text(name, path)`.
+
+### `win.add_token_field(name string, value string) &SimpleWindow`
+
+Adds a token bubble tags editor input field.
+
+- **Features**: Converts typical text phrases into tag chips or tag buttons when users press comma.
+- **Reading**: Standard `win.get_text()` returns a clean comma-separated sequence.
 
 ---
 

@@ -15,6 +15,11 @@ It is intended to make GUI programming feel more direct and less manual than the
 ## Features
 
 - Create named controls such as labels, text inputs, text areas, buttons, checkboxes, and number fields
+- **NSComboBox**: Rich editable dropdown combo box combining a text field with popup select options (freeform typing and suggestions)
+- **NSLevelIndicator / Rating**: Beautiful interactive 5-star rating systems and discrete/continuous capacity, level, and value indicators
+- **NSTokenField / Tags Entry**: Standard bubble tags & chips entry input field separated by delimiter (comma etc.)
+- **NSPathControl**: High-fidelity macOS native breadcrumb item displaying folders and file system links (drag/drop and editable)
+- **Activity Loading Spinner**: Native spinning wheel loader for background tasks and asynchronous operations
 - Set and read values by control name
 - Support multiple controls of the same kind using distinct names
 - Attach simple event handlers for clicks and value changes
@@ -296,6 +301,10 @@ The following native macOS windows were captured dynamically by building and run
   ![All Controls Demo](screenshots/all_controls_demo.png)
 - **Hierarchical Tree View**: `v run demos/tree_view_demo.v`
   ![Tree View Demo](screenshots/tree_view_demo.png)
+- **Interactive Rich Level Indicators & ComboBox**: `v run demos/modern_widgets_demo.v`
+  ![Rich Widgets Demo](screenshots/modern_widgets_demo.png)
+- **Advanced macOS Rich Controls Showcase**: `v run demos/rich_widgets_demo.v`
+  ![Advanced Controls Suite](screenshots/rich_widgets_demo.png)
 
 ### Built-in Interactive Utilities
 

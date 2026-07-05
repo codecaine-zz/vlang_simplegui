@@ -132,6 +132,11 @@ fn C.window_add_segmented_control_custom(&WindowInfo, &u8, &&u8, int, &u8) voidp
 fn C.window_add_radio_group_control(&WindowInfo, &u8, &&u8, int, &u8) voidptr
 fn C.window_add_switch_control(&WindowInfo, &u8, &u8, int) voidptr
 fn C.window_add_search_field_control(&WindowInfo, &u8, &u8) voidptr
+fn C.window_add_combo_box_control(&WindowInfo, &u8, &&u8, int, &u8) voidptr
+fn C.window_add_level_indicator_control(&WindowInfo, &u8, int, int, int, int) voidptr
+fn C.window_add_spinner_control(&WindowInfo, &u8, int) voidptr
+fn C.window_add_path_control(&WindowInfo, &u8, &u8) voidptr
+fn C.window_add_token_field_control(&WindowInfo, &u8, &u8) voidptr
 
 // Window constraints and behavior options
 fn C.window_set_min_size(&WindowInfo, int, int)
@@ -788,6 +793,105 @@ pub fn (win &SimpleWindow) add_search_field(name string, placeholder string) &Si
 	return win
 }
 
+pub fn (win &SimpleWindow) add_combo_box(name string, items []string, selected string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('combobox')
+	}
+	if win.debug_mode {
+		println('[simplegui DEBUG] Created Control: "${real_name}" (Type: "combobox", Selected: "${selected}")')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.upsert_control(real_name, 'combobox', selected, selected, false, 0)
+	}
+	if win.window_info != unsafe { nil } {
+		mut c_items := []&u8{}
+		for item in items {
+			c_items << item.str
+		}
+		C.window_add_combo_box_control(win.window_info, real_name.str, c_items.data, items.len, selected.str)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) add_level_indicator(name string, style int, min_val int, max_val int, value int) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('levelindicator')
+	}
+	if win.debug_mode {
+		println('[simplegui DEBUG] Created Control: "${real_name}" (Type: "levelindicator", Style: ${style}, Min: ${min_val}, Max: ${max_val}, Value: ${value})')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.upsert_control(real_name, 'levelindicator', '', value.str(), false, value)
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_level_indicator_control(win.window_info, real_name.str, style, min_val, max_val, value)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) add_rating(name string, value int) &SimpleWindow {
+	return win.add_level_indicator(name, 3, 0, 5, value)
+}
+
+pub fn (win &SimpleWindow) add_spinner(name string, active bool) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('spinner')
+	}
+	if win.debug_mode {
+		println('[simplegui DEBUG] Created Control: "${real_name}" (Type: "spinner", Active: ${active})')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.upsert_control(real_name, 'spinner', '', if active { 'true' } else { 'false' }, active, 0)
+	}
+	if win.window_info != unsafe { nil } {
+		act_val := if active { 1 } else { 0 }
+		C.window_add_spinner_control(win.window_info, real_name.str, act_val)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) add_path_control(name string, path string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('pathcontrol')
+	}
+	if win.debug_mode {
+		println('[simplegui DEBUG] Created Control: "${real_name}" (Type: "pathcontrol", Path: "${path}")')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.upsert_control(real_name, 'pathcontrol', '', path, false, 0)
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_path_control(win.window_info, real_name.str, path.str)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) add_token_field(name string, value string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('tokenfield')
+	}
+	if win.debug_mode {
+		println('[simplegui DEBUG] Created Control: "${real_name}" (Type: "tokenfield", Value: "${value}")')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.upsert_control(real_name, 'tokenfield', '', value, false, 0)
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_token_field_control(win.window_info, real_name.str, value.str)
+	}
+	return win
+}
+
 pub fn (win &SimpleWindow) configure(callback fn (mut cfg WindowConfig)) &SimpleWindow {
 	mut cfg := WindowConfig{
 		title:             win.title
@@ -1174,6 +1278,31 @@ pub fn (win &SimpleWindow) search_field(placeholder string) &SimpleWindow {
 	return win
 }
 
+pub fn (win &SimpleWindow) combo_box(items []string, selected string) &SimpleWindow {
+	win.add_combo_box('default_combobox', items, selected)
+	return win
+}
+
+pub fn (win &SimpleWindow) rating(value int) &SimpleWindow {
+	win.add_rating('default_rating', value)
+	return win
+}
+
+pub fn (win &SimpleWindow) spinner(active bool) &SimpleWindow {
+	win.add_spinner('default_spinner', active)
+	return win
+}
+
+pub fn (win &SimpleWindow) path_control(path string) &SimpleWindow {
+	win.add_path_control('default_pathcontrol', path)
+	return win
+}
+
+pub fn (win &SimpleWindow) token_field(value string) &SimpleWindow {
+	win.add_token_field('default_tokenfield', value)
+	return win
+}
+
 pub fn (win &SimpleWindow) set_responsive_layout(enabled bool) &SimpleWindow {
 	unsafe {
 		mut w := &SimpleWindow(win)
@@ -1288,12 +1417,12 @@ pub fn (win &SimpleWindow) clear(name string) &SimpleWindow {
 		return win
 	}
 	entry := win.controls[idx]
-	if entry.kind in ['checkbox', 'switch'] {
+	if entry.kind in ['checkbox', 'switch', 'spinner'] {
 		win.set_checked(name, false)
-	} else if entry.kind in ['number', 'slider', 'progress'] {
+	} else if entry.kind in ['number', 'slider', 'progress', 'levelindicator'] {
 		win.set_value_int(name, 0)
 	} else if entry.kind in ['input', 'password', 'textarea', 'date', 'mode', 'theme', 'listbox',
-		'color', 'search', 'dropdown', 'segmented', 'radiogroup'] {
+		'color', 'search', 'dropdown', 'segmented', 'radiogroup', 'combobox', 'pathcontrol', 'tokenfield'] {
 		win.set_text(name, '')
 	}
 	return win
@@ -1309,12 +1438,12 @@ pub fn (win &SimpleWindow) clear_all() &SimpleWindow {
 pub fn (win &SimpleWindow) reset_form() &SimpleWindow {
 	for i in 0 .. win.controls.len {
 		entry := win.controls[i]
-		if entry.kind in ['checkbox', 'switch'] {
+		if entry.kind in ['checkbox', 'switch', 'spinner'] {
 			win.set_checked(entry.name, entry.initial_checked)
-		} else if entry.kind in ['number', 'slider', 'progress'] {
+		} else if entry.kind in ['number', 'slider', 'progress', 'levelindicator'] {
 			win.set_value_int(entry.name, entry.initial_number)
 		} else if entry.kind in ['input', 'password', 'textarea', 'date', 'mode', 'theme', 'listbox',
-			'color', 'search', 'dropdown', 'segmented', 'radiogroup'] {
+			'color', 'search', 'dropdown', 'segmented', 'radiogroup', 'combobox', 'pathcontrol', 'tokenfield'] {
 			win.set_text(entry.name, entry.initial_value)
 		}
 	}
@@ -2862,10 +2991,10 @@ pub fn (win &SimpleWindow) is_control_dirty(name string) bool {
 	if entry.kind in ['label', 'button', 'image', 'html_view', 'progress'] {
 		return false
 	}
-	if entry.kind in ['checkbox', 'toggle'] {
+	if entry.kind in ['checkbox', 'toggle', 'spinner'] {
 		return entry.checked != entry.initial_checked
 	}
-	if entry.kind in ['number', 'slider'] {
+	if entry.kind in ['number', 'slider', 'levelindicator'] {
 		return entry.number != entry.initial_number
 	}
 	return entry.value != entry.initial_value
