@@ -279,7 +279,7 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
     NSButton *button = (NSButton *)view;
     [button setFont:[NSFont systemFontOfSize:13 weight:NSFontWeightMedium]];
     [button setControlSize:NSControlSizeRegular];
-    if (fontColor) {
+    if (fontColor && [button respondsToSelector:@selector(setContentTintColor:)]) {
       [button setContentTintColor:fontColor];
     }
     [button setBezelStyle:NSBezelStyleRounded];
@@ -303,7 +303,7 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
     NSSlider *slider = (NSSlider *)view;
     [slider setControlSize:NSControlSizeRegular];
     [slider setWantsLayer:YES];
-    if (fontColor) {
+    if (fontColor && [slider respondsToSelector:@selector(setContentTintColor:)]) {
       [slider setContentTintColor:fontColor];
     }
   } else if ([view isKindOfClass:[NSDatePicker class]]) {
@@ -1146,12 +1146,12 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   NSLog(@"applicationDidFinishLaunching");
   [self setupWindow];
   
-  // Auto-fit window to controls with a comfortable margin so forms are not clipped.
+  // Auto-fit the window to the actual content while keeping it within the visible screen.
   [self.mainStackView layoutSubtreeIfNeeded];
   NSSize fitSize = [self.mainStackView fittingSize];
   NSRect screenFrame = [[NSScreen mainScreen] visibleFrame];
-  CGFloat targetWidth = MAX(fitSize.width + 60, MIN(self.params.width, 520));
-  CGFloat targetHeight = MAX(fitSize.height + 40, MIN(self.params.height, 360));
+  CGFloat targetWidth = MAX(fitSize.width + 60.0, 320.0);
+  CGFloat targetHeight = MAX(fitSize.height + 48.0, 180.0);
   
   if (targetWidth > screenFrame.size.width * 0.9) {
     targetWidth = screenFrame.size.width * 0.9;
@@ -1159,9 +1159,6 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   if (targetHeight > screenFrame.size.height * 0.85) {
     targetHeight = screenFrame.size.height * 0.85;
   }
-  
-  targetWidth = MAX(targetWidth, 480);
-  targetHeight = MAX(targetHeight, 320);
   
   [self.window setContentSize:NSMakeSize(targetWidth, targetHeight)];
   [self.window center];
