@@ -114,11 +114,25 @@ fn C.window_show(&WindowInfo)
 // Thread Safety Runner
 fn C.window_run_on_main_thread(voidptr, voidptr)
 
-pub type StringEventCallback = fn (mut win &SimpleWindow, value string)
+// New general-purpose controls
+fn C.window_add_dropdown_control(&WindowInfo, &u8, &&u8, int, &u8) voidptr
+fn C.window_add_segmented_control_custom(&WindowInfo, &u8, &&u8, int, &u8) voidptr
+fn C.window_add_radio_group_control(&WindowInfo, &u8, &&u8, int, &u8) voidptr
+fn C.window_add_switch_control(&WindowInfo, &u8, &u8, int) voidptr
+fn C.window_add_search_field_control(&WindowInfo, &u8, &u8) voidptr
 
-pub type VoidEventCallback = fn (mut win &SimpleWindow)
+// Window constraints and behavior options
+fn C.window_set_min_size(&WindowInfo, int, int)
+fn C.window_set_max_size(&WindowInfo, int, int)
+fn C.window_set_resizable(&WindowInfo, int)
+fn C.window_set_minimizable(&WindowInfo, int)
+fn C.window_set_maximizable(&WindowInfo, int)
 
-pub type FileDropCallback = fn (mut win &SimpleWindow, files []string)
+pub type StringEventCallback = fn (mut win SimpleWindow, value string)
+
+pub type VoidEventCallback = fn (mut win SimpleWindow)
+
+pub type FileDropCallback = fn (mut win SimpleWindow, files []string)
 
 pub struct WindowParams {
 	title             string
@@ -157,6 +171,13 @@ mut:
 	default_button    string
 	debug_mode        bool
 	last_control      string
+	min_width         int
+	min_height        int
+	max_width         int
+	max_height        int
+	resizable         bool = true
+	minimizable       bool = true
+	maximizable       bool = true
 }
 
 struct ControlEntry {
@@ -195,6 +216,9 @@ pub fn new_simple_window(title string, width int, height int) &SimpleWindow {
 		height:            height
 		title:             title
 		responsive_layout: true
+		resizable:         true
+		minimizable:       true
+		maximizable:       true
 	}
 	win.placeholders = map[string]string{}
 	win.errors = map[string]string{}
@@ -585,6 +609,127 @@ pub fn (win &SimpleWindow) add_progress_indicator(name string, value int) &Simpl
 	return win
 }
 
+pub fn (win &SimpleWindow) add_dropdown(name string, items []string, selected string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('dropdown')
+	}
+	if win.debug_mode {
+		println('[simplegui DEBUG] Created Control: "${real_name}" (Type: "dropdown", Selected: "${selected}")')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.upsert_control(real_name, 'dropdown', selected, selected, false, 0)
+	}
+	if win.window_info != unsafe { nil } {
+		mut c_items := []&u8{}
+		for item in items {
+			c_items << item.str
+		}
+		C.window_add_dropdown_control(win.window_info, real_name.str, c_items.data, items.len,
+			selected.str)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) add_segmented_control(name string, items []string, selected string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('segmented')
+	}
+	if win.debug_mode {
+		println('[simplegui DEBUG] Created Control: "${real_name}" (Type: "segmented", Selected: "${selected}")')
+	}
+	mut sel_idx := -1
+	for idx, val in items {
+		if val == selected {
+			sel_idx = idx
+			break
+		}
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.upsert_control(real_name, 'segmented', selected, selected, false, sel_idx)
+	}
+	if win.window_info != unsafe { nil } {
+		mut c_items := []&u8{}
+		for item in items {
+			c_items << item.str
+		}
+		C.window_add_segmented_control_custom(win.window_info, real_name.str, c_items.data,
+			items.len, selected.str)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) add_radio_group(name string, items []string, selected string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('radiogroup')
+	}
+	if win.debug_mode {
+		println('[simplegui DEBUG] Created Control: "${real_name}" (Type: "radiogroup", Selected: "${selected}")')
+	}
+	mut sel_idx := -1
+	for idx, val in items {
+		if val == selected {
+			sel_idx = idx
+			break
+		}
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.upsert_control(real_name, 'radiogroup', selected, selected, false, sel_idx)
+	}
+	if win.window_info != unsafe { nil } {
+		mut c_items := []&u8{}
+		for item in items {
+			c_items << item.str
+		}
+		C.window_add_radio_group_control(win.window_info, real_name.str, c_items.data,
+			items.len, selected.str)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) add_switch(name string, label string, checked bool) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('switch')
+	}
+	if win.debug_mode {
+		println('[simplegui DEBUG] Created Control: "${real_name}" (Type: "switch", Label: "${label}", Checked: ${checked})')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.upsert_control(real_name, 'switch', label, '', checked, 0)
+	}
+	if win.window_info != unsafe { nil } {
+		checked_val := if checked { 1 } else { 0 }
+		C.window_add_switch_control(win.window_info, real_name.str, label.str, checked_val)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) add_search_field(name string, placeholder string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('search')
+	}
+	if win.debug_mode {
+		println('[simplegui DEBUG] Created Control: "${real_name}" (Type: "search", Placeholder: "${placeholder}")')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.upsert_control(real_name, 'search', '', '', false, 0)
+		w.set_placeholder(real_name, placeholder)
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_search_field_control(win.window_info, real_name.str, placeholder.str)
+	}
+	return win
+}
+
 // High-level helpers for common beginner-friendly form building
 pub fn (win &SimpleWindow) add_form_field(label string, name string, value string) &SimpleWindow {
 	mut real_name := name
@@ -876,6 +1021,31 @@ pub fn (win &SimpleWindow) set_button(title string) &SimpleWindow {
 	return win
 }
 
+pub fn (win &SimpleWindow) dropdown(items []string, selected string) &SimpleWindow {
+	win.add_dropdown('default_dropdown', items, selected)
+	return win
+}
+
+pub fn (win &SimpleWindow) segmented(items []string, selected string) &SimpleWindow {
+	win.add_segmented_control('default_segmented', items, selected)
+	return win
+}
+
+pub fn (win &SimpleWindow) radio_group(items []string, selected string) &SimpleWindow {
+	win.add_radio_group('default_radiogroup', items, selected)
+	return win
+}
+
+pub fn (win &SimpleWindow) toggle_switch(label string, checked bool) &SimpleWindow {
+	win.add_switch('default_switch', label, checked)
+	return win
+}
+
+pub fn (win &SimpleWindow) search_field(placeholder string) &SimpleWindow {
+	win.add_search_field('default_search', placeholder)
+	return win
+}
+
 pub fn (win &SimpleWindow) set_responsive_layout(enabled bool) &SimpleWindow {
 	unsafe {
 		mut w := &SimpleWindow(win)
@@ -990,11 +1160,12 @@ pub fn (win &SimpleWindow) clear(name string) &SimpleWindow {
 		return win
 	}
 	entry := win.controls[idx]
-	if entry.kind == 'checkbox' {
+	if entry.kind in ['checkbox', 'switch'] {
 		win.set_checked(name, false)
 	} else if entry.kind in ['number', 'slider', 'progress'] {
 		win.set_value_int(name, 0)
-	} else if entry.kind in ['input', 'password', 'textarea', 'date', 'mode', 'theme', 'listbox', 'color'] {
+	} else if entry.kind in ['input', 'password', 'textarea', 'date', 'mode', 'theme', 'listbox',
+		'color', 'search', 'dropdown', 'segmented', 'radiogroup'] {
 		win.set_text(name, '')
 	}
 	return win
@@ -1010,11 +1181,12 @@ pub fn (win &SimpleWindow) clear_all() &SimpleWindow {
 pub fn (win &SimpleWindow) reset_form() &SimpleWindow {
 	for i in 0 .. win.controls.len {
 		entry := win.controls[i]
-		if entry.kind == 'checkbox' {
+		if entry.kind in ['checkbox', 'switch'] {
 			win.set_checked(entry.name, entry.initial_checked)
 		} else if entry.kind in ['number', 'slider', 'progress'] {
 			win.set_value_int(entry.name, entry.initial_number)
-		} else if entry.kind in ['input', 'password', 'textarea', 'date', 'mode', 'theme', 'listbox', 'color'] {
+		} else if entry.kind in ['input', 'password', 'textarea', 'date', 'mode', 'theme', 'listbox',
+			'color', 'search', 'dropdown', 'segmented', 'radiogroup'] {
 			win.set_text(entry.name, entry.initial_value)
 		}
 	}
@@ -1192,6 +1364,75 @@ pub fn (win &SimpleWindow) get_always_on_top() bool {
 		return C.window_get_always_on_top(win.window_info) == 1
 	}
 	return win.always_on_top
+}
+
+pub fn (win &SimpleWindow) set_min_size(width int, height int) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.min_width = width
+		w.min_height = height
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_set_min_size(win.window_info, width, height)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) set_max_size(width int, height int) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.max_width = width
+		w.max_height = height
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_set_max_size(win.window_info, width, height)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) set_resizable(enabled bool) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.resizable = enabled
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_set_resizable(win.window_info, if enabled { 1 } else { 0 })
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) set_minimizable(enabled bool) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.minimizable = enabled
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_set_minimizable(win.window_info, if enabled { 1 } else { 0 })
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) set_maximizable(enabled bool) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.maximizable = enabled
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_set_maximizable(win.window_info, if enabled { 1 } else { 0 })
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) get_resizable() bool {
+	return win.resizable
+}
+
+pub fn (win &SimpleWindow) get_minimizable() bool {
+	return win.minimizable
+}
+
+pub fn (win &SimpleWindow) get_maximizable() bool {
+	return win.maximizable
 }
 
 pub fn (win &SimpleWindow) set_background_color(color string) &SimpleWindow {

@@ -150,7 +150,7 @@ fn test_qol_helpers_support_struct_binding_and_tables() {
 
 	win.enable_status_bar('')
 	win.show_window()
-	win.run_on_main_thread(fn (mut w &simplegui.SimpleWindow) {})
+	win.run_on_main_thread(fn (mut w simplegui.SimpleWindow) {})
 }
 
 fn test_ergonomic_helpers_are_available_and_resettable() {
@@ -173,10 +173,10 @@ fn test_ergonomic_helpers_are_available_and_resettable() {
 	win.set_error('name', 'Required')
 	win.set_tooltip('secret', 'Use a strong password')
 	win.set_default_button('run')
-	win.on_enter('name', fn (mut w &simplegui.SimpleWindow) {})
-	win.on_key('a', fn (mut w &simplegui.SimpleWindow, value string) {})
-	win.on_close(fn (mut w &simplegui.SimpleWindow) {})
-	win.run_after(5, fn (mut w &simplegui.SimpleWindow) {})
+	win.on_enter('name', fn (mut w simplegui.SimpleWindow) {})
+	win.on_key('a', fn (mut w simplegui.SimpleWindow, value string) {})
+	win.on_close(fn (mut w simplegui.SimpleWindow) {})
+	win.run_after(5, fn (mut w simplegui.SimpleWindow) {})
 	win.toast('Saved')
 	win.copy_to_clipboard('hello')
 	win.open_url('https://example.com')
@@ -210,7 +210,7 @@ fn test_high_level_form_helpers_are_available() {
 	win.add_form_textarea('Notes', 'notes', 'Hello')
 	win.add_toggle('ready', 'Ready', true)
 	win.add_number_field('age', 42)
-	win.add_action('run', 'Run', fn (mut w &simplegui.SimpleWindow) {})
+	win.add_action('run', 'Run', fn (mut w simplegui.SimpleWindow) {})
 
 	assert win.has_control('heading_0') == true
 	assert win.has_control('name') == true
@@ -230,7 +230,7 @@ fn test_file_drop_events_are_forwarded_to_window_handlers() {
 	mut win := simplegui.SimpleWindow{}
 	mut state := &CallbackState{}
 
-	win.on_file_drop(fn [mut state] (mut w &simplegui.SimpleWindow, files []string) {
+	win.on_file_drop(fn [mut state] (mut w simplegui.SimpleWindow, files []string) {
 		state.called = true
 		assert files.len == 2
 		assert files[0] == '/tmp/a.txt'
@@ -241,32 +241,63 @@ fn test_file_drop_events_are_forwarded_to_window_handlers() {
 	assert state.called == true
 }
 
-fn on_test_change(mut win &simplegui.SimpleWindow, value string) {
+fn on_test_change(mut win simplegui.SimpleWindow, value string) {
 	println('test change: ${value}')
 }
 
-fn on_test_click(mut win &simplegui.SimpleWindow) {
+fn on_test_click(mut win simplegui.SimpleWindow) {
 	println('test click')
 }
 
 fn test_method_chaining() {
 	mut win := simplegui.new_simple_window('Test Window', 100, 100)
+
 	win.add_input('first', 'Ada')
 		.add_input('second', 'Lovelace')
 		.set_text('first', 'Grace')
 		.set_text('second', 'Hopper')
 		.add_vertical_spacer(10)
 		.add_separator()
-	
+
 	assert win.get_text('first') == 'Grace'
 	assert win.get_text('second') == 'Hopper'
 }
 
+fn test_new_control_helpers_and_window_constraints() {
+	mut win := simplegui.new_simple_window('Test Window', 100, 100)
+
+	win.dropdown(['Low', 'High'], 'High')
+		.segmented(['Simple', 'Advanced'], 'Advanced')
+		.radio_group(['Admin', 'User'], 'User')
+		.toggle_switch('Enable alerts', true)
+		.search_field('Search here')
+		.set_resizable(false)
+		.set_min_size(320, 240)
+		.set_max_size(800, 600)
+		.set_minimizable(false)
+		.set_maximizable(false)
+
+	assert win.has_control('default_dropdown') == true
+	assert win.get_text('default_dropdown') == 'High'
+	assert win.has_control('default_segmented') == true
+	assert win.get_value_int('default_segmented') == 1
+	assert win.has_control('default_radiogroup') == true
+	assert win.get_text('default_radiogroup') == 'User'
+	assert win.has_control('default_switch') == true
+	assert win.get_bool('default_switch') == true
+	assert win.has_control('default_search') == true
+	assert win.get_text('default_search') == ''
+	assert win.get_resizable() == false
+	assert win.get_minimizable() == false
+	assert win.get_maximizable() == false
+}
+
 fn test_auto_naming() {
 	mut win := simplegui.new_simple_window('Test Window', 100, 100)
+
 	win.add_label('', 'Hello')
 		.add_input('', 'World')
-	
+
 	assert win.list_controls().len == 2
 	assert win.list_controls()[0].starts_with('auto_label_')
 	assert win.list_controls()[1].starts_with('auto_input_')
@@ -274,23 +305,24 @@ fn test_auto_naming() {
 
 fn test_consistent_nameless_helpers() {
 	mut win := simplegui.new_simple_window('Test Window', 100, 100)
+
 	win.input('My Input')
 		.textarea('My Textarea')
 		.checkbox('My Checkbox', true)
 		.number(123)
 		.button('My Button')
-	
+
 	assert win.get_input() == 'My Input'
 	assert win.get_textarea() == 'My Textarea'
 	assert win.get_checkbox() == true
 	assert win.get_number() == 123
-	
+
 	win.set_input('Updated Input')
 		.set_textarea('Updated Textarea')
 		.set_checkbox(false)
 		.set_number(456)
 		.set_button('Updated Button')
-	
+
 	assert win.get_input() == 'Updated Input'
 	assert win.get_textarea() == 'Updated Textarea'
 	assert win.get_checkbox() == false
@@ -301,9 +333,9 @@ fn test_layout_rows() {
 	mut win := simplegui.new_simple_window('Test Window', 100, 100)
 	win.add_fields_row({
 		'First Name': 'fn'
-		'Last Name': 'ln'
+		'Last Name':  'ln'
 	})
-	
+
 	assert win.has_control('fn') == true
 	assert win.has_control('ln') == true
 	assert win.has_control('fn_label') == true
@@ -320,15 +352,15 @@ fn test_form_generation_from_struct() {
 	mut win := simplegui.new_simple_window('Test Window', 100, 100)
 	p := TestProfile{
 		username: 'Grace'
-		score: 100
-		active: true
+		score:    100
+		active:   true
 	}
 	win.add_form_from_struct(p)
-	
+
 	assert win.has_control('username') == true
 	assert win.has_control('score') == true
 	assert win.has_control('active') == true
-	
+
 	assert win.get_text('username') == 'Grace'
 	assert win.get_value_int('score') == 100
 	assert win.get_checked('active') == true
@@ -338,7 +370,7 @@ fn test_debug_mode() {
 	mut win := simplegui.new_simple_window('Test Window', 100, 100)
 	win.set_debug_mode(true)
 	assert win.get_debug_mode() == true
-	
+
 	win.add_input('username', 'Ada')
 	win.dispatch_event('username', 'change', 'Grace')
 	assert win.get_status().contains('[DEBUG] change on "username"')
@@ -368,11 +400,11 @@ fn test_reset_form_does_not_clear_buttons_or_labels() {
 
 fn test_row_closure_layout() {
 	mut win := simplegui.new_simple_window('Test Window', 100, 100)
-	win.row('settings', fn (mut w &simplegui.SimpleWindow) {
+	win.row('settings', fn (mut w simplegui.SimpleWindow) {
 		w.add_input('db_host', 'localhost')
 		w.add_number('db_port', 3306)
 	})
-	
+
 	assert win.has_control('db_host') == true
 	assert win.has_control('db_port') == true
 	assert win.get_text('db_host') == 'localhost'
@@ -381,6 +413,7 @@ fn test_row_closure_layout() {
 
 fn test_last_control_chaining_modifiers() {
 	mut win := simplegui.new_simple_window('Test Window', 100, 100)
+
 	win.add_input('username', 'Ada')
 		.width(200)
 		.height(40)
@@ -389,7 +422,7 @@ fn test_last_control_chaining_modifiers() {
 		.tooltip('Enter username')
 		.visible(true)
 		.enabled(true)
-	
+
 	assert win.get_control_width('username') == 200
 	assert win.get_control_height('username') == 40
 	assert win.get_control_font_size('username') == 14
@@ -400,7 +433,7 @@ fn test_last_control_chaining_modifiers() {
 fn test_theme_presets() {
 	mut win := simplegui.new_simple_window('Test Window', 100, 100)
 	win.set_theme('dracula')
-	
+
 	assert win.get_background_color() == '#282a36'
 	assert win.get_font_color() == '#f8f8f2'
 }
@@ -408,11 +441,11 @@ fn test_theme_presets() {
 fn test_validation_clear_errors() {
 	mut win := simplegui.new_simple_window('Test Window', 100, 100)
 	win.add_input('username', 'Ada')
-	
+
 	win.set_error('username', 'Required')
 	// Check that it tracks the error internally
 	assert win.get_error('username') == 'Required'
-	
+
 	win.clear_errors()
 	assert win.get_error('username') == ''
 }
@@ -422,28 +455,28 @@ fn test_dirty_state_tracking() {
 	win.add_input('username', 'Ada')
 	win.add_checkbox('agree', 'Agree to terms', false)
 	win.add_number('age', 25)
-	
+
 	// Not dirty initially
 	assert win.is_dirty() == false
 	assert win.is_control_dirty('username') == false
 	assert win.is_control_dirty('agree') == false
 	assert win.is_control_dirty('age') == false
-	
+
 	// Modify a control value
 	win.set_text('username', 'Grace')
 	assert win.is_control_dirty('username') == true
 	assert win.is_dirty() == true
-	
+
 	// Commit changes sets new baseline
 	win.commit_changes()
 	assert win.is_control_dirty('username') == false
 	assert win.is_dirty() == false
-	
+
 	// Modify checkbox
 	win.set_checked('agree', true)
 	assert win.is_control_dirty('agree') == true
 	assert win.is_dirty() == true
-	
+
 	// Reset to initial (which was committed)
 	win.set_checked('agree', false)
 	assert win.is_control_dirty('agree') == false
@@ -467,20 +500,20 @@ mut:
 fn test_fluent_event_chaining() {
 	mut win := simplegui.new_simple_window('Test Window', 100, 100)
 	mut state := &EventChainState{}
-	
+
 	win.add_button('save', 'Save')
-		.onclick(fn [mut state] (mut w &simplegui.SimpleWindow) {
+		.onclick(fn [mut state] (mut w simplegui.SimpleWindow) {
 			state.clicked = true
 		})
-	
+
 	win.add_input('name', '')
-		.onchange(fn [mut state] (mut w &simplegui.SimpleWindow, val string) {
+		.onchange(fn [mut state] (mut w simplegui.SimpleWindow, val string) {
 			state.changed_val = val
 		})
 
 	win.dispatch_event('save', 'click', '')
 	win.dispatch_event('name', 'change', 'Grace')
-	
+
 	assert state.clicked == true
 	assert state.changed_val == 'Grace'
 }
@@ -489,13 +522,13 @@ fn test_clear_error_individually() {
 	mut win := simplegui.new_simple_window('Test Window', 100, 100)
 	win.add_input('username', 'Ada')
 	win.add_input('email', 'ada@example.com')
-	
+
 	win.set_error('username', 'Name required')
 	win.set_error('email', 'Email invalid')
-	
+
 	assert win.get_error('username') == 'Name required'
 	assert win.get_error('email') == 'Email invalid'
-	
+
 	win.clear_error('username')
 	assert win.get_error('username') == ''
 	assert win.get_error('email') == 'Email invalid'
@@ -503,14 +536,13 @@ fn test_clear_error_individually() {
 
 fn test_group_layout_nesting() {
 	mut win := simplegui.new_simple_window('Test Window', 100, 100)
-	win.group('profile', 'Profile Details', fn (mut w &simplegui.SimpleWindow) {
+	win.group('profile', 'Profile Details', fn (mut w simplegui.SimpleWindow) {
 		w.add_input('first_name', 'Ada')
 		w.add_input('last_name', 'Lovelace')
 	})
-	
+
 	assert win.has_control('profile') == true
 	assert win.has_control('first_name') == true
 	assert win.has_control('last_name') == true
 	assert win.get('first_name') == 'Ada'
 }
-

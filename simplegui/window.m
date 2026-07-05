@@ -121,6 +121,13 @@ extern void vlang_dispatch_event(void *win_ptr, const char *name, const char *ev
 - (NSView *)makeDatePickerWithName:(NSString *)name date:(NSString *)dateString;
 - (NSView *)makeSegmentedControlWithName:(NSString *)name selected:(NSString *)selected;
 - (NSView *)makeProgressIndicatorWithName:(NSString *)name value:(int)value;
+- (NSView *)makeDropdownWithName:(NSString *)name items:(NSArray<NSString *> *)items selected:(NSString *)selected;
+- (NSView *)makeSegmentedControlWithName:(NSString *)name items:(NSArray<NSString *> *)items selected:(NSString *)selected;
+- (NSView *)makeRadioGroupWithName:(NSString *)name items:(NSArray<NSString *> *)items selected:(NSString *)selected;
+- (NSView *)makeSwitchWithName:(NSString *)name label:(NSString *)label checked:(BOOL)checked;
+- (NSView *)makeSearchFieldWithName:(NSString *)name placeholder:(NSString *)placeholder;
+- (void)handleRadioChanged:(id)sender;
+- (void)handleSwitchChanged:(id)sender;
 - (void)setupMenuBar;
 - (NSMenu *)findOrCreateMenuWithName:(NSString *)menuName;
 - (void)handleMenuItemClicked:(id)sender;
@@ -857,6 +864,155 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   self.controlsByName[[name lowercaseString]] = progress;
   [self addControlToLayout:progress];
   return progress;
+}
+
+- (NSView *)makeDropdownWithName:(NSString *)name items:(NSArray<NSString *> *)items selected:(NSString *)selected {
+  NSPopUpButton *popup = [[NSPopUpButton alloc] initWithFrame:NSZeroRect pullsDown:NO];
+  for (NSString *item in items) {
+    [popup addItemWithTitle:item];
+  }
+  [popup selectItemWithTitle:selected];
+  [popup setTarget:self];
+  [popup setAction:@selector(handlePopUpChanged:)];
+  [self makeStretchableView:popup minimumWidth:180];
+  [popup setWantsLayer:YES];
+  
+  if (self.currentFontColor || self.currentBackgroundColor) {
+    applyStyleToView(popup, self.currentBackgroundColor, self.currentFontColor);
+  }
+  
+  self.controlsByName[[name lowercaseString]] = popup;
+  [self addControlToLayout:popup];
+  return popup;
+}
+
+- (NSView *)makeSegmentedControlWithName:(NSString *)name items:(NSArray<NSString *> *)items selected:(NSString *)selected {
+  NSSegmentedControl *seg = [[NSSegmentedControl alloc] initWithFrame:NSZeroRect];
+  [seg setSegmentCount:items.count];
+  for (NSInteger i = 0; i < items.count; i++) {
+    [seg setLabel:items[i] forSegment:i];
+  }
+  [seg setSelectedSegment:-1];
+  for (NSInteger i = 0; i < items.count; i++) {
+    if ([items[i] isEqualToString:selected]) {
+      [seg setSelectedSegment:i];
+      break;
+    }
+  }
+  [seg setTarget:self];
+  [seg setAction:@selector(handleSegmentedChanged:)];
+  [self makeStretchableView:seg minimumWidth:220];
+  [seg setWantsLayer:YES];
+  
+  if (self.currentFontColor) {
+    applyStyleToView(seg, nil, self.currentFontColor);
+  }
+  
+  self.controlsByName[[name lowercaseString]] = seg;
+  [self addControlToLayout:seg];
+  return seg;
+}
+
+- (NSView *)makeRadioGroupWithName:(NSString *)name items:(NSArray<NSString *> *)items selected:(NSString *)selected {
+  NSStackView *radioStack = [[NSStackView alloc] init];
+  [radioStack setOrientation:NSUserInterfaceLayoutOrientationVertical];
+  [radioStack setAlignment:NSLayoutAttributeLeading];
+  [radioStack setSpacing:6.0];
+  [radioStack setWantsLayer:YES];
+  [radioStack setTranslatesAutoresizingMaskIntoConstraints:NO];
+  
+  for (NSInteger i = 0; i < items.count; i++) {
+    NSButton *radio = [NSButton radioButtonWithTitle:items[i] target:self action:@selector(handleRadioChanged:)];
+    if ([items[i] isEqualToString:selected]) {
+      [radio setState:NSControlStateValueOn];
+    } else {
+      [radio setState:NSControlStateValueOff];
+    }
+    [radio setIdentifier:[NSString stringWithFormat:@"%@_radio_%ld", name, (long)i]];
+    if (self.currentFontColor) {
+      applyStyleToView(radio, nil, self.currentFontColor);
+    }
+    [radioStack addArrangedSubview:radio];
+  }
+  
+  self.controlsByName[[name lowercaseString]] = radioStack;
+  [self addControlToLayout:radioStack];
+  return radioStack;
+}
+
+- (void)handleRadioChanged:(id)sender {
+  NSButton *clickedRadio = (NSButton *)sender;
+  NSStackView *radioStack = (NSStackView *)[clickedRadio superview];
+  if ([radioStack isKindOfClass:[NSStackView class]]) {
+    for (NSView *subview in [radioStack arrangedSubviews]) {
+      if ([subview isKindOfClass:[NSButton class]]) {
+        NSButton *btn = (NSButton *)subview;
+        if (btn != clickedRadio) {
+          [btn setState:NSControlStateValueOff];
+        } else {
+          [btn setState:NSControlStateValueOn];
+        }
+      }
+    }
+    NSString *name = [self nameForControl:radioStack];
+    if (name && self.win_ptr) {
+      NSString *choice = [clickedRadio title];
+      vlang_dispatch_event(self.win_ptr, [name UTF8String], "change", [choice UTF8String]);
+    }
+  }
+}
+
+- (NSView *)makeSwitchWithName:(NSString *)name label:(NSString *)labelText checked:(BOOL)checked {
+  NSStackView *row = [[NSStackView alloc] init];
+  [row setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+  [row setAlignment:NSLayoutAttributeCenterY];
+  [row setSpacing:8.0];
+  [row setTranslatesAutoresizingMaskIntoConstraints:NO];
+
+  NSTextField *label = [NSTextField labelWithString:labelText];
+  [label setFont:[NSFont systemFontOfSize:13]];
+  if (self.currentFontColor) {
+    applyStyleToView(label, nil, self.currentFontColor);
+  }
+  
+  NSSwitch *sw = [[NSSwitch alloc] init];
+  [sw setState:checked ? NSControlStateValueOn : NSControlStateValueOff];
+  [sw setTarget:self];
+  [sw setAction:@selector(handleSwitchChanged:)];
+  
+  [row addArrangedSubview:label];
+  [row addArrangedSubview:sw];
+
+  self.controlsByName[[name lowercaseString]] = sw;
+  [self addControlToLayout:row];
+  return sw;
+}
+
+- (void)handleSwitchChanged:(id)sender {
+  NSSwitch *sw = (NSSwitch *)sender;
+  int checked = (sw.state == NSControlStateValueOn) ? 1 : 0;
+  NSString *name = [self nameForControl:sw];
+  if (name && self.win_ptr) {
+    NSString *valStr = checked ? @"true" : @"false";
+    vlang_dispatch_event(self.win_ptr, [name UTF8String], "change", [valStr UTF8String]);
+  }
+}
+
+- (NSView *)makeSearchFieldWithName:(NSString *)name placeholder:(NSString *)placeholder {
+  NSSearchField *searchField = [[NSSearchField alloc] initWithFrame:NSZeroRect];
+  [[searchField cell] setPlaceholderString:placeholder];
+  [searchField setTarget:self];
+  [searchField setAction:@selector(handleInputChanged:)];
+  [self makeStretchableView:searchField minimumWidth:180];
+  [searchField setWantsLayer:YES];
+  
+  if (self.currentFontColor || self.currentBackgroundColor) {
+    applyStyleToView(searchField, self.currentBackgroundColor, self.currentFontColor);
+  }
+  
+  self.controlsByName[[name lowercaseString]] = searchField;
+  [self addControlToLayout:searchField];
+  return searchField;
 }
 
 - (void)handleInputChanged:(id)sender {
@@ -1808,6 +1964,20 @@ void window_set_control_text(void *control, const char *text) {
     }
   } else if ([view isKindOfClass:[NSProgressIndicator class]]) {
     [(NSProgressIndicator *)view setDoubleValue:[nsText doubleValue]];
+  } else if ([view isKindOfClass:[NSSwitch class]]) {
+    [(NSSwitch *)view setState:[nsText isEqualToString:@"true"] || [nsText isEqualToString:@"1"] ? NSControlStateValueOn : NSControlStateValueOff];
+  } else if ([view isKindOfClass:[NSStackView class]]) {
+    NSStackView *radioStack = (NSStackView *)view;
+    for (NSView *subview in [radioStack arrangedSubviews]) {
+      if ([subview isKindOfClass:[NSButton class]]) {
+        NSButton *btn = (NSButton *)subview;
+        if ([[btn title] isEqualToString:nsText]) {
+          [btn setState:NSControlStateValueOn];
+        } else {
+          [btn setState:NSControlStateValueOff];
+        }
+      }
+    }
   }
 }
 
@@ -1828,7 +1998,11 @@ char *window_get_control_text(void *control) {
   } else if ([view isKindOfClass:[NSTextView class]]) {
     result = [(NSTextView *)view string];
   } else if ([view isKindOfClass:[NSButton class]]) {
-    result = [(NSButton *)view title];
+    if ([view isKindOfClass:[NSSwitch class]]) {
+      result = [(NSSwitch *)view state] == NSControlStateValueOn ? @"true" : @"false";
+    } else {
+      result = [(NSButton *)view title];
+    }
   } else if ([view isKindOfClass:[NSSlider class]]) {
     result = [NSString stringWithFormat:@"%.0f", [(NSSlider *)view doubleValue]];
   } else if ([view isKindOfClass:[NSColorWell class]]) {
@@ -1864,6 +2038,19 @@ char *window_get_control_text(void *control) {
     if (items && selectedRow >= 0 && selectedRow < items.count) {
       result = items[selectedRow];
     }
+  } else if ([view isKindOfClass:[NSSwitch class]]) {
+    result = [(NSSwitch *)view state] == NSControlStateValueOn ? @"true" : @"false";
+  } else if ([view isKindOfClass:[NSStackView class]]) {
+    NSStackView *radioStack = (NSStackView *)view;
+    for (NSView *subview in [radioStack arrangedSubviews]) {
+      if ([subview isKindOfClass:[NSButton class]]) {
+        NSButton *btn = (NSButton *)subview;
+        if ([btn state] == NSControlStateValueOn) {
+          result = [btn title];
+          break;
+        }
+      }
+    }
   }
   const char *utf8 = [result UTF8String];
   return utf8 ? strdup(utf8) : strdup("");
@@ -1873,6 +2060,8 @@ void window_set_control_bool(void *control, int checked) {
   NSView *view = (NSView *)control;
   if ([view isKindOfClass:[NSButton class]]) {
     [(NSButton *)view setState:checked ? NSOnState : NSOffState];
+  } else if ([view isKindOfClass:[NSSwitch class]]) {
+    [(NSSwitch *)view setState:checked ? NSControlStateValueOn : NSControlStateValueOff];
   }
 }
 
@@ -1880,6 +2069,8 @@ int window_get_control_bool(void *control) {
   NSView *view = (NSView *)control;
   if ([view isKindOfClass:[NSButton class]]) {
     return [(NSButton *)view state] == NSOnState ? 1 : 0;
+  } else if ([view isKindOfClass:[NSSwitch class]]) {
+    return [(NSSwitch *)view state] == NSControlStateValueOn ? 1 : 0;
   }
   return 0;
 }
@@ -1894,6 +2085,20 @@ void window_set_control_int(void *control, int value) {
     [(NSSegmentedControl *)view setSelectedSegment:value];
   } else if ([view isKindOfClass:[NSProgressIndicator class]]) {
     [(NSProgressIndicator *)view setDoubleValue:(double)value];
+  } else if ([view isKindOfClass:[NSStackView class]]) {
+    NSStackView *radioStack = (NSStackView *)view;
+    NSInteger idx = 0;
+    for (NSView *subview in [radioStack arrangedSubviews]) {
+      if ([subview isKindOfClass:[NSButton class]]) {
+        NSButton *btn = (NSButton *)subview;
+        if (idx == value) {
+          [btn setState:NSControlStateValueOn];
+        } else {
+          [btn setState:NSControlStateValueOff];
+        }
+        idx++;
+      }
+    }
   }
 }
 
@@ -1907,6 +2112,19 @@ int window_get_control_int(void *control) {
     return (int)[(NSSegmentedControl *)view selectedSegment];
   } else if ([view isKindOfClass:[NSProgressIndicator class]]) {
     return (int)[(NSProgressIndicator *)view doubleValue];
+  } else if ([view isKindOfClass:[NSStackView class]]) {
+    NSStackView *radioStack = (NSStackView *)view;
+    NSInteger idx = 0;
+    for (NSView *subview in [radioStack arrangedSubviews]) {
+      if ([subview isKindOfClass:[NSButton class]]) {
+        NSButton *btn = (NSButton *)subview;
+        if ([btn state] == NSControlStateValueOn) {
+          return (int)idx;
+        }
+        idx++;
+      }
+    }
+    return -1;
   }
   return 0;
 }
@@ -2585,4 +2803,161 @@ void window_run_on_main_thread(void *callback_fn, void *context) {
   dispatch_async(dispatch_get_main_queue(), ^{
     cb(context);
   });
+}
+
+void *window_add_dropdown_control(main__WindowInfo *info, const char *name, const char **items, int items_count, const char *selected) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    NSMutableArray *arr = [NSMutableArray array];
+    for (int i = 0; i < items_count; i++) {
+      [arr addObject:nsstring(items[i])];
+    }
+    control = [delegate makeDropdownWithName:nsstring(name) items:arr selected:nsstring(selected)];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return (__bridge void *)control;
+}
+
+void *window_add_segmented_control_custom(main__WindowInfo *info, const char *name, const char **items, int items_count, const char *selected) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    NSMutableArray *arr = [NSMutableArray array];
+    for (int i = 0; i < items_count; i++) {
+      [arr addObject:nsstring(items[i])];
+    }
+    control = [delegate makeSegmentedControlWithName:nsstring(name) items:arr selected:nsstring(selected)];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return (__bridge void *)control;
+}
+
+void *window_add_radio_group_control(main__WindowInfo *info, const char *name, const char **items, int items_count, const char *selected) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    NSMutableArray *arr = [NSMutableArray array];
+    for (int i = 0; i < items_count; i++) {
+      [arr addObject:nsstring(items[i])];
+    }
+    control = [delegate makeRadioGroupWithName:nsstring(name) items:arr selected:nsstring(selected)];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return (__bridge void *)control;
+}
+
+void *window_add_switch_control(main__WindowInfo *info, const char *name, const char *label, int checked) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeSwitchWithName:nsstring(name) label:nsstring(label) checked:checked != 0];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return (__bridge void *)control;
+}
+
+void *window_add_search_field_control(main__WindowInfo *info, const char *name, const char *placeholder) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeSearchFieldWithName:nsstring(name) placeholder:nsstring(placeholder)];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return (__bridge void *)control;
+}
+
+void window_set_min_size(main__WindowInfo *info, int width, int height) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate.window setMinSize:NSMakeSize(width, height)];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+void window_set_max_size(main__WindowInfo *info, int width, int height) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate.window setMaxSize:NSMakeSize(width, height)];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+void window_set_resizable(main__WindowInfo *info, int enabled) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    NSWindowStyleMask mask = [delegate.window styleMask];
+    if (enabled) {
+      mask |= NSWindowStyleMaskResizable;
+    } else {
+      mask &= ~NSWindowStyleMaskResizable;
+    }
+    [delegate.window setStyleMask:mask];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+void window_set_minimizable(main__WindowInfo *info, int enabled) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    NSWindowStyleMask mask = [delegate.window styleMask];
+    if (enabled) {
+      mask |= NSWindowStyleMaskMiniaturizable;
+    } else {
+      mask &= ~NSWindowStyleMaskMiniaturizable;
+    }
+    [delegate.window setStyleMask:mask];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+void window_set_maximizable(main__WindowInfo *info, int enabled) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    NSButton *zoomButton = [delegate.window standardWindowButton:NSWindowZoomButton];
+    if (zoomButton) {
+      [zoomButton setEnabled:enabled];
+    }
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
 }

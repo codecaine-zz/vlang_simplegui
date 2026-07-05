@@ -105,6 +105,26 @@ Enables or disables responsive auto-layout so controls grow and shrink with the 
 
 Returns whether responsive auto-layout is currently enabled.
 
+### `win.set_min_size(width int, height int) &SimpleWindow`
+
+Sets the minimum allowed width and height limits for the window resize action.
+
+### `win.set_max_size(width int, height int) &SimpleWindow`
+
+Sets the maximum allowed width and height limits for the window resize action.
+
+### `win.set_resizable(enabled bool) &SimpleWindow`
+
+Enables or disables window resizability using the dragging border/corners.
+
+### `win.set_minimizable(enabled bool) &SimpleWindow`
+
+Enables or disables the native minimize window titlebar button.
+
+### `win.set_maximizable(enabled bool) &SimpleWindow`
+
+Enables or disables the native zoom/maximize window titlebar button.
+
 ### `win.run()`
 
 Launches the native NSApplication event loop and displays the centered window.
@@ -188,6 +208,11 @@ If your application only needs a single control of a specific type (or you do no
 - `win.set_number(value int) &SimpleWindow` / `win.get_number() int`
 - `win.button(title string) &SimpleWindow`
 - `win.set_button(title string) &SimpleWindow`
+- `win.dropdown(items []string, selected string) &SimpleWindow`
+- `win.segmented(items []string, selected string) &SimpleWindow`
+- `win.radio_group(items []string, selected string) &SimpleWindow`
+- `win.toggle_switch(label string, checked bool) &SimpleWindow`
+- `win.search_field(placeholder string) &SimpleWindow`
 
 ### `win.add_label(name string, text string) &SimpleWindow`
 
@@ -256,6 +281,26 @@ Adds a scrollable table list box control displaying the array items. Selection c
 ### `win.add_image(name string, file_path string) &SimpleWindow`
 
 Adds an image box displaying a local PNG or JPEG file. Custom widths/heights can resize it.
+
+### `win.add_dropdown(name string, items []string, selected string) &SimpleWindow`
+
+Adds a generic popup dropdown choice selector with custom `items`. The selected item can be got/set using `win.get_text()` or `win.set_text()`.
+
+### `win.add_segmented_control(name string, items []string, selected string) &SimpleWindow`
+
+Adds a generic segmented control choice selector containing custom `items`. Choice updates can be set/got via label strings (`win.get_text()`) or 0-indexed segment positions (`win.get_value_int()`).
+
+### `win.add_radio_group(name string, items []string, selected string) &SimpleWindow`
+
+Adds a vertical radio button group layout. Choice updates can be retrieved/set via label strings (`win.get_text()`) or 0-indexed positions (`win.get_value_int()`).
+
+### `win.add_switch(name string, label string, checked bool) &SimpleWindow`
+
+Adds a native horizontal toggle switch. Its active state can be got/set using `win.get_bool()` or `win.set_bool()`.
+
+### `win.add_search_field(name string, placeholder string) &SimpleWindow`
+
+Adds a native magnifying glass search bar textfield.
 
 ---
 

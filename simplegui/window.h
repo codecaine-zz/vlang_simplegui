@@ -118,5 +118,19 @@ void window_show(main__WindowInfo *info);
 // Thread Safety Runner
 void window_run_on_main_thread(void *callback_fn, void *context);
 
+// New general-purpose controls
+void *window_add_dropdown_control(main__WindowInfo *info, const char *name, const char **items, int items_count, const char *selected);
+void *window_add_segmented_control_custom(main__WindowInfo *info, const char *name, const char **items, int items_count, const char *selected);
+void *window_add_radio_group_control(main__WindowInfo *info, const char *name, const char **items, int items_count, const char *selected);
+void *window_add_switch_control(main__WindowInfo *info, const char *name, const char *label, int checked);
+void *window_add_search_field_control(main__WindowInfo *info, const char *name, const char *placeholder);
+
+// Window constraints and behavior options
+void window_set_min_size(main__WindowInfo *info, int width, int height);
+void window_set_max_size(main__WindowInfo *info, int width, int height);
+void window_set_resizable(main__WindowInfo *info, int enabled);
+void window_set_minimizable(main__WindowInfo *info, int enabled);
+void window_set_maximizable(main__WindowInfo *info, int enabled);
+
 #endif
 
