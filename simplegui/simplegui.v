@@ -240,6 +240,8 @@ mut:
 	resizable         bool = true
 	minimizable       bool = true
 	maximizable       bool = true
+pub mut:
+	ws_client         voidptr = unsafe { nil }
 }
 
 struct ControlEntry {
