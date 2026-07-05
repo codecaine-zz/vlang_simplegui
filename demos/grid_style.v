@@ -31,14 +31,14 @@ fn main() {
 	gui.end_row()
 
 	// Event handlers
-	gui.on_click('test_conn', fn (mut win simplegui.SimpleWindow) {
+	gui.on_click('test_conn', fn (mut win &simplegui.SimpleWindow) {
 		host := win.get_text('host')
 		port := win.get_text('port')
 		win.set_status('Connecting to ' + host + ':' + port + '...')
 		println('Testing connection to ' + host + ':' + port)
 	})
 
-	gui.on_click('deploy', fn (mut win simplegui.SimpleWindow) {
+	gui.on_click('deploy', fn (mut win &simplegui.SimpleWindow) {
 		win.set_status('Deploying to server...')
 		println('Deploying!')
 	})

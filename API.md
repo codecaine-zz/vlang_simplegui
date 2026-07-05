@@ -19,7 +19,7 @@ fn main() {
     simplegui.new_simple_window('Starter', 640, 420)
         .add_input('name', 'Ada')
         .add_button('save', 'Save')
-        .on_click('save', fn (mut win simplegui.SimpleWindow) {
+        .on_click('save', fn (mut win &simplegui.SimpleWindow) {
             println("saved: ${win.get_text('name')}")
         })
         .run()
@@ -28,9 +28,9 @@ fn main() {
 
 ### Developer Helpers
 
-- `has_control(name string) bool` checks whether a named control exists.
-- `list_controls() []string` returns the registered control names.
-- `get_control_kind(name string) string` reports the control type.
+- `win.has_control(name string) bool` checks whether a named control exists.
+- `win.list_controls() []string` returns the registered control names.
+- `win.get_control_kind(name string) string` reports the control type.
 - Missing control access now raises a clear panic so mistakes surface early.
 
 ### `new_simple_window(title string, width int, height int) &SimpleWindow`
@@ -43,7 +43,7 @@ Initializes a new macOS window delegate.
   - `height`: Default initial height.
 - **Notes**: By default, the window automatically resizes its height/width to wrap snugly around the registered controls at startup.
 
-### `win.set_debug_mode(enabled bool)`
+### `win.set_debug_mode(enabled bool) &SimpleWindow`
 
 Enables or disables visual debug logging in stdout and prints events to the window status footer.
 
@@ -51,11 +51,11 @@ Enables or disables visual debug logging in stdout and prints events to the wind
 
 Returns whether debug mode is currently enabled.
 
-### `win.set_title(title string)`
+### `win.set_title(title string) &SimpleWindow`
 
 Updates the window title bar text.
 
-### `win.set_always_on_top(enabled bool)`
+### `win.set_always_on_top(enabled bool) &SimpleWindow`
 
 Keeps the window above other application windows while the app is running.
 
@@ -63,19 +63,35 @@ Keeps the window above other application windows while the app is running.
 
 Returns whether the window is currently configured to stay on top.
 
-### `win.set_background_color(hex_color string)`
+### `win.set_background_color(hex_color string) &SimpleWindow`
 
 Applies a background theme color to the window content view.
 
 - **Format**: `#RRGGBB` or `#RGB`.
 
-### `win.set_font_color(color string)`
+### `win.set_font_color(color string) &SimpleWindow`
 
 Sets the default font text color for labels and form controls.
 
 - **Values**: `'white'`, `'black'`, or hex format.
 
-### `win.set_responsive_layout(enabled bool)`
+### `win.set_padding(padding int) &SimpleWindow`
+
+Sets the window content margin padding.
+
+### `win.get_padding() int`
+
+Gets the current window content margin padding.
+
+### `win.set_spacing(spacing int) &SimpleWindow`
+
+Sets the vertical spacing between stacked controls.
+
+### `win.get_spacing() int`
+
+Gets the current vertical spacing between stacked controls.
+
+### `win.set_responsive_layout(enabled bool) &SimpleWindow`
 
 Enables or disables responsive auto-layout so controls grow and shrink with the window.
 
@@ -96,23 +112,35 @@ Launches the native NSApplication event loop and displays the centered window.
 
 ## 2. Control Layout & Grid Rows
 
-By default, all controls stack vertically. You can group multiple controls side-by-side on the same horizontal row using:
+By default, all controls stack vertically. You can group multiple controls side-by-side on the same horizontal row, or group them in layout containers:
 
-### `win.begin_row(name string)`
+### `win.begin_row(name string) &SimpleWindow`
 
 Starts a horizontal layout container. Any subsequent widgets added will align horizontally.
 
-### `win.end_row()`
+### `win.end_row() &SimpleWindow`
 
 Closes the active horizontal container. Subsequent controls return to vertical stacking.
 
-### `win.add_action_row(actions map[string]VoidEventCallback)`
+### `win.add_action_row(actions map[string]VoidEventCallback) &SimpleWindow`
 
 Lays out a set of buttons horizontally in a single call, binding each to its respective click event callback.
 
-### `win.add_fields_row(fields map[string]string)`
+### `win.add_fields_row(fields map[string]string) &SimpleWindow`
 
 Lays out a set of labeled input fields side-by-side. The map maps label text to input control name (e.g. `{"First Name": "fn"}`).
+
+### `win.add_group_box(name string, title string) &SimpleWindow`
+
+Adds a visual framed box container with an optional title label. Subsequent controls added will be nested inside this visual group.
+
+### `win.add_tabs(name string, titles []string) &SimpleWindow`
+
+Adds a tabbed container choice selector displaying the tab panes matching the provided `titles`.
+
+### `win.add_scroll_view(name string, height int) &SimpleWindow`
+
+Adds a scrollable layout viewport container with a fixed vertical height constraint.
 
 ---
 
@@ -124,93 +152,94 @@ Each control requires a `name` handle to get/set its value or listen to events. 
 
 For common forms, these helpers reduce boilerplate and keep the API friendly for beginners:
 
-- `win.add_form_field(label string, name string, value string)` creates a label plus input in a row.
-- `win.add_form_textarea(label string, name string, value string)` creates a label plus textarea in a row.
-- `win.add_toggle(name string, label string, checked bool)` creates a checkbox.
-- `win.add_number_field(name string, value int)` creates a numeric input.
-- `win.add_action(name string, title string, callback VoidEventCallback)` creates a button and wires its click handler.
-- `win.add_form_from_struct[T](default_data T)` automatically generates input/checkbox/numeric fields side-by-side and vertically from a V struct using compile-time reflection.
+- `win.add_form_field(label string, name string, value string) &SimpleWindow` creates a label plus input in a row.
+- `win.add_form_textarea(label string, name string, value string) &SimpleWindow` creates a label plus textarea in a row.
+- `win.add_toggle(name string, label string, checked bool) &SimpleWindow` creates a checkbox.
+- `win.add_number_field(name string, value int) &SimpleWindow` creates a numeric input.
+- `win.add_action(name string, title string, callback VoidEventCallback) &SimpleWindow` creates a button and wires its click handler.
+- `win.add_heading(title string) &SimpleWindow` inserts a large, prominent title label followed by a separator line.
+- `win.add_form_from_struct[T](default_data T) &SimpleWindow` automatically generates input/checkbox/numeric fields side-by-side and vertically from a V struct using compile-time reflection.
 
 ### Nameless default control helpers
 
 If your application only needs a single control of a specific type (or you do not want to manage control names), you can use nameless helpers which default to pre-configured keys (`'default_input'`, `'default_textarea'`, `'default_checkbox'`, `'default_number'`, `'default_button'`):
 
-- `win.input(value string)`
-- `win.set_input(value string)` / `win.get_input() string`
-- `win.textarea(text string)`
-- `win.set_textarea(text string)` / `win.get_textarea() string`
-- `win.checkbox(title string, checked bool)`
-- `win.set_checkbox(checked bool)` / `win.get_checkbox() bool`
-- `win.number(value int)`
-- `win.set_number(value int)` / `win.get_number() int`
-- `win.button(title string)`
-- `win.set_button(title string)`
+- `win.input(value string) &SimpleWindow`
+- `win.set_input(value string) &SimpleWindow` / `win.get_input() string`
+- `win.textarea(text string) &SimpleWindow`
+- `win.set_textarea(text string) &SimpleWindow` / `win.get_textarea() string`
+- `win.checkbox(title string, checked bool) &SimpleWindow`
+- `win.set_checkbox(checked bool) &SimpleWindow` / `win.get_checkbox() bool`
+- `win.number(value int) &SimpleWindow`
+- `win.set_number(value int) &SimpleWindow` / `win.get_number() int`
+- `win.button(title string) &SimpleWindow`
+- `win.set_button(title string) &SimpleWindow`
 
-### `win.add_label(name string, text string)`
+### `win.add_label(name string, text string) &SimpleWindow`
 
 Adds a read-only text description label.
 
-### `win.add_input(name string, value string)`
+### `win.add_input(name string, value string) &SimpleWindow`
 
 Adds a single-line text input field.
 
-### `win.add_password(name string, value string)`
+### `win.add_password(name string, value string) &SimpleWindow`
 
 Adds a secure password entry field.
 
-### `win.add_textarea(name string, value string)`
+### `win.add_textarea(name string, value string) &SimpleWindow`
 
 Adds a scrollable, multi-line rich text area.
 
-### `win.add_html_view(name string, html string)`
+### `win.add_html_view(name string, html string) &SimpleWindow`
 
 Adds a lightweight HTML preview panel using WebKit.
 
-### `win.add_drop_zone(name string, label string)`
+### `win.add_drop_zone(name string, label string) &SimpleWindow`
 
 Adds a drag-and-drop target for file paths and other dropped content.
 
-### `win.add_checkbox(name string, label string, checked bool)`
+### `win.add_checkbox(name string, label string, checked bool) &SimpleWindow`
 
 Adds a toggle checkbox.
 
-### `win.add_button(name string, title string)`
+### `win.add_button(name string, title string) &SimpleWindow`
 
 Adds a clickable push button.
 
-### `win.add_number(name string, value int)`
+### `win.add_number(name string, value int) &SimpleWindow`
 
 Adds a numeric input field bound to an increment/decrement stepper.
 
-### `win.add_slider(name string, value int)`
+### `win.add_slider(name string, value int) &SimpleWindow`
 
 Adds a horizontal slider control (range `0` to `100`).
 
-### `win.add_theme_menu(name string, selected string)`
+### `win.add_theme_menu(name string, selected string) &SimpleWindow`
 
 Adds a standard popup dropdown menu selection for active theme (options: `Light`, `Dark`, `System`).
 
-### `win.add_color_well(name string, color_hex string)`
+### `win.add_color_well(name string, color_hex string) &SimpleWindow`
 
 Adds a native macOS color well block. Clicking it launches the macOS Color Picker.
 
-### `win.add_date_picker(name string, date string)`
+### `win.add_date_picker(name string, date string) &SimpleWindow`
 
 Adds a calendar date picker input (input format: `yyyy-mm-dd`).
 
-### `win.add_mode_control(name string, selected string)`
+### `win.add_mode_control(name string, selected string) &SimpleWindow`
 
 Adds a segmented control choice selector (choices: `Simple`, `Advanced`, `Expert`).
 
-### `win.add_progress_indicator(name string, value int)`
+### `win.add_progress_indicator(name string, value int) &SimpleWindow`
 
 Adds a horizontal progress bar loader (range `0` to `100`).
 
-### `win.add_list_box(name string, items []string)`
+### `win.add_list_box(name string, items []string) &SimpleWindow`
 
 Adds a scrollable table list box control displaying the array items. Selection changes trigger change events.
 
-### `win.add_image(name string, file_path string)`
+### `win.add_image(name string, file_path string) &SimpleWindow`
 
 Adds an image box displaying a local PNG or JPEG file. Custom widths/heights can resize it.
 
@@ -220,27 +249,27 @@ Adds an image box displaying a local PNG or JPEG file. Custom widths/heights can
 
 Customize individual control dimensions and appearance by their registered name.
 
-### `win.set_control_width(name string, width int)`
+### `win.set_control_width(name string, width int) &SimpleWindow`
 
 Overwrites the control's Auto Layout width constraint.
 
-### `win.set_control_height(name string, height int)`
+### `win.set_control_height(name string, height int) &SimpleWindow`
 
 Overwrites the control's Auto Layout height constraint.
 
-### `win.set_control_font_size(name string, size int)`
+### `win.set_control_font_size(name string, size int) &SimpleWindow`
 
 Changes the control's font size (handles labels, text fields, textareas, and buttons).
 
-### `win.set_control_background_color(name string, hex_color string)`
+### `win.set_control_background_color(name string, hex_color string) &SimpleWindow`
 
 Sets a custom background color for the individual control.
 
-### `win.set_control_font_color(name string, hex_color string)`
+### `win.set_control_font_color(name string, hex_color string) &SimpleWindow`
 
 Sets a custom text font color for the individual control.
 
-### `win.set_control_visible(name string, visible bool)`
+### `win.set_control_visible(name string, visible bool) &SimpleWindow`
 
 Toggles whether the control is shown on screen.
 
@@ -250,7 +279,7 @@ Toggles whether the control is shown on screen.
 
 Checks if the control is currently visible.
 
-### `win.set_control_enabled(name string, enabled bool)`
+### `win.set_control_enabled(name string, enabled bool) &SimpleWindow`
 
 Enables/disables user interaction on the control. Disabled controls will render greyed out.
 
@@ -258,23 +287,23 @@ Enables/disables user interaction on the control. Disabled controls will render 
 
 Checks if the control is currently enabled.
 
-### `win.set_placeholder(name string, text string)`
+### `win.set_placeholder(name string, text string) &SimpleWindow`
 
 Sets placeholder text for text-based controls such as inputs and password fields.
 
-### `win.set_error(name string, text string)`
+### `win.set_error(name string, text string) &SimpleWindow`
 
 Applies validation/error feedback to a control and highlights it visually.
 
-### `win.set_tooltip(name string, text string)`
+### `win.set_tooltip(name string, text string) &SimpleWindow`
 
 Sets a hover tooltip for any control.
 
-### `win.set_default_button(name string)`
+### `win.set_default_button(name string) &SimpleWindow`
 
 Marks a button as the default Enter-key action for the window.
 
-### `win.set_html(name string, html string)`
+### `win.set_html(name string, html string) &SimpleWindow`
 
 Updates the content shown inside an HTML preview panel.
 
@@ -282,7 +311,7 @@ Updates the content shown inside an HTML preview panel.
 
 ## 5. Dialogs, Popups, & File Pickers
 
-### `win.alert(title string, message string)`
+### `win.alert(title string, message string) &SimpleWindow`
 
 Shows a native modal information alert dialog with an OK button.
 
@@ -308,13 +337,29 @@ Launches the native macOS file save panel, returning the target path (or empty i
 
 ---
 
-## 6. List Box & Image View Operations
+## 6. Utilities & System Actions
 
-### `win.update_list_items(name string, items []string)`
+### `win.toast(message string) &SimpleWindow`
+
+Shows a self-dismissing native overlay toast notification containing the message text.
+
+### `win.open_url(url string) &SimpleWindow`
+
+Opens a web URL in the user's default web browser.
+
+### `win.copy_to_clipboard(text string) &SimpleWindow`
+
+Copies the specified text to the macOS system clipboard.
+
+---
+
+## 7. List Box & Image View Operations
+
+### `win.update_list_items(name string, items []string) &SimpleWindow`
 
 Updates the entire set of rows displayed inside the list box. This is useful for search filters or dynamic updates.
 
-### `win.set_list_selected(name string, index int)`
+### `win.set_list_selected(name string, index int) &SimpleWindow`
 
 Sets the selected row index in the list box.
 
@@ -322,33 +367,37 @@ Sets the selected row index in the list box.
 
 Returns the 0-indexed selected row in the list box (or `-1` if no row is selected).
 
-### `win.set_image_path(name string, file_path string)`
+### `win.set_image_path(name string, file_path string) &SimpleWindow`
 
 Updates the active image shown in the specified image view control.
 
 ---
 
-## 7. Scheduled Timers
+## 8. Scheduled Timers & Delays
 
-### `win.set_interval(timer_name string, ms int, callback VoidEventCallback)`
+### `win.set_interval(timer_name string, ms int, callback VoidEventCallback) &SimpleWindow`
 
 Starts a recurring main-loop timer that triggers the callback function every `N` milliseconds.
 
 - **Timer Callbacks**: Attaches to `timer_name` trigger. Callback is executed on main V thread.
 
-### `win.stop_interval(timer_name string)`
+### `win.stop_interval(timer_name string) &SimpleWindow`
 
 Cancels and invalidates the active interval timer.
 
+### `win.run_after(ms int, callback VoidEventCallback) &SimpleWindow`
+
+Schedules a one-shot delay, executing the callback once after `ms` milliseconds have elapsed.
+
 ---
 
-## 8. Reading & Writing Values
+## 9. Reading & Writing Values
 
 ### `win.get_text(name string) string`
 
 Reads the string value of any text input, textarea, label, color well, popup, or date picker (including list boxes, returning the text of the selected row).
 
-### `win.set_text(name string, text string)`
+### `win.set_text(name string, text string) &SimpleWindow`
 
 Sets/updates the text content of any input, textarea, or label.
 
@@ -356,7 +405,7 @@ Sets/updates the text content of any input, textarea, or label.
 
 Gets the toggle state of a checkbox.
 
-### `win.set_checked(name string, checked bool)`
+### `win.set_checked(name string, checked bool) &SimpleWindow`
 
 Sets the toggle state of a checkbox.
 
@@ -364,7 +413,7 @@ Sets the toggle state of a checkbox.
 
 Gets the integer value of a slider, progress bar, list box selected index, or number/stepper input.
 
-### `win.set_value_int(name string, value int)`
+### `win.set_value_int(name string, value int) &SimpleWindow`
 
 Sets the integer value of a slider, progress bar, list box selected index, or number/stepper input.
 
@@ -372,116 +421,160 @@ Sets the integer value of a slider, progress bar, list box selected index, or nu
 
 Reads the current text value of the window status footer.
 
-### `win.set_status(text string)`
+### `win.set_status(text string) &SimpleWindow`
 
 Updates the text display of the window status footer.
 
+### `win.status(text string) &SimpleWindow`
+
+Alias for `set_status(text)`, updating the window status footer.
+
+### `win.clear(name string) &SimpleWindow`
+
+Clears the value of a specific named control. Text inputs and textareas are set to `""`, checkboxes to `false`, and numeric controls to `0`.
+
+### `win.clear_all() &SimpleWindow`
+
+Clears all input controls in the window.
+
+### `win.reset_form() &SimpleWindow`
+
+Resets all form input controls back to their initial/default values at registration time.
+
 ---
 
-## 9. Event Handling
+## 10. Event Handling
 
 Callbacks can be attached to any interactive control.
 
-### `win.on_click(name string, callback VoidEventCallback)`
+### `win.on_click(name string, callback VoidEventCallback) &SimpleWindow`
 
 Attaches an event handler for button click events.
 
-- **Callback Signature**: `fn (mut win SimpleWindow)`
+- **Callback Signature**: `fn (mut win &SimpleWindow)`
 
-### `win.on_change(name string, callback StringEventCallback)`
+### `win.on_change(name string, callback StringEventCallback) &SimpleWindow`
 
 Attaches an event handler for input changes (inputs, checkboxes, sliders, dropdowns, segmented controls, list boxes).
 
-- **Callback Signature**: `fn (mut win simplegui.SimpleWindow, value string)`
+- **Callback Signature**: `fn (mut win &simplegui.SimpleWindow, value string)`
 
-### `win.on_hover(name string, callback VoidEventCallback)`
+### `win.on_hover(name string, callback VoidEventCallback) &SimpleWindow`
 
 Attaches an event handler when the mouse pointer enters the bounding area of the control.
 
-### `win.on_hover_exit(name string, callback VoidEventCallback)`
+### `win.on_hover_exit(name string, callback VoidEventCallback) &SimpleWindow`
 
 Attaches an event handler when the mouse pointer exits the bounding area of the control.
 
-### `win.on_focus(name string, callback VoidEventCallback)`
+### `win.on_focus(name string, callback VoidEventCallback) &SimpleWindow`
 
 Attaches an event handler when a text field input control gains active focus.
 
-### `win.on_blur(name string, callback VoidEventCallback)`
+### `win.on_blur(name string, callback VoidEventCallback) &SimpleWindow`
 
 Attaches an event handler when a text field input control loses focus.
 
-### `win.on_resize(callback StringEventCallback)`
+### `win.on_enter(name string, callback VoidEventCallback) &SimpleWindow`
+
+Attaches an event handler triggered when the Enter/Return key is pressed inside a text input field.
+
+### `win.on_key(key string, callback StringEventCallback) &SimpleWindow`
+
+Attaches a global window-wide keyboard shortcut event listener. The callback value receives the key string.
+
+### `win.on_close(callback VoidEventCallback) &SimpleWindow`
+
+Attaches an event handler executed right before the window is closed and terminated.
+
+### `win.on_resize(callback StringEventCallback) &SimpleWindow`
 
 Attaches an event handler when the application window is resized by the user.
 
-- **Callback Signature**: `fn (mut win simplegui.SimpleWindow, new_size string)` (where `new_size` has format `"widthxheight"`, e.g. `"640x480"`)
+- **Callback Signature**: `fn (mut win &simplegui.SimpleWindow, new_size string)` (where `new_size` has format `"widthxheight"`, e.g. `"640x480"`)
 
-### `win.on_file_drop(callback FileDropCallback)`
+### `win.on_file_drop(callback FileDropCallback) &SimpleWindow`
 
 Attaches an event handler when files are dragged and dropped onto the window or onto a drop zone control.
 
-- **Callback Signature**: `fn (mut win simplegui.SimpleWindow, files []string)`
+- **Callback Signature**: `fn (mut win &simplegui.SimpleWindow, files []string)`
 
 ---
 
-## 10. Multi-Column Table / Data Grid
+## 11. Custom Application Menus
 
-### `win.add_table(name string, columns []string)`
+### `win.add_menu_item(menu_name string, item_title string, shortcut string, callback VoidEventCallback) &SimpleWindow`
+
+Adds a custom drop-down menu item under the main macOS application menu bar (e.g. under a custom menu tab like "Actions"). Binds the menu click action directly to the callback.
+
+---
+
+## 12. Multi-Column Table / Data Grid
+
+### `win.add_table(name string, columns []string) &SimpleWindow`
 
 Adds a scrollable multi-column table view widget with column headers.
 
-### `win.set_table_rows(name string, rows [][]string)`
+### `win.set_table_rows(name string, rows [][]string) &SimpleWindow`
 
 Updates the entire set of row cells displayed inside the table grid.
 
 ---
 
-## 11. Bulk Data Binding
+## 13. Bulk Data Binding
 
 ### `win.get_values() map[string]string`
 
 Serializes and returns a map containing all input control names matched to their current text values.
 
-### `win.set_values(values map[string]string)`
+### `win.set_values(values map[string]string) &SimpleWindow`
 
 Sets/updates multiple control text values from a name-value map.
 
-### `win.bind_to_struct[T](mut data T)`
+### `win.inspect_controls() string`
+
+Returns a comma-separated string containing the names of all currently registered controls.
+
+### `win.dump_values() map[string]string`
+
+Alias for `get_values()`, serializing all form inputs to a name-value string map.
+
+### `win.bind_to_struct[T](mut data T) &SimpleWindow`
 
 Queries all input control values and populates the matching field names on a mutable struct using compile-time reflection. Supports `string`, `int`, and `bool` fields.
 
-### `win.load_from_struct[T](data T)`
+### `win.load_from_struct[T](data T) &SimpleWindow`
 
 Populates GUI controls using matching field name values from the passed struct.
 
 ---
 
-## 12. Layout Spacers & Visual Separators
+## 14. Layout Spacers & Visual Separators
 
-### `win.add_vertical_spacer(height int)`
+### `win.add_vertical_spacer(height int) &SimpleWindow`
 
 Inserts an empty spacing box of the specified height in the layout stack.
 
-### `win.add_horizontal_spacer(width int)`
+### `win.add_horizontal_spacer(width int) &SimpleWindow`
 
 Inserts an empty spacing box of the specified width in horizontal layout rows.
 
-### `win.add_separator()`
+### `win.add_separator() &SimpleWindow`
 
 Draws a native horizontal visual line divider.
 
 ---
 
-## 13. System Status Tray Mode & Thread Safety
+## 15. System Status Tray Mode & Thread Safety
 
-### `win.enable_status_bar(icon_path string)`
+### `win.enable_status_bar(icon_path string) &SimpleWindow`
 
 Hides the main window and runs the application as a background macOS menu bar accessory with a dropdown status menu.
 
-### `win.show_window()`
+### `win.show_window() &SimpleWindow`
 
 Restores window visibility and brings the window to the front.
 
-### `win.run_on_main_thread(callback VoidEventCallback)`
+### `win.run_on_main_thread(callback VoidEventCallback) &SimpleWindow`
 
 Safely queues a UI update callback to execute on the main event thread, bridging background execution threads.

@@ -29,7 +29,7 @@ fn main() {
 	gui.set_control_height('img_view', 300)
 
 	// Callback when "Open Folder..." button is clicked
-	gui.on_click('btn_select', fn (mut win simplegui.SimpleWindow) {
+	gui.on_click('btn_select', fn (mut win &simplegui.SimpleWindow) {
 		selected := win.select_folder()
 		if selected.len == 0 {
 			win.set_status('Folder selection cancelled.')
@@ -65,7 +65,7 @@ fn main() {
 	})
 
 	// Callback when selection changes in the file list box
-	gui.on_change('file_list', fn (mut win simplegui.SimpleWindow, index string) {
+	gui.on_change('file_list', fn (mut win &simplegui.SimpleWindow, index string) {
 		folder := win.get_text('folder_state')
 		if folder.len == 0 {
 			return

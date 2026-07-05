@@ -15,15 +15,15 @@ fn main() {
 	mut gui := simplegui.new_simple_window('V QoL Features Demo', 500, 620)
 
 	// Add custom menu items
-	gui.add_menu_item('Tray Mode', 'Switch to Status Menu Bar', 's', fn (mut win simplegui.SimpleWindow) {
+	gui.add_menu_item('Tray Mode', 'Switch to Status Menu Bar', 's', fn (mut win &simplegui.SimpleWindow) {
 		win.alert('Status Bar Mode Enabled', 'The window will now hide. Look for the system tray menu in your top right macOS bar!')
 		win.enable_status_bar('') // pass empty for default title
 
 		// Add status bar specific items (these go to tray menu now)
-		win.add_menu_item('Tray', 'Restore Window', 'r', fn (mut w simplegui.SimpleWindow) {
+		win.add_menu_item('Tray', 'Restore Window', 'r', fn (mut w &simplegui.SimpleWindow) {
 			w.show_window()
 		})
-		win.add_menu_item('Tray', 'Quit App', 'q', fn (mut w simplegui.SimpleWindow) {
+		win.add_menu_item('Tray', 'Quit App', 'q', fn (mut w &simplegui.SimpleWindow) {
 			exit(0)
 		})
 	})
@@ -40,7 +40,7 @@ fn main() {
 	gui.set_control_enabled('drop_target', false)
 	gui.set_control_width('drop_target', 450)
 
-	gui.on_file_drop(fn (mut win simplegui.SimpleWindow, files []string) {
+	gui.on_file_drop(fn (mut win &simplegui.SimpleWindow, files []string) {
 		joined := files.join(', ')
 		win.set_text('drop_target', joined)
 		win.set_status('File dropped: ${files[0]}')
@@ -67,7 +67,7 @@ fn main() {
 	gui.add_button('load_btn', 'Load Default Struct')
 	gui.end_row()
 
-	gui.on_click('bind_btn', fn (mut win simplegui.SimpleWindow) {
+	gui.on_click('bind_btn', fn (mut win &simplegui.SimpleWindow) {
 		mut user := UserForm{}
 		win.bind_to_struct(mut user)
 		println('--- Struct State Dump ---')
@@ -78,7 +78,7 @@ fn main() {
 		win.alert('Struct Binding Output', 'Struct State Printed to Console!\n\nUsername: ${user.username}\nAge: ${user.age}')
 	})
 
-	gui.on_click('load_btn', fn (mut win simplegui.SimpleWindow) {
+	gui.on_click('load_btn', fn (mut win &simplegui.SimpleWindow) {
 		default_user := UserForm{
 			username:         'grace_hopper'
 			age:              85
@@ -112,7 +112,7 @@ fn main() {
 	gui.add_button('worker_btn', 'Start Async Worker Thread')
 	gui.end_row()
 
-	gui.on_click('worker_btn', fn (mut win simplegui.SimpleWindow) {
+	gui.on_click('worker_btn', fn (mut win &simplegui.SimpleWindow) {
 		win.set_control_enabled('worker_btn', false)
 		win.set_status('Running background calculations...')
 		go run_async_worker(mut win)
@@ -126,11 +126,11 @@ fn main() {
 	gui.run()
 }
 
-fn run_async_worker(mut win simplegui.SimpleWindow) {
+fn run_async_worker(mut win &simplegui.SimpleWindow) {
 	for _ in 1 .. 6 {
 		time.sleep(800 * time.millisecond)
 		// Safely dispatch table update & progress bar change to the main Cocoa thread
-		win.run_on_main_thread(fn (mut w simplegui.SimpleWindow) {
+		win.run_on_main_thread(fn (mut w &simplegui.SimpleWindow) {
 			val := w.get_value_int('progress') + 20
 			w.set_value_int('progress', val)
 

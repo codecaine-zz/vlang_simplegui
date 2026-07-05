@@ -39,11 +39,11 @@ fn main() {
     gui.run()
 }
 
-fn on_name_changed(mut win simplegui.SimpleWindow, value string) {
+fn on_name_changed(mut win &simplegui.SimpleWindow, value string) {
     println('name changed: ${value}')
 }
 
-fn on_run_clicked(mut win simplegui.SimpleWindow) {
+fn on_run_clicked(mut win &simplegui.SimpleWindow) {
     println('run clicked')
 }
 ```
@@ -59,7 +59,7 @@ fn main() {
     mut win := simplegui.new_simple_window('Starter', 640, 420)
     win.add_input('name', 'Ada')
     win.add_button('save', 'Save')
-    win.on_click('save', fn (mut win simplegui.SimpleWindow) {
+    win.on_click('save', fn (mut win &simplegui.SimpleWindow) {
         println("saved: ${win.get_text('name')}")
     })
     win.run()
@@ -77,7 +77,7 @@ win.add_form_field('City', 'city', 'London')
 win.add_form_textarea('Notes', 'notes', 'Hello')
 win.add_toggle('ready', 'Ready', true)
 win.add_number_field('age', 32)
-win.add_action('save', 'Save', fn (mut win simplegui.SimpleWindow) {
+win.add_action('save', 'Save', fn (mut win &simplegui.SimpleWindow) {
     println(win.get_values())
 })
 ```

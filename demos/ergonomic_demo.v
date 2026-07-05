@@ -52,38 +52,38 @@ fn main() {
 	win.set_status('Ready. Form generated automatically via struct reflection.')
 
 	// 7. Add enter key & close hooks
-	win.on_enter('name', fn (mut w simplegui.SimpleWindow) {
+	win.on_enter('name', fn (mut w &simplegui.SimpleWindow) {
 		w.set_status('Enter pressed in name field')
 	})
-	win.on_close(fn (mut w simplegui.SimpleWindow) {
+	win.on_close(fn (mut w &simplegui.SimpleWindow) {
 		println('Ergonomic demo window closed')
 	})
 
 	win.run()
 }
 
-fn on_save(mut win simplegui.SimpleWindow) {
+fn on_save(mut win &simplegui.SimpleWindow) {
 	mut profile := DeveloperProfile{}
 	win.bind_to_struct(mut profile)
 	newsletter := if profile.wants_newsletter { 'Yes' } else { 'No' }
 	win.alert('Saved Profile', 'Name: ${profile.name}\nExperience: ${profile.years_experience} years\nNewsletter: ${newsletter}')
 }
 
-fn on_reset(mut win simplegui.SimpleWindow) {
+fn on_reset(mut win &simplegui.SimpleWindow) {
 	win.reset_form()
 	win.set_status('Form reset to initial struct values.')
 }
 
-fn on_clear(mut win simplegui.SimpleWindow) {
+fn on_clear(mut win &simplegui.SimpleWindow) {
 	win.clear_all()
 	win.set_status('Cleared all form fields.')
 }
 
-fn on_copy(mut win simplegui.SimpleWindow) {
+fn on_copy(mut win &simplegui.SimpleWindow) {
 	win.copy_to_clipboard(win.get_text('name'))
 	win.toast('Copied name to clipboard!')
 }
 
-fn on_docs(mut win simplegui.SimpleWindow) {
+fn on_docs(mut win &simplegui.SimpleWindow) {
 	win.open_url('https://github.com/codecaine-zz/vlang_simplegui')
 }

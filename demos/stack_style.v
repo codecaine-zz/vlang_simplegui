@@ -15,7 +15,7 @@ fn main() {
 	gui.add_button('save', 'Save Profile')
 
 	// Set event handlers
-	gui.on_click('save', fn (mut win simplegui.SimpleWindow) {
+	gui.on_click('save', fn (mut win &simplegui.SimpleWindow) {
 		win.set_status('Profile saved for: ' + win.get_text('username'))
 		println('Saved! username: ' + win.get_text('username') + ', email: ' + win.get_text('email'))
 	})

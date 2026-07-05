@@ -42,21 +42,21 @@ fn main() {
 	gui.end_row()
 
 	// Register event handlers
-	gui.on_click('btn_0', fn (mut win simplegui.SimpleWindow) { press_digit(mut win, '0') })
-	gui.on_click('btn_1', fn (mut win simplegui.SimpleWindow) { press_digit(mut win, '1') })
-	gui.on_click('btn_2', fn (mut win simplegui.SimpleWindow) { press_digit(mut win, '2') })
-	gui.on_click('btn_3', fn (mut win simplegui.SimpleWindow) { press_digit(mut win, '3') })
-	gui.on_click('btn_4', fn (mut win simplegui.SimpleWindow) { press_digit(mut win, '4') })
-	gui.on_click('btn_5', fn (mut win simplegui.SimpleWindow) { press_digit(mut win, '5') })
-	gui.on_click('btn_6', fn (mut win simplegui.SimpleWindow) { press_digit(mut win, '6') })
-	gui.on_click('btn_7', fn (mut win simplegui.SimpleWindow) { press_digit(mut win, '7') })
-	gui.on_click('btn_8', fn (mut win simplegui.SimpleWindow) { press_digit(mut win, '8') })
-	gui.on_click('btn_9', fn (mut win simplegui.SimpleWindow) { press_digit(mut win, '9') })
+	gui.on_click('btn_0', fn (mut win &simplegui.SimpleWindow) { press_digit(mut win, '0') })
+	gui.on_click('btn_1', fn (mut win &simplegui.SimpleWindow) { press_digit(mut win, '1') })
+	gui.on_click('btn_2', fn (mut win &simplegui.SimpleWindow) { press_digit(mut win, '2') })
+	gui.on_click('btn_3', fn (mut win &simplegui.SimpleWindow) { press_digit(mut win, '3') })
+	gui.on_click('btn_4', fn (mut win &simplegui.SimpleWindow) { press_digit(mut win, '4') })
+	gui.on_click('btn_5', fn (mut win &simplegui.SimpleWindow) { press_digit(mut win, '5') })
+	gui.on_click('btn_6', fn (mut win &simplegui.SimpleWindow) { press_digit(mut win, '6') })
+	gui.on_click('btn_7', fn (mut win &simplegui.SimpleWindow) { press_digit(mut win, '7') })
+	gui.on_click('btn_8', fn (mut win &simplegui.SimpleWindow) { press_digit(mut win, '8') })
+	gui.on_click('btn_9', fn (mut win &simplegui.SimpleWindow) { press_digit(mut win, '9') })
 
-	gui.on_click('btn_add', fn (mut win simplegui.SimpleWindow) { press_op(mut win, '+') })
-	gui.on_click('btn_sub', fn (mut win simplegui.SimpleWindow) { press_op(mut win, '-') })
-	gui.on_click('btn_mul', fn (mut win simplegui.SimpleWindow) { press_op(mut win, '*') })
-	gui.on_click('btn_div', fn (mut win simplegui.SimpleWindow) { press_op(mut win, '/') })
+	gui.on_click('btn_add', fn (mut win &simplegui.SimpleWindow) { press_op(mut win, '+') })
+	gui.on_click('btn_sub', fn (mut win &simplegui.SimpleWindow) { press_op(mut win, '-') })
+	gui.on_click('btn_mul', fn (mut win &simplegui.SimpleWindow) { press_op(mut win, '*') })
+	gui.on_click('btn_div', fn (mut win &simplegui.SimpleWindow) { press_op(mut win, '/') })
 
 	gui.on_click('btn_clear', press_clear)
 	gui.on_click('btn_equal', press_equal)
@@ -69,7 +69,7 @@ fn main() {
 	gui.run()
 }
 
-fn press_digit(mut win simplegui.SimpleWindow, digit string) {
+fn press_digit(mut win &simplegui.SimpleWindow, digit string) {
 	curr := win.get_text('display')
 	if curr == '0' || curr == 'Error' {
 		win.set_text('display', digit)
@@ -78,17 +78,17 @@ fn press_digit(mut win simplegui.SimpleWindow, digit string) {
 	}
 }
 
-fn press_op(mut win simplegui.SimpleWindow, op string) {
+fn press_op(mut win &simplegui.SimpleWindow, op string) {
 	curr := win.get_text('display')
 	win.set_text('display', curr + ' ' + op + ' ')
 }
 
-fn press_clear(mut win simplegui.SimpleWindow) {
+fn press_clear(mut win &simplegui.SimpleWindow) {
 	win.set_text('display', '0')
 	win.set_status('Cleared')
 }
 
-fn press_equal(mut win simplegui.SimpleWindow) {
+fn press_equal(mut win &simplegui.SimpleWindow) {
 	expr := win.get_text('display')
 	parts := expr.split(' ')
 	if parts.len < 3 {

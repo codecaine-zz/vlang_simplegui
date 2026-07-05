@@ -54,7 +54,7 @@ fn main() {
 		.run()
 }
 
-fn on_print(mut win simplegui.SimpleWindow) {
+fn on_print(mut win &simplegui.SimpleWindow) {
 	// Read struct fields using reflection
 	mut config := Configuration{}
 	win.bind_to_struct(mut config)
@@ -79,12 +79,12 @@ fn on_print(mut win simplegui.SimpleWindow) {
 	win.alert('Current Values Summary', summary)
 }
 
-fn on_reset(mut win simplegui.SimpleWindow) {
+fn on_reset(mut win &simplegui.SimpleWindow) {
 	win.reset_form()
 	win.set_status('Form controls reset to initial values.')
 }
 
-fn on_toggle_hud(mut win simplegui.SimpleWindow) {
+fn on_toggle_hud(mut win &simplegui.SimpleWindow) {
 	new_state := !win.get_debug_mode()
 	win.set_debug_mode(new_state)
 	status_text := if new_state { 'ON' } else { 'OFF' }

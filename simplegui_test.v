@@ -150,7 +150,7 @@ fn test_qol_helpers_support_struct_binding_and_tables() {
 
 	win.enable_status_bar('')
 	win.show_window()
-	win.run_on_main_thread(fn (mut w simplegui.SimpleWindow) {})
+	win.run_on_main_thread(fn (mut w &simplegui.SimpleWindow) {})
 }
 
 fn test_ergonomic_helpers_are_available_and_resettable() {
@@ -173,10 +173,10 @@ fn test_ergonomic_helpers_are_available_and_resettable() {
 	win.set_error('name', 'Required')
 	win.set_tooltip('secret', 'Use a strong password')
 	win.set_default_button('run')
-	win.on_enter('name', fn (mut w simplegui.SimpleWindow) {})
-	win.on_key('a', fn (mut w simplegui.SimpleWindow, value string) {})
-	win.on_close(fn (mut w simplegui.SimpleWindow) {})
-	win.run_after(5, fn (mut w simplegui.SimpleWindow) {})
+	win.on_enter('name', fn (mut w &simplegui.SimpleWindow) {})
+	win.on_key('a', fn (mut w &simplegui.SimpleWindow, value string) {})
+	win.on_close(fn (mut w &simplegui.SimpleWindow) {})
+	win.run_after(5, fn (mut w &simplegui.SimpleWindow) {})
 	win.toast('Saved')
 	win.copy_to_clipboard('hello')
 	win.open_url('https://example.com')
@@ -210,7 +210,7 @@ fn test_high_level_form_helpers_are_available() {
 	win.add_form_textarea('Notes', 'notes', 'Hello')
 	win.add_toggle('ready', 'Ready', true)
 	win.add_number_field('age', 42)
-	win.add_action('run', 'Run', fn (mut w simplegui.SimpleWindow) {})
+	win.add_action('run', 'Run', fn (mut w &simplegui.SimpleWindow) {})
 
 	assert win.has_control('heading_0') == true
 	assert win.has_control('name') == true
@@ -230,7 +230,7 @@ fn test_file_drop_events_are_forwarded_to_window_handlers() {
 	mut win := simplegui.SimpleWindow{}
 	mut state := &CallbackState{}
 
-	win.on_file_drop(fn [mut state] (mut w simplegui.SimpleWindow, files []string) {
+	win.on_file_drop(fn [mut state] (mut w &simplegui.SimpleWindow, files []string) {
 		state.called = true
 		assert files.len == 2
 		assert files[0] == '/tmp/a.txt'
@@ -241,11 +241,11 @@ fn test_file_drop_events_are_forwarded_to_window_handlers() {
 	assert state.called == true
 }
 
-fn on_test_change(mut win simplegui.SimpleWindow, value string) {
+fn on_test_change(mut win &simplegui.SimpleWindow, value string) {
 	println('test change: ${value}')
 }
 
-fn on_test_click(mut win simplegui.SimpleWindow) {
+fn on_test_click(mut win &simplegui.SimpleWindow) {
 	println('test click')
 }
 

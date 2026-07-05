@@ -39,7 +39,7 @@ fn main() {
 	gui.end_row()
 
 	// Connect event handlers
-	gui.on_click('apply', fn (mut win simplegui.SimpleWindow) {
+	gui.on_click('apply', fn (mut win &simplegui.SimpleWindow) {
 		accent := win.get_text('accent')
 		mode := win.get_text('mode')
 		theme := win.get_text('theme')
@@ -51,7 +51,7 @@ fn main() {
 		println('Applied Settings -> Accent: ${accent}, Mode: ${mode}, Theme: ${theme}, Volume: ${volume}, Backup: ${date}, Notifications: ${notifs}')
 	})
 
-	gui.on_change('notifs', fn (mut win simplegui.SimpleWindow, value string) {
+	gui.on_change('notifs', fn (mut win &simplegui.SimpleWindow, value string) {
 		checked := value == 'true'
 		prog_val := if checked { 100 } else { 0 }
 		win.set_value_int('progress', prog_val)

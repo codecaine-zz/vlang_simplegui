@@ -114,11 +114,11 @@ fn C.window_show(&WindowInfo)
 // Thread Safety Runner
 fn C.window_run_on_main_thread(voidptr, voidptr)
 
-pub type StringEventCallback = fn (mut win SimpleWindow, value string)
+pub type StringEventCallback = fn (mut win &SimpleWindow, value string)
 
-pub type VoidEventCallback = fn (mut win SimpleWindow)
+pub type VoidEventCallback = fn (mut win &SimpleWindow)
 
-pub type FileDropCallback = fn (mut win SimpleWindow, files []string)
+pub type FileDropCallback = fn (mut win &SimpleWindow, files []string)
 
 pub struct WindowParams {
 	title             string
@@ -201,7 +201,7 @@ pub fn new_simple_window(title string, width int, height int) &SimpleWindow {
 	return win
 }
 
-fn (mut win SimpleWindow) ensure_window() {
+fn (win &SimpleWindow) ensure_window() {
 	if win.window_info == unsafe { nil } {
 		params := WindowParams{
 			title:             win.title
@@ -213,15 +213,18 @@ fn (mut win SimpleWindow) ensure_window() {
 			always_on_top:     if win.always_on_top { 1 } else { 0 }
 			responsive_layout: if win.responsive_layout { 1 } else { 0 }
 		}
-		win.window_info = C.window_app_init(&params)
+		unsafe {
+			mut w := &SimpleWindow(win)
+			w.window_info = C.window_app_init(&params)
+		}
 	}
 }
 
-pub fn (win SimpleWindow) has_control(name string) bool {
+pub fn (win &SimpleWindow) has_control(name string) bool {
 	return win.find_control(name) >= 0
 }
 
-pub fn (win SimpleWindow) list_controls() []string {
+pub fn (win &SimpleWindow) list_controls() []string {
 	mut names := []string{}
 	for control in win.controls {
 		names << control.name
@@ -229,7 +232,7 @@ pub fn (win SimpleWindow) list_controls() []string {
 	return names
 }
 
-pub fn (win SimpleWindow) get_control_kind(name string) string {
+pub fn (win &SimpleWindow) get_control_kind(name string) string {
 	idx := win.find_control(name)
 	if idx >= 0 {
 		return win.controls[idx].kind
@@ -237,14 +240,14 @@ pub fn (win SimpleWindow) get_control_kind(name string) string {
 	return ''
 }
 
-pub fn (win SimpleWindow) require_control(name string) string {
+pub fn (win &SimpleWindow) require_control(name string) string {
 	if win.has_control(name) {
 		return name
 	}
 	panic('Control "${name}" was not found. Create it first with add_input/add_button/etc.')
 }
 
-fn (win SimpleWindow) find_control(name string) int {
+fn (win &SimpleWindow) find_control(name string) int {
 	for i, control in win.controls {
 		if control.name == name {
 			return i
@@ -253,7 +256,7 @@ fn (win SimpleWindow) find_control(name string) int {
 	return -1
 }
 
-fn (win SimpleWindow) find_handler(control_name string, event_name string) int {
+fn (win &SimpleWindow) find_handler(control_name string, event_name string) int {
 	for i, handler in win.handlers {
 		if handler.control_name == control_name && handler.event_name == event_name
 			&& handler.filter_value == '' {
@@ -263,7 +266,7 @@ fn (win SimpleWindow) find_handler(control_name string, event_name string) int {
 	return -1
 }
 
-fn (win SimpleWindow) find_handler_by_filter(control_name string, event_name string, filter_value string) int {
+fn (win &SimpleWindow) find_handler_by_filter(control_name string, event_name string, filter_value string) int {
 	for i, handler in win.handlers {
 		if handler.control_name == control_name && handler.event_name == event_name
 			&& (handler.filter_value == '' || handler.filter_value == filter_value) {
@@ -277,7 +280,7 @@ fn (win &SimpleWindow) auto_name(kind string) string {
 	return 'auto_${kind}_${win.controls.len}'
 }
 
-fn (mut win SimpleWindow) upsert_control(name string, kind string, label string, value string, checked bool, number int) {
+fn (win &SimpleWindow) upsert_control(name string, kind string, label string, value string, checked bool, number int) {
 	idx := win.find_control(name)
 	mut entry := ControlEntry{
 		name:            name
@@ -290,18 +293,21 @@ fn (mut win SimpleWindow) upsert_control(name string, kind string, label string,
 		initial_checked: checked
 		initial_number:  number
 	}
-	if idx >= 0 {
-		entry = win.controls[idx]
-		entry.kind = kind
-		entry.label = label
-		entry.value = value
-		entry.checked = checked
-		entry.number = number
-		entry.background_color = win.controls[idx].background_color
-		entry.font_color = win.controls[idx].font_color
-		win.controls[idx] = entry
-	} else {
-		win.controls << entry
+	unsafe {
+		mut w := &SimpleWindow(win)
+		if idx >= 0 {
+			entry = w.controls[idx]
+			entry.kind = kind
+			entry.label = label
+			entry.value = value
+			entry.checked = checked
+			entry.number = number
+			entry.background_color = w.controls[idx].background_color
+			entry.font_color = w.controls[idx].font_color
+			w.controls[idx] = entry
+		} else {
+			w.controls << entry
+		}
 	}
 }
 
@@ -638,7 +644,7 @@ pub fn (win &SimpleWindow) set_debug_mode(enabled bool) &SimpleWindow {
 	return win
 }
 
-pub fn (win SimpleWindow) get_debug_mode() bool {
+pub fn (win &SimpleWindow) get_debug_mode() bool {
 	return win.debug_mode
 }
 
@@ -667,7 +673,7 @@ pub fn (win &SimpleWindow) set_value(name string, value string) &SimpleWindow {
 	return win
 }
 
-pub fn (win SimpleWindow) get_value(name string) string {
+pub fn (win &SimpleWindow) get_value(name string) string {
 	win.require_control(name)
 	if win.window_info != unsafe { nil } {
 		res := C.window_get_control_text_by_name(win.window_info, name.str)
@@ -705,7 +711,7 @@ pub fn (win &SimpleWindow) set_bool(name string, checked bool) &SimpleWindow {
 	return win
 }
 
-pub fn (win SimpleWindow) get_bool(name string) bool {
+pub fn (win &SimpleWindow) get_bool(name string) bool {
 	win.require_control(name)
 	if win.window_info != unsafe { nil } {
 		return C.window_get_control_bool_by_name(win.window_info, name.str) != 0
@@ -741,7 +747,7 @@ pub fn (win &SimpleWindow) set_number_value(name string, value int) &SimpleWindo
 	return win
 }
 
-pub fn (win SimpleWindow) get_number_value(name string) int {
+pub fn (win &SimpleWindow) get_number_value(name string) int {
 	win.require_control(name)
 	if win.window_info != unsafe { nil } {
 		return C.window_get_control_int_by_name(win.window_info, name.str)
@@ -775,7 +781,7 @@ pub fn (win &SimpleWindow) set_html(name string, html string) &SimpleWindow {
 	return win
 }
 
-pub fn (win SimpleWindow) get_text(name string) string {
+pub fn (win &SimpleWindow) get_text(name string) string {
 	return win.get_value(name)
 }
 
@@ -784,7 +790,7 @@ pub fn (win &SimpleWindow) set_checked(name string, checked bool) &SimpleWindow 
 	return win
 }
 
-pub fn (win SimpleWindow) get_checked(name string) bool {
+pub fn (win &SimpleWindow) get_checked(name string) bool {
 	return win.get_bool(name)
 }
 
@@ -793,7 +799,7 @@ pub fn (win &SimpleWindow) set_value_int(name string, val int) &SimpleWindow {
 	return win
 }
 
-pub fn (win SimpleWindow) get_value_int(name string) int {
+pub fn (win &SimpleWindow) get_value_int(name string) int {
 	return win.get_number_value(name)
 }
 
@@ -808,7 +814,7 @@ pub fn (win &SimpleWindow) set_input(value string) &SimpleWindow {
 	return win
 }
 
-pub fn (win SimpleWindow) get_input() string {
+pub fn (win &SimpleWindow) get_input() string {
 	return win.get_value('default_input')
 }
 
@@ -823,7 +829,7 @@ pub fn (win &SimpleWindow) set_textarea(text string) &SimpleWindow {
 	return win
 }
 
-pub fn (win SimpleWindow) get_textarea() string {
+pub fn (win &SimpleWindow) get_textarea() string {
 	return win.get_value('default_textarea')
 }
 
@@ -838,7 +844,7 @@ pub fn (win &SimpleWindow) set_checkbox(checked bool) &SimpleWindow {
 	return win
 }
 
-pub fn (win SimpleWindow) get_checkbox() bool {
+pub fn (win &SimpleWindow) get_checkbox() bool {
 	return win.get_bool('default_checkbox')
 }
 
@@ -853,7 +859,7 @@ pub fn (win &SimpleWindow) set_number(value int) &SimpleWindow {
 	return win
 }
 
-pub fn (win SimpleWindow) get_number() int {
+pub fn (win &SimpleWindow) get_number() int {
 	return win.get_number_value('default_number')
 }
 
@@ -879,7 +885,7 @@ pub fn (win &SimpleWindow) set_responsive_layout(enabled bool) &SimpleWindow {
 	return win
 }
 
-pub fn (win SimpleWindow) get_responsive_layout() bool {
+pub fn (win &SimpleWindow) get_responsive_layout() bool {
 	return win.responsive_layout
 }
 
@@ -894,7 +900,7 @@ pub fn (win &SimpleWindow) set_padding(padding int) &SimpleWindow {
 	return win
 }
 
-pub fn (win SimpleWindow) get_padding() int {
+pub fn (win &SimpleWindow) get_padding() int {
 	return win.padding
 }
 
@@ -909,7 +915,7 @@ pub fn (win &SimpleWindow) set_spacing(spacing int) &SimpleWindow {
 	return win
 }
 
-pub fn (win SimpleWindow) get_spacing() int {
+pub fn (win &SimpleWindow) get_spacing() int {
 	return win.spacing
 }
 
@@ -1344,7 +1350,7 @@ pub fn (win &SimpleWindow) set_status(text string) &SimpleWindow {
 	return win
 }
 
-pub fn (win SimpleWindow) get_status() string {
+pub fn (win &SimpleWindow) get_status() string {
 	return win.status_text
 }
 

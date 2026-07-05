@@ -33,7 +33,7 @@ fn main() {
 	win.run()
 }
 
-fn on_save(mut win simplegui.SimpleWindow) {
+fn on_save(mut win &simplegui.SimpleWindow) {
 	name := win.get_text('name')
 	city := win.get_text('city')
 	ready := if win.get_checked('ready') { 'yes' } else { 'no' }
@@ -41,7 +41,7 @@ fn on_save(mut win simplegui.SimpleWindow) {
 	win.set_status('Saved the current form values.')
 }
 
-fn on_clear(mut win simplegui.SimpleWindow) {
+fn on_clear(mut win &simplegui.SimpleWindow) {
 	win.set_text('name', '')
 	win.set_text('city', '')
 	win.set_text('notes', '')

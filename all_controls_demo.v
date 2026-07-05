@@ -95,7 +95,7 @@ fn main() {
 	win.on_change('mode', on_mode_changed)
 	win.on_change('items', on_items_changed)
 
-	win.on_file_drop(fn (mut win simplegui.SimpleWindow, files []string) {
+	win.on_file_drop(fn (mut win &simplegui.SimpleWindow, files []string) {
 		joined := files.join(', ')
 		win.set_text('notes', 'Dropped files: ${joined}')
 		win.set_status('Dropped ${joined}')
@@ -104,13 +104,13 @@ fn main() {
 	win.run()
 }
 
-fn on_snapshot_clicked(mut win simplegui.SimpleWindow) {
+fn on_snapshot_clicked(mut win &simplegui.SimpleWindow) {
 	summary := 'Name: ${win.get_text('name')}\nPassword: ${win.get_text('password')}\nNotes: ${win.get_text('notes')}\nAgree: ${win.get_checked('agree')}\nAlerts: ${win.get_checked('alerts')}\nAge: ${win.get_value_int('age')}\nVolume: ${win.get_value_int('volume')}\nTheme: ${win.get_text('theme')}\nAccent: ${win.get_text('accent')}\nDate: ${win.get_text('date')}\nMode: ${win.get_text('mode')}\nSelection: ${win.get_text('items')}'
 	win.alert('Snapshot', summary)
 	win.set_status('Snapshot captured.')
 }
 
-fn on_clear_clicked(mut win simplegui.SimpleWindow) {
+fn on_clear_clicked(mut win &simplegui.SimpleWindow) {
 	win.set_text('name', '')
 	win.set_text('password', '')
 	win.set_text('notes', '')
@@ -126,50 +126,50 @@ fn on_clear_clicked(mut win simplegui.SimpleWindow) {
 	win.set_status('Cleared the demo values.')
 }
 
-fn on_name_changed(mut win simplegui.SimpleWindow, value string) {
+fn on_name_changed(mut win &simplegui.SimpleWindow, value string) {
 	win.set_status('Name changed to ${value}')
 }
 
-fn on_password_changed(mut win simplegui.SimpleWindow, value string) {
+fn on_password_changed(mut win &simplegui.SimpleWindow, value string) {
 	win.set_status('Password updated.')
 }
 
-fn on_notes_changed(mut win simplegui.SimpleWindow, value string) {
+fn on_notes_changed(mut win &simplegui.SimpleWindow, value string) {
 	win.set_status('Notes updated.')
 }
 
-fn on_agree_changed(mut win simplegui.SimpleWindow, value string) {
+fn on_agree_changed(mut win &simplegui.SimpleWindow, value string) {
 	win.set_status(if value == 'true' { 'Terms accepted.' } else { 'Terms cleared.' })
 }
 
-fn on_alerts_changed(mut win simplegui.SimpleWindow, value string) {
+fn on_alerts_changed(mut win &simplegui.SimpleWindow, value string) {
 	win.set_status(if value == 'true' { 'Extra alerts enabled.' } else { 'Extra alerts disabled.' })
 }
 
-fn on_age_changed(mut win simplegui.SimpleWindow, value string) {
+fn on_age_changed(mut win &simplegui.SimpleWindow, value string) {
 	win.set_status('Age set to ${value}')
 }
 
-fn on_volume_changed(mut win simplegui.SimpleWindow, value string) {
+fn on_volume_changed(mut win &simplegui.SimpleWindow, value string) {
 	win.set_status('Volume set to ${value}')
 }
 
-fn on_theme_changed(mut win simplegui.SimpleWindow, value string) {
+fn on_theme_changed(mut win &simplegui.SimpleWindow, value string) {
 	win.set_status('Theme changed to ${value}')
 }
 
-fn on_accent_changed(mut win simplegui.SimpleWindow, value string) {
+fn on_accent_changed(mut win &simplegui.SimpleWindow, value string) {
 	win.set_status('Accent color changed to ${value}')
 }
 
-fn on_date_changed(mut win simplegui.SimpleWindow, value string) {
+fn on_date_changed(mut win &simplegui.SimpleWindow, value string) {
 	win.set_status('Date changed to ${value}')
 }
 
-fn on_mode_changed(mut win simplegui.SimpleWindow, value string) {
+fn on_mode_changed(mut win &simplegui.SimpleWindow, value string) {
 	win.set_status('Mode changed to ${value}')
 }
 
-fn on_items_changed(mut win simplegui.SimpleWindow, value string) {
+fn on_items_changed(mut win &simplegui.SimpleWindow, value string) {
 	win.set_status('Selection changed to ${value}')
 }

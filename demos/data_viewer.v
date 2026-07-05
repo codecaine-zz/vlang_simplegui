@@ -28,7 +28,7 @@ fn main() {
 	gui.add_textarea('output', 'Click Query Database to pull data records...')
 
 	// Connect event handlers
-	gui.on_click('search_btn', fn (mut win simplegui.SimpleWindow) {
+	gui.on_click('search_btn', fn (mut win &simplegui.SimpleWindow) {
 		query := win.get_text('query').to_lower()
 		role := win.get_text('role_filter')
 		limit := win.get_value_int('limit')
