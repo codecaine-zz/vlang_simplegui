@@ -1,4 +1,5 @@
 #import <Cocoa/Cocoa.h>
+#import <WebKit/WebKit.h>
 #import <string.h>
 #import <stdlib.h>
 #import "window.h"
@@ -31,13 +32,54 @@ static NSString *nsstring(const char *s) {
 @interface FlippedStackView : NSStackView
 @end
 
+extern void vlang_dispatch_event(void *win_ptr, const char *name, const char *event, const char *value);
+
 @implementation FlippedStackView
 - (BOOL)isFlipped {
   return YES;
 }
 @end
 
-extern void vlang_dispatch_event(void *win_ptr, const char *name, const char *event, const char *value);
+@interface DropZoneView : NSBox
+@property (nonatomic, assign) void *win_ptr;
+@property (nonatomic, copy) NSString *controlName;
+@end
+
+@implementation DropZoneView
+- (void)awakeFromNib {
+  [super awakeFromNib];
+  [self registerForDraggedTypes:@[NSPasteboardTypeFileURL]];
+}
+
+- (void)updateTrackingAreas {
+  [super updateTrackingAreas];
+}
+
+- (NSDragOperation)draggingEntered:(id<NSDraggingInfo>)sender {
+  NSPasteboard *pboard = [sender draggingPasteboard];
+  if ([[pboard types] containsObject:NSPasteboardTypeFileURL]) {
+    return NSDragOperationCopy;
+  }
+  return NSDragOperationNone;
+}
+
+- (BOOL)performDragOperation:(id<NSDraggingInfo>)sender {
+  NSPasteboard *pboard = [sender draggingPasteboard];
+  if ([[pboard types] containsObject:NSPasteboardTypeFileURL]) {
+    NSArray *urls = [pboard readObjectsForClasses:@[[NSURL class]] options:nil];
+    NSMutableArray *paths = [NSMutableArray array];
+    for (NSURL *url in urls) {
+      [paths addObject:[url path]];
+    }
+    if (self.win_ptr && self.controlName) {
+      NSString *joinedPaths = [paths componentsJoinedByString:@"|"];
+      vlang_dispatch_event(self.win_ptr, [self.controlName UTF8String], "file_drop", [joinedPaths UTF8String]);
+    }
+    return YES;
+  }
+  return NO;
+}
+@end
 
 @interface AppDelegate : NSObject <NSApplicationDelegate, NSWindowDelegate, NSTextFieldDelegate, NSTextViewDelegate, NSTableViewDataSource, NSTableViewDelegate>
 @property (nonatomic, assign) main__WindowParams params;
@@ -61,7 +103,10 @@ extern void vlang_dispatch_event(void *win_ptr, const char *name, const char *ev
 - (void)endRow;
 - (NSView *)makeLabelWithName:(NSString *)name text:(NSString *)text;
 - (NSView *)makeTextFieldWithName:(NSString *)name value:(NSString *)value;
+- (NSView *)makePasswordFieldWithName:(NSString *)name value:(NSString *)value;
 - (NSView *)makeTextAreaWithName:(NSString *)name value:(NSString *)value;
+- (NSView *)makeHtmlViewWithName:(NSString *)name html:(NSString *)html;
+- (NSView *)makeDropZoneWithName:(NSString *)name label:(NSString *)label;
 - (NSView *)makeButtonWithName:(NSString *)name title:(NSString *)title;
 - (NSView *)makeCheckboxWithName:(NSString *)name label:(NSString *)label checked:(BOOL)checked;
 - (NSView *)makeNumberFieldWithName:(NSString *)name value:(int)value;
@@ -202,29 +247,77 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
     return;
   }
 
-  if (backgroundColor) {
-    if ([view isKindOfClass:[NSTextField class]]) {
-      NSTextField *field = (NSTextField *)view;
+  if ([view isKindOfClass:[NSTextField class]]) {
+    NSTextField *field = (NSTextField *)view;
+    [field setFont:[NSFont systemFontOfSize:13 weight:NSFontWeightRegular]];
+    [field setControlSize:NSControlSizeRegular];
+    [field setFocusRingType:NSFocusRingTypeExterior];
+    [field setBordered:YES];
+    [field setBezelStyle:NSTextFieldRoundedBezel];
+    if (backgroundColor) {
       [field setDrawsBackground:YES];
       [field setBackgroundColor:backgroundColor];
-    } else if ([view isKindOfClass:[NSTextView class]]) {
-      NSTextView *textView = (NSTextView *)view;
+    } else {
+      [field setDrawsBackground:NO];
+    }
+    if (fontColor) {
+      [field setTextColor:fontColor];
+    }
+  } else if ([view isKindOfClass:[NSTextView class]]) {
+    NSTextView *textView = (NSTextView *)view;
+    [textView setFont:[NSFont systemFontOfSize:13]];
+    if (backgroundColor) {
       [textView setDrawsBackground:YES];
       [textView setBackgroundColor:backgroundColor];
     } else {
+      [textView setDrawsBackground:NO];
+    }
+    if (fontColor) {
+      [textView setTextColor:fontColor];
+    }
+  } else if ([view isKindOfClass:[NSButton class]]) {
+    NSButton *button = (NSButton *)view;
+    [button setFont:[NSFont systemFontOfSize:13 weight:NSFontWeightMedium]];
+    [button setControlSize:NSControlSizeRegular];
+    if (fontColor) {
+      [button setContentTintColor:fontColor];
+    }
+    [button setBezelStyle:NSBezelStyleRounded];
+    [button setWantsLayer:YES];
+    NSColor *fillColor = backgroundColor && ![backgroundColor isEqual:[NSColor clearColor]] ? backgroundColor : [NSColor controlAccentColor];
+    button.layer.cornerRadius = 8.0;
+    button.layer.borderWidth = 1.0;
+    button.layer.borderColor = [[NSColor colorWithWhite:1.0 alpha:0.16] CGColor];
+    button.layer.backgroundColor = fillColor.CGColor;
+  } else if ([view isKindOfClass:[NSPopUpButton class]]) {
+    NSPopUpButton *popup = (NSPopUpButton *)view;
+    [popup setFont:[NSFont systemFontOfSize:13]];
+    [popup setControlSize:NSControlSizeRegular];
+    [popup setBezelStyle:NSBezelStyleRounded];
+  } else if ([view isKindOfClass:[NSSegmentedControl class]]) {
+    NSSegmentedControl *segment = (NSSegmentedControl *)view;
+    [segment setSegmentStyle:NSSegmentStyleTexturedRounded];
+    [segment setControlSize:NSControlSizeRegular];
+    [segment setFont:[NSFont systemFontOfSize:13]];
+  } else if ([view isKindOfClass:[NSSlider class]]) {
+    NSSlider *slider = (NSSlider *)view;
+    [slider setControlSize:NSControlSizeRegular];
+    [slider setWantsLayer:YES];
+    if (fontColor) {
+      [slider setContentTintColor:fontColor];
+    }
+  } else if ([view isKindOfClass:[NSDatePicker class]]) {
+    NSDatePicker *picker = (NSDatePicker *)view;
+    [picker setControlSize:NSControlSizeRegular];
+  } else if ([view isKindOfClass:[NSScrollView class]]) {
+    [view setWantsLayer:YES];
+    [view.layer setCornerRadius:10.0];
+    [view.layer setBorderWidth:1.0];
+    [view.layer setBorderColor:[[NSColor colorWithWhite:1.0 alpha:0.12] CGColor]];
+  } else {
+    if (backgroundColor) {
       [view setWantsLayer:YES];
       [view.layer setBackgroundColor:backgroundColor.CGColor];
-    }
-  }
-
-  if (fontColor) {
-    if ([view isKindOfClass:[NSTextField class]]) {
-      [(NSTextField *)view setTextColor:fontColor];
-    } else if ([view isKindOfClass:[NSTextView class]]) {
-      [(NSTextView *)view setTextColor:fontColor];
-    } else if ([view isKindOfClass:[NSButton class]]) {
-      [(NSButton *)view setContentTintColor:fontColor];
-      [view setWantsLayer:YES];
     }
   }
 }
@@ -246,14 +339,16 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   }
 
   NSRect frame = NSMakeRect(100, 100, self.params.width, self.params.height);
-  NSUInteger style = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable;
+  NSUInteger style = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable | NSWindowStyleMaskFullSizeContentView;
   self.window = [[CustomWindow alloc] initWithContentRect:frame
                                             styleMask:style
                                               backing:NSBackingStoreBuffered
                                                 defer:NO];
   const char *title = self.params.title.str ? self.params.title.str : "";
   [self.window setTitle:nsstring(title)];
-  [self.window setBackgroundColor:[NSColor windowBackgroundColor]];
+  [self.window setTitlebarAppearsTransparent:YES];
+  [self.window setTitleVisibility:NSWindowTitleHidden];
+  [self.window setBackgroundColor:[NSColor clearColor]];
   [self.window setDelegate:self];
   [self.window setReleasedWhenClosed:NO];
   [self.window registerForDraggedTypes:@[NSPasteboardTypeFileURL]];
@@ -339,11 +434,20 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   NSLog(@"buildUI called");
   self.controlsByName = [NSMutableDictionary dictionary];
 
-  self.scrollView = [[NSScrollView alloc] initWithFrame:NSMakeRect(0, 0, self.params.width, self.params.height)];
+  NSVisualEffectView *backgroundView = [[NSVisualEffectView alloc] initWithFrame:NSMakeRect(0, 0, self.params.width, self.params.height)];
+  [backgroundView setMaterial:NSVisualEffectMaterialSidebar];
+  [backgroundView setBlendingMode:NSVisualEffectBlendingModeBehindWindow];
+  [backgroundView setState:NSVisualEffectStateActive];
+  [backgroundView setWantsLayer:YES];
+  [backgroundView.layer setBackgroundColor:CGColorCreateGenericRGB(0.08, 0.10, 0.14, 0.94)];
+  [backgroundView.layer setCornerRadius:16.0];
+  [backgroundView.layer setMasksToBounds:YES];
+
+  self.scrollView = [[NSScrollView alloc] initWithFrame:NSInsetRect(backgroundView.bounds, 12, 12)];
   [self.scrollView setHasVerticalScroller:YES];
   [self.scrollView setHasHorizontalScroller:NO];
   [self.scrollView setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
-  [self.scrollView setDrawsBackground:YES];
+  [self.scrollView setDrawsBackground:NO];
   [self.scrollView setBackgroundColor:[NSColor clearColor]];
 
   self.mainStackView = [[FlippedStackView alloc] init];
@@ -355,7 +459,8 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [self.mainStackView setTranslatesAutoresizingMaskIntoConstraints:NO];
   
   [self.scrollView setDocumentView:self.mainStackView];
-  [self.window setContentView:self.scrollView];
+  [backgroundView addSubview:self.scrollView];
+  [self.window setContentView:backgroundView];
   
   NSView *clipView = self.scrollView.contentView;
   [self.mainStackView.topAnchor constraintEqualToAnchor:clipView.topAnchor].active = YES;
@@ -421,6 +526,69 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   self.controlsByName[[name lowercaseString]] = textField;
   [self addControlToLayout:textField];
   return textField;
+}
+
+- (NSView *)makePasswordFieldWithName:(NSString *)name value:(NSString *)value {
+  NSSecureTextField *passwordField = [[NSSecureTextField alloc] initWithFrame:NSZeroRect];
+  [passwordField setStringValue:value];
+  [passwordField setPlaceholderString:@"Password..."];
+  [passwordField setBezelStyle:NSTextFieldRoundedBezel];
+  [passwordField setDelegate:self];
+  [passwordField setTarget:self];
+  [passwordField setAction:@selector(handleInputChanged:)];
+  [passwordField setWantsLayer:YES];
+  [passwordField.widthAnchor constraintEqualToConstant:300].active = YES;
+  
+  if (self.currentFontColor) {
+    applyStyleToView(passwordField, self.currentBackgroundColor ?: [NSColor textBackgroundColor], self.currentFontColor);
+  }
+  
+  self.controlsByName[[name lowercaseString]] = passwordField;
+  [self addControlToLayout:passwordField];
+  return passwordField;
+}
+
+- (NSView *)makeHtmlViewWithName:(NSString *)name html:(NSString *)html {
+  WKWebView *webView = [[WKWebView alloc] initWithFrame:NSZeroRect configuration:[[WKWebViewConfiguration alloc] init]];
+  [webView setTranslatesAutoresizingMaskIntoConstraints:NO];
+  [webView.widthAnchor constraintEqualToConstant:420].active = YES;
+  [webView.heightAnchor constraintEqualToConstant:180].active = YES;
+  [webView loadHTMLString:html baseURL:nil];
+  [self addControlToLayout:webView];
+  self.controlsByName[[name lowercaseString]] = webView;
+  return webView;
+}
+
+- (NSView *)makeDropZoneWithName:(NSString *)name label:(NSString *)label {
+  DropZoneView *box = [[DropZoneView alloc] initWithFrame:NSZeroRect];
+  [box setBoxType:NSBoxCustom];
+  [box setBorderType:NSLineBorder];
+  [box setContentViewMargins:NSMakeSize(12, 12)];
+  [box setTitle:@""];
+  [box setWantsLayer:YES];
+  [box.widthAnchor constraintEqualToConstant:420].active = YES;
+  [box.heightAnchor constraintEqualToConstant:96].active = YES;
+  [box.layer setCornerRadius:10.0];
+  [box.layer setBorderWidth:1.0];
+  [box.layer setBorderColor:[[NSColor colorWithWhite:1.0 alpha:0.18] CGColor]];
+  [box registerForDraggedTypes:@[NSPasteboardTypeFileURL]];
+  box.win_ptr = self.win_ptr;
+  box.controlName = [name lowercaseString];
+
+  NSTextField *labelField = [NSTextField labelWithString:label ?: @"Drop files here"];
+  [labelField setAlignment:NSTextAlignmentCenter];
+  [labelField setFont:[NSFont systemFontOfSize:13 weight:NSFontWeightMedium]];
+  [labelField setTextColor:[NSColor secondaryLabelColor]];
+  [labelField setTranslatesAutoresizingMaskIntoConstraints:NO];
+  [box addSubview:labelField];
+  [NSLayoutConstraint activateConstraints:@[
+    [labelField.centerXAnchor constraintEqualToAnchor:box.centerXAnchor],
+    [labelField.centerYAnchor constraintEqualToAnchor:box.centerYAnchor]
+  ]];
+
+  [self addControlToLayout:box];
+  self.controlsByName[[name lowercaseString]] = box;
+  return box;
 }
 
 - (NSView *)makeTextAreaWithName:(NSString *)name value:(NSString *)value {
@@ -1365,6 +1533,25 @@ void window_set_error_by_name(main__WindowInfo *info, const char *name, const ch
     NSView *view = [delegate viewForControlName:nsstring(name)];
     if (view) {
       [view setToolTip:nsstring(text)];
+      [view setWantsLayer:YES];
+      if (text && *text) {
+        view.layer.borderWidth = 1.2;
+        view.layer.borderColor = [[NSColor systemRedColor] CGColor];
+        view.layer.cornerRadius = 8.0;
+      } else {
+        view.layer.borderWidth = 0.0;
+        view.layer.borderColor = nil;
+      }
+    }
+  });
+}
+
+void window_set_tooltip_by_name(main__WindowInfo *info, const char *name, const char *text) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    NSView *view = [delegate viewForControlName:nsstring(name)];
+    if (view) {
+      [view setToolTip:nsstring(text)];
     }
   });
 }
@@ -1424,9 +1611,24 @@ void *window_add_input_control(main__WindowInfo *info, const char *name, const c
   return [delegate makeTextFieldWithName:nsstring(name) value:nsstring(value)];
 }
 
+void *window_add_password_control(main__WindowInfo *info, const char *name, const char *value) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  return [delegate makePasswordFieldWithName:nsstring(name) value:nsstring(value)];
+}
+
 void *window_add_textarea_control(main__WindowInfo *info, const char *name, const char *value) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
   return [delegate makeTextAreaWithName:nsstring(name) value:nsstring(value)];
+}
+
+void *window_add_html_view_control(main__WindowInfo *info, const char *name, const char *html) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  return [delegate makeHtmlViewWithName:nsstring(name) html:nsstring(html)];
+}
+
+void *window_add_drop_zone_control(main__WindowInfo *info, const char *name, const char *label) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  return [delegate makeDropZoneWithName:nsstring(name) label:nsstring(label)];
 }
 
 void *window_add_checkbox_control(main__WindowInfo *info, const char *name, const char *text, int checked) {
@@ -1489,6 +1691,8 @@ void window_set_control_text(void *control, const char *text) {
     [(NSTextField *)view setStringValue:nsText];
   } else if ([view isKindOfClass:[NSTextView class]]) {
     [(NSTextView *)view setString:nsText];
+  } else if ([view isKindOfClass:[WKWebView class]]) {
+    [(WKWebView *)view loadHTMLString:nsText baseURL:nil];
   } else if ([view isKindOfClass:[NSButton class]]) {
     [(NSButton *)view setTitle:nsText];
   } else if ([view isKindOfClass:[NSSlider class]]) {

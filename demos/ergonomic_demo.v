@@ -13,8 +13,10 @@ fn main() {
 	win.set_control_font_size('title', 18)
 
 	win.add_input('name', 'Ada Lovelace')
+	win.add_password('password', 'secret123')
 	win.set_placeholder('name', 'Type your name')
 	win.set_error('name', 'Validation hint: use letters')
+	win.set_tooltip('password', 'Use a strong password')
 	win.set_control_width('name', 320)
 	win.set_focus('name')
 

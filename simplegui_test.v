@@ -119,6 +119,9 @@ fn test_qol_helpers_support_struct_binding_and_tables() {
 fn test_ergonomic_helpers_are_available_and_resettable() {
 	mut win := simplegui.SimpleWindow{}
 	win.add_input('name', 'Ada')
+	win.add_password('secret', 's3cr3t')
+	win.add_html_view('preview', '<h1>Preview</h1>')
+	win.add_drop_zone('dropzone', 'Drop files here')
 	win.add_checkbox('ready', 'Ready', true)
 	win.add_number('age', 30)
 	win.add_button('run', 'Run')
@@ -131,6 +134,7 @@ fn test_ergonomic_helpers_are_available_and_resettable() {
 	win.set_focus('name')
 	win.set_placeholder('name', 'Type here')
 	win.set_error('name', 'Required')
+	win.set_tooltip('secret', 'Use a strong password')
 	win.set_default_button('run')
 	win.on_enter('name', fn (mut w simplegui.SimpleWindow) {})
 	win.on_key('a', fn (mut w simplegui.SimpleWindow, value string) {})
@@ -142,6 +146,8 @@ fn test_ergonomic_helpers_are_available_and_resettable() {
 
 	assert win.get_padding() == 16
 	assert win.get_spacing() == 10
+	assert win.get_text('secret') == 's3cr3t'
+	win.set_html('preview', '<p>Updated</p>')
 	assert win.inspect_controls().contains('profile')
 	assert win.inspect_controls().contains('mode')
 	assert win.inspect_controls().contains('details')

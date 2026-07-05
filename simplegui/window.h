@@ -29,6 +29,7 @@ void *window_add_scroll_view_control(main__WindowInfo *info, const char *name, i
 void window_focus_control(main__WindowInfo *info, const char *name);
 void window_set_placeholder_by_name(main__WindowInfo *info, const char *name, const char *text);
 void window_set_error_by_name(main__WindowInfo *info, const char *name, const char *text);
+void window_set_tooltip_by_name(main__WindowInfo *info, const char *name, const char *text);
 void window_set_default_button_by_name(main__WindowInfo *info, const char *name);
 void window_run_after(main__WindowInfo *info, int ms, const char *handler_name);
 void window_show_toast(main__WindowInfo *info, const char *message);
@@ -46,7 +47,10 @@ int window_get_control_int_by_name(main__WindowInfo *info, const char *name);
 // Dynamic control creation bridges
 void *window_add_label_control(main__WindowInfo *info, const char *name, const char *text);
 void *window_add_input_control(main__WindowInfo *info, const char *name, const char *value);
+void *window_add_password_control(main__WindowInfo *info, const char *name, const char *value);
 void *window_add_textarea_control(main__WindowInfo *info, const char *name, const char *value);
+void *window_add_html_view_control(main__WindowInfo *info, const char *name, const char *html);
+void *window_add_drop_zone_control(main__WindowInfo *info, const char *name, const char *label);
 void *window_add_checkbox_control(main__WindowInfo *info, const char *name, const char *text, int checked);
 void *window_add_button_control(main__WindowInfo *info, const char *name, const char *text);
 void *window_add_number_control(main__WindowInfo *info, const char *name, int value);

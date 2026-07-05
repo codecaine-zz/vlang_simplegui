@@ -3,6 +3,7 @@ module simplegui
 #include <Cocoa/Cocoa.h>
 #include "@VMODROOT/simplegui/window.h"
 #flag -framework Cocoa
+#flag -framework WebKit
 #flag @VMODROOT/simplegui/window.m
 
 fn C.window_app_init(&WindowParams) &WindowInfo
@@ -18,6 +19,7 @@ fn C.window_add_scroll_view_control(&WindowInfo, &u8, int) voidptr
 fn C.window_focus_control(&WindowInfo, &u8)
 fn C.window_set_placeholder_by_name(&WindowInfo, &u8, &u8)
 fn C.window_set_error_by_name(&WindowInfo, &u8, &u8)
+fn C.window_set_tooltip_by_name(&WindowInfo, &u8, &u8)
 fn C.window_set_default_button_by_name(&WindowInfo, &u8)
 fn C.window_run_after(&WindowInfo, int, &u8)
 fn C.window_show_toast(&WindowInfo, &u8)
@@ -75,7 +77,10 @@ fn C.window_get_control_int_by_name(&WindowInfo, &u8) int
 // Dynamic control creation bridges
 fn C.window_add_label_control(&WindowInfo, &u8, &u8) voidptr
 fn C.window_add_input_control(&WindowInfo, &u8, &u8) voidptr
+fn C.window_add_password_control(&WindowInfo, &u8, &u8) voidptr
 fn C.window_add_textarea_control(&WindowInfo, &u8, &u8) voidptr
+fn C.window_add_html_view_control(&WindowInfo, &u8, &u8) voidptr
+fn C.window_add_drop_zone_control(&WindowInfo, &u8, &u8) voidptr
 fn C.window_add_checkbox_control(&WindowInfo, &u8, &u8, int) voidptr
 fn C.window_add_button_control(&WindowInfo, &u8, &u8) voidptr
 fn C.window_add_number_control(&WindowInfo, &u8, int) voidptr
@@ -272,10 +277,31 @@ pub fn (mut win SimpleWindow) add_input(name string, value string) {
 	}
 }
 
+pub fn (mut win SimpleWindow) add_password(name string, value string) {
+	win.upsert_control(name, 'password', '', value, false, 0)
+	if win.window_info != unsafe { nil } {
+		C.window_add_password_control(win.window_info, name.str, value.str)
+	}
+}
+
 pub fn (mut win SimpleWindow) add_textarea(name string, value string) {
 	win.upsert_control(name, 'textarea', '', value, false, 0)
 	if win.window_info != unsafe { nil } {
 		C.window_add_textarea_control(win.window_info, name.str, value.str)
+	}
+}
+
+pub fn (mut win SimpleWindow) add_html_view(name string, html string) {
+	win.upsert_control(name, 'htmlview', '', html, false, 0)
+	if win.window_info != unsafe { nil } {
+		C.window_add_html_view_control(win.window_info, name.str, html.str)
+	}
+}
+
+pub fn (mut win SimpleWindow) add_drop_zone(name string, label string) {
+	win.upsert_control(name, 'dropzone', label, '', false, 0)
+	if win.window_info != unsafe { nil } {
+		C.window_add_drop_zone_control(win.window_info, name.str, label.str)
 	}
 }
 
@@ -421,6 +447,18 @@ pub fn (win SimpleWindow) get_number_value(name string) int {
 // High-level Delphi/VB/C# style properties/helpers
 pub fn (mut win SimpleWindow) set_text(name string, text string) {
 	win.set_value(name, text)
+}
+
+pub fn (mut win SimpleWindow) set_html(name string, html string) {
+	idx := win.find_control(name)
+	if idx >= 0 {
+		mut entry := win.controls[idx]
+		entry.value = html
+		win.controls[idx] = entry
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_set_control_text_by_name(win.window_info, name.str, html.str)
+	}
 }
 
 pub fn (win SimpleWindow) get_text(name string) string {
@@ -617,6 +655,12 @@ pub fn (mut win SimpleWindow) set_error(name string, text string) {
 	win.errors[name] = text
 	if win.window_info != unsafe { nil } {
 		C.window_set_error_by_name(win.window_info, name.str, text.str)
+	}
+}
+
+pub fn (mut win SimpleWindow) set_tooltip(name string, text string) {
+	if win.window_info != unsafe { nil } {
+		C.window_set_tooltip_by_name(win.window_info, name.str, text.str)
 	}
 }
 

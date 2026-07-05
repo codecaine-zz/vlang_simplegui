@@ -56,8 +56,17 @@ Adds a read-only text description label.
 ### `win.add_input(name string, value string)`
 Adds a single-line text input field.
 
+### `win.add_password(name string, value string)`
+Adds a secure password entry field.
+
 ### `win.add_textarea(name string, value string)`
 Adds a scrollable, multi-line rich text area.
+
+### `win.add_html_view(name string, html string)`
+Adds a lightweight HTML preview panel using WebKit.
+
+### `win.add_drop_zone(name string, label string)`
+Adds a drag-and-drop target for file paths and other dropped content.
 
 ### `win.add_checkbox(name string, label string, checked bool)`
 Adds a toggle checkbox.
@@ -125,6 +134,21 @@ Enables/disables user interaction on the control. Disabled controls will render 
 
 ### `win.get_control_enabled(name string) bool`
 Checks if the control is currently enabled.
+
+### `win.set_placeholder(name string, text string)`
+Sets placeholder text for text-based controls such as inputs and password fields.
+
+### `win.set_error(name string, text string)`
+Applies validation/error feedback to a control and highlights it visually.
+
+### `win.set_tooltip(name string, text string)`
+Sets a hover tooltip for any control.
+
+### `win.set_default_button(name string)`
+Marks a button as the default Enter-key action for the window.
+
+### `win.set_html(name string, html string)`
+Updates the content shown inside an HTML preview panel.
 
 ---
 
@@ -234,7 +258,7 @@ Attaches an event handler when the application window is resized by the user.
 - **Callback Signature**: `fn (mut win simplegui.SimpleWindow, new_size string)` (where `new_size` has format `"widthxheight"`, e.g. `"640x480"`)
 
 ### `win.on_file_drop(callback FileDropCallback)`
-Attaches an event handler when files are dragged and dropped onto the window.
+Attaches an event handler when files are dragged and dropped onto the window or onto a drop zone control.
 - **Callback Signature**: `fn (mut win simplegui.SimpleWindow, files []string)`
 
 ---
