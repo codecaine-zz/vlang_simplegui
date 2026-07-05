@@ -288,6 +288,8 @@ The following native macOS windows were captured dynamically by building and run
   ![Markdown Live Editor](screenshots/markdown_editor.png)
 - **Product Catalog CRUD Grid**: `v run demos/grid_data_editor.v`
   ![Product Catalog CRUD](screenshots/grid_data_editor.png)
+- **SQLite CRUD Showcase**: `v run demos/sqlite_crud_demo.v`
+  ![SQLite CRUD Showcase](screenshots/sqlite_crud_demo.png)
 
 ### Layout & Component Showcases
 
@@ -305,6 +307,8 @@ The following native macOS windows were captured dynamically by building and run
   ![Rich Widgets Demo](screenshots/modern_widgets_demo.png)
 - **Advanced macOS Rich Controls Showcase**: `v run demos/rich_widgets_demo.v`
   ![Advanced Controls Suite](screenshots/rich_widgets_demo.png)
+- **Native Switch & Custom Controls**: `v run demos/new_controls_demo.v`
+  ![Native Switch & Custom Controls](screenshots/new_controls_demo.png)
 
 ### Built-in Interactive Utilities
 
@@ -318,6 +322,10 @@ The following native macOS windows were captured dynamically by building and run
   ![List & Image Demo](screenshots/list_image_demo.png)
 - **Events & State Controller**: `v run demos/events_demo.v`
   ![Events Demo](screenshots/events_demo.png)
+- **Lorem & HTML Render**: `v run demos/lorem_and_html_demo.v`
+  ![Lorem & HTML Render](screenshots/lorem_and_html_demo.png)
+- **Menu Bar**: `v run demos/menu_demo.v`
+  ![Menu Bar](screenshots/menu_demo.png)
 
 ### Custom & Architectural Patterns
 
@@ -331,10 +339,72 @@ The following native macOS windows were captured dynamically by building and run
   ![Always On Top Demo](screenshots/always_on_top_demo.png)
 - **Developer DX Showcase**: `v run demos/dx_showcase.v`
   ![DX Showcase Demo](screenshots/dx_showcase.png)
+- **Developer DX Features**: `v run demos/dx_features_demo.v`
+  ![Developer DX Features](screenshots/dx_features_demo.png)
 - **Fluent Window Configurations**: `v run demos/configuration_demo.v`
   ![Window Config Demo](screenshots/configuration_demo.png)
 - **Dirty Form Change Tracking**: `v run demos/dirty_form_demo.v`
   ![Dirty Form Demo](screenshots/dirty_form_demo.png)
+- **Interactive Window Controller**: `v run demos/window_controller_demo.v`
+  ![Window Controller](screenshots/window_controller_demo.png)
+- **State Controller Pattern**: `v run demos/state_controller_pattern.v`
+  ![State Controller Pattern](screenshots/state_controller_pattern.png)
+- **QoL Bulk Binding Features**: `v run demos/features_demo.v`
+  ![QoL Bulk Binding](screenshots/features_demo.png)
+- **Advanced Features & Hooks**: `v run demos/advanced_features_demo.v`
+  ![Advanced Features & Hooks](screenshots/advanced_features_demo.png)
+
+### System & Standard Library Integrations
+
+- **System and Standard Library Features**: `v run demos/system_and_stdlib_features_demo.v`
+  ![System and Standard Library Features](screenshots/system_and_stdlib_features_demo.png)
+- **System Calls Info Viewer**: `v run demos/system_calls_demo.v`
+  ![System Calls Info Viewer](screenshots/system_calls_demo.png)
+- **System Info & Encodings (Hex/Base64)**: `v run demos/encoding_and_system_info_demo.v`
+  ![System Info & Encodings](screenshots/encoding_and_system_info_demo.png)
+- **Clipboard Monitor**: `v run demos/clipboard_demo.v`
+  ![Clipboard Monitor](screenshots/clipboard_demo.png)
+- **Performance Benchmark**: `v run demos/benchmark_demo.v`
+  ![Performance Benchmark](screenshots/benchmark_demo.png)
+
+### Network Sockets & Security Suite
+
+- **TCP Socket**: `v run demos/tcp_socket_demo.v`
+  ![TCP Socket](screenshots/tcp_socket_demo.png)
+- **UDP Socket**: `v run demos/udp_socket_demo.v`
+  ![UDP Socket](screenshots/udp_socket_demo.png)
+- **Unix Domain Socket**: `v run demos/unix_socket_demo.v`
+  ![Unix Domain Socket](screenshots/unix_socket_demo.png)
+- **Secure TLS Socket**: `v run demos/secure_socket_demo.v`
+  ![Secure TLS Socket](screenshots/secure_socket_demo.png)
+- **Secure UDP DTLS Socket**: `v run demos/secure_udp_demo.v`
+  ![Secure UDP DTLS Socket](screenshots/secure_udp_demo.png)
+- **Secure Unix TLS Socket**: `v run demos/secure_unix_demo.v`
+  ![Secure Unix TLS Socket](screenshots/secure_unix_demo.png)
+- **Secure WebSockets**: `v run demos/secure_websocket_demo.v`
+  ![Secure WebSockets](screenshots/secure_websocket_demo.png)
+- **High-Level Wrapped Sockets**: `v run demos/wrapped_sockets_demo.v`
+  ![High-Level Wrapped Sockets](screenshots/wrapped_sockets_demo.png)
+
+### Data Utilities & Compression
+
+- **Deflate Compression**: `v run demos/deflate_demo.v`
+  ![Deflate Compression](screenshots/deflate_demo.png)
+- **Zstandard Compression**: `v run demos/zstd_demo.v`
+  ![Zstandard Compression](screenshots/zstd_demo.png)
+
+### Starter Templates & Basics
+
+- **Starter Template**: `v run demos/starter_template.v`
+  ![Starter Template](screenshots/starter_template.png)
+- **Beginner Signup Form**: `v run demos/beginner_demo.v`
+  ![Beginner Signup Form](screenshots/beginner_demo.png)
+- **Vertical Stack Starter**: `v run demos/vertical_stack_starter.v`
+  ![Vertical Stack Starter](screenshots/vertical_stack_starter.png)
+- **Grid Column Starter**: `v run demos/grid_column_starter.v`
+  ![Grid Column Starter](screenshots/grid_column_starter.png)
+- **High-Level Form Builder**: `v run demos/high_level_demo.v`
+  ![High-Level Form Builder](screenshots/high_level_demo.png)
 
 ## Compiling & Packaging as a macOS App
 

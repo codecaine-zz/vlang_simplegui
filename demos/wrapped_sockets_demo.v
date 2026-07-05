@@ -73,7 +73,7 @@ fn main() {
 	time.sleep(50 * time.millisecond) // let them bind
 
 	// 2. Setup SimpleGUI Window
-	mut gui := simplegui.new_simple_window('Wrapped Network Sockets Demo', 600, 480)
+	mut gui := simplegui.new_simple_window('Wrapped Network Sockets Demo', 600, 560)
 	gui.set_padding(20)
 	gui.set_spacing(10)
 

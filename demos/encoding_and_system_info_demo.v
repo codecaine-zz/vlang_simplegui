@@ -3,7 +3,7 @@ module main
 import simplegui
 
 fn main() {
-	mut gui := simplegui.new_simple_window('Encoding & POSIX System Info Demo', 650, 600)
+	mut gui := simplegui.new_simple_window('Encoding & POSIX System Info Demo', 650, 520)
 	gui.set_padding(20)
 	gui.set_spacing(10)
 
@@ -34,7 +34,7 @@ fn main() {
 
 	// Output area
 	gui.add_textarea('output_box', 'Click any actions above to view outputs...')
-	gui.set_control_height('output_box', 220)
+	gui.set_control_height('output_box', 120)
 
 	// Event Handlers for Encoding
 	gui.on_click('btn_hex_enc', fn (mut win simplegui.SimpleWindow) {

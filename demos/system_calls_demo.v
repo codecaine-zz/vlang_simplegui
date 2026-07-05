@@ -4,7 +4,7 @@ import simplegui
 
 fn main() {
 	// Create a beautiful macOS SimpleGUI window
-	mut gui := simplegui.new_simple_window('System Calls & OS API Playground', 650, 680)
+	mut gui := simplegui.new_simple_window('System Calls & OS API Playground', 650, 820)
 	gui.set_title('SimpleGUI System Calls & OS API Playground')
 
 	// Set layout characteristics

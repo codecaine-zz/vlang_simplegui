@@ -152,7 +152,7 @@ fn main() {
 	}
 
 	// 6. Build the modern simplegui Cocoa desktop layout
-	mut win := simplegui.new_simple_window('SQLite Database CRUD Explorer', 780, 680)
+	mut win := simplegui.new_simple_window('SQLite Database CRUD Explorer', 780, 620)
 	win.set_theme('dracula')
 	win.set_spacing(10)
 	win.set_padding(15)
@@ -175,7 +175,7 @@ fn main() {
 
 	// Multi-column table grid representing the database table
 	win.add_table('products_table', ['ID', 'Product Name', 'Category', 'Stock Level', 'Unit Price', 'In Stock?', 'Date Received'])
-	win.set_control_height('products_table', 180)
+	win.set_control_height('products_table', 120)
 
 	// Context description label
 	win.add_label('info_label', 'Select a row in the table above to edit, or fill details below to add a new product.')
@@ -190,40 +190,33 @@ fn main() {
 		
 		// Column 1: Record Details form
 		win.add_group_box('record_details_group', 'Product Details Form')
-			win.begin_row('id_row')
-				win.add_label('lbl_id', 'Product Database ID:').font_size(11).width(120)
-				win.add_input('id_input', 'AUTO-GENERATE')
+			win.begin_row('id_cat_row')
+				win.add_label('lbl_id', 'ID:').font_size(11).width(30)
+				win.add_input('id_input', 'AUTO-GENERATE').width(110)
+				win.add_horizontal_spacer(10)
+				win.add_label('lbl_category', 'Category:').font_size(11).width(60)
+				win.add_dropdown('category_input', ['Electronics', 'Furniture', 'Apparel', 'Books', 'Other'], 'Electronics').width(110)
 			win.end_row()
 			win.set_control_enabled('id_input', false) // ID is database auto-incremented
 			
 			win.begin_row('name_row')
-				win.add_label('lbl_name', 'Product Name:').font_size(11).width(120)
+				win.add_label('lbl_name', 'Name:').font_size(11).width(60)
 				win.add_input('name_input', '')
 			win.end_row()
 			
-			win.begin_row('cat_stock_row')
-				win.add_label('lbl_category', 'Category:').font_size(11).width(120)
-				win.add_dropdown('category_input', ['Electronics', 'Furniture', 'Apparel', 'Books', 'Other'], 'Electronics')
-			win.end_row()
-
-			win.begin_row('stock_row')
-				win.add_label('lbl_stock', 'Stock Level (Qty):').font_size(11).width(120)
-				win.add_number('stock_input', 0)
+			win.begin_row('stock_price_row')
+				win.add_label('lbl_stock', 'Stock Qty:').font_size(11).width(60)
+				win.add_number('stock_input', 0).width(80)
+				win.add_horizontal_spacer(10)
+				win.add_label('lbl_price', 'Price ($):').font_size(11).width(60)
+				win.add_input('price_input', '').width(80)
 			win.end_row()
 			
-			win.begin_row('price_row')
-				win.add_label('lbl_price', 'Price Value ($):').font_size(11).width(120)
-				win.add_input('price_input', '')
-			win.end_row()
-			
-			win.begin_row('in_stock_row')
-				win.add_label('lbl_instock', 'Available / In-Stock:').font_size(11).width(120)
-				win.add_checkbox('in_stock_input', 'Active in Catalog', true)
-			win.end_row()
-
-			win.begin_row('date_row')
-				win.add_label('lbl_date', 'Date Received:').font_size(11).width(120)
-				win.add_date_picker('date_recv_input', '2026-07-05')
+			win.begin_row('in_stock_date_row')
+				win.add_checkbox('in_stock_input', 'Active in Catalog', true).width(140)
+				win.add_horizontal_spacer(10)
+				win.add_label('lbl_date', 'Date:').font_size(11).width(40)
+				win.add_date_picker('date_recv_input', '2026-07-05').width(120)
 			win.end_row()
 		
 		// Column 2: CRUD Database Actions and Stats panel

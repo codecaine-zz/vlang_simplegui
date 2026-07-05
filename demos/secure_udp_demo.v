@@ -29,7 +29,7 @@ fn main() {
 	println('==================================================')
 
 	// 2. Build the SimpleGUI application playground window
-	mut gui := simplegui.new_simple_window('Secure UDP Socket Client Demo', 640, 560)
+	mut gui := simplegui.new_simple_window('Secure UDP Socket Client Demo', 640, 620)
 	gui.set_title('SimpleGUI Secure UDP Socket Client (AES-128-CBC)')
 	gui.set_padding(20)
 	gui.set_spacing(12)

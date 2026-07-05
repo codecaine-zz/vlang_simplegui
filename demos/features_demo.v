@@ -12,7 +12,7 @@ mut:
 
 fn main() {
 	// Create the window
-	mut gui := simplegui.new_simple_window('V QoL Features Demo', 500, 620)
+	mut gui := simplegui.new_simple_window('V QoL Features Demo', 500, 750)
 
 	// Add custom menu items
 	gui.add_menu_item('Tray Mode', 'Switch to Status Menu Bar', 's', fn (mut win &simplegui.SimpleWindow) {

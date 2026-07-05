@@ -27,7 +27,7 @@ fn main() {
 	println('==================================================')
 
 	// 2. Build the SimpleGUI application playground window
-	mut gui := simplegui.new_simple_window('Unix Domain Socket Client Demo', 640, 520)
+	mut gui := simplegui.new_simple_window('Unix Domain Socket Client Demo', 640, 600)
 	gui.set_title('SimpleGUI High-Level Unix Socket Client')
 	gui.set_padding(20)
 	gui.set_spacing(12)

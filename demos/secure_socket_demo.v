@@ -38,7 +38,7 @@ fn main() {
 	println('==================================================')
 
 	// 3. Build the SimpleGUI application playground window
-	mut gui := simplegui.new_simple_window('Secure TLS Socket Client Demo', 640, 520)
+	mut gui := simplegui.new_simple_window('Secure TLS Socket Client Demo', 640, 600)
 	gui.set_title('SimpleGUI High-Level Secure Socket Client')
 	gui.set_padding(20)
 	gui.set_spacing(12)
