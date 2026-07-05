@@ -74,7 +74,7 @@ fn main() {
 
 	// Create a beautiful macOS SimpleGUI window
 	mut gui := simplegui.new_simple_window('System & Standard Library Showcase', 750,
-		1100)
+		1320)
 	gui.set_title('SimpleGUI System & Standard Library Showcase')
 
 	// Set layout characteristics
@@ -824,6 +824,73 @@ Total benchmark duration: ${sw.elapsed_sec():.4f} seconds'
 
 		win.set_text('txt_sock_output', 'Unix Domain Socket Successful!\nSent:     "${val}"\nReceived: "${response}"')
 		win.set_status('Unix socket handshake complete.')
+	})
+
+	// --------------------------------------------------
+	// 8. HTML DOM Parser & Lorem Generator
+	// --------------------------------------------------
+	gui.add_group_box('lorem_html_group', '📝 8. HTML DOM Parser & Strings Lorem')
+
+	gui.begin_row('row_lh_1')
+	gui.add_label('lbl_lh_corpus', 'Corpus:')
+	gui.add_input('input_lh_corpus', 'darwin')
+	gui.add_label('lbl_lh_paras', 'Paras:')
+	gui.add_input('input_lh_paras', '1')
+	gui.add_label('lbl_lh_sentences', 'Sentences:')
+	gui.add_input('input_lh_sentences', '2')
+	gui.add_label('lbl_lh_words', 'Words:')
+	gui.add_input('input_lh_words', '7')
+	gui.add_button('btn_lh_lorem', 'Generate Lorem')
+	gui.end_row()
+
+	gui.begin_row('row_lh_2')
+	gui.add_label('lbl_lh_html', 'HTML:')
+	gui.add_input('input_lh_html', '<h1 class="title">SimpleGUI Standard library Extensions</h1><p class="desc">net.html works!</p>')
+	gui.add_button('btn_lh_html', 'Parse HTML DOM')
+	gui.end_row()
+
+	gui.add_textarea('txt_lh_output', 'HTML parsing and strings lorem output will print here...')
+	gui.set_control_height('txt_lh_output', 90)
+
+	// Lorem Handler
+	gui.on_click('btn_lh_lorem', fn (mut win simplegui.SimpleWindow) {
+		corpus := win.get_text('input_lh_corpus').trim_space()
+		paras := win.get_text('input_lh_paras').int()
+		sentences := win.get_text('input_lh_sentences').int()
+		words := win.get_text('input_lh_words').int()
+
+		if corpus != 'lorem' && corpus != 'poe' && corpus != 'darwin' && corpus != 'bard' {
+			win.alert('Corpus Error', 'Corpus must be one of: lorem, poe, darwin, bard')
+			return
+		}
+
+		win.set_status('Generating lorem text...')
+		res := win.lorem_generate(corpus, paras, sentences, words)
+		win.set_text('txt_lh_output', 'Corpus "${corpus}":\n' + res)
+		win.set_status('Lorem generation complete.')
+	})
+
+	// HTML DOM Handler
+	gui.on_click('btn_lh_html', fn (mut win simplegui.SimpleWindow) {
+		content := win.get_text('input_lh_html')
+		if content.trim_space().len == 0 {
+			win.alert('Input Error', 'HTML input field cannot be empty.')
+			return
+		}
+
+		win.set_status('Parsing HTML DOM...')
+		doc := win.html_parse(content)
+		title := doc.get_tag_text('h1')
+		desc := doc.get_tags_by_class('desc')
+
+		mut desc_text := ''
+		for i, d in desc {
+			desc_text += '  Desc ${i + 1}: "${d}"\n'
+		}
+
+		formatted := 'Parsed HTML:\n  Title: "${title}"\n' + desc_text
+		win.set_text('txt_lh_output', formatted)
+		win.set_status('HTML DOM parsed successfully.')
 	})
 
 	// --------------------------------------------------

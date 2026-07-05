@@ -28,6 +28,8 @@ import net
 import net.unix
 import compress.deflate
 import compress.zstd
+import net.html
+import strings.lorem
 
 // stdlib.v - Extended High-Level Standard Library Wrappers for SimpleGUI
 // Provides extremely simple, beginner-friendly, and safe wrappers around V's Core Standard Library.
@@ -1070,3 +1072,65 @@ pub fn decompress_zstd(data []u8) string {
 pub fn (win &SimpleWindow) decompress_zstd(data []u8) string {
 	return decompress_zstd(data)
 }
+
+// ==========================================
+// 25. HTML Parser Helper (Chapter 13: net.html)
+// ==========================================
+
+// SimpleHTMLDocument wraps html.DocumentObjectModel for easy tag and class querying.
+pub struct SimpleHTMLDocument {
+pub mut:
+	doc html.DocumentObjectModel
+}
+
+// get_tag_text retrieves the text content of the first matching HTML tag name.
+pub fn (d &SimpleHTMLDocument) get_tag_text(name string) string {
+	tags := d.doc.get_tags(name: name)
+	if tags.len > 0 {
+		return tags[0].text().trim_space()
+	}
+	return ''
+}
+
+// get_tags_by_class retrieves the text content of all tags matching a class name.
+pub fn (d &SimpleHTMLDocument) get_tags_by_class(class_name string) []string {
+	tags := d.doc.get_tags_by_class_name(class_name)
+	mut res := []string{}
+	for t in tags {
+		res << t.text().trim_space()
+	}
+	return res
+}
+
+// html_parse parses an HTML string into a SimpleHTMLDocument.
+pub fn html_parse(content string) SimpleHTMLDocument {
+	return SimpleHTMLDocument{
+		doc: html.parse(content)
+	}
+}
+
+// html_parse delegates to standalone html_parse.
+pub fn (win &SimpleWindow) html_parse(content string) SimpleHTMLDocument {
+	return html_parse(content)
+}
+
+// ==========================================
+// 26. Strings Lorem Helper (Chapter 13: strings.lorem)
+// ==========================================
+
+// lorem_generate produces pseudo-random placeholder text (Markov chain).
+// Supported corpora: 'lorem' (default), 'poe', 'darwin', 'bard'.
+pub fn lorem_generate(corpus_name string, paragraphs int, sentences int, words int) string {
+	return lorem.generate(lorem.LoremCfg{
+		corpus_name:             corpus_name
+		paragraphs:              paragraphs
+		sentences_per_paragraph: sentences
+		words_per_sentence:      words
+	})
+}
+
+// lorem_generate delegates to standalone lorem_generate.
+pub fn (win &SimpleWindow) lorem_generate(corpus_name string, paragraphs int, sentences int, words int) string {
+	return lorem_generate(corpus_name, paragraphs, sentences, words)
+}
+

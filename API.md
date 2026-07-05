@@ -855,6 +855,22 @@ To simplify system integrations and mirror key features from NeutralinoJS, `simp
     - `s.read() !string`: Reads data from the Unix socket.
     - `s.close()`: Closes the active stream connection.
 
+### HTML Parser (`net.html`)
+
+- `win.html_parse(content string) SimpleHTMLDocument`: Parses HTML string content into a queryable Document Object Model (DOM).
+  - **Returned Type**: `SimpleHTMLDocument` supports:
+    - `d.get_tag_text(name string) string`: Extracts trimmed inner text of the first matching tag name.
+    - `d.get_tags_by_class(class_name string) []string`: Extracts trimmed inner text of all tags matching a class name.
+
+### Placeholder Text Generator (`strings.lorem`)
+
+- `win.lorem_generate(corpus_name string, paragraphs int, sentences int, words int) string`: Generates pseudo-random placeholder paragraphs based on Markov chains from corpora.
+  - **Parameters**:
+    - `corpus_name`: Choice of `'lorem'` (Latin), `'poe'` (Edgar Allan Poe), `'darwin'` (Charles Darwin), or `'bard'` (William Shakespeare).
+    - `paragraphs`: Number of paragraphs.
+    - `sentences`: Number of sentences per paragraph.
+    - `words`: Number of words per sentence.
+
 ### Console Text Styling (`term`)
 
 - `win.term_color(text string, style string) string`: Styles console text outputs (supports `'red'`, `'green'`, `'blue'`, `'yellow'`, `'bold'`, `'underline'`).
