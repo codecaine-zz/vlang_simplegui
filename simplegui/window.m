@@ -204,9 +204,13 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
 
   if (backgroundColor) {
     if ([view isKindOfClass:[NSTextField class]]) {
-      [(NSTextField *)view setBackgroundColor:backgroundColor];
+      NSTextField *field = (NSTextField *)view;
+      [field setDrawsBackground:YES];
+      [field setBackgroundColor:backgroundColor];
     } else if ([view isKindOfClass:[NSTextView class]]) {
-      [(NSTextView *)view setBackgroundColor:backgroundColor];
+      NSTextView *textView = (NSTextView *)view;
+      [textView setDrawsBackground:YES];
+      [textView setBackgroundColor:backgroundColor];
     } else {
       [view setWantsLayer:YES];
       [view.layer setBackgroundColor:backgroundColor.CGColor];
@@ -318,12 +322,13 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
     NSView *view = self.controlsByName[key];
     NSColor *effBg = nil;
     if ([view isKindOfClass:[NSTextField class]]) {
-      effBg = [NSColor textBackgroundColor];
+      effBg = backgroundColor ?: [NSColor textBackgroundColor];
     } else if ([view isKindOfClass:[NSScrollView class]]) {
       NSView *doc = [(NSScrollView *)view documentView];
       if ([doc isKindOfClass:[NSTextView class]]) {
         [(NSTextView *)doc setTextColor:fontColor];
-        [(NSTextView *)doc setBackgroundColor:[NSColor textBackgroundColor]];
+        [(NSTextView *)doc setBackgroundColor:backgroundColor ?: [NSColor textBackgroundColor]];
+        [(NSTextView *)doc setDrawsBackground:YES];
       }
     }
     applyStyleToView(view, effBg, fontColor);
@@ -410,7 +415,7 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [textField.widthAnchor constraintEqualToConstant:300].active = YES;
   
   if (self.currentFontColor) {
-    applyStyleToView(textField, [NSColor textBackgroundColor], self.currentFontColor);
+    applyStyleToView(textField, self.currentBackgroundColor ?: [NSColor textBackgroundColor], self.currentFontColor);
   }
   
   self.controlsByName[[name lowercaseString]] = textField;
@@ -440,7 +445,8 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   
   if (self.currentFontColor) {
     [textView setTextColor:self.currentFontColor];
-    [textView setBackgroundColor:[NSColor textBackgroundColor]];
+    [textView setBackgroundColor:self.currentBackgroundColor ?: [NSColor textBackgroundColor]];
+    [textView setDrawsBackground:YES];
   }
   
   self.controlsByName[[name lowercaseString]] = scroll;
@@ -498,7 +504,7 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [row addArrangedSubview:stepper];
   
   if (self.currentFontColor) {
-    applyStyleToView(numField, [NSColor textBackgroundColor], self.currentFontColor);
+    applyStyleToView(numField, self.currentBackgroundColor ?: [NSColor textBackgroundColor], self.currentFontColor);
   }
   
   self.controlsByName[[name lowercaseString]] = numField;
@@ -1239,6 +1245,172 @@ void window_set_control_font_size_by_name(main__WindowInfo *info, const char *na
   } else {
     applyFont(view);
   }
+}
+
+void window_set_padding(main__WindowInfo *info, int padding) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    if (delegate.mainStackView) {
+      [delegate.mainStackView setEdgeInsets:NSEdgeInsetsMake(padding, padding, padding, padding)];
+      [delegate.mainStackView setNeedsLayout:YES];
+    }
+  });
+}
+
+void window_set_spacing(main__WindowInfo *info, int spacing) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    if (delegate.mainStackView) {
+      [delegate.mainStackView setSpacing:(double)spacing];
+      [delegate.mainStackView setNeedsLayout:YES];
+    }
+  });
+}
+
+void *window_add_group_box_control(main__WindowInfo *info, const char *name, const char *title) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSBox *box = nil;
+  void (^runBlock)(void) = ^{
+    box = [[NSBox alloc] initWithFrame:NSZeroRect];
+    [box setTitle:nsstring(title)];
+    [box setBorderType:NSLineBorder];
+    [box setBoxType:NSBoxCustom];
+    [box setContentViewMargins:NSMakeSize(8, 8)];
+    [delegate addControlToLayout:box];
+    NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    delegate.controlsByName[key] = box;
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return (__bridge void *)box;
+}
+
+void *window_add_tabs_control(main__WindowInfo *info, const char *name, const char **titles, int titles_count) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSTabView *tabs = nil;
+  void (^runBlock)(void) = ^{
+    tabs = [[NSTabView alloc] initWithFrame:NSZeroRect];
+    [tabs setTabViewType:NSTopTabsBezelBorder];
+    [tabs setControlSize:NSSmallControlSize];
+    [tabs setFont:[NSFont systemFontOfSize:12]];
+    [tabs setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [tabs.widthAnchor constraintLessThanOrEqualToConstant:420].active = YES;
+    [tabs.heightAnchor constraintEqualToConstant:32].active = YES;
+    for (int i = 0; i < titles_count; i++) {
+      NSTabViewItem *item = [[NSTabViewItem alloc] initWithIdentifier:[NSString stringWithFormat:@"tab_%d", i]];
+      [item setLabel:nsstring(titles[i])];
+      [tabs addTabViewItem:item];
+    }
+    [delegate addControlToLayout:tabs];
+    NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    delegate.controlsByName[key] = tabs;
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return (__bridge void *)tabs;
+}
+
+void *window_add_scroll_view_control(main__WindowInfo *info, const char *name, int height) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSScrollView *scroll = nil;
+  void (^runBlock)(void) = ^{
+    scroll = [[NSScrollView alloc] initWithFrame:NSZeroRect];
+    [scroll setHasVerticalScroller:YES];
+    [scroll setHasHorizontalScroller:NO];
+    [scroll.heightAnchor constraintEqualToConstant:height].active = YES;
+    NSView *content = [[NSView alloc] initWithFrame:NSZeroRect];
+    [content setFrameSize:NSMakeSize(300, height)];
+    [scroll setDocumentView:content];
+    [delegate addControlToLayout:scroll];
+    NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    delegate.controlsByName[key] = scroll;
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return (__bridge void *)scroll;
+}
+
+void window_focus_control(main__WindowInfo *info, const char *name) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    NSView *view = [delegate viewForControlName:nsstring(name)];
+    if (view) {
+      [delegate.window makeFirstResponder:view];
+    }
+  });
+}
+
+void window_set_placeholder_by_name(main__WindowInfo *info, const char *name, const char *text) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    NSView *view = [delegate viewForControlName:nsstring(name)];
+    if ([view isKindOfClass:[NSTextField class]]) {
+      [(NSTextField *)view setPlaceholderString:nsstring(text)];
+    }
+  });
+}
+
+void window_set_error_by_name(main__WindowInfo *info, const char *name, const char *text) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    NSView *view = [delegate viewForControlName:nsstring(name)];
+    if (view) {
+      [view setToolTip:nsstring(text)];
+    }
+  });
+}
+
+void window_set_default_button_by_name(main__WindowInfo *info, const char *name) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    NSView *view = [delegate viewForControlName:nsstring(name)];
+    if ([view isKindOfClass:[NSButton class]]) {
+      [(NSButton *)view setKeyEquivalent:@"\r"];
+    }
+  });
+}
+
+void window_run_after(main__WindowInfo *info, int ms, const char *handler_name) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *handler = nsstring(handler_name);
+  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)ms * NSEC_PER_MSEC), dispatch_get_main_queue(), ^{
+    vlang_dispatch_event(delegate.win_ptr, [handler UTF8String], "run_after", "");
+  });
+}
+
+void window_show_toast(main__WindowInfo *info, const char *message) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    NSAlert *alert = [[NSAlert alloc] init];
+    [alert setMessageText:@"Notice"];
+    [alert setInformativeText:nsstring(message)];
+    [alert addButtonWithTitle:@"OK"];
+    [alert setAlertStyle:NSAlertStyleInformational];
+    [alert runModal];
+  });
+}
+
+void window_open_url(main__WindowInfo *info, const char *url) {
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:nsstring(url)]];
+  });
+}
+
+void window_copy_to_clipboard(main__WindowInfo *info, const char *text) {
+  dispatch_async(dispatch_get_main_queue(), ^{
+    NSPasteboard *pasteboard = [NSPasteboard generalPasteboard];
+    [pasteboard clearContents];
+    [pasteboard setString:nsstring(text) forType:NSPasteboardTypeString];
+  });
 }
 
 // C creation bridges calling AppDelegate make methods

@@ -21,6 +21,19 @@ void window_set_control_font_color_by_name(main__WindowInfo *info, const char *n
 void window_set_control_width_by_name(main__WindowInfo *info, const char *name, int width);
 void window_set_control_height_by_name(main__WindowInfo *info, const char *name, int height);
 void window_set_control_font_size_by_name(main__WindowInfo *info, const char *name, int size);
+void window_set_padding(main__WindowInfo *info, int padding);
+void window_set_spacing(main__WindowInfo *info, int spacing);
+void *window_add_group_box_control(main__WindowInfo *info, const char *name, const char *title);
+void *window_add_tabs_control(main__WindowInfo *info, const char *name, const char **titles, int titles_count);
+void *window_add_scroll_view_control(main__WindowInfo *info, const char *name, int height);
+void window_focus_control(main__WindowInfo *info, const char *name);
+void window_set_placeholder_by_name(main__WindowInfo *info, const char *name, const char *text);
+void window_set_error_by_name(main__WindowInfo *info, const char *name, const char *text);
+void window_set_default_button_by_name(main__WindowInfo *info, const char *name);
+void window_run_after(main__WindowInfo *info, int ms, const char *handler_name);
+void window_show_toast(main__WindowInfo *info, const char *message);
+void window_open_url(main__WindowInfo *info, const char *url);
+void window_copy_to_clipboard(main__WindowInfo *info, const char *text);
 
 // Name-based generic control accessors
 void window_set_control_text_by_name(main__WindowInfo *info, const char *name, const char *text);

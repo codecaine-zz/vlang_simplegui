@@ -116,6 +116,49 @@ fn test_qol_helpers_support_struct_binding_and_tables() {
 	win.run_on_main_thread(fn (mut w simplegui.SimpleWindow) {})
 }
 
+fn test_ergonomic_helpers_are_available_and_resettable() {
+	mut win := simplegui.SimpleWindow{}
+	win.add_input('name', 'Ada')
+	win.add_checkbox('ready', 'Ready', true)
+	win.add_number('age', 30)
+	win.add_button('run', 'Run')
+
+	win.set_padding(16)
+	win.set_spacing(10)
+	win.add_group_box('profile', 'Profile')
+	win.add_tabs('mode', ['Simple', 'Advanced'])
+	win.add_scroll_view('details', 120)
+	win.set_focus('name')
+	win.set_placeholder('name', 'Type here')
+	win.set_error('name', 'Required')
+	win.set_default_button('run')
+	win.on_enter('name', fn (mut w simplegui.SimpleWindow) {})
+	win.on_key('a', fn (mut w simplegui.SimpleWindow, value string) {})
+	win.on_close(fn (mut w simplegui.SimpleWindow) {})
+	win.run_after(5, fn (mut w simplegui.SimpleWindow) {})
+	win.toast('Saved')
+	win.copy_to_clipboard('hello')
+	win.open_url('https://example.com')
+
+	assert win.get_padding() == 16
+	assert win.get_spacing() == 10
+	assert win.inspect_controls().contains('profile')
+	assert win.inspect_controls().contains('mode')
+	assert win.inspect_controls().contains('details')
+
+	win.clear('name')
+	assert win.get_text('name') == ''
+
+	win.set_text('name', 'Grace')
+	win.set_checked('ready', false)
+	win.set_value_int('age', 42)
+	win.reset_form()
+	assert win.get_text('name') == 'Ada'
+	assert win.get_checked('ready') == true
+	assert win.get_value_int('age') == 30
+	assert win.dump_values()['name'] == 'Ada'
+}
+
 fn on_test_change(mut win simplegui.SimpleWindow, value string) {
 	println('test change: ${value}')
 }

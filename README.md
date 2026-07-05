@@ -48,27 +48,35 @@ fn on_run_clicked() {
 ## Screenshots
 
 ### 1. Vertical Stack Style (Default Layout)
+
 ![Vertical Stack Style](screenshots/stack_style.png)
 
 ### 2. Grid & Row Layout (Columns aligned side-by-side)
+
 ![Grid Layout](screenshots/grid_style.png)
 
 ### 3. Interactive Keypad Calculator
+
 ![Calculator](screenshots/calculator.png)
 
 ### 4. Advanced Preferences Settings Editor
+
 ![Settings Editor](screenshots/settings_editor.png)
 
 ### 5. Database Query Viewer & Filter
+
 ![Data Viewer](screenshots/data_viewer.png)
 
 ### 6. Scheduled Timer Loader Task
+
 ![Timer Demo](screenshots/timer_demo.png)
 
 ### 7. Interactive List & Image Selector Dashboard
+
 ![List & Image Demo](screenshots/list_image.png)
 
 ### 8. Interactive Events & State Controller
+
 ![Events Demo](screenshots/events_demo.png)
 
 ## Requirements
@@ -80,59 +88,75 @@ fn on_run_clicked() {
 ## Run the demos
 
 This project supports two different layout styles:
+
 1. **Vertical Stack Style**: The default linear, top-to-bottom layout.
 2. **Grid / Row-based Style**: Allows grouping multiple controls side-by-side inside rows.
 
 ### Run the main demo (which combines both styles):
+
 ```bash
 v run .
 ```
 
 ### Run the Stack Style demo:
+
 ```bash
 v run demos/stack_style.v
 ```
 
 ### Run the Grid Style demo:
+
 ```bash
 v run demos/grid_style.v
 ```
 
 ### Run the Calculator demo:
+
 ```bash
 v run demos/calculator.v
 ```
 
 ### Run the Settings Editor demo:
+
 ```bash
 v run demos/settings_editor.v
 ```
 
 ### Run the Data Viewer/Filter demo:
+
 ```bash
 v run demos/data_viewer.v
 ```
 
 ### Run the Timer & Progress loader demo:
+
 ```bash
 v run demos/timer_demo.v
 ```
 
 ### Run the List & Image Preview Selector demo:
+
 ```bash
 v run demos/list_image_demo.v
 ```
 
 ### Run the Interactive Events & States demo:
+
 ```bash
 v run demos/events_demo.v
 ```
 
+### Run the Ergonomic Helpers demo:
+
+```bash
+v run demos/ergonomic_demo.v
+```
+
 ### Run the Native Menu Bar & Text Shortcuts demo:
+
 ```bash
 v run demos/menu_demo.v
 ```
-
 
 ## Run tests
 
