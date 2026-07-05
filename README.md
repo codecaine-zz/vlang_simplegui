@@ -123,6 +123,8 @@ win.add_action('save', 'Save', fn (mut win simplegui.SimpleWindow) {
 
 ### 9. Single-Window Control Showcase
 
+![All Controls Demo](screenshots/all_controls_demo.png)
+
 ## Requirements
 
 - macOS

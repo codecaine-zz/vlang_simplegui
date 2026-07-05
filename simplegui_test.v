@@ -202,6 +202,21 @@ fn test_high_level_form_helpers_are_available() {
 	assert win.dispatch_event('run', 'click', '') == true
 }
 
+fn test_file_drop_events_are_forwarded_to_window_handlers() {
+	mut win := simplegui.SimpleWindow{}
+	mut called := false
+
+	win.on_file_drop(fn [mut called] (mut w simplegui.SimpleWindow, files []string) {
+		called = true
+		assert files.len == 2
+		assert files[0] == '/tmp/a.txt'
+		assert files[1] == '/tmp/b.txt'
+	})
+
+	assert win.dispatch_event('dropzone', 'file_drop', '/tmp/a.txt|/tmp/b.txt') == true
+	assert called == true
+}
+
 fn on_test_change(mut win simplegui.SimpleWindow, value string) {
 	println('test change: ${value}')
 }

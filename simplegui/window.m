@@ -910,9 +910,11 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
     ]];
   }
   [cell.textField setStringValue:items[row]];
-  if (self.currentFontColor) {
-    [cell.textField setTextColor:self.currentFontColor];
-  }
+  [cell.textField setTextColor:self.currentFontColor ?: [NSColor labelColor]];
+  [cell.textField setFont:[NSFont systemFontOfSize:13]];
+  [cell.textField setDrawsBackground:NO];
+  [cell.textField setBackgroundColor:[NSColor clearColor]];
+  [cell setBackgroundStyle:NSBackgroundStyleNormal];
   return cell;
 }
 
@@ -2170,9 +2172,16 @@ void *window_add_list_box_control(main__WindowInfo *info, const char *name, cons
     [tableView setHeaderView:nil];
     [tableView setAllowsMultipleSelection:NO];
     [tableView setIdentifier:nsstring(name)];
+    [tableView setBackgroundColor:[NSColor textBackgroundColor]];
+    [tableView setRowSizeStyle:NSTableViewRowSizeStyleDefault];
+    [tableView setIntercellSpacing:NSMakeSize(0, 0)];
+    [tableView setRowHeight:24];
+    [tableView setSelectionHighlightStyle:NSTableViewSelectionHighlightStyleRegular];
+    [tableView setUsesAlternatingRowBackgroundColors:NO];
     
     NSTableColumn *column = [[NSTableColumn alloc] initWithIdentifier:@"ListColumn"];
     [column setResizingMask:NSTableColumnAutoresizingMask];
+    [column setWidth:330];
     [tableView addTableColumn:column];
     
     [tableView setDataSource:delegate];
@@ -2190,6 +2199,7 @@ void *window_add_list_box_control(main__WindowInfo *info, const char *name, cons
     }
     NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
     delegate.listItemsByName[key] = itemsArray;
+    [tableView reloadData];
     
     [delegate addControlToLayout:scrollView];
     delegate.controlsByName[key] = scrollView;

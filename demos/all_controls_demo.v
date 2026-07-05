@@ -63,7 +63,7 @@ fn main() {
 
 	win.add_label('list_heading', 'List box and image')
 	win.begin_row('row_lists')
-	win.add_list_box('items', ['Alpha', 'Beta', 'Gamma', 'Delta'])
+	win.add_list_box('items', ['Alpha', 'Beta', 'Gamma', 'Delta', 'Epsilon', 'Zeta', 'Eta', 'Theta'])
 	win.add_image('preview', 'screenshots/stack_style.png')
 	win.end_row()
 	win.set_control_width('items', 260)

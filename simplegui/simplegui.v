@@ -990,20 +990,28 @@ pub fn (mut win SimpleWindow) on_change(name string, callback StringEventCallbac
 }
 
 pub fn (mut win SimpleWindow) dispatch_event(name string, event_name string, value string) bool {
-	idx := win.find_handler_by_filter(name, event_name, value)
-	if idx < 0 {
+	mut handler_idx := -1
+	if event_name == 'file_drop' {
+		handler_idx = win.find_handler_by_filter(name, event_name, value)
+		if handler_idx < 0 {
+			handler_idx = win.find_handler_by_filter('window', event_name, value)
+		}
+	} else {
+		handler_idx = win.find_handler_by_filter(name, event_name, value)
+	}
+	if handler_idx < 0 {
 		return false
 	}
-	handler := win.handlers[idx]
-	if handler.void_cb != unsafe { nil } {
+	handler := win.handlers[handler_idx]
+	if event_name == 'file_drop' {
+		files := value.split('|')
+		handler.file_drop_cb(mut win, files)
+		return true
+	} else if handler.void_cb != unsafe { nil } {
 		handler.void_cb(mut win)
 		return true
 	} else if handler.string_cb != unsafe { nil } {
 		handler.string_cb(mut win, value)
-		return true
-	} else if handler.file_drop_cb != unsafe { nil } {
-		files := value.split('|')
-		handler.file_drop_cb(mut win, files)
 		return true
 	}
 	return false
