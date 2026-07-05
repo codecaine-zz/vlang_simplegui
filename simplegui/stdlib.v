@@ -21,6 +21,7 @@ import crypto.bcrypt
 import crypto.hmac
 import compress.zlib
 import term
+import datatypes
 
 // stdlib.v - Extended High-Level Standard Library Wrappers for SimpleGUI
 // Provides extremely simple, beginner-friendly, and safe wrappers around V's Core Standard Library.
@@ -639,4 +640,142 @@ pub fn term_color(text string, style string) string {
 // term_color delegates to standalone term_color.
 pub fn (win &SimpleWindow) term_color(text string, style string) string {
 	return term_color(text, style)
+}
+
+// ==========================================
+// 17. Standard Collections & Datatypes
+// ==========================================
+
+// SimpleStack provides a high-level, generic LIFO (Last In First Out) stack.
+pub struct SimpleStack[T] {
+mut:
+	s datatypes.Stack[T]
+}
+
+pub fn (mut ss SimpleStack[T]) push(item T) {
+	ss.s.push(item)
+}
+
+pub fn (mut ss SimpleStack[T]) pop() !T {
+	return ss.s.pop()
+}
+
+pub fn (ss &SimpleStack[T]) peek() !T {
+	return ss.s.peek()
+}
+
+pub fn (ss &SimpleStack[T]) len() int {
+	return ss.s.len()
+}
+
+pub fn (ss &SimpleStack[T]) is_empty() bool {
+	return ss.s.is_empty()
+}
+
+// new_stack instantiates a new generic SimpleStack.
+pub fn new_stack[T]() SimpleStack[T] {
+	return SimpleStack[T]{}
+}
+
+// SimpleQueue provides a high-level, generic FIFO (First In First Out) queue.
+pub struct SimpleQueue[T] {
+mut:
+	q datatypes.Queue[T]
+}
+
+pub fn (mut sq SimpleQueue[T]) push(item T) {
+	sq.q.push(item)
+}
+
+pub fn (mut sq SimpleQueue[T]) pop() !T {
+	return sq.q.pop()
+}
+
+pub fn (sq &SimpleQueue[T]) peek() !T {
+	return sq.q.peek()
+}
+
+pub fn (sq &SimpleQueue[T]) len() int {
+	return sq.q.len()
+}
+
+pub fn (sq &SimpleQueue[T]) is_empty() bool {
+	return sq.q.is_empty()
+}
+
+// new_queue instantiates a new generic SimpleQueue.
+pub fn new_queue[T]() SimpleQueue[T] {
+	return SimpleQueue[T]{}
+}
+
+// SimpleSet provides a high-level, generic unique set collection.
+pub struct SimpleSet[T] {
+mut:
+	set datatypes.Set[T]
+}
+
+pub fn (mut ss SimpleSet[T]) add(item T) {
+	ss.set.add(item)
+}
+
+pub fn (mut ss SimpleSet[T]) remove(item T) {
+	ss.set.remove(item)
+}
+
+pub fn (ss &SimpleSet[T]) exists(item T) bool {
+	return ss.set.exists(item)
+}
+
+pub fn (ss &SimpleSet[T]) len() int {
+	return ss.set.size()
+}
+
+pub fn (ss &SimpleSet[T]) is_empty() bool {
+	return ss.set.is_empty()
+}
+
+pub fn (ss &SimpleSet[T]) to_array() []T {
+	return ss.set.array()
+}
+
+// new_set instantiates a new generic SimpleSet.
+pub fn new_set[T]() SimpleSet[T] {
+	return SimpleSet[T]{}
+}
+
+// SimpleRingBuffer provides a high-level, generic ring buffer.
+pub struct SimpleRingBuffer[T] {
+mut:
+	rb datatypes.RingBuffer[T]
+}
+
+pub fn (mut srb SimpleRingBuffer[T]) push(item T) ! {
+	srb.rb.push(item)!
+}
+
+pub fn (mut srb SimpleRingBuffer[T]) pop() !T {
+	return srb.rb.pop()
+}
+
+pub fn (srb &SimpleRingBuffer[T]) len() int {
+	return srb.rb.occupied()
+}
+
+pub fn (srb &SimpleRingBuffer[T]) capacity() int {
+	return srb.rb.capacity()
+}
+
+pub fn (srb &SimpleRingBuffer[T]) is_empty() bool {
+	return srb.rb.is_empty()
+}
+
+pub fn (srb &SimpleRingBuffer[T]) is_full() bool {
+	return srb.rb.is_full()
+}
+
+// new_ringbuffer instantiates a new generic SimpleRingBuffer with a specific capacity.
+pub fn new_ringbuffer[T](capacity int) SimpleRingBuffer[T] {
+	return SimpleRingBuffer[T]{
+		rb: datatypes.new_ringbuffer[T](capacity)
+	}
 }

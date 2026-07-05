@@ -910,4 +910,34 @@ fn test_stdlib_apis() {
 	// Test Term Colors
 	colored := win.term_color('colored text', 'red')
 	assert colored.len > 0
+
+	// Test Collections Datatypes
+	mut stack := simplegui.new_stack[string]()
+	stack.push('x')
+	assert stack.len() == 1
+	assert stack.peek() or { '' } == 'x'
+	assert stack.pop() or { '' } == 'x'
+	assert stack.is_empty() == true
+
+	mut queue := simplegui.new_queue[int]()
+	queue.push(100)
+	assert queue.len() == 1
+	assert queue.peek() or { 0 } == 100
+	assert queue.pop() or { 0 } == 100
+	assert queue.is_empty() == true
+
+	mut set := simplegui.new_set[string]()
+	set.add('foo')
+	assert set.len() == 1
+	assert set.exists('foo') == true
+	set.remove('foo')
+	assert set.exists('foo') == false
+	assert set.is_empty() == true
+
+	mut rb := simplegui.new_ringbuffer[f64](3)
+	rb.push(2.718) or { panic(err) }
+	assert rb.len() == 1
+	assert rb.capacity() == 3
+	assert rb.pop() or { 0.0 } == 2.718
+	assert rb.is_empty() == true
 }

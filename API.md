@@ -817,6 +817,40 @@ To simplify system integrations and mirror key features from NeutralinoJS, `simp
 
 - `win.term_color(text string, style string) string`: Styles console text outputs (supports `'red'`, `'green'`, `'blue'`, `'yellow'`, `'bold'`, `'underline'`).
 
+### Standard Collections & Datatypes (`datatypes`)
+
+`simplegui` provides high-level generic LIFO (Stack), FIFO (Queue), Set, and Ring Buffer collections:
+
+- `simplegui.new_stack[T]() SimpleStack[T]`: Instantiates a new LIFO stack.
+  - `stack.push(item T)`: Pushes an element onto the stack.
+  - `stack.pop() !T`: Pops and returns the top element from the stack.
+  - `stack.peek() !T`: Returns the top element without removing it.
+  - `stack.len() int`: Returns the number of items in the stack.
+  - `stack.is_empty() bool`: Reports whether the stack has no items.
+
+- `simplegui.new_queue[T]() SimpleQueue[T]`: Instantiates a new FIFO queue.
+  - `queue.push(item T)`: Enqueues an element.
+  - `queue.pop() !T`: Dequeues and returns the front element.
+  - `queue.peek() !T`: Returns the front element without removing it.
+  - `queue.len() int`: Returns the number of items in the queue.
+  - `queue.is_empty() bool`: Reports whether the queue has no items.
+
+- `simplegui.new_set[T]() SimpleSet[T]`: Instantiates a new unique set collection.
+  - `set.add(item T)`: Adds an item to the set if not already present.
+  - `set.remove(item T)`: Removes an item from the set.
+  - `set.exists(item T) bool`: Reports whether an item is in the set.
+  - `set.len() int`: Returns the number of unique items.
+  - `set.is_empty() bool`: Reports whether the set has no items.
+  - `set.to_array() []T`: Exports set items as a standard V array.
+
+- `simplegui.new_ringbuffer[T](capacity int) SimpleRingBuffer[T]`: Instantiates a new ring buffer with a fixed capacity.
+  - `rb.push(item T) !`: Pushes an item to the buffer, returning an error if full.
+  - `rb.pop() !T`: Pops and returns the oldest item, returning an error if empty.
+  - `rb.len() int`: Returns the number of occupied slots in the buffer.
+  - `rb.capacity() int`: Returns the total capacity.
+  - `rb.is_empty() bool`: Reports whether the buffer has no items.
+  - `rb.is_full() bool`: Reports whether the buffer is fully occupied.
+
 ---
 
 ## 7. List Box & Image View Operations

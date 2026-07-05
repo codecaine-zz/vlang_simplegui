@@ -5,7 +5,7 @@ import time
 
 fn main() {
 	// Create a beautiful macOS SimpleGUI window
-	mut gui := simplegui.new_simple_window('System & Standard Library Showcase', 750, 720)
+	mut gui := simplegui.new_simple_window('System & Standard Library Showcase', 750, 840)
 	gui.set_title('SimpleGUI System & Standard Library Showcase')
 
 	// Set layout characteristics
@@ -378,6 +378,167 @@ ${decoded_str}'
 Total benchmark duration: ${sw.elapsed_sec():.4f} seconds'
 		win.set_text('txt_crypto_output', formatted)
 		win.set_status('Benchmark complete.')
+	})
+
+	// --------------------------------------------------
+	// 5. Standard Collections & Datatypes Group Box
+	// --------------------------------------------------
+	gui.add_group_box('col_group', '📦 5. Standard Library Collections (Stack, Queue, Set, RingBuffer)')
+
+	gui.begin_row('row_col_inputs')
+		gui.add_label('lbl_col_input', 'Element Value:')
+		gui.add_input('input_col_val', 'DataPoint-1')
+	gui.end_row()
+
+	gui.begin_row('row_col_actions_1')
+		gui.add_button('btn_stack_push', 'Stack Push')
+		gui.add_button('btn_stack_pop', 'Stack Pop')
+		gui.add_button('btn_queue_push', 'Queue Enqueue')
+		gui.add_button('btn_queue_pop', 'Queue Dequeue')
+	gui.end_row()
+
+	gui.begin_row('row_col_actions_2')
+		gui.add_button('btn_set_add', 'Set Add')
+		gui.add_button('btn_set_remove', 'Set Remove')
+		gui.add_button('btn_rb_push', 'RingBuffer Push (max 4)')
+		gui.add_button('btn_rb_pop', 'RingBuffer Pop')
+	gui.end_row()
+
+	gui.add_textarea('txt_col_output', 'Collections state and operations output will display here...')
+	gui.set_control_height('txt_col_output', 100)
+
+	mut stack := simplegui.new_stack[string]()
+	mut queue := simplegui.new_queue[string]()
+	mut set := simplegui.new_set[string]()
+	mut rb := simplegui.new_ringbuffer[string](4)
+
+	gui.on_click('btn_stack_push', fn [mut stack] (mut win &simplegui.SimpleWindow) {
+		val := win.get_text('input_col_val').trim_space()
+		if val.len == 0 {
+			win.alert('Input Error', 'Please enter a value to push.')
+			return
+		}
+		stack.push(val)
+		
+		peek_val := stack.peek() or { 'empty' }
+		formatted := 'Stack: Pushed "${val}"
+  Current Length: ${stack.len()}
+  Peek Top:      "${peek_val}"'
+		win.set_text('txt_col_output', formatted)
+		win.set_status('Stack Push completed.')
+	})
+
+	gui.on_click('btn_stack_pop', fn [mut stack] (mut win &simplegui.SimpleWindow) {
+		if stack.is_empty() {
+			win.alert('Empty', 'Stack is empty!')
+			return
+		}
+		val := stack.pop() or { 'empty' }
+		peek_val := stack.peek() or { 'empty' }
+		formatted := 'Stack: Popped "${val}"
+  Current Length: ${stack.len()}
+  Peek Top:      "${peek_val}"'
+		win.set_text('txt_col_output', formatted)
+		win.set_status('Stack Pop completed.')
+	})
+
+	gui.on_click('btn_queue_push', fn [mut queue] (mut win &simplegui.SimpleWindow) {
+		val := win.get_text('input_col_val').trim_space()
+		if val.len == 0 {
+			win.alert('Input Error', 'Please enter a value to enqueue.')
+			return
+		}
+		queue.push(val)
+		
+		peek_val := queue.peek() or { 'empty' }
+		formatted := 'Queue: Enqueued "${val}"
+  Current Length: ${queue.len()}
+  Peek Front:    "${peek_val}"'
+		win.set_text('txt_col_output', formatted)
+		win.set_status('Queue Enqueue completed.')
+	})
+
+	gui.on_click('btn_queue_pop', fn [mut queue] (mut win &simplegui.SimpleWindow) {
+		if queue.is_empty() {
+			win.alert('Empty', 'Queue is empty!')
+			return
+		}
+		val := queue.pop() or { 'empty' }
+		peek_val := queue.peek() or { 'empty' }
+		formatted := 'Queue: Dequeued "${val}"
+  Current Length: ${queue.len()}
+  Peek Front:    "${peek_val}"'
+		win.set_text('txt_col_output', formatted)
+		win.set_status('Queue Dequeue completed.')
+	})
+
+	gui.on_click('btn_set_add', fn [mut set] (mut win &simplegui.SimpleWindow) {
+		val := win.get_text('input_col_val').trim_space()
+		if val.len == 0 {
+			win.alert('Input Error', 'Please enter a value to add.')
+			return
+		}
+		set.add(val)
+		
+		formatted := 'Set: Added "${val}"
+  Current Size:    ${set.len()}
+  Set Contents:    ${set.to_array()}'
+		win.set_text('txt_col_output', formatted)
+		win.set_status('Set Add completed.')
+	})
+
+	gui.on_click('btn_set_remove', fn [mut set] (mut win &simplegui.SimpleWindow) {
+		val := win.get_text('input_col_val').trim_space()
+		if val.len == 0 {
+			win.alert('Input Error', 'Please enter a value to remove.')
+			return
+		}
+		if !set.exists(val) {
+			win.alert('Not Found', 'Value "${val}" does not exist in the Set.')
+			return
+		}
+		set.remove(val)
+		
+		formatted := 'Set: Removed "${val}"
+  Current Size:    ${set.len()}
+  Set Contents:    ${set.to_array()}'
+		win.set_text('txt_col_output', formatted)
+		win.set_status('Set Remove completed.')
+	})
+
+	gui.on_click('btn_rb_push', fn [mut rb] (mut win &simplegui.SimpleWindow) {
+		val := win.get_text('input_col_val').trim_space()
+		if val.len == 0 {
+			win.alert('Input Error', 'Please enter a value to push.')
+			return
+		}
+		if rb.is_full() {
+			win.alert('Full', 'RingBuffer is full (capacity is ${rb.capacity()})!')
+			return
+		}
+		rb.push(val) or {
+			win.alert('Error', 'Failed to push: ' + err.msg())
+			return
+		}
+		
+		formatted := 'RingBuffer: Pushed "${val}"
+  Occupied / Cap: ${rb.len()} / ${rb.capacity()}
+  Is Full:        ${rb.is_full()}'
+		win.set_text('txt_col_output', formatted)
+		win.set_status('RingBuffer Push completed.')
+	})
+
+	gui.on_click('btn_rb_pop', fn [mut rb] (mut win &simplegui.SimpleWindow) {
+		if rb.is_empty() {
+			win.alert('Empty', 'RingBuffer is empty!')
+			return
+		}
+		val := rb.pop() or { 'empty' }
+		formatted := 'RingBuffer: Popped "${val}"
+  Occupied / Cap: ${rb.len()} / ${rb.capacity()}
+  Is Full:        ${rb.is_full()}'
+		win.set_text('txt_col_output', formatted)
+		win.set_status('RingBuffer Pop completed.')
 	})
 
 	// --------------------------------------------------
