@@ -75,6 +75,12 @@ Sets the default font text color for labels and form controls.
 
 - **Values**: `'white'`, `'black'`, or hex format.
 
+### `win.set_theme(theme_name string) &SimpleWindow`
+
+Applies a pre-configured theme preset for both the window background and font colors.
+
+- **Values**: `'dark'`, `'light'`, `'nord'`, or `'dracula'`.
+
 ### `win.set_padding(padding int) &SimpleWindow`
 
 Sets the window content margin padding.
@@ -141,6 +147,10 @@ Adds a tabbed container choice selector displaying the tab panes matching the pr
 ### `win.add_scroll_view(name string, height int) &SimpleWindow`
 
 Adds a scrollable layout viewport container with a fixed vertical height constraint.
+
+### `win.row(name string, callback VoidEventCallback) &SimpleWindow`
+
+Starts a horizontal row stack container, executes the callback closure passing the window reference, and automatically closes the horizontal container. Any widgets added inside the closure align horizontally.
 
 ---
 
@@ -306,6 +316,21 @@ Marks a button as the default Enter-key action for the window.
 ### `win.set_html(name string, html string) &SimpleWindow`
 
 Updates the content shown inside an HTML preview panel.
+
+### Fluent Chaining Modifiers (Last-Control Helpers)
+
+You can chain these modifiers directly onto control creation methods to style or customize the last created control without referencing its name/ID string:
+
+- **`.width(w int) &SimpleWindow`**: Sets the last control's Auto Layout width constraint.
+- **`.height(h int) &SimpleWindow`**: Sets the last control's Auto Layout height constraint.
+- **`.font_size(size int) &SimpleWindow`**: Changes the last control's font text size.
+- **`.color(hex_color string) &SimpleWindow`**: Sets a custom background color for the last control.
+- **`.font_color(hex_color string) &SimpleWindow`**: Sets a custom font color for the last control.
+- **`.placeholder(text string) &SimpleWindow`**: Sets placeholder text for the last text-based control.
+- **`.error(text string) &SimpleWindow`**: Highlights the last control with validation/error text.
+- **`.tooltip(text string) &SimpleWindow`**: Attaches a hover tooltip to the last control.
+- **`.visible(visible bool) &SimpleWindow`**: Toggles visibility of the last control.
+- **`.enabled(enabled bool) &SimpleWindow`**: Enables or disables user interaction on the last control.
 
 ---
 

@@ -156,6 +156,7 @@ mut:
 	errors            map[string]string
 	default_button    string
 	debug_mode        bool
+	last_control      string
 }
 
 struct ControlEntry {
@@ -295,6 +296,7 @@ fn (win &SimpleWindow) upsert_control(name string, kind string, label string, va
 	}
 	unsafe {
 		mut w := &SimpleWindow(win)
+		w.last_control = name
 		if idx >= 0 {
 			entry = w.controls[idx]
 			entry.kind = kind
@@ -1957,6 +1959,112 @@ pub fn (win &SimpleWindow) run_on_main_thread(callback VoidEventCallback) &Simpl
 			cb:  callback
 		}
 		C.window_run_on_main_thread(vlang_main_thread_dispatcher, data)
+	}
+	return win
+}
+
+// Closure-based row layout container
+pub fn (win &SimpleWindow) row(name string, callback VoidEventCallback) &SimpleWindow {
+	win.begin_row(name)
+	unsafe {
+		mut w := &SimpleWindow(win)
+		callback(mut w)
+	}
+	win.end_row()
+	return win
+}
+
+// Theme preset helper
+pub fn (win &SimpleWindow) set_theme(theme_name string) &SimpleWindow {
+	match theme_name.to_lower() {
+		'dark' {
+			win.set_background_color('#1e1e1e')
+			win.set_font_color('white')
+		}
+		'light' {
+			win.set_background_color('#f5f5f5')
+			win.set_font_color('black')
+		}
+		'nord' {
+			win.set_background_color('#2e3440')
+			win.set_font_color('#eceff4')
+		}
+		'dracula' {
+			win.set_background_color('#282a36')
+			win.set_font_color('#f8f8f2')
+		}
+		else {}
+	}
+	return win
+}
+
+// last-control chaining modifiers
+pub fn (win &SimpleWindow) width(w int) &SimpleWindow {
+	if win.last_control != '' {
+		win.set_control_width(win.last_control, w)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) height(h int) &SimpleWindow {
+	if win.last_control != '' {
+		win.set_control_height(win.last_control, h)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) font_size(size int) &SimpleWindow {
+	if win.last_control != '' {
+		win.set_control_font_size(win.last_control, size)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) color(hex_color string) &SimpleWindow {
+	if win.last_control != '' {
+		win.set_control_background_color(win.last_control, hex_color)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) font_color(hex_color string) &SimpleWindow {
+	if win.last_control != '' {
+		win.set_control_font_color(win.last_control, hex_color)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) placeholder(text string) &SimpleWindow {
+	if win.last_control != '' {
+		win.set_placeholder(win.last_control, text)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) error(text string) &SimpleWindow {
+	if win.last_control != '' {
+		win.set_error(win.last_control, text)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) tooltip(text string) &SimpleWindow {
+	if win.last_control != '' {
+		win.set_tooltip(win.last_control, text)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) visible(visible bool) &SimpleWindow {
+	if win.last_control != '' {
+		win.set_control_visible(win.last_control, visible)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) enabled(enabled bool) &SimpleWindow {
+	if win.last_control != '' {
+		win.set_control_enabled(win.last_control, enabled)
 	}
 	return win
 }

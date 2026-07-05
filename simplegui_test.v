@@ -365,3 +365,42 @@ fn test_reset_form_does_not_clear_buttons_or_labels() {
 	// Input was cleared
 	assert win.get_text('my_input') == ''
 }
+
+fn test_row_closure_layout() {
+	mut win := simplegui.new_simple_window('Test Window', 100, 100)
+	win.row('settings', fn (mut w &simplegui.SimpleWindow) {
+		w.add_input('db_host', 'localhost')
+		w.add_number('db_port', 3306)
+	})
+	
+	assert win.has_control('db_host') == true
+	assert win.has_control('db_port') == true
+	assert win.get_text('db_host') == 'localhost'
+	assert win.get_value_int('db_port') == 3306
+}
+
+fn test_last_control_chaining_modifiers() {
+	mut win := simplegui.new_simple_window('Test Window', 100, 100)
+	win.add_input('username', 'Ada')
+		.width(200)
+		.height(40)
+		.font_size(14)
+		.placeholder('Username here')
+		.tooltip('Enter username')
+		.visible(true)
+		.enabled(true)
+	
+	assert win.get_control_width('username') == 200
+	assert win.get_control_height('username') == 40
+	assert win.get_control_font_size('username') == 14
+	assert win.get_control_visible('username') == true
+	assert win.get_control_enabled('username') == true
+}
+
+fn test_theme_presets() {
+	mut win := simplegui.new_simple_window('Test Window', 100, 100)
+	win.set_theme('dracula')
+	
+	assert win.get_background_color() == '#282a36'
+	assert win.get_font_color() == '#f8f8f2'
+}

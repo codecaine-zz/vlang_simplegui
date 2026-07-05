@@ -9,10 +9,9 @@ struct DeveloperProfile {
 }
 
 fn main() {
-	// 1. Setup the window with style chaining and debug mode
+	// 1. Setup the window with style chaining, theme preset, and debug mode
 	mut win := simplegui.new_simple_window('Ergonomic Helpers Demo', 720, 780)
-		.set_background_color('#101820')
-		.set_font_color('white')
+		.set_theme('dracula')
 		.set_padding(16)
 		.set_spacing(10)
 		.set_debug_mode(true)
@@ -27,6 +26,17 @@ fn main() {
 		years_experience: 12
 	}
 	win.add_form_from_struct(default_profile)
+
+	// 3.5. Closure-based row layout and last-control chaining modifiers
+	win.add_heading('Additional Configuration')
+		.row('extra_config', fn (mut w &simplegui.SimpleWindow) {
+			w.add_input('nickname', 'Ada')
+				.width(200)
+				.placeholder('Enter nickname...')
+			w.add_number('level', 10)
+				.width(80)
+				.tooltip('Account Level')
+		})
 
 	// 4. Chain layout rows and actions
 	win.add_heading('Actions')
