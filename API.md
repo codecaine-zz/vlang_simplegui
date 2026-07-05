@@ -614,6 +614,57 @@ Copies the specified text to the macOS system clipboard.
 
 ---
 
+## 6b. Neutralino-Inspired System Calls & Platform API
+
+To simplify system integrations and mirror key features from NeutralinoJS, `simplegui` includes fluent-style wrappers around the V standard library's `os` and core system actions. These methods extend `SimpleWindow` and are readily available inside event handlers.
+
+### Shell Execution (`NL_OS`)
+
+- `win.exec(command string) (string, int)`: Runs a command synchronously in the system terminal and returns a tuple of `(output, exit_code)`.
+- `win.exec_or(command string, fallback string) string`: Runs a command, returning its stdout if successful (code 0) or the `fallback` value if it failed.
+- `win.exec_bg(command string) &SimpleWindow`: Spawns a shell command in the background (asynchronous concurrent thread) so the application GUI doesn't block or freeze.
+
+### Environment variables
+
+- `win.get_env(key string) string`: Retrieves the value of a system environment variable.
+- `win.set_env(key string, val string) &SimpleWindow`: Sets or overrides an environment variable for the running app.
+- `win.unset_env(key string) &SimpleWindow`: Removes an environment variable.
+
+### System Notifications (`os.showNotification`)
+
+- `win.show_system_notification(title string, message string) &SimpleWindow`: Dispatches a native, standard, system-wide macOS notification banner using lightweight Applescript.
+
+### Hardware & Computer Diagnostics (`NL_COMPUTER`)
+
+- `win.get_cpu_info() string`: Returns the local processor model string (e.g., `Apple M2 Max` or `Intel Core i7`).
+- `win.get_cpu_cores() int`: Returns the physical + virtual core count of the processor.
+- `win.get_memory_info() string`: Returns the total capacity of system physical memory (e.g., `16.0 GB RAM`).
+
+### System Paths Lookup
+
+- `win.get_system_path(name string) string`: Resolves canonical folders:
+  - `'home'`: User's home folder.
+  - `'temp'`: System temporary location.
+  - `'desktop'`: Desktop folder.
+  - `'documents'`: Documents folder.
+  - `'downloads'`: Downloads folder.
+  - `'cache'`: User caches folder (`~/Library/Caches`).
+  - `'app'`: App executable folder.
+
+### Filesystem IO Utilities (`NL_FILESYSTEM`)
+
+- `win.file_exists(path string) bool`: Reports true if the file or folder exists.
+- `win.is_dir(path string) bool`: Reports true if the target path is a directory.
+- `win.read_file(path string) string`: Reads file contents, returning an empty string if reading fails.
+- `win.read_file_opt(path string) !string`: Reads file contents with V's `!` error-handling/propagation capabilities.
+- `win.write_file(path string, content string) &SimpleWindow`: Writes content to a file, returning the fluent window pointer.
+- `win.write_file_opt(path string, content string) !&SimpleWindow`: Writes content to a file with V's `!` error-handling/propagation capabilities.
+- `win.delete_file(path string) &SimpleWindow`: Deletes a target file or folder paths.
+- `win.create_directory(path string) &SimpleWindow`: Recursively creates/ensures all directories in the given path.
+- `win.read_dir(path string) []string`: Returns a string array of items within the directory.
+
+---
+
 ## 7. List Box & Image View Operations
 
 ### `win.update_list_items(name string, items []string) &SimpleWindow`
