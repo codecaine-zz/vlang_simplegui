@@ -387,6 +387,14 @@ Overwrites the control's Auto Layout height constraint.
 
 Changes the control's font size (handles labels, text fields, textareas, and buttons).
 
+### `win.set_control_font_bold(name string, bold bool) &SimpleWindow`
+
+Configures the control's font to Bold weight (supports labels, text fields, textareas, and buttons).
+
+### `win.set_control_font_name(name string, font_name string) &SimpleWindow`
+
+Sets a custom font family/name (e.g. `"Courier"`, `"Helvetica"`, or `"Arial"`) for the control. Falls back to system font if unavailable.
+
 ### `win.set_control_background_color(name string, hex_color string) &SimpleWindow`
 
 Sets a custom background color for the individual control.
@@ -448,6 +456,8 @@ You can chain these modifiers directly onto control creation methods to style or
 - **`.width(w int) &SimpleWindow`**: Sets the last control's Auto Layout width constraint.
 - **`.height(h int) &SimpleWindow`**: Sets the last control's Auto Layout height constraint.
 - **`.font_size(size int) &SimpleWindow`**: Changes the last control's font text size.
+- **`.bold(b bool) &SimpleWindow`**: Sets the last control's font weight to Bold.
+- **`.font_name(font_name string) &SimpleWindow`**: Applies a custom font family (e.g. `"Courier"`) directly to the last control.
 - **`.color(hex_color string) &SimpleWindow`**: Sets a custom background color for the last control.
 - **`.font_color(hex_color string) &SimpleWindow`**: Sets a custom font color for the last control.
 - **`.placeholder(text string) &SimpleWindow`**: Sets placeholder text for the last text-based control.
@@ -478,6 +488,10 @@ Shows a warning confirmation popup with Yes/No actions, returning a boolean.
 ### `win.prompt(title string, message string, default_val string) string`
 
 Shows a popup prompt requesting input from the user, returning the entered string (or empty if cancelled).
+
+### `win.choice_dialog(title string, message string, choices []string) int`
+
+Displays a native macOS alert with multiple custom button choices. Returns the 0-indexed choice clicked by the user (or `-1` if cancelled/dismissed).
 
 ### `win.select_file() string`
 
@@ -665,11 +679,15 @@ Attaches an event handler when files are dragged and dropped onto the window or 
 
 ---
 
-## 11. Custom Application Menus
+## 11. Custom Application Menus & Context Menus
 
 ### `win.add_menu_item(menu_name string, item_title string, shortcut string, callback VoidEventCallback) &SimpleWindow`
 
 Adds a custom drop-down menu item under the main macOS application menu bar (e.g. under a custom menu tab like "Actions"). Binds the menu click action directly to the callback.
+
+### `win.add_context_menu_item(control_name string, item_title string, callback VoidEventCallback) &SimpleWindow`
+
+Binds a native right-click Context Menu item directly to any control by its `name` handle (or `"window"` to bind it to the general window background). Clicking the triggered choice executes the callback function.
 
 ---
 

@@ -668,3 +668,22 @@ fn test_group_layout_nesting() {
 	assert win.has_control('last_name') == true
 	assert win.get('first_name') == 'Ada'
 }
+
+fn test_control_font_customization_and_dialog_choices() {
+	mut win := simplegui.new_simple_window('Test Window', 100, 100)
+	win.add_label('header', 'Welcome')
+		.bold(true)
+		.font_name('Courier')
+		.bold(false)
+
+	// We won't call win.choice_dialog during automated tests because it opens a native modal dialog
+	// and blocks the test execution.
+
+	// Context menu click
+	mut state := &CallbackState{}
+	win.add_context_menu_item('header', 'Do Action', fn [mut state] (mut w simplegui.SimpleWindow) {
+		state.called = true
+	})
+	assert win.dispatch_event('context_header_Do Action', 'click', '') == true
+	assert state.called == true
+}

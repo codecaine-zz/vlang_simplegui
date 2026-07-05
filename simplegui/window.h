@@ -23,6 +23,10 @@ void window_set_control_font_color_by_name(main__WindowInfo *info, const char *n
 void window_set_control_width_by_name(main__WindowInfo *info, const char *name, int width);
 void window_set_control_height_by_name(main__WindowInfo *info, const char *name, int height);
 void window_set_control_font_size_by_name(main__WindowInfo *info, const char *name, int size);
+void window_set_control_font_bold_by_name(main__WindowInfo *info, const char *name, int bold);
+void window_set_control_font_name_by_name(main__WindowInfo *info, const char *name, const char *font_name);
+int window_show_choice_dialog(main__WindowInfo *info, const char *title, const char *message, const char **choices, int choices_count);
+void window_add_context_menu_item(main__WindowInfo *info, const char *control_name, const char *item_title, const char *handler_name);
 void window_set_padding(main__WindowInfo *info, int padding);
 void window_set_spacing(main__WindowInfo *info, int spacing);
 void window_set_responsive_layout(main__WindowInfo *info, int enabled);

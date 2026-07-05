@@ -34,6 +34,10 @@ fn C.window_set_control_font_color_by_name(&WindowInfo, &u8, &u8)
 fn C.window_set_control_width_by_name(&WindowInfo, &u8, int)
 fn C.window_set_control_height_by_name(&WindowInfo, &u8, int)
 fn C.window_set_control_font_size_by_name(&WindowInfo, &u8, int)
+fn C.window_set_control_font_bold_by_name(&WindowInfo, &u8, int)
+fn C.window_set_control_font_name_by_name(&WindowInfo, &u8, &u8)
+fn C.window_show_choice_dialog(&WindowInfo, &u8, &u8, &&u8, int) int
+fn C.window_add_context_menu_item(&WindowInfo, &u8, &u8, &u8)
 
 // Dialogs and Message boxes
 fn C.window_show_alert(&WindowInfo, &u8, &u8)
@@ -1870,6 +1874,23 @@ pub fn (win &SimpleWindow) get_control_font_size(name string) int {
 	return 0
 }
 
+pub fn (win &SimpleWindow) set_control_font_bold(name string, bold bool) &SimpleWindow {
+	win.require_control(name)
+	if win.window_info != unsafe { nil } {
+		b_val := if bold { 1 } else { 0 }
+		C.window_set_control_font_bold_by_name(win.window_info, name.str, b_val)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) set_control_font_name(name string, font_name string) &SimpleWindow {
+	win.require_control(name)
+	if win.window_info != unsafe { nil } {
+		C.window_set_control_font_name_by_name(win.window_info, name.str, font_name.str)
+	}
+	return win
+}
+
 // Status text
 pub fn (win &SimpleWindow) set_status(text string) &SimpleWindow {
 	unsafe {
@@ -2046,6 +2067,17 @@ pub fn (win &SimpleWindow) prompt(title string, message string, default_val stri
 		return unsafe { res.vstring() }
 	}
 	return ''
+}
+
+pub fn (win &SimpleWindow) choice_dialog(title string, message string, choices []string) int {
+	if win.window_info != unsafe { nil } {
+		mut c_choices := []&u8{}
+		for choice in choices {
+			c_choices << choice.str
+		}
+		return C.window_show_choice_dialog(win.window_info, title.str, message.str, c_choices.data, choices.len)
+	}
+	return -1
 }
 
 // File and Folder Panels
@@ -2288,6 +2320,15 @@ pub fn (win &SimpleWindow) add_menu_item(menu_name string, item_title string, sh
 	if win.window_info != unsafe { nil } {
 		C.window_add_menu_item(win.window_info, menu_name.str, item_title.str, shortcut.str,
 			handler_name.str)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) add_context_menu_item(control_name string, item_title string, callback VoidEventCallback) &SimpleWindow {
+	handler_name := 'context_${control_name}_${item_title}'
+	win.on_click(handler_name, callback)
+	if win.window_info != unsafe { nil } {
+		C.window_add_context_menu_item(win.window_info, control_name.str, item_title.str, handler_name.str)
 	}
 	return win
 }
@@ -2563,6 +2604,20 @@ pub fn (win &SimpleWindow) color(hex_color string) &SimpleWindow {
 pub fn (win &SimpleWindow) font_color(hex_color string) &SimpleWindow {
 	if win.last_control != '' {
 		win.set_control_font_color(win.last_control, hex_color)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) bold(b bool) &SimpleWindow {
+	if win.last_control != '' {
+		win.set_control_font_bold(win.last_control, b)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) font_name(font_name string) &SimpleWindow {
+	if win.last_control != '' {
+		win.set_control_font_name(win.last_control, font_name)
 	}
 	return win
 }

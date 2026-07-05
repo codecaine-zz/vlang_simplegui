@@ -1471,6 +1471,32 @@ void window_add_menu_item(main__WindowInfo *info, const char *menu_name, const c
   });
 }
 
+void window_add_context_menu_item(main__WindowInfo *info, const char *control_name, const char *item_title, const char *handler_name) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *controlName = nsstring(control_name);
+  NSString *itemTitle = nsstring(item_title);
+  NSString *handlerName = nsstring(handler_name);
+  
+  dispatch_async(dispatch_get_main_queue(), ^{
+    NSView *view = nil;
+    if ([controlName isEqualToString:@"window"]) {
+      view = delegate.window.contentView;
+    } else {
+      view = [delegate viewForControlName:controlName];
+    }
+    
+    if (view) {
+      if (!view.menu) {
+        view.menu = [[NSMenu alloc] init];
+      }
+      NSMenuItem *item = [[NSMenuItem alloc] initWithTitle:itemTitle action:@selector(handleMenuItemClicked:) keyEquivalent:@""];
+      [item setTarget:delegate];
+      [item setRepresentedObject:handlerName];
+      [view.menu addItem:item];
+    }
+  });
+}
+
 main__WindowInfo *window_app_init(void *params) {
   main__WindowParams window_params = {0};
   if (params) {
@@ -1656,6 +1682,64 @@ void window_set_control_font_size_by_name(main__WindowInfo *info, const char *na
     }
   } else {
     applyFont(view);
+  }
+}
+
+void window_set_control_font_bold_by_name(main__WindowInfo *info, const char *name, int bold) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSView *view = [delegate viewForControlName:nsstring(name)];
+  if (!view) return;
+  
+  void (^applyFontBold)(id) = ^(id target) {
+    if ([target respondsToSelector:@selector(setFont:)]) {
+      NSFont *oldFont = [target font] ?: [NSFont systemFontOfSize:13];
+      NSFont *newFont = nil;
+      if (bold) {
+        newFont = [[NSFontManager sharedFontManager] convertFont:oldFont toHaveTrait:NSBoldFontMask];
+      } else {
+        newFont = [[NSFontManager sharedFontManager] convertFont:oldFont toNotHaveTrait:NSBoldFontMask];
+      }
+      if (newFont) {
+        [target setFont:newFont];
+      }
+    }
+  };
+
+  if ([view isKindOfClass:[NSScrollView class]]) {
+    NSScrollView *scroll = (NSScrollView *)view;
+    if ([scroll.documentView isKindOfClass:[NSTextView class]]) {
+      applyFontBold(scroll.documentView);
+    }
+  } else {
+    applyFontBold(view);
+  }
+}
+
+void window_set_control_font_name_by_name(main__WindowInfo *info, const char *name, const char *font_name) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSView *view = [delegate viewForControlName:nsstring(name)];
+  if (!view) return;
+  NSString *fontName = nsstring(font_name);
+  
+  void (^applyFontName)(id) = ^(id target) {
+    if ([target respondsToSelector:@selector(setFont:)]) {
+      NSFont *oldFont = [target font] ?: [NSFont systemFontOfSize:13];
+      CGFloat size = oldFont ? [oldFont pointSize] : 13;
+      NSFont *newFont = [NSFont fontWithName:fontName size:size];
+      if (!newFont) {
+        newFont = [NSFont systemFontOfSize:size];
+      }
+      [target setFont:newFont];
+    }
+  };
+
+  if ([view isKindOfClass:[NSScrollView class]]) {
+    NSScrollView *scroll = (NSScrollView *)view;
+    if ([scroll.documentView isKindOfClass:[NSTextView class]]) {
+      applyFontName(scroll.documentView);
+    }
+  } else {
+    applyFontName(view);
   }
 }
 
@@ -2281,6 +2365,32 @@ int window_show_confirm(main__WindowInfo *info, const char *title, const char *m
   return (response == NSAlertFirstButtonReturn) ? 1 : 0;
 }
 
+int window_show_choice_dialog(main__WindowInfo *info, const char *title, const char *message, const char **choices, int choices_count) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSModalResponse response;
+  
+  void (^runBlock)(void) = ^{
+    NSAlert *alert = [[NSAlert alloc] init];
+    [alert setMessageText:nsstring(title)];
+    [alert setInformativeText:nsstring(message)];
+    [alert setAlertStyle:NSAlertStyleInformational];
+    
+    for (int i = 0; i < choices_count; i++) {
+      [alert addButtonWithTitle:nsstring(choices[i])];
+    }
+    
+    response = [alert runModal];
+  };
+  
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  
+  return (int)(response - NSAlertFirstButtonReturn);
+}
+
 char *window_show_prompt(main__WindowInfo *info, const char *title, const char *message, const char *default_val) {
   __block NSString *inputString = nil;
   void (^runPrompt)(void) = ^{
@@ -2808,6 +2918,7 @@ void window_enable_status_bar(main__WindowInfo *info, const char *icon_path) {
 void window_show(main__WindowInfo *info) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
   dispatch_async(dispatch_get_main_queue(), ^{
+    [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
     [delegate.window makeKeyAndOrderFront:nil];
     [NSApp activateIgnoringOtherApps:YES];
   });
