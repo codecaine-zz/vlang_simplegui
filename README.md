@@ -121,6 +121,8 @@ win.add_action('save', 'Save', fn (mut win simplegui.SimpleWindow) {
 
 ![Events Demo](screenshots/events_demo.png)
 
+### 9. Single-Window Control Showcase
+
 ## Requirements
 
 - macOS
@@ -194,6 +196,12 @@ v run demos/list_image_demo.v
 v run demos/events_demo.v
 ```
 
+### Run the single-window all-controls demo:
+
+```bash
+v run demos/all_controls_demo.v
+```
+
 ### Run the Ergonomic Helpers demo:
 
 ```bash
@@ -234,6 +242,7 @@ v test .
 - [demos/timer_demo.v](demos/timer_demo.v) — background timer tasks updating progress indicators periodically
 - [demos/list_image_demo.v](demos/list_image_demo.v) — interactive list selector previewing mockup screenshots in real time
 - [demos/events_demo.v](demos/events_demo.v) — advanced event listener triggers for hover, focus, lose focus (blur), and window resizes
+- [demos/all_controls_demo.v](demos/all_controls_demo.v) — single-window demo that exercises many controls in one place
 - [demos/high_level_demo.v](demos/high_level_demo.v) — showcases the new beginner-friendly helper API for forms and actions
 - [demos/menu_demo.v](demos/menu_demo.v) — demo of standard macOS application menus and text editing shortcuts
 
