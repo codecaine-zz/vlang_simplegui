@@ -434,6 +434,19 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   }
 }
 
+- (void)makeStretchableView:(NSView *)view minimumWidth:(CGFloat)minimumWidth {
+  [view setTranslatesAutoresizingMaskIntoConstraints:NO];
+  [view setContentHuggingPriority:NSLayoutPriorityDefaultLow forOrientation:NSLayoutConstraintOrientationHorizontal];
+  [view setContentCompressionResistancePriority:NSLayoutPriorityDefaultHigh forOrientation:NSLayoutConstraintOrientationHorizontal];
+  [view.widthAnchor constraintGreaterThanOrEqualToConstant:minimumWidth].active = YES;
+}
+
+- (void)configureRowStack:(NSStackView *)row {
+  [row setTranslatesAutoresizingMaskIntoConstraints:NO];
+  [row setDistribution:NSStackViewDistributionFill];
+  [row setAlignment:NSLayoutAttributeCenterY];
+}
+
 - (void)buildUI {
   NSLog(@"buildUI called");
   self.controlsByName = [NSMutableDictionary dictionary];
@@ -457,6 +470,7 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   self.mainStackView = [[FlippedStackView alloc] init];
   [self.mainStackView setOrientation:NSUserInterfaceLayoutOrientationVertical];
   [self.mainStackView setAlignment:NSLayoutAttributeLeading];
+  [self.mainStackView setDistribution:NSStackViewDistributionFill];
   [self.mainStackView setSpacing:8.0];
   [self.mainStackView setEdgeInsets:NSEdgeInsetsMake(20, 20, 20, 20)];
   [self.mainStackView setWantsLayer:YES];
@@ -470,6 +484,8 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [self.mainStackView.topAnchor constraintEqualToAnchor:clipView.topAnchor].active = YES;
   [self.mainStackView.leadingAnchor constraintEqualToAnchor:clipView.leadingAnchor].active = YES;
   [self.mainStackView.trailingAnchor constraintEqualToAnchor:clipView.trailingAnchor].active = YES;
+  [self.mainStackView.widthAnchor constraintEqualToAnchor:clipView.widthAnchor].active = YES;
+  [self.mainStackView.bottomAnchor constraintEqualToAnchor:clipView.bottomAnchor].active = YES;
 
   [self applyColors:[NSColor colorWithCalibratedWhite:0.12 alpha:1.0] fontColor:[NSColor whiteColor]];
 }
@@ -486,6 +502,7 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   NSStackView *row = [[NSStackView alloc] init];
   [row setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
   [row setAlignment:NSLayoutAttributeCenterY];
+  [row setDistribution:NSStackViewDistributionFill];
   [row setSpacing:8.0];
   [row setWantsLayer:YES];
   [row setTranslatesAutoresizingMaskIntoConstraints:NO];
@@ -521,7 +538,7 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [textField setTarget:self];
   [textField setAction:@selector(handleInputChanged:)];
   [textField setWantsLayer:YES];
-  [textField.widthAnchor constraintEqualToConstant:300].active = YES;
+  [self makeStretchableView:textField minimumWidth:220];
   
   if (self.currentFontColor) {
     applyStyleToView(textField, self.currentBackgroundColor ?: [NSColor textBackgroundColor], self.currentFontColor);
@@ -541,7 +558,7 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [passwordField setTarget:self];
   [passwordField setAction:@selector(handleInputChanged:)];
   [passwordField setWantsLayer:YES];
-  [passwordField.widthAnchor constraintEqualToConstant:300].active = YES;
+  [self makeStretchableView:passwordField minimumWidth:220];
   
   if (self.currentFontColor) {
     applyStyleToView(passwordField, self.currentBackgroundColor ?: [NSColor textBackgroundColor], self.currentFontColor);
@@ -554,8 +571,7 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
 
 - (NSView *)makeHtmlViewWithName:(NSString *)name html:(NSString *)html {
   WKWebView *webView = [[WKWebView alloc] initWithFrame:NSZeroRect configuration:[[WKWebViewConfiguration alloc] init]];
-  [webView setTranslatesAutoresizingMaskIntoConstraints:NO];
-  [webView.widthAnchor constraintEqualToConstant:420].active = YES;
+  [self makeStretchableView:webView minimumWidth:320];
   [webView.heightAnchor constraintEqualToConstant:180].active = YES;
   [webView loadHTMLString:html baseURL:nil];
   [self addControlToLayout:webView];
@@ -570,7 +586,7 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [box setContentViewMargins:NSMakeSize(12, 12)];
   [box setTitle:@""];
   [box setWantsLayer:YES];
-  [box.widthAnchor constraintEqualToConstant:420].active = YES;
+  [self makeStretchableView:box minimumWidth:320];
   [box.heightAnchor constraintEqualToConstant:96].active = YES;
   [box.layer setCornerRadius:10.0];
   [box.layer setBorderWidth:1.0];
@@ -600,7 +616,7 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [scroll setHasVerticalScroller:YES];
   [scroll setHasHorizontalScroller:NO];
   [scroll setBorderType:NSBezelBorder];
-  [scroll.widthAnchor constraintEqualToConstant:400].active = YES;
+  [self makeStretchableView:scroll minimumWidth:320];
   [scroll.heightAnchor constraintEqualToConstant:120].active = YES;
   
   NSTextView *textView = [[NSTextView alloc] initWithFrame:NSZeroRect];
@@ -629,7 +645,7 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
 - (NSView *)makeButtonWithName:(NSString *)name title:(NSString *)title {
   NSButton *button = [NSButton buttonWithTitle:title target:self action:@selector(handleButtonClicked:)];
   [button setBezelStyle:NSBezelStyleRounded];
-  [button.widthAnchor constraintEqualToConstant:150].active = YES;
+  [self makeStretchableView:button minimumWidth:120];
   [button setWantsLayer:YES];
   
   self.controlsByName[[name lowercaseString]] = button;
@@ -655,11 +671,12 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   NSStackView *row = [[NSStackView alloc] initWithFrame:NSZeroRect];
   [row setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
   [row setSpacing:8.0];
+  [self configureRowStack:row];
   
   NSTextField *numField = [[NSTextField alloc] initWithFrame:NSZeroRect];
   [numField setStringValue:[NSString stringWithFormat:@"%d", value]];
   [numField setBezelStyle:NSTextFieldRoundedBezel];
-  [numField.widthAnchor constraintEqualToConstant:70].active = YES;
+  [self makeStretchableView:numField minimumWidth:70];
   [numField setTarget:self];
   [numField setAction:@selector(handleNumberChanged:)];
   [numField setWantsLayer:YES];
@@ -688,12 +705,13 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   NSStackView *row = [[NSStackView alloc] initWithFrame:NSZeroRect];
   [row setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
   [row setSpacing:10.0];
+  [self configureRowStack:row];
   
   NSSlider *slider = [[NSSlider alloc] initWithFrame:NSZeroRect];
   [slider setMinValue:0];
   [slider setMaxValue:100];
   [slider setDoubleValue:(double)value];
-  [slider.widthAnchor constraintEqualToConstant:200].active = YES;
+  [self makeStretchableView:slider minimumWidth:200];
   [slider setTarget:self];
   [slider setAction:@selector(handleSliderChanged:)];
   [slider setWantsLayer:YES];
@@ -722,7 +740,7 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [popup selectItemWithTitle:selected];
   [popup setTarget:self];
   [popup setAction:@selector(handlePopUpChanged:)];
-  [popup.widthAnchor constraintEqualToConstant:200].active = YES;
+  [self makeStretchableView:popup minimumWidth:180];
   [popup setWantsLayer:YES];
   
   self.controlsByName[[name lowercaseString]] = popup;
@@ -755,7 +773,7 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [picker setDateValue:date];
   [picker setTarget:self];
   [picker setAction:@selector(handleDatePickerChanged:)];
-  [picker.widthAnchor constraintEqualToConstant:150].active = YES;
+  [self makeStretchableView:picker minimumWidth:160];
   [picker setWantsLayer:YES];
   
   if (self.currentFontColor) {
@@ -783,7 +801,7 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   }
   [seg setTarget:self];
   [seg setAction:@selector(handleSegmentedChanged:)];
-  [seg.widthAnchor constraintEqualToConstant:240].active = YES;
+  [self makeStretchableView:seg minimumWidth:220];
   [seg setWantsLayer:YES];
   
   self.controlsByName[[name lowercaseString]] = seg;
@@ -798,7 +816,7 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [progress setMaxValue:100];
   [progress setDoubleValue:(double)value];
   [progress setIndeterminate:NO];
-  [progress.widthAnchor constraintEqualToConstant:300].active = YES;
+  [self makeStretchableView:progress minimumWidth:260];
   [progress setWantsLayer:YES];
   
   self.controlsByName[[name lowercaseString]] = progress;
