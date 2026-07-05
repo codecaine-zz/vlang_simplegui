@@ -82,4 +82,21 @@ void window_enable_hover_events(main__WindowInfo *info, const char *name);
 // Menu Customization
 void window_add_menu_item(main__WindowInfo *info, const char *menu_name, const char *item_title, const char *shortcut, const char *handler_name);
 
+// Spacers and Separators
+void window_add_vertical_spacer(main__WindowInfo *info, int height);
+void window_add_horizontal_spacer(main__WindowInfo *info, int width);
+void window_add_separator(main__WindowInfo *info);
+
+// Multi-Column Table Controls
+void *window_add_table_control(main__WindowInfo *info, const char *name, const char **columns, int columns_count);
+void window_set_table_rows(main__WindowInfo *info, const char *name, const char **flat_items, int total_count, int columns_count);
+
+// System Menu Bar/Tray App Mode
+void window_enable_status_bar(main__WindowInfo *info, const char *icon_path);
+void window_show(main__WindowInfo *info);
+
+// Thread Safety Runner
+void window_run_on_main_thread(void *callback_fn, void *context);
+
 #endif
+

@@ -37,25 +37,7 @@ static NSString *nsstring(const char *s) {
 }
 @end
 
-@interface CustomWindow : NSWindow
-@end
-
-@implementation CustomWindow
-- (BOOL)performKeyEquivalent:(NSEvent *)event {
-  NSEventModifierFlags flags = [event modifierFlags] & NSEventModifierFlagDeviceIndependentFlagsMask;
-  if (flags == NSEventModifierFlagCommand) {
-    NSString *chars = [event charactersIgnoringModifiers];
-    if ([chars isEqualToString:@"q"]) {
-      [NSApp terminate:self];
-      return YES;
-    } else if ([chars isEqualToString:@"f"]) {
-      [self toggleFullScreen:nil];
-      return YES;
-    }
-  }
-  return [super performKeyEquivalent:event];
-}
-@end
+extern void vlang_dispatch_event(void *win_ptr, const char *name, const char *event, const char *value);
 
 @interface AppDelegate : NSObject <NSApplicationDelegate, NSWindowDelegate, NSTextFieldDelegate, NSTextViewDelegate, NSTableViewDataSource, NSTableViewDelegate>
 @property (nonatomic, assign) main__WindowParams params;
@@ -67,8 +49,11 @@ static NSString *nsstring(const char *s) {
 @property (nonatomic, strong) NSStackView *currentRowStack;
 @property (nonatomic, strong) NSMutableDictionary *controlsByName;
 @property (nonatomic, strong) NSMutableDictionary *listItemsByName;
+@property (nonatomic, strong) NSMutableDictionary *tableItemsByName;
 @property (nonatomic, strong) NSColor *currentBackgroundColor;
 @property (nonatomic, strong) NSColor *currentFontColor;
+@property (nonatomic, strong) NSStatusItem *statusItem;
+@property (nonatomic, strong) NSMenu *statusBarMenu;
 
 - (NSString *)nameForControl:(NSView *)control;
 - (void)addControlToLayout:(NSView *)view;
@@ -91,6 +76,51 @@ static NSString *nsstring(const char *s) {
 - (void)handleMenuItemClicked:(id)sender;
 @end
 
+@interface CustomWindow : NSWindow
+@end
+
+@implementation CustomWindow
+- (BOOL)performKeyEquivalent:(NSEvent *)event {
+  NSEventModifierFlags flags = [event modifierFlags] & NSEventModifierFlagDeviceIndependentFlagsMask;
+  if (flags == NSEventModifierFlagCommand) {
+    NSString *chars = [event charactersIgnoringModifiers];
+    if ([chars isEqualToString:@"q"]) {
+      [NSApp terminate:self];
+      return YES;
+    } else if ([chars isEqualToString:@"f"]) {
+      [self toggleFullScreen:nil];
+      return YES;
+    }
+  }
+  return [super performKeyEquivalent:event];
+}
+
+- (NSDragOperation)draggingEntered:(id<NSDraggingInfo>)sender {
+  NSPasteboard *pboard = [sender draggingPasteboard];
+  if ([[pboard types] containsObject:NSPasteboardTypeFileURL]) {
+    return NSDragOperationCopy;
+  }
+  return NSDragOperationNone;
+}
+
+- (BOOL)performDragOperation:(id<NSDraggingInfo>)sender {
+  NSPasteboard *pboard = [sender draggingPasteboard];
+  if ([[pboard types] containsObject:NSPasteboardTypeFileURL]) {
+    NSArray *urls = [pboard readObjectsForClasses:@[[NSURL class]] options:nil];
+    NSMutableArray *paths = [NSMutableArray array];
+    for (NSURL *url in urls) {
+      [paths addObject:[url path]];
+    }
+    AppDelegate *delegate = (AppDelegate *)self.delegate;
+    if (delegate && delegate.win_ptr) {
+      NSString *joinedPaths = [paths componentsJoinedByString:@"|"];
+      vlang_dispatch_event(delegate.win_ptr, "window", "file_drop", [joinedPaths UTF8String]);
+    }
+    return YES;
+  }
+  return NO;
+}
+@end
 
 static NSColor *colorFromString(const char *colorString) {
   if (!colorString || !*colorString) {
@@ -222,6 +252,7 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [self.window setBackgroundColor:[NSColor windowBackgroundColor]];
   [self.window setDelegate:self];
   [self.window setReleasedWhenClosed:NO];
+  [self.window registerForDraggedTypes:@[NSPasteboardTypeFileURL]];
   [self buildUI];
   [self.window center];
   self.windowController = [[NSWindowController alloc] initWithWindow:self.window];
@@ -597,8 +628,6 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   return progress;
 }
 
-extern void vlang_dispatch_event(void *win_ptr, const char *name, const char *event, const char *value);
-
 - (void)handleInputChanged:(id)sender {
   NSString *name = [self nameForControl:sender];
   if (name && self.win_ptr) {
@@ -629,7 +658,14 @@ extern void vlang_dispatch_event(void *win_ptr, const char *name, const char *ev
 - (NSInteger)numberOfRowsInTableView:(NSTableView *)tableView {
   NSString *name = tableView.identifier;
   if (!name) return 0;
-  NSArray *items = self.listItemsByName[[name lowercaseString]];
+  NSString *key = [[name lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  
+  if (self.tableItemsByName && self.tableItemsByName[key]) {
+    NSArray *rows = self.tableItemsByName[key];
+    return rows.count;
+  }
+  
+  NSArray *items = self.listItemsByName[key];
   return items ? items.count : 0;
 }
 
@@ -637,7 +673,47 @@ extern void vlang_dispatch_event(void *win_ptr, const char *name, const char *ev
 - (NSView *)tableView:(NSTableView *)tableView viewForTableColumn:(NSTableColumn *)tableColumn row:(NSInteger)row {
   NSString *name = tableView.identifier;
   if (!name) return nil;
-  NSArray *items = self.listItemsByName[[name lowercaseString]];
+  NSString *key = [[name lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  
+  if (self.tableItemsByName && self.tableItemsByName[key]) {
+    NSArray *rows = self.tableItemsByName[key];
+    if (row < 0 || row >= rows.count) return nil;
+    NSArray *cols = rows[row];
+    
+    NSString *colId = tableColumn.identifier;
+    int colIdx = 0;
+    if ([colId hasPrefix:@"Col_"]) {
+      colIdx = [[colId substringFromIndex:4] intValue];
+    }
+    if (colIdx < 0 || colIdx >= cols.count) return nil;
+    
+    NSTableCellView *cell = [tableView makeViewWithIdentifier:@"TableCell" owner:self];
+    if (!cell) {
+      cell = [[NSTableCellView alloc] initWithFrame:NSMakeRect(0, 0, 100, 20)];
+      NSTextField *textField = [[NSTextField alloc] initWithFrame:NSMakeRect(0, 0, 100, 20)];
+      [textField setBezeled:NO];
+      [textField setDrawsBackground:NO];
+      [textField setEditable:NO];
+      [textField setSelectable:NO];
+      [cell addSubview:textField];
+      cell.textField = textField;
+      
+      textField.translatesAutoresizingMaskIntoConstraints = NO;
+      [NSLayoutConstraint activateConstraints:@[
+        [textField.leadingAnchor constraintEqualToAnchor:cell.leadingAnchor constant:4],
+        [textField.trailingAnchor constraintEqualToAnchor:cell.trailingAnchor constant:-4],
+        [textField.topAnchor constraintEqualToAnchor:cell.topAnchor constant:2],
+        [textField.bottomAnchor constraintEqualToAnchor:cell.bottomAnchor constant:-2]
+      ]];
+    }
+    [cell.textField setStringValue:cols[colIdx]];
+    if (self.currentFontColor) {
+      [cell.textField setTextColor:self.currentFontColor];
+    }
+    return cell;
+  }
+  
+  NSArray *items = self.listItemsByName[key];
   if (!items || row < 0 || row >= items.count) return nil;
   
   NSTableCellView *cell = [tableView makeViewWithIdentifier:@"ListCell" owner:self];
@@ -976,12 +1052,19 @@ void window_add_menu_item(main__WindowInfo *info, const char *menu_name, const c
   NSString *handlerName = nsstring(handler_name);
   
   dispatch_async(dispatch_get_main_queue(), ^{
-    NSMenu *submenu = [delegate findOrCreateMenuWithName:menuName];
-    if (submenu) {
+    if (delegate.statusBarMenu) {
       NSMenuItem *item = [[NSMenuItem alloc] initWithTitle:itemTitle action:@selector(handleMenuItemClicked:) keyEquivalent:key];
       [item setTarget:delegate];
       [item setRepresentedObject:handlerName];
-      [submenu addItem:item];
+      [delegate.statusBarMenu addItem:item];
+    } else {
+      NSMenu *submenu = [delegate findOrCreateMenuWithName:menuName];
+      if (submenu) {
+        NSMenuItem *item = [[NSMenuItem alloc] initWithTitle:itemTitle action:@selector(handleMenuItemClicked:) keyEquivalent:key];
+        [item setTarget:delegate];
+        [item setRepresentedObject:handlerName];
+        [submenu addItem:item];
+      }
     }
   });
 }
@@ -1886,5 +1969,152 @@ void window_enable_hover_events(main__WindowInfo *info, const char *name) {
                                                           owner:delegate
                                                        userInfo:@{@"name": key}];
     [view addTrackingArea:area];
+  });
+}
+
+void window_add_vertical_spacer(main__WindowInfo *info, int height) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    NSView *spacer = [[NSView alloc] initWithFrame:NSZeroRect];
+    spacer.translatesAutoresizingMaskIntoConstraints = NO;
+    [spacer.heightAnchor constraintEqualToConstant:height].active = YES;
+    [delegate addControlToLayout:spacer];
+  });
+}
+
+void window_add_horizontal_spacer(main__WindowInfo *info, int width) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    NSView *spacer = [[NSView alloc] initWithFrame:NSZeroRect];
+    spacer.translatesAutoresizingMaskIntoConstraints = NO;
+    [spacer.widthAnchor constraintEqualToConstant:width].active = YES;
+    [delegate addControlToLayout:spacer];
+  });
+}
+
+void window_add_separator(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    NSBox *separator = [[NSBox alloc] initWithFrame:NSZeroRect];
+    [separator setBoxType:NSBoxSeparator];
+    [delegate addControlToLayout:separator];
+  });
+}
+
+void *window_add_table_control(main__WindowInfo *info, const char *name, const char **columns, int columns_count) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSScrollView *scrollView = nil;
+  void (^runBlock)(void) = ^{
+    scrollView = [[NSScrollView alloc] initWithFrame:NSZeroRect];
+    [scrollView setHasVerticalScroller:YES];
+    [scrollView setHasHorizontalScroller:YES];
+    [scrollView setBorderType:NSBezelBorder];
+    
+    [scrollView.widthAnchor constraintEqualToConstant:450].active = YES;
+    [scrollView.heightAnchor constraintEqualToConstant:200].active = YES;
+    
+    NSTableView *tableView = [[NSTableView alloc] initWithFrame:NSMakeRect(0, 0, 450, 200)];
+    [tableView setAllowsMultipleSelection:NO];
+    [tableView setIdentifier:nsstring(name)];
+    [tableView setGridStyleMask:NSTableViewSolidHorizontalGridLineMask | NSTableViewSolidVerticalGridLineMask];
+    
+    for (int i = 0; i < columns_count; i++) {
+      NSTableColumn *column = [[NSTableColumn alloc] initWithIdentifier:[NSString stringWithFormat:@"Col_%d", i]];
+      [column setTitle:nsstring(columns[i])];
+      [column setWidth:100.0];
+      [column setResizingMask:NSTableColumnAutoresizingMask];
+      [tableView addTableColumn:column];
+    }
+    
+    [tableView setDataSource:delegate];
+    [tableView setDelegate:delegate];
+    
+    [scrollView setDocumentView:tableView];
+    
+    NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    [delegate addControlToLayout:scrollView];
+    delegate.controlsByName[key] = scrollView;
+  };
+  
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return (__bridge void *)scrollView;
+}
+
+void window_set_table_rows(main__WindowInfo *info, const char *name, const char **flat_items, int total_count, int columns_count) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  
+  dispatch_async(dispatch_get_main_queue(), ^{
+    NSMutableArray *rowsArray = [NSMutableArray array];
+    if (flat_items && total_count > 0 && columns_count > 0) {
+      int row_count = total_count / columns_count;
+      for (int r = 0; r < row_count; r++) {
+        NSMutableArray *colsArray = [NSMutableArray array];
+        for (int c = 0; c < columns_count; c++) {
+          int idx = r * columns_count + c;
+          [colsArray addObject:nsstring(flat_items[idx])];
+        }
+        [rowsArray addObject:colsArray];
+      }
+    }
+    
+    if (!delegate.tableItemsByName) {
+      delegate.tableItemsByName = [NSMutableDictionary dictionary];
+    }
+    delegate.tableItemsByName[key] = rowsArray;
+    
+    NSView *view = delegate.controlsByName[key];
+    if ([view isKindOfClass:[NSScrollView class]]) {
+      NSScrollView *scroll = (NSScrollView *)view;
+      if ([scroll.documentView isKindOfClass:[NSTableView class]]) {
+        NSTableView *tableView = (NSTableView *)scroll.documentView;
+        [tableView reloadData];
+      }
+    }
+  });
+}
+
+void window_enable_status_bar(main__WindowInfo *info, const char *icon_path) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [NSApp setActivationPolicy:NSApplicationActivationPolicyAccessory];
+    
+    delegate.statusItem = [[NSStatusBar systemStatusBar] statusItemWithLength:NSVariableStatusItemLength];
+    if (icon_path && strlen(icon_path) > 0) {
+      NSImage *image = [[NSImage alloc] initWithContentsOfFile:nsstring(icon_path)];
+      if (image) {
+        [image setSize:NSMakeSize(18, 18)];
+        [image setTemplate:YES];
+        delegate.statusItem.button.image = image;
+      } else {
+        delegate.statusItem.button.title = delegate.window.title;
+      }
+    } else {
+      delegate.statusItem.button.title = delegate.window.title;
+    }
+    
+    delegate.statusBarMenu = [[NSMenu alloc] init];
+    delegate.statusItem.menu = delegate.statusBarMenu;
+    
+    [delegate.window orderOut:nil];
+  });
+}
+
+void window_show(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [delegate.window makeKeyAndOrderFront:nil];
+    [NSApp activateIgnoringOtherApps:YES];
+  });
+}
+
+void window_run_on_main_thread(void *callback_fn, void *context) {
+  void (*cb)(void *) = (void (*)(void *))callback_fn;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    cb(context);
   });
 }

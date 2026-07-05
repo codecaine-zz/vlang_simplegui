@@ -232,3 +232,59 @@ Attaches an event handler when a text field input control loses focus.
 ### `win.on_resize(callback StringEventCallback)`
 Attaches an event handler when the application window is resized by the user.
 - **Callback Signature**: `fn (mut win simplegui.SimpleWindow, new_size string)` (where `new_size` has format `"widthxheight"`, e.g. `"640x480"`)
+
+### `win.on_file_drop(callback FileDropCallback)`
+Attaches an event handler when files are dragged and dropped onto the window.
+- **Callback Signature**: `fn (mut win simplegui.SimpleWindow, files []string)`
+
+---
+
+## 10. Multi-Column Table / Data Grid
+
+### `win.add_table(name string, columns []string)`
+Adds a scrollable multi-column table view widget with column headers.
+
+### `win.set_table_rows(name string, rows [][]string)`
+Updates the entire set of row cells displayed inside the table grid.
+
+---
+
+## 11. Bulk Data Binding
+
+### `win.get_values() map[string]string`
+Serializes and returns a map containing all input control names matched to their current text values.
+
+### `win.set_values(values map[string]string)`
+Sets/updates multiple control text values from a name-value map.
+
+### `win.bind_to_struct[T](mut data T)`
+Queries all input control values and populates the matching field names on a mutable struct using compile-time reflection. Supports `string`, `int`, and `bool` fields.
+
+### `win.load_from_struct[T](data T)`
+Populates GUI controls using matching field name values from the passed struct.
+
+---
+
+## 12. Layout Spacers & Visual Separators
+
+### `win.add_vertical_spacer(height int)`
+Inserts an empty spacing box of the specified height in the layout stack.
+
+### `win.add_horizontal_spacer(width int)`
+Inserts an empty spacing box of the specified width in horizontal layout rows.
+
+### `win.add_separator()`
+Draws a native horizontal visual line divider.
+
+---
+
+## 13. System Status Tray Mode & Thread Safety
+
+### `win.enable_status_bar(icon_path string)`
+Hides the main window and runs the application as a background macOS menu bar accessory with a dropdown status menu.
+
+### `win.show_window()`
+Restores window visibility and brings the window to the front.
+
+### `win.run_on_main_thread(callback VoidEventCallback)`
+Safely queues a UI update callback to execute on the main event thread, bridging background execution threads.

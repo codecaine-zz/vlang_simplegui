@@ -77,8 +77,25 @@ fn C.window_add_progress_indicator_control(&WindowInfo, &u8, int) voidptr
 fn C.window_begin_row(&WindowInfo, &u8)
 fn C.window_end_row(&WindowInfo)
 
+// Spacers and Separators
+fn C.window_add_vertical_spacer(&WindowInfo, int)
+fn C.window_add_horizontal_spacer(&WindowInfo, int)
+fn C.window_add_separator(&WindowInfo)
+
+// Multi-Column Table Controls
+fn C.window_add_table_control(&WindowInfo, &u8, &&u8, int) voidptr
+fn C.window_set_table_rows(&WindowInfo, &u8, &&u8, int, int)
+
+// System Menu Bar/Tray App Mode
+fn C.window_enable_status_bar(&WindowInfo, &u8)
+fn C.window_show(&WindowInfo)
+
+// Thread Safety Runner
+fn C.window_run_on_main_thread(voidptr, voidptr)
+
 pub type StringEventCallback = fn (mut win SimpleWindow, value string)
 pub type VoidEventCallback = fn (mut win SimpleWindow)
+pub type FileDropCallback = fn (mut win SimpleWindow, files []string)
 
 pub struct WindowParams {
 	title   string
@@ -126,6 +143,7 @@ mut:
 	event_name   string
 	string_cb    StringEventCallback = unsafe { nil }
 	void_cb      VoidEventCallback   = unsafe { nil }
+	file_drop_cb FileDropCallback    = unsafe { nil }
 }
 
 pub fn new_simple_window(title string, width int, height int) &SimpleWindow {
@@ -628,6 +646,10 @@ pub fn (mut win SimpleWindow) dispatch_event(name string, event_name string, val
 	} else if handler.string_cb != unsafe { nil } {
 		handler.string_cb(mut win, value)
 		return true
+	} else if handler.file_drop_cb != unsafe { nil } {
+		files := value.split('|')
+		handler.file_drop_cb(mut win, files)
+		return true
 	}
 	return false
 }
@@ -890,6 +912,145 @@ pub fn (mut win SimpleWindow) add_menu_item(menu_name string, item_title string,
 	win.on_click(handler_name, callback)
 	if win.window_info != unsafe { nil } {
 		C.window_add_menu_item(win.window_info, menu_name.str, item_title.str, shortcut.str, handler_name.str)
+	}
+}
+
+pub fn (mut win SimpleWindow) on_file_drop(callback FileDropCallback) {
+	win.handlers << ControlEventHandler{
+		control_name: 'window'
+		event_name:   'file_drop'
+		file_drop_cb: callback
+	}
+}
+
+pub fn (mut win SimpleWindow) add_vertical_spacer(height int) {
+	if win.window_info != unsafe { nil } {
+		C.window_add_vertical_spacer(win.window_info, height)
+	}
+}
+
+pub fn (mut win SimpleWindow) add_horizontal_spacer(width int) {
+	if win.window_info != unsafe { nil } {
+		C.window_add_horizontal_spacer(win.window_info, width)
+	}
+}
+
+pub fn (mut win SimpleWindow) add_separator() {
+	if win.window_info != unsafe { nil } {
+		C.window_add_separator(win.window_info)
+	}
+}
+
+pub fn (mut win SimpleWindow) add_table(name string, columns []string) {
+	win.controls << ControlEntry{
+		name: name
+		kind: 'table'
+		value: ''
+	}
+	if win.window_info != unsafe { nil } {
+		mut c_cols := []&u8{}
+		for col in columns {
+			c_cols << col.str
+		}
+		C.window_add_table_control(win.window_info, name.str, c_cols.data, columns.len)
+	}
+}
+
+pub fn (mut win SimpleWindow) set_table_rows(name string, rows [][]string) {
+	if win.window_info != unsafe { nil } {
+		if rows.len == 0 {
+			C.window_set_table_rows(win.window_info, name.str, unsafe { nil }, 0, 0)
+			return
+		}
+		cols_count := rows[0].len
+		mut flat := []&u8{}
+		for row in rows {
+			for val in row {
+				flat << val.str
+			}
+		}
+		C.window_set_table_rows(win.window_info, name.str, flat.data, flat.len, cols_count)
+	}
+}
+
+pub fn (win SimpleWindow) get_values() map[string]string {
+	mut values := map[string]string{}
+	for control in win.controls {
+		if control.kind in ['table', 'image', 'progress'] {
+			continue
+		}
+		values[control.name] = win.get_text(control.name)
+	}
+	return values
+}
+
+pub fn (mut win SimpleWindow) set_values(values map[string]string) {
+	for name, val in values {
+		win.set_text(name, val)
+	}
+}
+
+pub fn (mut win SimpleWindow) bind_to_struct[T](mut data T) {
+	$for field in T.fields {
+		name := field.name
+		$if field.typ is string {
+			data.$(field.name) = win.get_text(name)
+		} $else $if field.typ is int {
+			data.$(field.name) = win.get_value_int(name)
+		} $else $if field.typ is bool {
+			data.$(field.name) = win.get_checked(name)
+		}
+	}
+}
+
+pub fn (mut win SimpleWindow) load_from_struct[T](data T) {
+	$for field in T.fields {
+		name := field.name
+		$if field.typ is string {
+			win.set_text(name, data.$(field.name))
+		} $else $if field.typ is int {
+			win.set_value_int(name, data.$(field.name))
+		} $else $if field.typ is bool {
+			win.set_checked(name, data.$(field.name))
+		}
+	}
+}
+
+pub fn (mut win SimpleWindow) enable_status_bar(icon_path string) {
+	if win.window_info != unsafe { nil } {
+		C.window_enable_status_bar(win.window_info, icon_path.str)
+	}
+}
+
+pub fn (mut win SimpleWindow) show_window() {
+	if win.window_info != unsafe { nil } {
+		C.window_show(win.window_info)
+	}
+}
+
+struct MainThreadCallback {
+mut:
+	win &SimpleWindow = unsafe { nil }
+	cb  VoidEventCallback = unsafe { nil }
+}
+
+fn vlang_main_thread_dispatcher(ctx voidptr) {
+	mut data := unsafe { &MainThreadCallback(ctx) }
+	cb := data.cb
+	mut win := data.win
+	cb(mut win)
+	unsafe {
+		free(data)
+	}
+}
+
+pub fn (mut win SimpleWindow) run_on_main_thread(callback VoidEventCallback) {
+	if win.window_info != unsafe { nil } {
+		data := &MainThreadCallback{
+			win: win
+			cb:  callback
+		}
+		C.window_run_on_main_thread(vlang_main_thread_dispatcher, data)
 	}
 }
 

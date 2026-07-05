@@ -77,6 +77,45 @@ fn test_control_sizing_methods_store_values() {
 	assert win.get_control_font_size('run') == 16
 }
 
+struct BindingExample {
+	username         string
+	age              int
+	wants_newsletter bool
+}
+
+fn test_qol_helpers_support_struct_binding_and_tables() {
+	mut win := simplegui.SimpleWindow{}
+	win.add_input('username', 'Ada')
+	win.add_number('age', 28)
+	win.add_checkbox('wants_newsletter', 'Subscribe', true)
+	win.add_vertical_spacer(10)
+	win.add_horizontal_spacer(20)
+	win.add_separator()
+	win.add_table('processes', ['PID', 'Name'])
+	win.set_table_rows('processes', [['1', 'V']])
+	win.set_values({
+		'username': 'Grace'
+	})
+
+	assert win.get_values()['username'] == 'Grace'
+	assert win.get_values()['username'] == 'Grace'
+
+	mut data := BindingExample{}
+	win.bind_to_struct(mut data)
+	assert data.username == 'Grace'
+	assert data.age == 28
+	assert data.wants_newsletter == true
+
+	win.load_from_struct(BindingExample{ username: 'Linus', age: 54, wants_newsletter: false })
+	assert win.get_text('username') == 'Linus'
+	assert win.get_value_int('age') == 54
+	assert win.get_checked('wants_newsletter') == false
+
+	win.enable_status_bar('')
+	win.show_window()
+	win.run_on_main_thread(fn (mut w simplegui.SimpleWindow) {})
+}
+
 fn on_test_change(mut win simplegui.SimpleWindow, value string) {
 	println('test change: ${value}')
 }
