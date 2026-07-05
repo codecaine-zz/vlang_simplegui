@@ -276,136 +276,6 @@ fn on_reset_clicked(mut win &simplegui.SimpleWindow) {
 - Calling `get_value`, `set_value`, `get_checked`, or similar on a missing control now raises a clear panic to make mistakes visible early.
 - The API is intentionally lightweight; start with the named control helpers and add layout helpers only when needed.
 
-## Screenshots
-
-The following native macOS windows were captured dynamically by building and running each live V demo:
-
-### High-Fidelity App & Web Studios
-
-- **Web HTML Studio**: `v run demos/web_studio_demo.v`
-  ![Web HTML Studio](screenshots/web_studio_demo.png)
-- **Markdown Live Editor**: `v run demos/markdown_editor.v`
-  ![Markdown Live Editor](screenshots/markdown_editor.png)
-- **Product Catalog CRUD Grid**: `v run demos/grid_data_editor.v`
-  ![Product Catalog CRUD](screenshots/grid_data_editor.png)
-- **SQLite CRUD Showcase**: `v run demos/sqlite_crud_demo.v`
-  ![SQLite CRUD Showcase](screenshots/sqlite_crud_demo.png)
-
-### Layout & Component Showcases
-
-- **Vertical Stack Style (Default Layout)**: `v run demos/stack_style.v`
-  ![Vertical Stack Style](screenshots/stack_style.png)
-- **Grid Column Layout**: `v run demos/grid_style.v`
-  ![Grid Layout](screenshots/grid_style.png)
-- **Advanced Preferences Settings**: `v run demos/settings_editor.v`
-  ![Settings Editor](screenshots/settings_editor.png)
-- **Single-Window All Controls**: `v run demos/all_controls_demo.v`
-  ![All Controls Demo](screenshots/all_controls_demo.png)
-- **Hierarchical Tree View**: `v run demos/tree_view_demo.v`
-  ![Tree View Demo](screenshots/tree_view_demo.png)
-- **Interactive Rich Level Indicators & ComboBox**: `v run demos/modern_widgets_demo.v`
-  ![Rich Widgets Demo](screenshots/modern_widgets_demo.png)
-- **Advanced macOS Rich Controls Showcase**: `v run demos/rich_widgets_demo.v`
-  ![Advanced Controls Suite](screenshots/rich_widgets_demo.png)
-- **Native Switch & Custom Controls**: `v run demos/new_controls_demo.v`
-  ![Native Switch & Custom Controls](screenshots/new_controls_demo.png)
-
-### Built-in Interactive Utilities
-
-- **Interactive Calculator**: `v run demos/calculator.v`
-  ![Calculator](screenshots/calculator.png)
-- **Database Query Viewer**: `v run demos/data_viewer.v`
-  ![Data Viewer](screenshots/data_viewer.png)
-- **Task Timer Loader**: `v run demos/timer_demo.v`
-  ![Timer Demo](screenshots/timer_demo.png)
-- **List & Image Preview Selector**: `v run demos/list_image_demo.v`
-  ![List & Image Demo](screenshots/list_image_demo.png)
-- **Events & State Controller**: `v run demos/events_demo.v`
-  ![Events Demo](screenshots/events_demo.png)
-- **Lorem & HTML Render**: `v run demos/lorem_and_html_demo.v`
-  ![Lorem & HTML Render](screenshots/lorem_and_html_demo.png)
-- **Menu Bar**: `v run demos/menu_demo.v`
-  ![Menu Bar](screenshots/menu_demo.png)
-
-### Custom & Architectural Patterns
-
-- **Delphi & RAD Inspired Showcase**: `v run demos/delphi_inspired_demo.v`
-  ![Delphi Demo](screenshots/delphi_inspired_demo.png)
-- **Ergonomic Reflection Form Building**: `v run demos/ergonomic_demo.v`
-  ![Ergonomic Demo](screenshots/ergonomic_demo.png)
-- **Sticky Yellow Overlay Notepad**: `v run demos/overlay_widget_demo.v`
-  ![Overlay Widget Demo](screenshots/overlay_widget_demo.png)
-- **Always On Top Window**: `v run demos/always_on_top_demo.v`
-  ![Always On Top Demo](screenshots/always_on_top_demo.png)
-- **Developer DX Showcase**: `v run demos/dx_showcase.v`
-  ![DX Showcase Demo](screenshots/dx_showcase.png)
-- **Developer DX Features**: `v run demos/dx_features_demo.v`
-  ![Developer DX Features](screenshots/dx_features_demo.png)
-- **Fluent Window Configurations**: `v run demos/configuration_demo.v`
-  ![Window Config Demo](screenshots/configuration_demo.png)
-- **Dirty Form Change Tracking**: `v run demos/dirty_form_demo.v`
-  ![Dirty Form Demo](screenshots/dirty_form_demo.png)
-- **Interactive Window Controller**: `v run demos/window_controller_demo.v`
-  ![Window Controller](screenshots/window_controller_demo.png)
-- **State Controller Pattern**: `v run demos/state_controller_pattern.v`
-  ![State Controller Pattern](screenshots/state_controller_pattern.png)
-- **QoL Bulk Binding Features**: `v run demos/features_demo.v`
-  ![QoL Bulk Binding](screenshots/features_demo.png)
-- **Advanced Features & Hooks**: `v run demos/advanced_features_demo.v`
-  ![Advanced Features & Hooks](screenshots/advanced_features_demo.png)
-
-### System & Standard Library Integrations
-
-- **System and Standard Library Features**: `v run demos/system_and_stdlib_features_demo.v`
-  ![System and Standard Library Features](screenshots/system_and_stdlib_features_demo.png)
-- **System Calls Info Viewer**: `v run demos/system_calls_demo.v`
-  ![System Calls Info Viewer](screenshots/system_calls_demo.png)
-- **System Info & Encodings (Hex/Base64)**: `v run demos/encoding_and_system_info_demo.v`
-  ![System Info & Encodings](screenshots/encoding_and_system_info_demo.png)
-- **Clipboard Monitor**: `v run demos/clipboard_demo.v`
-  ![Clipboard Monitor](screenshots/clipboard_demo.png)
-- **Performance Benchmark**: `v run demos/benchmark_demo.v`
-  ![Performance Benchmark](screenshots/benchmark_demo.png)
-
-### Network Sockets & Security Suite
-
-- **TCP Socket**: `v run demos/tcp_socket_demo.v`
-  ![TCP Socket](screenshots/tcp_socket_demo.png)
-- **UDP Socket**: `v run demos/udp_socket_demo.v`
-  ![UDP Socket](screenshots/udp_socket_demo.png)
-- **Unix Domain Socket**: `v run demos/unix_socket_demo.v`
-  ![Unix Domain Socket](screenshots/unix_socket_demo.png)
-- **Secure TLS Socket**: `v run demos/secure_socket_demo.v`
-  ![Secure TLS Socket](screenshots/secure_socket_demo.png)
-- **Secure UDP DTLS Socket**: `v run demos/secure_udp_demo.v`
-  ![Secure UDP DTLS Socket](screenshots/secure_udp_demo.png)
-- **Secure Unix TLS Socket**: `v run demos/secure_unix_demo.v`
-  ![Secure Unix TLS Socket](screenshots/secure_unix_demo.png)
-- **Secure WebSockets**: `v run demos/secure_websocket_demo.v`
-  ![Secure WebSockets](screenshots/secure_websocket_demo.png)
-- **High-Level Wrapped Sockets**: `v run demos/wrapped_sockets_demo.v`
-  ![High-Level Wrapped Sockets](screenshots/wrapped_sockets_demo.png)
-
-### Data Utilities & Compression
-
-- **Deflate Compression**: `v run demos/deflate_demo.v`
-  ![Deflate Compression](screenshots/deflate_demo.png)
-- **Zstandard Compression**: `v run demos/zstd_demo.v`
-  ![Zstandard Compression](screenshots/zstd_demo.png)
-
-### Starter Templates & Basics
-
-- **Starter Template**: `v run demos/starter_template.v`
-  ![Starter Template](screenshots/starter_template.png)
-- **Beginner Signup Form**: `v run demos/beginner_demo.v`
-  ![Beginner Signup Form](screenshots/beginner_demo.png)
-- **Vertical Stack Starter**: `v run demos/vertical_stack_starter.v`
-  ![Vertical Stack Starter](screenshots/vertical_stack_starter.png)
-- **Grid Column Starter**: `v run demos/grid_column_starter.v`
-  ![Grid Column Starter](screenshots/grid_column_starter.png)
-- **High-Level Form Builder**: `v run demos/high_level_demo.v`
-  ![High-Level Form Builder](screenshots/high_level_demo.png)
-
 ## Compiling & Packaging as a macOS App
 
 To build and package your V project into a standalone, native macOS application bundle (`.app`) with custom icons, use the pure V tool script `build.vsh`. The builder uses macOS native utilities (`sips` and `iconutil`) with zero JavaScript runtime dependencies.
@@ -767,3 +637,136 @@ v test .
 ## Notes
 
 The goal of this project is to provide a simple, high-abstraction GUI layer that feels familiar to people who are used to event-driven environments like Delphi, VBA, or Python-based UI toolkits.
+
+---
+
+## Screenshots
+
+The following native macOS windows were captured dynamically by building and running each live V demo.
+Screenshots are auto-generated using `v run capture_demos.vsh`.
+
+### High-Fidelity App & Web Studios
+
+- **Web HTML Studio**: `v run demos/web_studio_demo.v`
+  ![Web HTML Studio](screenshots/web_studio_demo.png)
+- **Markdown Live Editor**: `v run demos/markdown_editor.v`
+  ![Markdown Live Editor](screenshots/markdown_editor.png)
+- **Product Catalog CRUD Grid**: `v run demos/grid_data_editor.v`
+  ![Product Catalog CRUD](screenshots/grid_data_editor.png)
+- **SQLite CRUD Showcase**: `v run demos/sqlite_crud_demo.v`
+  ![SQLite CRUD Showcase](screenshots/sqlite_crud_demo.png)
+
+### Layout & Component Showcases
+
+- **Vertical Stack Style (Default Layout)**: `v run demos/stack_style.v`
+  ![Vertical Stack Style](screenshots/stack_style.png)
+- **Grid Column Layout**: `v run demos/grid_style.v`
+  ![Grid Layout](screenshots/grid_style.png)
+- **Advanced Preferences Settings**: `v run demos/settings_editor.v`
+  ![Settings Editor](screenshots/settings_editor.png)
+- **Single-Window All Controls**: `v run demos/all_controls_demo.v`
+  ![All Controls Demo](screenshots/all_controls_demo.png)
+- **Hierarchical Tree View**: `v run demos/tree_view_demo.v`
+  ![Tree View Demo](screenshots/tree_view_demo.png)
+- **Interactive Rich Level Indicators & ComboBox**: `v run demos/modern_widgets_demo.v`
+  ![Rich Widgets Demo](screenshots/modern_widgets_demo.png)
+- **Advanced macOS Rich Controls Showcase**: `v run demos/rich_widgets_demo.v`
+  ![Advanced Controls Suite](screenshots/rich_widgets_demo.png)
+- **Native Switch & Custom Controls**: `v run demos/new_controls_demo.v`
+  ![Native Switch & Custom Controls](screenshots/new_controls_demo.png)
+
+### Built-in Interactive Utilities
+
+- **Interactive Calculator**: `v run demos/calculator.v`
+  ![Calculator](screenshots/calculator.png)
+- **Database Query Viewer**: `v run demos/data_viewer.v`
+  ![Data Viewer](screenshots/data_viewer.png)
+- **Task Timer Loader**: `v run demos/timer_demo.v`
+  ![Timer Demo](screenshots/timer_demo.png)
+- **List & Image Preview Selector**: `v run demos/list_image_demo.v`
+  ![List & Image Demo](screenshots/list_image_demo.png)
+- **Events & State Controller**: `v run demos/events_demo.v`
+  ![Events Demo](screenshots/events_demo.png)
+- **Lorem & HTML Render**: `v run demos/lorem_and_html_demo.v`
+  ![Lorem & HTML Render](screenshots/lorem_and_html_demo.png)
+- **Menu Bar**: `v run demos/menu_demo.v`
+  ![Menu Bar](screenshots/menu_demo.png)
+
+### Custom & Architectural Patterns
+
+- **Delphi & RAD Inspired Showcase**: `v run demos/delphi_inspired_demo.v`
+  ![Delphi Demo](screenshots/delphi_inspired_demo.png)
+- **Ergonomic Reflection Form Building**: `v run demos/ergonomic_demo.v`
+  ![Ergonomic Demo](screenshots/ergonomic_demo.png)
+- **Sticky Yellow Overlay Notepad**: `v run demos/overlay_widget_demo.v`
+  ![Overlay Widget Demo](screenshots/overlay_widget_demo.png)
+- **Always On Top Window**: `v run demos/always_on_top_demo.v`
+  ![Always On Top Demo](screenshots/always_on_top_demo.png)
+- **Developer DX Showcase**: `v run demos/dx_showcase.v`
+  ![DX Showcase Demo](screenshots/dx_showcase.png)
+- **Developer DX Features**: `v run demos/dx_features_demo.v`
+  ![Developer DX Features](screenshots/dx_features_demo.png)
+- **Fluent Window Configurations**: `v run demos/configuration_demo.v`
+  ![Window Config Demo](screenshots/configuration_demo.png)
+- **Dirty Form Change Tracking**: `v run demos/dirty_form_demo.v`
+  ![Dirty Form Demo](screenshots/dirty_form_demo.png)
+- **Interactive Window Controller**: `v run demos/window_controller_demo.v`
+  ![Window Controller](screenshots/window_controller_demo.png)
+- **State Controller Pattern**: `v run demos/state_controller_pattern.v`
+  ![State Controller Pattern](screenshots/state_controller_pattern.png)
+- **QoL Bulk Binding Features**: `v run demos/features_demo.v`
+  ![QoL Bulk Binding](screenshots/features_demo.png)
+- **Advanced Features & Hooks**: `v run demos/advanced_features_demo.v`
+  ![Advanced Features & Hooks](screenshots/advanced_features_demo.png)
+
+### System & Standard Library Integrations
+
+- **System and Standard Library Features**: `v run demos/system_and_stdlib_features_demo.v`
+  ![System and Standard Library Features](screenshots/system_and_stdlib_features_demo.png)
+- **System Calls Info Viewer**: `v run demos/system_calls_demo.v`
+  ![System Calls Info Viewer](screenshots/system_calls_demo.png)
+- **System Info & Encodings (Hex/Base64)**: `v run demos/encoding_and_system_info_demo.v`
+  ![System Info & Encodings](screenshots/encoding_and_system_info_demo.png)
+- **Clipboard Monitor**: `v run demos/clipboard_demo.v`
+  ![Clipboard Monitor](screenshots/clipboard_demo.png)
+- **Performance Benchmark**: `v run demos/benchmark_demo.v`
+  ![Performance Benchmark](screenshots/benchmark_demo.png)
+
+### Network Sockets & Security Suite
+
+- **TCP Socket**: `v run demos/tcp_socket_demo.v`
+  ![TCP Socket](screenshots/tcp_socket_demo.png)
+- **UDP Socket**: `v run demos/udp_socket_demo.v`
+  ![UDP Socket](screenshots/udp_socket_demo.png)
+- **Unix Domain Socket**: `v run demos/unix_socket_demo.v`
+  ![Unix Domain Socket](screenshots/unix_socket_demo.png)
+- **Secure TLS Socket**: `v run demos/secure_socket_demo.v`
+  ![Secure TLS Socket](screenshots/secure_socket_demo.png)
+- **Secure UDP DTLS Socket**: `v run demos/secure_udp_demo.v`
+  ![Secure UDP DTLS Socket](screenshots/secure_udp_demo.png)
+- **Secure Unix TLS Socket**: `v run demos/secure_unix_demo.v`
+  ![Secure Unix TLS Socket](screenshots/secure_unix_demo.png)
+- **Secure WebSockets**: `v run demos/secure_websocket_demo.v`
+  ![Secure WebSockets](screenshots/secure_websocket_demo.png)
+- **High-Level Wrapped Sockets**: `v run demos/wrapped_sockets_demo.v`
+  ![High-Level Wrapped Sockets](screenshots/wrapped_sockets_demo.png)
+
+### Data Utilities & Compression
+
+- **Deflate Compression**: `v run demos/deflate_demo.v`
+  ![Deflate Compression](screenshots/deflate_demo.png)
+- **Zstandard Compression**: `v run demos/zstd_demo.v`
+  ![Zstandard Compression](screenshots/zstd_demo.png)
+
+### Starter Templates & Basics
+
+- **Starter Template**: `v run demos/starter_template.v`
+  ![Starter Template](screenshots/starter_template.png)
+- **Beginner Signup Form**: `v run demos/beginner_demo.v`
+  ![Beginner Signup Form](screenshots/beginner_demo.png)
+- **Vertical Stack Starter**: `v run demos/vertical_stack_starter.v`
+  ![Vertical Stack Starter](screenshots/vertical_stack_starter.png)
+- **Grid Column Starter**: `v run demos/grid_column_starter.v`
+  ![Grid Column Starter](screenshots/grid_column_starter.png)
+- **High-Level Form Builder**: `v run demos/high_level_demo.v`
+  ![High-Level Form Builder](screenshots/high_level_demo.png)
