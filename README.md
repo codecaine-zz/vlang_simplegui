@@ -273,41 +273,57 @@ fn on_reset_clicked(mut win &simplegui.SimpleWindow) {
 
 ## Screenshots
 
-### 1. Vertical Stack Style (Default Layout)
+The following native macOS windows were captured dynamically by building and running each live V demo:
 
-![Vertical Stack Style](screenshots/stack_style.png)
+### High-Fidelity App & Web Studios
 
-### 2. Grid & Row Layout (Columns aligned side-by-side)
+- **Web HTML Studio**: `v run demos/web_studio_demo.v`
+  ![Web HTML Studio](screenshots/web_studio_demo.png)
+- **Markdown Live Editor**: `v run demos/markdown_editor.v`
+  ![Markdown Live Editor](screenshots/markdown_editor.png)
+- **Product Catalog CRUD Grid**: `v run demos/grid_data_editor.v`
+  ![Product Catalog CRUD](screenshots/grid_data_editor.png)
 
-![Grid Layout](screenshots/grid_style.png)
+### Layout & Component Showcases
 
-### 3. Interactive Keypad Calculator
+- **Vertical Stack Style (Default Layout)**: `v run demos/stack_style.v`
+  ![Vertical Stack Style](screenshots/stack_style.png)
+- **Grid Column Layout**: `v run demos/grid_style.v`
+  ![Grid Layout](screenshots/grid_style.png)
+- **Advanced Preferences Settings**: `v run demos/settings_editor.v`
+  ![Settings Editor](screenshots/settings_editor.png)
+- **Single-Window All Controls**: `v run demos/all_controls_demo.v`
+  ![All Controls Demo](screenshots/all_controls_demo.png)
 
-![Calculator](screenshots/calculator.png)
+### Built-in Interactive Utilities
 
-### 4. Advanced Preferences Settings Editor
+- **Interactive Calculator**: `v run demos/calculator.v`
+  ![Calculator](screenshots/calculator.png)
+- **Database Query Viewer**: `v run demos/data_viewer.v`
+  ![Data Viewer](screenshots/data_viewer.png)
+- **Task Timer Loader**: `v run demos/timer_demo.v`
+  ![Timer Demo](screenshots/timer_demo.png)
+- **List & Image Preview Selector**: `v run demos/list_image_demo.v`
+  ![List & Image Demo](screenshots/list_image_demo.png)
+- **Events & State Controller**: `v run demos/events_demo.v`
+  ![Events Demo](screenshots/events_demo.png)
 
-![Settings Editor](screenshots/settings_editor.png)
+### Custom & Architectural Patterns
 
-### 5. Database Query Viewer & Filter
-
-![Data Viewer](screenshots/data_viewer.png)
-
-### 6. Scheduled Timer Loader Task
-
-![Timer Demo](screenshots/timer_demo.png)
-
-### 7. Interactive List & Image Selector Dashboard
-
-![List & Image Demo](screenshots/list_image.png)
-
-### 8. Interactive Events & State Controller
-
-![Events Demo](screenshots/events_demo.png)
-
-### 9. Single-Window Control Showcase
-
-![All Controls Demo](screenshots/all_controls_demo.png)
+- **Delphi & RAD Inspired Showcase**: `v run demos/delphi_inspired_demo.v`
+  ![Delphi Demo](screenshots/delphi_inspired_demo.png)
+- **Ergonomic Reflection Form Building**: `v run demos/ergonomic_demo.v`
+  ![Ergonomic Demo](screenshots/ergonomic_demo.png)
+- **Sticky Yellow Overlay Notepad**: `v run demos/overlay_widget_demo.v`
+  ![Overlay Widget Demo](screenshots/overlay_widget_demo.png)
+- **Always On Top Window**: `v run demos/always_on_top_demo.v`
+  ![Always On Top Demo](screenshots/always_on_top_demo.png)
+- **Developer DX Showcase**: `v run demos/dx_showcase.v`
+  ![DX Showcase Demo](screenshots/dx_showcase.png)
+- **Fluent Window Configurations**: `v run demos/configuration_demo.v`
+  ![Window Config Demo](screenshots/configuration_demo.png)
+- **Dirty Form Change Tracking**: `v run demos/dirty_form_demo.v`
+  ![Dirty Form Demo](screenshots/dirty_form_demo.png)
 
 ## Requirements
 
