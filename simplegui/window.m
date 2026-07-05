@@ -88,6 +88,158 @@ extern void vlang_dispatch_event(void *win_ptr, const char *name, const char *ev
 }
 @end
 
+@interface ModernTextFieldCell : NSTextFieldCell
+@end
+
+@implementation ModernTextFieldCell
+- (NSRect)drawingRectForBounds:(NSRect)rect {
+  NSRect titleRect = [super drawingRectForBounds:rect];
+  CGFloat horizontalPadding = 10.0;
+  CGFloat verticalPadding = (titleRect.size.height - 18.0) / 2.0;
+  if (verticalPadding < 0) verticalPadding = 2.0;
+  return NSMakeRect(titleRect.origin.x + horizontalPadding,
+                    titleRect.origin.y + verticalPadding,
+                    titleRect.size.width - (horizontalPadding * 2.0),
+                    titleRect.size.height - (verticalPadding * 2.0));
+}
+- (void)selectWithFrame:(NSRect)rect inView:(NSView *)controlView editor:(NSText *)textObj delegate:(id)anObject start:(NSInteger)selStart length:(NSInteger)selLength {
+  NSRect textFrame = [self drawingRectForBounds:rect];
+  [super selectWithFrame:textFrame inView:controlView editor:textObj delegate:anObject start:selStart length:selLength];
+}
+- (void)editWithFrame:(NSRect)rect inView:(NSView *)controlView editor:(NSText *)textObj delegate:(id)anObject event:(NSEvent *)theEvent {
+  NSRect textFrame = [self drawingRectForBounds:rect];
+  [super editWithFrame:textFrame inView:controlView editor:textObj delegate:anObject event:theEvent];
+}
+@end
+
+@interface ModernSecureTextFieldCell : NSSecureTextFieldCell
+@end
+
+@implementation ModernSecureTextFieldCell
+- (NSRect)drawingRectForBounds:(NSRect)rect {
+  NSRect titleRect = [super drawingRectForBounds:rect];
+  CGFloat horizontalPadding = 10.0;
+  CGFloat verticalPadding = (titleRect.size.height - 18.0) / 2.0;
+  if (verticalPadding < 0) verticalPadding = 2.0;
+  return NSMakeRect(titleRect.origin.x + horizontalPadding,
+                    titleRect.origin.y + verticalPadding,
+                    titleRect.size.width - (horizontalPadding * 2.0),
+                    titleRect.size.height - (verticalPadding * 2.0));
+}
+- (void)selectWithFrame:(NSRect)rect inView:(NSView *)controlView editor:(NSText *)textObj delegate:(id)anObject start:(NSInteger)selStart length:(NSInteger)selLength {
+  NSRect textFrame = [self drawingRectForBounds:rect];
+  [super selectWithFrame:textFrame inView:controlView editor:textObj delegate:anObject start:selStart length:selLength];
+}
+- (void)editWithFrame:(NSRect)rect inView:(NSView *)controlView editor:(NSText *)textObj delegate:(id)anObject event:(NSEvent *)theEvent {
+  NSRect textFrame = [self drawingRectForBounds:rect];
+  [super editWithFrame:textFrame inView:controlView editor:textObj delegate:anObject event:theEvent];
+}
+@end
+
+@interface ModernTextField : NSTextField
+@end
+
+@implementation ModernTextField
+- (instancetype)initWithFrame:(NSRect)frameRect {
+  self = [super initWithFrame:frameRect];
+  if (self) {
+    ModernTextFieldCell *cell = [[ModernTextFieldCell alloc] init];
+    [cell setEditable:YES];
+    [cell setSelectable:YES];
+    [cell setScrollable:YES];
+    [cell setDrawsBackground:YES];
+    self.cell = cell;
+    self.wantsLayer = YES;
+    self.layer.cornerRadius = 8.0;
+    self.layer.borderWidth = 1.0;
+    self.layer.borderColor = [NSColor separatorColor].CGColor;
+    self.focusRingType = NSFocusRingTypeNone;
+  }
+  return self;
+}
+- (void)layout {
+  [super layout];
+  NSColor *bgColor = self.backgroundColor ?: [NSColor textBackgroundColor];
+  self.layer.backgroundColor = bgColor.CGColor;
+  BOOL hasFocus = NO;
+  if (self.window && self.window.firstResponder) {
+    id responder = self.window.firstResponder;
+    if ([responder isKindOfClass:[NSView class]] && [(NSView *)responder isDescendantOf:self]) {
+      hasFocus = YES;
+    }
+  }
+  if (hasFocus) {
+    self.layer.borderColor = [NSColor controlAccentColor].CGColor;
+    self.layer.borderWidth = 1.5;
+  } else {
+    self.layer.borderColor = [NSColor separatorColor].CGColor;
+    self.layer.borderWidth = 1.0;
+  }
+}
+- (BOOL)becomeFirstResponder {
+  BOOL result = [super becomeFirstResponder];
+  [self setNeedsLayout:YES];
+  return result;
+}
+- (BOOL)resignFirstResponder {
+  BOOL result = [super resignFirstResponder];
+  [self setNeedsLayout:YES];
+  return result;
+}
+@end
+
+@interface ModernSecureTextField : NSSecureTextField
+@end
+
+@implementation ModernSecureTextField
+- (instancetype)initWithFrame:(NSRect)frameRect {
+  self = [super initWithFrame:frameRect];
+  if (self) {
+    ModernSecureTextFieldCell *cell = [[ModernSecureTextFieldCell alloc] init];
+    [cell setEditable:YES];
+    [cell setSelectable:YES];
+    [cell setScrollable:YES];
+    [cell setDrawsBackground:YES];
+    self.cell = cell;
+    self.wantsLayer = YES;
+    self.layer.cornerRadius = 8.0;
+    self.layer.borderWidth = 1.0;
+    self.layer.borderColor = [NSColor separatorColor].CGColor;
+    self.focusRingType = NSFocusRingTypeNone;
+  }
+  return self;
+}
+- (void)layout {
+  [super layout];
+  NSColor *bgColor = self.backgroundColor ?: [NSColor textBackgroundColor];
+  self.layer.backgroundColor = bgColor.CGColor;
+  BOOL hasFocus = NO;
+  if (self.window && self.window.firstResponder) {
+    id responder = self.window.firstResponder;
+    if ([responder isKindOfClass:[NSView class]] && [(NSView *)responder isDescendantOf:self]) {
+      hasFocus = YES;
+    }
+  }
+  if (hasFocus) {
+    self.layer.borderColor = [NSColor controlAccentColor].CGColor;
+    self.layer.borderWidth = 1.5;
+  } else {
+    self.layer.borderColor = [NSColor separatorColor].CGColor;
+    self.layer.borderWidth = 1.0;
+  }
+}
+- (BOOL)becomeFirstResponder {
+  BOOL result = [super becomeFirstResponder];
+  [self setNeedsLayout:YES];
+  return result;
+}
+- (BOOL)resignFirstResponder {
+  BOOL result = [super resignFirstResponder];
+  [self setNeedsLayout:YES];
+  return result;
+}
+@end
+
 @interface AppDelegate : NSObject <NSApplicationDelegate, NSWindowDelegate, NSTextFieldDelegate, NSTextViewDelegate, NSTableViewDataSource, NSTableViewDelegate>
 @property (nonatomic, assign) main__WindowParams params;
 @property (nonatomic, assign) void *win_ptr;
@@ -316,15 +468,32 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
       [field setBezeled:NO];
       [field setTextColor:effectiveFont];
     } else {
-      [field setFont:[NSFont systemFontOfSize:12 weight:NSFontWeightRegular]];
+      [field setFont:[NSFont systemFontOfSize:13 weight:NSFontWeightRegular]];
       [field setControlSize:NSControlSizeRegular];
-      [field setFocusRingType:NSFocusRingTypeExterior];
-      [field setBordered:YES];
-      [field setBezelStyle:NSTextFieldRoundedBezel];
+      [field setFocusRingType:NSFocusRingTypeNone];
+      [field setBordered:NO];
+      [field setBezeled:NO];
       [field setWantsLayer:YES];
-      [field setDrawsBackground:YES];
+      [field setDrawsBackground:NO];
       [field setBackgroundColor:effectiveBackground];
       [field setTextColor:effectiveFont];
+      field.layer.cornerRadius = 8.0;
+      field.layer.backgroundColor = effectiveBackground.CGColor;
+      
+      BOOL hasFocus = NO;
+      if (field.window && field.window.firstResponder) {
+        id responder = field.window.firstResponder;
+        if ([responder isKindOfClass:[NSView class]] && [(NSView *)responder isDescendantOf:field]) {
+          hasFocus = YES;
+        }
+      }
+      if (hasFocus) {
+        field.layer.borderColor = [NSColor controlAccentColor].CGColor;
+        field.layer.borderWidth = 1.5;
+      } else {
+        field.layer.borderColor = [NSColor separatorColor].CGColor;
+        field.layer.borderWidth = 1.0;
+      }
     }
   } else if ([view isKindOfClass:[NSTextView class]]) {
     NSTextView *textView = (NSTextView *)view;
@@ -350,14 +519,15 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
         [button setBezelStyle:NSBezelStyleRounded];
         [button setWantsLayer:YES];
         button.layer.backgroundColor = backgroundColor.CGColor;
-        button.layer.cornerRadius = 6.0;
+        button.layer.cornerRadius = 8.0;
         button.layer.borderWidth = 1.0;
         button.layer.borderColor = [NSColor separatorColor].CGColor;
         setButtonTitleColor(button, fontColor ?: [NSColor labelColor]);
       } else {
-        [button setWantsLayer:NO];
+        [button setWantsLayer:YES];
         [button setBordered:YES];
         [button setBezelStyle:NSBezelStyleRounded];
+        button.layer.cornerRadius = 8.0;
         if (fontColor) {
           setButtonTitleColor(button, fontColor);
         } else {
@@ -373,6 +543,9 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
     [popup setControlSize:NSControlSizeRegular];
     [popup setBezelStyle:NSBezelStyleRounded];
     [popup setWantsLayer:YES];
+    popup.layer.cornerRadius = 8.0;
+    popup.layer.borderWidth = 1.0;
+    popup.layer.borderColor = [NSColor separatorColor].CGColor;
     popup.layer.backgroundColor = (backgroundColor ?: modernElevatedSurfaceColor()).CGColor;
     if ([popup respondsToSelector:@selector(setContentTintColor:)]) {
       [popup setContentTintColor:effectiveFont];
@@ -383,6 +556,7 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
     [segment setControlSize:NSControlSizeRegular];
     [segment setFont:[NSFont systemFontOfSize:12 weight:NSFontWeightRegular]];
     [segment setWantsLayer:YES];
+    segment.layer.cornerRadius = 8.0;
     if ([segment respondsToSelector:@selector(setContentTintColor:)]) {
       [segment setContentTintColor:fontColor ?: modernAccentColor()];
     }
@@ -391,7 +565,7 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
     [slider setControlSize:NSControlSizeRegular];
     [slider setWantsLayer:YES];
     [slider setFocusRingType:NSFocusRingTypeNone];
-    slider.layer.cornerRadius = 6.0;
+    slider.layer.cornerRadius = 8.0;
     if (fontColor && [slider respondsToSelector:@selector(setContentTintColor:)]) {
       [slider setContentTintColor:fontColor];
     }
@@ -399,6 +573,9 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
     NSDatePicker *picker = (NSDatePicker *)view;
     [picker setControlSize:NSControlSizeRegular];
     [picker setWantsLayer:YES];
+    picker.layer.cornerRadius = 8.0;
+    picker.layer.borderWidth = 1.0;
+    picker.layer.borderColor = [NSColor separatorColor].CGColor;
     picker.layer.backgroundColor = (backgroundColor ?: modernElevatedSurfaceColor()).CGColor;
   } else if ([view isKindOfClass:[NSScrollView class]]) {
     [view setWantsLayer:YES];
@@ -684,19 +861,16 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
 }
 
 - (NSView *)makeTextFieldWithName:(NSString *)name value:(NSString *)value {
-  NSTextField *textField = [[NSTextField alloc] initWithFrame:NSZeroRect];
+  ModernTextField *textField = [[ModernTextField alloc] initWithFrame:NSZeroRect];
   [textField setStringValue:value];
   [textField setPlaceholderString:@"Type here..."];
-  [textField setBezelStyle:NSTextFieldRoundedBezel];
   [textField setDelegate:self];
   [textField setTarget:self];
   [textField setAction:@selector(handleInputChanged:)];
-  [textField setWantsLayer:YES];
   [self makeStretchableView:textField minimumWidth:220];
+  [textField.heightAnchor constraintEqualToConstant:34.0].active = YES;
   
-  if (self.currentFontColor) {
-    applyStyleToView(textField, self.currentBackgroundColor ?: [NSColor textBackgroundColor], self.currentFontColor);
-  }
+  applyStyleToView(textField, self.currentBackgroundColor, self.currentFontColor);
   
   self.controlsByName[[name lowercaseString]] = textField;
   [self addControlToLayout:textField];
@@ -704,19 +878,16 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
 }
 
 - (NSView *)makePasswordFieldWithName:(NSString *)name value:(NSString *)value {
-  NSSecureTextField *passwordField = [[NSSecureTextField alloc] initWithFrame:NSZeroRect];
+  ModernSecureTextField *passwordField = [[ModernSecureTextField alloc] initWithFrame:NSZeroRect];
   [passwordField setStringValue:value];
   [passwordField setPlaceholderString:@"Password..."];
-  [passwordField setBezelStyle:NSTextFieldRoundedBezel];
   [passwordField setDelegate:self];
   [passwordField setTarget:self];
   [passwordField setAction:@selector(handleInputChanged:)];
-  [passwordField setWantsLayer:YES];
   [self makeStretchableView:passwordField minimumWidth:220];
+  [passwordField.heightAnchor constraintEqualToConstant:34.0].active = YES;
   
-  if (self.currentFontColor) {
-    applyStyleToView(passwordField, self.currentBackgroundColor ?: [NSColor textBackgroundColor], self.currentFontColor);
-  }
+  applyStyleToView(passwordField, self.currentBackgroundColor, self.currentFontColor);
   
   self.controlsByName[[name lowercaseString]] = passwordField;
   [self addControlToLayout:passwordField];
@@ -744,14 +915,15 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [box.heightAnchor constraintEqualToConstant:96].active = YES;
   [box.layer setCornerRadius:10.0];
   [box.layer setBorderWidth:1.0];
-  [box.layer setBorderColor:[[NSColor colorWithWhite:1.0 alpha:0.18] CGColor]];
+  [box.layer setBorderColor:[modernBorderColor() CGColor]];
+  box.layer.backgroundColor = [modernElevatedSurfaceColor() CGColor];
   [box registerForDraggedTypes:@[NSPasteboardTypeFileURL]];
   box.win_ptr = self.win_ptr;
   box.controlName = [name lowercaseString];
 
   NSTextField *labelField = [NSTextField labelWithString:label ?: @"Drop files here"];
   [labelField setAlignment:NSTextAlignmentCenter];
-  [labelField setFont:[NSFont systemFontOfSize:10.5 weight:NSFontWeightMedium]];
+  [labelField setFont:[NSFont systemFontOfSize:11 weight:NSFontWeightMedium]];
   [labelField setTextColor:[NSColor secondaryLabelColor]];
   [labelField setTranslatesAutoresizingMaskIntoConstraints:NO];
   [box addSubview:labelField];
@@ -769,7 +941,11 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   NSScrollView *scroll = [[NSScrollView alloc] initWithFrame:NSZeroRect];
   [scroll setHasVerticalScroller:YES];
   [scroll setHasHorizontalScroller:NO];
-  [scroll setBorderType:NSBezelBorder];
+  [scroll setBorderType:NSNoBorder];
+  [scroll setWantsLayer:YES];
+  scroll.layer.cornerRadius = 8.0;
+  scroll.layer.borderWidth = 1.0;
+  scroll.layer.borderColor = [modernBorderColor() CGColor];
   [self makeStretchableView:scroll minimumWidth:320];
   [scroll.heightAnchor constraintEqualToConstant:120].active = YES;
   
@@ -782,14 +958,15 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [textView setString:value];
   [textView setDelegate:self];
   [textView setWantsLayer:YES];
+  [textView setTextContainerInset:NSMakeSize(8.0, 8.0)];
   
   [scroll setDocumentView:textView];
   
-  if (self.currentFontColor) {
-    [textView setTextColor:self.currentFontColor];
-    [textView setBackgroundColor:self.currentBackgroundColor ?: [NSColor textBackgroundColor]];
-    [textView setDrawsBackground:YES];
-  }
+  applyStyleToView(scroll, self.currentBackgroundColor ?: [NSColor textBackgroundColor], self.currentFontColor);
+  
+  [textView setTextColor:self.currentFontColor ?: modernTextColor()];
+  [textView setBackgroundColor:self.currentBackgroundColor ?: [NSColor textBackgroundColor]];
+  [textView setDrawsBackground:YES];
   
   self.controlsByName[[name lowercaseString]] = scroll;
   [self addControlToLayout:scroll];
@@ -827,13 +1004,12 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [row setSpacing:8.0];
   [self configureRowStack:row];
   
-  NSTextField *numField = [[NSTextField alloc] initWithFrame:NSZeroRect];
+  ModernTextField *numField = [[ModernTextField alloc] initWithFrame:NSZeroRect];
   [numField setStringValue:[NSString stringWithFormat:@"%d", value]];
-  [numField setBezelStyle:NSTextFieldRoundedBezel];
   [self makeStretchableView:numField minimumWidth:70];
   [numField setTarget:self];
   [numField setAction:@selector(handleNumberChanged:)];
-  [numField setWantsLayer:YES];
+  [numField.heightAnchor constraintEqualToConstant:34.0].active = YES;
   
   NSStepper *stepper = [[NSStepper alloc] initWithFrame:NSZeroRect];
   [stepper setMinValue:0];
@@ -846,9 +1022,7 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [row addArrangedSubview:numField];
   [row addArrangedSubview:stepper];
   
-  if (self.currentFontColor) {
-    applyStyleToView(numField, self.currentBackgroundColor ?: [NSColor textBackgroundColor], self.currentFontColor);
-  }
+  applyStyleToView(numField, self.currentBackgroundColor, self.currentFontColor);
   
   self.controlsByName[[name lowercaseString]] = numField;
   [self addControlToLayout:row];
@@ -1117,10 +1291,9 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [searchField setAction:@selector(handleInputChanged:)];
   [self makeStretchableView:searchField minimumWidth:180];
   [searchField setWantsLayer:YES];
+  [searchField.heightAnchor constraintEqualToConstant:34.0].active = YES;
   
-  if (self.currentFontColor || self.currentBackgroundColor) {
-    applyStyleToView(searchField, self.currentBackgroundColor, self.currentFontColor);
-  }
+  applyStyleToView(searchField, self.currentBackgroundColor, self.currentFontColor);
   
   self.controlsByName[[name lowercaseString]] = searchField;
   [self addControlToLayout:searchField];
@@ -1924,7 +2097,13 @@ void *window_add_group_box_control(main__WindowInfo *info, const char *name, con
     [box setTitle:nsstring(title)];
     [box setBorderType:NSLineBorder];
     [box setBoxType:NSBoxCustom];
-    [box setContentViewMargins:NSMakeSize(8, 8)];
+    [box setContentViewMargins:NSMakeSize(12, 12)];
+    [box setWantsLayer:YES];
+    box.layer.cornerRadius = 10.0;
+    box.layer.borderWidth = 1.0;
+    box.layer.borderColor = [modernBorderColor() CGColor];
+    box.layer.backgroundColor = (delegate.currentBackgroundColor ?: modernElevatedSurfaceColor()).CGColor;
+    
     [delegate addControlToLayout:box];
     NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
     delegate.controlsByName[key] = box;
@@ -2795,7 +2974,11 @@ void *window_add_list_box_control(main__WindowInfo *info, const char *name, cons
     scrollView = [[NSScrollView alloc] initWithFrame:NSZeroRect];
     [scrollView setHasVerticalScroller:YES];
     [scrollView setHasHorizontalScroller:NO];
-    [scrollView setBorderType:NSBezelBorder];
+    [scrollView setBorderType:NSNoBorder];
+    [scrollView setWantsLayer:YES];
+    scrollView.layer.cornerRadius = 8.0;
+    scrollView.layer.borderWidth = 1.0;
+    scrollView.layer.borderColor = [modernBorderColor() CGColor];
     
     // Add default Auto Layout sizing constraints
     [scrollView.widthAnchor constraintEqualToConstant:350].active = YES;
@@ -2808,9 +2991,13 @@ void *window_add_list_box_control(main__WindowInfo *info, const char *name, cons
     [tableView setBackgroundColor:[NSColor textBackgroundColor]];
     [tableView setRowSizeStyle:NSTableViewRowSizeStyleDefault];
     [tableView setIntercellSpacing:NSMakeSize(0, 0)];
-    [tableView setRowHeight:24];
+    [tableView setRowHeight:26];
     [tableView setSelectionHighlightStyle:NSTableViewSelectionHighlightStyleRegular];
     [tableView setUsesAlternatingRowBackgroundColors:NO];
+    
+    if (@available(macOS 11.0, *)) {
+      [tableView setStyle:NSTableViewStyleFullWidth];
+    }
     
     NSTableColumn *column = [[NSTableColumn alloc] initWithIdentifier:@"ListColumn"];
     [column setResizingMask:NSTableColumnAutoresizingMask];
@@ -2833,6 +3020,8 @@ void *window_add_list_box_control(main__WindowInfo *info, const char *name, cons
     NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
     delegate.listItemsByName[key] = itemsArray;
     [tableView reloadData];
+    
+    applyStyleToView(scrollView, delegate.currentBackgroundColor, delegate.currentFontColor);
     
     [delegate addControlToLayout:scrollView];
     delegate.controlsByName[key] = scrollView;
@@ -3025,7 +3214,11 @@ void *window_add_table_control(main__WindowInfo *info, const char *name, const c
     scrollView = [[NSScrollView alloc] initWithFrame:NSZeroRect];
     [scrollView setHasVerticalScroller:YES];
     [scrollView setHasHorizontalScroller:YES];
-    [scrollView setBorderType:NSBezelBorder];
+    [scrollView setBorderType:NSNoBorder];
+    [scrollView setWantsLayer:YES];
+    scrollView.layer.cornerRadius = 8.0;
+    scrollView.layer.borderWidth = 1.0;
+    scrollView.layer.borderColor = [modernBorderColor() CGColor];
     
     [scrollView.widthAnchor constraintEqualToConstant:450].active = YES;
     [scrollView.heightAnchor constraintEqualToConstant:200].active = YES;
@@ -3034,6 +3227,11 @@ void *window_add_table_control(main__WindowInfo *info, const char *name, const c
     [tableView setAllowsMultipleSelection:NO];
     [tableView setIdentifier:nsstring(name)];
     [tableView setGridStyleMask:NSTableViewSolidHorizontalGridLineMask | NSTableViewSolidVerticalGridLineMask];
+    [tableView setRowHeight:26];
+    
+    if (@available(macOS 11.0, *)) {
+      [tableView setStyle:NSTableViewStyleFullWidth];
+    }
     
     for (int i = 0; i < columns_count; i++) {
       NSTableColumn *column = [[NSTableColumn alloc] initWithIdentifier:[NSString stringWithFormat:@"Col_%d", i]];
@@ -3047,6 +3245,8 @@ void *window_add_table_control(main__WindowInfo *info, const char *name, const c
     [tableView setDelegate:delegate];
     
     [scrollView setDocumentView:tableView];
+    
+    applyStyleToView(scrollView, delegate.currentBackgroundColor, delegate.currentFontColor);
     
     NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
     [delegate addControlToLayout:scrollView];
