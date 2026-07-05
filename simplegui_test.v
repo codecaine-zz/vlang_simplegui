@@ -449,3 +449,68 @@ fn test_dirty_state_tracking() {
 	assert win.is_control_dirty('agree') == false
 	assert win.is_dirty() == false
 }
+
+fn test_shorthand_get_set() {
+	mut win := simplegui.new_simple_window('Test Window', 100, 100)
+	win.add_input('username', 'Ada')
+	assert win.get('username') == 'Ada'
+	win.set('username', 'Grace')
+	assert win.get('username') == 'Grace'
+}
+
+struct EventChainState {
+mut:
+	clicked     bool
+	changed_val string
+}
+
+fn test_fluent_event_chaining() {
+	mut win := simplegui.new_simple_window('Test Window', 100, 100)
+	mut state := &EventChainState{}
+	
+	win.add_button('save', 'Save')
+		.onclick(fn [mut state] (mut w &simplegui.SimpleWindow) {
+			state.clicked = true
+		})
+	
+	win.add_input('name', '')
+		.onchange(fn [mut state] (mut w &simplegui.SimpleWindow, val string) {
+			state.changed_val = val
+		})
+
+	win.dispatch_event('save', 'click', '')
+	win.dispatch_event('name', 'change', 'Grace')
+	
+	assert state.clicked == true
+	assert state.changed_val == 'Grace'
+}
+
+fn test_clear_error_individually() {
+	mut win := simplegui.new_simple_window('Test Window', 100, 100)
+	win.add_input('username', 'Ada')
+	win.add_input('email', 'ada@example.com')
+	
+	win.set_error('username', 'Name required')
+	win.set_error('email', 'Email invalid')
+	
+	assert win.get_error('username') == 'Name required'
+	assert win.get_error('email') == 'Email invalid'
+	
+	win.clear_error('username')
+	assert win.get_error('username') == ''
+	assert win.get_error('email') == 'Email invalid'
+}
+
+fn test_group_layout_nesting() {
+	mut win := simplegui.new_simple_window('Test Window', 100, 100)
+	win.group('profile', 'Profile Details', fn (mut w &simplegui.SimpleWindow) {
+		w.add_input('first_name', 'Ada')
+		w.add_input('last_name', 'Lovelace')
+	})
+	
+	assert win.has_control('profile') == true
+	assert win.has_control('first_name') == true
+	assert win.has_control('last_name') == true
+	assert win.get('first_name') == 'Ada'
+}
+

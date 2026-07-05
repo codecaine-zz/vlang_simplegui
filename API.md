@@ -152,6 +152,10 @@ Adds a scrollable layout viewport container with a fixed vertical height constra
 
 Starts a horizontal row stack container, executes the callback closure passing the window reference, and automatically closes the horizontal container. Any widgets added inside the closure align horizontally.
 
+### `win.group(name string, title string, callback VoidEventCallback) &SimpleWindow`
+
+Starts a visual group box container, executes the callback closure passing the window reference, allowing nested layout code.
+
 ---
 
 ## 3. Adding Controls
@@ -309,6 +313,10 @@ Applies validation/error feedback to a control and highlights it visually.
 
 Clears all active visual validation error states and error messages across all controls at once.
 
+### `win.clear_error(name string) &SimpleWindow`
+
+Clears the visual validation error state and error message for a specific named control.
+
 ### `win.set_tooltip(name string, text string) &SimpleWindow`
 
 Sets a hover tooltip for any control.
@@ -335,6 +343,13 @@ You can chain these modifiers directly onto control creation methods to style or
 - **`.tooltip(text string) &SimpleWindow`**: Attaches a hover tooltip to the last control.
 - **`.visible(visible bool) &SimpleWindow`**: Toggles visibility of the last control.
 - **`.enabled(enabled bool) &SimpleWindow`**: Enables or disables user interaction on the last control.
+- **`.onclick(callback VoidEventCallback) &SimpleWindow`**: Attaches a click handler to the last created control.
+- **`.onchange(callback StringEventCallback) &SimpleWindow`**: Attaches a change handler to the last created control.
+- **`.onenter(callback VoidEventCallback) &SimpleWindow`**: Attaches an enter-key handler to the last created control.
+- **`.onfocus(callback VoidEventCallback) &SimpleWindow`**: Attaches a focus handler to the last created control.
+- **`.onblur(callback VoidEventCallback) &SimpleWindow`**: Attaches a blur handler to the last created control.
+- **`.onhover(callback VoidEventCallback) &SimpleWindow`**: Attaches a hover-enter handler to the last created control.
+- **`.onhover_exit(callback VoidEventCallback) &SimpleWindow`**: Attaches a hover-exit handler to the last created control.
 
 ---
 
@@ -426,9 +441,17 @@ Schedules a one-shot delay, executing the callback once after `ms` milliseconds 
 
 Reads the string value of any text input, textarea, label, color well, popup, or date picker (including list boxes, returning the text of the selected row).
 
+### `win.get(name string) string`
+
+Beginner-friendly shorthand alias for `win.get_text(name)`.
+
 ### `win.set_text(name string, text string) &SimpleWindow`
 
 Sets/updates the text content of any input, textarea, or label.
+
+### `win.set(name string, value string) &SimpleWindow`
+
+Beginner-friendly shorthand alias for `win.set_text(name, value)`.
 
 ### `win.get_checked(name string) bool`
 

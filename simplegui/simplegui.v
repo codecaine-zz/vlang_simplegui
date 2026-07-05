@@ -2073,6 +2073,87 @@ pub fn (win &SimpleWindow) enabled(enabled bool) &SimpleWindow {
 	return win
 }
 
+// Fluent event chaining modifiers (attaching to the last created control)
+pub fn (win &SimpleWindow) onclick(callback VoidEventCallback) &SimpleWindow {
+	if win.last_control != '' {
+		win.on_click(win.last_control, callback)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) onchange(callback StringEventCallback) &SimpleWindow {
+	if win.last_control != '' {
+		win.on_change(win.last_control, callback)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) onfocus(callback VoidEventCallback) &SimpleWindow {
+	if win.last_control != '' {
+		win.on_focus(win.last_control, callback)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) onblur(callback VoidEventCallback) &SimpleWindow {
+	if win.last_control != '' {
+		win.on_blur(win.last_control, callback)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) onenter(callback VoidEventCallback) &SimpleWindow {
+	if win.last_control != '' {
+		win.on_enter(win.last_control, callback)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) onhover(callback VoidEventCallback) &SimpleWindow {
+	if win.last_control != '' {
+		win.on_hover(win.last_control, callback)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) onhover_exit(callback VoidEventCallback) &SimpleWindow {
+	if win.last_control != '' {
+		win.on_hover_exit(win.last_control, callback)
+	}
+	return win
+}
+
+// Shorthand aliases for value access
+pub fn (win &SimpleWindow) get(name string) string {
+	return win.get_text(name)
+}
+
+pub fn (win &SimpleWindow) set(name string, value string) &SimpleWindow {
+	return win.set_text(name, value)
+}
+
+// Clears the validation error state on a single control
+pub fn (win &SimpleWindow) clear_error(name string) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.errors.delete(name)
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_set_error_by_name(win.window_info, name.str, c'')
+	}
+	return win
+}
+
+// Starts a visual group box, executes the callback for child controls, and returns the window
+pub fn (win &SimpleWindow) group(name string, title string, callback VoidEventCallback) &SimpleWindow {
+	win.add_group_box(name, title)
+	unsafe {
+		mut w := &SimpleWindow(win)
+		callback(mut w)
+	}
+	return win
+}
+
 // Validation error clearing
 pub fn (win &SimpleWindow) clear_errors() &SimpleWindow {
 	unsafe {
