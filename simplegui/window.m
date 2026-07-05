@@ -109,6 +109,7 @@ extern void vlang_dispatch_event(void *win_ptr, const char *name, const char *ev
 - (void)addControlToLayout:(NSView *)view;
 - (void)beginRowWithName:(NSString *)name;
 - (void)endRow;
+- (void)applyColorsRecursively:(NSView *)view backgroundColor:(NSColor *)backgroundColor fontColor:(NSColor *)fontColor;
 - (NSView *)makeLabelWithName:(NSString *)name text:(NSString *)text;
 - (NSView *)makeTextFieldWithName:(NSString *)name value:(NSString *)value;
 - (NSView *)makePasswordFieldWithName:(NSString *)name value:(NSString *)value;
@@ -252,6 +253,24 @@ static NSColor *modernTextColor(void) {
   return [NSColor labelColor];
 }
 
+static void setButtonTitleColor(NSButton *button, NSColor *color) {
+  if (!button || !color) return;
+  NSString *title = button.title;
+  if (!title) title = @"";
+  
+  NSMutableParagraphStyle *style = [[NSMutableParagraphStyle alloc] init];
+  [style setAlignment:button.alignment];
+  
+  NSDictionary *attrs = @{
+    NSForegroundColorAttributeName: color,
+    NSFontAttributeName: button.font ?: [NSFont systemFontOfSize:12],
+    NSParagraphStyleAttributeName: style
+  };
+  
+  NSAttributedString *attrTitle = [[NSAttributedString alloc] initWithString:title attributes:attrs];
+  [button setAttributedTitle:attrTitle];
+}
+
 static NSColor *currentFontColorForView(NSView *view) {
   if (!view) {
     return nil;
@@ -291,15 +310,22 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
 
   if ([view isKindOfClass:[NSTextField class]]) {
     NSTextField *field = (NSTextField *)view;
-    [field setFont:[NSFont systemFontOfSize:12 weight:NSFontWeightRegular]];
-    [field setControlSize:NSControlSizeRegular];
-    [field setFocusRingType:NSFocusRingTypeExterior];
-    [field setBordered:YES];
-    [field setBezelStyle:NSTextFieldRoundedBezel];
-    [field setWantsLayer:YES];
-    [field setDrawsBackground:YES];
-    [field setBackgroundColor:effectiveBackground];
-    [field setTextColor:effectiveFont];
+    if (!field.isEditable) {
+      [field setDrawsBackground:NO];
+      [field setBordered:NO];
+      [field setBezeled:NO];
+      [field setTextColor:effectiveFont];
+    } else {
+      [field setFont:[NSFont systemFontOfSize:12 weight:NSFontWeightRegular]];
+      [field setControlSize:NSControlSizeRegular];
+      [field setFocusRingType:NSFocusRingTypeExterior];
+      [field setBordered:YES];
+      [field setBezelStyle:NSTextFieldRoundedBezel];
+      [field setWantsLayer:YES];
+      [field setDrawsBackground:YES];
+      [field setBackgroundColor:effectiveBackground];
+      [field setTextColor:effectiveFont];
+    }
   } else if ([view isKindOfClass:[NSTextView class]]) {
     NSTextView *textView = (NSTextView *)view;
     [textView setFont:[NSFont systemFontOfSize:13]];
@@ -311,9 +337,36 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
     NSButton *button = (NSButton *)view;
     [button setFont:[NSFont systemFontOfSize:12 weight:NSFontWeightMedium]];
     [button setControlSize:NSControlSizeRegular];
-    [button setBezelStyle:NSBezelStyleRounded];
-    [button setWantsLayer:YES];
-    [button setContentTintColor:fontColor ?: modernAccentColor()];
+
+    BOOL isCheckboxOrRadio = ![button isBordered];
+    if (isCheckboxOrRadio) {
+      [button setBezelStyle:NSBezelStyleRounded];
+      [button setWantsLayer:YES];
+      [button setBordered:NO];
+      [button setContentTintColor:fontColor ?: modernAccentColor()];
+      setButtonTitleColor(button, effectiveFont);
+    } else {
+      if (backgroundColor && ![backgroundColor isEqual:[NSColor clearColor]]) {
+        [button setBezelStyle:NSBezelStyleRounded];
+        [button setWantsLayer:YES];
+        button.layer.backgroundColor = backgroundColor.CGColor;
+        button.layer.cornerRadius = 6.0;
+        button.layer.borderWidth = 1.0;
+        button.layer.borderColor = [NSColor separatorColor].CGColor;
+        setButtonTitleColor(button, fontColor ?: [NSColor labelColor]);
+      } else {
+        [button setWantsLayer:NO];
+        [button setBordered:YES];
+        [button setBezelStyle:NSBezelStyleRounded];
+        if (fontColor) {
+          setButtonTitleColor(button, fontColor);
+        } else {
+          if (button.attributedTitle && button.attributedTitle.length > 0) {
+            [button setAttributedTitle:[[NSAttributedString alloc] initWithString:@""]];
+          }
+        }
+      }
+    }
   } else if ([view isKindOfClass:[NSPopUpButton class]]) {
     NSPopUpButton *popup = (NSPopUpButton *)view;
     [popup setFont:[NSFont systemFontOfSize:12 weight:NSFontWeightRegular]];
@@ -454,35 +507,79 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   applyStyleToView(view, effectiveBackgroundColor, effectiveFontColor);
 }
 
+- (void)applyColorsRecursively:(NSView *)view backgroundColor:(NSColor *)backgroundColor fontColor:(NSColor *)fontColor {
+  if (!view) {
+    return;
+  }
+
+  NSColor *effBg = nil;
+  if ([view isKindOfClass:[NSTextField class]]) {
+    NSTextField *field = (NSTextField *)view;
+    if (field.isEditable) {
+      effBg = backgroundColor ?: [NSColor textBackgroundColor];
+    }
+  }
+  applyStyleToView(view, effBg, fontColor);
+
+  if ([view isKindOfClass:[NSScrollView class]]) {
+    NSScrollView *scroll = (NSScrollView *)view;
+    NSView *doc = [scroll documentView];
+    if (doc) {
+      if ([doc isKindOfClass:[NSTextView class]]) {
+        [(NSTextView *)doc setTextColor:fontColor];
+        [(NSTextView *)doc setBackgroundColor:backgroundColor ?: [NSColor textBackgroundColor]];
+        [(NSTextView *)doc setDrawsBackground:YES];
+      } else if ([doc isKindOfClass:[NSTableView class]]) {
+        NSTableView *tv = (NSTableView *)doc;
+        [tv setBackgroundColor:backgroundColor ?: [NSColor controlBackgroundColor]];
+        [tv reloadData];
+      } else {
+        [self applyColorsRecursively:doc backgroundColor:backgroundColor fontColor:fontColor];
+      }
+    }
+  } else if ([view isKindOfClass:[NSStackView class]]) {
+    for (NSView *subview in [(NSStackView *)view arrangedSubviews]) {
+      [self applyColorsRecursively:subview backgroundColor:backgroundColor fontColor:fontColor];
+    }
+  } else if ([view isKindOfClass:[NSBox class]]) {
+    NSBox *box = (NSBox *)view;
+    if (box.contentView) {
+      [self applyColorsRecursively:box.contentView backgroundColor:backgroundColor fontColor:fontColor];
+    }
+  }
+
+  for (NSView *subview in view.subviews) {
+    if ([view isKindOfClass:[NSStackView class]] && [[(NSStackView *)view arrangedSubviews] containsObject:subview]) {
+      continue;
+    }
+    if ([view isKindOfClass:[NSScrollView class]] && subview == [(NSScrollView *)view documentView]) {
+      continue;
+    }
+    [self applyColorsRecursively:subview backgroundColor:backgroundColor fontColor:fontColor];
+  }
+}
+
 - (void)applyColors:(NSColor *)backgroundColor fontColor:(NSColor *)fontColor {
   self.currentBackgroundColor = backgroundColor;
   self.currentFontColor = fontColor;
 
   if (self.window) {
     [self.window setBackgroundColor:backgroundColor];
+    if (self.window.contentView) {
+      [self.window.contentView setWantsLayer:YES];
+      [self.window.contentView.layer setBackgroundColor:backgroundColor.CGColor];
+    }
   }
   if (self.scrollView) {
     [self.scrollView setBackgroundColor:backgroundColor];
   }
   if (self.mainStackView) {
+    [self.mainStackView setWantsLayer:YES];
     [self.mainStackView.layer setBackgroundColor:backgroundColor.CGColor];
   }
   
-  // Recursively apply to all subviews in controlsByName
-  for (NSString *key in self.controlsByName) {
-    NSView *view = self.controlsByName[key];
-    NSColor *effBg = nil;
-    if ([view isKindOfClass:[NSTextField class]]) {
-      effBg = backgroundColor ?: [NSColor textBackgroundColor];
-    } else if ([view isKindOfClass:[NSScrollView class]]) {
-      NSView *doc = [(NSScrollView *)view documentView];
-      if ([doc isKindOfClass:[NSTextView class]]) {
-        [(NSTextView *)doc setTextColor:fontColor];
-        [(NSTextView *)doc setBackgroundColor:backgroundColor ?: [NSColor textBackgroundColor]];
-        [(NSTextView *)doc setDrawsBackground:YES];
-      }
-    }
-    applyStyleToView(view, effBg, fontColor);
+  if (self.mainStackView) {
+    [self applyColorsRecursively:self.mainStackView backgroundColor:backgroundColor fontColor:fontColor];
   }
 }
 
@@ -703,7 +800,7 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   NSButton *button = [NSButton buttonWithTitle:title target:self action:@selector(handleButtonClicked:)];
   [button setBezelStyle:NSBezelStyleRounded];
   [self makeStretchableView:button minimumWidth:120];
-  [button setWantsLayer:YES];
+  [button setWantsLayer:NO];
   
   self.controlsByName[[name lowercaseString]] = button;
   [self addControlToLayout:button];
@@ -1589,10 +1686,41 @@ int window_get_number_value(main__WindowInfo *info) {
   return window_get_control_int_by_name(info, "number");
 }
 
+static BOOL isDarkColor(NSColor *color) {
+  if (!color) return YES;
+  NSColor *rgbColor = [color colorUsingColorSpace:[NSColorSpace deviceRGBColorSpace]];
+  if (!rgbColor) return YES;
+  CGFloat r=0, g=0, b=0, a=0;
+  [rgbColor getRed:&r green:&g blue:&b alpha:&a];
+  double luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  return luminance < 0.5;
+}
+
+static NSColor *getContrastColor(NSColor *color) {
+  return isDarkColor(color) ? [NSColor whiteColor] : [NSColor blackColor];
+}
+
 void window_set_background_color(main__WindowInfo *info, const char *color) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
   NSColor *backgroundColor = colorFromString(color);
-  NSColor *fontColor = delegate.currentFontColor ?: [NSColor whiteColor];
+  NSColor *fontColor = delegate.currentFontColor;
+  if (!fontColor) {
+    fontColor = getContrastColor(backgroundColor);
+  } else {
+    NSColor *rgbBg = [backgroundColor colorUsingColorSpace:[NSColorSpace deviceRGBColorSpace]];
+    NSColor *rgbFg = [fontColor colorUsingColorSpace:[NSColorSpace deviceRGBColorSpace]];
+    if (rgbBg && rgbFg) {
+      CGFloat r1=0, g1=0, b1=0, a1=0;
+      CGFloat r2=0, g2=0, b2=0, a2=0;
+      [rgbBg getRed:&r1 green:&g1 blue:&b1 alpha:&a1];
+      [rgbFg getRed:&r2 green:&g2 blue:&b2 alpha:&a2];
+      double lum1 = 0.2126 * r1 + 0.7152 * g1 + 0.0722 * b1;
+      double lum2 = 0.2126 * r2 + 0.7152 * g2 + 0.0722 * b2;
+      if (fabs(lum1 - lum2) < 0.25) {
+        fontColor = getContrastColor(backgroundColor);
+      }
+    }
+  }
   [delegate applyColors:backgroundColor fontColor:fontColor];
 }
 
@@ -1600,6 +1728,20 @@ void window_set_font_color(main__WindowInfo *info, const char *color) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
   NSColor *fontColor = colorFromString(color);
   NSColor *backgroundColor = delegate.currentBackgroundColor ?: [NSColor colorWithCalibratedWhite:0.12 alpha:1.0];
+  
+  NSColor *rgbBg = [backgroundColor colorUsingColorSpace:[NSColorSpace deviceRGBColorSpace]];
+  NSColor *rgbFg = [fontColor colorUsingColorSpace:[NSColorSpace deviceRGBColorSpace]];
+  if (rgbBg && rgbFg) {
+    CGFloat r1=0, g1=0, b1=0, a1=0;
+    CGFloat r2=0, g2=0, b2=0, a2=0;
+    [rgbBg getRed:&r1 green:&g1 blue:&b1 alpha:&a1];
+    [rgbFg getRed:&r2 green:&g2 blue:&b2 alpha:&a2];
+    double lum1 = 0.2126 * r1 + 0.7152 * g1 + 0.0722 * b1;
+    double lum2 = 0.2126 * r2 + 0.7152 * g2 + 0.0722 * b2;
+    if (fabs(lum1 - lum2) < 0.25) {
+      fontColor = getContrastColor(backgroundColor);
+    }
+  }
   [delegate applyColors:backgroundColor fontColor:fontColor];
 }
 
