@@ -178,6 +178,30 @@ fn test_ergonomic_helpers_are_available_and_resettable() {
 	assert win.dump_values()['name'] == 'Ada'
 }
 
+fn test_high_level_form_helpers_are_available() {
+	mut win := simplegui.SimpleWindow{}
+	win.add_heading('Profile')
+	win.add_form_field('Name', 'name', 'Ada')
+	win.add_form_field('City', 'city', 'London')
+	win.add_form_textarea('Notes', 'notes', 'Hello')
+	win.add_toggle('ready', 'Ready', true)
+	win.add_number_field('age', 42)
+	win.add_action('run', 'Run', fn (mut w simplegui.SimpleWindow) {})
+
+	assert win.has_control('heading_0') == true
+	assert win.has_control('name') == true
+	assert win.has_control('city') == true
+	assert win.has_control('notes') == true
+	assert win.has_control('ready') == true
+	assert win.has_control('age') == true
+	assert win.has_control('run') == true
+	assert win.get_text('name') == 'Ada'
+	assert win.get_text('notes') == 'Hello'
+	assert win.get_checked('ready') == true
+	assert win.get_value_int('age') == 42
+	assert win.dispatch_event('run', 'click', '') == true
+}
+
 fn on_test_change(mut win simplegui.SimpleWindow, value string) {
 	println('test change: ${value}')
 }

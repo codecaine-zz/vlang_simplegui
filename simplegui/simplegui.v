@@ -396,6 +396,40 @@ pub fn (mut win SimpleWindow) add_progress_indicator(name string, value int) {
 	}
 }
 
+// High-level helpers for common beginner-friendly form building
+pub fn (mut win SimpleWindow) add_form_field(label string, name string, value string) {
+	win.begin_row('${name}_row')
+	win.add_label('${name}_label', label)
+	win.add_input(name, value)
+	win.end_row()
+}
+
+pub fn (mut win SimpleWindow) add_form_textarea(label string, name string, value string) {
+	win.begin_row('${name}_row')
+	win.add_label('${name}_label', label)
+	win.add_textarea(name, value)
+	win.end_row()
+}
+
+pub fn (mut win SimpleWindow) add_toggle(name string, label string, checked bool) {
+	win.add_checkbox(name, label, checked)
+}
+
+pub fn (mut win SimpleWindow) add_number_field(name string, value int) {
+	win.add_number(name, value)
+}
+
+pub fn (mut win SimpleWindow) add_action(name string, title string, callback VoidEventCallback) {
+	win.add_button(name, title)
+	win.on_click(name, callback)
+}
+
+pub fn (mut win SimpleWindow) add_heading(title string) {
+	heading_name := 'heading_${win.controls.len}'
+	win.add_label(heading_name, title)
+	win.add_separator()
+}
+
 // Value setters and getters calling the generic name-based C bridge
 pub fn (mut win SimpleWindow) set_value(name string, value string) {
 	win.require_control(name)

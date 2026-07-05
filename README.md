@@ -65,6 +65,22 @@ fn main() {
 }
 ```
 
+## Faster form building
+
+For common forms, a few high-level helpers keep the code short:
+
+```v
+mut win := simplegui.new_simple_window('Profile', 640, 420)
+win.add_form_field('Name', 'name', 'Ada')
+win.add_form_field('City', 'city', 'London')
+win.add_form_textarea('Notes', 'notes', 'Hello')
+win.add_toggle('ready', 'Ready', true)
+win.add_number_field('age', 32)
+win.add_action('save', 'Save', fn (mut win simplegui.SimpleWindow) {
+    println(win.get_values())
+})
+```
+
 ## Developer tips
 
 - Use the built-in control discovery helpers: `has_control`, `list_controls`, and `get_control_kind`.
@@ -184,6 +200,12 @@ v run demos/events_demo.v
 v run demos/ergonomic_demo.v
 ```
 
+### Run the High-Level Helpers demo:
+
+```bash
+v run demos/high_level_demo.v
+```
+
 ### Run the Native Menu Bar & Text Shortcuts demo:
 
 ```bash
@@ -212,6 +234,7 @@ v test .
 - [demos/timer_demo.v](demos/timer_demo.v) — background timer tasks updating progress indicators periodically
 - [demos/list_image_demo.v](demos/list_image_demo.v) — interactive list selector previewing mockup screenshots in real time
 - [demos/events_demo.v](demos/events_demo.v) — advanced event listener triggers for hover, focus, lose focus (blur), and window resizes
+- [demos/high_level_demo.v](demos/high_level_demo.v) — showcases the new beginner-friendly helper API for forms and actions
 - [demos/menu_demo.v](demos/menu_demo.v) — demo of standard macOS application menus and text editing shortcuts
 
 ## Notes

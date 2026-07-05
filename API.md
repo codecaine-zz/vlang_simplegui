@@ -86,6 +86,16 @@ Closes the active horizontal container. Subsequent controls return to vertical s
 
 Each control requires a unique `name` handle to get/set its value or listen to events.
 
+### High-level form helpers
+
+For common forms, these helpers reduce boilerplate and keep the API friendly for beginners:
+
+- `win.add_form_field(label string, name string, value string)` creates a label plus input in a row.
+- `win.add_form_textarea(label string, name string, value string)` creates a label plus textarea in a row.
+- `win.add_toggle(name string, label string, checked bool)` creates a checkbox.
+- `win.add_number_field(name string, value int)` creates a numeric input.
+- `win.add_action(name string, title string, callback VoidEventCallback)` creates a button and wires its click handler.
+
 ### `win.add_label(name string, text string)`
 
 Adds a read-only text description label.

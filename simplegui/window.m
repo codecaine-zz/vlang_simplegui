@@ -1146,11 +1146,12 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   NSLog(@"applicationDidFinishLaunching");
   [self setupWindow];
   
-  // Auto-fit window to controls
+  // Auto-fit window to controls with a comfortable margin so forms are not clipped.
+  [self.mainStackView layoutSubtreeIfNeeded];
   NSSize fitSize = [self.mainStackView fittingSize];
   NSRect screenFrame = [[NSScreen mainScreen] visibleFrame];
-  CGFloat targetWidth = fitSize.width;
-  CGFloat targetHeight = fitSize.height;
+  CGFloat targetWidth = MAX(fitSize.width + 60, MIN(self.params.width, 520));
+  CGFloat targetHeight = MAX(fitSize.height + 40, MIN(self.params.height, 360));
   
   if (targetWidth > screenFrame.size.width * 0.9) {
     targetWidth = screenFrame.size.width * 0.9;
@@ -1159,8 +1160,8 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
     targetHeight = screenFrame.size.height * 0.85;
   }
   
-  targetWidth = MAX(targetWidth, 450);
-  targetHeight = MAX(targetHeight, 300);
+  targetWidth = MAX(targetWidth, 480);
+  targetHeight = MAX(targetHeight, 320);
   
   [self.window setContentSize:NSMakeSize(targetWidth, targetHeight)];
   [self.window center];
