@@ -767,12 +767,16 @@ To simplify system integrations and mirror key features from NeutralinoJS, `simp
 - `win.crypto_encrypt_aes(plain_text string, key_hex string) string`: Encrypts text using 128-bit AES block cipher under CBC mode, returning hex-encoded ciphertext.
 - `win.crypto_decrypt_aes(cipher_hex string, key_hex string) string`: Decrypts a hex-encoded AES CBC block string, returning the unpadded plaintext string.
 
-### Compression (`compress.gzip` & `compress.zlib`)
+### Compression (`compress.gzip`, `compress.zlib`, `compress.deflate`, & `compress.zstd`)
 
 - `win.compress_gzip(text string) []u8`: Compresses a string using Gzip format.
 - `win.decompress_gzip(data []u8) string`: Decompresses Gzip-compressed binary bytes back to a string.
 - `win.compress_zlib(text string) []u8`: Compresses a string using Zlib format.
 - `win.decompress_zlib(data []u8) string`: Decompresses Zlib-compressed binary bytes back to a string.
+- `win.compress_deflate(text string) []u8`: Compresses a string using Deflate format.
+- `win.decompress_deflate(data []u8) string`: Decompresses Deflate-compressed binary bytes back to a string.
+- `win.compress_zstd(text string) []u8`: Compresses a string using Zstd format.
+- `win.decompress_zstd(data []u8) string`: Decompresses Zstd-compressed binary bytes back to a string.
 
 ### Random Numbers (`rand`)
 
@@ -812,6 +816,44 @@ To simplify system integrations and mirror key features from NeutralinoJS, `simp
     - `sw.elapsed_ms() int`: Returns elapsed duration in milliseconds.
     - `sw.elapsed_sec() f64`: Returns elapsed duration in seconds.
     - `sw.restart()`: Resets and restarts the stopwatch in-place.
+
+### System Clipboard (`clipboard`)
+
+- `win.clipboard_copy(text string) bool`: Copies the specified text to the system clipboard.
+- `win.clipboard_read() string`: Pastes and returns the text content from the system clipboard.
+
+### Benchmark & Execution Timing (`benchmark`)
+
+- `win.start_benchmark() SimpleBenchmark`: Starts timing code execution blocks.
+- `win.new_benchmark() SimpleBenchmark`: Prepares a new benchmark tracker.
+- **Returned Type**: `SimpleBenchmark` supports:
+  - `sb.measure(label string)`: Adds a timing marker point.
+  - `sb.step()`: Progresses to the next step.
+  - `sb.ok()`: Flags the current step as successful.
+  - `sb.fail()`: Flags the current step as failed.
+  - `sb.step_message(label string) string`: Retrieves step duration detail message.
+  - `sb.total_message(label string) string`: Retrieves full benchmark overview.
+  - `sb.stop()`: Halts benchmark timing.
+
+### Network Sockets (TCP, UDP, Unix Domain Clients)
+
+- `win.tcp_connect(address string) !SimpleTCPClient`: Connects a TCP client to the host (e.g. `'127.0.0.1:8080'`).
+  - **Returned Type**: `SimpleTCPClient` supports:
+    - `s.write(data string) !`: Sends string data to the remote host.
+    - `s.read() !string`: Reads available incoming string data.
+    - `s.close()`: Closes the active client connection.
+
+- `win.udp_connect(address string) !SimpleUDPClient`: Connects a UDP socket to a remote endpoint.
+  - **Returned Type**: `SimpleUDPClient` supports:
+    - `s.write(data string) !`: Dispatches datagram packet data.
+    - `s.read() !string`: Reads incoming datagram packet data.
+    - `s.close()`: Closes the active socket.
+
+- `win.unix_connect(path string) !SimpleUnixClient`: Connects a client to a local Unix domain socket file.
+  - **Returned Type**: `SimpleUnixClient` supports:
+    - `s.write(data string) !`: Sends data over the Unix socket.
+    - `s.read() !string`: Reads data from the Unix socket.
+    - `s.close()`: Closes the active stream connection.
 
 ### Console Text Styling (`term`)
 

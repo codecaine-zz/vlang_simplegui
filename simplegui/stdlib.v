@@ -22,6 +22,12 @@ import crypto.hmac
 import compress.zlib
 import term
 import datatypes
+import clipboard
+import benchmark
+import net
+import net.unix
+import compress.deflate
+import compress.zstd
 
 // stdlib.v - Extended High-Level Standard Library Wrappers for SimpleGUI
 // Provides extremely simple, beginner-friendly, and safe wrappers around V's Core Standard Library.
@@ -138,20 +144,20 @@ pub fn crypto_encrypt_aes(plain_text string, key_hex string) string {
 			key = key[..16].clone()
 		}
 	}
-	
+
 	// Deterministic IV to keep decryption simple
 	iv := [u8(9), 8, 7, 6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4]
-	
+
 	block := aes.new_cipher(key)
 	mut enc := cipher.new_cbc(block, iv)
-	
+
 	plaintext := plain_text.bytes()
 	mut padded := plaintext.clone()
 	pad_len := 16 - (padded.len % 16)
 	for _ in 0 .. pad_len {
 		padded << u8(pad_len)
 	}
-	
+
 	mut ciphertext := []u8{len: padded.len}
 	enc.encrypt_blocks(mut ciphertext, padded)
 	return hex.encode(ciphertext)
@@ -175,18 +181,18 @@ pub fn crypto_decrypt_aes(cipher_hex string, key_hex string) string {
 			key = key[..16].clone()
 		}
 	}
-	
+
 	iv := [u8(9), 8, 7, 6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4]
 	ciphertext := hex.decode(cipher_hex) or { return '' }
 	if ciphertext.len % 16 != 0 || ciphertext.len == 0 {
 		return ''
 	}
-	
+
 	block := aes.new_cipher(key)
 	mut dec := cipher.new_cbc(block, iv)
 	mut decrypted := []u8{len: ciphertext.len}
 	dec.decrypt_blocks(mut decrypted, ciphertext)
-	
+
 	if decrypted.len == 0 {
 		return ''
 	}
@@ -358,11 +364,9 @@ pub fn (t &TOMLWrapperDoc) get_bool(key string) bool {
 
 // toml_parse parses flat TOML text content, wrapping query details inside an easy helper.
 pub fn toml_parse(content string) &TOMLWrapperDoc {
-	res := toml.parse_text(content) or {
-		return &TOMLWrapperDoc{
-			doc: toml.Doc{}
-		}
-	}
+	res := toml.parse_text(content) or { return &TOMLWrapperDoc{
+		doc: toml.Doc{}
+	} }
 	return &TOMLWrapperDoc{
 		doc: res
 	}
@@ -429,7 +433,7 @@ pub type SimpleWSMessageCallback = fn (msg string)
 
 pub struct SimpleWSClient {
 pub mut:
-	client        &websocket.Client = unsafe { nil }
+	client        &websocket.Client       = unsafe { nil }
 	on_message_cb SimpleWSMessageCallback = unsafe { nil }
 }
 
@@ -450,12 +454,12 @@ pub fn (mut ws SimpleWSClient) close() {
 // websocket_client constructs and spawns a WebSocket client on a background routine.
 pub fn websocket_client(url string, on_msg SimpleWSMessageCallback) ?&SimpleWSClient {
 	mut client := websocket.new_client(url) or { return none }
-	
+
 	mut ws := &SimpleWSClient{
-		client: client
+		client:        client
 		on_message_cb: on_msg
 	}
-	
+
 	client.on_message(fn [ws] (mut c websocket.Client, msg &websocket.Message) ! {
 		if msg.opcode == .text_frame {
 			payload := msg.payload.bytestr()
@@ -464,7 +468,7 @@ pub fn websocket_client(url string, on_msg SimpleWSMessageCallback) ?&SimpleWSCl
 			}
 		}
 	})
-	
+
 	client.connect() or { return none }
 	spawn client.listen()
 	return ws
@@ -515,9 +519,7 @@ pub fn (win &SimpleWindow) crypto_bcrypt_hash(password string) !string {
 
 // crypto_bcrypt_verify verifies a password against a bcrypt hash.
 pub fn crypto_bcrypt_verify(password string, hash string) bool {
-	bcrypt.compare_hash_and_password(password.bytes(), hash.bytes()) or {
-		return false
-	}
+	bcrypt.compare_hash_and_password(password.bytes(), hash.bytes()) or { return false }
 	return true
 }
 
@@ -778,4 +780,293 @@ pub fn new_ringbuffer[T](capacity int) SimpleRingBuffer[T] {
 	return SimpleRingBuffer[T]{
 		rb: datatypes.new_ringbuffer[T](capacity)
 	}
+}
+
+// ==========================================
+// 18. System Clipboard Helper (Chapter 13: clipboard)
+// ==========================================
+
+// clipboard_copy copies text to the system clipboard.
+pub fn clipboard_copy(text string) bool {
+	mut cb := clipboard.new()
+	defer {
+		cb.destroy()
+	}
+	if !cb.is_available() {
+		return false
+	}
+	return cb.copy(text)
+}
+
+// clipboard_copy delegates to standalone clipboard_copy.
+pub fn (win &SimpleWindow) clipboard_copy(text string) bool {
+	return clipboard_copy(text)
+}
+
+// clipboard_read retrieves text from the system clipboard.
+pub fn clipboard_read() string {
+	mut cb := clipboard.new()
+	defer {
+		cb.destroy()
+	}
+	if !cb.is_available() {
+		return ''
+	}
+	return cb.paste()
+}
+
+// clipboard_read delegates to standalone clipboard_read.
+pub fn (win &SimpleWindow) clipboard_read() string {
+	return clipboard_read()
+}
+
+// ==========================================
+// 19. Benchmark & Execution Timing Helper (Chapter 13: benchmark)
+// ==========================================
+
+// SimpleBenchmark wraps benchmark.Benchmark to time execution stages.
+pub struct SimpleBenchmark {
+pub mut:
+	b benchmark.Benchmark
+}
+
+// measure adds a benchmark measurement point.
+pub fn (mut sb SimpleBenchmark) measure(label string) {
+	sb.b.measure(label)
+}
+
+// step advances the benchmark to the next step.
+pub fn (mut sb SimpleBenchmark) step() {
+	sb.b.step()
+}
+
+// ok marks the current step as successful.
+pub fn (mut sb SimpleBenchmark) ok() {
+	sb.b.ok()
+}
+
+// fail marks the current step as failed.
+pub fn (mut sb SimpleBenchmark) fail() {
+	sb.b.fail()
+}
+
+// step_message returns the formatted string message for the current step.
+pub fn (mut sb SimpleBenchmark) step_message(label string) string {
+	return sb.b.step_message(label)
+}
+
+// total_message returns the final execution summary message.
+pub fn (mut sb SimpleBenchmark) total_message(label string) string {
+	return sb.b.total_message(label)
+}
+
+// stop stops the benchmark timing.
+pub fn (mut sb SimpleBenchmark) stop() {
+	sb.b.stop()
+}
+
+// start_benchmark starts a simple benchmark.
+pub fn start_benchmark() SimpleBenchmark {
+	return SimpleBenchmark{
+		b: benchmark.start()
+	}
+}
+
+// start_benchmark delegates to standalone start_benchmark.
+pub fn (win &SimpleWindow) start_benchmark() SimpleBenchmark {
+	return start_benchmark()
+}
+
+// new_benchmark initializes a new benchmark structure.
+pub fn new_benchmark() SimpleBenchmark {
+	return SimpleBenchmark{
+		b: benchmark.new_benchmark()
+	}
+}
+
+// new_benchmark delegates to standalone new_benchmark.
+pub fn (win &SimpleWindow) new_benchmark() SimpleBenchmark {
+	return new_benchmark()
+}
+
+// ==========================================
+// 20. TCP Socket Client (Chapter 13: net)
+// ==========================================
+
+// SimpleTCPClient provides a simplified wrapper for TCP connections.
+pub struct SimpleTCPClient {
+pub mut:
+	conn net.TcpConn
+}
+
+// write sends text to the TCP socket.
+pub fn (mut s SimpleTCPClient) write(data string) ! {
+	s.conn.write(data.bytes())!
+}
+
+// read reads string data from the TCP socket.
+pub fn (mut s SimpleTCPClient) read() !string {
+	mut buf := []u8{len: 1024}
+	n := s.conn.read(mut buf)!
+	return buf[..n].bytestr()
+}
+
+// close disconnects the TCP connection.
+pub fn (mut s SimpleTCPClient) close() {
+	s.conn.close() or {}
+}
+
+// tcp_connect establishes a TCP client connection to a specified address.
+pub fn tcp_connect(address string) !SimpleTCPClient {
+	conn := net.dial_tcp(address)!
+	return SimpleTCPClient{
+		conn: conn
+	}
+}
+
+// tcp_connect delegates to standalone tcp_connect.
+pub fn (win &SimpleWindow) tcp_connect(address string) !SimpleTCPClient {
+	if win.debug_mode {
+		println('[simplegui STDLIB] Dialing TCP socket connection to: ${address}')
+	}
+	return tcp_connect(address)!
+}
+
+// ==========================================
+// 21. UDP Socket Client (Chapter 13: net)
+// ==========================================
+
+// SimpleUDPClient provides a simplified wrapper for UDP connections.
+pub struct SimpleUDPClient {
+pub mut:
+	socket net.UdpConn
+}
+
+// write sends data packets over the UDP socket.
+pub fn (mut s SimpleUDPClient) write(data string) ! {
+	s.socket.write(data.bytes())!
+}
+
+// read reads a string data payload from the UDP socket.
+pub fn (mut s SimpleUDPClient) read() !string {
+	mut buf := []u8{len: 1024}
+	n, _ := s.socket.read(mut buf)!
+	return buf[..n].bytestr()
+}
+
+// close closes the UDP connection socket.
+pub fn (mut s SimpleUDPClient) close() {
+	s.socket.close() or {}
+}
+
+// udp_connect binds and connects a UDP socket to a target address.
+pub fn udp_connect(address string) !SimpleUDPClient {
+	socket := net.dial_udp(address)!
+	return SimpleUDPClient{
+		socket: socket
+	}
+}
+
+// udp_connect delegates to standalone udp_connect.
+pub fn (win &SimpleWindow) udp_connect(address string) !SimpleUDPClient {
+	if win.debug_mode {
+		println('[simplegui STDLIB] Dialing UDP socket to: ${address}')
+	}
+	return udp_connect(address)!
+}
+
+// ==========================================
+// 22. Unix Domain Socket Client (Chapter 13: net.unix)
+// ==========================================
+
+// SimpleUnixClient provides a simplified wrapper for Unix domain socket connections.
+pub struct SimpleUnixClient {
+pub mut:
+	conn unix.StreamConn
+}
+
+// write sends text data over the Unix socket.
+pub fn (mut s SimpleUnixClient) write(data string) ! {
+	s.conn.write(data.bytes())!
+}
+
+// read reads a string payload from the Unix socket.
+pub fn (mut s SimpleUnixClient) read() !string {
+	mut buf := []u8{len: 1024}
+	n := s.conn.read(mut buf)!
+	return buf[..n].bytestr()
+}
+
+// close closes the Unix socket stream connection.
+pub fn (mut s SimpleUnixClient) close() {
+	s.conn.close() or {}
+}
+
+// unix_connect connects a client to a Unix domain socket path.
+pub fn unix_connect(path string) !SimpleUnixClient {
+	conn := unix.connect_stream(path)!
+	return SimpleUnixClient{
+		conn: conn
+	}
+}
+
+// unix_connect delegates to standalone unix_connect.
+pub fn (win &SimpleWindow) unix_connect(path string) !SimpleUnixClient {
+	if win.debug_mode {
+		println('[simplegui STDLIB] Connecting Unix socket stream to path: ${path}')
+	}
+	return unix_connect(path)!
+}
+
+// ==========================================
+// 23. Deflate Compression (Chapter 13: compress.deflate)
+// ==========================================
+
+// compress_deflate compresses text using Deflate compression format.
+pub fn compress_deflate(text string) []u8 {
+	compressed := deflate.compress(text.bytes()) or { return []u8{} }
+	return compressed
+}
+
+// compress_deflate delegates to standalone compress_deflate.
+pub fn (win &SimpleWindow) compress_deflate(text string) []u8 {
+	return compress_deflate(text)
+}
+
+// decompress_deflate extracts Deflate-compressed binary bytes back to string format.
+pub fn decompress_deflate(data []u8) string {
+	decompressed := deflate.decompress(data) or { return '' }
+	return decompressed.bytestr()
+}
+
+// decompress_deflate delegates to standalone decompress_deflate.
+pub fn (win &SimpleWindow) decompress_deflate(data []u8) string {
+	return decompress_deflate(data)
+}
+
+// ==========================================
+// 24. Zstd Compression (Chapter 13: compress.zstd)
+// ==========================================
+
+// compress_zstd compresses text using Facebook Zstd compression format.
+pub fn compress_zstd(text string) []u8 {
+	// Standard compression level 3 as default
+	compressed := zstd.compress(text.bytes(), compression_level: 3) or { return []u8{} }
+	return compressed
+}
+
+// compress_zstd delegates to standalone compress_zstd.
+pub fn (win &SimpleWindow) compress_zstd(text string) []u8 {
+	return compress_zstd(text)
+}
+
+// decompress_zstd extracts Zstd-compressed binary bytes back to string format.
+pub fn decompress_zstd(data []u8) string {
+	decompressed := zstd.decompress(data) or { return '' }
+	return decompressed.bytestr()
+}
+
+// decompress_zstd delegates to standalone decompress_zstd.
+pub fn (win &SimpleWindow) decompress_zstd(data []u8) string {
+	return decompress_zstd(data)
 }
