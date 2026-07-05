@@ -404,3 +404,48 @@ fn test_theme_presets() {
 	assert win.get_background_color() == '#282a36'
 	assert win.get_font_color() == '#f8f8f2'
 }
+
+fn test_validation_clear_errors() {
+	mut win := simplegui.new_simple_window('Test Window', 100, 100)
+	win.add_input('username', 'Ada')
+	
+	win.set_error('username', 'Required')
+	// Check that it tracks the error internally
+	assert win.get_error('username') == 'Required'
+	
+	win.clear_errors()
+	assert win.get_error('username') == ''
+}
+
+fn test_dirty_state_tracking() {
+	mut win := simplegui.new_simple_window('Test Window', 100, 100)
+	win.add_input('username', 'Ada')
+	win.add_checkbox('agree', 'Agree to terms', false)
+	win.add_number('age', 25)
+	
+	// Not dirty initially
+	assert win.is_dirty() == false
+	assert win.is_control_dirty('username') == false
+	assert win.is_control_dirty('agree') == false
+	assert win.is_control_dirty('age') == false
+	
+	// Modify a control value
+	win.set_text('username', 'Grace')
+	assert win.is_control_dirty('username') == true
+	assert win.is_dirty() == true
+	
+	// Commit changes sets new baseline
+	win.commit_changes()
+	assert win.is_control_dirty('username') == false
+	assert win.is_dirty() == false
+	
+	// Modify checkbox
+	win.set_checked('agree', true)
+	assert win.is_control_dirty('agree') == true
+	assert win.is_dirty() == true
+	
+	// Reset to initial (which was committed)
+	win.set_checked('agree', false)
+	assert win.is_control_dirty('agree') == false
+	assert win.is_dirty() == false
+}

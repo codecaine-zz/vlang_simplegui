@@ -305,6 +305,10 @@ Sets placeholder text for text-based controls such as inputs and password fields
 
 Applies validation/error feedback to a control and highlights it visually.
 
+### `win.clear_errors() &SimpleWindow`
+
+Clears all active visual validation error states and error messages across all controls at once.
+
 ### `win.set_tooltip(name string, text string) &SimpleWindow`
 
 Sets a hover tooltip for any control.
@@ -603,3 +607,21 @@ Restores window visibility and brings the window to the front.
 ### `win.run_on_main_thread(callback VoidEventCallback) &SimpleWindow`
 
 Safely queues a UI update callback to execute on the main event thread, bridging background execution threads.
+
+---
+
+## 16. Form Change & Dirty Tracking
+
+You can track if users have modified form fields compared to their baseline state:
+
+### `win.is_dirty() bool`
+
+Returns `true` if any input control (text input, checkbox, toggle, slider, number) has a value different from its last committed baseline state.
+
+### `win.is_control_dirty(name string) bool`
+
+Returns `true` if the specific named control has changed compared to its baseline state.
+
+### `win.commit_changes() &SimpleWindow`
+
+Sets the current control values as the new baseline state, causing `is_dirty()` to reset to `false` without needing to reload the window. Typical use case is after a successful save action.

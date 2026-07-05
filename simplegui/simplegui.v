@@ -1049,6 +1049,10 @@ pub fn (win &SimpleWindow) set_error(name string, text string) &SimpleWindow {
 	return win
 }
 
+pub fn (win &SimpleWindow) get_error(name string) string {
+	return win.errors[name] or { '' }
+}
+
 pub fn (win &SimpleWindow) set_tooltip(name string, text string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_set_tooltip_by_name(win.window_info, name.str, text.str)
@@ -2065,6 +2069,61 @@ pub fn (win &SimpleWindow) visible(visible bool) &SimpleWindow {
 pub fn (win &SimpleWindow) enabled(enabled bool) &SimpleWindow {
 	if win.last_control != '' {
 		win.set_control_enabled(win.last_control, enabled)
+	}
+	return win
+}
+
+// Validation error clearing
+pub fn (win &SimpleWindow) clear_errors() &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		for name, _ in w.errors {
+			if win.window_info != nil {
+				C.window_set_error_by_name(win.window_info, name.str, c'')
+			}
+		}
+		w.errors = map[string]string{}
+	}
+	return win
+}
+
+// Change/Dirty state tracking helpers
+pub fn (win &SimpleWindow) is_control_dirty(name string) bool {
+	idx := win.find_control(name)
+	if idx < 0 {
+		return false
+	}
+	entry := win.controls[idx]
+	if entry.kind in ['label', 'button', 'image', 'html_view', 'progress'] {
+		return false
+	}
+	if entry.kind in ['checkbox', 'toggle'] {
+		return entry.checked != entry.initial_checked
+	}
+	if entry.kind in ['number', 'slider'] {
+		return entry.number != entry.initial_number
+	}
+	return entry.value != entry.initial_value
+}
+
+pub fn (win &SimpleWindow) is_dirty() bool {
+	for entry in win.controls {
+		if win.is_control_dirty(entry.name) {
+			return true
+		}
+	}
+	return false
+}
+
+// Set current control values as the baseline initial state
+pub fn (win &SimpleWindow) commit_changes() &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		for i in 0 .. w.controls.len {
+			w.controls[i].initial_value = w.controls[i].value
+			w.controls[i].initial_checked = w.controls[i].checked
+			w.controls[i].initial_number = w.controls[i].number
+		}
 	}
 	return win
 }
