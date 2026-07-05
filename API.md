@@ -31,6 +31,11 @@ fn main() {
 - `win.has_control(name string) bool` checks whether a named control exists.
 - `win.list_controls() []string` returns the registered control names.
 - `win.get_control_kind(name string) string` reports the control type.
+- `win.require_control(name string) string` returns the control name if it exists, otherwise raises an explicit panic.
+- `win.get_title() string` returns the current window title.
+- `win.get_resizable() bool` returns whether window scale resizability is enabled.
+- `win.get_minimizable() bool` returns whether window minimizability is enabled.
+- `win.get_maximizable() bool` returns whether window maximizability is enabled.
 - Missing control access now raises a clear panic so mistakes surface early.
 
 ### `new_simple_window(title string, width int, height int) &SimpleWindow`
@@ -421,6 +426,26 @@ Enables/disables user interaction on the control. Disabled controls will render 
 
 Checks if the control is currently enabled.
 
+### `win.get_control_background_color(name string) string`
+
+Gets the custom background HEX color string of the specified control, or an empty string if none is set.
+
+### `win.get_control_font_color(name string) string`
+
+Gets the custom font HEX color string of the specified control, or an empty string if none is set.
+
+### `win.get_control_width(name string) int`
+
+Gets the custom layout width constraint of the specified control, or `0` if not explicitly constrained.
+
+### `win.get_control_height(name string) int`
+
+Gets the custom layout height constraint of the specified control, or `0` if not explicitly constrained.
+
+### `win.get_control_font_size(name string) int`
+
+Gets the custom font size of the specified control, or `0` if not explicitly configured.
+
 ### `win.set_placeholder(name string, text string) &SimpleWindow`
 
 Sets placeholder text for text-based controls such as inputs and password fields.
@@ -436,6 +461,10 @@ Clears all active visual validation error states and error messages across all c
 ### `win.clear_error(name string) &SimpleWindow`
 
 Clears the visual validation error state and error message for a specific named control.
+
+### `win.get_error(name string) string`
+
+Gets the validation error text currently associated with the specified control, or an empty string if there is no error.
 
 ### `win.set_tooltip(name string, text string) &SimpleWindow`
 
@@ -481,6 +510,10 @@ You can chain these modifiers directly onto control creation methods to style or
 
 Shows a native modal information alert dialog with an OK button.
 
+### `win.alert_with_style(title string, message string, style string) &SimpleWindow`
+
+Shows a native modal alert dialog with a specific visual severity style preset (options: `'info'`, `'warning'`, `'critical'`).
+
 ### `win.confirm(title string, message string) bool`
 
 Shows a warning confirmation popup with Yes/No actions, returning a boolean.
@@ -496,6 +529,10 @@ Displays a native macOS alert with multiple custom button choices. Returns the 0
 ### `win.select_file() string`
 
 Launches the native macOS file picker panel, returning the chosen file path (or empty if cancelled).
+
+### `win.select_file_with_extensions(extensions string) string`
+
+Launches the native macOS file picker panel filtered by specific file extension constraints (e.g. `'png,txt,pdf'`), returning the chosen file path (or empty if cancelled).
 
 ### `win.select_folder() string`
 
@@ -619,6 +656,14 @@ Clears all input controls in the window.
 
 Resets all form input controls back to their initial/default values at registration time.
 
+### Name-based generic control accessors
+
+For advanced operations, these methods bypass type assumptions and directly set or read the primitive state value of controls by their named handles:
+
+- **`win.get_value(name string) string`** / **`win.set_value(name string, value string) &SimpleWindow`**: Directly sets or retrieves the raw string value representing any text/HTML-based control content.
+- **`win.get_bool(name string) bool`** / **`win.set_bool(name string, checked bool) &SimpleWindow`**: Gets or sets the toggle boolean state of checkbox and switch controls.
+- **`win.get_number_value(name string) int`** / **`win.set_number_value(name string, value int) &SimpleWindow`**: Gets or sets the primitive integer value of sliders, progress bars, list boxes selection/indexing, or numeric box steppers.
+
 ---
 
 ## 10. Event Handling
@@ -700,6 +745,10 @@ Adds a scrollable multi-column table view widget with column headers.
 ### `win.set_table_rows(name string, rows [][]string) &SimpleWindow`
 
 Updates the entire set of row cells displayed inside the table grid.
+
+### `win.load_table_from_structs[T](name string, items []T) &SimpleWindow`
+
+Populates and renders a scrollable multi-column table widget automatically using field names and values from an array of V structs of generic type `T`. Supports compile-time reflection of `string`, `int`, and `bool` fields.
 
 ---
 

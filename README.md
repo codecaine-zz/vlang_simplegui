@@ -91,6 +91,180 @@ win.add_action('save', 'Save', fn (mut win &simplegui.SimpleWindow) {
 })
 ```
 
+## Best Practices & Layout Starters
+
+To build responsive, native applications easily, follow these proven design patterns and structural layouts.
+
+### 1. The Easiest Way to Build (The Golden Rules)
+
+- **Always Configure Early**: Use `.configure(...)` right at the start to declare window geometry, paddings, and alignment spacing.
+- **Keep Event Callbacks Stateless**: Avoid global mutability. Pass all parameters or query active states dynamically using `win.get_text()` or `win.get_checked()`.
+- **Use Fluent Chaining**: Builder modifiers like `.placeholder()`, `.font_size()`, and `.enabled()` can be chained immediately after creating the control, avoiding any redundant `win.set_...` calls.
+
+---
+
+### 2. Starter Template: Vertical Stack Layout (Default Flow)
+
+Best for simple forms, log views, setup wizards, and linear layouts where controls stack nicely top-to-bottom.
+
+```v
+module main
+
+import simplegui
+
+fn main() {
+    simplegui.new_simple_window('Vertical Starter', 440, 520)
+        .configure(fn (mut cfg simplegui.WindowConfig) {
+            cfg.padding = 20
+            cfg.spacing = 12
+        })
+        .add_heading('App Settings')
+
+        .add_label('lbl_user', 'Username')
+        .add_input('username', 'ada_lovelace')
+            .placeholder('Enter username...')
+            .tooltip('At least 3 characters')
+
+        .add_toggle('newsletter', 'Subscribe to daily newsletter', true)
+
+        .add_action('btn_submit', 'Submit Settings', on_submit)
+        .run()
+}
+
+fn on_submit(mut win &simplegui.SimpleWindow) {
+    username := win.get_text('username')
+    subscribed := win.get_checked('newsletter')
+
+    win.alert('Status Updated', 'Saved user ${username} (Newsletter: ${subscribed})')
+}
+```
+
+---
+
+### 3. Starter Template: Side-by-Side Row Layout (Grid Columns)
+
+Best for tabular layouts, calculators, search bars with inline action buttons, or database filter fields aligned horizontally.
+
+```v
+module main
+
+import simplegui
+
+fn main() {
+    mut win := simplegui.new_simple_window('Row Grid Starter', 640, 320)
+        .set_theme('dracula')
+        .set_padding(20)
+
+    win.add_heading('Database Lookup Filters')
+
+    // Closure-based row helper aligns children side-by-side automatically
+    win.row('filters_row', fn (mut w &simplegui.SimpleWindow) {
+        w.add_label('', 'Category:')
+        w.add_dropdown('category', ['Engineering', 'Marketing', 'Sales'], 'Engineering')
+            .width(150)
+            .onchange(on_filter_changed)
+
+        w.add_label('', 'ID:')
+        w.add_number('filter_id', 101)
+            .width(80)
+            .onchange(on_filter_changed)
+
+        w.add_button('btn_search', 'Search')
+            .onclick(on_search_clicked)
+    })
+
+    win.add_textarea('output', 'Search results will render here...')
+        .height(120)
+
+    win.run()
+}
+
+fn on_filter_changed(mut win &simplegui.SimpleWindow, value string) {
+    category := win.get_text('category')
+    id := win.get_value_int('filter_id')
+    win.set_status('Active filter: Category=${category}, ID=${id}')
+}
+
+fn on_search_clicked(mut win &simplegui.SimpleWindow) {
+    category := win.get_text('category')
+    id := win.get_value_int('filter_id')
+
+    win.set_text('output', 'Running database query...\nFetched records matching ${category} with minimum ID ${id}!')
+    win.toast('Queries fetched successfully')
+}
+```
+
+---
+
+### 4. Interactive Getting, Setting, and Event Binding Pattern
+
+Use this template to see how to programmatically manipulate labels, checkboxes, text values, sliders, and progress loaders dynamically on click or change.
+
+```v
+module main
+
+import simplegui
+
+fn main() {
+    simplegui.new_simple_window('State Controller', 520, 480)
+        .set_theme('nord')
+        .set_padding(18)
+        .add_heading('Controller Panel')
+
+        .add_slider('volume_slider', 50)
+            .onchange(on_volume_changed)
+
+        .add_label('lbl_volume', 'Current Volume: 50%')
+
+        .add_separator()
+
+        .add_checkbox('mute_toggle', 'Mute output entirely', false)
+            .onchange(on_mute_toggled)
+
+        .add_progress_indicator('prog_bar', 50)
+
+        .add_action('reset_btn', 'Reset Back to Factory Defaults', on_reset_clicked)
+        .run()
+}
+
+fn on_volume_changed(mut win &simplegui.SimpleWindow, value string) {
+    // 1. Get mutated value
+    vol := win.get_value_int('volume_slider')
+
+    // 2. Set companion label text and progress indicator
+    win.set_text('lbl_volume', 'Current Volume: ${vol}%')
+    win.set_value_int('prog_bar', vol)
+}
+
+fn on_mute_toggled(mut win &simplegui.SimpleWindow, value string) {
+    muted := win.get_checked('mute_toggle')
+
+    if muted {
+        // Backup volume slider, set visual feedback or disable
+        win.set_text('lbl_volume', 'Current Volume: MUTED')
+        win.set_value_int('prog_bar', 0)
+        win.set_control_enabled('volume_slider', false)
+    } else {
+        // Re-enable and restore companion status
+        vol := win.get_value_int('volume_slider')
+        win.set_text('lbl_volume', 'Current Volume: ${vol}%')
+        win.set_value_int('prog_bar', vol)
+        win.set_control_enabled('volume_slider', true)
+    }
+}
+
+fn on_reset_clicked(mut win &simplegui.SimpleWindow) {
+    // Programmatically overwrite and set states on control handles
+    win.set_value_int('volume_slider', 50)
+    win.set_text('lbl_volume', 'Current Volume: 50%')
+    win.set_value_int('prog_bar', 50)
+    win.set_checked('mute_toggle', false)
+    win.set_control_enabled('volume_slider', true)
+
+    win.toast('Defaults restored')
+}
+```
+
 ## Developer tips
 
 - Use the built-in control discovery helpers: `has_control`, `list_controls`, and `get_control_kind`.
@@ -148,106 +322,172 @@ This project supports two different layout styles:
 1. **Vertical Stack Style**: The default linear, top-to-bottom layout.
 2. **Grid / Row-based Style**: Allows grouping multiple controls side-by-side inside rows.
 
-### Run the main demo (which combines both styles):
+### Run the main demo (which combines both styles)
 
 ```bash
 v run .
 ```
 
-### Run the Stack Style demo:
+### Run the Stack Style demo
 
 ```bash
 v run demos/stack_style.v
 ```
 
-### Run the Grid Style demo:
+### Run the Grid Style demo
 
 ```bash
 v run demos/grid_style.v
 ```
 
-### Run the starter template:
+### Run the starter template
 
 ```bash
 v run demos/starter_template.v
 ```
 
-### Run the Calculator demo:
+### Run the Calculator demo
 
 ```bash
 v run demos/calculator.v
 ```
 
-### Run the Settings Editor demo:
+### Run the Settings Editor demo
 
 ```bash
 v run demos/settings_editor.v
 ```
 
-### Run the Data Viewer/Filter demo:
+### Run the Data Viewer/Filter demo
 
 ```bash
 v run demos/data_viewer.v
 ```
 
-### Run the Timer & Progress loader demo:
+### Run the Timer & Progress loader demo
 
 ```bash
 v run demos/timer_demo.v
 ```
 
-### Run the List & Image Preview Selector demo:
+### Run the List & Image Preview Selector demo
 
 ```bash
 v run demos/list_image_demo.v
 ```
 
-### Run the Interactive Events & States demo:
+### Run the Interactive Events & States demo
 
 ```bash
 v run demos/events_demo.v
 ```
 
-### Run the single-window all-controls demo:
+### Run the single-window all-controls demo
 
 ```bash
 v run demos/all_controls_demo.v
 ```
 
-### Run the always-on-top demo:
+### Run the always-on-top demo
 
 ```bash
 v run demos/always_on_top_demo.v
 ```
 
-### Run the Ergonomic Helpers demo:
+### Run the Ergonomic Helpers demo
 
 ```bash
 v run demos/ergonomic_demo.v
 ```
 
-### Run the Delphi & C# Inspired RAD Showcase demo:
+### Run the Delphi & C# Inspired RAD Showcase demo
 
 ```bash
 v run demos/delphi_inspired_demo.v
 ```
 
-### Run the developer experience (DX) showcase demo:
+### Run the developer experience (DX) showcase demo
 
 ```bash
 v run demos/dx_features_demo.v
 ```
 
-### Run the High-Level Helpers demo:
+### Run the High-Level Helpers demo
 
 ```bash
 v run demos/high_level_demo.v
 ```
 
-### Run the Native Menu Bar & Text Shortcuts demo:
+### Run the Native Menu Bar & Text Shortcuts demo
 
 ```bash
 v run demos/menu_demo.v
+```
+
+### Run the Advanced Typography & Features demo
+
+```bash
+v run demos/advanced_features_demo.v
+```
+
+### Run the Beginner Friendly signup demo
+
+```bash
+v run demos/beginner_demo.v
+```
+
+### Run the Window Configuration demo
+
+```bash
+v run demos/configuration_demo.v
+```
+
+### Run the Change Tracking & Dirty Form demo
+
+```bash
+v run demos/dirty_form_demo.v
+```
+
+### Run the Developer Experience DX Showcase
+
+```bash
+v run demos/dx_showcase.v
+```
+
+### Run the QoL Bulk Binding Features demo
+
+```bash
+v run demos/features_demo.v
+```
+
+### Run the Product Catalog CRUD Grid Editor demo
+
+```bash
+v run demos/grid_data_editor.v
+```
+
+### Run the Studio Markdown Live Editor demo
+
+```bash
+v run demos/markdown_editor.v
+```
+
+### Run the Native Switch & Custom Controls Showcase
+
+```bash
+v run demos/new_controls_demo.v
+```
+
+### Run the Sticky Floating Yellow Pad Overlay widget
+
+```bash
+v run demos/overlay_widget_demo.v
+```
+
+### Run the Interactive Window controller demo
+
+```bash
+v run demos/window_controller_demo.v
 ```
 
 ## Run tests
@@ -276,6 +516,20 @@ v test .
 - [demos/high_level_demo.v](demos/high_level_demo.v) — showcases the new beginner-friendly helper API for forms and actions
 - [demos/menu_demo.v](demos/menu_demo.v) — demo of standard macOS application menus and text editing shortcuts
 - [demos/dx_features_demo.v](demos/dx_features_demo.v) — showcases the developer experience (DX) ergonomics improvements (reflection form building, chaining, nameless controls, action rows, and debug mode)
+- [demos/advanced_features_demo.v](demos/advanced_features_demo.v) — showcases advanced typography and macOS APIs
+- [demos/beginner_demo.v](demos/beginner_demo.v) — beginner-friendly signup form and profile builder
+- [demos/configuration_demo.v](demos/configuration_demo.v) — fluent configurations using WindowConfig
+- [demos/dirty_form_demo.v](demos/dirty_form_demo.v) — illustrates live form dirty-tracking state and control validation callbacks
+- [demos/dx_showcase.v](demos/dx_showcase.v) — demonstrates high-level horizontal rows, layout nesting, and fluent styling modifiers
+- [demos/features_demo.v](demos/features_demo.v) — showcases compiling-time struct binding and automatic multi-column tables
+- [demos/grid_data_editor.v](demos/grid_data_editor.v) — a fully-functional reactive database inventory-catalog CRUD grid editing dashboard
+- [demos/markdown_editor.v](demos/markdown_editor.v) — a complete live Markdown Studio layout using full WebKit render updates
+- [demos/new_controls_demo.v](demos/new_controls_demo.v) — exercises advanced segmented menus, popup selections, and search fields
+- [demos/overlay_widget_demo.v](demos/overlay_widget_demo.v) — sticky window overlay yellow notepad memo widget with custom styling
+- [demos/window_controller_demo.v](demos/window_controller_demo.v) — lets you programmatically resize, move, center, track dimensions, and fade opacity of the main Window at runtime
+- [demos/always_on_top_demo.v](demos/always_on_top_demo.v) — a utility app indicating how window z-axis float levels behaves
+- [demos/ergonomic_demo.v](demos/ergonomic_demo.v) — showcases lightweight ergonomic helpers for window configuration and forms
+- [demos/delphi_inspired_demo.v](demos/delphi_inspired_demo.v) — showcases standard Delphi RAD tool look and event bindings
 
 ## Notes
 
