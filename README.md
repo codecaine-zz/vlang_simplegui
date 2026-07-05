@@ -346,6 +346,24 @@ v run demos/grid_style.v
 v run demos/starter_template.v
 ```
 
+### Run the Best Practices: Vertical Stack Starter demo
+
+```bash
+v run demos/vertical_stack_starter.v
+```
+
+### Run the Best Practices: Grid Column Starter demo
+
+```bash
+v run demos/grid_column_starter.v
+```
+
+### Run the Best Practices: State Controller Pattern demo
+
+```bash
+v run demos/state_controller_pattern.v
+```
+
 ### Run the Calculator demo
 
 ```bash
@@ -530,6 +548,9 @@ v test .
 - [demos/always_on_top_demo.v](demos/always_on_top_demo.v) — a utility app indicating how window z-axis float levels behaves
 - [demos/ergonomic_demo.v](demos/ergonomic_demo.v) — showcases lightweight ergonomic helpers for window configuration and forms
 - [demos/delphi_inspired_demo.v](demos/delphi_inspired_demo.v) — showcases standard Delphi RAD tool look and event bindings
+- [demos/vertical_stack_starter.v](demos/vertical_stack_starter.v) — starter template demonstrating best practices for vertical stack forms
+- [demos/grid_column_starter.v](demos/grid_column_starter.v) — starter template demonstrating horizontal row layouts and event handling
+- [demos/state_controller_pattern.v](demos/state_controller_pattern.v) — interactive design pattern illustrating state manipulation and reactive controls
 
 ## Notes
 
