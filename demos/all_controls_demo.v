@@ -26,7 +26,7 @@ fn main() {
 	win.add_textarea('notes', 'This window exercises most of the built-in controls.')
 
 	win.add_label('html_label', 'HTML view')
-	win.add_html_view('html', '<h3 style="color:#5eead4">Native HTML preview</h3><p>Useful for lightweight rich content.</p>')
+	win.add_html_view('html', '<html><body style="font-family: -apple-system, sans-serif; font-size: 13px; color: #f8fafc; background-color: transparent; margin: 0;"><h3 style="color:#5eead4; margin-top: 0; margin-bottom: 4px;">Native HTML preview</h3><p style="margin: 0;">Useful for lightweight rich content.</p></body></html>')
 	win.set_control_width('html', 720)
 	win.set_control_height('html', 110)
 
@@ -203,10 +203,25 @@ fn on_volume_changed(mut win &simplegui.SimpleWindow, value string) {
 }
 
 fn on_theme_changed(mut win &simplegui.SimpleWindow, value string) {
+	win.set_theme(value)
+	
+	mut body_fg := '#f8fafc'
+	mut heading_color := '#5eead4'
+	if value.to_lower() == 'light' {
+		body_fg = '#1e293b'
+		heading_color = '#0284c7'
+	}
+	
+	html_content := '<html><body style="font-family: -apple-system, sans-serif; font-size: 13px; color: ${body_fg}; background-color: transparent; margin: 0;"><h3 style="color:${heading_color}; margin-top: 0; margin-bottom: 4px;">Native HTML preview</h3><p style="margin: 0;">Useful for lightweight rich content.</p></body></html>'
+	win.set_html('html', html_content)
+	
 	win.set_status('Theme changed to ${value}')
 }
 
 fn on_accent_changed(mut win &simplegui.SimpleWindow, value string) {
+	win.set_control_background_color('snapshot', value)
+	win.set_control_background_color('clear', value)
+	win.set_control_background_color('progress', value)
 	win.set_status('Accent color changed to ${value}')
 }
 

@@ -4,7 +4,7 @@ import simplegui
 
 fn main() {
 	// 1. Initialize window with a theme preset
-	mut win := simplegui.new_simple_window('SimpleGUI DX Showcase', 600, 500)
+	mut win := simplegui.new_simple_window('SimpleGUI DX Showcase', 700, 500)
 		.set_theme('dracula')
 		.set_padding(20)
 		.set_spacing(12)
@@ -89,17 +89,23 @@ fn on_validate(mut win &simplegui.SimpleWindow) {
 
 fn on_cycle_theme(mut win &simplegui.SimpleWindow) {
 	current_bg := win.get_background_color()
+	mut theme_name := 'dracula'
+	mut desc_color := '#8be9fd'
 	if current_bg == '#282a36' { // Dracula
-		win.set_theme('nord')
-		win.set_status('Theme changed to Nord.')
+		theme_name = 'nord'
+		desc_color = '#88c0d0'
 	} else if current_bg == '#2e3440' { // Nord
-		win.set_theme('light')
-		win.set_status('Theme changed to Light.')
+		theme_name = 'light'
+		desc_color = '#0055aa' // Readable dark blue on light bg
 	} else if current_bg == '#f5f5f5' { // Light
-		win.set_theme('dark')
-		win.set_status('Theme changed to Dark.')
+		theme_name = 'dark'
+		desc_color = '#ff6b6b'
 	} else {
-		win.set_theme('dracula')
-		win.set_status('Theme changed to Dracula.')
+		theme_name = 'dracula'
+		desc_color = '#8be9fd'
 	}
+
+	win.set_theme(theme_name)
+	win.set_control_font_color('description', desc_color)
+	win.set_status('Theme changed to ' + theme_name.capitalize() + '.')
 }

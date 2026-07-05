@@ -58,6 +58,16 @@ fn main() {
 		win.set_status('Notifications toggled: ' + value)
 	})
 
+	gui.on_change('theme', fn (mut win &simplegui.SimpleWindow, value string) {
+		win.set_theme(value)
+		win.set_status('Theme change applied: ' + value)
+	})
+
+	gui.on_change('accent', fn (mut win &simplegui.SimpleWindow, value string) {
+		win.set_control_background_color('apply', value)
+		win.set_status('Accent color applied: ' + value)
+	})
+
 	// Premium dark slate theme
 	gui.set_background_color('#2C3E50')
 	gui.set_font_color('white')

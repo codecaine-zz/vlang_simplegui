@@ -842,6 +842,28 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   self.currentFontColor = fontColor;
 
   if (self.window) {
+    if (backgroundColor) {
+      NSColor *rgbBg = [backgroundColor colorUsingColorSpace:[NSColorSpace deviceRGBColorSpace]];
+      if (rgbBg) {
+        CGFloat r=0, g=0, b=0, a=0;
+        [rgbBg getRed:&r green:&g blue:&b alpha:&a];
+        double luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        if (luminance < 0.5) {
+          if (@available(macOS 10.14, *)) {
+            self.window.appearance = [NSAppearance appearanceNamed:NSAppearanceNameDarkAqua];
+          } else {
+            self.window.appearance = [NSAppearance appearanceNamed:NSAppearanceNameVibrantDark];
+          }
+        } else {
+          if (@available(macOS 10.14, *)) {
+            self.window.appearance = [NSAppearance appearanceNamed:NSAppearanceNameAqua];
+          } else {
+            self.window.appearance = [NSAppearance appearanceNamed:NSAppearanceNameVibrantLight];
+          }
+        }
+      }
+    }
+
     if (backgroundColor.alphaComponent < 1.0) {
       [self.window setBackgroundColor:[NSColor clearColor]];
       [self.window setOpaque:NO];
