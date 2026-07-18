@@ -615,6 +615,144 @@ v run demos/overlay_widget_demo.v
 v run demos/window_controller_demo.v
 ```
 
+### Run the 2D Grid Beginner Painter demo
+
+```bash
+v run demos/grid_beginner_demo.v
+```
+
+### Run the SQLite CRUD Catalog demo
+
+```bash
+v run demos/sqlite_crud_demo.v
+```
+
+### Run the Number Guessing Game demo
+
+```bash
+v run demos/guessing_game.v
+```
+
+### Run the Pomodoro Focus Clock demo
+
+```bash
+v run demos/pomodoro_timer_demo.v
+```
+
+### Run the Lockbox Security Dashboard demo
+
+```bash
+v run demos/password_dashboard.v
+```
+
+### Run the Custom Colors Live Editor demo
+
+```bash
+v run demos/colors_demo.v
+```
+
+### Run the REST client API Studio demo
+
+```bash
+v run demos/rest_client_demo.v
+```
+
+### Run the Worker Pool Concurrency Visualizer demo
+
+```bash
+v run demos/worker_pool_visualizer.v
+```
+
+### Run the TCP Sockets demo
+
+```bash
+v run demos/tcp_socket_demo.v
+```
+
+### Run the UDP Sockets demo
+
+```bash
+v run demos/udp_socket_demo.v
+```
+
+### Run the Unix Domain Sockets demo
+
+```bash
+v run demos/unix_socket_demo.v
+```
+
+### Run the Secure TLS Sockets demo
+
+```bash
+v run demos/secure_socket_demo.v
+```
+
+### Run the Secure UDP DTLS Sockets demo
+
+```bash
+v run demos/secure_udp_demo.v
+```
+
+### Run the Secure Unix Sockets demo
+
+```bash
+v run demos/secure_unix_demo.v
+```
+
+### Run the Secure WebSockets demo
+
+```bash
+v run demos/secure_websocket_demo.v
+```
+
+### Run the Wrapped Sockets helper demo
+
+```bash
+v run demos/wrapped_sockets_demo.v
+```
+
+### Run the Deflate Compression demo
+
+```bash
+v run demos/deflate_demo.v
+```
+
+### Run the Zstandard Compression demo
+
+```bash
+v run demos/zstd_demo.v
+```
+
+### Run the System Info & Encodings demo
+
+```bash
+v run demos/encoding_and_system_info_demo.v
+```
+
+### Run the System Calls Info Viewer demo
+
+```bash
+v run demos/system_calls_demo.v
+```
+
+### Run the System & Stdlib Features demo
+
+```bash
+v run demos/system_and_stdlib_features_demo.v
+```
+
+### Run the Clipboard Manager demo
+
+```bash
+v run demos/clipboard_demo.v
+```
+
+### Run the Performance Benchmark demo
+
+```bash
+v run demos/benchmark_demo.v
+```
+
 ## Run tests
 
 ```bash
@@ -669,6 +807,29 @@ v test .
 - [demos/layout_scroll_view.v](demos/layout_scroll_view.v) — demonstrates scrollable panel constraints
 - [demos/layout_struct_reflection.v](demos/layout_struct_reflection.v) — demonstrates auto-generating forms from structs using V reflection
 - [demos/layout_responsive_constraints.v](demos/layout_responsive_constraints.v) — demonstrates responsive auto-layout scaling, fixed dimensions, and a background color picker well
+- [demos/grid_beginner_demo.v](demos/grid_beginner_demo.v) — beginner-friendly interactive 2D painting grid/canvas illustrating row/column structures, pointer-shared mutable state, presets, and native color well integrations
+- [demos/sqlite_crud_demo.v](demos/sqlite_crud_demo.v) — SQLite database dashboard performing CREATE, READ, UPDATE, DELETE actions on database tables
+- [demos/guessing_game.v](demos/guessing_game.v) — guess-the-number game showcasing native level indicators, ratings stars, color wells, and guess history logs
+- [demos/pomodoro_timer_demo.v](demos/pomodoro_timer_demo.v) — focus clock dashboard with a live system progress timer, notification toasts, and custom sessions settings
+- [demos/password_dashboard.v](demos/password_dashboard.v) — secure Lockbox security dashboard showing credentials lookup table and detail forms
+- [demos/colors_demo.v](demos/colors_demo.v) — dynamic workspace custom colors styling sandbox to tweak typography, background, active selections, and font colors at runtime
+- [demos/rest_client_demo.v](demos/rest_client_demo.v) — REST client API studio supporting methods selection (GET, POST), request parameters, headers dictionary, and JSON viewer
+- [demos/worker_pool_visualizer.v](demos/worker_pool_visualizer.v) — visual pipeline queue monitor displaying parallel concurrent task progress bars, worker states, and thread activity
+- [demos/tcp_socket_demo.v](demos/tcp_socket_demo.v) — simple client-server TCP networking message logs
+- [demos/udp_socket_demo.v](demos/udp_socket_demo.v) — datagram packet transfer over UDP sockets
+- [demos/unix_socket_demo.v](demos/unix_socket_demo.v) — local inter-process communication using Unix Domain sockets
+- [demos/secure_socket_demo.v](demos/secure_socket_demo.v) — TLS encrypted client-server socket communication
+- [demos/secure_udp_demo.v](demos/secure_udp_demo.v) — DTLS encrypted datagram network socket transfers
+- [demos/secure_unix_demo.v](demos/secure_unix_demo.v) — secure TLS encrypted Unix domain sockets
+- [demos/secure_websocket_demo.v](demos/secure_websocket_demo.v) — secure web sockets client-server networking
+- [demos/wrapped_sockets_demo.v](demos/wrapped_sockets_demo.v) — simplified wrapper APIs for TCP socket stream operations
+- [demos/deflate_demo.v](demos/deflate_demo.v) — compress and decompress strings using raw zlib deflate compression
+- [demos/zstd_demo.v](demos/zstd_demo.v) — Zstandard compression/decompression operations
+- [demos/encoding_and_system_info_demo.v](demos/encoding_and_system_info_demo.v) — text encoder/decoder (Hex, Base64) with native environment details viewer
+- [demos/system_calls_demo.v](demos/system_calls_demo.v) — native shell processes invocation, stdout routing, and folder monitoring
+- [demos/system_and_stdlib_features_demo.v](demos/system_and_stdlib_features_demo.v) — exhaustive showcases of V core systems operations
+- [demos/clipboard_demo.v](demos/clipboard_demo.v) — monitors clipboard entries and displays history log
+- [demos/benchmark_demo.v](demos/benchmark_demo.v) — measures wrapper operation latency benchmarks
 
 ## Notes
 
