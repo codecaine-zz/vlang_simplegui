@@ -284,6 +284,8 @@ mut:
 	width            int
 	height           int
 	font_size        int
+	visible          bool = true
+	enabled          bool = true
 	initial_value    string
 	initial_checked  bool
 	initial_number   int
@@ -414,6 +416,8 @@ fn (win &SimpleWindow) upsert_control(name string, kind string, label string, va
 		value:           value
 		checked:         checked
 		number:          number
+		visible:         true
+		enabled:         true
 		initial_value:   value
 		initial_checked: checked
 		initial_number:  number
@@ -430,6 +434,8 @@ fn (win &SimpleWindow) upsert_control(name string, kind string, label string, va
 			entry.number = number
 			entry.background_color = w.controls[idx].background_color
 			entry.font_color = w.controls[idx].font_color
+			entry.visible = w.controls[idx].visible
+			entry.enabled = w.controls[idx].enabled
 			w.controls[idx] = entry
 		} else {
 			w.controls << entry
@@ -2427,6 +2433,15 @@ pub fn (win &SimpleWindow) save_file_picker() string {
 
 // Visibility & Enabled state controls
 pub fn (win &SimpleWindow) set_control_visible(name string, visible bool) &SimpleWindow {
+	idx := win.find_control(name)
+	if idx >= 0 {
+		unsafe {
+			mut w := &SimpleWindow(win)
+			mut entry := w.controls[idx]
+			entry.visible = visible
+			w.controls[idx] = entry
+		}
+	}
 	if win.window_info != unsafe { nil } {
 		vis_val := if visible { 1 } else { 0 }
 		C.window_set_control_visible_by_name(win.window_info, name.str, vis_val)
@@ -2435,6 +2450,10 @@ pub fn (win &SimpleWindow) set_control_visible(name string, visible bool) &Simpl
 }
 
 pub fn (win &SimpleWindow) get_control_visible(name string) bool {
+	idx := win.find_control(name)
+	if idx >= 0 {
+		return win.controls[idx].visible
+	}
 	if win.window_info != unsafe { nil } {
 		return C.window_get_control_visible_by_name(win.window_info, name.str) == 1
 	}
@@ -2442,6 +2461,15 @@ pub fn (win &SimpleWindow) get_control_visible(name string) bool {
 }
 
 pub fn (win &SimpleWindow) set_control_enabled(name string, enabled bool) &SimpleWindow {
+	idx := win.find_control(name)
+	if idx >= 0 {
+		unsafe {
+			mut w := &SimpleWindow(win)
+			mut entry := w.controls[idx]
+			entry.enabled = enabled
+			w.controls[idx] = entry
+		}
+	}
 	if win.window_info != unsafe { nil } {
 		en_val := if enabled { 1 } else { 0 }
 		C.window_set_control_enabled_by_name(win.window_info, name.str, en_val)
@@ -2450,6 +2478,10 @@ pub fn (win &SimpleWindow) set_control_enabled(name string, enabled bool) &Simpl
 }
 
 pub fn (win &SimpleWindow) get_control_enabled(name string) bool {
+	idx := win.find_control(name)
+	if idx >= 0 {
+		return win.controls[idx].enabled
+	}
 	if win.window_info != unsafe { nil } {
 		return C.window_get_control_enabled_by_name(win.window_info, name.str) == 1
 	}

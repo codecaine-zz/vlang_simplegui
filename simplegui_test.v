@@ -181,15 +181,31 @@ fn test_batch_ergonomic_helpers_are_available() {
 	win.set_many_numbers({
 		'age': 42
 	})
+	win.set_many_visibility({
+		'name': false
+	})
+	win.set_many_enabled({
+		'age': false
+	})
+	win.set_many_errors({
+		'name': 'Required'
+	})
+	win.clear_many(['name', 'secret'])
+	win.reset_many(['name', 'secret', 'ready', 'age'])
 
 	texts := win.get_many_texts(['name', 'secret'])
 	checks := win.get_many_checked(['ready'])
 	numbers := win.get_many_numbers(['age'])
+	visibilities := win.get_many_visibility(['name'])
+	enabled := win.get_many_enabled(['age'])
 
-	assert texts['name'] == 'Grace'
-	assert texts['secret'] == 'topsecret'
-	assert checks['ready'] == true
-	assert numbers['age'] == 42
+	assert texts['name'] == 'Ada'
+	assert texts['secret'] == 's3cr3t'
+	assert checks['ready'] == false
+	assert numbers['age'] == 30
+	assert visibilities['name'] == false
+	assert enabled['age'] == false
+	assert win.get_error('name') == 'Required'
 }
 
 fn test_ergonomic_helpers_are_available_and_resettable() {

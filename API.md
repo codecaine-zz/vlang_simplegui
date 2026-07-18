@@ -1306,6 +1306,13 @@ A set of high-level shortcuts designed to make everyday tasks one-liners. See `d
 - `win.get_many_checked(names []string) map[string]bool` reads many checkbox/switch controls into a map.
 - `win.set_many_numbers(values map[string]int)` updates many numeric controls in one call.
 - `win.get_many_numbers(names []string) map[string]int` reads many numeric controls into a map.
+- `win.set_many_visibility(values map[string]bool)` updates many controls' visibility in one call.
+- `win.get_many_visibility(names []string) map[string]bool` reads many controls' visibility into a map.
+- `win.set_many_enabled(values map[string]bool)` updates many controls' enabled state in one call.
+- `win.get_many_enabled(names []string) map[string]bool` reads many controls' enabled state into a map.
+- `win.set_many_errors(values map[string]string)` updates many controls' inline errors in one call.
+- `win.clear_many(names []string)` clears a subset of controls to their empty/default state.
+- `win.reset_many(names []string)` restores a subset of controls to their original values.
 - `win.focus(name)` moves keyboard focus to a control (alias of `set_focus`).
 
 ### List Box Item Management

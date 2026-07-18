@@ -214,7 +214,54 @@ fn main() {
 		})
 	})
 
-	// 7. Quick validation + settings persistence
+	// 7. Bulk state helpers for visibility, enabled state, and inline errors
+	win.group('grp_state', 'Bulk State Helpers', fn (mut w simplegui.SimpleWindow) {
+		w.add_form_field('Display Name:', 'state_name', 'Ada')
+		w.add_form_field('Email:', 'state_email', 'ada@example.com')
+		w.add_button('state_action', 'Action')
+		w.add_action_row({
+			'Hide Name':      fn (mut w simplegui.SimpleWindow) {
+				w.set_many_visibility({
+					'state_name': false
+				})
+				w.set_status('Hid the display name field.')
+			}
+			'Disable Action': fn (mut w simplegui.SimpleWindow) {
+				w.set_many_enabled({
+					'state_action': false
+				})
+				w.set_status('Disabled the action button.')
+			}
+			'Show & Enable':  fn (mut w simplegui.SimpleWindow) {
+				w.set_many_visibility({
+					'state_name': true
+				})
+				w.set_many_enabled({
+					'state_action': true
+				})
+				w.set_many_errors({
+					'state_email': ''
+				})
+				w.set_status('Restored visibility and enabled state.')
+			}
+			'Flag Email':     fn (mut w simplegui.SimpleWindow) {
+				w.set_many_errors({
+					'state_email': 'Please enter a valid address'
+				})
+				w.set_status('Applied an inline error to the email field.')
+			}
+			'Clear Fields':   fn (mut w simplegui.SimpleWindow) {
+				w.clear_many(['state_name', 'state_email'])
+				w.set_status('Cleared the selected fields.')
+			}
+			'Restore Initial': fn (mut w simplegui.SimpleWindow) {
+				w.reset_many(['state_name', 'state_email'])
+				w.set_status('Restored the selected controls to their initial values.')
+			}
+		})
+	})
+
+	// 8. Quick validation + settings persistence
 	win.group('grp_persist', 'Validation & Persistence', fn (mut w simplegui.SimpleWindow) {
 		w.add_form_field('Username:', 'username', '')
 		w.add_form_field('Email:', 'email', '')

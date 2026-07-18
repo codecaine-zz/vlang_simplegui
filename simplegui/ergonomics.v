@@ -220,6 +220,77 @@ pub fn (win &SimpleWindow) get_many_numbers(names []string) map[string]int {
 	return values
 }
 
+// set_many_visibility updates several controls' visibility in one call.
+pub fn (win &SimpleWindow) set_many_visibility(values map[string]bool) &SimpleWindow {
+	for name, value in values {
+		win.set_control_visible(name, value)
+	}
+	return win
+}
+
+// get_many_visibility reads several controls' visibility into a name/value map.
+pub fn (win &SimpleWindow) get_many_visibility(names []string) map[string]bool {
+	mut values := map[string]bool{}
+	for name in names {
+		values[name] = win.get_control_visible(name)
+	}
+	return values
+}
+
+// set_many_enabled updates several controls' enabled state in one call.
+pub fn (win &SimpleWindow) set_many_enabled(values map[string]bool) &SimpleWindow {
+	for name, value in values {
+		win.set_control_enabled(name, value)
+	}
+	return win
+}
+
+// get_many_enabled reads several controls' enabled state into a name/value map.
+pub fn (win &SimpleWindow) get_many_enabled(names []string) map[string]bool {
+	mut values := map[string]bool{}
+	for name in names {
+		values[name] = win.get_control_enabled(name)
+	}
+	return values
+}
+
+// set_many_errors updates several controls' inline error state in one call.
+pub fn (win &SimpleWindow) set_many_errors(values map[string]string) &SimpleWindow {
+	for name, value in values {
+		win.set_error(name, value)
+	}
+	return win
+}
+
+// clear_many clears a subset of controls to their empty/default state.
+pub fn (win &SimpleWindow) clear_many(names []string) &SimpleWindow {
+	for name in names {
+		win.clear(name)
+	}
+	return win
+}
+
+// reset_many restores a subset of controls to their original values.
+pub fn (win &SimpleWindow) reset_many(names []string) &SimpleWindow {
+	for name in names {
+		idx := win.find_control(name)
+		if idx < 0 {
+			continue
+		}
+		entry := win.controls[idx]
+		if entry.kind in ['checkbox', 'switch', 'spinner'] {
+			win.set_checked(name, entry.initial_checked)
+		} else if entry.kind in ['number', 'slider', 'progress', 'levelindicator'] {
+			win.set_value_int(name, entry.initial_number)
+		} else if entry.kind in ['input', 'password', 'textarea', 'date', 'mode', 'theme', 'listbox',
+			'color', 'search', 'dropdown', 'segmented', 'radiogroup', 'combobox', 'pathcontrol',
+			'tokenfield'] {
+			win.set_text(name, entry.initial_value)
+		}
+	}
+	return win
+}
+
 // focus moves keyboard focus to the named control (alias of set_focus).
 pub fn (win &SimpleWindow) focus(name string) &SimpleWindow {
 	return win.set_focus(name)
