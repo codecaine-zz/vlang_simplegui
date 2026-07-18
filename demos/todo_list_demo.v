@@ -1,8 +1,9 @@
 module main
 
 // Todo List Demo - showcases the list box item-management helpers:
-// add_list_item, remove_selected_list_item, clear_list_items,
-// get_list_items, get_list_count, and get_list_selected_text.
+// add_list_item, multi-select (set_list_multi_select, get_list_selected_texts,
+// remove_selected_list_items, select_all_list_items), double-click events,
+// clear_list_items, get_list_items, and get_list_count.
 import simplegui
 
 fn main() {
@@ -22,24 +23,39 @@ fn main() {
 	win.set_default_button('add')
 	win.on_enter('new_task', add_task)
 
-	win.add_list_box('tasks', ['Buy groceries', 'Walk the dog'])
+	win.add_list_box('tasks', ['Buy groceries', 'Walk the dog', 'Pay bills', 'Water plants'])
 		.height(220)
 		.onchange(fn (mut w simplegui.SimpleWindow, _ string) {
-			selected := w.get_list_selected_text('tasks')
-			if selected != '' {
-				w.status('Selected: ${selected}')
+			selected := w.get_list_selected_texts('tasks')
+			if selected.len > 1 {
+				w.status('${selected.len} tasks selected (Cmd/Shift-click works!)')
+			} else if selected.len == 1 {
+				w.status('Selected: ${selected[0]}')
 			}
 		})
 
+	// Allow Cmd/Shift-click multiple row selection
+	win.set_list_multi_select('tasks', true)
+
+	// Double-click a row to complete it instantly
+	win.on_list_double_click('tasks', fn (mut w simplegui.SimpleWindow, row string) {
+		task := w.get_list_items('tasks')[row.int()] or { return }
+		w.remove_list_item('tasks', row.int())
+		w.status('Completed by double-click: ${task}')
+	})
+
 	win.add_action_row({
 		'Complete Selected': fn (mut w simplegui.SimpleWindow) {
-			selected := w.get_list_selected_text('tasks')
-			if selected == '' {
-				w.warn('Nothing Selected', 'Pick a task in the list first.')
+			removed := w.remove_selected_list_items('tasks')
+			if removed.len == 0 {
+				w.warn('Nothing Selected', 'Pick one or more tasks first (Cmd/Shift-click for multiple).')
 				return
 			}
-			w.remove_selected_list_item('tasks')
-			w.status('Completed: ${selected} (${w.get_list_count('tasks')} left)')
+			w.status('Completed ${removed.len} task(s) - ${w.get_list_count('tasks')} left')
+		}
+		'Select All':        fn (mut w simplegui.SimpleWindow) {
+			w.select_all_list_items('tasks')
+			w.status('All ${w.get_list_count('tasks')} tasks selected.')
 		}
 		'Clear All':         fn (mut w simplegui.SimpleWindow) {
 			if w.get_list_count('tasks') == 0 {

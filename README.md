@@ -799,7 +799,7 @@ v test .
 - [demos/always_on_top_demo.v](demos/always_on_top_demo.v) — a utility app indicating how window z-axis float levels behaves
 - [demos/ergonomic_demo.v](demos/ergonomic_demo.v) — showcases lightweight ergonomic helpers for window configuration and forms
 - [demos/easy_api_demo.v](demos/easy_api_demo.v) — showcases the ergonomic helper APIs: dialog shortcuts, batch control operations, increment/progress helpers, labeled rows, timer sugar, and require_fields validation
-- [demos/todo_list_demo.v](demos/todo_list_demo.v) — a todo list app built on the list box item-management helpers (add/remove/clear items, selected-text access)
+- [demos/todo_list_demo.v](demos/todo_list_demo.v) — a todo list app built on the list box item-management helpers (add/remove/clear items, Cmd/Shift multi-selection, double-click to complete, bulk remove of selected rows)
 - [demos/save_restore_demo.v](demos/save_restore_demo.v) — one-call JSON settings persistence with save_values_to_file/load_values_from_file and unsaved-changes prompts
 - [demos/delphi_inspired_demo.v](demos/delphi_inspired_demo.v) — showcases standard Delphi RAD tool look and event bindings
 - [demos/vertical_stack_starter.v](demos/vertical_stack_starter.v) — starter template demonstrating best practices for vertical stack forms

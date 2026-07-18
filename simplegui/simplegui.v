@@ -67,6 +67,11 @@ fn C.window_add_list_box_control(&WindowInfo, &u8, &&u8, int) voidptr
 fn C.window_update_list_items(&WindowInfo, &u8, &&u8, int)
 fn C.window_set_list_selected(&WindowInfo, &u8, int)
 fn C.window_get_list_selected(&WindowInfo, &u8) int
+fn C.window_set_list_multi_select(&WindowInfo, &u8, int)
+fn C.window_get_list_selected_indexes(&WindowInfo, &u8) &u8
+fn C.window_set_list_selected_indexes(&WindowInfo, &u8, &u8)
+fn C.window_select_all_list_items(&WindowInfo, &u8)
+fn C.window_clear_list_selection(&WindowInfo, &u8)
 fn C.window_add_image_control(&WindowInfo, &u8, &u8) voidptr
 fn C.window_set_image_path(&WindowInfo, &u8, &u8)
 

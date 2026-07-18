@@ -99,6 +99,11 @@ void *window_add_list_box_control(main__WindowInfo *info, const char *name, cons
 void window_update_list_items(main__WindowInfo *info, const char *name, const char **items, int items_count);
 void window_set_list_selected(main__WindowInfo *info, const char *name, int index);
 int window_get_list_selected(main__WindowInfo *info, const char *name);
+void window_set_list_multi_select(main__WindowInfo *info, const char *name, int enabled);
+char *window_get_list_selected_indexes(main__WindowInfo *info, const char *name);
+void window_set_list_selected_indexes(main__WindowInfo *info, const char *name, const char *csv_indexes);
+void window_select_all_list_items(main__WindowInfo *info, const char *name);
+void window_clear_list_selection(main__WindowInfo *info, const char *name);
 void *window_add_image_control(main__WindowInfo *info, const char *name, const char *file_path);
 void window_set_image_path(main__WindowInfo *info, const char *name, const char *file_path);
 

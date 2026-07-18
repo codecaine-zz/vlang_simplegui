@@ -1313,6 +1313,17 @@ Items are tracked automatically for every list box, so you can manage them incre
 - `win.get_list_count(name) int` returns the item count.
 - `win.get_list_selected_text(name) string` returns the selected row's text, or `''`.
 
+### List Box Multi-Selection & Double-Click
+
+- `win.set_list_multi_select(name, enabled bool)` enables Cmd/Shift-click multiple row selection.
+- `win.get_list_selected_indexes(name) []int` returns every selected row index (ascending).
+- `win.set_list_selected_indexes(name, indexes []int)` selects the given rows programmatically (empty array clears the selection).
+- `win.get_list_selected_texts(name) []string` returns the text of every selected row.
+- `win.select_all_list_items(name)` selects every row (multi-select must be enabled).
+- `win.clear_list_selection(name)` deselects everything.
+- `win.remove_selected_list_items(name) []string` removes all selected rows and returns the removed items (works in both single and multi mode).
+- `win.on_list_double_click(name, callback StringEventCallback)` fires when a row is double-clicked; the callback receives the 0-based row index as a string.
+
 ### Settings Persistence
 
 - `win.save_values_to_file(path string) !` writes every control value to a JSON file.

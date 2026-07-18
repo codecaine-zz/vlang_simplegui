@@ -229,6 +229,111 @@ pub fn (win &SimpleWindow) get_list_selected_text(name string) string {
 	return ''
 }
 
+// set_list_multi_select enables or disables multiple row selection on a list box
+// (users can then Cmd/Shift-click to select several rows).
+pub fn (win &SimpleWindow) set_list_multi_select(name string, enabled bool) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_list_multi_select(win.window_info, name.str, int(enabled))
+	}
+	return win
+}
+
+// get_list_selected_indexes returns every selected row index of a list box (0-based, ascending).
+pub fn (win &SimpleWindow) get_list_selected_indexes(name string) []int {
+	if win.window_info == unsafe { nil } {
+		return []int{}
+	}
+	res := C.window_get_list_selected_indexes(win.window_info, name.str)
+	csv := unsafe { res.vstring() }
+	mut indexes := []int{}
+	for part in csv.split(',') {
+		trimmed := part.trim_space()
+		if trimmed != '' {
+			indexes << trimmed.int()
+		}
+	}
+	return indexes
+}
+
+// set_list_selected_indexes selects the given row indexes (requires multi-select
+// for more than one row). Pass an empty array to clear the selection.
+pub fn (win &SimpleWindow) set_list_selected_indexes(name string, indexes []int) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		csv := indexes.map(it.str()).join(',')
+		C.window_set_list_selected_indexes(win.window_info, name.str, csv.str)
+	}
+	return win
+}
+
+// get_list_selected_texts returns the text of every selected list box row.
+pub fn (win &SimpleWindow) get_list_selected_texts(name string) []string {
+	items := win.get_list_items(name)
+	mut texts := []string{}
+	for idx in win.get_list_selected_indexes(name) {
+		if idx >= 0 && idx < items.len {
+			texts << items[idx]
+		}
+	}
+	return texts
+}
+
+// select_all_list_items selects every row of a list box (multi-select must be enabled).
+pub fn (win &SimpleWindow) select_all_list_items(name string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_select_all_list_items(win.window_info, name.str)
+	}
+	return win
+}
+
+// clear_list_selection deselects every row of a list box.
+pub fn (win &SimpleWindow) clear_list_selection(name string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_clear_list_selection(win.window_info, name.str)
+	}
+	return win
+}
+
+// remove_selected_list_items removes every selected row from a list box
+// (works with both single and multi selection). Returns the removed items.
+pub fn (win &SimpleWindow) remove_selected_list_items(name string) []string {
+	selected := win.get_list_selected_indexes(name)
+	if selected.len == 0 {
+		return []string{}
+	}
+	items := win.get_list_items(name)
+	mut removed := []string{}
+	mut remaining := []string{}
+	for i, item in items {
+		if i in selected {
+			removed << item
+		} else {
+			remaining << item
+		}
+	}
+	win.update_list_items(name, remaining)
+	return removed
+}
+
+// on_list_double_click registers a callback fired when a list box row is
+// double-clicked. The callback value is the 0-based row index as a string.
+pub fn (win &SimpleWindow) on_list_double_click(name string, callback StringEventCallback) &SimpleWindow {
+	idx := win.find_handler(name, 'dblclick')
+	mut handler := ControlEventHandler{
+		control_name: name
+		event_name:   'dblclick'
+		string_cb:    callback
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		if idx >= 0 {
+			w.handlers[idx] = handler
+		} else {
+			w.handlers << handler
+		}
+	}
+	return win
+}
+
 // ==========================================
 // 5. Settings Persistence
 // ==========================================

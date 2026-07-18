@@ -407,6 +407,7 @@ extern void vlang_dispatch_event(void *win_ptr, const char *name, const char *ev
 - (NSView *)makeTokenFieldWithName:(NSString *)name value:(NSString *)value;
 - (void)handleRadioChanged:(id)sender;
 - (void)handleSwitchChanged:(id)sender;
+- (void)handleListDoubleClick:(id)sender;
 - (void)setupMenuBar;
 - (NSMenu *)findOrCreateMenuWithName:(NSString *)menuName;
 - (void)handleMenuItemClicked:(id)sender;
@@ -1787,6 +1788,19 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
     NSInteger selectedRow = [tableView selectedRow];
     NSString *value = [NSString stringWithFormat:@"%ld", (long)selectedRow];
     vlang_dispatch_event(self.win_ptr, [name UTF8String], "change", [value UTF8String]);
+  }
+}
+
+- (void)handleListDoubleClick:(id)sender {
+  if (![sender isKindOfClass:[NSTableView class]]) return;
+  NSTableView *tableView = (NSTableView *)sender;
+  NSString *name = tableView.identifier;
+  if (name && self.win_ptr) {
+    NSInteger row = [tableView clickedRow];
+    if (row < 0) row = [tableView selectedRow];
+    if (row < 0) return;
+    NSString *value = [NSString stringWithFormat:@"%ld", (long)row];
+    vlang_dispatch_event(self.win_ptr, [name UTF8String], "dblclick", [value UTF8String]);
   }
 }
 
@@ -3545,6 +3559,8 @@ void *window_add_list_box_control(main__WindowInfo *info, const char *name, cons
     
     [tableView setDataSource:delegate];
     [tableView setDelegate:delegate];
+    [tableView setTarget:delegate];
+    [tableView setDoubleAction:@selector(handleListDoubleClick:)];
     
     [scrollView setDocumentView:tableView];
     
@@ -3638,6 +3654,104 @@ int window_get_list_selected(main__WindowInfo *info, const char *name) {
     dispatch_sync(dispatch_get_main_queue(), runBlock);
   }
   return result;
+}
+
+static NSTableView *listTableViewForKey(AppDelegate *delegate, NSString *key) {
+  NSView *view = delegate.controlsByName[key];
+  if ([view isKindOfClass:[NSScrollView class]]) {
+    NSScrollView *scroll = (NSScrollView *)view;
+    if ([scroll.documentView isKindOfClass:[NSTableView class]]) {
+      return (NSTableView *)scroll.documentView;
+    }
+  }
+  return nil;
+}
+
+void window_set_list_multi_select(main__WindowInfo *info, const char *name, int enabled) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  
+  dispatch_async(dispatch_get_main_queue(), ^{
+    NSTableView *tableView = listTableViewForKey(delegate, key);
+    if (tableView) {
+      [tableView setAllowsMultipleSelection:enabled ? YES : NO];
+    }
+  });
+}
+
+char *window_get_list_selected_indexes(main__WindowInfo *info, const char *name) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  
+  __block char *result = NULL;
+  void (^runBlock)(void) = ^{
+    NSTableView *tableView = listTableViewForKey(delegate, key);
+    if (tableView) {
+      NSMutableArray *parts = [NSMutableArray array];
+      NSIndexSet *indexes = [tableView selectedRowIndexes];
+      [indexes enumerateIndexesUsingBlock:^(NSUInteger idx, BOOL *stop) {
+        [parts addObject:[NSString stringWithFormat:@"%lu", (unsigned long)idx]];
+      }];
+      result = strdup([[parts componentsJoinedByString:@","] UTF8String]);
+    }
+  };
+  
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return result ? result : strdup("");
+}
+
+void window_set_list_selected_indexes(main__WindowInfo *info, const char *name, const char *csv_indexes) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  NSString *csv = nsstring(csv_indexes);
+  
+  dispatch_async(dispatch_get_main_queue(), ^{
+    NSTableView *tableView = listTableViewForKey(delegate, key);
+    if (!tableView) return;
+    NSMutableIndexSet *indexes = [NSMutableIndexSet indexSet];
+    for (NSString *part in [csv componentsSeparatedByString:@","]) {
+      NSString *trimmed = [part stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+      if (trimmed.length == 0) continue;
+      NSInteger idx = [trimmed integerValue];
+      if (idx >= 0 && idx < [tableView numberOfRows]) {
+        [indexes addIndex:(NSUInteger)idx];
+      }
+    }
+    if (indexes.count == 0) {
+      [tableView deselectAll:nil];
+    } else {
+      [tableView selectRowIndexes:indexes byExtendingSelection:NO];
+      [tableView scrollRowToVisible:(NSInteger)[indexes firstIndex]];
+    }
+  });
+}
+
+void window_select_all_list_items(main__WindowInfo *info, const char *name) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  
+  dispatch_async(dispatch_get_main_queue(), ^{
+    NSTableView *tableView = listTableViewForKey(delegate, key);
+    if (tableView) {
+      [tableView selectAll:nil];
+    }
+  });
+}
+
+void window_clear_list_selection(main__WindowInfo *info, const char *name) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  
+  dispatch_async(dispatch_get_main_queue(), ^{
+    NSTableView *tableView = listTableViewForKey(delegate, key);
+    if (tableView) {
+      [tableView deselectAll:nil];
+    }
+  });
 }
 
 void *window_add_image_control(main__WindowInfo *info, const char *name, const char *file_path) {
