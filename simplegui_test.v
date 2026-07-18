@@ -372,16 +372,16 @@ fn test_new_control_helpers_and_window_constraints() {
 	win.bounce_dock(false)
 
 	// Test window focus/blur/minimize/restore events
-	win.on_window_focus(fn (mut w &simplegui.SimpleWindow) {
+	win.on_window_focus(fn (mut w simplegui.SimpleWindow) {
 		println('focused!')
 	})
-	win.on_window_blur(fn (mut w &simplegui.SimpleWindow) {
+	win.on_window_blur(fn (mut w simplegui.SimpleWindow) {
 		println('blurred!')
 	})
-	win.on_window_minimize(fn (mut w &simplegui.SimpleWindow) {
+	win.on_window_minimize(fn (mut w simplegui.SimpleWindow) {
 		println('minimized!')
 	})
-	win.on_window_restore(fn (mut w &simplegui.SimpleWindow) {
+	win.on_window_restore(fn (mut w simplegui.SimpleWindow) {
 		println('restored!')
 	})
 
@@ -698,6 +698,7 @@ fn test_group_layout_nesting() {
 
 fn test_control_font_customization_and_dialog_choices() {
 	mut win := simplegui.new_simple_window('Test Window', 100, 100)
+
 	win.add_label('header', 'Welcome')
 		.bold(true)
 		.font_name('Courier')
@@ -716,21 +717,29 @@ fn test_control_font_customization_and_dialog_choices() {
 }
 
 struct ProjectRow {
-	id          int
-	name        string
-	is_active   bool
+	id        int
+	name      string
+	is_active bool
 }
 
 fn test_reflection_table_loading_and_styles() {
 	mut win := simplegui.new_simple_window('Test Window', 100, 100)
 	win.add_table('projects', ['ID', 'Name', 'Active'])
-	
+
 	items_list := [
-		ProjectRow{ id: 101, name: "Delphi Compiler", is_active: true },
-		ProjectRow{ id: 102, name: "Turbo Pascal", is_active: false },
+		ProjectRow{
+			id:        101
+			name:      'Delphi Compiler'
+			is_active: true
+		},
+		ProjectRow{
+			id:        102
+			name:      'Turbo Pascal'
+			is_active: false
+		},
 	]
 	win.load_table_from_structs('projects', items_list)
-	
+
 	// Test alert style compilability
 	win.alert_with_style('Warning Title', 'Warning Message', 'warning')
 	win.alert_with_style('Error Title', 'Critical Error', 'error')
@@ -741,7 +750,7 @@ fn test_reflection_table_loading_and_styles() {
 
 fn test_sys_apis() {
 	win := simplegui.SimpleWindow{}
-	
+
 	// Test environment
 	win.set_env('SIMPLEGUI_TEST_KEY', 'simplegui_val')
 	assert win.get_env('SIMPLEGUI_TEST_KEY') == 'simplegui_val'
@@ -786,20 +795,20 @@ fn test_sys_apis() {
 	// Files and Directories
 	test_dir := 'temp_test_sys_dir'
 	test_file := 'temp_test_sys_dir/test_file.txt'
-	
+
 	if win.file_exists(test_dir) {
 		win.delete_directory(test_dir) or {}
 	}
-	
+
 	// single directory
 	win.create_single_directory(test_dir) or { panic(err) }
 	assert win.is_dir(test_dir) == true
-	
+
 	// write/read lines
 	win.write_lines(test_file, ['hello', 'world']) or { panic(err) }
 	assert win.file_exists(test_file) == true
 	assert win.is_file(test_file) == true
-	
+
 	lines := win.read_lines(test_file) or { panic(err) }
 	assert lines.len == 2
 	assert lines[0] == 'hello'
@@ -853,7 +862,7 @@ fn test_sys_apis() {
 	if !win.file_exists(cmd_path) {
 		cmd_path = '/usr/bin/echo'
 	}
-	
+
 	mut p := win.spawn_process(cmd_path, ['hello_process'], map[string]string{}) or { panic(err) }
 	p.wait()
 	out := p.read()
@@ -890,8 +899,14 @@ fn test_stdlib_apis() {
 
 	// Test JSON Map Lists
 	map_list := [
-		{'name': 'Alice', 'role': 'admin'},
-		{'name': 'Bob', 'role': 'user'}
+		{
+			'name': 'Alice'
+			'role': 'admin'
+		},
+		{
+			'name': 'Bob'
+			'role': 'user'
+		},
 	]
 	json_str := win.json_encode_map_list(map_list)
 	decoded_list := win.json_decode_map_list(json_str)
@@ -977,3 +992,53 @@ fn test_new_window_controls() {
 	assert win.get_movable_by_window_background() == false
 }
 
+fn test_table_row_management_helpers() {
+	mut win := simplegui.SimpleWindow{}
+	win.add_table('inventory', ['ID', 'Name', 'Qty'])
+
+	// Starts empty
+	assert win.get_table_row_count('inventory') == 0
+	assert win.get_table_rows('inventory') == [][]string{}
+
+	// Bulk load + tracking
+	win.set_table_rows('inventory', [['1', 'Bolt', '40'], ['2', 'Nut', '75']])
+	assert win.get_table_row_count('inventory') == 2
+	assert win.get_table_row('inventory', 0) == ['1', 'Bolt', '40']
+	assert win.get_table_cell('inventory', 1, 1) == 'Nut'
+	assert win.get_table_cell('inventory', 9, 9) == ''
+	assert win.get_table_row('inventory', 9) == []string{}
+
+	// Append / insert / update
+	win.add_table_row('inventory', ['3', 'Washer', '120'])
+	assert win.get_table_row_count('inventory') == 3
+	win.insert_table_row('inventory', 0, ['0', 'Screw', '10'])
+	assert win.get_table_row('inventory', 0) == ['0', 'Screw', '10']
+	win.update_table_row('inventory', 0, ['0', 'Screw', '11'])
+	assert win.get_table_cell('inventory', 0, 2) == '11'
+	win.set_table_cell('inventory', 0, 1, 'Wood Screw')
+	assert win.get_table_cell('inventory', 0, 1) == 'Wood Screw'
+
+	// Search
+	assert win.find_table_row('inventory', 1, 'Nut') == 2
+	assert win.find_table_row('inventory', 1, 'Missing') == -1
+
+	// Remove / clear
+	win.remove_table_row('inventory', 0)
+	assert win.get_table_row_count('inventory') == 3
+	win.remove_table_row('inventory', 99) // out of range is a no-op
+	assert win.get_table_row_count('inventory') == 3
+	win.clear_table('inventory')
+	assert win.get_table_row_count('inventory') == 0
+}
+
+fn test_table_event_helpers_are_available() {
+	mut win := simplegui.SimpleWindow{}
+	win.add_table('inventory', ['ID', 'Name'])
+	win.set_table_rows('inventory', [['1', 'Bolt']])
+
+	win.on_table_select('inventory', fn (mut w simplegui.SimpleWindow, value string) {})
+	win.on_table_double_click('inventory', fn (mut w simplegui.SimpleWindow, value string) {})
+
+	assert win.dispatch_event('inventory', 'change', '0') == true
+	assert win.dispatch_event('inventory', 'dblclick', '0') == true
+}

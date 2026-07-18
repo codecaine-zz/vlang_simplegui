@@ -1150,6 +1150,8 @@ Updates the entire set of row cells displayed inside the table grid.
 
 Populates and renders a scrollable multi-column table widget automatically using field names and values from an array of V structs of generic type `T`. Supports compile-time reflection of `string`, `int`, and `bool` fields.
 
+Table rows are tracked automatically on the V side, enabling the incremental row-management, selection, and event helpers described in [Section 17](#17-ergonomic-helpers) (`add_table_row`, `remove_selected_table_rows`, `on_table_select`, `on_table_double_click`, and more).
+
 ---
 
 ## 12b. Hierarchical Tree View
@@ -1271,7 +1273,7 @@ Sets the current control values as the new baseline state, causing `is_dirty()` 
 
 ## 17. Ergonomic Helpers
 
-A set of high-level shortcuts designed to make everyday tasks one-liners. See `demos/easy_api_demo.v`, `demos/todo_list_demo.v`, and `demos/save_restore_demo.v` for working examples.
+A set of high-level shortcuts designed to make everyday tasks one-liners. See `demos/easy_api_demo.v`, `demos/todo_list_demo.v`, `demos/table_manager_demo.v`, and `demos/save_restore_demo.v` for working examples.
 
 ### Dialog Shortcuts
 
@@ -1345,6 +1347,34 @@ One-call label + control rows (no `begin_row`/`end_row` needed):
 - `win.after(ms int, callback)` runs the callback once after the delay (alias of `run_after`).
 - `win.on_change_many(names []string, callback)` binds a change callback to multiple controls.
 - `win.on_click_many(names []string, callback)` binds a click callback to multiple controls.
+
+### Table Row Management
+
+Rows are tracked automatically for every table, so you can manage them incrementally (see `demos/table_manager_demo.v`):
+
+- `win.get_table_rows(name) [][]string` returns every row.
+- `win.get_table_row(name, index) []string` returns one row (empty array when out of range).
+- `win.get_table_row_count(name) int` returns the row count.
+- `win.get_table_cell(name, row, col) string` / `win.set_table_cell(name, row, col, value)` read/write a single cell.
+- `win.add_table_row(name, row []string)` appends a row.
+- `win.insert_table_row(name, index, row)` inserts a row at a 0-based index.
+- `win.update_table_row(name, index, row)` replaces a row.
+- `win.remove_table_row(name, index)` removes a row.
+- `win.clear_table(name)` removes every row.
+- `win.find_table_row(name, column, value) int` returns the first row index whose cell matches, or `-1`.
+
+### Table Selection & Events
+
+- `win.get_table_selected(name) int` returns the selected row index (`-1` when none).
+- `win.set_table_selected(name, index)` selects a row programmatically (`-1` clears).
+- `win.get_table_selected_row(name) []string` returns the selected row's cells.
+- `win.set_table_multi_select(name, enabled bool)` enables Cmd/Shift-click multiple row selection.
+- `win.get_table_selected_indexes(name) []int` returns every selected row index (ascending).
+- `win.get_table_selected_rows(name) [][]string` returns the cells of every selected row.
+- `win.clear_table_selection(name)` deselects everything.
+- `win.remove_selected_table_rows(name) [][]string` removes all selected rows and returns them (works in both single and multi mode).
+- `win.on_table_select(name, callback StringEventCallback)` fires on selection change; the callback receives the selected row index as a string (`-1` when cleared).
+- `win.on_table_double_click(name, callback StringEventCallback)` fires when a row is double-clicked; the callback receives the 0-based row index as a string.
 
 ### Quick Validation
 

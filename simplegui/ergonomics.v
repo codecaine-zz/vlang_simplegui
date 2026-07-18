@@ -438,7 +438,179 @@ pub fn (win &SimpleWindow) on_click_many(names []string, callback VoidEventCallb
 }
 
 // ==========================================
-// 8. Quick Validation
+// 8. Table Row Management
+// ==========================================
+
+// get_table_rows returns every row of a table (each row is a []string of cell values).
+pub fn (win &SimpleWindow) get_table_rows(name string) [][]string {
+	return win.table_rows[name] or { [][]string{} }
+}
+
+// get_table_row returns the row at the given 0-based index, or an empty array.
+pub fn (win &SimpleWindow) get_table_row(name string, index int) []string {
+	rows := win.get_table_rows(name)
+	if index >= 0 && index < rows.len {
+		return rows[index]
+	}
+	return []string{}
+}
+
+// get_table_row_count returns the number of rows in a table.
+pub fn (win &SimpleWindow) get_table_row_count(name string) int {
+	return win.get_table_rows(name).len
+}
+
+// get_table_cell returns a single cell value, or an empty string when out of range.
+pub fn (win &SimpleWindow) get_table_cell(name string, row int, col int) string {
+	cells := win.get_table_row(name, row)
+	if col >= 0 && col < cells.len {
+		return cells[col]
+	}
+	return ''
+}
+
+// set_table_cell updates a single cell of a table in place.
+pub fn (win &SimpleWindow) set_table_cell(name string, row int, col int, value string) &SimpleWindow {
+	mut rows := win.get_table_rows(name)
+	if row >= 0 && row < rows.len && col >= 0 && col < rows[row].len {
+		rows[row][col] = value
+		win.set_table_rows(name, rows)
+	}
+	return win
+}
+
+// add_table_row appends a row to the end of a table.
+pub fn (win &SimpleWindow) add_table_row(name string, row []string) &SimpleWindow {
+	mut rows := win.get_table_rows(name)
+	rows << row
+	return win.set_table_rows(name, rows)
+}
+
+// insert_table_row inserts a row at the given 0-based index.
+pub fn (win &SimpleWindow) insert_table_row(name string, index int, row []string) &SimpleWindow {
+	mut rows := win.get_table_rows(name)
+	if index >= 0 && index <= rows.len {
+		rows.insert(index, row)
+		win.set_table_rows(name, rows)
+	}
+	return win
+}
+
+// update_table_row replaces the row at the given 0-based index.
+pub fn (win &SimpleWindow) update_table_row(name string, index int, row []string) &SimpleWindow {
+	mut rows := win.get_table_rows(name)
+	if index >= 0 && index < rows.len {
+		rows[index] = row
+		win.set_table_rows(name, rows)
+	}
+	return win
+}
+
+// remove_table_row removes the row at the given 0-based index.
+pub fn (win &SimpleWindow) remove_table_row(name string, index int) &SimpleWindow {
+	mut rows := win.get_table_rows(name)
+	if index >= 0 && index < rows.len {
+		rows.delete(index)
+		win.set_table_rows(name, rows)
+	}
+	return win
+}
+
+// clear_table removes every row from a table.
+pub fn (win &SimpleWindow) clear_table(name string) &SimpleWindow {
+	return win.set_table_rows(name, [][]string{})
+}
+
+// find_table_row returns the 0-based index of the first row whose cell in the
+// given column equals value, or -1 when not found.
+pub fn (win &SimpleWindow) find_table_row(name string, column int, value string) int {
+	for i, row in win.get_table_rows(name) {
+		if column >= 0 && column < row.len && row[column] == value {
+			return i
+		}
+	}
+	return -1
+}
+
+// get_table_selected returns the 0-based index of the selected table row (-1 when none).
+pub fn (win &SimpleWindow) get_table_selected(name string) int {
+	return win.get_list_selected(name)
+}
+
+// set_table_selected selects the table row at the given 0-based index
+// (pass -1 to clear the selection).
+pub fn (win &SimpleWindow) set_table_selected(name string, index int) &SimpleWindow {
+	return win.set_list_selected(name, index)
+}
+
+// get_table_selected_row returns the cell values of the selected row, or an empty array.
+pub fn (win &SimpleWindow) get_table_selected_row(name string) []string {
+	return win.get_table_row(name, win.get_table_selected(name))
+}
+
+// set_table_multi_select enables or disables multiple row selection on a table
+// (users can then Cmd/Shift-click to select several rows).
+pub fn (win &SimpleWindow) set_table_multi_select(name string, enabled bool) &SimpleWindow {
+	return win.set_list_multi_select(name, enabled)
+}
+
+// get_table_selected_indexes returns every selected table row index (0-based, ascending).
+pub fn (win &SimpleWindow) get_table_selected_indexes(name string) []int {
+	return win.get_list_selected_indexes(name)
+}
+
+// get_table_selected_rows returns the cell values of every selected table row.
+pub fn (win &SimpleWindow) get_table_selected_rows(name string) [][]string {
+	rows := win.get_table_rows(name)
+	mut selected := [][]string{}
+	for idx in win.get_table_selected_indexes(name) {
+		if idx >= 0 && idx < rows.len {
+			selected << rows[idx]
+		}
+	}
+	return selected
+}
+
+// clear_table_selection deselects every row of a table.
+pub fn (win &SimpleWindow) clear_table_selection(name string) &SimpleWindow {
+	return win.clear_list_selection(name)
+}
+
+// remove_selected_table_rows removes every selected row from a table
+// (works with both single and multi selection). Returns the removed rows.
+pub fn (win &SimpleWindow) remove_selected_table_rows(name string) [][]string {
+	selected := win.get_table_selected_indexes(name)
+	if selected.len == 0 {
+		return [][]string{}
+	}
+	rows := win.get_table_rows(name)
+	mut removed := [][]string{}
+	mut remaining := [][]string{}
+	for i, row in rows {
+		if i in selected {
+			removed << row
+		} else {
+			remaining << row
+		}
+	}
+	win.set_table_rows(name, remaining)
+	return removed
+}
+
+// on_table_select registers a callback fired when the table selection changes.
+// The callback value is the 0-based selected row index as a string (-1 when cleared).
+pub fn (win &SimpleWindow) on_table_select(name string, callback StringEventCallback) &SimpleWindow {
+	return win.on_change(name, callback)
+}
+
+// on_table_double_click registers a callback fired when a table row is
+// double-clicked. The callback value is the 0-based row index as a string.
+pub fn (win &SimpleWindow) on_table_double_click(name string, callback StringEventCallback) &SimpleWindow {
+	return win.on_list_double_click(name, callback)
+}
+
+// ==========================================
+// 9. Quick Validation
 // ==========================================
 
 // require_fields checks that every named control has a non-blank value.

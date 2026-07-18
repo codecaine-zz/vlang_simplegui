@@ -194,33 +194,33 @@ pub type FileDropCallback = fn (mut win SimpleWindow, files []string)
 pub type ControlValidator = fn (value string) string
 
 pub struct WindowConfig {
-	pub mut:
-		title             string
-		width             int
-		height            int
-		padding           int
-		spacing           int
-		background_color  string
-		font_color        string
-		always_on_top     bool
-		responsive_layout bool
-		resizable                    bool
-		minimizable                  bool
-		maximizable                  bool
-		closable                     bool
-		has_shadow                   bool
-		movable_by_window_background bool
+pub mut:
+	title                        string
+	width                        int
+	height                       int
+	padding                      int
+	spacing                      int
+	background_color             string
+	font_color                   string
+	always_on_top                bool
+	responsive_layout            bool
+	resizable                    bool
+	minimizable                  bool
+	maximizable                  bool
+	closable                     bool
+	has_shadow                   bool
+	movable_by_window_background bool
 }
 
 pub struct WindowParams {
-	title             string
-	width             int
-	height            int
-	win_ptr           voidptr
-	padding           int
-	spacing           int
-	always_on_top     int
-	responsive_layout int
+	title                        string
+	width                        int
+	height                       int
+	win_ptr                      voidptr
+	padding                      int
+	spacing                      int
+	always_on_top                int
+	responsive_layout            int
 	resizable                    int
 	minimizable                  int
 	maximizable                  int
@@ -237,28 +237,28 @@ pub struct WindowInfo {
 @[heap]
 pub struct SimpleWindow {
 mut:
-	window_info       &WindowInfo = unsafe { nil }
-	width             int
-	height            int
-	title             string
-	controls          []ControlEntry
-	status_text       string
-	handlers          []ControlEventHandler
-	background_color  string
-	font_color        string
-	padding           int
-	spacing           int
-	always_on_top     bool
-	responsive_layout bool = true
-	placeholders      map[string]string
-	errors            map[string]string
-	default_button    string
-	debug_mode        bool
-	last_control      string
-	min_width         int
-	min_height        int
-	max_width         int
-	max_height        int
+	window_info                  &WindowInfo = unsafe { nil }
+	width                        int
+	height                       int
+	title                        string
+	controls                     []ControlEntry
+	status_text                  string
+	handlers                     []ControlEventHandler
+	background_color             string
+	font_color                   string
+	padding                      int
+	spacing                      int
+	always_on_top                bool
+	responsive_layout            bool = true
+	placeholders                 map[string]string
+	errors                       map[string]string
+	default_button               string
+	debug_mode                   bool
+	last_control                 string
+	min_width                    int
+	min_height                   int
+	max_width                    int
+	max_height                   int
 	resizable                    bool = true
 	minimizable                  bool = true
 	maximizable                  bool = true
@@ -266,8 +266,9 @@ mut:
 	has_shadow                   bool = true
 	movable_by_window_background bool
 	list_items                   map[string][]string
+	table_rows                   map[string][][]string
 pub mut:
-	ws_client         voidptr = unsafe { nil }
+	ws_client voidptr = unsafe { nil }
 }
 
 struct ControlEntry {
@@ -302,9 +303,9 @@ mut:
 
 pub fn new_simple_window(title string, width int, height int) &SimpleWindow {
 	mut win := &SimpleWindow{
-		width:             width
-		height:            height
-		title:             title
+		width:                        width
+		height:                       height
+		title:                        title
 		responsive_layout:            true
 		resizable:                    true
 		minimizable:                  true
@@ -322,14 +323,14 @@ pub fn new_simple_window(title string, width int, height int) &SimpleWindow {
 fn (win &SimpleWindow) ensure_window() {
 	if win.window_info == unsafe { nil } {
 		params := WindowParams{
-			title:             win.title
-			width:             win.width
-			height:            win.height
-			win_ptr:           win
-			padding:           win.padding
-			spacing:           win.spacing
-			always_on_top:     if win.always_on_top { 1 } else { 0 }
-			responsive_layout: if win.responsive_layout { 1 } else { 0 }
+			title:                        win.title
+			width:                        win.width
+			height:                       win.height
+			win_ptr:                      win
+			padding:                      win.padding
+			spacing:                      win.spacing
+			always_on_top:                if win.always_on_top { 1 } else { 0 }
+			responsive_layout:            if win.responsive_layout { 1 } else { 0 }
 			resizable:                    if win.resizable { 1 } else { 0 }
 			minimizable:                  if win.minimizable { 1 } else { 0 }
 			maximizable:                  if win.maximizable { 1 } else { 0 }
@@ -846,7 +847,8 @@ pub fn (win &SimpleWindow) add_combo_box(name string, items []string, selected s
 		for item in items {
 			c_items << item.str
 		}
-		C.window_add_combo_box_control(win.window_info, real_name.str, c_items.data, items.len, selected.str)
+		C.window_add_combo_box_control(win.window_info, real_name.str, c_items.data, items.len,
+			selected.str)
 	}
 	return win
 }
@@ -864,7 +866,8 @@ pub fn (win &SimpleWindow) add_level_indicator(name string, style int, min_val i
 		w.upsert_control(real_name, 'levelindicator', '', value.str(), false, value)
 	}
 	if win.window_info != unsafe { nil } {
-		C.window_add_level_indicator_control(win.window_info, real_name.str, style, min_val, max_val, value)
+		C.window_add_level_indicator_control(win.window_info, real_name.str, style, min_val,
+			max_val, value)
 	}
 	return win
 }
@@ -883,7 +886,8 @@ pub fn (win &SimpleWindow) add_spinner(name string, active bool) &SimpleWindow {
 	}
 	unsafe {
 		mut w := &SimpleWindow(win)
-		w.upsert_control(real_name, 'spinner', '', if active { 'true' } else { 'false' }, active, 0)
+		w.upsert_control(real_name, 'spinner', '', if active { 'true' } else { 'false' },
+			active, 0)
 	}
 	if win.window_info != unsafe { nil } {
 		act_val := if active { 1 } else { 0 }
@@ -930,15 +934,15 @@ pub fn (win &SimpleWindow) add_token_field(name string, value string) &SimpleWin
 
 pub fn (win &SimpleWindow) configure(callback fn (mut cfg WindowConfig)) &SimpleWindow {
 	mut cfg := WindowConfig{
-		title:             win.title
-		width:             win.width
-		height:            win.height
-		padding:           win.padding
-		spacing:           win.spacing
-		background_color:  win.background_color
-		font_color:        win.font_color
-		always_on_top:     win.always_on_top
-		responsive_layout: win.responsive_layout
+		title:                        win.title
+		width:                        win.width
+		height:                       win.height
+		padding:                      win.padding
+		spacing:                      win.spacing
+		background_color:             win.background_color
+		font_color:                   win.font_color
+		always_on_top:                win.always_on_top
+		responsive_layout:            win.responsive_layout
 		resizable:                    win.resizable
 		minimizable:                  win.minimizable
 		maximizable:                  win.maximizable
@@ -1475,7 +1479,8 @@ pub fn (win &SimpleWindow) clear(name string) &SimpleWindow {
 	} else if entry.kind in ['number', 'slider', 'progress', 'levelindicator'] {
 		win.set_value_int(name, 0)
 	} else if entry.kind in ['input', 'password', 'textarea', 'date', 'mode', 'theme', 'listbox',
-		'color', 'search', 'dropdown', 'segmented', 'radiogroup', 'combobox', 'pathcontrol', 'tokenfield'] {
+		'color', 'search', 'dropdown', 'segmented', 'radiogroup', 'combobox', 'pathcontrol',
+		'tokenfield'] {
 		win.set_text(name, '')
 	}
 	return win
@@ -1496,7 +1501,8 @@ pub fn (win &SimpleWindow) reset_form() &SimpleWindow {
 		} else if entry.kind in ['number', 'slider', 'progress', 'levelindicator'] {
 			win.set_value_int(entry.name, entry.initial_number)
 		} else if entry.kind in ['input', 'password', 'textarea', 'date', 'mode', 'theme', 'listbox',
-			'color', 'search', 'dropdown', 'segmented', 'radiogroup', 'combobox', 'pathcontrol', 'tokenfield'] {
+			'color', 'search', 'dropdown', 'segmented', 'radiogroup', 'combobox', 'pathcontrol',
+			'tokenfield'] {
 			win.set_text(entry.name, entry.initial_value)
 		}
 	}
@@ -2380,7 +2386,8 @@ pub fn (win &SimpleWindow) choice_dialog(title string, message string, choices [
 		for choice in choices {
 			c_choices << choice.str
 		}
-		return C.window_show_choice_dialog(win.window_info, title.str, message.str, c_choices.data, choices.len)
+		return C.window_show_choice_dialog(win.window_info, title.str, message.str, c_choices.data,
+			choices.len)
 	}
 	return -1
 }
@@ -2698,7 +2705,8 @@ pub fn (win &SimpleWindow) add_context_menu_item(control_name string, item_title
 	handler_name := 'context_${control_name}_${item_title}'
 	win.on_click(handler_name, callback)
 	if win.window_info != unsafe { nil } {
-		C.window_add_context_menu_item(win.window_info, control_name.str, item_title.str, handler_name.str)
+		C.window_add_context_menu_item(win.window_info, control_name.str, item_title.str,
+			handler_name.str)
 	}
 	return win
 }
@@ -2818,6 +2826,10 @@ pub fn (win &SimpleWindow) add_table(name string, columns []string) &SimpleWindo
 }
 
 pub fn (win &SimpleWindow) set_table_rows(name string, rows [][]string) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.table_rows[name] = rows.map(it.clone())
+	}
 	if win.window_info != unsafe { nil } {
 		if rows.len == 0 {
 			C.window_set_table_rows(win.window_info, name.str, unsafe { nil }, 0, 0)

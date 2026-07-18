@@ -3896,6 +3896,8 @@ void *window_add_table_control(main__WindowInfo *info, const char *name, const c
     
     [tableView setDataSource:delegate];
     [tableView setDelegate:delegate];
+    [tableView setTarget:delegate];
+    [tableView setDoubleAction:@selector(handleListDoubleClick:)];
     
     [scrollView setDocumentView:tableView];
     
