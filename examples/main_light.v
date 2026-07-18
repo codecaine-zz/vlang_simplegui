@@ -1,12 +1,12 @@
-// Lightweight V demo for the Python-like control API.
+// Light mode version of the V demo for the Python-like control API.
 module main
 
 import simplegui
 
 fn main() {
 	// Create the window and give it a title.
-	mut gui := simplegui.new_simple_window('V Native GUI Demo', 760, 950)
-	gui.set_title('V Native GUI Demo')
+	mut gui := simplegui.new_simple_window('V Native GUI Demo (Light)', 760, 950)
+	gui.set_title('V Native GUI Demo (Light)')
 
 	// Add the native controls. Each one gets a name so it can be found/updated from V.
 	gui.add_label('intro', 'Create controls with one small call')
@@ -51,9 +51,8 @@ fn main() {
 	gui.on_change('mode', on_mode_changed)
 	gui.on_change('ready', on_ready_changed)
 
-	// Make the window look nicer with colors.
-	gui.set_background_color('#2B2E2A')
-	gui.set_font_color('white')
+	// Apply light mode theme defaults.
+	gui.set_theme('light')
 
 	// Customize layout dimensions and fonts
 	gui.set_control_font_size('intro', 18)
@@ -70,14 +69,6 @@ fn main() {
 	gui.set_checked('ready', false)
 	gui.set_value_int('number', 42)
 	gui.set_status('Ready for more controls')
-
-	// Read back values and print them to the terminal for demonstration.
-	println('name = ${gui.get_text('name')}')
-	println('city = ${gui.get_text('city')}')
-	println('notes = ${gui.get_text('notes')}')
-	println('ready = ${gui.get_checked('ready')}')
-	println('number = ${gui.get_value_int('number')}')
-	println('status = ${gui.get_status()}')
 
 	// Show the window and start the app loop.
 	gui.run()
@@ -128,8 +119,6 @@ fn on_toggle_changed(mut win &simplegui.SimpleWindow, value string) {
 	enabled := value == 'true'
 	msg := if enabled { 'Advanced mode enabled.' } else { 'Advanced mode disabled.' }
 	win.set_status(msg)
-	
-	// Dynamically hide/show the Notes textarea based on this toggle checkbox
 	win.set_control_visible('notes', enabled)
 }
 

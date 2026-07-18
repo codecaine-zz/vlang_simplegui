@@ -219,9 +219,16 @@ extern void vlang_dispatch_event(void *win_ptr, const char *name, const char *ev
   if (hasFocus) {
     self.layer.borderColor = [NSColor controlAccentColor].CGColor;
     self.layer.borderWidth = 1.5;
+    self.layer.shadowColor = [NSColor controlAccentColor].CGColor;
+    self.layer.shadowOffset = CGSizeZero;
+    self.layer.shadowRadius = 3.0;
+    self.layer.shadowOpacity = 0.35;
+    self.layer.masksToBounds = NO;
   } else {
     self.layer.borderColor = [NSColor separatorColor].CGColor;
     self.layer.borderWidth = 1.0;
+    self.layer.shadowColor = nil;
+    self.layer.shadowOpacity = 0.0;
   }
 }
 - (BOOL)becomeFirstResponder {
@@ -271,9 +278,16 @@ extern void vlang_dispatch_event(void *win_ptr, const char *name, const char *ev
   if (hasFocus) {
     self.layer.borderColor = [NSColor controlAccentColor].CGColor;
     self.layer.borderWidth = 1.5;
+    self.layer.shadowColor = [NSColor controlAccentColor].CGColor;
+    self.layer.shadowOffset = CGSizeZero;
+    self.layer.shadowRadius = 3.0;
+    self.layer.shadowOpacity = 0.35;
+    self.layer.masksToBounds = NO;
   } else {
     self.layer.borderColor = [NSColor separatorColor].CGColor;
     self.layer.borderWidth = 1.0;
+    self.layer.shadowColor = nil;
+    self.layer.shadowOpacity = 0.0;
   }
 }
 - (BOOL)becomeFirstResponder {
@@ -361,9 +375,16 @@ extern void vlang_dispatch_event(void *win_ptr, const char *name, const char *ev
   if (hasFocus) {
     self.layer.borderColor = [NSColor controlAccentColor].CGColor;
     self.layer.borderWidth = 1.5;
+    self.layer.shadowColor = [NSColor controlAccentColor].CGColor;
+    self.layer.shadowOffset = CGSizeZero;
+    self.layer.shadowRadius = 3.0;
+    self.layer.shadowOpacity = 0.35;
+    self.layer.masksToBounds = NO;
   } else {
     self.layer.borderColor = [NSColor separatorColor].CGColor;
     self.layer.borderWidth = 1.0;
+    self.layer.shadowColor = nil;
+    self.layer.shadowOpacity = 0.0;
   }
 }
 - (BOOL)becomeFirstResponder {
@@ -589,8 +610,18 @@ static NSColor *colorFromString(const char *colorString) {
   return [NSColor controlAccentColor];
 }
 
+static BOOL isDarkColor(NSColor *color);
+static NSColor *getContrastColor(NSColor *color);
+
+static NSColor *primaryButtonColor(void) {
+  if (@available(macOS 10.14, *)) {
+    return [NSColor controlAccentColor];
+  }
+  return [NSColor systemBlueColor];
+}
+
 static NSColor *modernAccentColor(void) {
-  return [NSColor controlAccentColor];
+  return primaryButtonColor();
 }
 
 static NSColor *modernSurfaceColor(void) {
@@ -601,12 +632,42 @@ static NSColor *modernSurfaceColor(void) {
   return [NSColor colorWithSRGBRed:0.97 green:0.97 blue:0.985 alpha:0.85];
 }
 
+static BOOL isSystemDark(void) {
+  NSAppearance *appearance = [NSApp effectiveAppearance];
+  return [appearance bestMatchFromAppearancesWithNames:@[NSAppearanceNameDarkAqua, NSAppearanceNameAqua]] == NSAppearanceNameDarkAqua;
+}
+
+static NSColor *modernElevatedSurfaceColorWithDark(BOOL isDark) {
+  if (isDark) {
+    return [NSColor colorWithSRGBRed:0.18 green:0.18 blue:0.22 alpha:0.6];
+  }
+  return [NSColor colorWithSRGBRed:0.95 green:0.95 blue:0.97 alpha:0.7];
+}
+
 static NSColor *modernElevatedSurfaceColor(void) {
-  return [NSColor controlBackgroundColor];
+  return modernElevatedSurfaceColorWithDark(isSystemDark());
+}
+
+static NSColor *modernCardColorWithDark(BOOL isDark) {
+  if (isDark) {
+    return [NSColor colorWithSRGBRed:1.0 green:1.0 blue:1.0 alpha:0.04];
+  }
+  return [NSColor colorWithSRGBRed:0.0 green:0.0 blue:0.0 alpha:0.03];
+}
+
+static NSColor *modernCardColor(void) {
+  return modernCardColorWithDark(isSystemDark());
+}
+
+static NSColor *modernBorderColorWithDark(BOOL isDark) {
+  if (isDark) {
+    return [NSColor colorWithSRGBRed:0.25 green:0.25 blue:0.28 alpha:0.4];
+  }
+  return [NSColor colorWithSRGBRed:0.75 green:0.75 blue:0.75 alpha:0.4];
 }
 
 static NSColor *modernBorderColor(void) {
-  return [NSColor separatorColor];
+  return modernBorderColorWithDark(isSystemDark());
 }
 
 static NSColor *modernTextColor(void) {
@@ -630,6 +691,95 @@ static void setButtonTitleColor(NSButton *button, NSColor *color) {
   NSAttributedString *attrTitle = [[NSAttributedString alloc] initWithString:title attributes:attrs];
   [button setAttributedTitle:attrTitle];
 }
+
+static NSColor *adjustColorBrightness(NSColor *color, CGFloat factor) {
+  NSColor *rgbColor = [color colorUsingColorSpace:[NSColorSpace deviceRGBColorSpace]];
+  if (!rgbColor) return color;
+  CGFloat r=0, g=0, b=0, a=0;
+  [rgbColor getRed:&r green:&g blue:&b alpha:&a];
+  r = MIN(MAX(r * factor, 0.0), 1.0);
+  g = MIN(MAX(g * factor, 0.0), 1.0);
+  b = MIN(MAX(b * factor, 0.0), 1.0);
+  return [NSColor colorWithDeviceRed:r green:g blue:b alpha:a];
+}
+
+static NSColor *hoverColor(NSColor *color) {
+  if (isDarkColor(color)) {
+    return adjustColorBrightness(color, 1.25);
+  }
+  return adjustColorBrightness(color, 0.90);
+}
+
+static NSColor *activeColor(NSColor *color) {
+  if (isDarkColor(color)) {
+    return adjustColorBrightness(color, 0.85);
+  }
+  return adjustColorBrightness(color, 1.15);
+}
+
+@interface ModernButton : NSButton
+@property (nonatomic, strong) NSTrackingArea *trackingArea;
+@property (nonatomic, assign) BOOL isHovered;
+@property (nonatomic, assign) BOOL isPressed;
+@property (nonatomic, strong) NSColor *baseBackgroundColor;
+@property (nonatomic, strong) NSColor *baseTextColor;
+@end
+
+@implementation ModernButton
+- (void)updateTrackingAreas {
+  [super updateTrackingAreas];
+  if (self.trackingArea != nil) {
+    [self removeTrackingArea:self.trackingArea];
+  }
+  int opts = NSTrackingMouseEnteredAndExited | NSTrackingActiveAlways;
+  self.trackingArea = [[NSTrackingArea alloc] initWithRect:self.bounds options:opts owner:self userInfo:nil];
+  [self addTrackingArea:self.trackingArea];
+}
+
+- (void)mouseEntered:(NSEvent *)event {
+  self.isHovered = YES;
+  [self updateVisuals];
+}
+
+- (void)mouseExited:(NSEvent *)event {
+  self.isHovered = NO;
+  [self updateVisuals];
+}
+
+- (void)mouseDown:(NSEvent *)event {
+  self.isPressed = YES;
+  [self updateVisuals];
+  [super mouseDown:event];
+  self.isPressed = NO;
+  [self updateVisuals];
+}
+
+- (void)updateVisuals {
+  if (!self.layer) return;
+  [CATransaction begin];
+  [CATransaction setAnimationDuration:0.15];
+  
+  NSColor *bgColor = self.baseBackgroundColor ?: [NSColor controlColor];
+  NSColor *fgColor = self.baseTextColor ?: [NSColor controlTextColor];
+  
+  if (self.isPressed) {
+    self.layer.backgroundColor = activeColor(bgColor).CGColor;
+  } else if (self.isHovered) {
+    self.layer.backgroundColor = hoverColor(bgColor).CGColor;
+  } else {
+    self.layer.backgroundColor = bgColor.CGColor;
+  }
+  
+  setButtonTitleColor(self, fgColor);
+  
+  [CATransaction commit];
+}
+
+- (void)layout {
+  [super layout];
+  [self updateVisuals];
+}
+@end
 
 static NSColor *currentFontColorForView(NSView *view) {
   if (!view) {
@@ -666,7 +816,12 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   }
 
   NSColor *effectiveBackground = backgroundColor ?: ([view isKindOfClass:[NSTextField class]] || [view isKindOfClass:[NSTextView class]] || [view isKindOfClass:[NSDatePicker class]] || [view isKindOfClass:[NSPopUpButton class]]) ? [NSColor textBackgroundColor] : [NSColor clearColor];
-  NSColor *effectiveFont = fontColor ?: modernTextColor();
+  NSString *controlName = [view.identifier lowercaseString];
+  BOOL isStatus = [controlName isEqualToString:@"status"];
+  NSColor *effectiveFont = fontColor;
+  if (!effectiveFont) {
+    effectiveFont = isStatus ? [NSColor secondaryLabelColor] : modernTextColor();
+  }
 
   if ([view isKindOfClass:[NSTextField class]]) {
     NSTextField *field = (NSTextField *)view;
@@ -676,7 +831,9 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
       [field setBezeled:NO];
       [field setTextColor:effectiveFont];
     } else {
-      [field setFont:[NSFont systemFontOfSize:13 weight:NSFontWeightRegular]];
+      NSFont *currFont = field.font;
+      CGFloat fSize = currFont ? currFont.pointSize : 13.0;
+      [field setFont:[NSFont systemFontOfSize:fSize weight:NSFontWeightRegular]];
       [field setControlSize:NSControlSizeRegular];
       [field setFocusRingType:NSFocusRingTypeNone];
       [field setBordered:NO];
@@ -712,11 +869,15 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
     [textView setWantsLayer:YES];
   } else if ([view isKindOfClass:[NSButton class]]) {
     NSButton *button = (NSButton *)view;
-    [button setFont:[NSFont systemFontOfSize:12 weight:NSFontWeightMedium]];
+    NSFont *currFont = button.font;
+    CGFloat fSize = currFont ? currFont.pointSize : 13.0;
+    [button setFont:[NSFont systemFontOfSize:fSize weight:NSFontWeightRegular]];
     [button setControlSize:NSControlSizeRegular];
 
-    BOOL isCheckboxOrRadio = ![button isBordered];
+    BOOL isCheckboxOrRadio = ![button isBordered] && button.bezelStyle != NSBezelStyleInline;
     BOOL isLinkButton = button.bezelStyle == NSBezelStyleInline;
+    BOOL isDefaultButton = [button.keyEquivalent isEqualToString:@"\r"];
+    
     if (isCheckboxOrRadio && !isLinkButton) {
       [button setBezelStyle:NSBezelStyleRounded];
       [button setWantsLayer:YES];
@@ -726,23 +887,66 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
     } else {
       [button setBezelStyle:NSBezelStyleRounded];
       [button setWantsLayer:YES];
-      [button setBordered:YES];
       if (isLinkButton) {
         [button setBordered:NO];
         [button setContentTintColor:fontColor ?: [NSColor linkColor]];
         setButtonTitleColor(button, fontColor ?: [NSColor linkColor]);
-      } else if (backgroundColor && ![backgroundColor isEqual:[NSColor clearColor]]) {
-        button.layer.backgroundColor = backgroundColor.CGColor;
-        button.layer.cornerRadius = 8.0;
-        button.layer.borderWidth = 1.0;
-        button.layer.borderColor = [NSColor separatorColor].CGColor;
-        setButtonTitleColor(button, fontColor ?: [NSColor labelColor]);
+      } else if ([button isKindOfClass:[ModernButton class]]) {
+        ModernButton *modButton = (ModernButton *)button;
+        [modButton setBordered:NO];
+        modButton.layer.cornerRadius = 8.0;
+        
+        NSColor *winBg = button.window ? button.window.backgroundColor : nil;
+        BOOL isDark = YES;
+        if (winBg && ![winBg isEqual:[NSColor clearColor]]) {
+          isDark = isDarkColor(winBg);
+        } else {
+          isDark = isSystemDark();
+        }
+        
+        if (isDefaultButton) {
+          modButton.baseBackgroundColor = primaryButtonColor();
+          modButton.baseTextColor = getContrastColor(primaryButtonColor());
+          modButton.layer.borderWidth = 0.0;
+        } else if (backgroundColor && ![backgroundColor isEqual:[NSColor clearColor]]) {
+          modButton.baseBackgroundColor = backgroundColor;
+          modButton.baseTextColor = fontColor ?: (isDark ? [NSColor whiteColor] : [NSColor labelColor]);
+          modButton.layer.borderWidth = 1.0;
+          modButton.layer.borderColor = modernBorderColorWithDark(isDark).CGColor;
+        } else {
+          modButton.baseBackgroundColor = modernElevatedSurfaceColorWithDark(isDark);
+          modButton.baseTextColor = fontColor ?: (isDark ? [NSColor whiteColor] : [NSColor labelColor]);
+          modButton.layer.borderWidth = 1.0;
+          modButton.layer.borderColor = modernBorderColorWithDark(isDark).CGColor;
+        }
+        [modButton updateVisuals];
       } else {
-        button.layer.backgroundColor = [modernElevatedSurfaceColor() CGColor];
+        [button setBordered:NO];
         button.layer.cornerRadius = 8.0;
-        button.layer.borderWidth = 1.0;
-        button.layer.borderColor = [NSColor separatorColor].CGColor;
-        setButtonTitleColor(button, fontColor ?: [NSColor labelColor]);
+        
+        NSColor *winBg = button.window ? button.window.backgroundColor : nil;
+        BOOL isDark = YES;
+        if (winBg && ![winBg isEqual:[NSColor clearColor]]) {
+          isDark = isDarkColor(winBg);
+        } else {
+          isDark = isSystemDark();
+        }
+        
+        if (isDefaultButton) {
+          button.layer.backgroundColor = primaryButtonColor().CGColor;
+          button.layer.borderWidth = 0.0;
+          setButtonTitleColor(button, getContrastColor(primaryButtonColor()));
+        } else if (backgroundColor && ![backgroundColor isEqual:[NSColor clearColor]]) {
+          button.layer.backgroundColor = backgroundColor.CGColor;
+          button.layer.borderWidth = 1.0;
+          button.layer.borderColor = modernBorderColorWithDark(isDark).CGColor;
+          setButtonTitleColor(button, fontColor ?: (isDark ? [NSColor whiteColor] : [NSColor labelColor]));
+        } else {
+          button.layer.backgroundColor = [modernElevatedSurfaceColorWithDark(isDark) CGColor];
+          button.layer.borderWidth = 1.0;
+          button.layer.borderColor = modernBorderColorWithDark(isDark).CGColor;
+          setButtonTitleColor(button, fontColor ?: (isDark ? [NSColor whiteColor] : [NSColor labelColor]));
+        }
       }
     }
   } else if ([view isKindOfClass:[NSPopUpButton class]]) {
@@ -862,7 +1066,7 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [self.window setTitle:nsstring(title)];
   BOOL titlebarVisible = self.params.titlebar_visible != 0;
   BOOL titleVisible = self.params.title_visible != 0;
-  [self.window setTitlebarAppearsTransparent:!titlebarVisible];
+  [self.window setTitlebarAppearsTransparent:YES];
   [self.window setTitleVisibility:(titlebarVisible && titleVisible) ? NSWindowTitleVisible : NSWindowTitleHidden];
   
   if ([self.window respondsToSelector:@selector(setTitlebarSeparatorStyle:)]) {
@@ -1021,7 +1225,13 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
       }
     }
 
-    if (backgroundColor.alphaComponent < 1.0) {
+    BOOL isDefaultBg = NO;
+    NSColor *defaultBg = modernSurfaceColor();
+    if (backgroundColor && [backgroundColor isEqual:defaultBg]) {
+      isDefaultBg = YES;
+    }
+
+    if (backgroundColor.alphaComponent < 1.0 || isDefaultBg) {
       [self.window setBackgroundColor:[NSColor clearColor]];
       [self.window setOpaque:NO];
     } else {
@@ -1029,7 +1239,18 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
     }
     if (self.window.contentView) {
       [self.window.contentView setWantsLayer:YES];
-      [self.window.contentView.layer setBackgroundColor:backgroundColor.CGColor];
+      [self.window.contentView.layer setBorderWidth:0.5];
+      NSAppearance *appearance = [NSApp effectiveAppearance];
+      if ([appearance bestMatchFromAppearancesWithNames:@[NSAppearanceNameDarkAqua, NSAppearanceNameAqua]] == NSAppearanceNameDarkAqua) {
+        [self.window.contentView.layer setBorderColor:[[NSColor colorWithCalibratedWhite:1.0 alpha:0.15] CGColor]];
+      } else {
+        [self.window.contentView.layer setBorderColor:[[NSColor colorWithCalibratedWhite:0.0 alpha:0.10] CGColor]];
+      }
+      if (isDefaultBg) {
+        [self.window.contentView.layer setBackgroundColor:[NSColor clearColor].CGColor];
+      } else {
+        [self.window.contentView.layer setBackgroundColor:backgroundColor.CGColor];
+      }
     }
   }
   if (self.scrollView) {
@@ -1074,10 +1295,15 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [backgroundView setBlendingMode:NSVisualEffectBlendingModeBehindWindow];
   [backgroundView setState:NSVisualEffectStateActive];
   [backgroundView setWantsLayer:YES];
-  [backgroundView.layer setBackgroundColor:modernSurfaceColor().CGColor];
-  [backgroundView.layer setCornerRadius:0.0];
-  [backgroundView.layer setBorderWidth:0.0];
-  [backgroundView.layer setMasksToBounds:NO];
+  [backgroundView.layer setCornerRadius:12.0];
+  [backgroundView.layer setMasksToBounds:YES];
+  [backgroundView.layer setBorderWidth:0.5];
+  NSAppearance *appearance = [NSApp effectiveAppearance];
+  if ([appearance bestMatchFromAppearancesWithNames:@[NSAppearanceNameDarkAqua, NSAppearanceNameAqua]] == NSAppearanceNameDarkAqua) {
+    [backgroundView.layer setBorderColor:[[NSColor colorWithCalibratedWhite:1.0 alpha:0.15] CGColor]];
+  } else {
+    [backgroundView.layer setBorderColor:[[NSColor colorWithCalibratedWhite:0.0 alpha:0.10] CGColor]];
+  }
 
   self.scrollView = [[NSScrollView alloc] initWithFrame:NSZeroRect];
   [self.scrollView setHasVerticalScroller:YES];
@@ -1090,8 +1316,10 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [self.mainStackView setOrientation:NSUserInterfaceLayoutOrientationVertical];
   [self.mainStackView setAlignment:NSLayoutAttributeLeading];
   [self.mainStackView setDistribution:NSStackViewDistributionFill];
-  [self.mainStackView setSpacing:5.0];
-  [self.mainStackView setEdgeInsets:NSEdgeInsetsMake(10, 16, 10, 16)];
+  double spacingVal = self.params.spacing > 0 ? (double)self.params.spacing : 14.0;
+  [self.mainStackView setSpacing:spacingVal];
+  double paddingVal = self.params.padding > 0 ? (double)self.params.padding : 20.0;
+  [self.mainStackView setEdgeInsets:NSEdgeInsetsMake(paddingVal, paddingVal, paddingVal, paddingVal)];
   [self.mainStackView setWantsLayer:YES];
   [self.mainStackView setTranslatesAutoresizingMaskIntoConstraints:NO];
   
@@ -1129,7 +1357,7 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [row setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
   [row setAlignment:NSLayoutAttributeCenterY];
   [row setDistribution:NSStackViewDistributionFill];
-  [row setSpacing:8.0];
+  [row setSpacing:12.0];
   [row setWantsLayer:YES];
   [row setTranslatesAutoresizingMaskIntoConstraints:NO];
   
@@ -1145,10 +1373,19 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
 // Control creation methods
 - (NSView *)makeLabelWithName:(NSString *)name text:(NSString *)text {
   NSTextField *label = [NSTextField labelWithString:text];
-  [label setTextColor:self.currentFontColor ?: [NSColor labelColor]];
-  [label setFont:[NSFont systemFontOfSize:10.5 weight:NSFontWeightMedium]];
   [label setLineBreakMode:NSLineBreakByWordWrapping];
   [label setWantsLayer:YES];
+  
+  if ([name hasPrefix:@"heading_"]) {
+    [label setFont:[NSFont systemFontOfSize:17.0 weight:NSFontWeightBold]];
+    [label setTextColor:self.currentFontColor ?: [NSColor labelColor]];
+  } else if ([name isEqualToString:@"status"]) {
+    [label setFont:[NSFont systemFontOfSize:11.0 weight:NSFontWeightRegular]];
+    [label setTextColor:self.currentFontColor ?: [NSColor secondaryLabelColor]];
+  } else {
+    [label setFont:[NSFont systemFontOfSize:13.0 weight:NSFontWeightRegular]];
+    [label setTextColor:self.currentFontColor ?: [NSColor labelColor]];
+  }
   
   self.controlsByName[[name lowercaseString]] = label;
   [self addControlToLayout:label];
@@ -1157,6 +1394,7 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
 
 - (NSView *)makeTextFieldWithName:(NSString *)name value:(NSString *)value {
   ModernTextField *textField = [[ModernTextField alloc] initWithFrame:NSZeroRect];
+  [textField setIdentifier:name];
   [textField setStringValue:value];
   [textField setPlaceholderString:@"Type here..."];
   [textField setDelegate:self];
@@ -1174,6 +1412,7 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
 
 - (NSView *)makePasswordFieldWithName:(NSString *)name value:(NSString *)value {
   ModernSecureTextField *passwordField = [[ModernSecureTextField alloc] initWithFrame:NSZeroRect];
+  [passwordField setIdentifier:name];
   [passwordField setStringValue:value];
   [passwordField setPlaceholderString:@"Password..."];
   [passwordField setDelegate:self];
@@ -1245,6 +1484,7 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
 
 - (NSView *)makeTextAreaWithName:(NSString *)name value:(NSString *)value {
   NSScrollView *scroll = [[NSScrollView alloc] initWithFrame:NSZeroRect];
+  [scroll setIdentifier:name];
   [scroll setHasVerticalScroller:YES];
   [scroll setHasHorizontalScroller:NO];
   [scroll setBorderType:NSNoBorder];
@@ -1256,6 +1496,7 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [scroll.heightAnchor constraintEqualToConstant:120].active = YES;
   
   NSTextView *textView = [[NSTextView alloc] initWithFrame:NSZeroRect];
+  [textView setIdentifier:name];
   [textView setMinSize:NSMakeSize(0.0, 120.0)];
   [textView setMaxSize:NSMakeSize(FLT_MAX, FLT_MAX)];
   [textView setVerticallyResizable:YES];
@@ -1280,7 +1521,8 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
 }
 
 - (NSView *)makeButtonWithName:(NSString *)name title:(NSString *)title {
-  NSButton *button = [NSButton buttonWithTitle:title target:self action:@selector(handleButtonClicked:)];
+  ModernButton *button = [ModernButton buttonWithTitle:title target:self action:@selector(handleButtonClicked:)];
+  [button setIdentifier:name];
   [button setBezelStyle:NSBezelStyleRounded];
   [self makeStretchableView:button minimumWidth:120];
   [button.heightAnchor constraintGreaterThanOrEqualToConstant:30.0].active = YES;
@@ -1314,6 +1556,7 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
 
 - (NSView *)makeCheckboxWithName:(NSString *)name label:(NSString *)label checked:(BOOL)checked {
   NSButton *checkbox = [NSButton checkboxWithTitle:label target:self action:@selector(handleCheckboxClicked:)];
+  [checkbox setIdentifier:name];
   [checkbox setState:checked ? NSOnState : NSOffState];
   [checkbox setWantsLayer:YES];
   
@@ -1697,6 +1940,10 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   indicator.target = self;
   indicator.action = @selector(handleLevelIndicatorChanged:);
   
+  if ([indicator respondsToSelector:@selector(setContentTintColor:)]) {
+    [indicator setContentTintColor:modernAccentColor()];
+  }
+  
   [self makeStretchableView:indicator minimumWidth:120];
   [indicator.heightAnchor constraintEqualToConstant:24.0].active = YES;
   
@@ -1904,7 +2151,8 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
 }
 
 - (NSView *)makeImageButtonWithName:(NSString *)name symbol:(NSString *)symbolName title:(NSString *)title {
-  NSButton *button = [NSButton buttonWithTitle:title ?: @"" target:self action:@selector(handleButtonClicked:)];
+  ModernButton *button = [ModernButton buttonWithTitle:title ?: @"" target:self action:@selector(handleButtonClicked:)];
+  [button setIdentifier:name];
   [button setBezelStyle:NSBezelStyleRounded];
   if (@available(macOS 11.0, *)) {
     NSImage *img = [NSImage imageWithSystemSymbolName:symbolName accessibilityDescription:(title.length > 0 ? title : symbolName)];
@@ -1914,7 +2162,7 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
     }
   }
   [self makeStretchableView:button minimumWidth:60];
-  [button setWantsLayer:NO];
+  applyStyleToView(button, self.currentBackgroundColor, self.currentFontColor);
   
   self.controlsByName[[name lowercaseString]] = button;
   [self addControlToLayout:button];
@@ -2896,10 +3144,10 @@ void *window_add_group_box_control(main__WindowInfo *info, const char *name, con
     [box setBoxType:NSBoxCustom];
     [box setContentViewMargins:NSMakeSize(12, 12)];
     [box setWantsLayer:YES];
-    box.layer.cornerRadius = 10.0;
+    box.layer.cornerRadius = 12.0;
     box.layer.borderWidth = 1.0;
     box.layer.borderColor = [modernBorderColor() CGColor];
-    box.layer.backgroundColor = (delegate.currentBackgroundColor ?: modernElevatedSurfaceColor()).CGColor;
+    box.layer.backgroundColor = (delegate.currentBackgroundColor ?: modernCardColor()).CGColor;
     
     [delegate addControlToLayout:box];
     NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
@@ -3019,7 +3267,9 @@ void window_set_default_button_by_name(main__WindowInfo *info, const char *name)
   dispatch_async(dispatch_get_main_queue(), ^{
     NSView *view = [delegate viewForControlName:nsstring(name)];
     if ([view isKindOfClass:[NSButton class]]) {
-      [(NSButton *)view setKeyEquivalent:@"\r"];
+      NSButton *button = (NSButton *)view;
+      [button setKeyEquivalent:@"\r"];
+      applyStyleToView(button, delegate.currentBackgroundColor, delegate.currentFontColor);
     }
   });
 }
@@ -4248,7 +4498,13 @@ void window_add_separator(main__WindowInfo *info) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
   dispatch_async(dispatch_get_main_queue(), ^{
     NSBox *separator = [[NSBox alloc] initWithFrame:NSZeroRect];
-    [separator setBoxType:NSBoxSeparator];
+    [separator setBoxType:NSBoxCustom];
+    [separator setBorderType:NSLineBorder];
+    [separator setBorderWidth:1.0];
+    [separator setBorderColor:modernBorderColor()];
+    [separator setWantsLayer:YES];
+    separator.translatesAutoresizingMaskIntoConstraints = NO;
+    [separator.heightAnchor constraintEqualToConstant:1.0].active = YES;
     [delegate addControlToLayout:separator];
   });
 }
@@ -4272,7 +4528,7 @@ void *window_add_table_control(main__WindowInfo *info, const char *name, const c
     NSTableView *tableView = [[NSTableView alloc] initWithFrame:NSMakeRect(0, 0, 450, 200)];
     [tableView setAllowsMultipleSelection:NO];
     [tableView setIdentifier:nsstring(name)];
-    [tableView setGridStyleMask:NSTableViewSolidHorizontalGridLineMask | NSTableViewSolidVerticalGridLineMask];
+    [tableView setGridStyleMask:NSTableViewSolidHorizontalGridLineMask];
     [tableView setRowHeight:26];
     
     if (@available(macOS 11.0, *)) {
