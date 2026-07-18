@@ -1273,7 +1273,7 @@ Sets the current control values as the new baseline state, causing `is_dirty()` 
 
 ## 17. Ergonomic Helpers
 
-A set of high-level shortcuts designed to make everyday tasks one-liners. See `demos/easy_api_demo.v`, `demos/todo_list_demo.v`, `demos/table_manager_demo.v`, and `demos/save_restore_demo.v` for working examples.
+A set of high-level shortcuts designed to make everyday tasks one-liners. See `demos/easy_api_demo.v`, `demos/todo_list_demo.v`, `demos/table_manager_demo.v`, `demos/save_restore_demo.v`, and `demos/ergonomics_helpers_demo.v` for working examples.
 
 ### Dialog Shortcuts
 
@@ -1300,6 +1300,12 @@ A set of high-level shortcuts designed to make everyday tasks one-liners. See `d
 - `win.set_progress(name, value)` / `win.get_progress(name) int` — friendly progress bar accessors.
 - `win.append_text(name, text)` appends text to a text-based control.
 - `win.append_line(name, line)` appends a new line to a textarea (perfect for activity logs).
+- `win.set_many_texts(values map[string]string)` updates many text-based controls in one call.
+- `win.get_many_texts(names []string) map[string]string` reads many text-based controls into a map.
+- `win.set_many_checked(values map[string]bool)` updates many checkbox/switch controls in one call.
+- `win.get_many_checked(names []string) map[string]bool` reads many checkbox/switch controls into a map.
+- `win.set_many_numbers(values map[string]int)` updates many numeric controls in one call.
+- `win.get_many_numbers(names []string) map[string]int` reads many numeric controls into a map.
 - `win.focus(name)` moves keyboard focus to a control (alias of `set_focus`).
 
 ### List Box Item Management

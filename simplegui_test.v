@@ -164,6 +164,34 @@ fn test_qol_helpers_support_struct_binding_and_tables() {
 	win.run_on_main_thread(fn (mut w simplegui.SimpleWindow) {})
 }
 
+fn test_batch_ergonomic_helpers_are_available() {
+	mut win := simplegui.SimpleWindow{}
+	win.add_input('name', 'Ada')
+	win.add_password('secret', 's3cr3t')
+	win.add_checkbox('ready', 'Ready', false)
+	win.add_number('age', 30)
+
+	win.set_many_texts({
+		'name':   'Grace'
+		'secret': 'topsecret'
+	})
+	win.set_many_checked({
+		'ready': true
+	})
+	win.set_many_numbers({
+		'age': 42
+	})
+
+	texts := win.get_many_texts(['name', 'secret'])
+	checks := win.get_many_checked(['ready'])
+	numbers := win.get_many_numbers(['age'])
+
+	assert texts['name'] == 'Grace'
+	assert texts['secret'] == 'topsecret'
+	assert checks['ready'] == true
+	assert numbers['age'] == 42
+}
+
 fn test_ergonomic_helpers_are_available_and_resettable() {
 	mut win := simplegui.SimpleWindow{}
 	win.add_input('name', 'Ada')

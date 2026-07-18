@@ -172,7 +172,49 @@ fn main() {
 		})
 	})
 
-	// 6. Quick validation + settings persistence
+	// 6. Bulk value helpers for text, checkbox, and number controls
+	win.group('grp_bulk', 'Bulk Value Helpers', fn (mut w simplegui.SimpleWindow) {
+		w.add_form_field('First Name:', 'bulk_name', 'Ada')
+		w.add_form_field('Email:', 'bulk_email', 'ada@example.com')
+		w.add_toggle('bulk_ready', 'Ready', true)
+		w.add_number_field('bulk_age', 29)
+		w.add_action_row({
+			'Apply Bulk': fn (mut w simplegui.SimpleWindow) {
+				w.set_many_texts({
+					'bulk_name':  'Grace'
+					'bulk_email': 'grace@example.com'
+				})
+				w.set_many_checked({
+					'bulk_ready': true
+				})
+				w.set_many_numbers({
+					'bulk_age': 42
+				})
+				w.set_status('Applied a bulk update across several controls.')
+			}
+			'Read Bulk':  fn (mut w simplegui.SimpleWindow) {
+				texts := w.get_many_texts(['bulk_name', 'bulk_email'])
+				checks := w.get_many_checked(['bulk_ready'])
+				numbers := w.get_many_numbers(['bulk_age'])
+				w.set_status('Name=${texts['bulk_name']} | Email=${texts['bulk_email']} | Ready=${checks['bulk_ready']} | Age=${numbers['bulk_age']}')
+			}
+			'Reset':      fn (mut w simplegui.SimpleWindow) {
+				w.set_many_texts({
+					'bulk_name':  'Ada'
+					'bulk_email': 'ada@example.com'
+				})
+				w.set_many_checked({
+					'bulk_ready': true
+				})
+				w.set_many_numbers({
+					'bulk_age': 29
+				})
+				w.set_status('Reset the bulk helper fields.')
+			}
+		})
+	})
+
+	// 7. Quick validation + settings persistence
 	win.group('grp_persist', 'Validation & Persistence', fn (mut w simplegui.SimpleWindow) {
 		w.add_form_field('Username:', 'username', '')
 		w.add_form_field('Email:', 'email', '')
@@ -209,7 +251,7 @@ fn main() {
 		})
 	})
 
-	// 7. Timer sugar: every() heartbeat + after() one-shot
+	// 8. Timer sugar: every() heartbeat + after() one-shot
 	win.add_label('clock_label', 'Uptime: 0s')
 	win.every(1000, fn (mut w simplegui.SimpleWindow) {
 		seconds := w.get_text('clock_label').replace('Uptime: ', '').replace('s', '').int() + 1

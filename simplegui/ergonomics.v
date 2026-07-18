@@ -169,6 +169,57 @@ pub fn (win &SimpleWindow) append_line(name string, line string) &SimpleWindow {
 	return win.set_value(name, current + '\n' + line)
 }
 
+// set_many_texts updates several text-based controls in one call.
+pub fn (win &SimpleWindow) set_many_texts(values map[string]string) &SimpleWindow {
+	for name, value in values {
+		win.set_text(name, value)
+	}
+	return win
+}
+
+// get_many_texts reads several text-based controls into a name/value map.
+pub fn (win &SimpleWindow) get_many_texts(names []string) map[string]string {
+	mut values := map[string]string{}
+	for name in names {
+		values[name] = win.get_text(name)
+	}
+	return values
+}
+
+// set_many_checked updates several checkbox/switch controls in one call.
+pub fn (win &SimpleWindow) set_many_checked(values map[string]bool) &SimpleWindow {
+	for name, value in values {
+		win.set_checked(name, value)
+	}
+	return win
+}
+
+// get_many_checked reads several checkbox/switch controls into a name/value map.
+pub fn (win &SimpleWindow) get_many_checked(names []string) map[string]bool {
+	mut values := map[string]bool{}
+	for name in names {
+		values[name] = win.get_checked(name)
+	}
+	return values
+}
+
+// set_many_numbers updates several numeric controls in one call.
+pub fn (win &SimpleWindow) set_many_numbers(values map[string]int) &SimpleWindow {
+	for name, value in values {
+		win.set_value_int(name, value)
+	}
+	return win
+}
+
+// get_many_numbers reads several numeric controls into a name/value map.
+pub fn (win &SimpleWindow) get_many_numbers(names []string) map[string]int {
+	mut values := map[string]int{}
+	for name in names {
+		values[name] = win.get_value_int(name)
+	}
+	return values
+}
+
 // focus moves keyboard focus to the named control (alias of set_focus).
 pub fn (win &SimpleWindow) focus(name string) &SimpleWindow {
 	return win.set_focus(name)

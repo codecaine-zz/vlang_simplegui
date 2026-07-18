@@ -43,6 +43,7 @@ fn main() {
 	demo_maps['dx_showcase.v'] = DemoConfig{'DX Showcase', 'drawing_board.png'}
 	demo_maps['encoding_and_system_info_demo.v'] = DemoConfig{'Encoding and System Info Demo', 'system_monitor.png'}
 	demo_maps['ergonomic_demo.v'] = DemoConfig{'Ergonomic Demo', 'productivity.png'}
+	demo_maps['ergonomics_helpers_demo.v'] = DemoConfig{'Ergonomics Helpers Demo', 'productivity.png'}
 	demo_maps['events_demo.v'] = DemoConfig{'Events Demo', 'log_viewer.png'}
 	demo_maps['features_demo.v'] = DemoConfig{'Features Demo', 'utility.png'}
 	demo_maps['grid_column_starter.v'] = DemoConfig{'Grid Column Starter', 'spreadsheet.png'}
