@@ -1289,3 +1289,104 @@ fn test_additional_ergonomics_helpers() {
 	assert win.get_text('txt_int') == 'new_val'
 	os.rm(settings_path) or {}
 }
+
+struct TestValidationStruct {
+	name  string @[required; min_len: '3']
+	email string @[required; email]
+	age   int    @[min: '18'; max: '99']
+}
+
+fn test_new_ergonomic_features() {
+	mut win := simplegui.new_simple_window('Ergonomic Test', 100, 100)
+	
+	// 1. Labeled form helpers / aliases
+	win.add_form_password('Password:', 'pwd', 's3cr3t')
+	win.add_form_slider('Slider:', 'sld', 45)
+	win.add_form_number('Num:', 'nbr', 7)
+	win.add_form_dropdown('Quality:', 'quality', ['Low', 'High'], 'High')
+	win.add_form_date_picker('Date:', 'dt', '2026-07-18')
+	win.add_form_progress('Prog:', 'prg', 20)
+	win.add_form_switch('Enable:', 'swh', 'Notifications', true)
+
+	assert win.has_control('pwd') == true
+	assert win.has_control('sld') == true
+	assert win.has_control('nbr') == true
+	assert win.has_control('quality') == true
+	assert win.has_control('dt') == true
+	assert win.has_control('prg') == true
+	assert win.has_control('swh') == true
+
+	// 2. Generic set/get_as
+	win.set('pwd', 'new_password')
+	win.set('sld', 80)
+	win.set('swh', false)
+	win.set('nbr', 42)
+
+	assert win.get_as[string]('pwd') == 'new_password'
+	assert win.get_as[int]('sld') == 80
+	assert win.get_as[bool]('swh') == false
+	assert win.get_as[int]('nbr') == 42
+
+	// 3. Compile-time struct validation
+	win.add_input('name', 'Ad') // invalid (<3 characters)
+	win.add_input('email', 'not-an-email') // invalid
+	win.add_number('age', 16) // invalid (<18)
+
+	assert win.validate_struct[TestValidationStruct]() == false
+	assert win.get_error('name') != ''
+	assert win.get_error('email') != ''
+	assert win.get_error('age') != ''
+
+	win.set('name', 'Ada')
+	win.set('email', 'ada@example.com')
+	win.set('age', 28)
+
+	assert win.validate_struct[TestValidationStruct]() == true
+	assert win.get_error('name') == ''
+	assert win.get_error('email') == ''
+	assert win.get_error('age') == ''
+
+	// 4. Table querying and diagnostics
+	win.add_table('scores', ['Name', 'Points'])
+	win.add_table_rows('scores', [
+		['Ada', '10'],
+		['Grace', '25'],
+		['Linus', '25'],
+	])
+
+	assert win.get_table_row_where('scores', 0, 'Grace') == ['Grace', '25']
+	assert win.get_table_row_where('scores', 0, 'Nobody') == []string{}
+	assert win.get_table_rows_where('scores', 1, '25') == [['Grace', '25'], ['Linus', '25']]
+	assert win.get_table_column_sum('scores', 1) == 60.0
+	assert win.get_table_column_average('scores', 1) == 20.0
+
+	// 5. JSON persistence for lists & tables
+	list_json_path := os.join_path(os.temp_dir(), 'test_list.json')
+	table_json_path := os.join_path(os.temp_dir(), 'test_table.json')
+
+	win.add_list_box('fruits', ['Apple', 'Banana', 'Cherry'])
+	win.save_list_to_json('fruits', list_json_path) or { assert false, err.msg() }
+	win.clear_list_items('fruits')
+	win.load_list_from_json('fruits', list_json_path) or { assert false, err.msg() }
+	assert win.get_list_items('fruits') == ['Apple', 'Banana', 'Cherry']
+
+	win.save_table_to_json('scores', table_json_path) or { assert false, err.msg() }
+	win.clear_table('scores')
+	win.load_table_from_json('scores', table_json_path) or { assert false, err.msg() }
+	assert win.get_table_rows('scores') == [['Ada', '10'], ['Grace', '25'], ['Linus', '25']]
+
+	os.rm(list_json_path) or {}
+	os.rm(table_json_path) or {}
+
+	// 6. Async task runner
+	mut async_called := false
+	win.run_async(
+		fn () {
+			// background task
+		},
+		fn [mut async_called] (mut w simplegui.SimpleWindow) {
+			async_called = true
+		}
+	)
+}
+

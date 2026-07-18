@@ -290,6 +290,13 @@ For common forms, these helpers reduce boilerplate and keep the API friendly for
 
 - `win.add_form_field(label string, name string, value string) &SimpleWindow` creates a label plus input in a row.
 - `win.add_form_textarea(label string, name string, value string) &SimpleWindow` creates a label plus textarea in a row.
+- `win.add_form_password(label string, name string, value string) &SimpleWindow` creates a label plus password field in a row.
+- `win.add_form_slider(label string, name string, value int) &SimpleWindow` creates a label plus slider in a row.
+- `win.add_form_number(label string, name string, value int) &SimpleWindow` creates a label plus stepper number field in a row.
+- `win.add_form_dropdown(label string, name string, items []string, selected string) &SimpleWindow` creates a label plus dropdown selection in a row.
+- `win.add_form_date_picker(label string, name string, date string) &SimpleWindow` creates a label plus date picker in a row.
+- `win.add_form_progress(label string, name string, value int) &SimpleWindow` creates a label plus progress indicator in a row.
+- `win.add_form_switch(label string, name string, switch_label string, checked bool) &SimpleWindow` creates a label plus switch toggle in a row.
 - `win.add_toggle(name string, label string, checked bool) &SimpleWindow` creates a checkbox.
 - `win.add_number_field(name string, value int) &SimpleWindow` creates a numeric input.
 - `win.add_action(name string, title string, callback VoidEventCallback) &SimpleWindow` creates a button and wires its click handler.
@@ -298,6 +305,7 @@ For common forms, these helpers reduce boilerplate and keep the API friendly for
 - `win.configure(callback fn (mut cfg WindowConfig)) &SimpleWindow` applies a small fluent configuration block for window title, dimensions, spacing, colors, and resize behavior.
 - `win.form(title string, callback VoidEventCallback) &SimpleWindow` and `win.section(title string, callback VoidEventCallback) &SimpleWindow` create grouped form containers with a lightweight builder feel.
 - `win.validate_controls(validators map[string]ControlValidator) map[string]string` validates named controls and stores inline errors, while `simplegui.validate_not_empty(value string) string` provides a ready-made required-field validator.
+- `win.validate_struct[T]() bool` automatically validates form controls against struct field attributes (e.g. `@[required]`, `@[min_len: X]`, `@[max_len: Y]`, `@[email]`, `@[url]`, `@[alphanumeric]`, `@[min: A]`, `@[max: B]`) and displays visual inline errors on the window. Returns `true` if valid.
 
 ### Nameless default control helpers
 
@@ -992,13 +1000,17 @@ Reads the string value of any text input, textarea, label, color well, popup, or
 
 Beginner-friendly shorthand alias for `win.get_text(name)`.
 
+### `win.get_as[T](name string) T`
+
+Helper method to fetch any control value in its native type. Supports fetching strings (`string`), booleans (`bool`), integers (`int`), and floats (`f64`).
+
 ### `win.set_text(name string, text string) &SimpleWindow`
 
 Sets/updates the text content of any input, textarea, or label.
 
-### `win.set(name string, value string) &SimpleWindow`
+### `win.set[T](name string, value T) &SimpleWindow`
 
-Beginner-friendly shorthand alias for `win.set_text(name, value)`.
+Beginner-friendly, generic shorthand method to set or update any control value (replaces the older non-generic `win.set`). Automatically routes to `set_text`, `set_bool`, `set_number_value`, or `set_float` based on the compile-time type of `T` (via type inference).
 
 ### `win.get_checked(name string) bool`
 
@@ -1251,6 +1263,10 @@ Restores window visibility and brings the window to the front.
 
 Safely queues a UI update callback to execute on the main event thread, bridging background execution threads.
 
+### `win.run_async(bg_task fn (), on_complete VoidEventCallback) &SimpleWindow`
+
+Runs a time-consuming background or I/O task on a separate concurrent worker thread to keep the application window fully responsive. Upon completion, automatically dispatches the `on_complete` callback on the main thread for thread-safe UI updates.
+
 ---
 
 ## 16. Form Change & Dirty Tracking
@@ -1393,6 +1409,10 @@ Rows are tracked automatically for every table, so you can manage them increment
 - `win.remove_table_row(name, index)` removes a row.
 - `win.clear_table(name)` removes every row.
 - `win.find_table_row(name, column, value) int` returns the first row index whose cell matches, or `-1`.
+- `win.get_table_row_where(name, column, value) []string` returns the first row matching the filter value in the specified column.
+- `win.get_table_rows_where(name, column, value) [][]string` returns all rows matching the filter value in the specified column.
+- `win.get_table_column_sum(name, column) f64` computes the numeric sum of a column's values.
+- `win.get_table_column_average(name, column) f64` computes the numeric average of a column's values.
 
 ### Table Selection & Events
 
@@ -1428,14 +1448,16 @@ Rows are tracked automatically for every table, so you can manage them increment
 - `win.move_selected_list_item_up(name)` / `win.move_selected_list_item_down(name)` shifts the currently selected list item up/down by 1 slot.
 - `win.bind_search_to_list(search_name, list_name)` wires a search field to a list box so typing filters the visible rows live (case-insensitive substring match; clearing the search restores the full set). The full item set is snapshotted at bind time, so re-bind after replacing the list's master items.
 - `win.save_list_to_file(name, path)` / `win.load_list_from_file(name, path)` saves/loads list box items to/from a line-separated text file.
+- `win.save_list_to_json(name, path) !` / `win.load_list_from_json(name, path) !` saves/loads list box items to/from a JSON file.
 
-### Table Sorting & CSV Import/Export
+### Table Sorting & CSV/JSON Import/Export
 
 - `win.sort_table_by_column(name, column, ascending bool)` sorts rows by a 0-based column — numerically when every cell in the column parses as a number, otherwise as case-insensitive text.
 - `win.move_table_row(name, from, to)` moves a row to a new index.
 - `win.move_selected_table_row_up(name)` / `win.move_selected_table_row_down(name)` shifts the currently selected table row up/down by 1 slot.
 - `win.save_table_to_csv(name, path) !` exports every table row to a CSV file.
 - `win.load_table_from_csv(name, path) !` replaces a table's rows with the contents of a CSV file.
+- `win.save_table_to_json(name, path) !` / `win.load_table_from_json(name, path) !` exports/imports table rows to/from a JSON file.
 
 ### Clipboard & State Helpers
 

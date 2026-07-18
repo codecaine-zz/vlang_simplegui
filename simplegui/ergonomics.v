@@ -1239,3 +1239,86 @@ pub fn (win &SimpleWindow) find_list_item(name string, item string) int {
 pub fn (win &SimpleWindow) has_list_item(name string, item string) bool {
 	return win.find_list_item(name, item) != -1
 }
+
+// ==========================================
+// 14. Advanced Table Querying & Diagnostics
+// ==========================================
+
+// get_table_row_where returns the first row where the cell in the specified column matches the value.
+pub fn (win &SimpleWindow) get_table_row_where(name string, column int, value string) []string {
+	rows := win.get_table_rows(name)
+	for row in rows {
+		if column >= 0 && column < row.len && row[column] == value {
+			return row
+		}
+	}
+	return []string{}
+}
+
+// get_table_rows_where returns all rows where the cell in the specified column matches the value.
+pub fn (win &SimpleWindow) get_table_rows_where(name string, column int, value string) [][]string {
+	rows := win.get_table_rows(name)
+	mut matching := [][]string{}
+	for row in rows {
+		if column >= 0 && column < row.len && row[column] == value {
+			matching << row
+		}
+	}
+	return matching
+}
+
+// get_table_column_sum returns the sum of all numeric values in a column.
+pub fn (win &SimpleWindow) get_table_column_sum(name string, column int) f64 {
+	rows := win.get_table_rows(name)
+	mut total := 0.0
+	for row in rows {
+		if column >= 0 && column < row.len {
+			cell := row[column].trim_space()
+			total += strconv.atof64(cell) or { 0.0 }
+		}
+	}
+	return total
+}
+
+// get_table_column_average returns the average of all numeric values in a column.
+pub fn (win &SimpleWindow) get_table_column_average(name string, column int) f64 {
+	rows := win.get_table_rows(name)
+	if rows.len == 0 {
+		return 0.0
+	}
+	sum := win.get_table_column_sum(name, column)
+	return sum / f64(rows.len)
+}
+
+// ==========================================
+// 15. JSON Table/List Persistence
+// ==========================================
+
+// save_table_to_json exports all table rows to a JSON file.
+pub fn (win &SimpleWindow) save_table_to_json(name string, path string) ! {
+	rows := win.get_table_rows(name)
+	content := json.encode(rows)
+	os.write_file(path, content)!
+}
+
+// load_table_from_json replaces a table's rows with the contents of a JSON file.
+pub fn (win &SimpleWindow) load_table_from_json(name string, path string) ! {
+	content := os.read_file(path)!
+	rows := json.decode([][]string, content)!
+	win.set_table_rows(name, rows)
+}
+
+// save_list_to_json exports all list items to a JSON file.
+pub fn (win &SimpleWindow) save_list_to_json(name string, path string) ! {
+	items := win.get_list_items(name)
+	content := json.encode(items)
+	os.write_file(path, content)!
+}
+
+// load_list_from_json replaces a list's items with the contents of a JSON file.
+pub fn (win &SimpleWindow) load_list_from_json(name string, path string) ! {
+	content := os.read_file(path)!
+	items := json.decode([]string, content)!
+	win.update_list_items(name, items)
+}
+

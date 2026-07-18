@@ -1041,6 +1041,90 @@ pub fn (win &SimpleWindow) add_form_textarea(label string, name string, value st
 	return win
 }
 
+pub fn (win &SimpleWindow) add_form_password(label string, name string, value string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('password')
+	}
+	win.begin_row('${real_name}_row')
+	win.add_label('${real_name}_label', label)
+	win.add_password(real_name, value)
+	win.end_row()
+	return win
+}
+
+pub fn (win &SimpleWindow) add_form_slider(label string, name string, value int) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('slider')
+	}
+	win.begin_row('${real_name}_row')
+	win.add_label('${real_name}_label', label)
+	win.add_slider(real_name, value)
+	win.end_row()
+	return win
+}
+
+pub fn (win &SimpleWindow) add_form_number(label string, name string, value int) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('number')
+	}
+	win.begin_row('${real_name}_row')
+	win.add_label('${real_name}_label', label)
+	win.add_number(real_name, value)
+	win.end_row()
+	return win
+}
+
+pub fn (win &SimpleWindow) add_form_dropdown(label string, name string, items []string, selected string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('dropdown')
+	}
+	win.begin_row('${real_name}_row')
+	win.add_label('${real_name}_label', label)
+	win.add_dropdown(real_name, items, selected)
+	win.end_row()
+	return win
+}
+
+pub fn (win &SimpleWindow) add_form_date_picker(label string, name string, date string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('date')
+	}
+	win.begin_row('${real_name}_row')
+	win.add_label('${real_name}_label', label)
+	win.add_date_picker(real_name, date)
+	win.end_row()
+	return win
+}
+
+pub fn (win &SimpleWindow) add_form_progress(label string, name string, value int) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('progress')
+	}
+	win.begin_row('${real_name}_row')
+	win.add_label('${real_name}_label', label)
+	win.add_progress_indicator(real_name, value)
+	win.end_row()
+	return win
+}
+
+pub fn (win &SimpleWindow) add_form_switch(label string, name string, switch_label string, checked bool) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('switch')
+	}
+	win.begin_row('${real_name}_row')
+	win.add_label('${real_name}_label', label)
+	win.add_switch(real_name, switch_label, checked)
+	win.end_row()
+	return win
+}
+
 pub fn (win &SimpleWindow) add_toggle(name string, label string, checked bool) &SimpleWindow {
 	win.add_checkbox(name, label, checked)
 	return win
@@ -2974,6 +3058,95 @@ pub fn (win &SimpleWindow) load_from_struct[T](data T) &SimpleWindow {
 	return win
 }
 
+pub fn (win &SimpleWindow) validate_struct[T]() bool {
+	mut all_valid := true
+	$for field in T.fields {
+		name := field.name
+		mut val := ''
+		$if field.typ is string {
+			val = win.get_text(name)
+		} $else $if field.typ is int {
+			val = win.get_value_int(name).str()
+		} $else $if field.typ is bool {
+			val = win.get_checked(name).str()
+		} $else {
+			val = win.get_text(name)
+		}
+		
+		mut err_msg := ''
+		for attr in field.attrs {
+			if attr == 'required' {
+				if val.trim_space() == '' {
+					err_msg = 'This field is required'
+					break
+				}
+			} else if attr.starts_with('min_len:') {
+				min_len := attr.all_after('min_len:').trim_space().int()
+				if val.len < min_len {
+					err_msg = 'Must be at least ${min_len} characters'
+					break
+				}
+			} else if attr.starts_with('max_len:') {
+				max_len := attr.all_after('max_len:').trim_space().int()
+				if val.len > max_len {
+					err_msg = 'Must be at most ${max_len} characters'
+					break
+				}
+			} else if attr == 'email' {
+				if val.trim_space() != '' {
+					email_err := validate_email(val)
+					if email_err != '' {
+						err_msg = email_err
+						break
+					}
+				}
+			} else if attr == 'url' {
+				if val.trim_space() != '' {
+					url_err := validate_url(val)
+					if url_err != '' {
+						err_msg = url_err
+						break
+					}
+				}
+			} else if attr == 'alphanumeric' {
+				if val.trim_space() != '' {
+					alpha_err := validate_alphanumeric(val)
+					if alpha_err != '' {
+						err_msg = alpha_err
+						break
+					}
+				}
+			} else if attr.starts_with('min:') {
+				$if field.typ is int {
+					min_val := attr.all_after('min:').trim_space().int()
+					int_val := win.get_value_int(name)
+					if int_val < min_val {
+						err_msg = 'Must be at least ${min_val}'
+						break
+					}
+				}
+			} else if attr.starts_with('max:') {
+				$if field.typ is int {
+					max_val := attr.all_after('max:').trim_space().int()
+					int_val := win.get_value_int(name)
+					if int_val > max_val {
+						err_msg = 'Must be at most ${max_val}'
+						break
+					}
+				}
+			}
+		}
+		
+		if err_msg != '' {
+			win.set_error(name, err_msg)
+			all_valid = false
+		} else {
+			win.clear_error(name)
+		}
+	}
+	return all_valid
+}
+
 // Layout Rows and Form Generation Helpers
 pub fn (win &SimpleWindow) add_action_row(actions map[string]VoidEventCallback) &SimpleWindow {
 	row_name := win.auto_name('action_row')
@@ -3054,6 +3227,17 @@ pub fn (win &SimpleWindow) run_on_main_thread(callback VoidEventCallback) &Simpl
 			cb:  callback
 		}
 		C.window_run_on_main_thread(vlang_main_thread_dispatcher, data)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) run_async(bg_task fn (), on_complete VoidEventCallback) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		spawn fn [mut w, bg_task, on_complete] () {
+			bg_task()
+			w.run_on_main_thread(on_complete)
+		}()
 	}
 	return win
 }
@@ -3233,9 +3417,34 @@ pub fn (win &SimpleWindow) get(name string) string {
 	return win.get_text(name)
 }
 
-pub fn (win &SimpleWindow) set(name string, value string) &SimpleWindow {
-	return win.set_text(name, value)
+pub fn (win &SimpleWindow) set[T](name string, value T) &SimpleWindow {
+	$if T is string {
+		return win.set_text(name, value)
+	} $else $if T is bool {
+		return win.set_bool(name, value)
+	} $else $if T is int {
+		return win.set_number_value(name, value)
+	} $else $if T is f64 {
+		return win.set_float(name, value)
+	} $else {
+		return win.set_text(name, value.str())
+	}
 }
+
+pub fn (win &SimpleWindow) get_as[T](name string) T {
+	$if T is string {
+		return win.get_text(name)
+	} $else $if T is bool {
+		return win.get_bool(name)
+	} $else $if T is int {
+		return win.get_int(name)
+	} $else $if T is f64 {
+		return win.get_float(name)
+	} $else {
+		return T{}
+	}
+}
+
 
 // Clears the validation error state on a single control
 pub fn (win &SimpleWindow) clear_error(name string) &SimpleWindow {
