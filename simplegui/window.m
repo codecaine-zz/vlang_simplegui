@@ -84,6 +84,8 @@ static NSLayoutConstraint *findHeightConstraint(NSView *view) {
   return nil;
 }
 
+static NSVisualEffectMaterial materialFromString(NSString *materialStr);
+
 @interface SimpleCollectionItem : NSCollectionViewItem
 @property (nonatomic, strong) NSImageView *customImageView;
 @property (nonatomic, strong) NSTextField *customLabel;
@@ -547,6 +549,7 @@ extern void vlang_dispatch_event(void *win_ptr, const char *name, const char *ev
 @property (nonatomic, strong) NSMutableArray<NSStackView *> *splitPanes;
 @property (nonatomic, assign) int activeSplitPaneIndex;
 @property (nonatomic, strong) NSMutableDictionary *collectionItemsByName;
+@property (nonatomic, strong) NSStackView *currentGlassBoxStack;
 
 - (void)beginSplitViewWithName:(NSString *)name vertical:(BOOL)vertical;
 - (void)splitViewNextPane;
@@ -554,6 +557,10 @@ extern void vlang_dispatch_event(void *win_ptr, const char *name, const char *ev
 - (NSView *)makeCollectionViewWithName:(NSString *)name itemWidth:(int)itemWidth itemHeight:(int)itemHeight;
 - (NSView *)makeCalendarWithName:(NSString *)name date:(NSString *)dateString;
 - (NSView *)makeCanvasWithName:(NSString *)name height:(int)height;
+- (void)beginGlassBoxWithName:(NSString *)name material:(NSString *)material;
+- (void)endGlassBox;
+- (NSView *)makeBadgeWithName:(NSString *)name text:(NSString *)text style:(NSString *)style;
+- (NSView *)makeIconSegmentsWithName:(NSString *)name symbols:(NSArray<NSString *> *)symbols selected:(NSString *)selected;
 
 
 - (void)setupToolbar;
@@ -1507,6 +1514,8 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
 - (void)addControlToLayout:(NSView *)view {
   if (self.currentRowStack) {
     [self.currentRowStack addArrangedSubview:view];
+  } else if (self.currentGlassBoxStack) {
+    [self.currentGlassBoxStack addArrangedSubview:view];
   } else if (self.currentSplitPane) {
     [self.currentSplitPane addArrangedSubview:view];
   } else {
@@ -2767,6 +2776,9 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   NSSegmentedControl *seg = (NSSegmentedControl *)sender;
   NSInteger index = [seg selectedSegment];
   NSString *label = [seg labelForSegment:index];
+  if (!label || label.length == 0) {
+    label = [NSString stringWithFormat:@"%ld", (long)index];
+  }
   NSString *name = [self nameForControl:seg];
   if (name && self.win_ptr) {
     vlang_dispatch_event(self.win_ptr, [name UTF8String], "change", [label UTF8String]);
@@ -3085,9 +3097,190 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [self addControlToLayout:canvas];
   return canvas;
 }
+// Glass Box container
+- (void)beginGlassBoxWithName:(NSString *)name material:(NSString *)materialStr {
+  NSVisualEffectView *glass = [[NSVisualEffectView alloc] initWithFrame:NSZeroRect];
+  [glass setMaterial:materialFromString(materialStr)];
+  [glass setBlendingMode:NSVisualEffectBlendingModeBehindWindow];
+  [glass setState:NSVisualEffectStateActive];
+  [glass setWantsLayer:YES];
+  glass.layer.cornerRadius = 12.0;
+  glass.layer.masksToBounds = YES;
+  glass.layer.borderWidth = 1.0;
+  glass.layer.borderColor = [modernBorderColor() CGColor];
+  
+  NSStackView *contentStack = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [contentStack setOrientation:NSUserInterfaceLayoutOrientationVertical];
+  [contentStack setSpacing:10.0];
+  [contentStack setEdgeInsets:NSEdgeInsetsMake(12, 12, 12, 12)];
+  [contentStack setTranslatesAutoresizingMaskIntoConstraints:NO];
+  [glass addSubview:contentStack];
+  
+  [contentStack.topAnchor constraintEqualToAnchor:glass.topAnchor].active = YES;
+  [contentStack.bottomAnchor constraintEqualToAnchor:glass.bottomAnchor].active = YES;
+  [contentStack.leadingAnchor constraintEqualToAnchor:glass.leadingAnchor].active = YES;
+  [contentStack.trailingAnchor constraintEqualToAnchor:glass.trailingAnchor].active = YES;
+  
+  [self addControlToLayout:glass];
+  
+  self.currentGlassBoxStack = contentStack;
+  self.controlsByName[[name lowercaseString]] = glass;
+}
+
+- (void)endGlassBox {
+  self.currentGlassBoxStack = nil;
+}
+
+// Badge View container
+- (NSView *)makeBadgeWithName:(NSString *)name text:(NSString *)text style:(NSString *)styleStr {
+  NSBox *box = [[NSBox alloc] initWithFrame:NSZeroRect];
+  [box setBoxType:NSBoxCustom];
+  [box setBorderType:NSNoBorder];
+  [box setContentViewMargins:NSMakeSize(8, 4)];
+  [box setWantsLayer:YES];
+  box.layer.cornerRadius = 10.0;
+  
+  NSTextField *label = [NSTextField labelWithString:text];
+  [label setFont:[NSFont boldSystemFontOfSize:11.0]];
+  
+  NSColor *bgColor = nil;
+  NSColor *textColor = nil;
+  
+  NSString *style = [styleStr lowercaseString];
+  if ([style isEqualToString:@"success"]) {
+    bgColor = [NSColor colorWithCalibratedRed:0.18 green:0.49 blue:0.20 alpha:0.15];
+    textColor = [NSColor systemGreenColor];
+  } else if ([style isEqualToString:@"error"]) {
+    bgColor = [NSColor colorWithCalibratedRed:0.83 green:0.18 blue:0.18 alpha:0.15];
+    textColor = [NSColor systemRedColor];
+  } else if ([style isEqualToString:@"warning"]) {
+    bgColor = [NSColor colorWithCalibratedRed:0.95 green:0.60 blue:0.00 alpha:0.15];
+    textColor = [NSColor systemOrangeColor];
+  } else if ([style isEqualToString:@"info"]) {
+    bgColor = [NSColor colorWithCalibratedRed:0.12 green:0.45 blue:0.74 alpha:0.15];
+    textColor = [NSColor systemBlueColor];
+  } else {
+    bgColor = [NSColor colorWithCalibratedWhite:0.5 alpha:0.15];
+    textColor = [NSColor secondaryLabelColor];
+  }
+  
+  box.layer.backgroundColor = [bgColor CGColor];
+  [label setTextColor:textColor];
+  [box setContentView:label];
+  
+  [box.widthAnchor constraintEqualToAnchor:label.widthAnchor constant:16].active = YES;
+  [box.heightAnchor constraintEqualToAnchor:label.heightAnchor constant:8].active = YES;
+  
+  self.controlsByName[[name lowercaseString]] = box;
+  [self addControlToLayout:box];
+  return box;
+}
+
+// Icon Segments container
+- (NSView *)makeIconSegmentsWithName:(NSString *)name symbols:(NSArray<NSString *> *)symbols selected:(NSString *)selected {
+  NSSegmentedControl *seg = [[NSSegmentedControl alloc] initWithFrame:NSZeroRect];
+  [seg setSegmentCount:symbols.count];
+  [seg setSegmentStyle:NSSegmentStyleRoundRect];
+  [seg setTarget:self];
+  [seg setAction:@selector(handleSegmentedChanged:)];
+  [seg setWantsLayer:YES];
+  
+  NSInteger selectedIndex = -1;
+  
+  for (NSUInteger i = 0; i < symbols.count; i++) {
+    NSString *sym = symbols[i];
+    if (@available(macOS 11.0, *)) {
+      NSImage *img = [NSImage imageWithSystemSymbolName:sym accessibilityDescription:nil];
+      if (img) {
+        [seg setImage:img forSegment:i];
+      } else {
+        [seg setLabel:sym forSegment:i];
+      }
+    } else {
+      [seg setLabel:sym forSegment:i];
+    }
+    if ([sym isEqualToString:selected]) {
+      selectedIndex = i;
+    }
+  }
+  
+  if (selectedIndex >= 0) {
+    [seg setSelectedSegment:selectedIndex];
+  }
+  
+  self.controlsByName[[name lowercaseString]] = seg;
+  [self addControlToLayout:seg];
+  return seg;
+}
 @end
 
 // C Bridge functions
+static NSVisualEffectMaterial materialFromString(NSString *materialStr) {
+  NSString *norm = [materialStr lowercaseString];
+  if ([norm isEqualToString:@"sidebar"]) return NSVisualEffectMaterialSidebar;
+  if ([norm isEqualToString:@"header"]) return NSVisualEffectMaterialHeaderView;
+  if ([norm isEqualToString:@"titlebar"]) return NSVisualEffectMaterialTitlebar;
+  if ([norm isEqualToString:@"selection"]) return NSVisualEffectMaterialSelection;
+  if ([norm isEqualToString:@"menu"]) return NSVisualEffectMaterialMenu;
+  if ([norm isEqualToString:@"hud"] || [norm isEqualToString:@"hudwindow"]) return NSVisualEffectMaterialHUDWindow;
+  return NSVisualEffectMaterialWindowBackground;
+}
+
+void window_begin_glass_box(main__WindowInfo *info, const char *name, const char *material) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate beginGlassBoxWithName:nsstring(name) material:nsstring(material)];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+void window_end_glass_box(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate endGlassBox];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+void *window_add_badge_control(main__WindowInfo *info, const char *name, const char *text, const char *style) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *badge = nil;
+  void (^runBlock)(void) = ^{
+    badge = [delegate makeBadgeWithName:nsstring(name) text:nsstring(text) style:nsstring(style)];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return (__bridge void *)badge;
+}
+
+void *window_add_icon_segments_control(main__WindowInfo *info, const char *name, const char **symbols, int symbols_count, const char *selected) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *seg = nil;
+  void (^runBlock)(void) = ^{
+    NSMutableArray *arr = [NSMutableArray array];
+    for (int i = 0; i < symbols_count; i++) {
+      [arr addObject:nsstring(symbols[i])];
+    }
+    seg = [delegate makeIconSegmentsWithName:nsstring(name) symbols:arr selected:nsstring(selected)];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return (__bridge void *)seg;
+}
 void window_begin_split_view(main__WindowInfo *info, const char *name, int vertical) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
   void (^runBlock)(void) = ^{

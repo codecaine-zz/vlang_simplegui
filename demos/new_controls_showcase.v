@@ -4,7 +4,7 @@ import simplegui
 import os
 
 fn main() {
-	mut win := simplegui.new_simple_window('Showcase of New Advanced Controls', 900, 750)
+	mut win := simplegui.new_simple_window('Showcase of New Advanced Controls', 900, 780)
 	win.configure(fn (mut cfg simplegui.WindowConfig) {
 		cfg.padding = 15
 		cfg.spacing = 10
@@ -17,10 +17,25 @@ fn main() {
 
 		// --- Left Pane Content ---
 		win.add_heading('Canvas & Settings')
-		
-		win.add_label('lbl_calendar', 'Select a Date:')
-		win.add_calendar('calendar', '2026-07-18')
-		win.on_change('calendar', on_date_changed)
+
+		// 2. Glass Box container wrapping our calendar settings
+		win.begin_glass_box('settings_glass', 'hudwindow')
+			win.add_label('lbl_glass_title', 'Glassmorphic Controls Box')
+			
+			win.add_label('lbl_calendar', 'Select a Date:')
+			win.add_calendar('calendar', '2026-07-18')
+			win.on_change('calendar', on_date_changed)
+
+			win.add_vertical_spacer(5)
+
+			// 3. Status Badges
+			win.add_label('lbl_badge_title', 'Status Badges:')
+			win.begin_row('badges_row')
+				win.add_badge('badge_ok', 'Connected', 'success')
+				win.add_badge('badge_warn', 'Pending', 'warning')
+				win.add_badge('badge_err', 'Failed', 'error')
+			win.end_row()
+		win.end_glass_box()
 
 		win.add_vertical_spacer(10)
 
@@ -31,7 +46,7 @@ fn main() {
 		win.add_vertical_spacer(10)
 
 		win.add_label('lbl_canvas', 'Interactive Drawing Canvas:')
-		win.add_canvas('canvas', 250)
+		win.add_canvas('canvas', 200)
 		
 		// Let's add action buttons for drawing
 		win.begin_row('row_draw_actions')
@@ -53,11 +68,18 @@ fn main() {
 		win.add_collection_view('grid_collection', 120, 120)
 		win.on_click('grid_collection', on_collection_item_clicked)
 
-		win.add_vertical_spacer(15)
+		win.add_vertical_spacer(10)
+
+		// 4. SF Symbol Segmented Control Picker
+		win.add_label('lbl_icon_seg', 'Pick an Icon View Mode (SF Symbols Segmented):')
+		win.add_icon_segments('view_mode', ['house', 'gear', 'person', 'envelope', 'trash'], 'house')
+		win.on_change('view_mode', on_view_mode_changed)
+
+		win.add_vertical_spacer(10)
 
 		win.add_heading('Activity Log')
 		win.add_textarea('output_log', 'Welcome! Click controls to see event outputs here.')
-			.height(150)
+			.height(130)
 
 	win.end_split_view()
 
@@ -95,40 +117,39 @@ fn on_popover_clicked(mut win &simplegui.SimpleWindow) {
 }
 
 fn on_collection_item_clicked(mut win &simplegui.SimpleWindow) {
-	// The collection view click dispatches event value equal to clicked index
 	idx := win.get_text('grid_collection')
 	log_message(mut win, 'Collection item index ${idx} selected!')
 }
 
+fn on_view_mode_changed(mut win &simplegui.SimpleWindow, value string) {
+	log_message(mut win, 'Icon segment changed. Selected index/label: ${value}')
+}
+
 fn draw_welcome_canvas(mut win &simplegui.SimpleWindow) {
 	win.clear_canvas('canvas')
-	// Draw a cool header box
-	win.draw_rect('canvas', 10.0, 200.0, 380.0, 40.0, '#3A3F44', true, 1.0)
-	win.draw_circle('canvas', 50.0, 120.0, 30.0, 'blue', false, 3.0)
-	win.draw_circle('canvas', 150.0, 120.0, 30.0, 'green', true, 1.0)
-	win.draw_circle('canvas', 250.0, 120.0, 30.0, 'red', false, 2.0)
-	win.draw_line('canvas', 10.0, 40.0, 380.0, 40.0, '#FF00FF', 4.0)
+	win.draw_rect('canvas', 10.0, 160.0, 380.0, 30.0, '#3A3F44', true, 1.0)
+	win.draw_circle('canvas', 50.0, 90.0, 25.0, 'blue', false, 3.0)
+	win.draw_circle('canvas', 150.0, 90.0, 25.0, 'green', true, 1.0)
+	win.draw_circle('canvas', 250.0, 90.0, 25.0, 'red', false, 2.0)
+	win.draw_line('canvas', 10.0, 30.0, 380.0, 30.0, '#FF00FF', 3.0)
 }
 
 fn on_draw_house(mut win &simplegui.SimpleWindow) {
 	win.clear_canvas('canvas')
 	log_message(mut win, 'Drawing a house on the canvas...')
-	// Draw house body
-	win.draw_rect('canvas', 50.0, 50.0, 150.0, 100.0, '#DDA0DD', true, 1.0)
-	win.draw_rect('canvas', 50.0, 50.0, 150.0, 100.0, '#8B008B', false, 3.0)
-	// Roof (lines)
-	win.draw_line('canvas', 50.0, 150.0, 125.0, 220.0, 'red', 4.0)
-	win.draw_line('canvas', 125.0, 220.0, 200.0, 150.0, 'red', 4.0)
-	// Door
-	win.draw_rect('canvas', 100.0, 50.0, 50.0, 70.0, '#8B4513', true, 1.0)
+	win.draw_rect('canvas', 50.0, 30.0, 120.0, 80.0, '#DDA0DD', true, 1.0)
+	win.draw_rect('canvas', 50.0, 30.0, 120.0, 80.0, '#8B008B', false, 3.0)
+	win.draw_line('canvas', 50.0, 110.0, 110.0, 160.0, 'red', 4.0)
+	win.draw_line('canvas', 110.0, 160.0, 170.0, 110.0, 'red', 4.0)
+	win.draw_rect('canvas', 90.0, 30.0, 40.0, 50.0, '#8B4513', true, 1.0)
 }
 
 fn on_draw_shapes(mut win &simplegui.SimpleWindow) {
 	win.clear_canvas('canvas')
 	log_message(mut win, 'Drawing geometric shapes...')
-	win.draw_rect('canvas', 20.0, 80.0, 120.0, 120.0, 'orange', true, 1.0)
-	win.draw_circle('canvas', 240.0, 140.0, 60.0, 'purple', true, 1.0)
-	win.draw_line('canvas', 10.0, 10.0, 380.0, 240.0, 'cyan', 3.0)
+	win.draw_rect('canvas', 20.0, 60.0, 90.0, 90.0, 'orange', true, 1.0)
+	win.draw_circle('canvas', 200.0, 110.0, 40.0, 'purple', true, 1.0)
+	win.draw_line('canvas', 10.0, 10.0, 380.0, 180.0, 'cyan', 3.0)
 }
 
 fn on_clear_canvas(mut win &simplegui.SimpleWindow) {

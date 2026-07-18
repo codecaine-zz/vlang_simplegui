@@ -237,6 +237,12 @@ fn C.window_draw_rect(&WindowInfo, &u8, f64, f64, f64, f64, &u8, int, f64)
 fn C.window_draw_circle(&WindowInfo, &u8, f64, f64, f64, &u8, int, f64)
 fn C.window_clear_canvas(&WindowInfo, &u8)
 
+// Glass, Badge, Icon Segment C declarations
+fn C.window_begin_glass_box(&WindowInfo, &u8, &u8)
+fn C.window_end_glass_box(&WindowInfo)
+fn C.window_add_badge_control(&WindowInfo, &u8, &u8, &u8) voidptr
+fn C.window_add_icon_segments_control(&WindowInfo, &u8, &&u8, int, &u8) voidptr
+
 pub type StringEventCallback = fn (mut win SimpleWindow, value string)
 
 pub type VoidEventCallback = fn (mut win SimpleWindow)
@@ -4058,6 +4064,62 @@ pub fn (win &SimpleWindow) draw_circle(canvas_name string, x f64, y f64, r f64, 
 pub fn (win &SimpleWindow) clear_canvas(canvas_name string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_clear_canvas(win.window_info, canvas_name.str)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) begin_glass_box(name string, material string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_begin_glass_box(win.window_info, name.str, material.str)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) end_glass_box() &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_end_glass_box(win.window_info)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) add_badge(name string, text string, style string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('badge')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name: real_name
+			kind: 'badge'
+			value: text
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_badge_control(win.window_info, real_name.str, text.str, style.str)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) add_icon_segments(name string, symbols []string, selected string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('icon_segments')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name: real_name
+			kind: 'icon_segments'
+			value: selected
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		mut c_symbols := []&u8{}
+		for sym in symbols {
+			c_symbols << sym.str
+		}
+		C.window_add_icon_segments_control(win.window_info, real_name.str, c_symbols.data, symbols.len, selected.str)
 	}
 	return win
 }

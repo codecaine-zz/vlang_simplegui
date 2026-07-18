@@ -242,5 +242,11 @@ void window_draw_rect(main__WindowInfo *info, const char *canvas_name, double x,
 void window_draw_circle(main__WindowInfo *info, const char *canvas_name, double x, double y, double r, const char *color_str, int fill, double stroke_width);
 void window_clear_canvas(main__WindowInfo *info, const char *canvas_name);
 
+// Glass, Badge, Icon Segment controls
+void window_begin_glass_box(main__WindowInfo *info, const char *name, const char *material);
+void window_end_glass_box(main__WindowInfo *info);
+void *window_add_badge_control(main__WindowInfo *info, const char *name, const char *text, const char *style);
+void *window_add_icon_segments_control(main__WindowInfo *info, const char *name, const char **symbols, int symbols_count, const char *selected);
+
 #endif
 
