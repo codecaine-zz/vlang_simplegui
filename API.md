@@ -297,6 +297,7 @@ For common forms, these helpers reduce boilerplate and keep the API friendly for
 - `win.add_form_date_picker(label string, name string, date string) &SimpleWindow` creates a label plus date picker in a row.
 - `win.add_form_progress(label string, name string, value int) &SimpleWindow` creates a label plus progress indicator in a row.
 - `win.add_form_switch(label string, name string, switch_label string, checked bool) &SimpleWindow` creates a label plus switch toggle in a row.
+- `win.add_form_link(label string, name string, link_text string, url string) &SimpleWindow` creates a label plus hyperlink text button in a row.
 - `win.add_toggle(name string, label string, checked bool) &SimpleWindow` creates a checkbox.
 - `win.add_number_field(name string, value int) &SimpleWindow` creates a numeric input.
 - `win.add_action(name string, title string, callback VoidEventCallback) &SimpleWindow` creates a button and wires its click handler.
@@ -1479,3 +1480,14 @@ Rows are tracked automatically for every table, so you can manage them increment
 - `win.style_controls(names []string, style_fn fn (name string, mut w SimpleWindow)) &SimpleWindow` applies a custom styling closure to a list of named controls in bulk.
 - `win.get_dirty_controls() []string` returns a list of modified control names since the last baseline commit.
 - `win.get_dirty_values() map[string]string` returns a map of modified control names and their new string values.
+- `win.notify(title string, message string) &SimpleWindow` triggers a non-blocking slide-in macOS native user notification.
+- `win.badge(text string) &SimpleWindow` sets a badge text label on the application Dock icon (pass empty string `""` to clear).
+- `win.set_slider_range(name string, min_val f64, max_val f64) &SimpleWindow` / `win.range(min_val f64, max_val f64) &SimpleWindow` sets a custom min/max bounds range for a slider or level indicator.
+- `win.add_link(name string, text string, url string) &SimpleWindow` inserts a styled native hyperlink text button.
+- `simplegui.beep()` plays the native macOS system alert beep sound.
+- `win.add_disclosure(name string, title string, open bool) &SimpleWindow` inserts a collapsible native disclosure triangle toggle button.
+- `win.enable_search_history(name string, autosave_name string) &SimpleWindow` configures recent search item caches and history dropdowns automatically on a named search field.
+- `win.set_status_bar_icon(icon_path string) &SimpleWindow` updates the status bar accessory icon dynamically.
+- `win.set_status_bar_title(title string) &SimpleWindow` updates the status bar accessory title text dynamically.
+- `win.set_dock_icon(image_path string) &SimpleWindow` overrides the application dock icon dynamically using a custom file image (or clears it with `win.clear_dock_icon()`).
+- `simplegui.play_sound(sound_name string)` plays a native macOS system sound by name (e.g. `"Glass"`, `"Ping"`, `"Purr"`, `"Basso"`, `"Tink"`, `"Blow"`).

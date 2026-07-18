@@ -4,7 +4,9 @@ module main
 // dialogs (info/warn/error_dialog/ask), batch control operations,
 // value shortcuts (increment, toggle_checked, set_progress, append_line),
 // labeled control rows, timers (every/after), require_fields validation,
-// structured menus, hotkeys, bulk styling, and temporary status bar updates.
+// structured menus, hotkeys, bulk styling, temporary status bar updates,
+// Dock badges, native macOS notifications, custom range sliders, hyperlinks,
+// collapsible disclosure groups, system sounds, search history, and Dock icon overrides.
 import simplegui
 import time
 
@@ -14,7 +16,7 @@ struct UserProfile {
 }
 
 fn main() {
-	mut win := simplegui.new_simple_window('Easy API Demo', 560, 680)
+	mut win := simplegui.new_simple_window('Easy API Demo', 560, 760)
 	win.set_theme('dark')
 	win.set_padding(16)
 	win.set_spacing(10)
@@ -27,6 +29,8 @@ fn main() {
 			callback: fn (mut w simplegui.SimpleWindow) {
 				w.status_temp('Session saved successfully!', 2000)
 				w.append_line('log', 'Session saved via File Menu (cmd+s)')
+				w.badge('Saved') // Set Dock badge
+				simplegui.play_sound('Hero')
 			}
 		},
 		simplegui.MenuItem{
@@ -48,6 +52,8 @@ fn main() {
 			callback: fn (mut w simplegui.SimpleWindow) {
 				w.set('log', '')
 				w.status_temp('Activity log cleared!', 2000)
+				w.badge('') // Clear badge
+				simplegui.play_sound('Tink')
 			}
 		}
 	])
@@ -60,12 +66,19 @@ fn main() {
 			w2.set_control_font_color(name, '#eceff4')
 		})
 		w.append_line('log', 'Applied bulk custom styling via shortcut (cmd+l)')
+		simplegui.play_sound('Submarine')
 	})
 
 	win.add_heading('Ergonomic Helpers')
 
+	// --- Recent Search history cache field
+	win.add_search_field('search_bar', '').placeholder('Search (history cached)...')
+	win.enable_search_history('search_bar', 'easy_api_demo_recents')
+
 	// --- Labeled control rows (using the new add_form_ helpers)
 	win.add_form_slider('Volume:', 'volume', 40)
+	win.range(0.0, 500.0) // Extend range dynamically from default 0-100 to 0-500!
+
 	win.add_form_number('Count:', 'count', 5)
 	win.add_form_dropdown('Quality:', 'quality', ['Low', 'Medium', 'High'], 'Medium')
 	win.add_form_progress('Progress:', 'progress', 0)
@@ -75,10 +88,14 @@ fn main() {
 		w.add_button('minus', '-1').onclick(fn (mut w simplegui.SimpleWindow) {
 			new_val := w.increment('count', -1)
 			w.status('Count is now ${new_val}')
+			w.badge(new_val.str())
+			simplegui.play_sound('Morse')
 		})
 		w.add_button('plus', '+1').onclick(fn (mut w simplegui.SimpleWindow) {
 			new_val := w.increment('count', 1)
 			w.status('Count is now ${new_val}')
+			w.badge(new_val.str())
+			simplegui.play_sound('Ping')
 		})
 		w.add_button('fill', 'Fill Progress').onclick(fn (mut w simplegui.SimpleWindow) {
 			w.set('progress', 100)
@@ -96,10 +113,12 @@ fn main() {
 		'Submit':      fn (mut w simplegui.SimpleWindow) {
 			if !w.validate_struct[UserProfile]() {
 				w.warn('Validation Failed', 'Please fix the highlighted errors.')
+				simplegui.play_sound('Basso')
 				return
 			}
 			w.append_line('log', 'Submitted: ${w.get_as[string]('name')} <${w.get_as[string]('email')}>')
 			w.info('Saved', 'Thanks, ${w.get_as[string]('name')}!')
+			simplegui.play_sound('Glass')
 		}
 		'Async Task':  fn (mut w simplegui.SimpleWindow) {
 			w.disable_all_controls()
@@ -113,7 +132,9 @@ fn main() {
 					win.enable_all_controls()
 					win.set('progress', 100)
 					win.status('Computation finished!')
+					win.notify('Task Complete', 'Background computation finished successfully!')
 					win.info('Finished', 'Background task completed successfully!')
+					simplegui.play_sound('Purr')
 				}
 			)
 		}
@@ -139,10 +160,33 @@ fn main() {
 		}
 	})
 
+	win.add_separator()
+
+	// --- Collapsible Developer Controls Group
+	win.add_disclosure('show_dev', 'Show Advanced Developer Tools', false).onchange(fn (mut w simplegui.SimpleWindow, value string) {
+		open := value == 'true'
+		if open {
+			w.show_controls(['unlock', 'quit_btn'])
+			simplegui.play_sound('Pop')
+		} else {
+			w.hide_controls(['unlock', 'quit_btn'])
+			simplegui.play_sound('Blow')
+		}
+	})
+
 	win.add_button('unlock', 'Unlock Everything').onclick(fn (mut w simplegui.SimpleWindow) {
 		w.enable_all_controls()
 		w.status('Everything unlocked again.')
 	})
+
+	win.add_button('quit_btn', 'Quit App').onclick(fn (mut w simplegui.SimpleWindow) {
+		if w.ask('Quit', 'Really quit the demo?') {
+			w.quit()
+		}
+	})
+
+	// Hide collapsible children initially
+	win.hide_controls(['unlock', 'quit_btn'])
 
 	win.add_separator()
 
@@ -160,11 +204,8 @@ fn main() {
 		w.append_line('log', 'Welcome! This line appeared 1.5s after startup.')
 	})
 
-	win.add_button('quit_btn', 'Quit App').onclick(fn (mut w simplegui.SimpleWindow) {
-		if w.ask('Quit', 'Really quit the demo?') {
-			w.quit()
-		}
-	})
+	// --- Native Hyperlink layout
+	win.add_form_link('Help & Resources:', 'docs_link', 'Visit Github Repository', 'https://github.com/codecaine/vlang_simplegui')
 
 	win.set_status('Ready. Try the buttons above!')
 	win.run()

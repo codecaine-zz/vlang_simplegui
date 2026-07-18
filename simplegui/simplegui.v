@@ -185,6 +185,19 @@ fn C.window_is_active(&WindowInfo) int
 fn C.window_set_titlebar_visible(&WindowInfo, int)
 fn C.window_request_attention(&WindowInfo, int)
 
+fn C.window_deliver_notification(&u8, &u8)
+fn C.window_set_dock_badge(&u8)
+fn C.window_set_slider_range(&WindowInfo, &u8, f64, f64)
+fn C.window_add_link_control(&WindowInfo, &u8, &u8, &u8) voidptr
+fn C.window_beep()
+
+fn C.window_add_disclosure_control(&WindowInfo, &u8, &u8, int) voidptr
+fn C.window_enable_search_history(&WindowInfo, &u8, &u8)
+fn C.window_set_status_bar_icon(&WindowInfo, &u8)
+fn C.window_set_status_bar_title(&WindowInfo, &u8)
+fn C.window_set_dock_icon(&u8)
+fn C.window_play_system_sound(&u8)
+
 pub type StringEventCallback = fn (mut win SimpleWindow, value string)
 
 pub type VoidEventCallback = fn (mut win SimpleWindow)
@@ -579,6 +592,24 @@ pub fn (win &SimpleWindow) add_button(name string, title string) &SimpleWindow {
 	return win
 }
 
+pub fn (win &SimpleWindow) add_link(name string, text string, url string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('link')
+	}
+	if win.debug_mode {
+		println('[simplegui DEBUG] Created Control: "${real_name}" (Type: "link", Text: "${text}", URL: "${url}")')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.upsert_control(real_name, 'link', text, url, false, 0)
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_link_control(win.window_info, real_name.str, text.str, url.str)
+	}
+	return win
+}
+
 pub fn (win &SimpleWindow) add_checkbox(name string, label string, checked bool) &SimpleWindow {
 	mut real_name := name
 	if real_name == '' {
@@ -594,6 +625,25 @@ pub fn (win &SimpleWindow) add_checkbox(name string, label string, checked bool)
 	if win.window_info != unsafe { nil } {
 		checked_val := if checked { 1 } else { 0 }
 		C.window_add_checkbox_control(win.window_info, real_name.str, label.str, checked_val)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) add_disclosure(name string, title string, open bool) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('disclosure')
+	}
+	if win.debug_mode {
+		println('[simplegui DEBUG] Created Control: "${real_name}" (Type: "disclosure", Title: "${title}", Open: ${open})')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.upsert_control(real_name, 'disclosure', title, '', open, 0)
+	}
+	if win.window_info != unsafe { nil } {
+		open_val := if open { 1 } else { 0 }
+		C.window_add_disclosure_control(win.window_info, real_name.str, title.str, open_val)
 	}
 	return win
 }
@@ -1128,6 +1178,18 @@ pub fn (win &SimpleWindow) add_form_switch(label string, name string, switch_lab
 	win.begin_row('${real_name}_row')
 	win.add_label('${real_name}_label', label)
 	win.add_switch(real_name, switch_label, checked)
+	win.end_row()
+	return win
+}
+
+pub fn (win &SimpleWindow) add_form_link(label string, name string, link_text string, url string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('link')
+	}
+	win.begin_row('${real_name}_row')
+	win.add_label('${real_name}_label', label)
+	win.add_link(real_name, link_text, url)
 	win.end_row()
 	return win
 }
@@ -3591,5 +3653,68 @@ pub fn (win &SimpleWindow) style_controls(names []string, style_fn fn (name stri
 		}
 	}
 	return win
+}
+
+pub fn (win &SimpleWindow) notify(title string, message string) &SimpleWindow {
+	C.window_deliver_notification(title.str, message.str)
+	return win
+}
+
+pub fn (win &SimpleWindow) badge(text string) &SimpleWindow {
+	C.window_set_dock_badge(text.str)
+	return win
+}
+
+pub fn (win &SimpleWindow) set_slider_range(name string, min_val f64, max_val f64) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_slider_range(win.window_info, name.str, min_val, max_val)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) range(min_val f64, max_val f64) &SimpleWindow {
+	if win.last_control != '' {
+		win.set_slider_range(win.last_control, min_val, max_val)
+	}
+	return win
+}
+
+pub fn beep() {
+	C.window_beep()
+}
+
+pub fn (win &SimpleWindow) enable_search_history(name string, autosave_name string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_enable_search_history(win.window_info, name.str, autosave_name.str)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) set_status_bar_icon(icon_path string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_status_bar_icon(win.window_info, icon_path.str)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) set_status_bar_title(title string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_status_bar_title(win.window_info, title.str)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) set_dock_icon(image_path string) &SimpleWindow {
+	C.window_set_dock_icon(image_path.str)
+	return win
+}
+
+pub fn (win &SimpleWindow) clear_dock_icon() &SimpleWindow {
+	C.window_set_dock_icon(''.str)
+	return win
+}
+
+pub fn play_sound(sound_name string) {
+	C.window_play_system_sound(sound_name.str)
 }
 

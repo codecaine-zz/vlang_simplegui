@@ -1457,4 +1457,42 @@ fn test_rad_improvements() {
 	assert win.get_dirty_values()['first'] == 'new_a'
 }
 
+fn test_macos_native_controls() {
+	mut win := simplegui.new_simple_window('macOS native controls test', 100, 100)
+
+	// 1. Link / Hyperlink controls
+	win.add_link('docs_link', 'Read API Docs', 'https://github.com/codecaine/vlang_simplegui')
+	assert win.has_control('docs_link') == true
+	assert win.get_control_kind('docs_link') == 'link'
+	assert win.get_text('docs_link') == 'Read API Docs'
+
+	win.add_form_link('Official Site:', 'site_link', 'Visit Site', 'https://vlang.org')
+	assert win.has_control('site_link') == true
+	assert win.get_control_kind('site_link') == 'link'
+
+	// 2. Dock badging and notification checks
+	win.badge('7')
+	win.notify('Title', 'Message')
+	simplegui.beep()
+
+	// 3. Slider custom range modifier
+	win.add_slider('vol_slider', 10).range(0.0, 500.0)
+	assert win.has_control('vol_slider') == true
+
+	// 4. Extra macOS controls & ergonomics
+	win.add_disclosure('details_toggle', 'Show Details', false)
+	assert win.has_control('details_toggle') == true
+	assert win.get_control_kind('details_toggle') == 'disclosure'
+	assert win.get_checked('details_toggle') == false
+
+	win.add_search_field('search_box', 'Search...')
+	win.enable_search_history('search_box', 'history_cache')
+
+	win.set_status_bar_title('Status: Running')
+	win.set_status_bar_icon('')
+	win.set_dock_icon('')
+	win.clear_dock_icon()
+	simplegui.play_sound('Glass')
+}
+
 

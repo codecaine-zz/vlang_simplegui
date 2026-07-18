@@ -368,6 +368,7 @@ extern void vlang_dispatch_event(void *win_ptr, const char *name, const char *ev
 @property (nonatomic, strong) NSMutableDictionary *listItemsByName;
 @property (nonatomic, strong) NSMutableDictionary *tableItemsByName;
 @property (nonatomic, strong) NSMutableDictionary *treeItemsByName;
+@property (nonatomic, strong) NSMutableDictionary *linkUrls;
 @property (nonatomic, strong) NSColor *currentBackgroundColor;
 @property (nonatomic, strong) NSColor *currentFontColor;
 @property (nonatomic, strong) NSStatusItem *statusItem;
@@ -387,7 +388,9 @@ extern void vlang_dispatch_event(void *win_ptr, const char *name, const char *ev
 - (NSView *)makeHtmlViewWithName:(NSString *)name html:(NSString *)html;
 - (NSView *)makeDropZoneWithName:(NSString *)name label:(NSString *)label;
 - (NSView *)makeButtonWithName:(NSString *)name title:(NSString *)title;
+- (NSView *)makeLinkWithName:(NSString *)name text:(NSString *)text url:(NSString *)urlStr;
 - (NSView *)makeCheckboxWithName:(NSString *)name label:(NSString *)label checked:(BOOL)checked;
+- (NSView *)makeDisclosureButtonWithName:(NSString *)name title:(NSString *)title state:(BOOL)open;
 - (NSView *)makeNumberFieldWithName:(NSString *)name value:(int)value;
 - (NSView *)makeSliderWithName:(NSString *)name value:(int)value;
 - (NSView *)makePopUpButtonWithName:(NSString *)name selected:(NSString *)selected;
@@ -989,6 +992,7 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   NSLog(@"buildUI called");
   self.controlsByName = [NSMutableDictionary dictionary];
   self.treeItemsByName = [NSMutableDictionary dictionary];
+  self.linkUrls = [NSMutableDictionary dictionary];
 
   NSVisualEffectView *backgroundView = [[NSVisualEffectView alloc] initWithFrame:NSMakeRect(0, 0, self.params.width, self.params.height)];
   [backgroundView setMaterial:NSVisualEffectMaterialWindowBackground];
@@ -1211,6 +1215,25 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   return button;
 }
 
+- (NSView *)makeLinkWithName:(NSString *)name text:(NSString *)text url:(NSString *)urlStr {
+  NSButton *button = [NSButton buttonWithTitle:text target:self action:@selector(handleLinkClicked:)];
+  [button setBezelStyle:NSBezelStyleInline];
+  [button setBordered:NO];
+  [button setWantsLayer:YES];
+  
+  NSMutableAttributedString *attrTitle = [[NSMutableAttributedString alloc] initWithString:text];
+  NSRange range = NSMakeRange(0, [text length]);
+  [attrTitle addAttribute:NSUnderlineStyleAttributeName value:@(NSUnderlineStyleSingle) range:range];
+  [attrTitle addAttribute:NSForegroundColorAttributeName value:[NSColor linkColor] range:range];
+  [attrTitle addAttribute:NSFontAttributeName value:[NSFont systemFontOfSize:[NSFont systemFontSize]] range:range];
+  [button setAttributedTitle:attrTitle];
+  
+  self.linkUrls[[name lowercaseString]] = urlStr;
+  self.controlsByName[[name lowercaseString]] = button;
+  [self addControlToLayout:button];
+  return button;
+}
+
 - (NSView *)makeCheckboxWithName:(NSString *)name label:(NSString *)label checked:(BOOL)checked {
   NSButton *checkbox = [NSButton checkboxWithTitle:label target:self action:@selector(handleCheckboxClicked:)];
   [checkbox setState:checked ? NSOnState : NSOffState];
@@ -1223,6 +1246,25 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   self.controlsByName[[name lowercaseString]] = checkbox;
   [self addControlToLayout:checkbox];
   return checkbox;
+}
+
+- (NSView *)makeDisclosureButtonWithName:(NSString *)name title:(NSString *)title state:(BOOL)open {
+  NSButton *disclosure = [[NSButton alloc] initWithFrame:NSZeroRect];
+  [disclosure setButtonType:NSButtonTypeOnOff];
+  [disclosure setBezelStyle:NSBezelStyleDisclosure];
+  [disclosure setTitle:title];
+  [disclosure setState:open ? NSOnState : NSOffState];
+  [disclosure setTarget:self];
+  [disclosure setAction:@selector(handleDisclosureClicked:)];
+  [disclosure setWantsLayer:YES];
+  
+  if (self.currentFontColor) {
+    applyStyleToView(disclosure, nil, self.currentFontColor);
+  }
+  
+  self.controlsByName[[name lowercaseString]] = disclosure;
+  [self addControlToLayout:disclosure];
+  return disclosure;
 }
 
 - (NSView *)makeNumberFieldWithName:(NSString *)name value:(int)value {
@@ -1995,11 +2037,32 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   }
 }
 
+- (void)handleLinkClicked:(id)sender {
+  NSString *name = [self nameForControl:sender];
+  if (name) {
+    NSString *url = self.linkUrls[[name lowercaseString]];
+    if (url) {
+      [[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:url]];
+    }
+    if (self.win_ptr) {
+      vlang_dispatch_event(self.win_ptr, [name UTF8String], "click", "");
+    }
+  }
+}
+
 - (void)handleCheckboxClicked:(id)sender {
   NSString *name = [self nameForControl:sender];
   BOOL checked = [(NSButton *)sender state] == NSOnState;
   if (name && self.win_ptr) {
     vlang_dispatch_event(self.win_ptr, [name UTF8String], "change", checked ? "true" : "false");
+  }
+}
+
+- (void)handleDisclosureClicked:(id)sender {
+  NSString *name = [self nameForControl:sender];
+  BOOL open = [(NSButton *)sender state] == NSOnState;
+  if (name && self.win_ptr) {
+    vlang_dispatch_event(self.win_ptr, [name UTF8String], "change", open ? "true" : "false");
   }
 }
 
@@ -4964,4 +5027,133 @@ int window_get_titlebar_visible(main__WindowInfo *info) {
     dispatch_sync(dispatch_get_main_queue(), runBlock);
   }
   return result;
+}
+
+void window_deliver_notification(const char *title, const char *message) {
+  NSString *titleStr = nsstring(title);
+  NSString *msgStr = nsstring(message);
+  dispatch_async(dispatch_get_main_queue(), ^{
+    NSUserNotification *notification = [[NSUserNotification alloc] init];
+    [notification setTitle:titleStr];
+    [notification setInformativeText:msgStr];
+    [[NSUserNotificationCenter defaultUserNotificationCenter] deliverNotification:notification];
+  });
+}
+
+void window_set_dock_badge(const char *text) {
+  NSString *badge = nsstring(text);
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [[NSApp dockTile] setBadgeLabel:badge];
+  });
+}
+
+void window_set_slider_range(main__WindowInfo *info, const char *name, double min_val, double max_val) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *controlName = nsstring(name);
+  dispatch_async(dispatch_get_main_queue(), ^{
+    NSView *view = [delegate viewForControlName:controlName];
+    if ([view isKindOfClass:[NSSlider class]]) {
+      NSSlider *slider = (NSSlider *)view;
+      [slider setMinValue:min_val];
+      [slider setMaxValue:max_val];
+    } else if ([view isKindOfClass:[NSLevelIndicator class]]) {
+      NSLevelIndicator *indicator = (NSLevelIndicator *)view;
+      [indicator setMinValue:min_val];
+      [indicator setMaxValue:max_val];
+    }
+  });
+}
+
+void *window_add_link_control(main__WindowInfo *info, const char *name, const char *text, const char *url) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeLinkWithName:nsstring(name) text:nsstring(text) url:nsstring(url)];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return (__bridge void *)control;
+}
+
+void window_beep() {
+  NSBeep();
+}
+
+void *window_add_disclosure_control(main__WindowInfo *info, const char *name, const char *title, int open) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeDisclosureButtonWithName:nsstring(name) title:nsstring(title) state:open == 1];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return (__bridge void *)control;
+}
+
+void window_enable_search_history(main__WindowInfo *info, const char *name, const char *autosave_name) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *controlName = nsstring(name);
+  NSString *autosave = nsstring(autosave_name);
+  dispatch_async(dispatch_get_main_queue(), ^{
+    NSView *view = [delegate viewForControlName:controlName];
+    if ([view isKindOfClass:[NSSearchField class]]) {
+      NSSearchField *searchField = (NSSearchField *)view;
+      [searchField setRecentsAutosaveName:autosave];
+    }
+  });
+}
+
+void window_set_status_bar_icon(main__WindowInfo *info, const char *icon_path) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    if (delegate.statusItem) {
+      if (icon_path && strlen(icon_path) > 0) {
+        NSImage *image = [[NSImage alloc] initWithContentsOfFile:nsstring(icon_path)];
+        if (image) {
+          [image setSize:NSMakeSize(18, 18)];
+          [image setTemplate:YES];
+          delegate.statusItem.button.image = image;
+          delegate.statusItem.button.title = @"";
+        }
+      }
+    }
+  });
+}
+
+void window_set_status_bar_title(main__WindowInfo *info, const char *title) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *titleStr = nsstring(title);
+  dispatch_async(dispatch_get_main_queue(), ^{
+    if (delegate.statusItem) {
+      delegate.statusItem.button.title = titleStr;
+      delegate.statusItem.button.image = nil;
+    }
+  });
+}
+
+void window_set_dock_icon(const char *image_path) {
+  dispatch_async(dispatch_get_main_queue(), ^{
+    if (image_path && strlen(image_path) > 0) {
+      NSImage *image = [[NSImage alloc] initWithContentsOfFile:nsstring(image_path)];
+      if (image) {
+        [NSApp setApplicationIconImage:image];
+      }
+    } else {
+      [NSApp setApplicationIconImage:nil];
+    }
+  });
+}
+
+void window_play_system_sound(const char *sound_name) {
+  NSString *name = nsstring(sound_name);
+  dispatch_async(dispatch_get_main_queue(), ^{
+    NSSound *sound = [NSSound soundNamed:name];
+    [sound play];
+  });
 }

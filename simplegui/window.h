@@ -189,5 +189,18 @@ void window_set_title_visible(main__WindowInfo *info, int visible);
 int window_get_title_visible(main__WindowInfo *info);
 int window_get_titlebar_visible(main__WindowInfo *info);
 
+void window_deliver_notification(const char *title, const char *message);
+void window_set_dock_badge(const char *text);
+void window_set_slider_range(main__WindowInfo *info, const char *name, double min_val, double max_val);
+void *window_add_link_control(main__WindowInfo *info, const char *name, const char *text, const char *url);
+void window_beep();
+
+void *window_add_disclosure_control(main__WindowInfo *info, const char *name, const char *title, int open);
+void window_enable_search_history(main__WindowInfo *info, const char *name, const char *autosave_name);
+void window_set_status_bar_icon(main__WindowInfo *info, const char *icon_path);
+void window_set_status_bar_title(main__WindowInfo *info, const char *title);
+void window_set_dock_icon(const char *image_path);
+void window_play_system_sound(const char *sound_name);
+
 #endif
 
