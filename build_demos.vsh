@@ -47,6 +47,7 @@ fn main() {
 	demo_maps['grid_column_starter.v'] = DemoConfig{'Grid Column Starter', 'spreadsheet.png'}
 	demo_maps['grid_data_editor.v'] = DemoConfig{'Grid Data Editor', 'spreadsheet.png'}
 	demo_maps['grid_style.v'] = DemoConfig{'Grid Style', 'spreadsheet.png'}
+	demo_maps['grid_beginner_demo.v'] = DemoConfig{'Beginner Grid Painter', 'drawing_board.png'}
 	demo_maps['high_level_demo.v'] = DemoConfig{'High Level Demo', 'launcher.png'}
 	demo_maps['list_image_demo.v'] = DemoConfig{'List Image Demo', 'image_viewer.png'}
 	demo_maps['lorem_and_html_demo.v'] = DemoConfig{'Lorem and HTML Demo', 'text_editor.png'}
