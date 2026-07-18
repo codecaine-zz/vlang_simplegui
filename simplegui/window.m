@@ -3587,11 +3587,51 @@ void window_clear_canvas(main__WindowInfo *info, const char *canvas_name) {
   }
 }
 
+static NSString *normalizeMenuShortcut(NSString *shortcut, NSEventModifierFlags *modifierMask) {
+  if (!shortcut || shortcut.length == 0) {
+    if (modifierMask) *modifierMask = 0;
+    return @"";
+  }
+
+  NSArray<NSString *> *parts = [shortcut componentsSeparatedByString:@"+"];
+  NSEventModifierFlags mask = 0;
+  NSString *key = @"";
+
+  for (NSString *part in parts) {
+    NSString *token = [[part lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    if ([token isEqualToString:@""] || [token isEqualToString:@"cmd"] || [token isEqualToString:@"command"]) {
+      mask |= NSEventModifierFlagCommand;
+    } else if ([token isEqualToString:@"ctrl"] || [token isEqualToString:@"control"]) {
+      mask |= NSEventModifierFlagControl;
+    } else if ([token isEqualToString:@"opt"] || [token isEqualToString:@"option"] || [token isEqualToString:@"alt"]) {
+      mask |= NSEventModifierFlagOption;
+    } else if ([token isEqualToString:@"shift"]) {
+      mask |= NSEventModifierFlagShift;
+    } else {
+      key = token;
+    }
+  }
+
+  if (modifierMask) *modifierMask = mask;
+
+  if ([key isEqualToString:@"return"] || [key isEqualToString:@"enter"]) {
+    return @"\r";
+  }
+  if ([key isEqualToString:@"escape"] || [key isEqualToString:@"esc"]) {
+    return @"\033";
+  }
+  if ([key isEqualToString:@"space"]) {
+    return @" ";
+  }
+
+  return key;
+}
+
 void window_add_menu_item(main__WindowInfo *info, const char *menu_name, const char *item_title, const char *shortcut, const char *handler_name) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
   NSString *menuName = nsstring(menu_name);
   NSString *itemTitle = nsstring(item_title);
-  NSString *key = nsstring(shortcut);
+  NSString *shortcutText = nsstring(shortcut);
   NSString *handlerName = nsstring(handler_name);
   
   dispatch_async(dispatch_get_main_queue(), ^{
@@ -3599,7 +3639,10 @@ void window_add_menu_item(main__WindowInfo *info, const char *menu_name, const c
       if ([itemTitle isEqualToString:@"-"]) {
         [delegate.statusBarMenu addItem:[NSMenuItem separatorItem]];
       } else {
-        NSMenuItem *item = [[NSMenuItem alloc] initWithTitle:itemTitle action:@selector(handleMenuItemClicked:) keyEquivalent:key];
+        NSEventModifierFlags modifierMask = 0;
+        NSString *keyEquivalent = normalizeMenuShortcut(shortcutText, &modifierMask);
+        NSMenuItem *item = [[NSMenuItem alloc] initWithTitle:itemTitle action:@selector(handleMenuItemClicked:) keyEquivalent:keyEquivalent];
+        [item setKeyEquivalentModifierMask:modifierMask];
         [item setTarget:delegate];
         [item setRepresentedObject:handlerName];
         [delegate.statusBarMenu addItem:item];
@@ -3610,7 +3653,10 @@ void window_add_menu_item(main__WindowInfo *info, const char *menu_name, const c
         if ([itemTitle isEqualToString:@"-"]) {
           [submenu addItem:[NSMenuItem separatorItem]];
         } else {
-          NSMenuItem *item = [[NSMenuItem alloc] initWithTitle:itemTitle action:@selector(handleMenuItemClicked:) keyEquivalent:key];
+          NSEventModifierFlags modifierMask = 0;
+          NSString *keyEquivalent = normalizeMenuShortcut(shortcutText, &modifierMask);
+          NSMenuItem *item = [[NSMenuItem alloc] initWithTitle:itemTitle action:@selector(handleMenuItemClicked:) keyEquivalent:keyEquivalent];
+          [item setKeyEquivalentModifierMask:modifierMask];
           [item setTarget:delegate];
           [item setRepresentedObject:handlerName];
           [submenu addItem:item];
