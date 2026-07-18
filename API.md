@@ -461,6 +461,38 @@ Adds a token bubble tags editor input field.
 - **Features**: Converts typical text phrases into tag chips or tag buttons when users press comma.
 - **Reading**: Standard `win.get_text()` returns a clean comma-separated sequence.
 
+### `win.add_stepper(name string, min_val int, max_val int, step int, value int) &SimpleWindow`
+
+Adds a standalone native up/down arrow stepper (`NSStepper`) with a live value label beside it.
+
+- **Parameters**: `min_val`/`max_val` bound the value, `step` is the increment per click (values <= 0 default to 1).
+- **Accessing**: Use `win.get_value_int(name)` / `win.set_value_int(name, value)`; user clicks fire `change` events with the numeric value.
+- **Range**: Adjust bounds later with `win.set_slider_range(name, min, max)` or the chainable `.range(min, max)`.
+
+### `win.add_help_button(name string) &SimpleWindow`
+
+Adds the round native macOS "?" help button (`NSBezelStyleHelpButton`). Attach behavior with `.onclick()` — typically opening documentation or a popover-style dialog.
+
+### `win.add_knob(name string, value int) &SimpleWindow`
+
+Adds a circular rotary slider knob (`NSSliderTypeCircular`) with a live value label.
+
+- **Range**: Defaults to 0–100; chain `.range(min, max)` to customize.
+- **Accessing**: Same numeric accessors and `change` events as a linear slider.
+
+### `win.add_pull_down(name string, title string, items []string) &SimpleWindow`
+
+Adds a native pull-down menu button (`NSPopUpButton` in pulls-down mode). Unlike `add_dropdown`, the button always displays `title` and acts as a compact action menu.
+
+- **Events**: Choosing an item fires a `change` event whose value is the chosen item's text.
+
+### `win.add_image_button(name string, symbol string, title string) &SimpleWindow`
+
+Adds a push button decorated with a native SF Symbol image (macOS 11+), e.g. `'trash'`, `'gearshape'`, `'square.and.arrow.up'`.
+
+- **Icon-only**: Pass an empty `title` for a compact icon-only button.
+- **Events**: Fires standard `click` events (`.onclick()`).
+
 ---
 
 ## 4. Control Sizing & Styling

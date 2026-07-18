@@ -202,5 +202,11 @@ void window_set_status_bar_title(main__WindowInfo *info, const char *title);
 void window_set_dock_icon(const char *image_path);
 void window_play_system_sound(const char *sound_name);
 
+void *window_add_stepper_control(main__WindowInfo *info, const char *name, double min_val, double max_val, double step, double value);
+void *window_add_help_button_control(main__WindowInfo *info, const char *name);
+void *window_add_knob_control(main__WindowInfo *info, const char *name, double min_val, double max_val, double value);
+void *window_add_pull_down_control(main__WindowInfo *info, const char *name, const char *title, const char **items, int items_count);
+void *window_add_image_button_control(main__WindowInfo *info, const char *name, const char *symbol, const char *title);
+
 #endif
 

@@ -408,6 +408,11 @@ extern void vlang_dispatch_event(void *win_ptr, const char *name, const char *ev
 - (NSView *)makeSpinnerWithName:(NSString *)name active:(BOOL)active;
 - (NSView *)makePathControlWithName:(NSString *)name path:(NSString *)pathString;
 - (NSView *)makeTokenFieldWithName:(NSString *)name value:(NSString *)value;
+- (NSView *)makeStepperWithName:(NSString *)name minValue:(double)minValue maxValue:(double)maxValue step:(double)step value:(double)value;
+- (NSView *)makeHelpButtonWithName:(NSString *)name;
+- (NSView *)makeKnobWithName:(NSString *)name minValue:(double)minValue maxValue:(double)maxValue value:(double)value;
+- (NSView *)makePullDownWithName:(NSString *)name title:(NSString *)title items:(NSArray<NSString *> *)items;
+- (NSView *)makeImageButtonWithName:(NSString *)name symbol:(NSString *)symbolName title:(NSString *)title;
 - (void)handleRadioChanged:(id)sender;
 - (void)handleSwitchChanged:(id)sender;
 - (void)handleListDoubleClick:(id)sender;
@@ -1706,6 +1711,144 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   return tokenField;
 }
 
+- (NSView *)makeStepperWithName:(NSString *)name minValue:(double)minValue maxValue:(double)maxValue step:(double)step value:(double)value {
+  NSStackView *row = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [row setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+  [row setSpacing:8.0];
+  [self configureRowStack:row];
+  
+  NSStepper *stepper = [[NSStepper alloc] initWithFrame:NSZeroRect];
+  [stepper setMinValue:minValue];
+  [stepper setMaxValue:maxValue];
+  [stepper setIncrement:step > 0 ? step : 1];
+  [stepper setDoubleValue:value];
+  [stepper setValueWraps:NO];
+  [stepper setAutorepeat:YES];
+  [stepper setTarget:self];
+  [stepper setAction:@selector(handleStandaloneStepperChanged:)];
+  [stepper setWantsLayer:YES];
+  
+  NSTextField *label = [NSTextField labelWithString:[NSString stringWithFormat:@"%.0f", value]];
+  [label.widthAnchor constraintGreaterThanOrEqualToConstant:40].active = YES;
+  [label setWantsLayer:YES];
+  if (self.currentFontColor) {
+    [label setTextColor:self.currentFontColor];
+  }
+  
+  [row addArrangedSubview:stepper];
+  [row addArrangedSubview:label];
+  
+  self.controlsByName[[name lowercaseString]] = stepper;
+  [self addControlToLayout:row];
+  return stepper;
+}
+
+- (void)handleStandaloneStepperChanged:(id)sender {
+  NSStepper *stepper = (NSStepper *)sender;
+  NSView *parent = stepper.superview;
+  if ([parent isKindOfClass:[NSStackView class]]) {
+    NSStackView *row = (NSStackView *)parent;
+    if (row.arrangedSubviews.count > 1 && [row.arrangedSubviews[1] isKindOfClass:[NSTextField class]]) {
+      NSTextField *label = (NSTextField *)row.arrangedSubviews[1];
+      [label setStringValue:[NSString stringWithFormat:@"%.0f", [stepper doubleValue]]];
+    }
+  }
+  NSString *name = [self nameForControl:stepper];
+  if (name && self.win_ptr) {
+    NSString *valStr = [NSString stringWithFormat:@"%.0f", [stepper doubleValue]];
+    vlang_dispatch_event(self.win_ptr, [name UTF8String], "change", [valStr UTF8String]);
+  }
+}
+
+- (NSView *)makeHelpButtonWithName:(NSString *)name {
+  NSButton *button = [NSButton buttonWithTitle:@"" target:self action:@selector(handleButtonClicked:)];
+  [button setBezelStyle:NSBezelStyleHelpButton];
+  [button setTranslatesAutoresizingMaskIntoConstraints:NO];
+  [button.widthAnchor constraintEqualToConstant:24.0].active = YES;
+  [button.heightAnchor constraintEqualToConstant:24.0].active = YES;
+  [button setWantsLayer:NO];
+  
+  self.controlsByName[[name lowercaseString]] = button;
+  [self addControlToLayout:button];
+  return button;
+}
+
+- (NSView *)makeKnobWithName:(NSString *)name minValue:(double)minValue maxValue:(double)maxValue value:(double)value {
+  NSStackView *row = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [row setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+  [row setSpacing:10.0];
+  [self configureRowStack:row];
+  
+  NSSlider *knob = [[NSSlider alloc] initWithFrame:NSZeroRect];
+  [knob setSliderType:NSSliderTypeCircular];
+  [knob setMinValue:minValue];
+  [knob setMaxValue:maxValue];
+  [knob setDoubleValue:value];
+  [knob setTarget:self];
+  [knob setAction:@selector(handleSliderChanged:)];
+  [knob setTranslatesAutoresizingMaskIntoConstraints:NO];
+  [knob.widthAnchor constraintEqualToConstant:36.0].active = YES;
+  [knob.heightAnchor constraintEqualToConstant:36.0].active = YES;
+  [knob setWantsLayer:YES];
+  
+  NSTextField *label = [NSTextField labelWithString:[NSString stringWithFormat:@"Value: %d", (int)value]];
+  [label.widthAnchor constraintEqualToConstant:100].active = YES;
+  [label setWantsLayer:YES];
+  if (self.currentFontColor) {
+    [label setTextColor:self.currentFontColor];
+  }
+  
+  [row addArrangedSubview:knob];
+  [row addArrangedSubview:label];
+  
+  self.controlsByName[[name lowercaseString]] = knob;
+  [self addControlToLayout:row];
+  return knob;
+}
+
+- (NSView *)makePullDownWithName:(NSString *)name title:(NSString *)title items:(NSArray<NSString *> *)items {
+  NSPopUpButton *popup = [[NSPopUpButton alloc] initWithFrame:NSZeroRect pullsDown:YES];
+  [popup addItemWithTitle:title ?: @""];
+  for (NSString *item in items) {
+    [popup addItemWithTitle:item];
+  }
+  [popup setTarget:self];
+  [popup setAction:@selector(handlePullDownChanged:)];
+  [self makeStretchableView:popup minimumWidth:180];
+  [popup setWantsLayer:YES];
+  
+  self.controlsByName[[name lowercaseString]] = popup;
+  [self addControlToLayout:popup];
+  return popup;
+}
+
+- (void)handlePullDownChanged:(id)sender {
+  NSPopUpButton *popup = (NSPopUpButton *)sender;
+  NSString *choice = [popup titleOfSelectedItem] ?: @"";
+  NSString *name = [self nameForControl:popup];
+  if (name && self.win_ptr) {
+    vlang_dispatch_event(self.win_ptr, [name UTF8String], "change", [choice UTF8String]);
+  }
+}
+
+- (NSView *)makeImageButtonWithName:(NSString *)name symbol:(NSString *)symbolName title:(NSString *)title {
+  NSButton *button = [NSButton buttonWithTitle:title ?: @"" target:self action:@selector(handleButtonClicked:)];
+  [button setBezelStyle:NSBezelStyleRounded];
+  if (@available(macOS 11.0, *)) {
+    NSImage *img = [NSImage imageWithSystemSymbolName:symbolName accessibilityDescription:(title.length > 0 ? title : symbolName)];
+    if (img) {
+      [button setImage:img];
+      [button setImagePosition:(title.length > 0 ? NSImageLeading : NSImageOnly)];
+    }
+  }
+  [self makeStretchableView:button minimumWidth:60];
+  [button setWantsLayer:NO];
+  
+  self.controlsByName[[name lowercaseString]] = button;
+  [self addControlToLayout:button];
+  return button;
+}
+
 - (void)handleInputChanged:(id)sender {
   NSString *name = [self nameForControl:sender];
   if (name && self.win_ptr) {
@@ -2962,6 +3105,8 @@ void window_set_control_text(void *control, const char *text) {
     [(NSButton *)view setTitle:nsText];
   } else if ([view isKindOfClass:[NSSlider class]]) {
     [(NSSlider *)view setDoubleValue:[nsText doubleValue]];
+  } else if ([view isKindOfClass:[NSStepper class]]) {
+    [(NSStepper *)view setDoubleValue:[nsText doubleValue]];
   } else if ([view isKindOfClass:[NSColorWell class]]) {
     [(NSColorWell *)view setColor:colorFromString(text)];
   } else if ([view isKindOfClass:[NSDatePicker class]]) {
@@ -3040,6 +3185,8 @@ char *window_get_control_text(void *control) {
     }
   } else if ([view isKindOfClass:[NSSlider class]]) {
     result = [NSString stringWithFormat:@"%.0f", [(NSSlider *)view doubleValue]];
+  } else if ([view isKindOfClass:[NSStepper class]]) {
+    result = [NSString stringWithFormat:@"%.0f", [(NSStepper *)view doubleValue]];
   } else if ([view isKindOfClass:[NSColorWell class]]) {
     NSColor *color = [(NSColorWell *)view color];
     CGFloat r=0, g=0, b=0, a=0;
@@ -3152,6 +3299,8 @@ void window_set_control_int(void *control, int value) {
     [(NSProgressIndicator *)view setDoubleValue:(double)value];
   } else if ([view isKindOfClass:[NSLevelIndicator class]]) {
     [(NSLevelIndicator *)view setIntValue:value];
+  } else if ([view isKindOfClass:[NSStepper class]]) {
+    [(NSStepper *)view setIntValue:value];
   } else if ([view isKindOfClass:[NSStackView class]]) {
     NSStackView *radioStack = (NSStackView *)view;
     NSInteger idx = 0;
@@ -3181,6 +3330,8 @@ int window_get_control_int(void *control) {
     return (int)[(NSProgressIndicator *)view doubleValue];
   } else if ([view isKindOfClass:[NSLevelIndicator class]]) {
     return (int)[(NSLevelIndicator *)view intValue];
+  } else if ([view isKindOfClass:[NSStepper class]]) {
+    return [(NSStepper *)view intValue];
   } else if ([view isKindOfClass:[NSStackView class]]) {
     NSStackView *radioStack = (NSStackView *)view;
     NSInteger idx = 0;
@@ -3273,6 +3424,15 @@ void window_set_control_int_by_name(main__WindowInfo *info, const char *name, in
         if (row.arrangedSubviews.count > 1 && [row.arrangedSubviews[1] isKindOfClass:[NSTextField class]]) {
           NSTextField *label = (NSTextField *)row.arrangedSubviews[1];
           [label setStringValue:[NSString stringWithFormat:@"Value: %d", value]];
+        }
+      }
+    } else if ([view isKindOfClass:[NSStepper class]]) {
+      NSView *parent = view.superview;
+      if ([parent isKindOfClass:[NSStackView class]]) {
+        NSStackView *row = (NSStackView *)parent;
+        if (row.arrangedSubviews.count > 1 && [row.arrangedSubviews[1] isKindOfClass:[NSTextField class]]) {
+          NSTextField *label = (NSTextField *)row.arrangedSubviews[1];
+          [label setStringValue:[NSString stringWithFormat:@"%d", value]];
         }
       }
     }
@@ -5050,7 +5210,7 @@ void window_set_dock_badge(const char *text) {
 void window_set_slider_range(main__WindowInfo *info, const char *name, double min_val, double max_val) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
   NSString *controlName = nsstring(name);
-  dispatch_async(dispatch_get_main_queue(), ^{
+  void (^runBlock)(void) = ^{
     NSView *view = [delegate viewForControlName:controlName];
     if ([view isKindOfClass:[NSSlider class]]) {
       NSSlider *slider = (NSSlider *)view;
@@ -5060,8 +5220,17 @@ void window_set_slider_range(main__WindowInfo *info, const char *name, double mi
       NSLevelIndicator *indicator = (NSLevelIndicator *)view;
       [indicator setMinValue:min_val];
       [indicator setMaxValue:max_val];
+    } else if ([view isKindOfClass:[NSStepper class]]) {
+      NSStepper *stepper = (NSStepper *)view;
+      [stepper setMinValue:min_val];
+      [stepper setMaxValue:max_val];
     }
-  });
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_async(dispatch_get_main_queue(), runBlock);
+  }
 }
 
 void *window_add_link_control(main__WindowInfo *info, const char *name, const char *text, const char *url) {
@@ -5107,6 +5276,80 @@ void window_enable_search_history(main__WindowInfo *info, const char *name, cons
       [searchField setRecentsAutosaveName:autosave];
     }
   });
+}
+
+void *window_add_stepper_control(main__WindowInfo *info, const char *name, double min_val, double max_val, double step, double value) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeStepperWithName:nsstring(name) minValue:min_val maxValue:max_val step:step value:value];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return (__bridge void *)control;
+}
+
+void *window_add_help_button_control(main__WindowInfo *info, const char *name) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeHelpButtonWithName:nsstring(name)];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return (__bridge void *)control;
+}
+
+void *window_add_knob_control(main__WindowInfo *info, const char *name, double min_val, double max_val, double value) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeKnobWithName:nsstring(name) minValue:min_val maxValue:max_val value:value];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return (__bridge void *)control;
+}
+
+void *window_add_pull_down_control(main__WindowInfo *info, const char *name, const char *title, const char **items, int items_count) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    NSMutableArray *arr = [NSMutableArray array];
+    for (int i = 0; i < items_count; i++) {
+      [arr addObject:nsstring(items[i])];
+    }
+    control = [delegate makePullDownWithName:nsstring(name) title:nsstring(title) items:arr];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return (__bridge void *)control;
+}
+
+void *window_add_image_button_control(main__WindowInfo *info, const char *name, const char *symbol, const char *title) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeImageButtonWithName:nsstring(name) symbol:nsstring(symbol) title:nsstring(title)];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return (__bridge void *)control;
 }
 
 void window_set_status_bar_icon(main__WindowInfo *info, const char *icon_path) {

@@ -193,6 +193,11 @@ fn C.window_beep()
 
 fn C.window_add_disclosure_control(&WindowInfo, &u8, &u8, int) voidptr
 fn C.window_enable_search_history(&WindowInfo, &u8, &u8)
+fn C.window_add_stepper_control(&WindowInfo, &u8, f64, f64, f64, f64) voidptr
+fn C.window_add_help_button_control(&WindowInfo, &u8) voidptr
+fn C.window_add_knob_control(&WindowInfo, &u8, f64, f64, f64) voidptr
+fn C.window_add_pull_down_control(&WindowInfo, &u8, &u8, &&u8, int) voidptr
+fn C.window_add_image_button_control(&WindowInfo, &u8, &u8, &u8) voidptr
 fn C.window_set_status_bar_icon(&WindowInfo, &u8)
 fn C.window_set_status_bar_title(&WindowInfo, &u8)
 fn C.window_set_dock_icon(&u8)
@@ -997,6 +1002,113 @@ pub fn (win &SimpleWindow) add_token_field(name string, value string) &SimpleWin
 	return win
 }
 
+// add_stepper inserts a standalone native NSStepper (up/down arrows) with a live value label.
+// Use get_value_int/set_value_int to read or write the current value.
+pub fn (win &SimpleWindow) add_stepper(name string, min_val int, max_val int, step int, value int) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('stepper')
+	}
+	if win.debug_mode {
+		println('[simplegui DEBUG] Created Control: "${real_name}" (Type: "stepper", Min: ${min_val}, Max: ${max_val}, Step: ${step}, Value: ${value})')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.upsert_control(real_name, 'stepper', '', value.str(), false, value)
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_stepper_control(win.window_info, real_name.str, f64(min_val), f64(max_val),
+			f64(step), f64(value))
+	}
+	return win
+}
+
+// add_help_button inserts the round native macOS "?" help button (NSBezelStyleHelpButton).
+// Attach behavior with .onclick().
+pub fn (win &SimpleWindow) add_help_button(name string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('helpbutton')
+	}
+	if win.debug_mode {
+		println('[simplegui DEBUG] Created Control: "${real_name}" (Type: "helpbutton")')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.upsert_control(real_name, 'helpbutton', '', '', false, 0)
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_help_button_control(win.window_info, real_name.str)
+	}
+	return win
+}
+
+// add_knob inserts a circular rotary slider (NSSliderTypeCircular) with a live value label.
+// Defaults to a 0-100 range; chain .range(min, max) to customize.
+pub fn (win &SimpleWindow) add_knob(name string, value int) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('knob')
+	}
+	if win.debug_mode {
+		println('[simplegui DEBUG] Created Control: "${real_name}" (Type: "knob", Value: ${value})')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.upsert_control(real_name, 'knob', '', value.str(), false, value)
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_knob_control(win.window_info, real_name.str, 0.0, 100.0, f64(value))
+	}
+	return win
+}
+
+// add_pull_down inserts a native pull-down menu button (NSPopUpButton pullsDown:YES).
+// The button always shows `title`; choosing an item fires a change event with the item text.
+pub fn (win &SimpleWindow) add_pull_down(name string, title string, items []string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('pulldown')
+	}
+	if win.debug_mode {
+		println('[simplegui DEBUG] Created Control: "${real_name}" (Type: "pulldown", Title: "${title}", Items: ${items.len})')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.upsert_control(real_name, 'pulldown', title, '', false, 0)
+	}
+	if win.window_info != unsafe { nil } {
+		mut c_items := []&u8{}
+		for item in items {
+			c_items << item.str
+		}
+		C.window_add_pull_down_control(win.window_info, real_name.str, title.str, c_items.data,
+			items.len)
+	}
+	return win
+}
+
+// add_image_button inserts a push button decorated with a native SF Symbol image
+// (e.g. 'trash', 'gearshape', 'square.and.arrow.up'). Pass an empty title for an icon-only button.
+pub fn (win &SimpleWindow) add_image_button(name string, symbol string, title string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('imagebutton')
+	}
+	if win.debug_mode {
+		println('[simplegui DEBUG] Created Control: "${real_name}" (Type: "imagebutton", Symbol: "${symbol}", Title: "${title}")')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.upsert_control(real_name, 'imagebutton', title, symbol, false, 0)
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_image_button_control(win.window_info, real_name.str, symbol.str,
+			title.str)
+	}
+	return win
+}
+
 pub fn (win &SimpleWindow) configure(callback fn (mut cfg WindowConfig)) &SimpleWindow {
 	mut cfg := WindowConfig{
 		title:                        win.title
@@ -1275,7 +1387,7 @@ pub fn (win &SimpleWindow) get_value(name string) string {
 		kind := win.controls[idx].kind
 		if kind in ['checkbox', 'switch', 'spinner'] {
 			return if win.controls[idx].checked { 'true' } else { 'false' }
-		} else if kind in ['number', 'slider', 'progress', 'levelindicator'] {
+		} else if kind in ['number', 'slider', 'progress', 'levelindicator', 'stepper', 'knob'] {
 			return win.controls[idx].number.str()
 		}
 		return win.controls[idx].value
@@ -1637,7 +1749,7 @@ pub fn (win &SimpleWindow) clear(name string) &SimpleWindow {
 	entry := win.controls[idx]
 	if entry.kind in ['checkbox', 'switch', 'spinner'] {
 		win.set_checked(name, false)
-	} else if entry.kind in ['number', 'slider', 'progress', 'levelindicator'] {
+	} else if entry.kind in ['number', 'slider', 'progress', 'levelindicator', 'stepper', 'knob'] {
 		win.set_value_int(name, 0)
 	} else if entry.kind in ['input', 'password', 'textarea', 'date', 'mode', 'theme', 'listbox',
 		'color', 'search', 'dropdown', 'segmented', 'radiogroup', 'combobox', 'pathcontrol',
@@ -1659,7 +1771,7 @@ pub fn (win &SimpleWindow) reset_form() &SimpleWindow {
 		entry := win.controls[i]
 		if entry.kind in ['checkbox', 'switch', 'spinner'] {
 			win.set_checked(entry.name, entry.initial_checked)
-		} else if entry.kind in ['number', 'slider', 'progress', 'levelindicator'] {
+		} else if entry.kind in ['number', 'slider', 'progress', 'levelindicator', 'stepper', 'knob'] {
 			win.set_value_int(entry.name, entry.initial_number)
 		} else if entry.kind in ['input', 'password', 'textarea', 'date', 'mode', 'theme', 'listbox',
 			'color', 'search', 'dropdown', 'segmented', 'radiogroup', 'combobox', 'pathcontrol',
@@ -2502,7 +2614,7 @@ fn vlang_dispatch_event(win_ptr voidptr, name_str &u8, event_str &u8, value_str 
 			kind := win.controls[idx].kind
 			if kind == 'checkbox' || kind == 'toggle' {
 				win.controls[idx].checked = (value == 'true')
-			} else if kind == 'number' || kind == 'slider' || kind == 'progress' {
+			} else if kind in ['number', 'slider', 'progress', 'stepper', 'knob', 'levelindicator'] {
 				win.controls[idx].number = value.int()
 			}
 			win.controls[idx].value = value
@@ -3572,13 +3684,14 @@ pub fn (win &SimpleWindow) is_control_dirty(name string) bool {
 		return false
 	}
 	entry := win.controls[idx]
-	if entry.kind in ['label', 'button', 'image', 'html_view', 'progress'] {
+	if entry.kind in ['label', 'button', 'image', 'html_view', 'progress', 'helpbutton',
+		'imagebutton'] {
 		return false
 	}
 	if entry.kind in ['checkbox', 'toggle', 'spinner'] {
 		return entry.checked != entry.initial_checked
 	}
-	if entry.kind in ['number', 'slider', 'levelindicator'] {
+	if entry.kind in ['number', 'slider', 'levelindicator', 'stepper', 'knob'] {
 		return entry.number != entry.initial_number
 	}
 	return entry.value != entry.initial_value
@@ -3622,7 +3735,7 @@ pub fn (win &SimpleWindow) get_dirty_values() map[string]string {
 		if win.is_control_dirty(entry.name) {
 			if entry.kind in ['checkbox', 'toggle', 'spinner'] {
 				values[entry.name] = win.get_checked(entry.name).str()
-			} else if entry.kind in ['number', 'slider', 'levelindicator'] {
+			} else if entry.kind in ['number', 'slider', 'levelindicator', 'stepper', 'knob'] {
 				values[entry.name] = win.get_value_int(entry.name).str()
 			} else {
 				values[entry.name] = win.get_text(entry.name)

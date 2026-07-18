@@ -1495,4 +1495,52 @@ fn test_macos_native_controls() {
 	simplegui.play_sound('Glass')
 }
 
+fn test_extra_native_controls() {
+	mut win := simplegui.new_simple_window('extra native controls test', 100, 100)
+
+	// 1. Standalone stepper (NSStepper)
+	win.add_stepper('qty_stepper', 0, 50, 5, 10)
+	assert win.has_control('qty_stepper') == true
+	assert win.get_control_kind('qty_stepper') == 'stepper'
+	assert win.get_value_int('qty_stepper') == 10
+	win.set_value_int('qty_stepper', 25)
+	assert win.get_value_int('qty_stepper') == 25
+
+	// 2. Native help button (NSBezelStyleHelpButton)
+	win.add_help_button('help_btn').onclick(fn (mut w simplegui.SimpleWindow) {})
+	assert win.has_control('help_btn') == true
+	assert win.get_control_kind('help_btn') == 'helpbutton'
+
+	// 3. Circular knob slider (NSSliderTypeCircular) with custom range
+	win.add_knob('gain_knob', 40).range(0.0, 200.0)
+	assert win.has_control('gain_knob') == true
+	assert win.get_control_kind('gain_knob') == 'knob'
+	assert win.get_value_int('gain_knob') == 40
+	win.set_value_int('gain_knob', 150)
+	assert win.get_value_int('gain_knob') == 150
+
+	// 4. Pull-down menu button (NSPopUpButton pullsDown:YES)
+	win.add_pull_down('actions_menu', 'Actions', ['Duplicate', 'Rename', 'Delete'])
+	assert win.has_control('actions_menu') == true
+	assert win.get_control_kind('actions_menu') == 'pulldown'
+
+	// 5. SF Symbol image button
+	win.add_image_button('share_btn', 'square.and.arrow.up', 'Share')
+	assert win.has_control('share_btn') == true
+	assert win.get_control_kind('share_btn') == 'imagebutton'
+
+	// Buttons never count as dirty; value controls do
+	assert win.is_control_dirty('help_btn') == false
+	assert win.is_control_dirty('share_btn') == false
+	assert win.is_control_dirty('qty_stepper') == true
+	assert win.is_control_dirty('gain_knob') == true
+	win.commit_changes()
+	assert win.is_control_dirty('qty_stepper') == false
+
+	// reset_form restores the committed baseline value for stepper/knob
+	win.set_value_int('qty_stepper', 3)
+	win.reset_form()
+	assert win.get_value_int('qty_stepper') == 25
+}
+
 

@@ -319,7 +319,7 @@ pub fn (win &SimpleWindow) reset_many(names []string) &SimpleWindow {
 		entry := win.controls[idx]
 		if entry.kind in ['checkbox', 'switch', 'spinner'] {
 			win.set_checked(name, entry.initial_checked)
-		} else if entry.kind in ['number', 'slider', 'progress', 'levelindicator'] {
+		} else if entry.kind in ['number', 'slider', 'progress', 'levelindicator', 'stepper', 'knob'] {
 			win.set_value_int(name, entry.initial_number)
 		} else if entry.kind in ['input', 'password', 'textarea', 'date', 'mode', 'theme', 'listbox',
 			'color', 'search', 'dropdown', 'segmented', 'radiogroup', 'combobox', 'pathcontrol',
@@ -517,7 +517,7 @@ pub fn (win &SimpleWindow) load_values_from_file(path string) ! {
 			kind := win.get_control_kind(name)
 			if kind in ['checkbox', 'switch', 'spinner'] {
 				win.set_checked(name, val == 'true')
-			} else if kind in ['number', 'slider', 'progress', 'levelindicator'] {
+			} else if kind in ['number', 'slider', 'progress', 'levelindicator', 'stepper', 'knob'] {
 				win.set_value_int(name, val.int())
 			} else {
 				win.set_text(name, val)

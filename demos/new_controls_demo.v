@@ -42,6 +42,42 @@ fn main() {
 			w.set_status('Search: ${value}')
 		})
 
+	win.add_separator()
+	win.add_heading('Extra Native Controls')
+
+	// Standalone up/down stepper (NSStepper)
+	win.row('stepper_row', fn (mut w simplegui.SimpleWindow) {
+		w.add_label('stepper_label', 'Quantity:')
+		w.add_stepper('quantity', 0, 100, 5, 25).onchange(fn (mut w simplegui.SimpleWindow, value string) {
+			w.set_status('Quantity: ${value}')
+		})
+		// Round native "?" help button (NSBezelStyleHelpButton)
+		w.add_help_button('qty_help').onclick(fn (mut w simplegui.SimpleWindow) {
+			w.info('Help', 'Use the stepper arrows to adjust the quantity in steps of 5.')
+		})
+	})
+
+	// Circular rotary knob slider (NSSliderTypeCircular)
+	win.add_label('knob_label', 'Gain knob (0-200):')
+	win.add_knob('gain', 75).range(0.0, 200.0).onchange(fn (mut w simplegui.SimpleWindow, value string) {
+		w.set_status('Gain: ${value}')
+	})
+
+	// Pull-down action menu button (NSPopUpButton pullsDown:YES)
+	win.add_pull_down('actions', 'Actions', ['Duplicate', 'Rename', 'Delete']).onchange(fn (mut w simplegui.SimpleWindow, value string) {
+		w.set_status('Action chosen: ${value}')
+	})
+
+	// SF Symbol image buttons (macOS 11+)
+	win.row('icon_buttons', fn (mut w simplegui.SimpleWindow) {
+		w.add_image_button('share', 'square.and.arrow.up', 'Share').onclick(fn (mut w simplegui.SimpleWindow) {
+			w.set_status('Share clicked')
+		})
+		w.add_image_button('trash', 'trash', '').onclick(fn (mut w simplegui.SimpleWindow) {
+			w.set_status('Trash clicked')
+		})
+	})
+
 	win.add_action_row({
 		'Lock Resize':  fn (mut w simplegui.SimpleWindow) {
 			w.set_resizable(false)
