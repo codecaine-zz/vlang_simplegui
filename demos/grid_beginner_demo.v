@@ -44,8 +44,10 @@ fn main() {
 		.set_spacing(10)
 
 	// Heading and description
+
 	win.add_heading('🎨 2D Grid Painter')
 		.font_color('#bd93f9')
+
 	win.add_label('lbl_info', 'Learn 2D layouts by creating visual grids. Click cells to paint!')
 		.font_size(11)
 		.font_color('#6272a4')
@@ -61,6 +63,7 @@ fn main() {
 			for c in 0 .. grid_size {
 				cell_name := 'cell_${r}_${c}'
 				// Add button cell with default color
+
 				w.add_button(cell_name, ' ')
 					.width(55)
 					.height(55)
@@ -93,6 +96,7 @@ fn main() {
 		// Native color well row
 		w.begin_row('well_row')
 		w.add_label('lbl_active', 'Active Color:').width(100).bold(true)
+
 		w.add_color_well('custom_color_well', '#ff5555')
 			.onchange(fn [mut state] (mut w2 simplegui.SimpleWindow, hex_color string) {
 				state.active_color = hex_color
@@ -109,6 +113,7 @@ fn main() {
 		w.add_label('lbl_presets', 'Presets:').width(80).bold(true)
 		for idx, color_hex in preset_colors {
 			preset_btn := 'preset_${idx}'
+
 			w.add_button(preset_btn, ' ')
 				.width(32)
 				.height(32)
@@ -201,6 +206,7 @@ fn main() {
 
 	// 6. Output textarea for logs and exports
 	win.add_label('lbl_output', 'Export Output & Event Logs:')
+
 	win.add_textarea('txt_output', 'Welcome to the 2D Grid Painter!\nSelect a color and paint your design on the grid.\n')
 		.height(100)
 
