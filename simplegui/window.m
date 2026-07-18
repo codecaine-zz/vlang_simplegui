@@ -3784,7 +3784,7 @@ void window_set_table_rows(main__WindowInfo *info, const char *name, const char 
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
   NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
   
-  dispatch_async(dispatch_get_main_queue(), ^{
+  void (^runBlock)(void) = ^{
     NSMutableArray *rowsArray = [NSMutableArray array];
     if (flat_items && total_count > 0 && columns_count > 0) {
       int row_count = total_count / columns_count;
@@ -3792,7 +3792,8 @@ void window_set_table_rows(main__WindowInfo *info, const char *name, const char 
         NSMutableArray *colsArray = [NSMutableArray array];
         for (int c = 0; c < columns_count; c++) {
           int idx = r * columns_count + c;
-          [colsArray addObject:nsstring(flat_items[idx])];
+          const char *value = flat_items[idx];
+          [colsArray addObject:(value != NULL) ? nsstring(value) : @""];
         }
         [rowsArray addObject:colsArray];
       }
@@ -3811,7 +3812,13 @@ void window_set_table_rows(main__WindowInfo *info, const char *name, const char 
         [tableView reloadData];
       }
     }
-  });
+  };
+  
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
 }
 
 void *window_add_tree_view_control(main__WindowInfo *info, const char *name, int height) {

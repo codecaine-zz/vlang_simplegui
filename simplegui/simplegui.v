@@ -1062,10 +1062,9 @@ pub fn (win &SimpleWindow) get_debug_mode() bool {
 	return win.debug_mode
 }
 
-// Value setters and getters calling the generic name-based C bridge
-pub fn (win &SimpleWindow) set_value(name string, value string) &SimpleWindow {
+pub fn (win &SimpleWindow) set_control_value(name string, value string) &SimpleWindow {
 	if win.debug_mode {
-		println('[simplegui DEBUG] set_value("${name}", "${value}")')
+		println('[simplegui DEBUG] set_control_value("${name}", "${value}")')
 	}
 	win.require_control(name)
 	idx := win.find_control(name)
@@ -1080,6 +1079,12 @@ pub fn (win &SimpleWindow) set_value(name string, value string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_set_control_text_by_name(win.window_info, name.str, value.str)
 	}
+	return win
+}
+
+// Value setters and getters calling the generic name-based C bridge
+pub fn (win &SimpleWindow) set_value(name string, value string) &SimpleWindow {
+	win.set_control_value(name, value)
 	unsafe {
 		mut w := &SimpleWindow(win)
 		w.dispatch_event(name, 'change', value)
@@ -1089,11 +1094,17 @@ pub fn (win &SimpleWindow) set_value(name string, value string) &SimpleWindow {
 
 pub fn (win &SimpleWindow) get_value(name string) string {
 	win.require_control(name)
+	idx := win.find_control(name)
+	if idx >= 0 {
+		kind := win.controls[idx].kind
+		if kind in ['table', 'tree'] {
+			return win.controls[idx].value
+		}
+	}
 	if win.window_info != unsafe { nil } {
 		res := C.window_get_control_text_by_name(win.window_info, name.str)
 		return unsafe { res.vstring() }
 	}
-	idx := win.find_control(name)
 	if idx >= 0 {
 		return win.controls[idx].value
 	}
