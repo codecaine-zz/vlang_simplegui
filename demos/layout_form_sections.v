@@ -20,7 +20,7 @@ fn main() {
 	win.add_vertical_spacer(10)
 
 	// 1. Form grouping personal details
-	win.form('Personal Information', fn (mut w &simplegui.SimpleWindow) {
+	win.form('Personal Information', fn (mut w simplegui.SimpleWindow) {
 		w.add_form_field('Full Name', 'full_name', 'Grace Hopper')
 		w.add_form_field('Email Address', 'email', '')
 	})
@@ -28,7 +28,7 @@ fn main() {
 	win.add_vertical_spacer(10)
 
 	// 2. Section grouping professional details
-	win.section('Professional Summary', fn (mut w &simplegui.SimpleWindow) {
+	win.section('Professional Summary', fn (mut w simplegui.SimpleWindow) {
 		w.add_form_textarea('Biography', 'bio_summary', '')
 		w.set_control_height('bio_summary', 80)
 	})
@@ -36,7 +36,7 @@ fn main() {
 	win.add_vertical_spacer(15)
 
 	// 3. Actions & Validation
-	win.row('action_row', fn (mut w &simplegui.SimpleWindow) {
+	win.row('action_row', fn (mut w simplegui.SimpleWindow) {
 		w.add_button('btn_validate', 'Validate & Submit')
 			.onclick(on_submit)
 	})
@@ -44,7 +44,7 @@ fn main() {
 	win.run()
 }
 
-fn on_submit(mut win &simplegui.SimpleWindow) {
+fn on_submit(mut win simplegui.SimpleWindow) {
 	// Clear previous validation errors
 	win.clear_errors()
 

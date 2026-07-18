@@ -7,11 +7,11 @@ fn main() {
 	gui.set_title('Native Menu Bar Demo')
 
 	// Add custom menu items
-	gui.add_menu_item('Custom Actions', 'Greet Me', 'g', fn (mut win &simplegui.SimpleWindow) {
+	gui.add_menu_item('Custom Actions', 'Greet Me', 'g', fn (mut win simplegui.SimpleWindow) {
 		win.alert('Greetings', 'Hello from a custom menu action!')
 	})
 
-	gui.add_menu_item('Custom Actions', 'Toggle Test Input', 't', fn (mut win &simplegui.SimpleWindow) {
+	gui.add_menu_item('Custom Actions', 'Toggle Test Input', 't', fn (mut win simplegui.SimpleWindow) {
 		visible := win.get_control_visible('test_input')
 		win.set_control_visible('test_input', !visible)
 		win.set_status('Test input visibility toggled!')

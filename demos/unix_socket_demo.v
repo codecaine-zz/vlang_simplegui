@@ -14,7 +14,7 @@ pub mut:
 fn main() {
 	println('==================================================')
 	println('Starting local self-contained Unix Socket Echo Server...')
-	
+
 	socket_path := os.join_path(os.temp_dir(), 'v_unix_socket_demo')
 	println('Socket path: ${socket_path}')
 
@@ -46,10 +46,10 @@ fn main() {
 	gui.set_control_font_bold('cfg_title', true)
 
 	gui.begin_row('conn_row')
-		gui.add_label('path_lbl', 'Socket Path:')
-		gui.add_input('path_input', socket_path)
-		gui.add_button('connect_btn', 'Connect')
-		gui.add_button('disconnect_btn', 'Disconnect')
+	gui.add_label('path_lbl', 'Socket Path:')
+	gui.add_input('path_input', socket_path)
+	gui.add_button('connect_btn', 'Connect')
+	gui.add_button('disconnect_btn', 'Disconnect')
 	gui.end_row()
 
 	gui.add_separator()
@@ -59,9 +59,9 @@ fn main() {
 	gui.set_control_font_bold('msg_title', true)
 
 	gui.begin_row('send_row')
-		gui.add_label('msg_lbl', 'Message payload:')
-		gui.add_input('msg_input', 'Hello V Unix Domain Sockets!')
-		gui.add_button('send_btn', 'Send to Server')
+	gui.add_label('msg_lbl', 'Message payload:')
+	gui.add_input('msg_input', 'Hello V Unix Domain Sockets!')
+	gui.add_button('send_btn', 'Send to Server')
 	gui.end_row()
 
 	gui.add_separator()
@@ -76,7 +76,7 @@ fn main() {
 	win_ptr := voidptr(gui)
 
 	// Connect Button Handler
-	gui.on_click('connect_btn', fn [win_ptr] (mut win &simplegui.SimpleWindow) {
+	gui.on_click('connect_btn', fn [win_ptr] (mut win simplegui.SimpleWindow) {
 		path := win.get_text('path_input').trim_space()
 		if path.len == 0 {
 			win.alert('Input Error', 'Please enter a valid socket path.')
@@ -85,12 +85,14 @@ fn main() {
 
 		time_stamp := win.time_now()
 		current_logs := win.get_text('stream_logs')
-		win.set_text('stream_logs', current_logs + '\n[' + time_stamp + '] [Handshake]: Connecting to Unix socket at: ' + path + '...')
+		win.set_text('stream_logs', current_logs + '\n[' + time_stamp +
+			'] [Handshake]: Connecting to Unix socket at: ' + path + '...')
 		win.set_status('Connecting Unix socket...')
 
 		conn := unix.connect_stream(path) or {
 			fail_stamp := win.time_now()
-			win.set_text('stream_logs', win.get_text('stream_logs') + '\n[' + fail_stamp + '] [Error]: Connection failed! Make sure the server is reachable: ' + err.msg())
+			win.set_text('stream_logs', win.get_text('stream_logs') + '\n[' + fail_stamp +
+				'] [Error]: Connection failed! Make sure the server is reachable: ' + err.msg())
 			win.alert('Connection Failed', 'Unix socket is unreachable.')
 			win.set_status('Unix socket connection failed.')
 			return
@@ -105,9 +107,7 @@ fn main() {
 		spawn fn [mut client, win_ptr] () {
 			mut buf := []u8{len: 1024}
 			for {
-				n := client.conn.read(mut buf) or {
-					break
-				}
+				n := client.conn.read(mut buf) or { break }
 				if n == 0 {
 					break
 				}
@@ -117,7 +117,8 @@ fn main() {
 					w.run_on_main_thread(fn [msg] (mut w_inner simplegui.SimpleWindow) {
 						time_stamp := w_inner.time_now()
 						current_logs := w_inner.get_text('stream_logs')
-						w_inner.set_text('stream_logs', current_logs + '\n[' + time_stamp + '] [Received]: ' + msg)
+						w_inner.set_text('stream_logs', current_logs + '\n[' + time_stamp +
+							'] [Received]: ' + msg)
 						w_inner.toast('New Unix socket payload arrived!')
 						w_inner.set_status('Received server response.')
 					})
@@ -127,20 +128,22 @@ fn main() {
 			unsafe {
 				mut w := &simplegui.SimpleWindow(win_ptr)
 				w.run_on_main_thread(fn (mut w_inner simplegui.SimpleWindow) {
-					w_inner.ws_client = voidptr(0)
+					w_inner.ws_client = nil
 					w_inner.set_control_enabled('connect_btn', true)
 					w_inner.set_control_enabled('disconnect_btn', false)
 					w_inner.set_control_enabled('send_btn', false)
 					w_inner.set_status('Disconnected.')
 					time_stamp := w_inner.time_now()
 					current_logs := w_inner.get_text('stream_logs')
-					w_inner.set_text('stream_logs', current_logs + '\n[' + time_stamp + '] [Offline]: Connection closed cleanly.')
+					w_inner.set_text('stream_logs', current_logs + '\n[' + time_stamp +
+						'] [Offline]: Connection closed cleanly.')
 				})
 			}
 		}()
 
 		success_stamp := win.time_now()
-		win.set_text('stream_logs', win.get_text('stream_logs') + '\n[' + success_stamp + '] [Success]: Unix Socket connected successfully!')
+		win.set_text('stream_logs', win.get_text('stream_logs') + '\n[' + success_stamp +
+			'] [Success]: Unix Socket connected successfully!')
 		win.set_control_enabled('connect_btn', false)
 		win.set_control_enabled('disconnect_btn', true)
 		win.set_control_enabled('send_btn', true)
@@ -148,23 +151,23 @@ fn main() {
 	})
 
 	// Disconnect Button Handler
-	gui.on_click('disconnect_btn', fn (mut win &simplegui.SimpleWindow) {
-		if win.ws_client != voidptr(0) {
+	gui.on_click('disconnect_btn', fn (mut win simplegui.SimpleWindow) {
+		if win.ws_client != unsafe { nil } {
 			mut client := unsafe { &SimpleUnixClient(win.ws_client) }
 			client.conn.close() or {}
-			win.ws_client = voidptr(0)
+			win.ws_client = unsafe { nil }
 		}
 	})
 
 	// Message Send Handler
-	gui.on_click('send_btn', fn (mut win &simplegui.SimpleWindow) {
+	gui.on_click('send_btn', fn (mut win simplegui.SimpleWindow) {
 		msg := win.get_text('msg_input').trim_space()
 		if msg.len == 0 {
 			win.alert('Input Error', 'Message text cannot be empty.')
 			return
 		}
 
-		if win.ws_client == voidptr(0) {
+		if win.ws_client == unsafe { nil } {
 			win.alert('Not Connected', 'Please connect the socket stream before transmitting.')
 			return
 		}
@@ -177,11 +180,12 @@ fn main() {
 		mut client := unsafe { &SimpleUnixClient(win.ws_client) }
 		client.conn.write(msg.bytes()) or {
 			err_stamp := win.time_now()
-			win.set_text('stream_logs', win.get_text('stream_logs') + '\n[' + err_stamp + '] [Error]: Transmission failed: ' + err.msg())
+			win.set_text('stream_logs', win.get_text('stream_logs') + '\n[' + err_stamp +
+				'] [Error]: Transmission failed: ' + err.msg())
 			win.set_status('Write failed.')
 			return
 		}
-		
+
 		win.set_status('Message string transmitted successfully.')
 	})
 
@@ -220,13 +224,15 @@ fn run_unix_server(socket_path string) {
 			break
 		}
 		println('[Server log] Client connected!')
-		
+
 		spawn fn (mut c unix.StreamConn) {
 			defer { c.close() or {} }
 			mut buf := []u8{len: 1024}
 			for {
 				n := c.read(mut buf) or { break }
-				if n == 0 { break }
+				if n == 0 {
+					break
+				}
 				payload := buf[..n].bytestr()
 				println('[Server log] Echoing: "${payload}"')
 				c.write(('Echo Server: ' + payload).bytes()) or { break }

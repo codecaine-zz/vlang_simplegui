@@ -133,7 +133,7 @@ fn main() {
 	win.on_click('tabs_snapshot', on_tabs_snapshot_clicked)
 	win.on_click('tabs_reset', on_tabs_reset_clicked)
 
-	win.on_file_drop(fn (mut win &simplegui.SimpleWindow, files []string) {
+	win.on_file_drop(fn (mut win simplegui.SimpleWindow, files []string) {
 		joined := files.join(', ')
 		win.set_text('notes', 'Dropped files: ${joined}')
 		win.set_status('Dropped ${joined}')
@@ -142,13 +142,13 @@ fn main() {
 	win.run()
 }
 
-fn on_snapshot_clicked(mut win &simplegui.SimpleWindow) {
+fn on_snapshot_clicked(mut win simplegui.SimpleWindow) {
 	summary := 'Name: ${win.get_text('name')}\nPassword: ${win.get_text('password')}\nNotes: ${win.get_text('notes')}\nAgree: ${win.get_checked('agree')}\nAlerts: ${win.get_checked('alerts')}\nAge: ${win.get_value_int('age')}\nVolume: ${win.get_value_int('volume')}\nTheme: ${win.get_text('theme')}\nAccent: ${win.get_text('accent')}\nDate: ${win.get_text('date')}\nMode: ${win.get_text('mode')}\nSelection: ${win.get_text('items')}\nPriority: ${win.get_text('priority')}\nAnalysis: ${win.get_text('analysis_mode')}\nRole: ${win.get_text('role')}\nNotifications: ${win.get_checked('notifications')}\nSearch: ${win.get_text('search')}'
 	win.alert('Snapshot', summary)
 	win.set_status('Snapshot captured.')
 }
 
-fn on_clear_clicked(mut win &simplegui.SimpleWindow) {
+fn on_clear_clicked(mut win simplegui.SimpleWindow) {
 	win.set_text('name', '')
 	win.set_text('password', '')
 	win.set_text('notes', '')
@@ -174,94 +174,94 @@ fn on_clear_clicked(mut win &simplegui.SimpleWindow) {
 	win.set_status('Cleared the demo values.')
 }
 
-fn on_name_changed(mut win &simplegui.SimpleWindow, value string) {
+fn on_name_changed(mut win simplegui.SimpleWindow, value string) {
 	win.set_status('Name changed to ${value}')
 }
 
-fn on_password_changed(mut win &simplegui.SimpleWindow, value string) {
+fn on_password_changed(mut win simplegui.SimpleWindow, value string) {
 	win.set_status('Password updated.')
 }
 
-fn on_notes_changed(mut win &simplegui.SimpleWindow, value string) {
+fn on_notes_changed(mut win simplegui.SimpleWindow, value string) {
 	win.set_status('Notes updated.')
 }
 
-fn on_agree_changed(mut win &simplegui.SimpleWindow, value string) {
+fn on_agree_changed(mut win simplegui.SimpleWindow, value string) {
 	win.set_status(if value == 'true' { 'Terms accepted.' } else { 'Terms cleared.' })
 }
 
-fn on_alerts_changed(mut win &simplegui.SimpleWindow, value string) {
+fn on_alerts_changed(mut win simplegui.SimpleWindow, value string) {
 	win.set_status(if value == 'true' { 'Extra alerts enabled.' } else { 'Extra alerts disabled.' })
 }
 
-fn on_age_changed(mut win &simplegui.SimpleWindow, value string) {
+fn on_age_changed(mut win simplegui.SimpleWindow, value string) {
 	win.set_status('Age set to ${value}')
 }
 
-fn on_volume_changed(mut win &simplegui.SimpleWindow, value string) {
+fn on_volume_changed(mut win simplegui.SimpleWindow, value string) {
 	win.set_status('Volume set to ${value}')
 }
 
-fn on_theme_changed(mut win &simplegui.SimpleWindow, value string) {
+fn on_theme_changed(mut win simplegui.SimpleWindow, value string) {
 	win.set_theme(value)
-	
+
 	mut body_fg := '#f8fafc'
 	mut heading_color := '#5eead4'
 	if value.to_lower() == 'light' {
 		body_fg = '#1e293b'
 		heading_color = '#0284c7'
 	}
-	
+
 	html_content := '<html><body style="font-family: -apple-system, sans-serif; font-size: 13px; color: ${body_fg}; background-color: transparent; margin: 0;"><h3 style="color:${heading_color}; margin-top: 0; margin-bottom: 4px;">Native HTML preview</h3><p style="margin: 0;">Useful for lightweight rich content.</p></body></html>'
 	win.set_html('html', html_content)
-	
+
 	win.set_status('Theme changed to ${value}')
 }
 
-fn on_accent_changed(mut win &simplegui.SimpleWindow, value string) {
+fn on_accent_changed(mut win simplegui.SimpleWindow, value string) {
 	win.set_control_background_color('snapshot', value)
 	win.set_control_background_color('clear', value)
 	win.set_control_background_color('progress', value)
 	win.set_status('Accent color changed to ${value}')
 }
 
-fn on_date_changed(mut win &simplegui.SimpleWindow, value string) {
+fn on_date_changed(mut win simplegui.SimpleWindow, value string) {
 	win.set_status('Date changed to ${value}')
 }
 
-fn on_mode_changed(mut win &simplegui.SimpleWindow, value string) {
+fn on_mode_changed(mut win simplegui.SimpleWindow, value string) {
 	win.set_status('Mode changed to ${value}')
 }
 
-fn on_items_changed(mut win &simplegui.SimpleWindow, value string) {
+fn on_items_changed(mut win simplegui.SimpleWindow, value string) {
 	win.set_status('Selection changed to ${value}')
 }
 
-fn on_priority_changed(mut win &simplegui.SimpleWindow, value string) {
+fn on_priority_changed(mut win simplegui.SimpleWindow, value string) {
 	win.set_status('Priority changed to ${value}')
 }
 
-fn on_analysis_mode_changed(mut win &simplegui.SimpleWindow, value string) {
+fn on_analysis_mode_changed(mut win simplegui.SimpleWindow, value string) {
 	win.set_status('Analysis mode changed to ${value}')
 }
 
-fn on_role_changed(mut win &simplegui.SimpleWindow, value string) {
+fn on_role_changed(mut win simplegui.SimpleWindow, value string) {
 	win.set_status('Role changed to ${value}')
 }
 
-fn on_notifications_changed(mut win &simplegui.SimpleWindow, value string) {
+fn on_notifications_changed(mut win simplegui.SimpleWindow, value string) {
 	win.set_status(if value == 'true' { 'Notifications enabled.' } else { 'Notifications disabled.' })
 }
 
-fn on_search_changed(mut win &simplegui.SimpleWindow, value string) {
+fn on_search_changed(mut win simplegui.SimpleWindow, value string) {
 	win.set_status('Search updated to ${value}')
 }
 
-fn on_tabs_snapshot_clicked(mut win &simplegui.SimpleWindow) {
+fn on_tabs_snapshot_clicked(mut win simplegui.SimpleWindow) {
 	win.set_status('Tab snapshot requested.')
 }
 
-fn on_tabs_reset_clicked(mut win &simplegui.SimpleWindow) {
+fn on_tabs_reset_clicked(mut win simplegui.SimpleWindow) {
 	win.set_text('profile_name', 'Ada')
 	win.set_checked('profile_accept', true)
 	win.set_text('priority', 'Medium')

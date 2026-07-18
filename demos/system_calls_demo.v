@@ -43,16 +43,16 @@ fn main() {
 	gui.set_control_font_size('env_title', 14)
 
 	gui.begin_row('env_row')
-		gui.add_label('env_lbl', 'Lookup key:')
-		gui.add_input('env_input', 'USER')
-		gui.add_button('env_btn', 'Query OS Env')
+	gui.add_label('env_lbl', 'Lookup key:')
+	gui.add_input('env_input', 'USER')
+	gui.add_button('env_btn', 'Query OS Env')
 	gui.end_row()
 
 	gui.add_label('env_result', 'Env Variable Value will be displayed here.')
 	gui.set_control_font_bold('env_result', true)
 
 	// Event handler for Env variable inspection
-	gui.on_click('env_btn', fn (mut win &simplegui.SimpleWindow) {
+	gui.on_click('env_btn', fn (mut win simplegui.SimpleWindow) {
 		key := win.get_text('env_input').trim_space()
 		if key.len > 0 {
 			res := win.get_env(key)
@@ -78,22 +78,23 @@ fn main() {
 	gui.set_control_font_size('exec_title', 14)
 
 	gui.begin_row('exec_row')
-		gui.add_label('cmd_lbl', 'Command:')
-		gui.add_input('cmd_input', 'echo "Hello from SimpleGUI! System Architecture:" && uname -a')
-		gui.add_button('exec_btn', 'Run Sync')
-		gui.add_button('exec_bg_btn', 'Run Async (BG)')
+	gui.add_label('cmd_lbl', 'Command:')
+	gui.add_input('cmd_input', 'echo "Hello from SimpleGUI! System Architecture:" && uname -a')
+	gui.add_button('exec_btn', 'Run Sync')
+	gui.add_button('exec_bg_btn', 'Run Async (BG)')
 	gui.end_row()
 
 	gui.add_textarea('cmd_output', 'Command standard output and exit codes will print here...')
 	gui.set_control_height('cmd_output', 80)
 
 	// Event handler for synchronous execution
-	gui.on_click('exec_btn', fn (mut win &simplegui.SimpleWindow) {
+	gui.on_click('exec_btn', fn (mut win simplegui.SimpleWindow) {
 		cmd := win.get_text('cmd_input').trim_space()
 		if cmd.len > 0 {
 			win.set_status('Running command synchronously...')
 			output, code := win.exec(cmd)
-			result_text := '--- [SYNC COMMAND FINISHED - EXIT CODE: ' + code.str() + '] ---\n' + output
+			result_text := '--- [SYNC COMMAND FINISHED - EXIT CODE: ' + code.str() + '] ---\n' +
+				output
 			win.set_text('cmd_output', result_text)
 			win.set_status('Shell command execution complete.')
 		} else {
@@ -102,12 +103,13 @@ fn main() {
 	})
 
 	// Event handler for background asynchronous task execution
-	gui.on_click('exec_bg_btn', fn (mut win &simplegui.SimpleWindow) {
+	gui.on_click('exec_bg_btn', fn (mut win simplegui.SimpleWindow) {
 		cmd := win.get_text('cmd_input').trim_space()
 		if cmd.len > 0 {
 			win.set_status('Background task started...')
 			win.exec_bg(cmd)
-			win.set_text('cmd_output', 'Background execution requested for: "' + cmd + '"\nCheck terminal console outputs if debug mode is active.')
+			win.set_text('cmd_output', 'Background execution requested for: "' + cmd +
+				'"\nCheck terminal console outputs if debug mode is active.')
 			win.set_status('Asynchronous command spawned successfully.')
 		} else {
 			win.alert('Input Error', 'Command field cannot be empty.')
@@ -124,12 +126,12 @@ fn main() {
 	gui.set_control_font_size('notify_title', 14)
 
 	gui.begin_row('notify_row')
-		gui.add_input('banner_title', 'V & SimpleGUI System Alert')
-		gui.add_input('banner_msg', 'Hello! This native notification triggered from V!')
-		gui.add_button('notify_btn', 'Send System Banner')
+	gui.add_input('banner_title', 'V & SimpleGUI System Alert')
+	gui.add_input('banner_msg', 'Hello! This native notification triggered from V!')
+	gui.add_button('notify_btn', 'Send System Banner')
 	gui.end_row()
 
-	gui.on_click('notify_btn', fn (mut win &simplegui.SimpleWindow) {
+	gui.on_click('notify_btn', fn (mut win simplegui.SimpleWindow) {
 		title := win.get_text('banner_title')
 		msg := win.get_text('banner_msg')
 		win.show_system_notification(title, msg)
@@ -153,24 +155,25 @@ fn main() {
 	gui.set_control_font_bold('fs_info', true)
 
 	gui.add_input('fs_content', 'Neutralino-Inspired Filesystem Call has written me in V!')
-	
+
 	gui.begin_row('fs_buttons')
-		gui.add_button('fs_write_btn', 'Write File')
-		gui.add_button('fs_read_btn', 'Read File')
-		gui.add_button('fs_exists_btn', 'Check Exists')
-		gui.add_button('fs_delete_btn', 'Delete File')
+	gui.add_button('fs_write_btn', 'Write File')
+	gui.add_button('fs_read_btn', 'Read File')
+	gui.add_button('fs_exists_btn', 'Check Exists')
+	gui.add_button('fs_delete_btn', 'Delete File')
 	gui.end_row()
 
 	// File IO Event Handlers
-	gui.on_click('fs_write_btn', fn (mut win &simplegui.SimpleWindow) {
+	gui.on_click('fs_write_btn', fn (mut win simplegui.SimpleWindow) {
 		content := win.get_text('fs_content')
 		temp_path := win.get_system_path('temp') + '/simplegui_playground.txt'
 		win.write_file(temp_path, content)
-		win.alert('Filesystem IO', 'Successfully wrote ' + content.len.str() + ' characters to:\n' + temp_path)
+		win.alert('Filesystem IO', 'Successfully wrote ' + content.len.str() + ' characters to:\n' +
+			temp_path)
 		win.set_status('Wrote string file data: ' + temp_path)
 	})
 
-	gui.on_click('fs_read_btn', fn (mut win &simplegui.SimpleWindow) {
+	gui.on_click('fs_read_btn', fn (mut win simplegui.SimpleWindow) {
 		temp_path := win.get_system_path('temp') + '/simplegui_playground.txt'
 		if win.file_exists(temp_path) {
 			content := win.read_file(temp_path)
@@ -181,7 +184,7 @@ fn main() {
 		}
 	})
 
-	gui.on_click('fs_exists_btn', fn (mut win &simplegui.SimpleWindow) {
+	gui.on_click('fs_exists_btn', fn (mut win simplegui.SimpleWindow) {
 		temp_path := win.get_system_path('temp') + '/simplegui_playground.txt'
 		has_file := win.file_exists(temp_path)
 		msg := if has_file { 'Confirmed: File EXISTS on disk.' } else { 'File DOES NOT exist.' }
@@ -189,7 +192,7 @@ fn main() {
 		win.set_status('Queried exists checks: ' + has_file.str())
 	})
 
-	gui.on_click('fs_delete_btn', fn (mut win &simplegui.SimpleWindow) {
+	gui.on_click('fs_delete_btn', fn (mut win simplegui.SimpleWindow) {
 		temp_path := win.get_system_path('temp') + '/simplegui_playground.txt'
 		if win.file_exists(temp_path) {
 			win.delete_file(temp_path)
@@ -210,96 +213,102 @@ fn main() {
 	gui.set_control_font_size('stdlib_title', 14)
 
 	gui.begin_row('sl_row_1')
-		gui.add_label('sl_text_lbl', 'Input Text:')
-		gui.add_input('sl_text_input', 'SimpleGUI Stdlib Wrapper Showcase')
-		gui.add_button('sl_hash_btn', 'Hash (SHA256/MD5)')
-		gui.add_button('sl_rand_btn', 'Rand ID & Numbers')
+	gui.add_label('sl_text_lbl', 'Input Text:')
+	gui.add_input('sl_text_input', 'SimpleGUI Stdlib Wrapper Showcase')
+	gui.add_button('sl_hash_btn', 'Hash (SHA256/MD5)')
+	gui.add_button('sl_rand_btn', 'Rand ID & Numbers')
 	gui.end_row()
 
 	gui.begin_row('sl_row_2')
-		gui.add_button('sl_comp_btn', 'Gzip Compress')
-		gui.add_button('sl_aes_btn', 'AES CBC Encrypt/Decrypt')
-		gui.add_button('sl_semver_btn', 'Semver Verification')
-		gui.add_button('sl_toml_btn', 'Parse TOML/JSON Configs')
+	gui.add_button('sl_comp_btn', 'Gzip Compress')
+	gui.add_button('sl_aes_btn', 'AES CBC Encrypt/Decrypt')
+	gui.add_button('sl_semver_btn', 'Semver Verification')
+	gui.add_button('sl_toml_btn', 'Parse TOML/JSON Configs')
 	gui.end_row()
 
 	gui.add_textarea('sl_output', 'Standard library operations and metrics will output here...')
 	gui.set_control_height('sl_output', 80)
 
 	// Hashing Handler
-	gui.on_click('sl_hash_btn', fn (mut win &simplegui.SimpleWindow) {
+	gui.on_click('sl_hash_btn', fn (mut win simplegui.SimpleWindow) {
 		input := win.get_text('sl_text_input')
 		sha := win.crypto_sha256(input)
 		md5_hex := win.crypto_md5(input)
 		time_stamp := win.time_now()
-		
-		win.set_text('sl_output', '[Time: ' + time_stamp + ']\nInput:  "' + input + '"\nSHA256: ' + sha + '\nMD5:    ' + md5_hex)
+
+		win.set_text('sl_output', '[Time: ' + time_stamp + ']\nInput:  "' + input + '"\nSHA256: ' +
+			sha + '\nMD5:    ' + md5_hex)
 		win.set_status('Cryptographic hashing finished successfully.')
 	})
 
 	// Random Token & Number Handler
-	gui.on_click('sl_rand_btn', fn (mut win &simplegui.SimpleWindow) {
+	gui.on_click('sl_rand_btn', fn (mut win simplegui.SimpleWindow) {
 		rand_int := win.rand_int(100, 1000)
 		rand_token := win.rand_string(16)
 		time_stamp := win.time_now()
-		
-		win.set_text('sl_output', '[Time: ' + time_stamp + ']\nRandom Integer (100 -> 1000): ' + rand_int.str() + '\nRandom Alphanumeric Token (16 chars): ' + rand_token)
+
+		win.set_text('sl_output', '[Time: ' + time_stamp + ']\nRandom Integer (100 -> 1000): ' +
+			rand_int.str() + '\nRandom Alphanumeric Token (16 chars): ' + rand_token)
 		win.set_status('Random token generation completed.')
 	})
 
 	// Gzip Compression Handler
-	gui.on_click('sl_comp_btn', fn (mut win &simplegui.SimpleWindow) {
+	gui.on_click('sl_comp_btn', fn (mut win simplegui.SimpleWindow) {
 		input := win.get_text('sl_text_input')
 		compressed_bytes := win.compress_gzip(input)
 		decompressed := win.decompress_gzip(compressed_bytes)
-		
+
 		output := 'Original:      "' + input + '" (' + input.len.str() + ' bytes)\n' +
-		          'Gzip Bytes:    ' + compressed_bytes.len.str() + ' bytes (Compressed!)\n' +
-		          'Decompressed:  "' + decompressed + '"'
+			'Gzip Bytes:    ' + compressed_bytes.len.str() + ' bytes (Compressed!)\n' +
+			'Decompressed:  "' + decompressed + '"'
 		win.set_text('sl_output', output)
 		win.set_status('Gzip compression/decompression verified.')
 	})
 
 	// AES Block Symmetric Cryptography Handler
-	gui.on_click('sl_aes_btn', fn (mut win &simplegui.SimpleWindow) {
+	gui.on_click('sl_aes_btn', fn (mut win simplegui.SimpleWindow) {
 		input := win.get_text('sl_text_input')
 		secret_key_hex := 'aabbccddeeff00112233445566778899' // 16 bytes encoded as hex (AES-128)
-		
+
 		ciphertext_hex := win.crypto_encrypt_aes(input, secret_key_hex)
 		decrypted := win.crypto_decrypt_aes(ciphertext_hex, secret_key_hex)
-		
-		output := 'Plaintext:   "' + input + '"\n' +
-		          'AES Hex Key: ' + secret_key_hex + '\n' +
-		          'AES CBC Ciphertext (Hex): ' + ciphertext_hex + '\n' +
-		          'AES Decrypted Text:       "' + decrypted + '"'
+
+		output := 'Plaintext:   "' + input + '"\n' + 'AES Hex Key: ' + secret_key_hex + '\n' +
+			'AES CBC Ciphertext (Hex): ' + ciphertext_hex + '\n' + 'AES Decrypted Text:       "' +
+			decrypted + '"'
 		win.set_text('sl_output', output)
 		win.set_status('AES CBC symmetric encryption verified.')
 	})
 
 	// Semantic Versioning Handler
-	gui.on_click('sl_semver_btn', fn (mut win &simplegui.SimpleWindow) {
+	gui.on_click('sl_semver_btn', fn (mut win simplegui.SimpleWindow) {
 		v1 := '1.5.0-beta.1'
 		v2 := '1.5.0'
 		v3 := '2.0.1'
 		constraint := '>=1.0.0 <2.0.0'
-		
+
 		cmp_res := win.semver_compare(v1, v2)
-		cmp_text := if cmp_res < 0 { '<' } else if cmp_res > 0 { '>' } else { '==' }
-		
+		cmp_text := if cmp_res < 0 {
+			'<'
+		} else if cmp_res > 0 {
+			'>'
+		} else {
+			'=='
+		}
+
 		sat_1 := win.semver_satisfies(v2, constraint)
 		sat_2 := win.semver_satisfies(v3, constraint)
-		
-		output := 'Comparing Semver:\n' +
-		          '  "' + v1 + '" ' + cmp_text + ' "' + v2 + '"\n' +
-		          'Constraint Checks on query: "' + constraint + '"\n' +
-		          '  Does "' + v2 + '" satisfy constraint? -> ' + sat_1.str() + '\n' +
-		          '  Does "' + v3 + '" satisfy constraint? -> ' + sat_2.str()
+
+		output := 'Comparing Semver:\n' + '  "' + v1 + '" ' + cmp_text + ' "' + v2 + '"\n' +
+			'Constraint Checks on query: "' + constraint + '"\n' + '  Does "' + v2 +
+			'" satisfy constraint? -> ' + sat_1.str() + '\n' + '  Does "' + v3 +
+			'" satisfy constraint? -> ' + sat_2.str()
 		win.set_text('sl_output', output)
 		win.set_status('Semantic version parsing verified.')
 	})
 
 	// TOML Configuration Parser Handler
-	gui.on_click('sl_toml_btn', fn (mut win &simplegui.SimpleWindow) {
+	gui.on_click('sl_toml_btn', fn (mut win simplegui.SimpleWindow) {
 		toml_content := '# Beginner TOML Config
 [database]
 server = "127.0.0.1"
@@ -311,12 +320,10 @@ enabled = true'
 		db_server := doc.get_string('database.server')
 		db_conn := doc.get_int('database.connection_max')
 		db_enabled := doc.get_bool('database.enabled')
-		
-		output := 'Parsed TOML Input:\n' + toml_content + '\n\n' +
-		          'Extracted Values:\n' +
-		          '  server:  ' + db_server + '\n' +
-		          '  conn:    ' + db_conn.str() + '\n' +
-		          '  enabled: ' + db_enabled.str()
+
+		output := 'Parsed TOML Input:\n' + toml_content + '\n\n' + 'Extracted Values:\n' +
+			'  server:  ' + db_server + '\n' + '  conn:    ' + db_conn.str() + '\n' +
+			'  enabled: ' + db_enabled.str()
 		win.set_text('sl_output', output)
 		win.set_status('TOML configuration parsing verified.')
 	})

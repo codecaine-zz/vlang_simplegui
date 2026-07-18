@@ -23,39 +23,39 @@ fn main() {
 	gui.add_checkbox('enable_toggle', 'Enable Form Controls', true)
 
 	// 1. Focus & Blur (Lost Focus) events on the text field
-	gui.on_focus('username', fn (mut win &simplegui.SimpleWindow) {
+	gui.on_focus('username', fn (mut win simplegui.SimpleWindow) {
 		win.set_status('Input field focused: ready for text entry.')
 		win.set_control_background_color('username', '#FCF3CF') // Highlight yellow
 	})
 
-	gui.on_blur('username', fn (mut win &simplegui.SimpleWindow) {
+	gui.on_blur('username', fn (mut win simplegui.SimpleWindow) {
 		win.set_status('Input field lost focus.')
 		win.set_control_background_color('username', '#FFFFFF') // Reset white
 	})
 
 	// 2. Hover enter & exit events on the button
-	gui.on_hover('action_btn', fn (mut win &simplegui.SimpleWindow) {
+	gui.on_hover('action_btn', fn (mut win simplegui.SimpleWindow) {
 		win.set_status('Hover: Mouse entered Submit Button area!')
 		win.set_control_background_color('action_btn', '#E67E22') // Accent highlight orange
 	})
 
-	gui.on_hover_exit('action_btn', fn (mut win &simplegui.SimpleWindow) {
+	gui.on_hover_exit('action_btn', fn (mut win simplegui.SimpleWindow) {
 		win.set_status('Hover: Mouse left button area.')
 		win.set_control_background_color('action_btn', '#3498DB') // Revert blue
 	})
 
 	// 3. Enabling / disabling form controls dynamically
-	gui.on_change('enable_toggle', fn (mut win &simplegui.SimpleWindow, value string) {
+	gui.on_change('enable_toggle', fn (mut win simplegui.SimpleWindow, value string) {
 		enabled := value == 'true'
 		win.set_control_enabled('username', enabled)
 		win.set_control_enabled('action_btn', enabled)
-		
+
 		status_msg := if enabled { 'Form controls enabled.' } else { 'Form controls disabled.' }
 		win.set_status(status_msg)
 	})
 
 	// 4. Window Resize event tracking
-	gui.on_resize(fn (mut win &simplegui.SimpleWindow, new_size string) {
+	gui.on_resize(fn (mut win simplegui.SimpleWindow, new_size string) {
 		win.set_status('Window resized to: ${new_size}')
 	})
 

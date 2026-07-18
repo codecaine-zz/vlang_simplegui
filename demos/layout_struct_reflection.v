@@ -18,15 +18,13 @@ fn main() {
 			cfg.padding = 24
 			cfg.spacing = 12
 			cfg.background_color = '#2e3440' // Nord theme dark background
-			cfg.font_color = '#eceff4'       // Nord theme light text
+			cfg.font_color = '#eceff4' // Nord theme light text
 		})
 
 	win.add_heading('Reflection-Based Form')
 
-	win.add_label('desc', 'In simplegui, calling add_form_from_struct uses V\'s compile-time reflection (\$for) to automatically construct labeled form text inputs, number fields, and checkable toggles mapped directly to the struct fields.')
+	win.add_label('desc', "In simplegui, calling add_form_from_struct uses V's compile-time reflection (\$for) to automatically construct labeled form text inputs, number fields, and checkable toggles mapped directly to the struct fields.")
 	win.set_control_font_size('desc', 11)
-
-
 
 	win.add_vertical_spacer(10)
 
@@ -49,7 +47,7 @@ fn main() {
 	win.run()
 }
 
-fn on_read(mut win &simplegui.SimpleWindow) {
+fn on_read(mut win simplegui.SimpleWindow) {
 	// Query the fields by using the exact names of the struct properties
 	host := win.get_text('host')
 	port := win.get_value_int('port')

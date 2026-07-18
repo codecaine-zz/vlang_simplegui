@@ -12,11 +12,12 @@ fn main() {
 	win.add_heading('Sleek Developer Settings')
 
 	// 2. Closure-based horizontal row layout with fluent chaining modifiers
-	win.row('server_config', fn (mut w &simplegui.SimpleWindow) {
+	win.row('server_config', fn (mut w simplegui.SimpleWindow) {
 		w.add_label('', 'Server Host:')
 			.width(100)
 
 		// Nameless helper with styled modifiers
+
 		w.add_input('', '127.0.0.1')
 			.width(180)
 			.placeholder('e.g. localhost')
@@ -31,7 +32,7 @@ fn main() {
 	})
 
 	// 3. User info inputs with chaining
-	win.row('user_details', fn (mut w &simplegui.SimpleWindow) {
+	win.row('user_details', fn (mut w simplegui.SimpleWindow) {
 		w.add_label('', 'Username:')
 			.width(100)
 
@@ -47,12 +48,13 @@ fn main() {
 	})
 
 	// 4. Custom status alerts & validation styling
+
 	win.add_label('description', 'Configure the server details and click Validate.')
 		.font_size(11)
 		.font_color('#8be9fd')
 
 	// 5. Button row to trigger validation
-	win.row('actions', fn (mut w &simplegui.SimpleWindow) {
+	win.row('actions', fn (mut w simplegui.SimpleWindow) {
 		w.add_button('validate_btn', 'Validate Form')
 			.width(150)
 
@@ -68,7 +70,7 @@ fn main() {
 	win.run()
 }
 
-fn on_validate(mut win &simplegui.SimpleWindow) {
+fn on_validate(mut win simplegui.SimpleWindow) {
 	username := win.get_text('username')
 	age := win.get_value_int('age')
 
@@ -87,7 +89,7 @@ fn on_validate(mut win &simplegui.SimpleWindow) {
 	}
 }
 
-fn on_cycle_theme(mut win &simplegui.SimpleWindow) {
+fn on_cycle_theme(mut win simplegui.SimpleWindow) {
 	current_bg := win.get_background_color()
 	mut theme_name := 'dracula'
 	mut desc_color := '#8be9fd'

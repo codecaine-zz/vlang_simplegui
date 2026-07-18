@@ -3,7 +3,7 @@ module main
 import simplegui
 
 fn main() {
-	mut win := simplegui.new_simple_window('High-Level Helpers Demo', 760, 550)
+	mut win := simplegui.new_simple_window('High-Level Helpers Demo', 760, 500)
 	win.set_background_color('#132238')
 	win.set_font_color('white')
 	win.set_padding(16)
@@ -24,18 +24,16 @@ fn main() {
 
 	win.set_control_width('name', 280)
 	win.set_control_width('city', 280)
-	win.set_control_width('notes', 500)
-	win.set_control_height('notes', 200)
+	win.set_control_width('notes', 200)
 	win.set_control_width('save', 140)
 	win.set_control_width('clear', 140)
 	win.set_control_font_size('title', 18)
-	win.set_control_width('age', 550)
 	win.set_status('Use the shortcut helpers to build a form quickly.')
 
 	win.run()
 }
 
-fn on_save(mut win &simplegui.SimpleWindow) {
+fn on_save(mut win simplegui.SimpleWindow) {
 	name := win.get_text('name')
 	city := win.get_text('city')
 	ready := if win.get_checked('ready') { 'yes' } else { 'no' }
@@ -43,7 +41,7 @@ fn on_save(mut win &simplegui.SimpleWindow) {
 	win.set_status('Saved the current form values.')
 }
 
-fn on_clear(mut win &simplegui.SimpleWindow) {
+fn on_clear(mut win simplegui.SimpleWindow) {
 	win.set_text('name', '')
 	win.set_text('city', '')
 	win.set_text('notes', '')

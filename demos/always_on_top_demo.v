@@ -17,7 +17,7 @@ fn main() {
 	win.set_always_on_top(true)
 	win.set_status('Window is pinned above other windows')
 
-	win.on_change('stay_on_top', fn (mut win &simplegui.SimpleWindow, value string) {
+	win.on_change('stay_on_top', fn (mut win simplegui.SimpleWindow, value string) {
 		enabled := value == 'true'
 		win.set_always_on_top(enabled)
 		if enabled {
@@ -29,7 +29,7 @@ fn main() {
 
 	win.add_vertical_spacer(16)
 	win.add_button('close', 'Close')
-	win.on_click('close', fn (mut win &simplegui.SimpleWindow) {
+	win.on_click('close', fn (mut win simplegui.SimpleWindow) {
 		win.alert('Demo', 'The window is closing now.')
 		exit(0)
 	})

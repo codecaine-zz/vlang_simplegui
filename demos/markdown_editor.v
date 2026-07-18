@@ -8,7 +8,7 @@ import os
 // ----------------------------------------------------
 // A complete, highly functional live Markdown editor
 // utilizing WebView rendering, responsive rows/columns,
-// native Cocoa file and clipboard dialogue operations, 
+// native Cocoa file and clipboard dialogue operations,
 // and dynamic custom CSS theme synchronization.
 // ----------------------------------------------------
 
@@ -28,6 +28,7 @@ fn main() {
 	win.set_spacing(10)
 
 	// Top Section: Title & Controls
+
 	win.add_label('studio_title', 'Markdown Live Studio')
 		.bold(true)
 		.font_size(20)
@@ -41,15 +42,16 @@ fn main() {
 
 	// Toolbar Pane
 	win.begin_row('toolbar')
-		win.add_label('lbl_tmpl', 'Template:')
-		win.add_dropdown('template', ['Features Guide', 'Code Showcase', 'Project Planner'], 'Features Guide')
-		
-		win.add_button('btn_open', 'Open File...')
-		win.add_button('btn_save', 'Save File...')
-		win.add_button('btn_copy', 'Copy HTML')
+	win.add_label('lbl_tmpl', 'Template:')
+	win.add_dropdown('template', ['Features Guide', 'Code Showcase', 'Project Planner'],
+		'Features Guide')
 
-		win.add_label('lbl_theme', 'Theme:')
-		win.add_theme_menu('editor_theme', 'Dracula')
+	win.add_button('btn_open', 'Open File...')
+	win.add_button('btn_save', 'Save File...')
+	win.add_button('btn_copy', 'Copy HTML')
+
+	win.add_label('lbl_theme', 'Theme:')
+	win.add_theme_menu('editor_theme', 'Dracula')
 	win.end_row()
 
 	win.add_separator()
@@ -60,8 +62,8 @@ fn main() {
 
 	// Main Editor / Preview Split Pane
 	win.begin_row('studio_split')
-		win.add_textarea('editor', initial_text)
-		win.add_html_view('preview', initial_html)
+	win.add_textarea('editor', initial_text)
+	win.add_html_view('preview', initial_html)
 	win.end_row()
 
 	// Explicit dimensional sizing
@@ -71,7 +73,7 @@ fn main() {
 	win.set_control_height('preview', 450)
 
 	// Add file drag & drop event listener
-	win.on_file_drop(fn [mut state] (mut w &simplegui.SimpleWindow, files []string) {
+	win.on_file_drop(fn [mut state] (mut w simplegui.SimpleWindow, files []string) {
 		if files.len > 0 {
 			target := files[0]
 			if target.ends_with('.md') || target.ends_with('.txt') {
@@ -81,11 +83,11 @@ fn main() {
 				}
 				state.current_file = target
 				w.set_text('editor', content)
-				
+
 				// Force render update
 				rendered_html := markdown_to_html(content, state.theme_name)
 				w.set_html('preview', rendered_html)
-				
+
 				update_status(mut w, state.current_file, content)
 				w.toast('Imported ${os.file_name(target)}')
 			} else {
@@ -95,13 +97,13 @@ fn main() {
 	})
 
 	// Connect interactive element callbacks
-	win.on_change('editor', fn [mut state] (mut w &simplegui.SimpleWindow, value string) {
+	win.on_change('editor', fn [mut state] (mut w simplegui.SimpleWindow, value string) {
 		rendered_html := markdown_to_html(value, state.theme_name)
 		w.set_html('preview', rendered_html)
 		update_status(mut w, state.current_file, value)
 	})
 
-	win.on_change('template', fn [mut state] (mut w &simplegui.SimpleWindow, value string) {
+	win.on_change('template', fn [mut state] (mut w simplegui.SimpleWindow, value string) {
 		txt := get_template(value)
 		w.set_text('editor', txt)
 		rendered_html := markdown_to_html(txt, state.theme_name)
@@ -110,15 +112,15 @@ fn main() {
 		w.set_status('Loaded ${value} Template')
 	})
 
-	win.on_change('editor_theme', fn [mut state] (mut w &simplegui.SimpleWindow, value string) {
+	win.on_change('editor_theme', fn [mut state] (mut w simplegui.SimpleWindow, value string) {
 		state.theme_name = value.to_lower()
 		w.set_theme(state.theme_name)
-		
+
 		// Re-render HTML with new corresponding CSS palette
 		editor_val := w.get_text('editor')
 		rendered_html := markdown_to_html(editor_val, state.theme_name)
 		w.set_html('preview', rendered_html)
-		
+
 		// Dynamically color title bar and subtitle descriptions
 		title_color := match state.theme_name {
 			'dracula' { '#8be9fd' }
@@ -137,7 +139,7 @@ fn main() {
 		w.set_status('Editor theme changed to ${value}')
 	})
 
-	win.on_click('btn_open', fn [mut state] (mut w &simplegui.SimpleWindow) {
+	win.on_click('btn_open', fn [mut state] (mut w simplegui.SimpleWindow) {
 		file_path := w.select_file()
 		if file_path != '' {
 			content := os.read_file(file_path) or {
@@ -146,16 +148,16 @@ fn main() {
 			}
 			state.current_file = file_path
 			w.set_text('editor', content)
-			
+
 			rendered_html := markdown_to_html(content, state.theme_name)
 			w.set_html('preview', rendered_html)
-			
+
 			update_status(mut w, state.current_file, content)
 			w.toast('Opened file successfully.')
 		}
 	})
 
-	win.on_click('btn_save', fn [mut state] (mut w &simplegui.SimpleWindow) {
+	win.on_click('btn_save', fn [mut state] (mut w simplegui.SimpleWindow) {
 		save_path := w.save_file_picker()
 		if save_path != '' {
 			mut real_path := save_path
@@ -174,7 +176,7 @@ fn main() {
 		}
 	})
 
-	win.on_click('btn_copy', fn [mut state] (mut w &simplegui.SimpleWindow) {
+	win.on_click('btn_copy', fn [mut state] (mut w simplegui.SimpleWindow) {
 		content := w.get_text('editor')
 		rendered_html := markdown_to_html(content, state.theme_name)
 		w.copy_to_clipboard(rendered_html)
@@ -190,12 +192,12 @@ fn main() {
 // UI Update Helpers
 // ----------------------------------------------------
 
-fn update_status(mut win &simplegui.SimpleWindow, file_name string, content string) {
+fn update_status(mut win simplegui.SimpleWindow, file_name string, content string) {
 	short_name := os.file_name(file_name)
 	char_count := content.len
 	word_count := content.split_any(' \n\t').filter(it != '').len
 	line_count := content.split_into_lines().len
-	
+
 	win.set_status('Doc: ${short_name} | Words: ${word_count} | Chars: ${char_count} | Lines: ${line_count}')
 }
 
@@ -247,7 +249,8 @@ fn markdown_to_html(md string, theme string) string {
 				html += '</code></pre>\n'
 				in_code_block = false
 			} else {
-				html += '<pre style="background: ' + code_bg + '; color: ' + body_fg + '; padding: 10px; border-radius: 4px; overflow-x: auto;"><code>'
+				html += '<pre style="background: ' + code_bg + '; color: ' + body_fg +
+					'; padding: 10px; border-radius: 4px; overflow-x: auto;"><code>'
 				in_code_block = true
 			}
 			continue
@@ -255,7 +258,8 @@ fn markdown_to_html(md string, theme string) string {
 
 		if in_code_block {
 			// Simple HTML escape for code blocks
-			mut escaped := line.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+			mut escaped := line.replace('&', '&amp;').replace('<', '&lt;').replace('>',
+				'&gt;')
 			html += escaped + '\n'
 			continue
 		}
@@ -269,19 +273,26 @@ fn markdown_to_html(md string, theme string) string {
 
 		// 3. Horizontal Rule
 		if trimmed == '---' {
-			html += '<hr style="border: none; border-top: 1px solid ' + hr_color + '; margin: 20px 0;"/>\n'
+			html += '<hr style="border: none; border-top: 1px solid ' + hr_color +
+				'; margin: 20px 0;"/>\n'
 			continue
 		}
 
 		// 4. Headers
 		if trimmed.starts_with('# ') {
-			html += '<h1 style="color: ' + (if theme == "light" { "#0066cc" } else { "#50fa7b" }) + '; margin-top: 20px; font-weight: bold;">' + parse_inline(trimmed[2..], code_bg, code_fg) + '</h1>\n'
+			html += '<h1 style="color: ' + (if theme == 'light' { '#0066cc' } else { '#50fa7b' }) +
+				'; margin-top: 20px; font-weight: bold;">' +
+				parse_inline(trimmed[2..], code_bg, code_fg) + '</h1>\n'
 			continue
 		} else if trimmed.starts_with('## ') {
-			html += '<h2 style="color: ' + (if theme == "light" { "#333333" } else { "#ffb86c" }) + '; margin-top: 16px; font-weight: bold;">' + parse_inline(trimmed[3..], code_bg, code_fg) + '</h2>\n'
+			html += '<h2 style="color: ' + (if theme == 'light' { '#333333' } else { '#ffb86c' }) +
+				'; margin-top: 16px; font-weight: bold;">' +
+				parse_inline(trimmed[3..], code_bg, code_fg) + '</h2>\n'
 			continue
 		} else if trimmed.starts_with('### ') {
-			html += '<h3 style="color: ' + (if theme == "light" { "#555555" } else { "#ff79c6" }) + '; margin-top: 12px; font-weight: bold;">' + parse_inline(trimmed[4..], code_bg, code_fg) + '</h3>\n'
+			html += '<h3 style="color: ' + (if theme == 'light' { '#555555' } else { '#ff79c6' }) +
+				'; margin-top: 12px; font-weight: bold;">' +
+				parse_inline(trimmed[4..], code_bg, code_fg) + '</h3>\n'
 			continue
 		}
 
@@ -292,7 +303,8 @@ fn markdown_to_html(md string, theme string) string {
 				in_list = true
 			}
 			content := trimmed[2..]
-			html += '<li style="margin-bottom: 4px;">' + parse_inline(content, code_bg, code_fg) + '</li>\n'
+			html += '<li style="margin-bottom: 4px;">' + parse_inline(content, code_bg, code_fg) +
+				'</li>\n'
 			continue
 		}
 
@@ -301,7 +313,8 @@ fn markdown_to_html(md string, theme string) string {
 			continue
 		}
 
-		html += '<p style="line-height: 1.6; margin-bottom: 12px;">' + parse_inline(line, code_bg, code_fg) + '</p>\n'
+		html += '<p style="line-height: 1.6; margin-bottom: 12px;">' +
+			parse_inline(line, code_bg, code_fg) + '</p>\n'
 	}
 
 	if in_list {
@@ -312,7 +325,10 @@ fn markdown_to_html(md string, theme string) string {
 	}
 
 	// Dynamic, beautiful wrap with system font stylesheet matching theme
-	return '<html><head><meta charset="utf-8"></head><body style="font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Helvetica, Arial, sans-serif; font-size: 14px; background-color: ' + body_bg + '; color: ' + body_fg + '; padding: 18px; margin: 0; line-height: 1.6;">' + html + '</body></html>'
+	return
+		'<html><head><meta charset="utf-8"></head><body style="font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Helvetica, Arial, sans-serif; font-size: 14px; background-color: ' +
+		body_bg + '; color: ' + body_fg + '; padding: 18px; margin: 0; line-height: 1.6;">' + html +
+		'</body></html>'
 }
 
 fn parse_inline(text string, code_bg string, code_fg string) string {
@@ -344,7 +360,9 @@ fn parse_inline(text string, code_bg string, code_fg string) string {
 		rest := res[start + 1..]
 		end := rest.index('`') or { break }
 		code_text := rest[..end]
-		res = res[..start] + '<code style="background: ' + code_bg + '; color: ' + code_fg + '; border-radius: 3px; padding: 2px 4px; font-family: monospace; font-size: 0.9em;">' + code_text + '</code>' + rest[end + 1..]
+		res = res[..start] + '<code style="background: ' + code_bg + '; color: ' + code_fg +
+			'; border-radius: 3px; padding: 2px 4px; font-family: monospace; font-size: 0.9em;">' +
+			code_text + '</code>' + rest[end + 1..]
 	}
 
 	return res
@@ -415,13 +433,13 @@ fn main() {
 '
 		}
 		'Project Planner' {
-			return '# Personal Task & Sprint Planner
+			return "# Personal Task & Sprint Planner
 
 Keep track of your milestones and logs easily.
 
 ---
 
-## Today\'s Priorities:
+## Today's Priorities:
 * **Sprint 3 Cleanup**: Finalize all native Cocoa view constraints.
 * **Theme Styling**: Connect color well callbacks to button themes.
 * **Testing suite**: Check validation scenarios with list selectors.
@@ -431,7 +449,7 @@ Keep track of your milestones and logs easily.
 ---
 
 *Enjoy coding with SimpleGUI!*
-'
+"
 		}
 		else {
 			return ''

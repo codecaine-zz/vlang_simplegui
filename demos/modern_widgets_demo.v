@@ -14,16 +14,19 @@ fn main() {
 	win.add_heading('Interactive Rating & Combo Box Demo')
 
 	win.add_label('lbl_combo', 'NSComboBox: Editable Dropdown (type or select):')
-	
+
 	// Create ComboBox with auto suggested items
-	win.add_combo_box('fruit_combo', ['Apple', 'Banana', 'Cherry', 'Dates', 'Elderberry'], 'Banana')
+
+	win.add_combo_box('fruit_combo', ['Apple', 'Banana', 'Cherry', 'Dates', 'Elderberry'],
+		'Banana')
 		.onchange(fn (mut w simplegui.SimpleWindow, value string) {
 			w.set_status('ComboBox val: ${value}')
 		})
 
 	win.add_label('lbl_rating', 'NSLevelIndicator: Interactive 5-Star Rating:')
-	
+
 	// Interactive Rating Stars (Style = 3, range = 0 to 5)
+
 	win.add_rating('app_rating', 4)
 		.onchange(fn (mut w simplegui.SimpleWindow, value string) {
 			rating_val := w.get_value_int('app_rating')
@@ -31,8 +34,9 @@ fn main() {
 		})
 
 	win.add_label('lbl_level', 'NSLevelIndicator: Discrete Level/Capacity Meter:')
-	
+
 	// Discrete Level Selector (Style = 2 is discrete, range = 0 to 10)
+
 	win.add_level_indicator('battery_level', 2, 0, 10, 7)
 		.onchange(fn (mut w simplegui.SimpleWindow, value string) {
 			level_val := w.get_value_int('battery_level')
@@ -52,7 +56,7 @@ fn main() {
 			w.set_text('info_area', text)
 			w.toast('Inspected current widget states successfully!')
 		}
-		'Reset Widgets': fn (mut w simplegui.SimpleWindow) {
+		'Reset Widgets':  fn (mut w simplegui.SimpleWindow) {
 			w.set_text('fruit_combo', 'Apple')
 			w.set_value_int('app_rating', 2)
 			w.set_value_int('battery_level', 4)

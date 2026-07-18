@@ -14,6 +14,7 @@ fn main() {
 	win.add_heading('Typography & Advanced macOS APIs')
 
 	// 1. Typography Showcase
+
 	win.add_label('header_styled', 'Styled Header (Courier Bold 18pt)')
 		.bold(true)
 		.font_name('Courier')
@@ -25,6 +26,7 @@ fn main() {
 		.font_color('#94a3b8')
 
 	// 2. Context Menu Showcase
+
 	win.add_label('context_target', 'Right-Click Me: Options for Colors')
 		.bold(true)
 		.font_size(14)
@@ -51,11 +53,8 @@ fn main() {
 	win.add_label('choice_lbl', 'Multiple Choice native macOS Modal Dialogs:')
 	win.add_action('choice_btn', 'Try Multi-Choice alert', fn (mut w simplegui.SimpleWindow) {
 		choices := ['Nordic Theme', 'Dracula Theme', 'Reset Slate', 'Cancel']
-		choice_index := w.choice_dialog(
-			'Theme Switcher',
-			'Choose a color preset layout to apply to this window and all of its elements dynamically:',
-			choices
-		)
+		choice_index := w.choice_dialog('Theme Switcher', 'Choose a color preset layout to apply to this window and all of its elements dynamically:',
+			choices)
 		match choice_index {
 			0 {
 				w.set_theme('nord')

@@ -7,13 +7,13 @@ import time
 fn main() {
 	println('==================================================')
 	println('Starting local self-contained plain WS Echo Server for fallback...')
-	
+
 	// We run a local plain ws server in case the user wants to test offline,
 	// but the UI points to wss://echo.websocket.org by default to demo secure wss.
 	port := 30399
 	mut ws_server := simplegui.new_simple_window('WS Fallback Listener', 1, 1) // Dummy for import or helper
 	_ = ws_server
-	
+
 	// Spawn the standard local offline WS echo server in the background
 	// so the demo has a fallback local port.
 	spawn run_local_ws_server(port)
@@ -24,7 +24,8 @@ fn main() {
 	println('==================================================')
 
 	// 2. Build the SimpleGUI application playground window
-	mut gui := simplegui.new_simple_window('Secure WebSocket (wss://) Client Demo', 640, 600)
+	mut gui := simplegui.new_simple_window('Secure WebSocket (wss://) Client Demo', 640,
+		600)
 	gui.set_title('SimpleGUI Secure WebSocket (WSS) Client')
 	gui.set_padding(20)
 	gui.set_spacing(12)
@@ -43,10 +44,10 @@ fn main() {
 	gui.set_control_font_bold('cfg_title', true)
 
 	gui.begin_row('conn_row')
-		gui.add_label('url_lbl', 'Secure URL:')
-		gui.add_input('url_input', 'wss://echo.websocket.org')
-		gui.add_button('connect_btn', 'Connect')
-		gui.add_button('disconnect_btn', 'Disconnect')
+	gui.add_label('url_lbl', 'Secure URL:')
+	gui.add_input('url_input', 'wss://echo.websocket.org')
+	gui.add_button('connect_btn', 'Connect')
+	gui.add_button('disconnect_btn', 'Disconnect')
 	gui.end_row()
 
 	gui.add_separator()
@@ -56,9 +57,9 @@ fn main() {
 	gui.set_control_font_bold('msg_title', true)
 
 	gui.begin_row('send_row')
-		gui.add_label('msg_lbl', 'Message payload:')
-		gui.add_input('msg_input', 'Hello V Secure WebSockets!')
-		gui.add_button('send_btn', 'Send Securely')
+	gui.add_label('msg_lbl', 'Message payload:')
+	gui.add_input('msg_input', 'Hello V Secure WebSockets!')
+	gui.add_button('send_btn', 'Send Securely')
 	gui.end_row()
 
 	gui.add_separator()
@@ -86,7 +87,7 @@ fn main() {
 	}
 
 	// Connect Button Handler
-	gui.on_click('connect_btn', fn [on_message_received] (mut win &simplegui.SimpleWindow) {
+	gui.on_click('connect_btn', fn [on_message_received] (mut win simplegui.SimpleWindow) {
 		url := win.get_text('url_input').trim_space()
 		if url.len == 0 {
 			win.alert('Input Error', 'Please enter a valid Secure WebSocket URL.')
@@ -95,13 +96,15 @@ fn main() {
 
 		time_stamp := win.time_now()
 		current_logs := win.get_text('stream_logs')
-		win.set_text('stream_logs', current_logs + '\n[' + time_stamp + '] [Handshake]: Initiating secure connection to: ' + url + '...')
+		win.set_text('stream_logs', current_logs + '\n[' + time_stamp +
+			'] [Handshake]: Initiating secure connection to: ' + url + '...')
 		win.set_status('Connecting secure web socket...')
 
 		// Use the simplegui high-level wrapper (it automatically initiates SSL for wss:// URLs)
 		conn := win.websocket_client(url, on_message_received) or {
 			fail_stamp := win.time_now()
-			win.set_text('stream_logs', win.get_text('stream_logs') + '\n[' + fail_stamp + '] [Error]: Secure handshake failed: ' + err.msg())
+			win.set_text('stream_logs', win.get_text('stream_logs') + '\n[' + fail_stamp +
+				'] [Error]: Secure handshake failed: ' + err.msg())
 			win.alert('Connection Failed', 'Handshake or network endpoint is unreachable. (If offline, try: ws://127.0.0.1:30399)')
 			win.set_status('Websocket connection failed.')
 			return
@@ -110,7 +113,8 @@ fn main() {
 		win.ws_client = voidptr(conn)
 
 		success_stamp := win.time_now()
-		win.set_text('stream_logs', win.get_text('stream_logs') + '\n[' + success_stamp + '] [Success]: Secure Web Socket connected successfully!')
+		win.set_text('stream_logs', win.get_text('stream_logs') + '\n[' + success_stamp +
+			'] [Success]: Secure Web Socket connected successfully!')
 		win.set_control_enabled('connect_btn', false)
 		win.set_control_enabled('disconnect_btn', true)
 		win.set_control_enabled('send_btn', true)
@@ -118,16 +122,17 @@ fn main() {
 	})
 
 	// Disconnect Button Handler
-	gui.on_click('disconnect_btn', fn (mut win &simplegui.SimpleWindow) {
-		if win.ws_client != voidptr(0) {
+	gui.on_click('disconnect_btn', fn (mut win simplegui.SimpleWindow) {
+		if win.ws_client != unsafe { nil } {
 			mut conn := unsafe { &simplegui.SimpleWSClient(win.ws_client) }
 			conn.close()
-			win.ws_client = voidptr(0)
+			win.ws_client = unsafe { nil }
 		}
-		
+
 		time_stamp := win.time_now()
 		current_logs := win.get_text('stream_logs')
-		win.set_text('stream_logs', current_logs + '\n[' + time_stamp + '] [Offline]: Connection closed cleanly.')
+		win.set_text('stream_logs', current_logs + '\n[' + time_stamp +
+			'] [Offline]: Connection closed cleanly.')
 		win.set_control_enabled('connect_btn', true)
 		win.set_control_enabled('disconnect_btn', false)
 		win.set_control_enabled('send_btn', false)
@@ -135,14 +140,14 @@ fn main() {
 	})
 
 	// Message Send Handler
-	gui.on_click('send_btn', fn (mut win &simplegui.SimpleWindow) {
+	gui.on_click('send_btn', fn (mut win simplegui.SimpleWindow) {
 		msg := win.get_text('msg_input').trim_space()
 		if msg.len == 0 {
 			win.alert('Input Error', 'Message text cannot be empty.')
 			return
 		}
 
-		if win.ws_client == voidptr(0) {
+		if win.ws_client == unsafe { nil } {
 			win.alert('Not Connected', 'Please connect the socket stream before transmitting.')
 			return
 		}
@@ -155,11 +160,12 @@ fn main() {
 		mut conn := unsafe { &simplegui.SimpleWSClient(win.ws_client) }
 		conn.write_string(msg) or {
 			err_stamp := win.time_now()
-			win.set_text('stream_logs', win.get_text('stream_logs') + '\n[' + err_stamp + '] [Error]: Transmission failed: ' + err.msg())
+			win.set_text('stream_logs', win.get_text('stream_logs') + '\n[' + err_stamp +
+				'] [Error]: Transmission failed: ' + err.msg())
 			win.set_status('Write failed.')
 			return
 		}
-		
+
 		win.set_status('Message string transmitted successfully.')
 	})
 

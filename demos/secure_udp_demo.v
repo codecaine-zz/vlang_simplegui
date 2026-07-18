@@ -15,7 +15,7 @@ const key_hex = '0123456789abcdef0123456789abcdef'
 fn main() {
 	println('==================================================')
 	println('Starting local self-contained SECURE UDP Echo Server...')
-	
+
 	port := 30499
 	println('UDP Listening Port: ${port}')
 	println('AES Pre-shared Key (Hex): ${key_hex}')
@@ -48,12 +48,12 @@ fn main() {
 	gui.set_control_font_bold('cfg_title', true)
 
 	gui.begin_row('conn_row')
-		gui.add_label('host_lbl', 'Host:')
-		gui.add_input('host_input', '127.0.0.1')
-		gui.add_label('port_lbl', 'Port:')
-		gui.add_input('port_input', port.str())
-		gui.add_button('connect_btn', 'Connect')
-		gui.add_button('disconnect_btn', 'Disconnect')
+	gui.add_label('host_lbl', 'Host:')
+	gui.add_input('host_input', '127.0.0.1')
+	gui.add_label('port_lbl', 'Port:')
+	gui.add_input('port_input', port.str())
+	gui.add_button('connect_btn', 'Connect')
+	gui.add_button('disconnect_btn', 'Disconnect')
 	gui.end_row()
 
 	gui.add_separator()
@@ -63,9 +63,9 @@ fn main() {
 	gui.set_control_font_bold('msg_title', true)
 
 	gui.begin_row('send_row')
-		gui.add_label('msg_lbl', 'Message payload:')
-		gui.add_input('msg_input', 'Hello V Secure UDP Sockets!')
-		gui.add_button('send_btn', 'Send Encrypted')
+	gui.add_label('msg_lbl', 'Message payload:')
+	gui.add_input('msg_input', 'Hello V Secure UDP Sockets!')
+	gui.add_button('send_btn', 'Send Encrypted')
 	gui.end_row()
 
 	gui.add_separator()
@@ -80,7 +80,7 @@ fn main() {
 	win_ptr := voidptr(gui)
 
 	// Connect Button Handler
-	gui.on_click('connect_btn', fn [win_ptr] (mut win &simplegui.SimpleWindow) {
+	gui.on_click('connect_btn', fn [win_ptr] (mut win simplegui.SimpleWindow) {
 		host := win.get_text('host_input').trim_space()
 		port_str := win.get_text('port_input').trim_space()
 		if host.len == 0 || port_str.len == 0 {
@@ -90,12 +90,14 @@ fn main() {
 
 		time_stamp := win.time_now()
 		current_logs := win.get_text('stream_logs')
-		win.set_text('stream_logs', current_logs + '\n[' + time_stamp + '] [Dialing]: Dialing UDP endpoint at: ' + host + ':' + port_str + '...')
+		win.set_text('stream_logs', current_logs + '\n[' + time_stamp +
+			'] [Dialing]: Dialing UDP endpoint at: ' + host + ':' + port_str + '...')
 		win.set_status('Dialing UDP socket...')
 
 		socket := net.dial_udp('${host}:${port_str}') or {
 			fail_stamp := win.time_now()
-			win.set_text('stream_logs', win.get_text('stream_logs') + '\n[' + fail_stamp + '] [Error]: Dial failed: ' + err.msg())
+			win.set_text('stream_logs', win.get_text('stream_logs') + '\n[' + fail_stamp +
+				'] [Error]: Dial failed: ' + err.msg())
 			win.alert('Dial Failed', 'UDP endpoint is unreachable.')
 			win.set_status('UDP dial failed.')
 			return
@@ -110,9 +112,7 @@ fn main() {
 		spawn fn [mut client, win_ptr] () {
 			mut buf := []u8{len: 1024}
 			for {
-				read, _ := client.socket.read(mut buf) or {
-					break
-				}
+				read, _ := client.socket.read(mut buf) or { break }
 				if read == 0 {
 					continue
 				}
@@ -124,10 +124,9 @@ fn main() {
 					w.run_on_main_thread(fn [cipher, plain] (mut w_inner simplegui.SimpleWindow) {
 						time_stamp := w_inner.time_now()
 						current_logs := w_inner.get_text('stream_logs')
-						w_inner.set_text('stream_logs', current_logs + 
-							'\n[' + time_stamp + '] [Received Ciphertext (Hex)]: ' + cipher +
-							'\n[' + time_stamp + '] [Received Decrypted (Plain)]: ' + plain + '\n'
-						)
+						w_inner.set_text('stream_logs', current_logs + '\n[' + time_stamp +
+							'] [Received Ciphertext (Hex)]: ' + cipher + '\n[' + time_stamp +
+							'] [Received Decrypted (Plain)]: ' + plain + '\n')
 						w_inner.toast('Secure UDP payload arrived & decrypted!')
 						w_inner.set_status('Received secure UDP response.')
 					})
@@ -137,20 +136,22 @@ fn main() {
 			unsafe {
 				mut w := &simplegui.SimpleWindow(win_ptr)
 				w.run_on_main_thread(fn (mut w_inner simplegui.SimpleWindow) {
-					w_inner.ws_client = voidptr(0)
+					w_inner.ws_client = nil
 					w_inner.set_control_enabled('connect_btn', true)
 					w_inner.set_control_enabled('disconnect_btn', false)
 					w_inner.set_control_enabled('send_btn', false)
 					w_inner.set_status('Disconnected.')
 					time_stamp := w_inner.time_now()
 					current_logs := w_inner.get_text('stream_logs')
-					w_inner.set_text('stream_logs', current_logs + '\n[' + time_stamp + '] [Offline]: UDP socket closed.')
+					w_inner.set_text('stream_logs', current_logs + '\n[' + time_stamp +
+						'] [Offline]: UDP socket closed.')
 				})
 			}
 		}()
 
 		success_stamp := win.time_now()
-		win.set_text('stream_logs', win.get_text('stream_logs') + '\n[' + success_stamp + '] [Success]: Secure UDP Socket initialized successfully!')
+		win.set_text('stream_logs', win.get_text('stream_logs') + '\n[' + success_stamp +
+			'] [Success]: Secure UDP Socket initialized successfully!')
 		win.set_control_enabled('connect_btn', false)
 		win.set_control_enabled('disconnect_btn', true)
 		win.set_control_enabled('send_btn', true)
@@ -158,23 +159,23 @@ fn main() {
 	})
 
 	// Disconnect Button Handler
-	gui.on_click('disconnect_btn', fn (mut win &simplegui.SimpleWindow) {
-		if win.ws_client != voidptr(0) {
+	gui.on_click('disconnect_btn', fn (mut win simplegui.SimpleWindow) {
+		if win.ws_client != unsafe { nil } {
 			mut client := unsafe { &SimpleUDPClient(win.ws_client) }
 			client.socket.close() or {}
-			win.ws_client = voidptr(0)
+			win.ws_client = unsafe { nil }
 		}
 	})
 
 	// Message Send Handler
-	gui.on_click('send_btn', fn (mut win &simplegui.SimpleWindow) {
+	gui.on_click('send_btn', fn (mut win simplegui.SimpleWindow) {
 		msg := win.get_text('msg_input').trim_space()
 		if msg.len == 0 {
 			win.alert('Input Error', 'Message text cannot be empty.')
 			return
 		}
 
-		if win.ws_client == voidptr(0) {
+		if win.ws_client == unsafe { nil } {
 			win.alert('Not Connected', 'Please connect the socket stream before transmitting.')
 			return
 		}
@@ -182,22 +183,22 @@ fn main() {
 		time_stamp := win.time_now()
 		// Encrypt payload
 		cipher := simplegui.crypto_encrypt_aes(msg, key_hex)
-		
+
 		current_logs := win.get_text('stream_logs')
-		win.set_text('stream_logs', current_logs + 
-			'\n[' + time_stamp + '] [Sent Plaintext (Plain)]: ' + msg +
-			'\n[' + time_stamp + '] [Sent Ciphertext (Hex)]: ' + cipher
-		)
+		win.set_text('stream_logs', current_logs + '\n[' + time_stamp +
+			'] [Sent Plaintext (Plain)]: ' + msg + '\n[' + time_stamp +
+			'] [Sent Ciphertext (Hex)]: ' + cipher)
 
 		// Send data
 		mut client := unsafe { &SimpleUDPClient(win.ws_client) }
 		client.socket.write(cipher.bytes()) or {
 			err_stamp := win.time_now()
-			win.set_text('stream_logs', win.get_text('stream_logs') + '\n[' + err_stamp + '] [Error]: Transmission failed: ' + err.msg())
+			win.set_text('stream_logs', win.get_text('stream_logs') + '\n[' + err_stamp +
+				'] [Error]: Transmission failed: ' + err.msg())
 			win.set_status('Write failed.')
 			return
 		}
-		
+
 		win.set_status('Secure UDP datagram transmitted successfully.')
 	})
 
@@ -232,17 +233,19 @@ fn run_secure_udp_server(port int) {
 			println('[Server log] Read error: ${err.msg()}')
 			break
 		}
-		if read == 0 { continue }
+		if read == 0 {
+			continue
+		}
 		cipher := buf[..read].bytestr()
-		
+
 		// Decrypt message
 		plain := simplegui.crypto_decrypt_aes(cipher, key_hex)
 		println('[Server log] Received encrypted hex: "${cipher}" -> Decrypted: "${plain}"')
-		
+
 		// Encrypt response back
 		response := 'Echo Server (Secure): ' + plain
 		resp_cipher := simplegui.crypto_encrypt_aes(response, key_hex)
-		
+
 		socket.write_to(addr, resp_cipher.bytes()) or {
 			println('[Server log] Write back failed: ${err.msg()}')
 		}

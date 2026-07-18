@@ -24,6 +24,7 @@ fn main() {
 	win.add_heading('Delphi & C# RAD Developer Studio')
 
 	// 1. Custom Dialog Alerts with Icons / Severity
+
 	win.add_label('dialog_lbl', '1. High-Level Native Alert Dialogs (Severity Styles)')
 		.bold(true)
 		.font_size(14)
@@ -31,31 +32,23 @@ fn main() {
 
 	win.begin_row('styles_row')
 	win.add_action('info_btn', 'Show Info Alert', fn (mut w simplegui.SimpleWindow) {
-		w.alert_with_style(
-			'Information',
-			'Success! The component compiled and linked correctly.',
-			'info'
-		)
+		w.alert_with_style('Information', 'Success! The component compiled and linked correctly.',
+			'info')
 	})
 	win.add_action('warn_btn', 'Show Warning Alert', fn (mut w simplegui.SimpleWindow) {
-		w.alert_with_style(
-			'Caution Required',
-			'Deprecations found. Please upgrade to the latest macOS target framework.',
-			'warning'
-		)
+		w.alert_with_style('Caution Required', 'Deprecations found. Please upgrade to the latest macOS target framework.',
+			'warning')
 	})
 	win.add_action('error_btn', 'Show Critical Error', fn (mut w simplegui.SimpleWindow) {
-		w.alert_with_style(
-			'Linker Error (Visual debug)',
-			'Undefined symbol found! Missing Cocoa framework references in your build script.',
-			'error'
-		)
+		w.alert_with_style('Linker Error (Visual debug)', 'Undefined symbol found! Missing Cocoa framework references in your build script.',
+			'error')
 	})
 	win.end_row()
 
 	win.add_separator()
 
 	// 2. Filtered Open File Dialog
+
 	win.add_label('filter_lbl', '2. Filtered macOS File Open Dialog (Delphi TFilter style)')
 		.bold(true)
 		.font_size(14)
@@ -88,6 +81,7 @@ fn main() {
 	win.add_separator()
 
 	// 3. Easy-To-Use ListView load from Struct list (Anders' Reflection philosophy)
+
 	win.add_label('table_lbl', '3. ListView Autowired from Array of Structs (Load compile-time reflection)')
 		.bold(true)
 		.font_size(14)
@@ -98,10 +92,30 @@ fn main() {
 
 	// Custom DeveloperTask structures list
 	tasks := [
-		DeveloperTask{ id: 101, task: 'Implement Context Menus', priority: 'High', done: true },
-		DeveloperTask{ id: 102, task: 'Write Filtered File Selector Dialog', priority: 'Medium', done: true },
-		DeveloperTask{ id: 103, task: 'Extract generic loader reflection', priority: 'High', done: true },
-		DeveloperTask{ id: 104, task: 'Design Pascal UI Demo', priority: 'Low', done: false },
+		DeveloperTask{
+			id:       101
+			task:     'Implement Context Menus'
+			priority: 'High'
+			done:     true
+		},
+		DeveloperTask{
+			id:       102
+			task:     'Write Filtered File Selector Dialog'
+			priority: 'Medium'
+			done:     true
+		},
+		DeveloperTask{
+			id:       103
+			task:     'Extract generic loader reflection'
+			priority: 'High'
+			done:     true
+		},
+		DeveloperTask{
+			id:       104
+			task:     'Design Pascal UI Demo'
+			priority: 'Low'
+			done:     false
+		},
 	]
 
 	// Single line load of an array of structs into our grid with fully automatic type checking!
@@ -114,7 +128,7 @@ fn main() {
 	// Context actions for the window
 	win.add_context_menu_item('window', 'Reset Table Grid', fn (mut w simplegui.SimpleWindow) {
 		w.load_table_from_structs('tasks', [
-			DeveloperTask{ id: 201, task: 'Refactor components', priority: 'High', done: false }
+			DeveloperTask{ id: 201, task: 'Refactor components', priority: 'High', done: false },
 		])
 		w.set_status('Grid reset to custom view!')
 	})

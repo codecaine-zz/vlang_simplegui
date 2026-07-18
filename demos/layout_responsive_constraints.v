@@ -9,9 +9,9 @@ fn main() {
 			cfg.padding = 20
 			cfg.spacing = 12
 			cfg.background_color = '#282a36' // Dracula theme background
-			cfg.font_color = '#f8f8f2'       // Dracula theme text
-			cfg.resizable = true             // Must be resizable to showcase auto-layout resizing!
-			cfg.responsive_layout = true     // Starts with responsive auto-layout ON
+			cfg.font_color = '#f8f8f2' // Dracula theme text
+			cfg.resizable = true // Must be resizable to showcase auto-layout resizing!
+			cfg.responsive_layout = true // Starts with responsive auto-layout ON
 		})
 
 	win.add_heading('Responsive Sizing & Constraints')
@@ -31,6 +31,7 @@ fn main() {
 	// 2. Input constrained to a fixed width
 	win.add_label('lbl_fixed_w', '2. Fixed Width Input (constrained to 250px wide):')
 	win.set_control_font_bold('lbl_fixed_w', true)
+
 	win.add_input('fixed_input', 'Constrained width input field')
 		.width(250)
 
@@ -39,13 +40,14 @@ fn main() {
 	// 3. Text area constrained to a fixed height
 	win.add_label('lbl_fixed_h', '3. Fixed Height Area (constrained to 60px high):')
 	win.set_control_font_bold('lbl_fixed_h', true)
+
 	win.add_textarea('fixed_area', 'Constrained height area...')
 		.height(60)
 
 	win.add_vertical_spacer(15)
 
 	// 4. Interactive Theme Color Customization
-	win.row('theme_color_row', fn (mut w &simplegui.SimpleWindow) {
+	win.row('theme_color_row', fn (mut w simplegui.SimpleWindow) {
 		w.add_label('lbl_color_picker', 'Pick custom layout background color:')
 		w.add_color_well('bg_color_well', '#282a36')
 	})
@@ -59,18 +61,17 @@ fn main() {
 	win.run()
 }
 
-fn on_bg_color_changed(mut win &simplegui.SimpleWindow, hex_color string) {
+fn on_bg_color_changed(mut win simplegui.SimpleWindow, hex_color string) {
 	// Dynamically modify the layout's background color
 	win.set_background_color(hex_color)
 	win.toast('Theme color updated: ${hex_color}')
 }
 
-
-fn on_toggle_responsive(mut win &simplegui.SimpleWindow) {
+fn on_toggle_responsive(mut win simplegui.SimpleWindow) {
 	// Query current responsive mode status
 	is_enabled := win.get_responsive_layout()
 	new_state := !is_enabled
-	
+
 	// Toggle the layout engine configuration
 	win.set_responsive_layout(new_state)
 

@@ -9,7 +9,7 @@ import json
 // This demo showcases a real-world utility application: an Executive Business
 // Intelligence (BI) KPI Board & Financial Portfolio Generator.
 // V models the financial metrics (Revenue, conversion margins, user targets, and
-// styling presets), while delivering a fully interactive custom HTML5 Webkit 
+// styling presets), while delivering a fully interactive custom HTML5 Webkit
 // data visualization with reactive canvas gauges, inline data-baking JSON exports,
 // and synchronized alerts.
 // -----------------------------------------------------------------------------
@@ -31,13 +31,15 @@ fn main() {
 	mut spec := DashboardSpec{}
 
 	// Create and configure a premium SimpleGUI environment
-	mut win := simplegui.new_simple_window('Enterprise Fintech Analytics, KPI & BI Center', 880, 680)
+	mut win := simplegui.new_simple_window('Enterprise Fintech Analytics, KPI & BI Center',
+		880, 680)
 		.set_background_color('#0b0f19') // Premium Obsidian Space Black
 		.set_font_color('#f1f5f9')
 		.set_padding(18)
 		.set_spacing(8)
 
 	win.add_heading('📊 Enterprise BI Dashboard & KPI Publisher')
+
 	win.add_label('studio_sub', 'Model business data and styling metrics live in V. Real-time updates re-render interactive WebKit charts, financial tickers, and high-performance canvas gauges.')
 		.font_size(11)
 		.font_color('#64748b')
@@ -46,62 +48,62 @@ fn main() {
 
 	// Side-by-side pane split: V controls on the left, WebKit Preview on the right
 	win.begin_row('studio_pane')
-		// LEFT COLUMN: Controls Pane
-		win.begin_row('controls_column')
-			win.group('studio_styles', 'Financial KPI Configurations', fn (mut w &simplegui.SimpleWindow) {
-				w.row('comp_row', fn (mut w2 &simplegui.SimpleWindow) {
-					w2.add_label('', 'Entity name:').width(90)
-					w2.add_input('company_name', 'Acme Analytics Corp').width(240)
-				})
+	// LEFT COLUMN: Controls Pane
+	win.begin_row('controls_column')
+	win.group('studio_styles', 'Financial KPI Configurations', fn (mut w simplegui.SimpleWindow) {
+		w.row('comp_row', fn (mut w2 simplegui.SimpleWindow) {
+			w2.add_label('', 'Entity name:').width(90)
+			w2.add_input('company_name', 'Acme Analytics Corp').width(240)
+		})
 
-				w.row('kpi_row', fn (mut w2 &simplegui.SimpleWindow) {
-					w2.add_label('', 'KPI Metric:').width(90)
-					w2.add_input('kpi_label', 'Quarterly Recurring Revenue (ARR)').width(240)
-				})
+		w.row('kpi_row', fn (mut w2 simplegui.SimpleWindow) {
+			w2.add_label('', 'KPI Metric:').width(90)
+			w2.add_input('kpi_label', 'Quarterly Recurring Revenue (ARR)').width(240)
+		})
 
-				w.row('rev_row', fn (mut w2 &simplegui.SimpleWindow) {
-					w2.add_label('', 'Target (USD):').width(90)
-					w2.add_slider('total_revenue_slider', 42).width(240) // mapped programmatically as value * 100,000
-				})
+		w.row('rev_row', fn (mut w2 simplegui.SimpleWindow) {
+			w2.add_label('', 'Target (USD):').width(90)
+			w2.add_slider('total_revenue_slider', 42).width(240) // mapped programmatically as value * 100,000
+		})
 
-				w.row('conv_row', fn (mut w2 &simplegui.SimpleWindow) {
-					w2.add_label('lbl_conv', 'Conversion: 3.42%').width(140)
-					w2.add_slider('conversion_slider', 34).width(190) // mapped as value / 10
-				})
+		w.row('conv_row', fn (mut w2 simplegui.SimpleWindow) {
+			w2.add_label('lbl_conv', 'Conversion: 3.42%').width(140)
+			w2.add_slider('conversion_slider', 34).width(190) // mapped as value / 10
+		})
 
-				w.row('cust_row', fn (mut w2 &simplegui.SimpleWindow) {
-					w2.add_label('', 'Clients:').width(90)
-					w2.add_number('customer_count_val', 1380).width(240)
-				})
+		w.row('cust_row', fn (mut w2 simplegui.SimpleWindow) {
+			w2.add_label('', 'Clients:').width(90)
+			w2.add_number('customer_count_val', 1380).width(240)
+		})
 
-				w.row('colors_row', fn (mut w2 &simplegui.SimpleWindow) {
-					w2.add_label('', 'Theme C1:').width(60)
-					w2.add_color_well('color_p', '#06b6d4')
-					w2.add_horizontal_spacer(20)
-					w2.add_label('', 'Theme C2:').width(70)
-					w2.add_color_well('color_s', '#3b82f6')
-				})
+		w.row('colors_row', fn (mut w2 simplegui.SimpleWindow) {
+			w2.add_label('', 'Theme C1:').width(60)
+			w2.add_color_well('color_p', '#06b6d4')
+			w2.add_horizontal_spacer(20)
+			w2.add_label('', 'Theme C2:').width(70)
+			w2.add_color_well('color_s', '#3b82f6')
+		})
 
-				w.row('radius_row', fn (mut w2 &simplegui.SimpleWindow) {
-					w2.add_label('lbl_radius', 'Corner Radius: 14px').width(140)
-					w2.add_slider('radius_slider', 14).width(190)
-				})
+		w.row('radius_row', fn (mut w2 simplegui.SimpleWindow) {
+			w2.add_label('lbl_radius', 'Corner Radius: 14px').width(140)
+			w2.add_slider('radius_slider', 14).width(190)
+		})
 
-				w.add_checkbox('alert_checkbox', 'Deploy Active Target Notification Banner', true)
+		w.add_checkbox('alert_checkbox', 'Deploy Active Target Notification Banner', true)
 
-				w.add_vertical_spacer(8)
-				
-				w.begin_row('btn_actions')
-					w.add_action('btn_export', 'Export JSON', on_export_clicked).width(160)
-					w.add_action('btn_report', 'Submit Report', on_report_clicked).width(160)
-				w.end_row()
-			})
-		win.end_row()
+		w.add_vertical_spacer(8)
 
-		// RIGHT COLUMN: Live WebKit HTML Preview Pane
-		win.begin_row('preview_column')
-			win.add_html_view('web_preview', compile_html(spec))
-		win.end_row()
+		w.begin_row('btn_actions')
+		w.add_action('btn_export', 'Export JSON', on_export_clicked).width(160)
+		w.add_action('btn_report', 'Submit Report', on_report_clicked).width(160)
+		w.end_row()
+	})
+	win.end_row()
+
+	// RIGHT COLUMN: Live WebKit HTML Preview Pane
+	win.begin_row('preview_column')
+	win.add_html_view('web_preview', compile_html(spec))
+	win.end_row()
 	win.end_row()
 
 	// Explicit layout width/height configurations
@@ -130,7 +132,7 @@ fn main() {
 }
 
 // Retrieves all active V control properties, compiles the output HTML and updates WebView
-fn on_style_changed(mut win &simplegui.SimpleWindow, value string) {
+fn on_style_changed(mut win simplegui.SimpleWindow, value string) {
 	comp := win.get_text('company_name')
 	kpi := win.get_text('kpi_label')
 	rev := win.get_value_int('total_revenue_slider') * 100000
@@ -162,7 +164,7 @@ fn on_style_changed(mut win &simplegui.SimpleWindow, value string) {
 	win.set_status('Synced BI metrics. Target: \$${rev}. Conversion: ${conv:0.2f}%. Clients: ${cust}.')
 }
 
-fn on_export_clicked(mut win &simplegui.SimpleWindow) {
+fn on_export_clicked(mut win simplegui.SimpleWindow) {
 	comp := win.get_text('company_name')
 	kpi := win.get_text('kpi_label')
 	rev := win.get_value_int('total_revenue_slider') * 100000
@@ -179,11 +181,13 @@ fn on_export_clicked(mut win &simplegui.SimpleWindow) {
 	}
 
 	encoded_spec := json.encode(spec)
-	win.alert('Enterprise Spec Exported', 'KPI specs serialized successfully to JSON!\n\nPayload:\n' + encoded_spec + '\n\nThis payload can be published directly to enterprise analytics APIs.')
+	win.alert('Enterprise Spec Exported',
+		'KPI specs serialized successfully to JSON!\n\nPayload:\n' + encoded_spec +
+		'\n\nThis payload can be published directly to enterprise analytics APIs.')
 	win.toast('JSON Specs Compiled')
 }
 
-fn on_report_clicked(mut win &simplegui.SimpleWindow) {
+fn on_report_clicked(mut win simplegui.SimpleWindow) {
 	comp := win.get_text('company_name')
 	if win.confirm('Publish BI Report', 'Do you want to confirm submitting the compiled metrics summary for ${comp}?') {
 		win.alert('Report Submitted', 'BI dashboard published successfully to production database.')

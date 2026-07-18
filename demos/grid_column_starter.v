@@ -10,13 +10,15 @@ fn main() {
 	win.add_heading('Database Lookup Filters')
 
 	// Closure-based row helper aligns children side-by-side automatically
-	win.row('filters_row', fn (mut w &simplegui.SimpleWindow) {
+	win.row('filters_row', fn (mut w simplegui.SimpleWindow) {
 		w.add_label('', 'Category:')
+
 		w.add_dropdown('category', ['Engineering', 'Marketing', 'Sales'], 'Engineering')
 			.width(150)
 			.onchange(on_filter_changed)
 
 		w.add_label('', 'ID:')
+
 		w.add_number('filter_id', 101)
 			.width(80)
 			.onchange(on_filter_changed)
@@ -31,13 +33,13 @@ fn main() {
 	win.run()
 }
 
-fn on_filter_changed(mut win &simplegui.SimpleWindow, value string) {
+fn on_filter_changed(mut win simplegui.SimpleWindow, value string) {
 	category := win.get_text('category')
 	id := win.get_value_int('filter_id')
 	win.set_status('Active filter: Category=${category}, ID=${id}')
 }
 
-fn on_search_clicked(mut win &simplegui.SimpleWindow) {
+fn on_search_clicked(mut win simplegui.SimpleWindow) {
 	category := win.get_text('category')
 	id := win.get_value_int('filter_id')
 

@@ -23,7 +23,7 @@ fn pretty_print_json(raw string) string {
 	mut in_string := false
 	for i := 0; i < raw.len; i++ {
 		c := raw[i]
-		if c == `"` && (i == 0 || raw[i-1] != `\\`) {
+		if c == `"` && (i == 0 || raw[i - 1] != `\\`) {
 			in_string = !in_string
 			formatted += c.ascii_str()
 			continue
@@ -39,10 +39,12 @@ fn pretty_print_json(raw string) string {
 			}
 			`}`, `]` {
 				indent_level--
-				if indent_level < 0 { indent_level = 0 }
+				if indent_level < 0 {
+					indent_level = 0
+				}
 				// Trim trailing tabs if any
 				if formatted.ends_with('\t') {
-					formatted = formatted[0..formatted.len-1]
+					formatted = formatted[0..formatted.len - 1]
 				}
 				formatted += '\n' + '\t'.repeat(indent_level) + c.ascii_str()
 			}
@@ -66,14 +68,14 @@ fn pretty_print_json(raw string) string {
 fn execute_request(method string, url string, headers_str string, body string, response_chan chan ResponseEvent) {
 	// 1. Build HTTP request
 	mut req := http.Request{
-		url: url
+		url:    url
 		method: match method {
 			'POST' { http.Method.post }
 			'PUT' { http.Method.put }
 			'DELETE' { http.Method.delete }
 			else { http.Method.get }
 		}
-		data: body
+		data:   body
 	}
 
 	// 2. Set default user agent
@@ -95,9 +97,9 @@ fn execute_request(method string, url string, headers_str string, body string, r
 	res := req.do() or {
 		response_chan <- ResponseEvent{
 			success: false
-			status: 'Failed to connect: ' + err.msg()
+			status:  'Failed to connect: ' + err.msg()
 			headers: ''
-			body: ''
+			body:    ''
 		}
 		return
 	}
@@ -108,9 +110,9 @@ fn execute_request(method string, url string, headers_str string, body string, r
 	// 6. Return response event
 	response_chan <- ResponseEvent{
 		success: true
-		status: '${res.status_code} ${res.status_msg}'
+		status:  '${res.status_code} ${res.status_msg}'
 		headers: headers_buf
-		body: res.body
+		body:    res.body
 	}
 }
 
@@ -135,15 +137,15 @@ fn main() {
 
 	// Request Row (Method & URL)
 	win.begin_row('req_row')
-		win.add_dropdown('method_dropdown', ['GET', 'POST', 'PUT', 'DELETE'], 'GET').width(90)
-		win.add_combo_box('url_combo', [
-			'https://jsonplaceholder.typicode.com/posts/1',
-			'https://jsonplaceholder.typicode.com/todos',
-			'https://httpbin.org/get',
-			'https://httpbin.org/post',
-			'https://httpbin.org/delay/2'
-		], 'https://jsonplaceholder.typicode.com/posts/1')
-		win.add_spinner('spinner_req', false).width(30)
+	win.add_dropdown('method_dropdown', ['GET', 'POST', 'PUT', 'DELETE'], 'GET').width(90)
+	win.add_combo_box('url_combo', [
+		'https://jsonplaceholder.typicode.com/posts/1',
+		'https://jsonplaceholder.typicode.com/todos',
+		'https://httpbin.org/get',
+		'https://httpbin.org/post',
+		'https://httpbin.org/delay/2',
+	], 'https://jsonplaceholder.typicode.com/posts/1')
+	win.add_spinner('spinner_req', false).width(30)
 	win.end_row()
 
 	// Headers and request body inputs
@@ -156,28 +158,29 @@ fn main() {
 
 	// Send button
 	win.begin_row('actions')
-		win.add_button('btn_send', 'Send Request').width(140)
+	win.add_button('btn_send', 'Send Request').width(140)
 	win.end_row()
 
 	win.add_separator()
 
 	// Response display
+
 	win.add_label('lbl_res_status', 'Response Status:')
 		.bold(true)
 		.font_color('#50fa7b') // Dracula Green
 
 	win.begin_row('res_displays')
-		win.begin_row('headers_col')
-			win.add_label('lbl_res_headers', 'Response Headers:')
-			win.add_textarea('txt_res_headers', '')
-			win.set_control_height('txt_res_headers', 200)
-		win.end_row()
+	win.begin_row('headers_col')
+	win.add_label('lbl_res_headers', 'Response Headers:')
+	win.add_textarea('txt_res_headers', '')
+	win.set_control_height('txt_res_headers', 200)
+	win.end_row()
 
-		win.begin_row('body_col')
-			win.add_label('lbl_res_body', 'Response Body:')
-			win.add_textarea('txt_res_body', '')
-			win.set_control_height('txt_res_body', 200)
-		win.end_row()
+	win.begin_row('body_col')
+	win.add_label('lbl_res_body', 'Response Body:')
+	win.add_textarea('txt_res_body', '')
+	win.set_control_height('txt_res_body', 200)
+	win.end_row()
 	win.end_row()
 
 	// Method Dropdown change triggers auto request body visibility
@@ -237,16 +240,16 @@ fn main() {
 					if res.success {
 						w_inner.set_text('lbl_res_status', 'Response: ' + res.status)
 						w_inner.set_text('txt_res_headers', res.headers)
-						
+
 						// Pretty print if JSON, otherwise print raw
 						trimmed_body := res.body.trim_space()
-						if (trimmed_body.starts_with('{') && trimmed_body.ends_with('}')) || 
-						   (trimmed_body.starts_with('[') && trimmed_body.ends_with(']')) {
+						if (trimmed_body.starts_with('{') && trimmed_body.ends_with('}'))
+							|| (trimmed_body.starts_with('[') && trimmed_body.ends_with(']')) {
 							w_inner.set_text('txt_res_body', pretty_print_json(trimmed_body))
 						} else {
 							w_inner.set_text('txt_res_body', res.body)
 						}
-						
+
 						w_inner.set_status('Request completed successfully.')
 					} else {
 						w_inner.set_text('lbl_res_status', 'Error: Request Failed')
