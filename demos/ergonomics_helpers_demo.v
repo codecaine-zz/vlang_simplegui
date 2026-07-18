@@ -220,19 +220,19 @@ fn main() {
 		w.add_form_field('Email:', 'state_email', 'ada@example.com')
 		w.add_button('state_action', 'Action')
 		w.add_action_row({
-			'Hide Name':      fn (mut w simplegui.SimpleWindow) {
+			'Hide Name':       fn (mut w simplegui.SimpleWindow) {
 				w.set_many_visibility({
 					'state_name': false
 				})
 				w.set_status('Hid the display name field.')
 			}
-			'Disable Action': fn (mut w simplegui.SimpleWindow) {
+			'Disable Action':  fn (mut w simplegui.SimpleWindow) {
 				w.set_many_enabled({
 					'state_action': false
 				})
 				w.set_status('Disabled the action button.')
 			}
-			'Show & Enable':  fn (mut w simplegui.SimpleWindow) {
+			'Show & Enable':   fn (mut w simplegui.SimpleWindow) {
 				w.set_many_visibility({
 					'state_name': true
 				})
@@ -244,13 +244,13 @@ fn main() {
 				})
 				w.set_status('Restored visibility and enabled state.')
 			}
-			'Flag Email':     fn (mut w simplegui.SimpleWindow) {
+			'Flag Email':      fn (mut w simplegui.SimpleWindow) {
 				w.set_many_errors({
 					'state_email': 'Please enter a valid address'
 				})
 				w.set_status('Applied an inline error to the email field.')
 			}
-			'Clear Fields':   fn (mut w simplegui.SimpleWindow) {
+			'Clear Fields':    fn (mut w simplegui.SimpleWindow) {
 				w.clear_many(['state_name', 'state_email'])
 				w.set_status('Cleared the selected fields.')
 			}
