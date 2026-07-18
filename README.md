@@ -2,6 +2,11 @@
 
 A small macOS-native GUI starter project written in V, designed to feel approachable for programmers coming from Python, Delphi, or VBA.
 
+## Documentation
+
+- API reference: [API.md](API.md)
+- Project overview and examples: [README.md](README.md)
+
 ## What this project does
 
 This project combines:

@@ -1,8 +1,42 @@
 # SimpleGUI API Documentation
 
-`simplegui` is a beginner-friendly, rapid application development (RAD) framework for building native macOS Cocoa applications in V. It uses a dynamic auto-layout engine to automatically build, size, and layout controls.
+SimpleGUI is a beginner-friendly framework for building native macOS Cocoa applications in V. It combines a lightweight V-side API with a native bridge for real macOS windows and controls, so you can create polished desktop apps with very little boilerplate.
 
-All layout, control creation, styling, and event registration APIs support a **fluent builder pattern** (method chaining) to keep your code clean and concise.
+This guide is organized for fast scanning on GitHub and for quick reference while coding. The most common patterns are grouped first, followed by detailed API entries for individual controls and window actions.
+
+## Table of contents
+
+- [1. Window operations](#1-window-operations)
+- [2. Control layout and grid rows](#2-control-layout--grid-rows)
+- [3. Adding controls](#3-adding-controls)
+- [4. Control sizing and styling](#4-control-sizing--styling)
+- [5. Dialogs, popups, and file pickers](#5-dialogs-popups--file-pickers)
+- [6. Utilities and system actions](#6-utilities--system-actions)
+
+## Quick start
+
+```v
+module main
+
+import simplegui
+
+fn main() {
+    simplegui.new_simple_window('Starter', 640, 420)
+        .add_input('name', 'Ada')
+        .add_button('save', 'Save')
+        .on_click('save', fn (mut win &simplegui.SimpleWindow) {
+            println('saved: ${win.get_text('name')}')
+        })
+        .run()
+}
+```
+
+## Common patterns
+
+- Create a window first with `new_simple_window(...)`.
+- Give controls clear names such as `name`, `email`, `save`, or `status`.
+- Prefer fluent chaining for compact, readable code like `.width(150).tooltip('Helpful text')`.
+- Use `on_click(...)`, `on_change(...)`, and `on_enter(...)` to wire behavior without extra boilerplate.
 
 ---
 
