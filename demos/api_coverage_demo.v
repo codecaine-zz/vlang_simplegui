@@ -61,6 +61,10 @@ fn main() {
 		w.set_titlebar_visible(!w.is_titlebar_visible())
 		w.set_status(if w.is_titlebar_visible() { 'Titlebar visible' } else { 'Titlebar hidden' })
 	})
+	win.add_action('window_title_text', 'Toggle Title Text', fn (mut w simplegui.SimpleWindow) {
+		w.set_title_visible(!w.is_title_visible())
+		w.set_status(if w.is_title_visible() { 'Title text visible' } else { 'Title text hidden' })
+	})
 	win.end_row()
 	win.add_action('window_shadow', 'Toggle Shadow', fn (mut w simplegui.SimpleWindow) {
 		enabled := !w.get_has_shadow()
@@ -252,12 +256,12 @@ fn main() {
 	win.add_input('table_value_edit', '10')
 	win.end_row()
 	win.add_action('apply_table_edit', 'Apply edit', fn [mut table_rows] (mut w simplegui.SimpleWindow) {
-		selected_value := w.get_value('demo_table')
-		if selected_value == '' {
+		selected_row := w.get_table_selected('demo_table')
+		if selected_row < 0 {
 			w.set_status('Select a table row first.')
 			return
 		}
-		row_index := selected_value.int()
+		row_index := selected_row
 		if row_index < 0 || row_index >= table_rows.len {
 			w.set_status('The selected row is out of range.')
 			return

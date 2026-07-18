@@ -248,6 +248,8 @@ pub mut:
 	closable                     bool
 	has_shadow                   bool
 	movable_by_window_background bool
+	titlebar_visible             bool
+	title_visible                bool
 }
 
 pub struct WindowParams {
@@ -265,6 +267,8 @@ pub struct WindowParams {
 	closable                     int
 	has_shadow                   int
 	movable_by_window_background int
+	titlebar_visible             int
+	title_visible                int
 }
 
 pub struct WindowInfo {
@@ -304,6 +308,8 @@ mut:
 	closable                     bool = true
 	has_shadow                   bool = true
 	movable_by_window_background bool
+	titlebar_visible             bool = true
+	title_visible                bool = true
 	list_items                   map[string][]string
 	table_rows                   map[string][][]string
 pub mut:
@@ -379,6 +385,8 @@ fn (win &SimpleWindow) ensure_window() {
 			closable:                     if win.closable { 1 } else { 0 }
 			has_shadow:                   if win.has_shadow { 1 } else { 0 }
 			movable_by_window_background: if win.movable_by_window_background { 1 } else { 0 }
+			titlebar_visible:             if win.titlebar_visible { 1 } else { 0 }
+			title_visible:                if win.title_visible { 1 } else { 0 }
 		}
 		unsafe {
 			mut w := &SimpleWindow(win)
@@ -1139,6 +1147,8 @@ pub fn (win &SimpleWindow) configure(callback fn (mut cfg WindowConfig)) &Simple
 		closable:                     win.closable
 		has_shadow:                   win.has_shadow
 		movable_by_window_background: win.movable_by_window_background
+		titlebar_visible:             win.titlebar_visible
+		title_visible:                win.title_visible
 	}
 	callback(mut cfg)
 	win.set_title(cfg.title)
@@ -1154,6 +1164,8 @@ pub fn (win &SimpleWindow) configure(callback fn (mut cfg WindowConfig)) &Simple
 	win.set_closable(cfg.closable)
 	win.set_has_shadow(cfg.has_shadow)
 	win.set_movable_by_window_background(cfg.movable_by_window_background)
+	win.set_titlebar_visible(cfg.titlebar_visible)
+	win.set_title_visible(cfg.title_visible)
 	unsafe {
 		mut w := &SimpleWindow(win)
 		w.width = cfg.width
@@ -2226,6 +2238,10 @@ pub fn (win &SimpleWindow) is_active() bool {
 }
 
 pub fn (win &SimpleWindow) set_titlebar_visible(visible bool) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.titlebar_visible = visible
+	}
 	if win.window_info != unsafe { nil } {
 		C.window_set_titlebar_visible(win.window_info, if visible { 1 } else { 0 })
 	}
@@ -2305,6 +2321,10 @@ pub fn (win &SimpleWindow) is_visible() bool {
 }
 
 pub fn (win &SimpleWindow) set_title_visible(visible bool) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.title_visible = visible
+	}
 	if win.window_info != unsafe { nil } {
 		C.window_set_title_visible(win.window_info, if visible { 1 } else { 0 })
 	}
@@ -2315,18 +2335,22 @@ pub fn (win &SimpleWindow) get_title_visible() bool {
 	if win.window_info != unsafe { nil } {
 		return C.window_get_title_visible(win.window_info) == 1
 	}
-	return true
+	return win.title_visible
 }
 
 pub fn (win &SimpleWindow) is_title_visible() bool {
 	return win.get_title_visible()
 }
 
-pub fn (win &SimpleWindow) is_titlebar_visible() bool {
+pub fn (win &SimpleWindow) get_titlebar_visible() bool {
 	if win.window_info != unsafe { nil } {
 		return C.window_get_titlebar_visible(win.window_info) == 1
 	}
-	return true
+	return win.titlebar_visible
+}
+
+pub fn (win &SimpleWindow) is_titlebar_visible() bool {
+	return win.get_titlebar_visible()
 }
 
 pub fn (win &SimpleWindow) set_background_color(color string) &SimpleWindow {

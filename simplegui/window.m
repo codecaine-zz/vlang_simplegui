@@ -26,6 +26,8 @@ typedef struct main__WindowParams {
   int closable;
   int has_shadow;
   int movable_by_window_background;
+  int titlebar_visible;
+  int title_visible;
 } main__WindowParams;
 
 typedef struct main__WindowInfo {
@@ -835,8 +837,10 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
                                                  defer:NO];
   const char *title = self.params.title.str ? self.params.title.str : "";
   [self.window setTitle:nsstring(title)];
-  [self.window setTitlebarAppearsTransparent:YES];
-  [self.window setTitleVisibility:NSWindowTitleVisible];
+  BOOL titlebarVisible = self.params.titlebar_visible != 0;
+  BOOL titleVisible = self.params.title_visible != 0;
+  [self.window setTitlebarAppearsTransparent:!titlebarVisible];
+  [self.window setTitleVisibility:(titlebarVisible && titleVisible) ? NSWindowTitleVisible : NSWindowTitleHidden];
   
   if ([self.window respondsToSelector:@selector(setTitlebarSeparatorStyle:)]) {
     // NSTitlebarSeparatorStyleNone (0) removes standard divider lines for unified macOS Sonoma/Tahoe sidebar look
@@ -3121,6 +3125,16 @@ void window_set_control_text(void *control, const char *text) {
     NSView *doc = [(NSScrollView *)view documentView];
     if ([doc isKindOfClass:[NSTextView class]]) {
       view = doc;
+    } else if ([doc isKindOfClass:[NSTableView class]]) {
+      NSTableView *tableView = (NSTableView *)doc;
+      NSInteger index = [nsText integerValue];
+      if (index >= 0 && index < [tableView numberOfRows]) {
+        [tableView selectRowIndexes:[NSIndexSet indexSetWithIndex:index] byExtendingSelection:NO];
+        [tableView scrollRowToVisible:index];
+      } else {
+        [tableView deselectAll:nil];
+      }
+      return;
     }
   }
   
@@ -3197,7 +3211,9 @@ char *window_get_control_text(void *control) {
     } else if ([doc isKindOfClass:[NSOutlineView class]]) {
       view = doc;
     } else if ([doc isKindOfClass:[NSTableView class]]) {
-      view = doc;
+      NSTableView *tableView = (NSTableView *)doc;
+      NSInteger selectedRow = [tableView selectedRow];
+      return strdup([[NSString stringWithFormat:@"%ld", (long)selectedRow] UTF8String]);
     }
   }
   

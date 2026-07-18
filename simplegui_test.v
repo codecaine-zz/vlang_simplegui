@@ -84,6 +84,17 @@ fn test_window_always_on_top_state_is_stored() {
 	assert win.get_always_on_top() == false
 }
 
+fn test_window_title_visibility_helpers_are_available() {
+	mut win := simplegui.SimpleWindow{}
+
+	assert win.get_titlebar_visible() == true
+	assert win.get_title_visible() == true
+	win.set_titlebar_visible(false)
+	win.set_title_visible(false)
+	assert win.get_titlebar_visible() == false
+	assert win.get_title_visible() == false
+}
+
 fn test_control_color_methods_store_values() {
 	mut win := simplegui.SimpleWindow{}
 	win.add_input('name', 'Ada')
