@@ -2,6 +2,8 @@ module simplegui
 
 import os
 import json
+import strconv
+import encoding.csv
 
 // ergonomics.v - High-level ergonomic helpers for SimpleGUI
 // A collection of shortcuts, batch operations, and convenience methods designed to
@@ -244,9 +246,9 @@ pub fn (win &SimpleWindow) get_list_selected_indexes(name string) []int {
 		return []int{}
 	}
 	res := C.window_get_list_selected_indexes(win.window_info, name.str)
-	csv := unsafe { res.vstring() }
+	csv_text := unsafe { res.vstring() }
 	mut indexes := []int{}
-	for part in csv.split(',') {
+	for part in csv_text.split(',') {
 		trimmed := part.trim_space()
 		if trimmed != '' {
 			indexes << trimmed.int()
@@ -259,8 +261,8 @@ pub fn (win &SimpleWindow) get_list_selected_indexes(name string) []int {
 // for more than one row). Pass an empty array to clear the selection.
 pub fn (win &SimpleWindow) set_list_selected_indexes(name string, indexes []int) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
-		csv := indexes.map(it.str()).join(',')
-		C.window_set_list_selected_indexes(win.window_info, name.str, csv.str)
+		csv_text := indexes.map(it.str()).join(',')
+		C.window_set_list_selected_indexes(win.window_info, name.str, csv_text.str)
 	}
 	return win
 }
@@ -627,4 +629,191 @@ pub fn (win &SimpleWindow) require_fields(names []string) bool {
 		}
 	}
 	return all_filled
+}
+
+// validate_email is a ready-made ControlValidator that accepts basic
+// user@domain.tld addresses. Returns an error message or ''.
+pub fn validate_email(value string) string {
+	v := value.trim_space()
+	if v == '' {
+		return 'Email is required'
+	}
+	user := v.all_before('@')
+	domain := v.all_after('@')
+	if user == '' || domain == '' || domain == v || !domain.contains('.') || domain.starts_with('.')
+		|| domain.ends_with('.') || v.contains(' ') {
+		return 'Enter a valid email address'
+	}
+	return ''
+}
+
+// validate_number is a ready-made ControlValidator that accepts integers
+// and floating point numbers. Returns an error message or ''.
+pub fn validate_number(value string) string {
+	v := value.trim_space()
+	if v == '' {
+		return 'A number is required'
+	}
+	if !is_numeric_text(v) {
+		return 'Enter a valid number'
+	}
+	return ''
+}
+
+// is_numeric_text reports whether the string parses as an integer or float.
+fn is_numeric_text(s string) bool {
+	_ := strconv.atof64(s) or { return false }
+	return true
+}
+
+// min_len_validator builds a ControlValidator requiring at least min characters
+// (leading/trailing whitespace is ignored).
+pub fn min_len_validator(min int) ControlValidator {
+	return fn [min] (value string) string {
+		if value.trim_space().len < min {
+			return 'Must be at least ${min} characters'
+		}
+		return ''
+	}
+}
+
+// ==========================================
+// 10. Batch Value Access
+// ==========================================
+
+// clear_fields empties every named text-based control and clears its error state.
+pub fn (win &SimpleWindow) clear_fields(names []string) &SimpleWindow {
+	for name in names {
+		win.set_text(name, '')
+		win.clear_error(name)
+	}
+	return win
+}
+
+// ==========================================
+// 11. List Sorting, Reordering & Live Search
+// ==========================================
+
+// sort_list_items sorts the items of a list box alphabetically
+// (case-insensitive). Pass ascending = false for reverse order.
+pub fn (win &SimpleWindow) sort_list_items(name string, ascending bool) &SimpleWindow {
+	mut items := win.get_list_items(name)
+	items.sort_with_compare(fn (a &string, b &string) int {
+		return compare_strings(a.to_lower(), b.to_lower())
+	})
+	if !ascending {
+		items.reverse_in_place()
+	}
+	return win.update_list_items(name, items)
+}
+
+// move_list_item moves the item at index `from` to index `to`
+// (useful for Move Up / Move Down buttons).
+pub fn (win &SimpleWindow) move_list_item(name string, from int, to int) &SimpleWindow {
+	mut items := win.get_list_items(name)
+	if from < 0 || from >= items.len || to < 0 || to >= items.len || from == to {
+		return win
+	}
+	item := items[from]
+	items.delete(from)
+	items.insert(to, item)
+	return win.update_list_items(name, items)
+}
+
+// bind_search_to_list wires a search field (or any text input) to a list box so
+// typing filters the visible rows live (case-insensitive substring match).
+// Clearing the search restores the full item set. The full set is snapshotted
+// when this is called, so re-bind after replacing the list's master items.
+pub fn (win &SimpleWindow) bind_search_to_list(search_name string, list_name string) &SimpleWindow {
+	master := win.get_list_items(list_name).clone()
+	win.on_change(search_name, fn [master, list_name] (mut w SimpleWindow, value string) {
+		query := value.trim_space().to_lower()
+		if query == '' {
+			w.update_list_items(list_name, master)
+			return
+		}
+		w.update_list_items(list_name, master.filter(it.to_lower().contains(query)))
+	})
+	return win
+}
+
+// ==========================================
+// 12. Table Sorting & CSV Import/Export
+// ==========================================
+
+// sort_table_by_column sorts table rows by the given 0-based column. When every
+// cell in that column parses as a number the sort is numeric, otherwise it is a
+// case-insensitive text sort. Pass ascending = false for reverse order.
+pub fn (win &SimpleWindow) sort_table_by_column(name string, column int, ascending bool) &SimpleWindow {
+	rows := win.get_table_rows(name)
+	if rows.len < 2 {
+		return win
+	}
+	mut keys := []string{cap: rows.len}
+	mut numeric := true
+	for row in rows {
+		cell := if column >= 0 && column < row.len { row[column] } else { '' }
+		keys << cell
+		if numeric && !is_numeric_text(cell.trim_space()) {
+			numeric = false
+		}
+	}
+	mut idxs := []int{len: rows.len, init: index}
+	if numeric {
+		mut nums := []f64{cap: keys.len}
+		for k in keys {
+			nums << strconv.atof64(k.trim_space()) or { 0.0 }
+		}
+		idxs.sort_with_compare(fn [nums] (a &int, b &int) int {
+			if nums[*a] < nums[*b] {
+				return -1
+			}
+			if nums[*a] > nums[*b] {
+				return 1
+			}
+			return 0
+		})
+	} else {
+		lows := keys.map(it.to_lower())
+		idxs.sort_with_compare(fn [lows] (a &int, b &int) int {
+			return compare_strings(lows[*a], lows[*b])
+		})
+	}
+	if !ascending {
+		idxs.reverse_in_place()
+	}
+	return win.set_table_rows(name, idxs.map(rows[it]))
+}
+
+// move_table_row moves the row at index `from` to index `to`.
+pub fn (win &SimpleWindow) move_table_row(name string, from int, to int) &SimpleWindow {
+	mut rows := win.get_table_rows(name)
+	if from < 0 || from >= rows.len || to < 0 || to >= rows.len || from == to {
+		return win
+	}
+	row := rows[from]
+	rows.delete(from)
+	rows.insert(to, row)
+	return win.set_table_rows(name, rows)
+}
+
+// save_table_to_csv exports every table row to a CSV file.
+pub fn (win &SimpleWindow) save_table_to_csv(name string, path string) ! {
+	mut writer := csv.new_writer()
+	for row in win.get_table_rows(name) {
+		writer.write(row)!
+	}
+	os.write_file(path, writer.str())!
+}
+
+// load_table_from_csv replaces a table's rows with the contents of a CSV file.
+pub fn (win &SimpleWindow) load_table_from_csv(name string, path string) ! {
+	content := os.read_file(path)!
+	mut reader := csv.new_reader(content)
+	mut rows := [][]string{}
+	for {
+		row := reader.read() or { break }
+		rows << row
+	}
+	win.set_table_rows(name, rows)
 }

@@ -1042,3 +1042,79 @@ fn test_table_event_helpers_are_available() {
 	assert win.dispatch_event('inventory', 'change', '0') == true
 	assert win.dispatch_event('inventory', 'dblclick', '0') == true
 }
+
+fn test_list_sort_move_and_search_binding() {
+	mut win := simplegui.SimpleWindow{}
+	win.add_list_box('fruits', ['banana', 'Cherry', 'apple'])
+
+	win.sort_list_items('fruits', true)
+	assert win.get_list_items('fruits') == ['apple', 'banana', 'Cherry']
+	win.sort_list_items('fruits', false)
+	assert win.get_list_items('fruits') == ['Cherry', 'banana', 'apple']
+
+	win.move_list_item('fruits', 2, 0)
+	assert win.get_list_items('fruits') == ['apple', 'Cherry', 'banana']
+	win.move_list_item('fruits', 5, 0) // out of range is a no-op
+	assert win.get_list_items('fruits') == ['apple', 'Cherry', 'banana']
+
+	win.add_search_field('search', 'Filter...')
+	win.bind_search_to_list('search', 'fruits')
+	assert win.dispatch_event('search', 'change', 'an') == true
+	assert win.get_list_items('fruits') == ['banana']
+	assert win.dispatch_event('search', 'change', '') == true
+	assert win.get_list_items('fruits') == ['apple', 'Cherry', 'banana']
+}
+
+fn test_table_sort_move_and_csv_roundtrip() {
+	mut win := simplegui.SimpleWindow{}
+	win.add_table('inv', ['Name', 'Qty'])
+	win.set_table_rows('inv', [['bolt', '2'], ['Anchor', '10'],
+		['clip', '1']])
+
+	// Numeric-aware column sort
+	win.sort_table_by_column('inv', 1, true)
+	assert win.get_table_rows('inv') == [['clip', '1'], ['bolt', '2'],
+		['Anchor', '10']]
+
+	// Case-insensitive text sort, descending
+	win.sort_table_by_column('inv', 0, false)
+	assert win.get_table_rows('inv')[0] == ['clip', '1']
+	assert win.get_table_rows('inv')[2] == ['Anchor', '10']
+
+	win.move_table_row('inv', 2, 0)
+	assert win.get_table_rows('inv')[0] == ['Anchor', '10']
+
+	// CSV round trip
+	path := os.join_path(os.temp_dir(), 'simplegui_csv_test.csv')
+	win.save_table_to_csv('inv', path) or { assert false, err.msg() }
+	rows_before := win.get_table_rows('inv')
+	win.clear_table('inv')
+	win.load_table_from_csv('inv', path) or { assert false, err.msg() }
+	assert win.get_table_rows('inv') == rows_before
+	os.rm(path) or {}
+}
+
+fn test_batch_clear_fields_and_validators() {
+	mut win := simplegui.SimpleWindow{}
+	win.add_input('a', 'hello')
+	win.add_input('b', 'world')
+	win.set_error('a', 'bad')
+	win.clear_fields(['a', 'b'])
+	assert win.get_value('a') == ''
+	assert win.get_value('b') == ''
+	assert win.get_error('a') == ''
+
+	assert simplegui.validate_email('ada@lovelace.dev') == ''
+	assert simplegui.validate_email('not-an-email') != ''
+	assert simplegui.validate_email('@nope.com') != ''
+	assert simplegui.validate_email('user@nodot') != ''
+
+	assert simplegui.validate_number('42') == ''
+	assert simplegui.validate_number('3.14') == ''
+	assert simplegui.validate_number('abc') != ''
+	assert simplegui.validate_number('') != ''
+
+	min3 := simplegui.min_len_validator(3)
+	assert min3('ab') != ''
+	assert min3('abc') == ''
+}

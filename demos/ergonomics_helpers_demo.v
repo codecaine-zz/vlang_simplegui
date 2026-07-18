@@ -89,16 +89,21 @@ fn main() {
 		w.add_textarea('log_area', 'activity log:').height(90)
 	})
 
-	// 4. List box item management (multi-select, double-click)
+	// 4. List box item management (live search, sorting, multi-select, double-click)
 	win.group('grp_list', 'List Helpers', fn (mut w simplegui.SimpleWindow) {
+		w.add_search_field('fruit_search', 'Type to filter fruits...')
 		w.add_list_box('fruits', ['Apple', 'Banana', 'Cherry', 'Date'])
 		w.set_list_multi_select('fruits', true)
+		w.bind_search_to_list('fruit_search', 'fruits')
 		w.on_list_double_click('fruits', fn (mut w simplegui.SimpleWindow, value string) {
 			w.toast('Double-clicked row ${value}: ${w.get_list_selected_text('fruits')}')
 		})
 		w.add_action_row({
 			'Add Item':        fn (mut w simplegui.SimpleWindow) {
 				w.add_list_item('fruits', 'Fruit #${w.get_list_count('fruits') + 1}')
+			}
+			'Sort A-Z':        fn (mut w simplegui.SimpleWindow) {
+				w.sort_list_items('fruits', true)
 			}
 			'Remove Selected': fn (mut w simplegui.SimpleWindow) {
 				removed := w.remove_selected_list_items('fruits')
@@ -133,6 +138,9 @@ fn main() {
 				n := w.get_table_row_count('crew') + 1
 				w.add_table_row('crew', ['Member ${n}', 'Recruit'])
 			}
+			'Sort by Name': fn (mut w simplegui.SimpleWindow) {
+				w.sort_table_by_column('crew', 0, true)
+			}
 			'Promote Cell': fn (mut w simplegui.SimpleWindow) {
 				idx := w.get_table_selected('crew')
 				if idx >= 0 {
@@ -145,10 +153,21 @@ fn main() {
 				removed := w.remove_selected_table_rows('crew')
 				w.set_status('Removed ${removed.len} row(s).')
 			}
-			'Find "Grace"': fn (mut w simplegui.SimpleWindow) {
-				idx := w.find_table_row('crew', 0, 'Grace')
-				w.set_table_selected('crew', idx)
-				w.set_status('find_table_row returned ${idx}')
+			'Export CSV':   fn (mut w simplegui.SimpleWindow) {
+				path := os.join_path(os.temp_dir(), 'crew.csv')
+				w.save_table_to_csv('crew', path) or {
+					w.error_dialog('Export Failed', err.msg())
+					return
+				}
+				w.toast('Exported to ${path}')
+			}
+			'Import CSV':   fn (mut w simplegui.SimpleWindow) {
+				path := os.join_path(os.temp_dir(), 'crew.csv')
+				w.load_table_from_csv('crew', path) or {
+					w.warn('Import Failed', 'Export the table first.\n${err.msg()}')
+					return
+				}
+				w.toast('Imported from ${path}')
 			}
 		})
 	})
@@ -159,11 +178,19 @@ fn main() {
 		w.add_form_field('Email:', 'email', '')
 		w.add_action_row({
 			'Validate': fn (mut w simplegui.SimpleWindow) {
-				if w.require_fields(['username', 'email']) {
-					w.toast('All fields filled!')
+				errors := w.validate_controls({
+					'username': simplegui.min_len_validator(3)
+					'email':    simplegui.validate_email
+				})
+				if errors.len == 0 {
+					w.toast('All fields valid!')
 				} else {
-					w.set_status('Fill in the highlighted fields.')
+					w.set_status('Fix the highlighted fields.')
 				}
+			}
+			'Clear':    fn (mut w simplegui.SimpleWindow) {
+				w.clear_fields(['username', 'email'])
+				w.set_status('Fields cleared.')
 			}
 			'Save':     fn (mut w simplegui.SimpleWindow) {
 				w.save_values_to_file(settings_path) or {

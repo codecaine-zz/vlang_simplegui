@@ -1379,3 +1379,23 @@ Rows are tracked automatically for every table, so you can manage them increment
 ### Quick Validation
 
 - `win.require_fields(names []string) bool` marks blank controls with an inline "required" error, clears errors on filled ones, and returns `true` only when all fields are filled.
+- `simplegui.validate_email(value) string` is a ready-made `ControlValidator` accepting basic `user@domain.tld` addresses.
+- `simplegui.validate_number(value) string` is a ready-made `ControlValidator` accepting integers and floats.
+- `simplegui.min_len_validator(min int) ControlValidator` builds a validator requiring at least `min` characters (whitespace trimmed).
+
+### Batch Value Access
+
+- `win.clear_fields(names []string)` empties every named text-based control and clears its error state in one call.
+
+### List Sorting, Reordering & Live Search
+
+- `win.sort_list_items(name, ascending bool)` sorts list box items alphabetically (case-insensitive).
+- `win.move_list_item(name, from, to)` moves an item to a new index (great for Move Up/Down buttons).
+- `win.bind_search_to_list(search_name, list_name)` wires a search field to a list box so typing filters the visible rows live (case-insensitive substring match; clearing the search restores the full set). The full item set is snapshotted at bind time, so re-bind after replacing the list's master items.
+
+### Table Sorting & CSV Import/Export
+
+- `win.sort_table_by_column(name, column, ascending bool)` sorts rows by a 0-based column — numerically when every cell in the column parses as a number, otherwise as case-insensitive text.
+- `win.move_table_row(name, from, to)` moves a row to a new index.
+- `win.save_table_to_csv(name, path) !` exports every table row to a CSV file.
+- `win.load_table_from_csv(name, path) !` replaces a table's rows with the contents of a CSV file.
