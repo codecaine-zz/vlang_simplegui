@@ -2794,7 +2794,11 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
 }
 
 - (void)setupMenuBar {
-  NSMenu *mainMenu = [[NSMenu alloc] init];
+  NSMenu *mainMenu = [NSApp mainMenu];
+  if (!mainMenu) {
+    mainMenu = [[NSMenu alloc] init];
+    [NSApp setMainMenu:mainMenu];
+  }
   
   NSString *appName = nil;
   if (self.params.title.str && strlen(self.params.title.str) > 0) {
@@ -2803,56 +2807,90 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
     appName = [[NSProcessInfo processInfo] processName];
   }
   
-  // 1. App Menu
-  NSMenuItem *appMenuItem = [[NSMenuItem alloc] init];
-  [mainMenu addItem:appMenuItem];
-  NSMenu *appMenu = [[NSMenu alloc] init];
+  NSMenuItem *appMenuItem = nil;
+  for (NSMenuItem *item in mainMenu.itemArray) {
+    if (item.submenu && [[item.submenu title] isEqualToString:@"App"]) {
+      appMenuItem = item;
+      break;
+    }
+  }
+  if (!appMenuItem) {
+    appMenuItem = [[NSMenuItem alloc] init];
+    [mainMenu addItem:appMenuItem];
+  }
+  NSMenu *appMenu = appMenuItem.submenu;
+  if (!appMenu) {
+    appMenu = [[NSMenu alloc] initWithTitle:@"App"];
+    [appMenuItem setSubmenu:appMenu];
+  }
+  if (appMenu.itemArray.count == 0) {
+    NSString *aboutTitle = [NSString stringWithFormat:@"About %@", appName];
+    [appMenu addItemWithTitle:aboutTitle action:@selector(orderFrontStandardAboutPanel:) keyEquivalent:@""];
+    
+    [appMenu addItem:[NSMenuItem separatorItem]];
+    
+    NSString *hideTitle = [NSString stringWithFormat:@"Hide %@", appName];
+    [appMenu addItemWithTitle:hideTitle action:@selector(hide:) keyEquivalent:@"h"];
+    
+    NSMenuItem *hideOthersItem = [appMenu addItemWithTitle:@"Hide Others" action:@selector(hideOtherApplications:) keyEquivalent:@"h"];
+    [hideOthersItem setKeyEquivalentModifierMask:NSEventModifierFlagCommand | NSEventModifierFlagOption];
+    
+    [appMenu addItemWithTitle:@"Show All" action:@selector(unhideAllApplications:) keyEquivalent:@""];
+    
+    [appMenu addItem:[NSMenuItem separatorItem]];
+    
+    NSString *quitTitle = [NSString stringWithFormat:@"Quit %@", appName];
+    [appMenu addItemWithTitle:quitTitle action:@selector(terminate:) keyEquivalent:@"q"];
+  }
   
-  NSString *aboutTitle = [NSString stringWithFormat:@"About %@", appName];
-  [appMenu addItemWithTitle:aboutTitle action:@selector(orderFrontStandardAboutPanel:) keyEquivalent:@""];
+  NSMenuItem *editMenuItem = nil;
+  for (NSMenuItem *item in mainMenu.itemArray) {
+    if (item.submenu && [[item.submenu title] isEqualToString:@"Edit"]) {
+      editMenuItem = item;
+      break;
+    }
+  }
+  if (!editMenuItem) {
+    editMenuItem = [[NSMenuItem alloc] init];
+    [mainMenu addItem:editMenuItem];
+  }
+  NSMenu *editMenu = editMenuItem.submenu;
+  if (!editMenu) {
+    editMenu = [[NSMenu alloc] initWithTitle:@"Edit"];
+    [editMenuItem setSubmenu:editMenu];
+  }
+  if (editMenu.itemArray.count == 0) {
+    [editMenu addItemWithTitle:@"Undo" action:@selector(undo:) keyEquivalent:@"z"];
+    [editMenu addItemWithTitle:@"Redo" action:@selector(redo:) keyEquivalent:@"Z"];
+    [editMenu addItem:[NSMenuItem separatorItem]];
+    [editMenu addItemWithTitle:@"Cut" action:@selector(cut:) keyEquivalent:@"x"];
+    [editMenu addItemWithTitle:@"Copy" action:@selector(copy:) keyEquivalent:@"c"];
+    [editMenu addItemWithTitle:@"Paste" action:@selector(paste:) keyEquivalent:@"v"];
+    [editMenu addItemWithTitle:@"Select All" action:@selector(selectAll:) keyEquivalent:@"a"];
+  }
   
-  [appMenu addItem:[NSMenuItem separatorItem]];
+  NSMenuItem *windowMenuItem = nil;
+  for (NSMenuItem *item in mainMenu.itemArray) {
+    if (item.submenu && [[item.submenu title] isEqualToString:@"Window"]) {
+      windowMenuItem = item;
+      break;
+    }
+  }
+  if (!windowMenuItem) {
+    windowMenuItem = [[NSMenuItem alloc] init];
+    [mainMenu addItem:windowMenuItem];
+  }
+  NSMenu *windowMenu = windowMenuItem.submenu;
+  if (!windowMenu) {
+    windowMenu = [[NSMenu alloc] initWithTitle:@"Window"];
+    [windowMenuItem setSubmenu:windowMenu];
+  }
+  if (windowMenu.itemArray.count == 0) {
+    [windowMenu addItemWithTitle:@"Minimize" action:@selector(performMiniaturize:) keyEquivalent:@"m"];
+    [windowMenu addItemWithTitle:@"Zoom" action:@selector(performZoom:) keyEquivalent:@""];
+  }
   
-  NSString *hideTitle = [NSString stringWithFormat:@"Hide %@", appName];
-  [appMenu addItemWithTitle:hideTitle action:@selector(hide:) keyEquivalent:@"h"];
-  
-  NSMenuItem *hideOthersItem = [appMenu addItemWithTitle:@"Hide Others" action:@selector(hideOtherApplications:) keyEquivalent:@"h"];
-  [hideOthersItem setKeyEquivalentModifierMask:NSEventModifierFlagCommand | NSEventModifierFlagOption];
-  
-  [appMenu addItemWithTitle:@"Show All" action:@selector(unhideAllApplications:) keyEquivalent:@""];
-  
-  [appMenu addItem:[NSMenuItem separatorItem]];
-  
-  NSString *quitTitle = [NSString stringWithFormat:@"Quit %@", appName];
-  [appMenu addItemWithTitle:quitTitle action:@selector(terminate:) keyEquivalent:@"q"];
-  
-  [appMenuItem setSubmenu:appMenu];
-  
-  // 2. Edit Menu (Fixes standard copy/paste shortcuts)
-  NSMenuItem *editMenuItem = [[NSMenuItem alloc] init];
-  [mainMenu addItem:editMenuItem];
-  NSMenu *editMenu = [[NSMenu alloc] initWithTitle:@"Edit"];
-  
-  [editMenu addItemWithTitle:@"Undo" action:@selector(undo:) keyEquivalent:@"z"];
-  [editMenu addItemWithTitle:@"Redo" action:@selector(redo:) keyEquivalent:@"Z"];
-  [editMenu addItem:[NSMenuItem separatorItem]];
-  [editMenu addItemWithTitle:@"Cut" action:@selector(cut:) keyEquivalent:@"x"];
-  [editMenu addItemWithTitle:@"Copy" action:@selector(copy:) keyEquivalent:@"c"];
-  [editMenu addItemWithTitle:@"Paste" action:@selector(paste:) keyEquivalent:@"v"];
-  [editMenu addItemWithTitle:@"Select All" action:@selector(selectAll:) keyEquivalent:@"a"];
-  
-  [editMenuItem setSubmenu:editMenu];
-  
-  // 3. Window Menu
-  NSMenuItem *windowMenuItem = [[NSMenuItem alloc] init];
-  [mainMenu addItem:windowMenuItem];
-  NSMenu *windowMenu = [[NSMenu alloc] initWithTitle:@"Window"];
-  [windowMenu addItemWithTitle:@"Minimize" action:@selector(performMiniaturize:) keyEquivalent:@"m"];
-  [windowMenu addItemWithTitle:@"Zoom" action:@selector(performZoom:) keyEquivalent:@""];
-  
-  [windowMenuItem setSubmenu:windowMenu];
-  
-  [[NSApplication sharedApplication] setMainMenu:mainMenu];
+  [NSApp setMainMenu:mainMenu];
 }
 
 - (void)applicationWillFinishLaunching:(NSNotification *)notification {
@@ -2921,10 +2959,23 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
     }
   }
   
-  // Create new top-level menu
-  NSMenuItem *menuItem = [mainMenu addItemWithTitle:menuName action:nil keyEquivalent:@""];
+  NSInteger insertionIndex = 0;
+  for (NSMenuItem *item in mainMenu.itemArray) {
+    if (item.submenu && [[item.submenu title] isEqualToString:@"Edit"]) {
+      insertionIndex = [mainMenu.itemArray indexOfObject:item];
+      break;
+    }
+    if (item.submenu && [[item.submenu title] isEqualToString:@"Window"]) {
+      insertionIndex = [mainMenu.itemArray indexOfObject:item];
+      break;
+    }
+  }
+  
+  // Create a new top-level menu near the front so custom menus appear before the standard ones.
+  NSMenuItem *menuItem = [[NSMenuItem alloc] initWithTitle:menuName action:nil keyEquivalent:@""];
   NSMenu *submenu = [[NSMenu alloc] initWithTitle:menuName];
   [menuItem setSubmenu:submenu];
+  [mainMenu insertItem:menuItem atIndex:insertionIndex];
   return submenu;
 }
 
