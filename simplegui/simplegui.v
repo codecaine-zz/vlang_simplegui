@@ -8,6 +8,7 @@ module simplegui
 
 fn C.window_app_init(&WindowParams) &WindowInfo
 fn C.window_app_run(&WindowInfo)
+fn C.window_app_exit(&WindowInfo)
 fn C.window_set_title_text(&WindowInfo, &u8)
 fn C.window_set_status_text(&WindowInfo, &u8)
 fn C.window_set_always_on_top(&WindowInfo, int)
@@ -259,6 +260,7 @@ mut:
 	closable                     bool = true
 	has_shadow                   bool = true
 	movable_by_window_background bool
+	list_items                   map[string][]string
 pub mut:
 	ws_client         voidptr = unsafe { nil }
 }
@@ -2478,6 +2480,7 @@ pub fn (win &SimpleWindow) add_list_box(name string, items []string) &SimpleWind
 			kind:  'listbox'
 			value: ''
 		}
+		w.list_items[real_name] = items.clone()
 	}
 	if win.window_info != unsafe { nil } {
 		mut c_items := []&u8{}
@@ -2490,6 +2493,10 @@ pub fn (win &SimpleWindow) add_list_box(name string, items []string) &SimpleWind
 }
 
 pub fn (win &SimpleWindow) update_list_items(name string, items []string) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.list_items[name] = items.clone()
+	}
 	if win.window_info != unsafe { nil } {
 		mut c_items := []&u8{}
 		for item in items {

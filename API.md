@@ -1266,3 +1266,75 @@ Returns `true` if the specific named control has changed compared to its baselin
 ### `win.commit_changes() &SimpleWindow`
 
 Sets the current control values as the new baseline state, causing `is_dirty()` to reset to `false` without needing to reload the window. Typical use case is after a successful save action.
+
+---
+
+## 17. Ergonomic Helpers
+
+A set of high-level shortcuts designed to make everyday tasks one-liners. See `demos/easy_api_demo.v`, `demos/todo_list_demo.v`, and `demos/save_restore_demo.v` for working examples.
+
+### Dialog Shortcuts
+
+- `win.info(title string, message string) &SimpleWindow` shows an informational alert.
+- `win.warn(title string, message string) &SimpleWindow` shows a warning-styled alert.
+- `win.error_dialog(title string, message string) &SimpleWindow` shows a critical error-styled alert.
+- `win.ask(title string, question string) bool` shows a Yes/No confirmation and returns `true` when confirmed.
+- `win.quit()` terminates the application event loop immediately.
+
+### Batch Control Operations
+
+- `win.show_controls(names []string)` / `win.hide_controls(names []string)` toggle visibility for many controls at once.
+- `win.enable_controls(names []string)` / `win.disable_controls(names []string)` toggle interactivity for many controls at once.
+- `win.enable_all_controls()` / `win.disable_all_controls()` affect every registered control (e.g. lock the UI while processing).
+- `win.toggle_visible(name string) bool` flips visibility and returns the new state.
+- `win.toggle_enabled(name string) bool` flips the enabled state and returns the new state.
+
+### Value Convenience Accessors
+
+- `win.get_int(name) int` / `win.set_int(name, value)` — aliases for numeric controls.
+- `win.get_float(name) f64` / `win.set_float(name, value)` — parse/write floating point values in text controls.
+- `win.increment(name string, delta int) int` adds `delta` (may be negative) to a numeric control and returns the new value.
+- `win.toggle_checked(name string) bool` flips a checkbox/switch and returns the new state.
+- `win.set_progress(name, value)` / `win.get_progress(name) int` — friendly progress bar accessors.
+- `win.append_text(name, text)` appends text to a text-based control.
+- `win.append_line(name, line)` appends a new line to a textarea (perfect for activity logs).
+- `win.focus(name)` moves keyboard focus to a control (alias of `set_focus`).
+
+### List Box Item Management
+
+Items are tracked automatically for every list box, so you can manage them incrementally:
+
+- `win.get_list_items(name) []string` returns the current items.
+- `win.set_list_items(name, items)` replaces all items (alias of `update_list_items`).
+- `win.add_list_item(name, item)` appends a single item.
+- `win.remove_list_item(name, index)` removes an item by 0-based index.
+- `win.remove_selected_list_item(name)` removes the currently selected row.
+- `win.clear_list_items(name)` removes everything.
+- `win.get_list_count(name) int` returns the item count.
+- `win.get_list_selected_text(name) string` returns the selected row's text, or `''`.
+
+### Settings Persistence
+
+- `win.save_values_to_file(path string) !` writes every control value to a JSON file.
+- `win.load_values_from_file(path string) !` restores control values from a JSON file (unknown control names are skipped safely).
+
+### Labeled Control Rows
+
+One-call label + control rows (no `begin_row`/`end_row` needed):
+
+- `win.add_labeled_slider(label, name, value)`
+- `win.add_labeled_dropdown(label, name, items, selected)`
+- `win.add_labeled_number(label, name, value)`
+- `win.add_labeled_date_picker(label, name, date)`
+- `win.add_labeled_progress(label, name, value)`
+
+### Timer & Event Sugar
+
+- `win.every(ms int, callback)` runs the callback repeatedly with an auto-generated timer name.
+- `win.after(ms int, callback)` runs the callback once after the delay (alias of `run_after`).
+- `win.on_change_many(names []string, callback)` binds a change callback to multiple controls.
+- `win.on_click_many(names []string, callback)` binds a click callback to multiple controls.
+
+### Quick Validation
+
+- `win.require_fields(names []string) bool` marks blank controls with an inline "required" error, clears errors on filled ones, and returns `true` only when all fields are filled.
