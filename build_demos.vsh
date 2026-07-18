@@ -90,7 +90,8 @@ fn main() {
 	demo_maps['layout_struct_reflection.v'] = DemoConfig{'Layout: Struct Reflection', 'developer.png'}
 	demo_maps['layout_responsive_constraints.v'] = DemoConfig{'Layout: Responsive & Sizing', 'design.png'}
 	demo_maps['colors_demo.v'] = DemoConfig{'Colors Demo', 'color_picker.png'}
-
+	demo_maps['password_dashboard.v'] = DemoConfig{'Lockbox Security Dashboard', 'password_manager.png'}
+	demo_maps['pomodoro_timer_demo.v'] = DemoConfig{'Pomodoro Focus Studio', 'clock.png'}
 
 	files := os.ls(demo_dir) or {
 		eprintln('❌ Failed to list demos: ${err}')
@@ -122,8 +123,12 @@ fn main() {
 
 	for chunk_start := 0; chunk_start < demo_files.len; chunk_start += concurrency {
 		mut threads := []thread bool{}
-		chunk_end := if chunk_start + concurrency < demo_files.len { chunk_start + concurrency } else { demo_files.len }
-		
+		chunk_end := if chunk_start + concurrency < demo_files.len {
+			chunk_start + concurrency
+		} else {
+			demo_files.len
+		}
+
 		for i := chunk_start; i < chunk_end; i++ {
 			file := demo_files[i]
 			path := os.join_path(demo_dir, file)
