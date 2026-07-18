@@ -716,33 +716,33 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
     [button setControlSize:NSControlSizeRegular];
 
     BOOL isCheckboxOrRadio = ![button isBordered];
-    if (isCheckboxOrRadio) {
+    BOOL isLinkButton = button.bezelStyle == NSBezelStyleInline;
+    if (isCheckboxOrRadio && !isLinkButton) {
       [button setBezelStyle:NSBezelStyleRounded];
       [button setWantsLayer:YES];
       [button setBordered:NO];
       [button setContentTintColor:fontColor ?: modernAccentColor()];
       setButtonTitleColor(button, effectiveFont);
     } else {
-      if (backgroundColor && ![backgroundColor isEqual:[NSColor clearColor]]) {
-        [button setBezelStyle:NSBezelStyleRounded];
-        [button setWantsLayer:YES];
+      [button setBezelStyle:NSBezelStyleRounded];
+      [button setWantsLayer:YES];
+      [button setBordered:YES];
+      if (isLinkButton) {
+        [button setBordered:NO];
+        [button setContentTintColor:fontColor ?: [NSColor linkColor]];
+        setButtonTitleColor(button, fontColor ?: [NSColor linkColor]);
+      } else if (backgroundColor && ![backgroundColor isEqual:[NSColor clearColor]]) {
         button.layer.backgroundColor = backgroundColor.CGColor;
         button.layer.cornerRadius = 8.0;
         button.layer.borderWidth = 1.0;
         button.layer.borderColor = [NSColor separatorColor].CGColor;
         setButtonTitleColor(button, fontColor ?: [NSColor labelColor]);
       } else {
-        [button setWantsLayer:YES];
-        [button setBordered:YES];
-        [button setBezelStyle:NSBezelStyleRounded];
+        button.layer.backgroundColor = [modernElevatedSurfaceColor() CGColor];
         button.layer.cornerRadius = 8.0;
-        if (fontColor) {
-          setButtonTitleColor(button, fontColor);
-        } else {
-          if (button.attributedTitle && button.attributedTitle.length > 0) {
-            [button setAttributedTitle:[[NSAttributedString alloc] initWithString:@""]];
-          }
-        }
+        button.layer.borderWidth = 1.0;
+        button.layer.borderColor = [NSColor separatorColor].CGColor;
+        setButtonTitleColor(button, fontColor ?: [NSColor labelColor]);
       }
     }
   } else if ([view isKindOfClass:[NSPopUpButton class]]) {
@@ -789,6 +789,29 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
     picker.layer.borderWidth = 1.0;
     picker.layer.borderColor = [NSColor separatorColor].CGColor;
     picker.layer.backgroundColor = (backgroundColor ?: modernElevatedSurfaceColor()).CGColor;
+  } else if ([view isKindOfClass:[NSStepper class]]) {
+    NSStepper *stepper = (NSStepper *)view;
+    [stepper setControlSize:NSControlSizeRegular];
+    [stepper setWantsLayer:YES];
+    stepper.layer.cornerRadius = 8.0;
+    stepper.layer.borderWidth = 1.0;
+    stepper.layer.borderColor = [NSColor separatorColor].CGColor;
+    if ([stepper respondsToSelector:@selector(setContentTintColor:)]) {
+      [stepper setContentTintColor:fontColor ?: modernAccentColor()];
+    }
+  } else if ([view isKindOfClass:[NSColorWell class]]) {
+    NSColorWell *well = (NSColorWell *)view;
+    [well setWantsLayer:YES];
+    well.layer.cornerRadius = 8.0;
+    well.layer.borderWidth = 1.0;
+    well.layer.borderColor = [NSColor separatorColor].CGColor;
+    if (backgroundColor) {
+      well.layer.backgroundColor = backgroundColor.CGColor;
+    }
+  } else if ([view isKindOfClass:[NSProgressIndicator class]]) {
+    NSProgressIndicator *indicator = (NSProgressIndicator *)view;
+    [indicator setWantsLayer:YES];
+    indicator.layer.cornerRadius = 6.0;
   } else if ([view isKindOfClass:[NSScrollView class]]) {
     [view setWantsLayer:YES];
     [view.layer setCornerRadius:10.0];
@@ -1260,7 +1283,8 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   NSButton *button = [NSButton buttonWithTitle:title target:self action:@selector(handleButtonClicked:)];
   [button setBezelStyle:NSBezelStyleRounded];
   [self makeStretchableView:button minimumWidth:120];
-  [button setWantsLayer:NO];
+  [button.heightAnchor constraintGreaterThanOrEqualToConstant:30.0].active = YES;
+  applyStyleToView(button, self.currentBackgroundColor, self.currentFontColor);
   
   self.controlsByName[[name lowercaseString]] = button;
   [self addControlToLayout:button];
@@ -1272,6 +1296,8 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [button setBezelStyle:NSBezelStyleInline];
   [button setBordered:NO];
   [button setWantsLayer:YES];
+  
+  applyStyleToView(button, nil, self.currentFontColor ?: [NSColor linkColor]);
   
   NSMutableAttributedString *attrTitle = [[NSMutableAttributedString alloc] initWithString:text];
   NSRange range = NSMakeRange(0, [text length]);
@@ -1291,9 +1317,7 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [checkbox setState:checked ? NSOnState : NSOffState];
   [checkbox setWantsLayer:YES];
   
-  if (self.currentFontColor) {
-    applyStyleToView(checkbox, nil, self.currentFontColor);
-  }
+  applyStyleToView(checkbox, nil, self.currentFontColor ?: modernTextColor());
   
   self.controlsByName[[name lowercaseString]] = checkbox;
   [self addControlToLayout:checkbox];
@@ -1310,9 +1334,7 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [disclosure setAction:@selector(handleDisclosureClicked:)];
   [disclosure setWantsLayer:YES];
   
-  if (self.currentFontColor) {
-    applyStyleToView(disclosure, nil, self.currentFontColor);
-  }
+  applyStyleToView(disclosure, nil, self.currentFontColor ?: modernTextColor());
   
   self.controlsByName[[name lowercaseString]] = disclosure;
   [self addControlToLayout:disclosure];
@@ -1339,6 +1361,7 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [stepper setTarget:self];
   [stepper setAction:@selector(handleNumberChanged:)];
   [stepper setWantsLayer:YES];
+  applyStyleToView(stepper, self.currentBackgroundColor, self.currentFontColor);
   
   [row addArrangedSubview:numField];
   [row addArrangedSubview:stepper];
@@ -1364,6 +1387,7 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [slider setTarget:self];
   [slider setAction:@selector(handleSliderChanged:)];
   [slider setWantsLayer:YES];
+  applyStyleToView(slider, self.currentBackgroundColor, self.currentFontColor);
   
   NSTextField *label = [NSTextField labelWithString:[NSString stringWithFormat:@"Value: %d", value]];
   [label.widthAnchor constraintEqualToConstant:100].active = YES;
@@ -1391,6 +1415,7 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [popup setAction:@selector(handlePopUpChanged:)];
   [self makeStretchableView:popup minimumWidth:180];
   [popup setWantsLayer:YES];
+  applyStyleToView(popup, self.currentBackgroundColor, self.currentFontColor);
   
   self.controlsByName[[name lowercaseString]] = popup;
   [self addControlToLayout:popup];
@@ -1406,6 +1431,7 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [well.heightAnchor constraintEqualToConstant:30].active = YES;
   [well setWantsLayer:YES];
   well.layer.cornerRadius = 6.0;
+  applyStyleToView(well, self.currentBackgroundColor, self.currentFontColor);
   
   if ([well respondsToSelector:@selector(setColorWellStyle:)]) {
     // 1 is NSColorWellStyleMinimal, which looks incredibly slick and modern (like the Safari web inspector / system settings circles)
@@ -1431,9 +1457,7 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [self makeStretchableView:picker minimumWidth:160];
   [picker setWantsLayer:YES];
   
-  if (self.currentFontColor) {
-    applyStyleToView(picker, nil, self.currentFontColor);
-  }
+  applyStyleToView(picker, self.currentBackgroundColor, self.currentFontColor);
   
   self.controlsByName[[name lowercaseString]] = picker;
   [self addControlToLayout:picker];
@@ -1475,6 +1499,7 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [progress setIndeterminate:NO];
   [self makeStretchableView:progress minimumWidth:260];
   [progress setWantsLayer:YES];
+  applyStyleToView(progress, self.currentBackgroundColor, self.currentFontColor);
   
   self.controlsByName[[name lowercaseString]] = progress;
   [self addControlToLayout:progress];
