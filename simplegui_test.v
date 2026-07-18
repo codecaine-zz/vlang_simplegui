@@ -941,3 +941,39 @@ fn test_stdlib_apis() {
 	assert rb.pop() or { 0.0 } == 2.718
 	assert rb.is_empty() == true
 }
+
+fn test_new_window_controls() {
+	win := simplegui.new_simple_window('Test Window Controls', 400, 300)
+
+	// Test default values
+	assert win.get_closable() == true
+	assert win.get_has_shadow() == true
+	assert win.get_movable_by_window_background() == false
+	assert win.is_visible() == false
+	assert win.is_titlebar_visible() == true
+	assert win.is_title_visible() == true
+
+	// Test mutators
+	win.set_closable(false)
+	assert win.get_closable() == false
+
+	win.set_has_shadow(false)
+	assert win.get_has_shadow() == false
+
+	win.set_movable_by_window_background(true)
+	assert win.get_movable_by_window_background() == true
+
+	win.set_title_visible(false)
+	assert win.is_title_visible() == false
+
+	// Test configuration block
+	win.configure(fn (mut cfg simplegui.WindowConfig) {
+		cfg.closable = true
+		cfg.has_shadow = true
+		cfg.movable_by_window_background = false
+	})
+	assert win.get_closable() == true
+	assert win.get_has_shadow() == true
+	assert win.get_movable_by_window_background() == false
+}
+

@@ -203,6 +203,30 @@ Returns whether simplegui's window is currently the key focused window on the de
 
 Bounces the application icon in the macOS Dock to catch the user's attention. If `critical` is true, the icon bounces repeatedly until the application is activated; otherwise, it bounces once.
 
+### `win.set_closable(enabled bool)` &SimpleWindow / `win.get_closable() bool`
+
+Toggles and queries whether the window has a close button and can be closed by the user.
+
+### `win.set_has_shadow(enabled bool)` &SimpleWindow / `win.get_has_shadow() bool`
+
+Toggles and queries whether the window casts a desktop shadow.
+
+### `win.set_movable_by_window_background(enabled bool)` &SimpleWindow / `win.get_movable_by_window_background() bool`
+
+Toggles and queries whether the user can click and drag anywhere in the window background area to move the window (useful for customized borderless layouts).
+
+### `win.is_visible() bool`
+
+Returns whether the window is currently visible on screen.
+
+### `win.set_title_visible(visible bool)` &SimpleWindow / `win.get_title_visible() bool` / `win.is_title_visible() bool`
+
+Toggles and queries the visibility of the window title text in the titlebar, without hiding the titlebar itself or traffic light controls.
+
+### `win.is_titlebar_visible() bool`
+
+Returns whether the window's titlebar is currently visible (i.e. not hidden via titlebar visibility settings).
+
 ### `win.run()`
 
 Launches the native NSApplication event loop and displays the centered window.

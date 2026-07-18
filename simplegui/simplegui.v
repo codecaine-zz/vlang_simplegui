@@ -144,6 +144,16 @@ fn C.window_set_max_size(&WindowInfo, int, int)
 fn C.window_set_resizable(&WindowInfo, int)
 fn C.window_set_minimizable(&WindowInfo, int)
 fn C.window_set_maximizable(&WindowInfo, int)
+fn C.window_set_closable(&WindowInfo, int)
+fn C.window_get_closable(&WindowInfo) int
+fn C.window_set_has_shadow(&WindowInfo, int)
+fn C.window_get_has_shadow(&WindowInfo) int
+fn C.window_set_movable_by_window_background(&WindowInfo, int)
+fn C.window_get_movable_by_window_background(&WindowInfo) int
+fn C.window_is_visible(&WindowInfo) int
+fn C.window_set_title_visible(&WindowInfo, int)
+fn C.window_get_title_visible(&WindowInfo) int
+fn C.window_get_titlebar_visible(&WindowInfo) int
 
 // Additional Window Operations
 fn C.window_close(&WindowInfo)
@@ -188,9 +198,12 @@ pub struct WindowConfig {
 		font_color        string
 		always_on_top     bool
 		responsive_layout bool
-		resizable         bool
-		minimizable       bool
-		maximizable       bool
+		resizable                    bool
+		minimizable                  bool
+		maximizable                  bool
+		closable                     bool
+		has_shadow                   bool
+		movable_by_window_background bool
 }
 
 pub struct WindowParams {
@@ -202,9 +215,12 @@ pub struct WindowParams {
 	spacing           int
 	always_on_top     int
 	responsive_layout int
-	resizable         int
-	minimizable       int
-	maximizable       int
+	resizable                    int
+	minimizable                  int
+	maximizable                  int
+	closable                     int
+	has_shadow                   int
+	movable_by_window_background int
 }
 
 pub struct WindowInfo {
@@ -237,9 +253,12 @@ mut:
 	min_height        int
 	max_width         int
 	max_height        int
-	resizable         bool = true
-	minimizable       bool = true
-	maximizable       bool = true
+	resizable                    bool = true
+	minimizable                  bool = true
+	maximizable                  bool = true
+	closable                     bool = true
+	has_shadow                   bool = true
+	movable_by_window_background bool
 pub mut:
 	ws_client         voidptr = unsafe { nil }
 }
@@ -279,10 +298,13 @@ pub fn new_simple_window(title string, width int, height int) &SimpleWindow {
 		width:             width
 		height:            height
 		title:             title
-		responsive_layout: true
-		resizable:         true
-		minimizable:       true
-		maximizable:       true
+		responsive_layout:            true
+		resizable:                    true
+		minimizable:                  true
+		maximizable:                  true
+		closable:                     true
+		has_shadow:                   true
+		movable_by_window_background: false
 	}
 	win.placeholders = map[string]string{}
 	win.errors = map[string]string{}
@@ -301,9 +323,12 @@ fn (win &SimpleWindow) ensure_window() {
 			spacing:           win.spacing
 			always_on_top:     if win.always_on_top { 1 } else { 0 }
 			responsive_layout: if win.responsive_layout { 1 } else { 0 }
-			resizable:         if win.resizable { 1 } else { 0 }
-			minimizable:       if win.minimizable { 1 } else { 0 }
-			maximizable:       if win.maximizable { 1 } else { 0 }
+			resizable:                    if win.resizable { 1 } else { 0 }
+			minimizable:                  if win.minimizable { 1 } else { 0 }
+			maximizable:                  if win.maximizable { 1 } else { 0 }
+			closable:                     if win.closable { 1 } else { 0 }
+			has_shadow:                   if win.has_shadow { 1 } else { 0 }
+			movable_by_window_background: if win.movable_by_window_background { 1 } else { 0 }
 		}
 		unsafe {
 			mut w := &SimpleWindow(win)
@@ -907,9 +932,12 @@ pub fn (win &SimpleWindow) configure(callback fn (mut cfg WindowConfig)) &Simple
 		font_color:        win.font_color
 		always_on_top:     win.always_on_top
 		responsive_layout: win.responsive_layout
-		resizable:         win.resizable
-		minimizable:       win.minimizable
-		maximizable:       win.maximizable
+		resizable:                    win.resizable
+		minimizable:                  win.minimizable
+		maximizable:                  win.maximizable
+		closable:                     win.closable
+		has_shadow:                   win.has_shadow
+		movable_by_window_background: win.movable_by_window_background
 	}
 	callback(mut cfg)
 	win.set_title(cfg.title)
@@ -922,6 +950,9 @@ pub fn (win &SimpleWindow) configure(callback fn (mut cfg WindowConfig)) &Simple
 	win.set_resizable(cfg.resizable)
 	win.set_minimizable(cfg.minimizable)
 	win.set_maximizable(cfg.maximizable)
+	win.set_closable(cfg.closable)
+	win.set_has_shadow(cfg.has_shadow)
+	win.set_movable_by_window_background(cfg.movable_by_window_background)
 	unsafe {
 		mut w := &SimpleWindow(win)
 		w.width = cfg.width
@@ -1885,6 +1916,92 @@ pub fn (win &SimpleWindow) request_attention(critical bool) &SimpleWindow {
 
 pub fn (win &SimpleWindow) bounce_dock(critical bool) &SimpleWindow {
 	return win.request_attention(critical)
+}
+
+pub fn (win &SimpleWindow) set_closable(enabled bool) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.closable = enabled
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_set_closable(win.window_info, if enabled { 1 } else { 0 })
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) get_closable() bool {
+	if win.window_info != unsafe { nil } {
+		return C.window_get_closable(win.window_info) == 1
+	}
+	return win.closable
+}
+
+pub fn (win &SimpleWindow) set_has_shadow(enabled bool) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.has_shadow = enabled
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_set_has_shadow(win.window_info, if enabled { 1 } else { 0 })
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) get_has_shadow() bool {
+	if win.window_info != unsafe { nil } {
+		return C.window_get_has_shadow(win.window_info) == 1
+	}
+	return win.has_shadow
+}
+
+pub fn (win &SimpleWindow) set_movable_by_window_background(enabled bool) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.movable_by_window_background = enabled
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_set_movable_by_window_background(win.window_info, if enabled { 1 } else { 0 })
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) get_movable_by_window_background() bool {
+	if win.window_info != unsafe { nil } {
+		return C.window_get_movable_by_window_background(win.window_info) == 1
+	}
+	return win.movable_by_window_background
+}
+
+pub fn (win &SimpleWindow) is_visible() bool {
+	if win.window_info != unsafe { nil } {
+		return C.window_is_visible(win.window_info) == 1
+	}
+	return false
+}
+
+pub fn (win &SimpleWindow) set_title_visible(visible bool) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_title_visible(win.window_info, if visible { 1 } else { 0 })
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) get_title_visible() bool {
+	if win.window_info != unsafe { nil } {
+		return C.window_get_title_visible(win.window_info) == 1
+	}
+	return true
+}
+
+pub fn (win &SimpleWindow) is_title_visible() bool {
+	return win.get_title_visible()
+}
+
+pub fn (win &SimpleWindow) is_titlebar_visible() bool {
+	if win.window_info != unsafe { nil } {
+		return C.window_get_titlebar_visible(win.window_info) == 1
+	}
+	return true
 }
 
 pub fn (win &SimpleWindow) set_background_color(color string) &SimpleWindow {

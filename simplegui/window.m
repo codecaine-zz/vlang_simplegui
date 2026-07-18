@@ -22,6 +22,9 @@ typedef struct main__WindowParams {
   int resizable;
   int minimizable;
   int maximizable;
+  int closable;
+  int has_shadow;
+  int movable_by_window_background;
 } main__WindowParams;
 
 typedef struct main__WindowInfo {
@@ -733,7 +736,10 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   }
 
   NSRect frame = NSMakeRect(100, 100, self.params.width, self.params.height);
-  NSUInteger style = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskFullSizeContentView;
+  NSUInteger style = NSWindowStyleMaskTitled | NSWindowStyleMaskFullSizeContentView;
+  if (self.params.closable) {
+    style |= NSWindowStyleMaskClosable;
+  }
   if (self.params.resizable) {
     style |= NSWindowStyleMaskResizable;
   }
@@ -741,9 +747,9 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
     style |= NSWindowStyleMaskMiniaturizable;
   }
   self.window = [[CustomWindow alloc] initWithContentRect:frame
-                                            styleMask:style
-                                              backing:NSBackingStoreBuffered
-                                                defer:NO];
+                                             styleMask:style
+                                               backing:NSBackingStoreBuffered
+                                                 defer:NO];
   const char *title = self.params.title.str ? self.params.title.str : "";
   [self.window setTitle:nsstring(title)];
   [self.window setTitlebarAppearsTransparent:YES];
@@ -761,6 +767,8 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [self.window setLevel:self.params.always_on_top ? NSFloatingWindowLevel : NSNormalWindowLevel];
   [self.window setDelegate:self];
   [self.window setReleasedWhenClosed:NO];
+  [self.window setHasShadow:self.params.has_shadow != 0];
+  [self.window setMovableByWindowBackground:self.params.movable_by_window_background != 0];
   [self.window registerForDraggedTypes:@[NSPasteboardTypeFileURL]];
   
   // Apply maximizable setting
@@ -4553,4 +4561,146 @@ void window_request_attention(main__WindowInfo *info, int critical) {
   dispatch_async(dispatch_get_main_queue(), ^{
     [NSApp requestUserAttention:critical ? NSCriticalRequest : NSInformationalRequest];
   });
+}
+
+void window_set_closable(main__WindowInfo *info, int enabled) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    NSWindowStyleMask mask = [delegate.window styleMask];
+    if (enabled) {
+      mask |= NSWindowStyleMaskClosable;
+    } else {
+      mask &= ~NSWindowStyleMaskClosable;
+    }
+    [delegate.window setStyleMask:mask];
+    NSButton *closeButton = [delegate.window standardWindowButton:NSWindowCloseButton];
+    if (closeButton) {
+      [closeButton setEnabled:enabled];
+    }
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+int window_get_closable(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block int result = 0;
+  void (^runBlock)(void) = ^{
+    result = (delegate.window.styleMask & NSWindowStyleMaskClosable) ? 1 : 0;
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return result;
+}
+
+void window_set_has_shadow(main__WindowInfo *info, int enabled) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate.window setHasShadow:enabled != 0];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+int window_get_has_shadow(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block int result = 0;
+  void (^runBlock)(void) = ^{
+    result = delegate.window.hasShadow ? 1 : 0;
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return result;
+}
+
+void window_set_movable_by_window_background(main__WindowInfo *info, int enabled) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate.window setMovableByWindowBackground:enabled != 0];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+int window_get_movable_by_window_background(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block int result = 0;
+  void (^runBlock)(void) = ^{
+    result = delegate.window.movableByWindowBackground ? 1 : 0;
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return result;
+}
+
+int window_is_visible(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block int result = 0;
+  void (^runBlock)(void) = ^{
+    result = delegate.window.isVisible ? 1 : 0;
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return result;
+}
+
+void window_set_title_visible(main__WindowInfo *info, int visible) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate.window setTitleVisibility:visible ? NSWindowTitleVisible : NSWindowTitleHidden];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+int window_get_title_visible(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block int result = 0;
+  void (^runBlock)(void) = ^{
+    result = (delegate.window.titleVisibility == NSWindowTitleVisible) ? 1 : 0;
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return result;
+}
+
+int window_get_titlebar_visible(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block int result = 0;
+  void (^runBlock)(void) = ^{
+    result = (delegate.window.titleVisibility == NSWindowTitleVisible) ? 1 : 0;
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return result;
 }

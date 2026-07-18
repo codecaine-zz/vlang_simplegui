@@ -173,5 +173,16 @@ int window_is_active(main__WindowInfo *info);
 void window_set_titlebar_visible(main__WindowInfo *info, int visible);
 void window_request_attention(main__WindowInfo *info, int critical);
 
+void window_set_closable(main__WindowInfo *info, int enabled);
+int window_get_closable(main__WindowInfo *info);
+void window_set_has_shadow(main__WindowInfo *info, int enabled);
+int window_get_has_shadow(main__WindowInfo *info);
+void window_set_movable_by_window_background(main__WindowInfo *info, int enabled);
+int window_get_movable_by_window_background(main__WindowInfo *info);
+int window_is_visible(main__WindowInfo *info);
+void window_set_title_visible(main__WindowInfo *info, int visible);
+int window_get_title_visible(main__WindowInfo *info);
+int window_get_titlebar_visible(main__WindowInfo *info);
+
 #endif
 
