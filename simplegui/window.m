@@ -487,6 +487,13 @@ static NSColor *colorFromString(const char *colorString) {
         [expanded appendFormat:@"%C%C", ch, ch];
       }
       hex = expanded;
+    } else if ([hex length] == 4) {
+      NSMutableString *expanded = [NSMutableString stringWithCapacity:8];
+      for (NSUInteger i = 0; i < [hex length]; i++) {
+        unichar ch = [hex characterAtIndex:i];
+        [expanded appendFormat:@"%C%C", ch, ch];
+      }
+      hex = expanded;
     }
     if ([hex length] == 6) {
       const char *hexChars = [hex UTF8String];
@@ -497,6 +504,17 @@ static NSColor *colorFromString(const char *colorString) {
         CGFloat g = ((value >> 8) & 0xFF) / 255.0;
         CGFloat b = (value & 0xFF) / 255.0;
         return [NSColor colorWithCalibratedRed:r green:g blue:b alpha:1.0];
+      }
+    } else if ([hex length] == 8) {
+      const char *hexChars = [hex UTF8String];
+      char *end = NULL;
+      unsigned long value = strtoul(hexChars, &end, 16);
+      if (end && *end == '\0') {
+        CGFloat r = ((value >> 24) & 0xFF) / 255.0;
+        CGFloat g = ((value >> 16) & 0xFF) / 255.0;
+        CGFloat b = ((value >> 8) & 0xFF) / 255.0;
+        CGFloat a = (value & 0xFF) / 255.0;
+        return [NSColor colorWithCalibratedRed:r green:g blue:b alpha:a];
       }
     }
   }

@@ -13,6 +13,8 @@ fn main() {
 	gui.add_textarea('bio', 'Computer scientist and US Navy rear admiral.')
 	gui.add_checkbox('newsletter', 'Subscribe to weekly updates', true)
 	gui.add_button('save', 'Save Profile')
+	gui.add_horizontal_spacer(10)
+	gui.add_search_field('search', 'Search...')
 
 	// Set event handlers
 	gui.on_click('save', fn (mut win simplegui.SimpleWindow) {

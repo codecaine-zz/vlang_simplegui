@@ -6,7 +6,7 @@ fn main() {
 	// Create window with Dracula theme
 	mut win := simplegui.new_simple_window('Horizontal Rows Demo', 550, 480)
 		.configure(fn (mut cfg simplegui.WindowConfig) {
-			cfg.padding = 20
+			cfg.padding = 50
 			cfg.spacing = 10
 			cfg.background_color = '#282a36' // Dracula theme background
 			cfg.font_color = '#f8f8f2' // Dracula theme text
