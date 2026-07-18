@@ -3,7 +3,7 @@ module main
 import simplegui
 
 fn main() {
-	mut win := simplegui.new_simple_window('High-Level Helpers Demo', 760, 720)
+	mut win := simplegui.new_simple_window('High-Level Helpers Demo', 760, 500)
 	win.set_background_color('#132238')
 	win.set_font_color('white')
 	win.set_padding(16)
