@@ -814,6 +814,15 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
       return key;
     }
   }
+  // NSTextField focus notifications may arrive from the shared field editor.
+  if ([control isKindOfClass:[NSTextView class]]) {
+    for (NSString *key in self.controlsByName) {
+      NSView *candidate = self.controlsByName[key];
+      if ([candidate isKindOfClass:[NSTextField class]] && [(NSTextField *)candidate currentEditor] == control) {
+        return key;
+      }
+    }
+  }
   // Scroll view wrappers (like for notes view)
   if ([control isKindOfClass:[NSTextView class]]) {
     NSView *clip = control.superview;
@@ -1656,6 +1665,17 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
     NSString *value = [(NSTextField *)control stringValue];
     vlang_dispatch_event(self.win_ptr, [name UTF8String], "change", [value UTF8String]);
   }
+}
+
+- (BOOL)control:(NSControl *)control textView:(NSTextView *)textView doCommandBySelector:(SEL)commandSelector {
+  if (commandSelector == @selector(insertNewline:)) {
+    NSString *name = [self nameForControl:(NSView *)control];
+    if (name && self.win_ptr) {
+      NSString *value = [control respondsToSelector:@selector(stringValue)] ? [(NSTextField *)control stringValue] : @"";
+      vlang_dispatch_event(self.win_ptr, [name UTF8String], "enter", [value UTF8String]);
+    }
+  }
+  return NO;
 }
 
 - (void)textDidChange:(NSNotification *)notification {

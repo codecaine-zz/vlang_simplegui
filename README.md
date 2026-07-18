@@ -290,7 +290,7 @@ v run build.vsh
 
 This compiles your V code and creates:
 
-```
+```text
 dist/Vlang Macos Native Window.app
 ```
 
@@ -335,12 +335,13 @@ v run build_demos.vsh
 ```
 
 This script:
+
 1. **Pre-compiles** `build.vsh` to a temporary `./build_app` binary to bypass redundant compilations and prevent C/V compiler concurrency conflicts.
 2. **Scans** `demos/` and maps each application to its corresponding premium icon in `resources/` (e.g., `calculator.png` for the Calculator, `database.png` for SQLite CRUD, etc.).
 3. **Runs** the packaging pipeline concurrently in parallel batches (6 tasks by default), significantly speeding up the build process.
 4. **Cleans up** the temporary compiler helper when finished.
 
-#### CLI Options:
+#### CLI Options
 
 - `-i, --icon <path>`: Path to a PNG icon. Defaults to `resources/icon.png` or `icon.png`. (If no icon is found, the builder will gracefully assemble the `.app` bundle using a default macOS application icon).
 - `-n, --name <name>`: Custom display name for the `.app` bundle.
@@ -415,6 +416,9 @@ v run demos/layout_struct_reflection.v
 
 # 8. Responsive Auto-Layout vs Fixed Constraints
 v run demos/layout_responsive_constraints.v
+
+# 9. Compact Layouts + Events Showcase
+v run demos/layout_events_mini_demo.v
 ```
 
 ### Run the main demo (which combines both styles)
@@ -805,6 +809,7 @@ v test .
 - [demos/layout_group_boxes.v](demos/layout_group_boxes.v) — demonstrates visual panel containment boxes
 - [demos/layout_tabs.v](demos/layout_tabs.v) — demonstrates interactive native tabs switching between multi-view panels
 - [demos/layout_scroll_view.v](demos/layout_scroll_view.v) — demonstrates scrollable panel constraints
+- [demos/layout_events_mini_demo.v](demos/layout_events_mini_demo.v) — compact showcase combining sections, rows, groups, and event bindings
 - [demos/layout_struct_reflection.v](demos/layout_struct_reflection.v) — demonstrates auto-generating forms from structs using V reflection
 - [demos/layout_responsive_constraints.v](demos/layout_responsive_constraints.v) — demonstrates responsive auto-layout scaling, fixed dimensions, and a background color picker well
 - [demos/grid_beginner_demo.v](demos/grid_beginner_demo.v) — beginner-friendly interactive 2D painting grid/canvas illustrating row/column structures, pointer-shared mutable state, presets, and native color well integrations

@@ -89,6 +89,7 @@ fn main() {
 	demo_maps['layout_group_boxes.v'] = DemoConfig{'Layout: Group Boxes', 'design.png'}
 	demo_maps['layout_tabs.v'] = DemoConfig{'Layout: Tabs & Views', 'design.png'}
 	demo_maps['layout_scroll_view.v'] = DemoConfig{'Layout: Scroll View', 'design.png'}
+	demo_maps['layout_events_mini_demo.v'] = DemoConfig{'Layout Events Mini Demo', 'design.png'}
 	demo_maps['layout_struct_reflection.v'] = DemoConfig{'Layout: Struct Reflection', 'developer.png'}
 	demo_maps['layout_responsive_constraints.v'] = DemoConfig{'Layout: Responsive & Sizing', 'design.png'}
 	demo_maps['colors_demo.v'] = DemoConfig{'Colors Demo', 'color_picker.png'}
