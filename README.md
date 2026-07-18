@@ -798,6 +798,7 @@ v test .
 - [demos/window_controller_demo.v](demos/window_controller_demo.v) — lets you programmatically resize, move, center, track dimensions, and fade opacity of the main Window at runtime
 - [demos/always_on_top_demo.v](demos/always_on_top_demo.v) — a utility app indicating how window z-axis float levels behaves
 - [demos/ergonomic_demo.v](demos/ergonomic_demo.v) — showcases lightweight ergonomic helpers for window configuration and forms
+- [demos/ergonomics_helpers_demo.v](demos/ergonomics_helpers_demo.v) — a grouped tour of every ergonomics.v helper family: dialog shortcuts, batch operations, value accessors, list & table row management, timer sugar, require_fields validation, and JSON settings persistence
 - [demos/easy_api_demo.v](demos/easy_api_demo.v) — showcases the ergonomic helper APIs: dialog shortcuts, batch control operations, increment/progress helpers, labeled rows, timer sugar, and require_fields validation
 - [demos/todo_list_demo.v](demos/todo_list_demo.v) — a todo list app built on the list box item-management helpers (add/remove/clear items, Cmd/Shift multi-selection, double-click to complete, bulk remove of selected rows)
 - [demos/table_manager_demo.v](demos/table_manager_demo.v) — an inventory manager built on the table row-management helpers (add/insert/update/remove rows, cell editing, find_table_row, Cmd/Shift multi-selection, double-click to increment, bulk remove of selected rows)
