@@ -251,6 +251,7 @@ mut:
 	always_on_top                bool
 	responsive_layout            bool = true
 	placeholders                 map[string]string
+	tooltips                     map[string]string
 	errors                       map[string]string
 	default_button               string
 	debug_mode                   bool
@@ -317,6 +318,7 @@ pub fn new_simple_window(title string, width int, height int) &SimpleWindow {
 		movable_by_window_background: false
 	}
 	win.placeholders = map[string]string{}
+	win.tooltips = map[string]string{}
 	win.errors = map[string]string{}
 	win.ensure_window()
 	return win
@@ -1112,17 +1114,17 @@ pub fn (win &SimpleWindow) set_value(name string, value string) &SimpleWindow {
 pub fn (win &SimpleWindow) get_value(name string) string {
 	win.require_control(name)
 	idx := win.find_control(name)
-	if idx >= 0 {
-		kind := win.controls[idx].kind
-		if kind in ['table', 'tree'] {
-			return win.controls[idx].value
-		}
-	}
 	if win.window_info != unsafe { nil } {
 		res := C.window_get_control_text_by_name(win.window_info, name.str)
 		return unsafe { res.vstring() }
 	}
 	if idx >= 0 {
+		kind := win.controls[idx].kind
+		if kind in ['checkbox', 'switch', 'spinner'] {
+			return if win.controls[idx].checked { 'true' } else { 'false' }
+		} else if kind in ['number', 'slider', 'progress', 'levelindicator'] {
+			return win.controls[idx].number.str()
+		}
 		return win.controls[idx].value
 	}
 	return ''
@@ -1529,6 +1531,10 @@ pub fn (win &SimpleWindow) set_placeholder(name string, text string) &SimpleWind
 	return win
 }
 
+pub fn (win &SimpleWindow) get_placeholder(name string) string {
+	return win.placeholders[name] or { '' }
+}
+
 pub fn (win &SimpleWindow) set_error(name string, text string) &SimpleWindow {
 	unsafe {
 		mut w := &SimpleWindow(win)
@@ -1548,10 +1554,21 @@ pub fn (win &SimpleWindow) get_error(name string) string {
 }
 
 pub fn (win &SimpleWindow) set_tooltip(name string, text string) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		if w.tooltips.len == 0 {
+			w.tooltips = map[string]string{}
+		}
+		w.tooltips[name] = text
+	}
 	if win.window_info != unsafe { nil } {
 		C.window_set_tooltip_by_name(win.window_info, name.str, text.str)
 	}
 	return win
+}
+
+pub fn (win &SimpleWindow) get_tooltip(name string) string {
+	return win.tooltips[name] or { '' }
 }
 
 pub fn (win &SimpleWindow) set_default_button(name string) &SimpleWindow {
@@ -2552,6 +2569,15 @@ pub fn (win &SimpleWindow) update_list_items(name string, items []string) &Simpl
 }
 
 pub fn (win &SimpleWindow) set_list_selected(name string, index int) &SimpleWindow {
+	idx := win.find_control(name)
+	if idx >= 0 {
+		unsafe {
+			mut w := &SimpleWindow(win)
+			mut entry := w.controls[idx]
+			entry.number = index
+			w.controls[idx] = entry
+		}
+	}
 	if win.window_info != unsafe { nil } {
 		C.window_set_list_selected(win.window_info, name.str, index)
 	}
@@ -2561,6 +2587,10 @@ pub fn (win &SimpleWindow) set_list_selected(name string, index int) &SimpleWind
 pub fn (win &SimpleWindow) get_list_selected(name string) int {
 	if win.window_info != unsafe { nil } {
 		return C.window_get_list_selected(win.window_info, name.str)
+	}
+	idx := win.find_control(name)
+	if idx >= 0 {
+		return win.controls[idx].number
 	}
 	return -1
 }

@@ -190,8 +190,19 @@ fn test_batch_ergonomic_helpers_are_available() {
 	win.set_many_errors({
 		'name': 'Required'
 	})
+	win.set_many_placeholders({
+		'name': 'Type your name'
+	})
+	win.set_many_tooltips({
+		'name': 'This field is required'
+	})
 	win.clear_many(['name', 'secret'])
 	win.reset_many(['name', 'secret', 'ready', 'age'])
+
+	win.with_busy_state(['name', 'age'], 'Saving...', fn (mut w simplegui.SimpleWindow) {
+		assert w.get_control_enabled('name') == false
+		assert w.get_control_enabled('age') == false
+	})
 
 	texts := win.get_many_texts(['name', 'secret'])
 	checks := win.get_many_checked(['ready'])
@@ -203,6 +214,11 @@ fn test_batch_ergonomic_helpers_are_available() {
 	assert texts['secret'] == 's3cr3t'
 	assert checks['ready'] == false
 	assert numbers['age'] == 30
+	assert win.get_placeholder('name') == 'Type your name'
+	assert win.get_tooltip('name') == 'This field is required'
+	assert win.get_control_enabled('name') == true
+	assert win.get_control_enabled('age') == false
+	assert win.get_status() == 'Saving...'
 	assert visibilities['name'] == false
 	assert enabled['age'] == false
 	assert win.get_error('name') == 'Required'
@@ -1161,4 +1177,115 @@ fn test_batch_clear_fields_and_validators() {
 	min3 := simplegui.min_len_validator(3)
 	assert min3('ab') != ''
 	assert min3('abc') == ''
+}
+
+fn test_additional_ergonomics_helpers() {
+	mut win := simplegui.SimpleWindow{}
+	win.add_input('txt_int', '123')
+	win.add_input('txt_float', '12.34')
+	win.add_input('txt_empty', '')
+	win.add_slider('num_slider', 42)
+	win.add_checkbox('chk', 'Checked', true)
+
+	// Test get_int on text input
+	assert win.get_int('txt_int') == 123
+	assert win.get_int('num_slider') == 42
+
+	// Test get_int_or, get_float_or, get_text_or
+	assert win.get_int_or('txt_int', 999) == 123
+	assert win.get_int_or('txt_empty', 999) == 999
+	assert win.get_int_or('non_existent', 999) == 999
+	assert win.get_int_or('num_slider', 999) == 42
+
+	assert win.get_float_or('txt_float', 9.9) == 12.34
+	assert win.get_float_or('txt_empty', 9.9) == 9.9
+	assert win.get_float_or('non_existent', 9.9) == 9.9
+
+	assert win.get_text_or('txt_int', 'fallback') == '123'
+	assert win.get_text_or('txt_empty', 'fallback') == 'fallback'
+	assert win.get_text_or('non_existent', 'fallback') == 'fallback'
+
+	// Test clear_errors_for
+	win.set_error('txt_int', 'err1')
+	win.set_error('txt_float', 'err2')
+	win.clear_errors_for(['txt_int'])
+	assert win.get_error('txt_int') == ''
+	assert win.get_error('txt_float') == 'err2'
+
+	// Test add_list_items
+	win.add_list_box('fruits', ['Apple'])
+	win.add_list_items('fruits', ['Banana', 'Cherry'])
+	assert win.get_list_items('fruits') == ['Apple', 'Banana', 'Cherry']
+	assert win.has_list_item('fruits', 'Banana') == true
+	assert win.has_list_item('fruits', 'Orange') == false
+	assert win.find_list_item('fruits', 'Cherry') == 2
+
+	// Test move_selected_list_item_up / down
+	win.set_list_selected('fruits', 1) // select Banana
+	win.move_selected_list_item_down('fruits') // Banana down (to index 2)
+	assert win.get_list_items('fruits') == ['Apple', 'Cherry', 'Banana']
+	assert win.get_list_selected('fruits') == 2
+
+	win.move_selected_list_item_up('fruits') // Banana up (to index 1)
+	assert win.get_list_items('fruits') == ['Apple', 'Banana', 'Cherry']
+	assert win.get_list_selected('fruits') == 1
+
+	// Test add_table_rows and get_table_column_values
+	win.add_table('items', ['Name', 'Price'])
+	win.add_table_rows('items', [['Apple', '1'], ['Banana', '2']])
+	assert win.get_table_rows('items') == [['Apple', '1'], ['Banana', '2']]
+	assert win.get_table_column_values('items', 0) == ['Apple', 'Banana']
+	assert win.get_table_column_values('items', 1) == ['1', '2']
+
+	// Test move_selected_table_row_up / down
+	win.set_table_selected('items', 0)
+	win.move_selected_table_row_down('items')
+	assert win.get_table_rows('items') == [['Banana', '2'], ['Apple', '1']]
+	assert win.get_table_selected('items') == 1
+
+	win.move_selected_table_row_up('items')
+	assert win.get_table_rows('items') == [['Apple', '1'], ['Banana', '2']]
+	assert win.get_table_selected('items') == 0
+
+	// Test save_list_to_file and load_list_from_file
+	list_path := os.join_path(os.temp_dir(), 'simplegui_list_test.txt')
+	win.save_list_to_file('fruits', list_path) or { assert false, err.msg() }
+	win.clear_list_items('fruits')
+	win.load_list_from_file('fruits', list_path) or { assert false, err.msg() }
+	assert win.get_list_items('fruits') == ['Apple', 'Banana', 'Cherry']
+	os.rm(list_path) or {}
+
+	// Test confirm_discard_changes (dirty tracking)
+	assert win.confirm_discard_changes('Discard?', 'Discard?') == true
+	win.set_text('txt_int', 'new_val') // make dirty
+	// since win.window_info is nil, dialogs won't show.
+	// confirmation will return false because ask calls confirm which returns false on nil info.
+	assert win.confirm_discard_changes('Discard?', 'Discard?') == false
+	win.commit_changes()
+	assert win.confirm_discard_changes('Discard?', 'Discard?') == true
+
+	// Test new validators
+	assert simplegui.validate_url('https://google.com') == ''
+	assert simplegui.validate_url('invalid-url') != ''
+	assert simplegui.validate_alphanumeric('abc123') == ''
+	assert simplegui.validate_alphanumeric('abc-123') != ''
+	max5 := simplegui.max_len_validator(5)
+	assert max5('abcde') == ''
+	assert max5('abcdef') != ''
+
+	// Test settings persistence with checkboxes and numbers
+	settings_path := os.join_path(os.temp_dir(), 'simplegui_persist_test.json')
+	win.save_values_to_file(settings_path) or { assert false, err.msg() }
+	
+	// Reset values
+	win.set_checked('chk', false)
+	win.set_value_int('num_slider', 0)
+	win.set_text('txt_int', '')
+
+	// Load values
+	win.load_values_from_file(settings_path) or { assert false, err.msg() }
+	assert win.get_checked('chk') == true
+	assert win.get_value_int('num_slider') == 42
+	assert win.get_text('txt_int') == 'new_val'
+	os.rm(settings_path) or {}
 }

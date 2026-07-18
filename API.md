@@ -1275,12 +1275,18 @@ Sets the current control values as the new baseline state, causing `is_dirty()` 
 
 A set of high-level shortcuts designed to make everyday tasks one-liners. See `demos/easy_api_demo.v`, `demos/todo_list_demo.v`, `demos/table_manager_demo.v`, `demos/save_restore_demo.v`, and `demos/ergonomics_helpers_demo.v` for working examples.
 
-### Dialog Shortcuts
+### Dialog & File Panel Shortcuts
 
 - `win.info(title string, message string) &SimpleWindow` shows an informational alert.
 - `win.warn(title string, message string) &SimpleWindow` shows a warning-styled alert.
 - `win.error_dialog(title string, message string) &SimpleWindow` shows a critical error-styled alert.
 - `win.ask(title string, question string) bool` shows a Yes/No confirmation and returns `true` when confirmed.
+- `win.choose(title string, message string, choices []string) int` shows a Choice/Dropdown dialog box and returns the selected 0-based option index.
+- `win.ask_text(title string, message string, default_val string) string` prompts the user for text input with a dialog box, returning the response.
+- `win.choose_file() string` opens a native file dialog selection panel.
+- `win.choose_file_ext(extensions string) string` opens a native file dialog selection panel filtered by file extensions.
+- `win.choose_folder() string` opens a native directory selection panel.
+- `win.choose_save_file() string` opens a native save file dialog panel.
 - `win.quit()` terminates the application event loop immediately.
 
 ### Batch Control Operations
@@ -1293,8 +1299,11 @@ A set of high-level shortcuts designed to make everyday tasks one-liners. See `d
 
 ### Value Convenience Accessors
 
-- `win.get_int(name) int` / `win.set_int(name, value)` — aliases for numeric controls.
+- `win.get_int(name) int` / `win.set_int(name, value)` — aliases for numeric and text controls (auto-parsed if text).
 - `win.get_float(name) f64` / `win.set_float(name, value)` — parse/write floating point values in text controls.
+- `win.get_int_or(name string, fallback int) int` — gets integer value or returns a fallback if invalid or empty.
+- `win.get_float_or(name string, fallback f64) f64` — gets float value or returns a fallback if invalid or empty.
+- `win.get_text_or(name string, fallback string) string` — gets text value or returns a fallback if empty.
 - `win.increment(name string, delta int) int` adds `delta` (may be negative) to a numeric control and returns the new value.
 - `win.toggle_checked(name string) bool` flips a checkbox/switch and returns the new state.
 - `win.set_progress(name, value)` / `win.get_progress(name) int` — friendly progress bar accessors.
@@ -1311,7 +1320,11 @@ A set of high-level shortcuts designed to make everyday tasks one-liners. See `d
 - `win.set_many_enabled(values map[string]bool)` updates many controls' enabled state in one call.
 - `win.get_many_enabled(names []string) map[string]bool` reads many controls' enabled state into a map.
 - `win.set_many_errors(values map[string]string)` updates many controls' inline errors in one call.
+- `win.set_many_placeholders(values map[string]string)` updates many controls' placeholder text in one call.
+- `win.set_many_tooltips(values map[string]string)` updates many controls' tooltip text in one call.
+- `win.with_busy_state(names []string, status_text string, callback)` temporarily disables a set of controls while running a callback.
 - `win.clear_many(names []string)` clears a subset of controls to their empty/default state.
+- `win.clear_errors_for(names []string)` clears the inline error state for the specified list of controls.
 - `win.reset_many(names []string)` restores a subset of controls to their original values.
 - `win.focus(name)` moves keyboard focus to a control (alias of `set_focus`).
 
@@ -1322,6 +1335,9 @@ Items are tracked automatically for every list box, so you can manage them incre
 - `win.get_list_items(name) []string` returns the current items.
 - `win.set_list_items(name, items)` replaces all items (alias of `update_list_items`).
 - `win.add_list_item(name, item)` appends a single item.
+- `win.add_list_items(name, items)` appends multiple items.
+- `win.has_list_item(name, item) bool` returns whether the item exists in the list box.
+- `win.find_list_item(name, item) int` returns the 0-based index of the first matching item, or `-1`.
 - `win.remove_list_item(name, index)` removes an item by 0-based index.
 - `win.remove_selected_list_item(name)` removes the currently selected row.
 - `win.clear_list_items(name)` removes everything.
@@ -1370,6 +1386,8 @@ Rows are tracked automatically for every table, so you can manage them increment
 - `win.get_table_row_count(name) int` returns the row count.
 - `win.get_table_cell(name, row, col) string` / `win.set_table_cell(name, row, col, value)` read/write a single cell.
 - `win.add_table_row(name, row []string)` appends a row.
+- `win.add_table_rows(name, rows [][]string)` appends multiple rows.
+- `win.get_table_column_values(name, column int) []string` returns all values of a specific 0-based column.
 - `win.insert_table_row(name, index, row)` inserts a row at a 0-based index.
 - `win.update_table_row(name, index, row)` replaces a row.
 - `win.remove_table_row(name, index)` removes a row.
@@ -1394,7 +1412,10 @@ Rows are tracked automatically for every table, so you can manage them increment
 - `win.require_fields(names []string) bool` marks blank controls with an inline "required" error, clears errors on filled ones, and returns `true` only when all fields are filled.
 - `simplegui.validate_email(value) string` is a ready-made `ControlValidator` accepting basic `user@domain.tld` addresses.
 - `simplegui.validate_number(value) string` is a ready-made `ControlValidator` accepting integers and floats.
+- `simplegui.validate_url(value) string` is a ready-made `ControlValidator` accepting basic `http://` or `https://` URLs.
+- `simplegui.validate_alphanumeric(value) string` is a ready-made `ControlValidator` accepting only letters and digits.
 - `simplegui.min_len_validator(min int) ControlValidator` builds a validator requiring at least `min` characters (whitespace trimmed).
+- `simplegui.max_len_validator(max int) ControlValidator` builds a validator requiring at most `max` characters.
 
 ### Batch Value Access
 
@@ -1404,11 +1425,20 @@ Rows are tracked automatically for every table, so you can manage them increment
 
 - `win.sort_list_items(name, ascending bool)` sorts list box items alphabetically (case-insensitive).
 - `win.move_list_item(name, from, to)` moves an item to a new index (great for Move Up/Down buttons).
+- `win.move_selected_list_item_up(name)` / `win.move_selected_list_item_down(name)` shifts the currently selected list item up/down by 1 slot.
 - `win.bind_search_to_list(search_name, list_name)` wires a search field to a list box so typing filters the visible rows live (case-insensitive substring match; clearing the search restores the full set). The full item set is snapshotted at bind time, so re-bind after replacing the list's master items.
+- `win.save_list_to_file(name, path)` / `win.load_list_from_file(name, path)` saves/loads list box items to/from a line-separated text file.
 
 ### Table Sorting & CSV Import/Export
 
 - `win.sort_table_by_column(name, column, ascending bool)` sorts rows by a 0-based column — numerically when every cell in the column parses as a number, otherwise as case-insensitive text.
 - `win.move_table_row(name, from, to)` moves a row to a new index.
+- `win.move_selected_table_row_up(name)` / `win.move_selected_table_row_down(name)` shifts the currently selected table row up/down by 1 slot.
 - `win.save_table_to_csv(name, path) !` exports every table row to a CSV file.
 - `win.load_table_from_csv(name, path) !` replaces a table's rows with the contents of a CSV file.
+
+### Clipboard & State Helpers
+
+- `win.copy_control_to_clipboard(name)` copies the text value of a named control to the system clipboard.
+- `win.paste_from_clipboard_to_control(name)` replaces the named control's text with the system clipboard content.
+- `win.confirm_discard_changes(title, message) bool` prompts the user with a confirmation dialog if the window has unsaved dirty changes, returning `true` if it's safe to proceed.

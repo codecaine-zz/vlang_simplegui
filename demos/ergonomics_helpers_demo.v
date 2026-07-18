@@ -261,7 +261,31 @@ fn main() {
 		})
 	})
 
-	// 8. Quick validation + settings persistence
+	// 8. Workflow helpers: busy-state and bulk placeholder/tooltip setup
+	win.group('grp_workflow', 'Workflow Helpers', fn (mut w simplegui.SimpleWindow) {
+		w.add_form_field('Task Name:', 'task_name', '')
+		w.add_form_field('Notes:', 'task_notes', '')
+		w.add_button('task_run', 'Run Task')
+		w.add_action_row({
+			'Prepare Form': fn (mut w simplegui.SimpleWindow) {
+				w.set_many_placeholders({
+					'task_name': 'e.g. Sync reports'
+					'task_notes': 'Add context for the next person'
+				})
+				w.set_many_tooltips({
+					'task_run': 'Starts the workflow for the current form'
+				})
+				w.set_status('Prepared the form with helpful hints.')
+			}
+			'Run Busy Task': fn (mut w simplegui.SimpleWindow) {
+				w.with_busy_state(['task_name', 'task_notes', 'task_run'], 'Working...', fn (mut w simplegui.SimpleWindow) {
+					w.set_status('Task completed from the busy-state wrapper.')
+				})
+			}
+		})
+	})
+
+	// 9. Quick validation + settings persistence
 	win.group('grp_persist', 'Validation & Persistence', fn (mut w simplegui.SimpleWindow) {
 		w.add_form_field('Username:', 'username', '')
 		w.add_form_field('Email:', 'email', '')

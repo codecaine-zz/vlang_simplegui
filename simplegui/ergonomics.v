@@ -110,8 +110,12 @@ pub fn (win &SimpleWindow) toggle_enabled(name string) bool {
 // 3. Value Convenience Accessors
 // ==========================================
 
-// get_int returns the numeric value of a number/slider/progress control.
+// get_int returns the numeric value of a number/slider/progress/text control.
 pub fn (win &SimpleWindow) get_int(name string) int {
+	kind := win.get_control_kind(name)
+	if kind in ['input', 'password', 'textarea', 'label'] {
+		return win.get_value(name).trim_space().int()
+	}
 	return win.get_number_value(name)
 }
 
@@ -258,6 +262,41 @@ pub fn (win &SimpleWindow) get_many_enabled(names []string) map[string]bool {
 pub fn (win &SimpleWindow) set_many_errors(values map[string]string) &SimpleWindow {
 	for name, value in values {
 		win.set_error(name, value)
+	}
+	return win
+}
+
+// set_many_placeholders updates several controls' placeholder text in one call.
+pub fn (win &SimpleWindow) set_many_placeholders(values map[string]string) &SimpleWindow {
+	for name, value in values {
+		win.set_placeholder(name, value)
+	}
+	return win
+}
+
+// set_many_tooltips updates several controls' tooltip text in one call.
+pub fn (win &SimpleWindow) set_many_tooltips(values map[string]string) &SimpleWindow {
+	for name, value in values {
+		win.set_tooltip(name, value)
+	}
+	return win
+}
+
+// with_busy_state temporarily disables a set of controls, updates the status text,
+// runs a callback, and then restores the previous enabled state.
+pub fn (win &SimpleWindow) with_busy_state(names []string, status_text string, callback VoidEventCallback) &SimpleWindow {
+	mut original_states := map[string]bool{}
+	for name in names {
+		original_states[name] = win.get_control_enabled(name)
+		win.set_control_enabled(name, false)
+	}
+	win.set_status(status_text)
+	unsafe {
+		mut w := &SimpleWindow(win)
+		callback(mut w)
+	}
+	for name, enabled in original_states {
+		win.set_control_enabled(name, enabled)
 	}
 	return win
 }
@@ -475,7 +514,14 @@ pub fn (win &SimpleWindow) load_values_from_file(path string) ! {
 	values := json_decode_map(content)
 	for name, val in values {
 		if win.has_control(name) {
-			win.set_text(name, val)
+			kind := win.get_control_kind(name)
+			if kind in ['checkbox', 'switch', 'spinner'] {
+				win.set_checked(name, val == 'true')
+			} else if kind in ['number', 'slider', 'progress', 'levelindicator'] {
+				win.set_value_int(name, val.int())
+			} else {
+				win.set_text(name, val)
+			}
 		}
 	}
 }
@@ -938,4 +984,258 @@ pub fn (win &SimpleWindow) load_table_from_csv(name string, path string) ! {
 		rows << row
 	}
 	win.set_table_rows(name, rows)
+}
+
+// ==========================================
+// 13. Additional Ergonomics & QoL Helpers
+// ==========================================
+
+// choose shows a Choice/Dropdown dialog box and returns the selected 0-based option index.
+pub fn (win &SimpleWindow) choose(title string, message string, choices []string) int {
+	return win.choice_dialog(title, message, choices)
+}
+
+// ask_text prompts the user for text input with a dialog box, returning the response.
+pub fn (win &SimpleWindow) ask_text(title string, message string, default_val string) string {
+	return win.prompt(title, message, default_val)
+}
+
+// choose_file opens a native file dialog selection panel.
+pub fn (win &SimpleWindow) choose_file() string {
+	return win.select_file()
+}
+
+// choose_file_ext opens a native file dialog selection panel filtered by file extensions.
+pub fn (win &SimpleWindow) choose_file_ext(extensions string) string {
+	return win.select_file_with_extensions(extensions)
+}
+
+// choose_folder opens a native directory selection panel.
+pub fn (win &SimpleWindow) choose_folder() string {
+	return win.select_folder()
+}
+
+// choose_save_file opens a native save file dialog panel.
+pub fn (win &SimpleWindow) choose_save_file() string {
+	return win.save_file_picker()
+}
+
+// get_int_or returns the numeric value of a control, or fallback if empty or invalid.
+pub fn (win &SimpleWindow) get_int_or(name string, fallback int) int {
+	if !win.has_control(name) {
+		return fallback
+	}
+	kind := win.get_control_kind(name)
+	if kind in ['input', 'password', 'textarea', 'label'] {
+		val := win.get_value(name).trim_space()
+		if val == '' {
+			return fallback
+		}
+		return val.int()
+	}
+	return win.get_number_value(name)
+}
+
+// get_float_or returns the floating point value of a control, or fallback if empty or invalid.
+pub fn (win &SimpleWindow) get_float_or(name string, fallback f64) f64 {
+	if !win.has_control(name) {
+		return fallback
+	}
+	kind := win.get_control_kind(name)
+	if kind in ['input', 'password', 'textarea', 'label'] {
+		val := win.get_value(name).trim_space()
+		if val == '' {
+			return fallback
+		}
+		return strconv.atof64(val) or { fallback }
+	}
+	return win.get_number_value(name)
+}
+
+// get_text_or returns the text value of a control, or fallback if empty.
+pub fn (win &SimpleWindow) get_text_or(name string, fallback string) string {
+	if !win.has_control(name) {
+		return fallback
+	}
+	val := win.get_text(name)
+	if val == '' {
+		return fallback
+	}
+	return val
+}
+
+// clear_errors_for clears the inline error state for the specified list of controls.
+pub fn (win &SimpleWindow) clear_errors_for(names []string) &SimpleWindow {
+	for name in names {
+		win.clear_error(name)
+	}
+	return win
+}
+
+// add_list_items appends multiple items to the end of a list box.
+pub fn (win &SimpleWindow) add_list_items(name string, new_items []string) &SimpleWindow {
+	if new_items.len == 0 {
+		return win
+	}
+	mut items := win.get_list_items(name)
+	items << new_items
+	return win.update_list_items(name, items)
+}
+
+// add_table_rows appends multiple rows to the end of a table.
+pub fn (win &SimpleWindow) add_table_rows(name string, new_rows [][]string) &SimpleWindow {
+	if new_rows.len == 0 {
+		return win
+	}
+	mut rows := win.get_table_rows(name)
+	rows << new_rows
+	return win.set_table_rows(name, rows)
+}
+
+// move_selected_list_item_up moves the currently selected list box item up by one slot.
+pub fn (win &SimpleWindow) move_selected_list_item_up(name string) &SimpleWindow {
+	idx := win.get_list_selected(name)
+	if idx > 0 {
+		win.move_list_item(name, idx, idx - 1)
+		win.set_list_selected(name, idx - 1)
+	}
+	return win
+}
+
+// move_selected_list_item_down moves the currently selected list box item down by one slot.
+pub fn (win &SimpleWindow) move_selected_list_item_down(name string) &SimpleWindow {
+	idx := win.get_list_selected(name)
+	count := win.get_list_count(name)
+	if idx >= 0 && idx < count - 1 {
+		win.move_list_item(name, idx, idx + 1)
+		win.set_list_selected(name, idx + 1)
+	}
+	return win
+}
+
+// move_selected_table_row_up moves the currently selected table row up by one slot.
+pub fn (win &SimpleWindow) move_selected_table_row_up(name string) &SimpleWindow {
+	idx := win.get_table_selected(name)
+	if idx > 0 {
+		win.move_table_row(name, idx, idx - 1)
+		win.set_table_selected(name, idx - 1)
+	}
+	return win
+}
+
+// move_selected_table_row_down moves the currently selected table row down by one slot.
+pub fn (win &SimpleWindow) move_selected_table_row_down(name string) &SimpleWindow {
+	idx := win.get_table_selected(name)
+	count := win.get_table_row_count(name)
+	if idx >= 0 && idx < count - 1 {
+		win.move_table_row(name, idx, idx + 1)
+		win.set_table_selected(name, idx + 1)
+	}
+	return win
+}
+
+// get_table_column_values extracts all cell values of a specific 0-based column.
+pub fn (win &SimpleWindow) get_table_column_values(name string, column int) []string {
+	rows := win.get_table_rows(name)
+	mut values := []string{cap: rows.len}
+	for row in rows {
+		if column >= 0 && column < row.len {
+			values << row[column]
+		} else {
+			values << ''
+		}
+	}
+	return values
+}
+
+// save_list_to_file writes every list box item to a plain text file, one item per line.
+pub fn (win &SimpleWindow) save_list_to_file(name string, path string) ! {
+	items := win.get_list_items(name)
+	os.write_file(path, items.join('\n'))!
+}
+
+// load_list_from_file replaces a list box's items with lines from a plain text file.
+pub fn (win &SimpleWindow) load_list_from_file(name string, path string) ! {
+	content := os.read_file(path)!
+	mut items := []string{}
+	for line in content.split_into_lines() {
+		trimmed := line.trim_right('\r\n')
+		items << trimmed
+	}
+	win.update_list_items(name, items)
+}
+
+// copy_control_to_clipboard copies the text value of a named control to the system clipboard.
+pub fn (win &SimpleWindow) copy_control_to_clipboard(name string) &SimpleWindow {
+	val := win.get_text(name)
+	win.clipboard_copy(val)
+	return win
+}
+
+// paste_from_clipboard_to_control replaces the named control's text with the system clipboard content.
+pub fn (win &SimpleWindow) paste_from_clipboard_to_control(name string) &SimpleWindow {
+	val := win.clipboard_read()
+	win.set_text(name, val)
+	return win
+}
+
+// confirm_discard_changes prompts the user if the window has dirty changes.
+// Returns true if there are no dirty changes or if the user confirms they want to discard them.
+pub fn (win &SimpleWindow) confirm_discard_changes(title string, message string) bool {
+	if !win.is_dirty() {
+		return true
+	}
+	return win.ask(title, message)
+}
+
+// validate_url is a ready-made ControlValidator that accepts basic http:// or https:// URLs.
+pub fn validate_url(value string) string {
+	v := value.trim_space()
+	if v == '' {
+		return 'URL is required'
+	}
+	if !v.starts_with('http://') && !v.starts_with('https://') {
+		return 'Enter a valid URL starting with http:// or https://'
+	}
+	return ''
+}
+
+// validate_alphanumeric is a ready-made ControlValidator that accepts only letters and digits.
+pub fn validate_alphanumeric(value string) string {
+	v := value.trim_space()
+	if v == '' {
+		return 'This field is required'
+	}
+	for c in v {
+		if !c.is_letter() && !c.is_digit() {
+			return 'Only letters and digits are allowed'
+		}
+	}
+	return ''
+}
+
+// max_len_validator builds a ControlValidator requiring at most max characters.
+pub fn max_len_validator(max int) ControlValidator {
+	return fn [max] (value string) string {
+		if value.trim_space().len > max {
+			return 'Must be at most ${max} characters'
+		}
+		return ''
+	}
+}
+
+// find_list_item returns the 0-based index of the first item matching value, or -1.
+pub fn (win &SimpleWindow) find_list_item(name string, item string) int {
+	items := win.get_list_items(name)
+	for i, val in items {
+		if val == item {
+			return i
+		}
+	}
+	return -1
+}
+
+// has_list_item returns true if the list box contains the item.
+pub fn (win &SimpleWindow) has_list_item(name string, item string) bool {
+	return win.find_list_item(name, item) != -1
 }
