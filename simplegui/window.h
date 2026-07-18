@@ -220,5 +220,13 @@ void window_animate_size(main__WindowInfo *info, int width, int height, int dura
 void window_animate_position(main__WindowInfo *info, int x, int y, int duration_ms);
 void window_animate_bounds(main__WindowInfo *info, int x, int y, int width, int height, int duration_ms);
 
+// Native macOS UI extensions
+void window_add_toolbar_item(main__WindowInfo *info, const char *name, const char *label, const char *tooltip, const char *symbol);
+void window_add_toolbar_space(main__WindowInfo *info);
+void window_add_toolbar_flexible_space(main__WindowInfo *info);
+void window_set_toolbar_style(main__WindowInfo *info, const char *style);
+void window_show_sheet_alert(main__WindowInfo *info, const char *title, const char *message, const char *style);
+void window_add_dock_menu_item(main__WindowInfo *info, const char *title, const char *handler_name);
+
 #endif
 

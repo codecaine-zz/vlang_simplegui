@@ -422,7 +422,7 @@ extern void vlang_dispatch_event(void *win_ptr, const char *name, const char *ev
 }
 @end
 
-@interface AppDelegate : NSObject <NSApplicationDelegate, NSWindowDelegate, NSTextFieldDelegate, NSTextViewDelegate, NSTableViewDataSource, NSTableViewDelegate, NSOutlineViewDataSource, NSOutlineViewDelegate, NSTabViewDelegate>
+@interface AppDelegate : NSObject <NSApplicationDelegate, NSWindowDelegate, NSTextFieldDelegate, NSTextViewDelegate, NSTableViewDataSource, NSTableViewDelegate, NSOutlineViewDataSource, NSOutlineViewDelegate, NSTabViewDelegate, NSToolbarDelegate>
 @property (nonatomic, assign) main__WindowParams params;
 @property (nonatomic, assign) void *win_ptr;
 @property (nonatomic, strong) NSWindow *window;
@@ -440,7 +440,12 @@ extern void vlang_dispatch_event(void *win_ptr, const char *name, const char *ev
 @property (nonatomic, strong) NSStatusItem *statusItem;
 @property (nonatomic, strong) NSMenu *statusBarMenu;
 @property (nonatomic, assign) BOOL responsiveLayoutEnabled;
+@property (nonatomic, strong) NSMutableDictionary *toolbarItems;
+@property (nonatomic, strong) NSMutableArray *toolbarOrder;
+@property (nonatomic, strong) NSMenu *dockMenu;
 
+- (void)setupToolbar;
+- (void)handleToolbarItemClicked:(id)sender;
 - (TreeItem *)findTreeItemWithId:(NSString *)targetId inItems:(NSArray<TreeItem *> *)items;
 - (NSString *)nameForControl:(NSView *)control;
 - (void)addControlToLayout:(NSView *)view;
@@ -1094,6 +1099,49 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [self buildUI];
   [self.window center];
   self.windowController = [[NSWindowController alloc] initWithWindow:self.window];
+}
+
+- (void)setupToolbar {
+  NSToolbar *toolbar = [[NSToolbar alloc] initWithIdentifier:@"SimpleGUIToolbar"];
+  [toolbar setDelegate:self];
+  [toolbar setAllowsUserCustomization:NO];
+  [toolbar setAutosavesConfiguration:NO];
+  [toolbar setDisplayMode:NSToolbarDisplayModeIconAndLabel];
+  [self.window setToolbar:toolbar];
+}
+
+- (void)handleToolbarItemClicked:(id)sender {
+  NSToolbarItem *item = (NSToolbarItem *)sender;
+  NSString *name = item.itemIdentifier;
+  if (name && self.win_ptr) {
+    vlang_dispatch_event(self.win_ptr, [name UTF8String], "click", "");
+  }
+}
+
+- (NSToolbarItem *)toolbar:(NSToolbar *)toolbar itemForItemIdentifier:(NSToolbarItemIdentifier)itemIdentifier willBeInsertedIntoToolbar:(BOOL)flag {
+  return self.toolbarItems[itemIdentifier];
+}
+
+- (NSArray<NSToolbarItemIdentifier> *)toolbarDefaultItemIdentifiers:(NSToolbar *)toolbar {
+  NSMutableArray *defaults = [NSMutableArray array];
+  for (NSString *name in self.toolbarOrder) {
+    if ([name isEqualToString:@"space"]) {
+      [defaults addObject:NSToolbarSpaceItemIdentifier];
+    } else if ([name isEqualToString:@"flexible_space"]) {
+      [defaults addObject:NSToolbarFlexibleSpaceItemIdentifier];
+    } else {
+      [defaults addObject:name];
+    }
+  }
+  return defaults;
+}
+
+- (NSArray<NSToolbarItemIdentifier> *)toolbarAllowedItemIdentifiers:(NSToolbar *)toolbar {
+  return [self toolbarDefaultItemIdentifiers:toolbar];
+}
+
+- (NSMenu *)applicationDockMenu:(NSApplication *)sender {
+  return self.dockMenu;
 }
 
 - (NSView *)viewForControlName:(NSString *)name {
@@ -5918,5 +5966,153 @@ void window_animate_bounds(main__WindowInfo *info, int x, int y, int width, int 
       [[delegate.window animator] setFrame:targetFrame display:YES];
     } completionHandler:^{
     }];
+  });
+}
+
+void window_add_toolbar_item(main__WindowInfo *info, const char *name, const char *label, const char *tooltip, const char *symbol) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  if (!delegate) return;
+  NSString *itemName = nsstring(name);
+  NSString *itemLabel = nsstring(label);
+  NSString *itemTooltip = nsstring(tooltip);
+  NSString *icon = nsstring(symbol);
+  dispatch_async(dispatch_get_main_queue(), ^{
+    if (!delegate.toolbarItems) {
+      delegate.toolbarItems = [NSMutableDictionary dictionary];
+      delegate.toolbarOrder = [NSMutableArray array];
+    }
+    
+    NSToolbarItem *item = [[NSToolbarItem alloc] initWithItemIdentifier:itemName];
+    [item setLabel:itemLabel];
+    [item setPaletteLabel:itemLabel];
+    [item setToolTip:itemTooltip];
+    
+    if (icon && icon.length > 0) {
+      NSImage *image = nil;
+      if (@available(macOS 11.0, *)) {
+        image = [NSImage imageWithSystemSymbolName:icon accessibilityDescription:nil];
+      }
+      if (!image) {
+        image = [NSImage imageNamed:icon];
+      }
+      if (!image) {
+        image = [[NSImage alloc] initWithContentsOfFile:icon];
+      }
+      if (image) {
+        [item setImage:image];
+      }
+    }
+    
+    [item setTarget:delegate];
+    [item setAction:@selector(handleToolbarItemClicked:)];
+    
+    delegate.toolbarItems[itemName] = item;
+    [delegate.toolbarOrder addObject:itemName];
+    
+    if (!delegate.window.toolbar) {
+      [delegate setupToolbar];
+    } else {
+      NSToolbar *toolbar = delegate.window.toolbar;
+      [delegate.window setToolbar:nil];
+      [delegate.window setToolbar:toolbar];
+    }
+  });
+}
+
+void window_add_toolbar_space(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  if (!delegate) return;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    if (!delegate.toolbarItems) {
+      delegate.toolbarItems = [NSMutableDictionary dictionary];
+      delegate.toolbarOrder = [NSMutableArray array];
+    }
+    [delegate.toolbarOrder addObject:@"space"];
+    
+    if (!delegate.window.toolbar) {
+      [delegate setupToolbar];
+    } else {
+      NSToolbar *toolbar = delegate.window.toolbar;
+      [delegate.window setToolbar:nil];
+      [delegate.window setToolbar:toolbar];
+    }
+  });
+}
+
+void window_add_toolbar_flexible_space(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  if (!delegate) return;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    if (!delegate.toolbarItems) {
+      delegate.toolbarItems = [NSMutableDictionary dictionary];
+      delegate.toolbarOrder = [NSMutableArray array];
+    }
+    [delegate.toolbarOrder addObject:@"flexible_space"];
+    
+    if (!delegate.window.toolbar) {
+      [delegate setupToolbar];
+    } else {
+      NSToolbar *toolbar = delegate.window.toolbar;
+      [delegate.window setToolbar:nil];
+      [delegate.window setToolbar:toolbar];
+    }
+  });
+}
+
+void window_set_toolbar_style(main__WindowInfo *info, const char *style) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  if (!delegate || !delegate.window) return;
+  NSString *styleStr = nsstring(style);
+  dispatch_async(dispatch_get_main_queue(), ^{
+    if (@available(macOS 11.0, *)) {
+      if ([styleStr isEqualToString:@"expanded"]) {
+        [delegate.window setToolbarStyle:NSWindowToolbarStyleExpanded];
+      } else if ([styleStr isEqualToString:@"preference"]) {
+        [delegate.window setToolbarStyle:NSWindowToolbarStylePreference];
+      } else if ([styleStr isEqualToString:@"unified"]) {
+        [delegate.window setToolbarStyle:NSWindowToolbarStyleUnified];
+      } else if ([styleStr isEqualToString:@"unified_compact"]) {
+        [delegate.window setToolbarStyle:NSWindowToolbarStyleUnifiedCompact];
+      } else {
+        [delegate.window setToolbarStyle:NSWindowToolbarStyleAutomatic];
+      }
+    }
+  });
+}
+
+void window_show_sheet_alert(main__WindowInfo *info, const char *title, const char *message, const char *style) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  if (!delegate || !delegate.window) return;
+  NSString *titleStr = nsstring(title);
+  NSString *messageStr = nsstring(message);
+  NSString *styleStr = nsstring(style);
+  dispatch_async(dispatch_get_main_queue(), ^{
+    NSAlert *alert = [[NSAlert alloc] init];
+    [alert setMessageText:titleStr];
+    [alert setInformativeText:messageStr];
+    if ([styleStr isEqualToString:@"warning"]) {
+      [alert setAlertStyle:NSAlertStyleWarning];
+    } else if ([styleStr isEqualToString:@"critical"]) {
+      [alert setAlertStyle:NSAlertStyleCritical];
+    } else {
+      [alert setAlertStyle:NSAlertStyleInformational];
+    }
+    [alert beginSheetModalForWindow:delegate.window completionHandler:nil];
+  });
+}
+
+void window_add_dock_menu_item(main__WindowInfo *info, const char *title, const char *handler_name) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  if (!delegate) return;
+  NSString *titleStr = nsstring(title);
+  NSString *handler = nsstring(handler_name);
+  dispatch_async(dispatch_get_main_queue(), ^{
+    if (!delegate.dockMenu) {
+      delegate.dockMenu = [[NSMenu alloc] initWithTitle:@"DockMenu"];
+    }
+    NSMenuItem *item = [[NSMenuItem alloc] initWithTitle:titleStr action:@selector(handleMenuItemClicked:) keyEquivalent:@""];
+    [item setTarget:delegate];
+    [item setRepresentedObject:handler];
+    [delegate.dockMenu addItem:item];
   });
 }

@@ -207,6 +207,27 @@ fn main() {
 	// --- Native Hyperlink layout
 	win.add_form_link('Help & Resources:', 'docs_link', 'Visit Github Repository', 'https://github.com/codecaine/vlang_simplegui')
 
+	// --- Native macOS Toolbar, Sheet alerts, and Dock Menu additions
+	win.add_toolbar_item('nav_home', 'Home', 'Go to main view', 'house.fill')
+	win.add_toolbar_item('nav_settings', 'Settings', 'Preferences', 'gear')
+	win.add_toolbar_flexible_space()
+	win.add_toolbar_item('nav_help', 'Help', 'Get Help', 'questionmark.circle')
+	win.set_toolbar_style('unified')
+
+	win.on_toolbar_click('nav_settings', fn (mut w simplegui.SimpleWindow) {
+		w.show_sheet_alert('Preferences', 'You clicked the native preferences toolbar icon!', 'info')
+	})
+	win.on_toolbar_click('nav_home', fn (mut w simplegui.SimpleWindow) {
+		w.status_temp('Returned to Home state', 2000)
+	})
+	win.on_toolbar_click('nav_help', fn (mut w simplegui.SimpleWindow) {
+		w.show_sheet_alert('Help Center', 'Please check the Github repository for documentation.', 'warning')
+	})
+
+	win.add_dock_menu_item('Trigger Alert', fn (mut w simplegui.SimpleWindow) {
+		w.show_sheet_alert('Dock Menu Trigger', 'This was triggered from the macOS Dock icon context menu!', 'critical')
+	})
+
 	win.set_status('Ready. Try the buttons above!')
 	win.run()
 }

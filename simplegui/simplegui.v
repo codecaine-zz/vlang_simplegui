@@ -216,6 +216,13 @@ fn C.window_animate_size(&WindowInfo, int, int, int)
 fn C.window_animate_position(&WindowInfo, int, int, int)
 fn C.window_animate_bounds(&WindowInfo, int, int, int, int, int)
 
+fn C.window_add_toolbar_item(&WindowInfo, &u8, &u8, &u8, &u8)
+fn C.window_add_toolbar_space(&WindowInfo)
+fn C.window_add_toolbar_flexible_space(&WindowInfo)
+fn C.window_set_toolbar_style(&WindowInfo, &u8)
+fn C.window_show_sheet_alert(&WindowInfo, &u8, &u8, &u8)
+fn C.window_add_dock_menu_item(&WindowInfo, &u8, &u8)
+
 pub type StringEventCallback = fn (mut win SimpleWindow, value string)
 
 pub type VoidEventCallback = fn (mut win SimpleWindow)
@@ -3425,6 +3432,54 @@ pub fn (win &SimpleWindow) add_form_from_struct[T](default_data T) &SimpleWindow
 pub fn (win &SimpleWindow) enable_status_bar(icon_path string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_enable_status_bar(win.window_info, icon_path.str)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) add_toolbar_item(name string, label string, tooltip string, symbol string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_add_toolbar_item(win.window_info, name.str, label.str, tooltip.str, symbol.str)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) add_toolbar_space() &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_add_toolbar_space(win.window_info)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) add_toolbar_flexible_space() &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_add_toolbar_flexible_space(win.window_info)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) set_toolbar_style(style string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_toolbar_style(win.window_info, style.str)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) on_toolbar_click(name string, callback VoidEventCallback) &SimpleWindow {
+	return win.on_click(name, callback)
+}
+
+pub fn (win &SimpleWindow) show_sheet_alert(title string, message string, style string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_show_sheet_alert(win.window_info, title.str, message.str, style.str)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) add_dock_menu_item(title string, callback VoidEventCallback) &SimpleWindow {
+	handler_name := 'dock_menu_${title.replace(' ', '_').to_lower()}'
+	win.on_click(handler_name, callback)
+	if win.window_info != unsafe { nil } {
+		C.window_add_dock_menu_item(win.window_info, title.str, handler_name.str)
 	}
 	return win
 }

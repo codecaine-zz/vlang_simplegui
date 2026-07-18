@@ -1583,4 +1583,23 @@ fn test_animation_helpers() {
 	assert true
 }
 
+fn test_native_macos_ui_additions() {
+	mut win := simplegui.new_simple_window('macOS UI additions test', 100, 100)
+
+	// 1. Toolbar APIs
+	win.add_toolbar_item('save_btn', 'Save', 'Save document', 'square.and.arrow.down')
+	win.add_toolbar_space()
+	win.add_toolbar_flexible_space()
+	win.set_toolbar_style('unified')
+	win.on_toolbar_click('save_btn', fn (mut w simplegui.SimpleWindow) {})
+
+	// 2. Sheet Alert APIs
+	win.show_sheet_alert('Success', 'Settings saved successfully', 'info')
+
+	// 3. Dock Menu APIs
+	win.add_dock_menu_item('New Document', fn (mut w simplegui.SimpleWindow) {})
+
+	assert true
+}
+
 
