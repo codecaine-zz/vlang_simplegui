@@ -4,6 +4,7 @@ module simplegui
 #include "@VMODROOT/simplegui/window.h"
 #flag -framework Cocoa
 #flag -framework WebKit
+#flag -framework QuartzCore
 #flag @VMODROOT/simplegui/window.m
 
 fn C.window_app_init(&WindowParams) &WindowInfo
@@ -202,6 +203,18 @@ fn C.window_set_status_bar_icon(&WindowInfo, &u8)
 fn C.window_set_status_bar_title(&WindowInfo, &u8)
 fn C.window_set_dock_icon(&u8)
 fn C.window_play_system_sound(&u8)
+
+// Animations and Transition Helpers C declarations
+fn C.window_animate_control_opacity(&WindowInfo, &u8, f64, int)
+fn C.window_animate_opacity(&WindowInfo, f64, int)
+fn C.window_animate_control_shake(&WindowInfo, &u8)
+fn C.window_shake(&WindowInfo)
+fn C.window_animate_control_width(&WindowInfo, &u8, int, int)
+fn C.window_animate_control_height(&WindowInfo, &u8, int, int)
+fn C.window_animate_control_size(&WindowInfo, &u8, int, int, int)
+fn C.window_animate_size(&WindowInfo, int, int, int)
+fn C.window_animate_position(&WindowInfo, int, int, int)
+fn C.window_animate_bounds(&WindowInfo, int, int, int, int, int)
 
 pub type StringEventCallback = fn (mut win SimpleWindow, value string)
 

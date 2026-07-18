@@ -1,5 +1,6 @@
 #import <Cocoa/Cocoa.h>
 #import <WebKit/WebKit.h>
+#import <QuartzCore/QuartzCore.h>
 #import <string.h>
 #import <stdlib.h>
 #import "window.h"
@@ -37,6 +38,48 @@ static NSString *nsstring(const char *s) {
     s = "";
   }
   return [[NSString alloc] initWithBytes:s length:strlen(s) encoding:NSUTF8StringEncoding];
+}
+
+static NSLayoutConstraint *findWidthConstraint(NSView *view) {
+  if (!view) return nil;
+  for (NSLayoutConstraint *constraint in view.constraints) {
+    if (constraint.firstAttribute == NSLayoutAttributeWidth && constraint.relation == NSLayoutRelationEqual) {
+      if (constraint.firstItem == view && [constraint isMemberOfClass:[NSLayoutConstraint class]]) {
+        return constraint;
+      }
+    }
+  }
+  if (view.superview) {
+    for (NSLayoutConstraint *constraint in view.superview.constraints) {
+      if (constraint.firstAttribute == NSLayoutAttributeWidth && constraint.relation == NSLayoutRelationEqual) {
+        if (constraint.firstItem == view && [constraint isMemberOfClass:[NSLayoutConstraint class]]) {
+          return constraint;
+        }
+      }
+    }
+  }
+  return nil;
+}
+
+static NSLayoutConstraint *findHeightConstraint(NSView *view) {
+  if (!view) return nil;
+  for (NSLayoutConstraint *constraint in view.constraints) {
+    if (constraint.firstAttribute == NSLayoutAttributeHeight && constraint.relation == NSLayoutRelationEqual) {
+      if (constraint.firstItem == view && [constraint isMemberOfClass:[NSLayoutConstraint class]]) {
+        return constraint;
+      }
+    }
+  }
+  if (view.superview) {
+    for (NSLayoutConstraint *constraint in view.superview.constraints) {
+      if (constraint.firstAttribute == NSLayoutAttributeHeight && constraint.relation == NSLayoutRelationEqual) {
+        if (constraint.firstItem == view && [constraint isMemberOfClass:[NSLayoutConstraint class]]) {
+          return constraint;
+        }
+      }
+    }
+  }
+  return nil;
 }
 
 @interface FlippedStackView : NSStackView
@@ -2674,14 +2717,7 @@ void window_set_control_width_by_name(main__WindowInfo *info, const char *name, 
   NSView *view = [delegate viewForControlName:nsstring(name)];
   if (!view) return;
   
-  NSLayoutConstraint *found = nil;
-  for (NSLayoutConstraint *constraint in view.constraints) {
-    if (constraint.firstAttribute == NSLayoutAttributeWidth && constraint.relation == NSLayoutRelationEqual) {
-      found = constraint;
-      break;
-    }
-  }
-  
+  NSLayoutConstraint *found = findWidthConstraint(view);
   if (found) {
     found.constant = width;
   } else {
@@ -2695,14 +2731,7 @@ void window_set_control_height_by_name(main__WindowInfo *info, const char *name,
   NSView *view = [delegate viewForControlName:nsstring(name)];
   if (!view) return;
   
-  NSLayoutConstraint *found = nil;
-  for (NSLayoutConstraint *constraint in view.constraints) {
-    if (constraint.firstAttribute == NSLayoutAttributeHeight && constraint.relation == NSLayoutRelationEqual) {
-      found = constraint;
-      break;
-    }
-  }
-  
+  NSLayoutConstraint *found = findHeightConstraint(view);
   if (found) {
     found.constant = height;
   } else {
@@ -5398,5 +5427,199 @@ void window_play_system_sound(const char *sound_name) {
   dispatch_async(dispatch_get_main_queue(), ^{
     NSSound *sound = [NSSound soundNamed:name];
     [sound play];
+  });
+}
+
+// Animations and Transition Helpers
+void window_animate_control_opacity(main__WindowInfo *info, const char *name, double opacity, int duration_ms) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSView *view = [delegate viewForControlName:nsstring(name)];
+  if (!view) return;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    view.wantsLayer = YES;
+    [NSAnimationContext runAnimationGroup:^(NSAnimationContext *context) {
+      context.duration = (double)duration_ms / 1000.0;
+      context.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseInEaseOut];
+      [[view animator] setAlphaValue:opacity];
+    } completionHandler:^{
+    }];
+  });
+}
+
+void window_animate_opacity(main__WindowInfo *info, double opacity, int duration_ms) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  if (!delegate || !delegate.window) return;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [NSAnimationContext runAnimationGroup:^(NSAnimationContext *context) {
+      context.duration = (double)duration_ms / 1000.0;
+      context.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseInEaseOut];
+      [[delegate.window animator] setAlphaValue:opacity];
+    } completionHandler:^{
+    }];
+  });
+}
+
+void window_animate_control_shake(main__WindowInfo *info, const char *name) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSView *view = [delegate viewForControlName:nsstring(name)];
+  if (!view) return;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    view.wantsLayer = YES;
+    CAKeyframeAnimation *shake = [CAKeyframeAnimation animationWithKeyPath:@"transform.translation.x"];
+    shake.duration = 0.4;
+    shake.values = @[@0, @-10, @10, @-10, @10, @-5, @5, @-2, @2, @0];
+    [view.layer addAnimation:shake forKey:@"shake"];
+  });
+}
+
+void window_shake(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  if (!delegate || !delegate.window) return;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    NSRect frame = [delegate.window frame];
+    CAKeyframeAnimation *shake = [CAKeyframeAnimation animationWithKeyPath:@"frameOrigin"];
+    shake.duration = 0.4;
+    
+    NSMutableArray *values = [NSMutableArray array];
+    [values addObject:[NSValue valueWithPoint:NSMakePoint(frame.origin.x, frame.origin.y)]];
+    for (int i = 0; i < 4; i++) {
+      [values addObject:[NSValue valueWithPoint:NSMakePoint(frame.origin.x - 10, frame.origin.y)]];
+      [values addObject:[NSValue valueWithPoint:NSMakePoint(frame.origin.x + 10, frame.origin.y)]];
+    }
+    [values addObject:[NSValue valueWithPoint:NSMakePoint(frame.origin.x, frame.origin.y)]];
+    
+    shake.values = values;
+    [delegate.window setAnimations:@{@"frameOrigin": shake}];
+    [[delegate.window animator] setFrameOrigin:frame.origin];
+  });
+}
+
+void window_animate_control_width(main__WindowInfo *info, const char *name, int width, int duration_ms) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSView *view = [delegate viewForControlName:nsstring(name)];
+  if (!view) return;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    NSLayoutConstraint *found = findWidthConstraint(view);
+    if (!found) {
+      // Pin the current width first so the change animates from the live value.
+      found = [view.widthAnchor constraintEqualToConstant:view.frame.size.width];
+      found.active = YES;
+      [view.window.contentView layoutSubtreeIfNeeded];
+    }
+    [NSAnimationContext runAnimationGroup:^(NSAnimationContext *context) {
+      context.duration = (double)duration_ms / 1000.0;
+      context.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseInEaseOut];
+      context.allowsImplicitAnimation = YES;
+      [[found animator] setConstant:width];
+      [view.window.contentView layoutSubtreeIfNeeded];
+    } completionHandler:^{
+    }];
+  });
+}
+
+void window_animate_control_height(main__WindowInfo *info, const char *name, int height, int duration_ms) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSView *view = [delegate viewForControlName:nsstring(name)];
+  if (!view) return;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    NSLayoutConstraint *found = findHeightConstraint(view);
+    if (!found) {
+      found = [view.heightAnchor constraintEqualToConstant:view.frame.size.height];
+      found.active = YES;
+      [view.window.contentView layoutSubtreeIfNeeded];
+    }
+    [NSAnimationContext runAnimationGroup:^(NSAnimationContext *context) {
+      context.duration = (double)duration_ms / 1000.0;
+      context.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseInEaseOut];
+      context.allowsImplicitAnimation = YES;
+      [[found animator] setConstant:height];
+      [view.window.contentView layoutSubtreeIfNeeded];
+    } completionHandler:^{
+    }];
+  });
+}
+
+void window_animate_control_size(main__WindowInfo *info, const char *name, int width, int height, int duration_ms) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSView *view = [delegate viewForControlName:nsstring(name)];
+  if (!view) return;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    NSLayoutConstraint *foundW = findWidthConstraint(view);
+    NSLayoutConstraint *foundH = findHeightConstraint(view);
+    BOOL needsInitialLayout = NO;
+    if (!foundW) {
+      foundW = [view.widthAnchor constraintEqualToConstant:view.frame.size.width];
+      foundW.active = YES;
+      needsInitialLayout = YES;
+    }
+    if (!foundH) {
+      foundH = [view.heightAnchor constraintEqualToConstant:view.frame.size.height];
+      foundH.active = YES;
+      needsInitialLayout = YES;
+    }
+    if (needsInitialLayout) {
+      [view.window.contentView layoutSubtreeIfNeeded];
+    }
+    [NSAnimationContext runAnimationGroup:^(NSAnimationContext *context) {
+      context.duration = (double)duration_ms / 1000.0;
+      context.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseInEaseOut];
+      context.allowsImplicitAnimation = YES;
+      [[foundW animator] setConstant:width];
+      [[foundH animator] setConstant:height];
+      [view.window.contentView layoutSubtreeIfNeeded];
+    } completionHandler:^{
+    }];
+  });
+}
+
+void window_animate_size(main__WindowInfo *info, int width, int height, int duration_ms) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  if (!delegate || !delegate.window) return;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [NSAnimationContext runAnimationGroup:^(NSAnimationContext *context) {
+      context.duration = (double)duration_ms / 1000.0;
+      context.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseInEaseOut];
+      
+      NSRect frame = delegate.window.frame;
+      CGFloat diffHeight = height - frame.size.height;
+      NSRect targetFrame = NSMakeRect(frame.origin.x, frame.origin.y - diffHeight, width, height);
+      [[delegate.window animator] setFrame:targetFrame display:YES];
+    } completionHandler:^{
+    }];
+  });
+}
+
+void window_animate_position(main__WindowInfo *info, int x, int y, int duration_ms) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  if (!delegate || !delegate.window) return;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [NSAnimationContext runAnimationGroup:^(NSAnimationContext *context) {
+      context.duration = (double)duration_ms / 1000.0;
+      context.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseInEaseOut];
+      
+      NSRect frame = delegate.window.frame;
+      NSRect screenFrame = [[NSScreen mainScreen] frame];
+      CGFloat flippedY = screenFrame.size.height - y - frame.size.height;
+      NSRect targetFrame = NSMakeRect(x, flippedY, frame.size.width, frame.size.height);
+      [[delegate.window animator] setFrame:targetFrame display:YES];
+    } completionHandler:^{
+    }];
+  });
+}
+
+void window_animate_bounds(main__WindowInfo *info, int x, int y, int width, int height, int duration_ms) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  if (!delegate || !delegate.window) return;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [NSAnimationContext runAnimationGroup:^(NSAnimationContext *context) {
+      context.duration = (double)duration_ms / 1000.0;
+      context.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseInEaseOut];
+      
+      NSRect screenFrame = [[NSScreen mainScreen] frame];
+      CGFloat flippedY = screenFrame.size.height - y - height;
+      NSRect targetFrame = NSMakeRect(x, flippedY, width, height);
+      [[delegate.window animator] setFrame:targetFrame display:YES];
+    } completionHandler:^{
+    }];
   });
 }

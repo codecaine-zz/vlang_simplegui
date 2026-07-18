@@ -1543,4 +1543,33 @@ fn test_extra_native_controls() {
 	assert win.get_value_int('qty_stepper') == 25
 }
 
+fn test_animation_helpers() {
+	mut win := simplegui.SimpleWindow{}
+	win.add_input('test_input', 'value')
+	
+	// Test opacity methods (can be chained)
+	win.animate_opacity(0.5, 500)
+		.animate_control_opacity('test_input', 0.8, 400)
+		.fade_in('test_input', 300)
+		.fade_out('test_input', 300)
+		.fade_in_window(300)
+		.fade_out_window(300)
+	
+	// Test shake methods
+	win.shake('test_input')
+		.shake_window()
+		
+	// Test size methods
+	win.animate_width('test_input', 120, 300)
+		.animate_height('test_input', 40, 300)
+		.animate_size('test_input', 150, 45, 300)
+		
+	// Test window size/position methods
+	win.animate_window_size(800, 600, 300)
+		.animate_window_position(100, 100, 300)
+		.animate_window_bounds(100, 100, 800, 600, 300)
+		
+	assert true
+}
+
 

@@ -1322,3 +1322,107 @@ pub fn (win &SimpleWindow) load_list_from_json(name string, path string) ! {
 	win.update_list_items(name, items)
 }
 
+// ==========================================
+// 14. Animation & Transition Helpers
+// ==========================================
+
+// animate_opacity animates the window's opacity to the target value over a duration.
+pub fn (win &SimpleWindow) animate_opacity(opacity f64, duration_ms int) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_animate_opacity(win.window_info, opacity, duration_ms)
+	}
+	return win
+}
+
+// animate_control_opacity animates a specific control's opacity to the target value.
+pub fn (win &SimpleWindow) animate_control_opacity(name string, opacity f64, duration_ms int) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_animate_control_opacity(win.window_info, name.str, opacity, duration_ms)
+	}
+	return win
+}
+
+// fade_in is a helper to fade a control to 1.0 opacity.
+pub fn (win &SimpleWindow) fade_in(name string, duration_ms int) &SimpleWindow {
+	return win.animate_control_opacity(name, 1.0, duration_ms)
+}
+
+// fade_out is a helper to fade a control to 0.0 opacity.
+pub fn (win &SimpleWindow) fade_out(name string, duration_ms int) &SimpleWindow {
+	return win.animate_control_opacity(name, 0.0, duration_ms)
+}
+
+// fade_in_window is a helper to fade the window to 1.0 opacity.
+pub fn (win &SimpleWindow) fade_in_window(duration_ms int) &SimpleWindow {
+	return win.animate_opacity(1.0, duration_ms)
+}
+
+// fade_out_window is a helper to fade the window to 0.0 opacity.
+pub fn (win &SimpleWindow) fade_out_window(duration_ms int) &SimpleWindow {
+	return win.animate_opacity(0.0, duration_ms)
+}
+
+// shake shakes a specific control horizontally.
+pub fn (win &SimpleWindow) shake(name string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_animate_control_shake(win.window_info, name.str)
+	}
+	return win
+}
+
+// shake_window shakes the entire window.
+pub fn (win &SimpleWindow) shake_window() &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_shake(win.window_info)
+	}
+	return win
+}
+
+// animate_width animates the width constraint of a control.
+pub fn (win &SimpleWindow) animate_width(name string, width int, duration_ms int) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_animate_control_width(win.window_info, name.str, width, duration_ms)
+	}
+	return win
+}
+
+// animate_height animates the height constraint of a control.
+pub fn (win &SimpleWindow) animate_height(name string, height int, duration_ms int) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_animate_control_height(win.window_info, name.str, height, duration_ms)
+	}
+	return win
+}
+
+// animate_size animates both width and height constraints of a control.
+pub fn (win &SimpleWindow) animate_size(name string, width int, height int, duration_ms int) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_animate_control_size(win.window_info, name.str, width, height, duration_ms)
+	}
+	return win
+}
+
+// animate_window_size animates the window's size.
+pub fn (win &SimpleWindow) animate_window_size(width int, height int, duration_ms int) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_animate_size(win.window_info, width, height, duration_ms)
+	}
+	return win
+}
+
+// animate_window_position animates the window's position (x, y).
+pub fn (win &SimpleWindow) animate_window_position(x int, y int, duration_ms int) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_animate_position(win.window_info, x, y, duration_ms)
+	}
+	return win
+}
+
+// animate_window_bounds animates both window position and size.
+pub fn (win &SimpleWindow) animate_window_bounds(x int, y int, width int, height int, duration_ms int) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_animate_bounds(win.window_info, x, y, width, height, duration_ms)
+	}
+	return win
+}
+

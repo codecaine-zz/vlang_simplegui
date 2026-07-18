@@ -208,5 +208,17 @@ void *window_add_knob_control(main__WindowInfo *info, const char *name, double m
 void *window_add_pull_down_control(main__WindowInfo *info, const char *name, const char *title, const char **items, int items_count);
 void *window_add_image_button_control(main__WindowInfo *info, const char *name, const char *symbol, const char *title);
 
+// Animations and Transition Helpers
+void window_animate_control_opacity(main__WindowInfo *info, const char *name, double opacity, int duration_ms);
+void window_animate_opacity(main__WindowInfo *info, double opacity, int duration_ms);
+void window_animate_control_shake(main__WindowInfo *info, const char *name);
+void window_shake(main__WindowInfo *info);
+void window_animate_control_width(main__WindowInfo *info, const char *name, int width, int duration_ms);
+void window_animate_control_height(main__WindowInfo *info, const char *name, int height, int duration_ms);
+void window_animate_control_size(main__WindowInfo *info, const char *name, int width, int height, int duration_ms);
+void window_animate_size(main__WindowInfo *info, int width, int height, int duration_ms);
+void window_animate_position(main__WindowInfo *info, int x, int y, int duration_ms);
+void window_animate_bounds(main__WindowInfo *info, int x, int y, int width, int height, int duration_ms);
+
 #endif
 
