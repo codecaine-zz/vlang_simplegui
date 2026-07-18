@@ -96,15 +96,69 @@ win.add_action('save', 'Save', fn (mut win &simplegui.SimpleWindow) {
 })
 ```
 
-## Best Practices & Layout Starters
+## Best and easiest ways to create GUIs and events
 
-To build responsive, native applications easily, follow these proven design patterns and structural layouts.
+These patterns are the fastest and least error-prone way to build native macOS apps with this project.
 
-### 1. The Easiest Way to Build (The Golden Rules)
+### 1. Start simple: window → controls → events
+
+For the majority of apps, the easiest flow is:
+
+1. Create a window with `simplegui.new_simple_window(...)`.
+2. Add controls with clear names such as `name`, `email`, `save`, or `status`.
+3. Connect a small event callback with `add_action(...)`, `on_click(...)`, or `on_change(...)`.
+4. Read and update state with helpers like `get_text()`, `get_checked()`, `get_value_int()`, `set_text()`, and `set_status()`.
+
+```v
+module main
+
+import simplegui
+
+fn main() {
+    mut win := simplegui.new_simple_window('Quick Start', 640, 420)
+
+    win.add_input('name', 'Ada')
+    win.add_action('save', 'Save', fn (mut win &simplegui.SimpleWindow) {
+        name := win.get_text('name')
+        win.alert('Saved', 'Hello ${name}')
+    })
+
+    win.run()
+}
+```
+
+### 2. Prefer the high-level helpers for common UI patterns
+
+Use the builder helpers when you want to move quickly:
+
+- `.configure(...)` for window spacing and padding.
+- `.form(...)` and `.section(...)` for grouped content.
+- `.row(...)` for side-by-side controls.
+- `add_action(...)` for buttons that need a single handler.
+
+These helpers usually make the code shorter and easier to read than manually stitching together low-level layout calls.
+
+### 3. Best event pattern for most apps
+
+- Use `add_action(...)` for button presses.
+- Use `on_change(...)` for text, dropdown, checkbox, or slider updates.
+- Keep callbacks compact and read values from the window at the time of the event.
+- Update the UI with `set_text(...)`, `set_checked(...)`, `set_value_int(...)`, or `set_status(...)`.
+
+```v
+mut win := simplegui.new_simple_window('Event Demo', 560, 420)
+win.add_input('email', '')
+win.on_change('email', fn (mut win &simplegui.SimpleWindow, value string) {
+    win.set_status('Typing: ${value}')
+})
+win.run()
+```
+
+### 4. The Easiest Way to Build (The Golden Rules)
 
 - **Always Configure Early**: Use `.configure(...)` right at the start to declare window geometry, paddings, and alignment spacing.
-- **Keep Event Callbacks Stateless**: Avoid global mutability. Pass all parameters or query active states dynamically using `win.get_text()` or `win.get_checked()`.
-- **Use Fluent Chaining**: Builder modifiers like `.placeholder()`, `.font_size()`, and `.enabled()` can be chained immediately after creating the control, avoiding any redundant `win.set_...` calls.
+- **Keep Event Callbacks Small**: Avoid global mutability. Read current values with `win.get_text()`, `win.get_checked()`, or `win.get_value_int()` and update the UI directly.
+- **Use Fluent Chaining**: Builder modifiers like `.placeholder()`, `.tooltip()`, `.width()`, and `.enabled()` can be chained immediately after creating the control, avoiding redundant `win.set_...` calls.
 
 ---
 
