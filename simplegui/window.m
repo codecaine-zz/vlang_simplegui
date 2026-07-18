@@ -353,7 +353,7 @@ extern void vlang_dispatch_event(void *win_ptr, const char *name, const char *ev
 }
 @end
 
-@interface AppDelegate : NSObject <NSApplicationDelegate, NSWindowDelegate, NSTextFieldDelegate, NSTextViewDelegate, NSTableViewDataSource, NSTableViewDelegate, NSOutlineViewDataSource, NSOutlineViewDelegate>
+@interface AppDelegate : NSObject <NSApplicationDelegate, NSWindowDelegate, NSTextFieldDelegate, NSTextViewDelegate, NSTableViewDataSource, NSTableViewDelegate, NSOutlineViewDataSource, NSOutlineViewDelegate, NSTabViewDelegate>
 @property (nonatomic, assign) main__WindowParams params;
 @property (nonatomic, assign) void *win_ptr;
 @property (nonatomic, strong) NSWindow *window;
@@ -2012,6 +2012,14 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   }
 }
 
+- (void)tabView:(NSTabView *)tabView didSelectTabViewItem:(NSTabViewItem *)tabViewItem {
+  NSString *name = [self nameForControl:tabView];
+  NSString *label = [tabViewItem label];
+  if (name && self.win_ptr) {
+    vlang_dispatch_event(self.win_ptr, [name UTF8String], "change", [label UTF8String]);
+  }
+}
+
 - (void)setupMenuBar {
   NSMenu *mainMenu = [[NSMenu alloc] init];
   
@@ -2090,8 +2098,8 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [self.mainStackView layoutSubtreeIfNeeded];
   NSSize fitSize = [self.mainStackView fittingSize];
   NSRect screenFrame = [[NSScreen mainScreen] visibleFrame];
-  CGFloat targetWidth = MAX(fitSize.width + 60.0, 320.0);
-  CGFloat targetHeight = MAX(fitSize.height + 48.0, 180.0);
+  CGFloat targetWidth = self.params.width > 0 ? MAX(fitSize.width + 60.0, (CGFloat)self.params.width) : MAX(fitSize.width + 60.0, 320.0);
+  CGFloat targetHeight = self.params.height > 0 ? MAX(fitSize.height + 48.0, (CGFloat)self.params.height) : MAX(fitSize.height + 48.0, 180.0);
   
   if (targetWidth > screenFrame.size.width * 0.9) {
     targetWidth = screenFrame.size.width * 0.9;
@@ -2572,6 +2580,7 @@ void *window_add_tabs_control(main__WindowInfo *info, const char *name, const ch
       [item setLabel:nsstring(titles[i])];
       [tabs addTabViewItem:item];
     }
+    [tabs setDelegate:delegate];
     [delegate addControlToLayout:tabs];
     NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
     delegate.controlsByName[key] = tabs;

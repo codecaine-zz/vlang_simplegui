@@ -4,7 +4,7 @@ import simplegui
 
 fn main() {
 	// Create the window (it will auto-fit to the controls at startup)
-	mut gui := simplegui.new_simple_window('Vertical Stack Style Demo', 500, 700)
+	mut gui := simplegui.new_simple_window('Vertical Stack Style Demo', 500, 300)
 	gui.set_title('Vertical Stack Style')
 
 	gui.add_label('header', 'User Profile Settings')

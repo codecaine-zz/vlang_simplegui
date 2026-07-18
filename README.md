@@ -389,6 +389,34 @@ This project supports two different layout styles:
 1. **Vertical Stack Style**: The default linear, top-to-bottom layout.
 2. **Grid / Row-based Style**: Allows grouping multiple controls side-by-side inside rows.
 
+### Run the layout demos
+
+```bash
+# 1. Linear Vertical Stacking
+v run demos/layout_vertical_stack.v
+
+# 2. Side-by-Side Horizontal Rows
+v run demos/layout_horizontal_rows.v
+
+# 3. Forms & Sections with Validation
+v run demos/layout_form_sections.v
+
+# 4. Bordered Group Boxes
+v run demos/layout_group_boxes.v
+
+# 5. Interactive Native Tabs & View Swapping
+v run demos/layout_tabs.v
+
+# 6. Fixed-Height Scroll Views
+v run demos/layout_scroll_view.v
+
+# 7. Compile-Time Reflection Form Builder
+v run demos/layout_struct_reflection.v
+
+# 8. Responsive Auto-Layout vs Fixed Constraints
+v run demos/layout_responsive_constraints.v
+```
+
 ### Run the main demo (which combines both styles)
 
 ```bash
@@ -633,6 +661,14 @@ v test .
 - [demos/grid_column_starter.v](demos/grid_column_starter.v) — starter template demonstrating horizontal row layouts and event handling
 - [demos/state_controller_pattern.v](demos/state_controller_pattern.v) — interactive design pattern illustrating state manipulation and reactive controls
 - [demos/web_studio_demo.v](demos/web_studio_demo.v) — real-world business intelligence (BI) KPI & Fintech analytics board integrating native V widgets, responsive HTML structures, CSS custom layout properties, and Javascript currency loaders
+- [demos/layout_vertical_stack.v](demos/layout_vertical_stack.v) — demonstrates linear vertical stacking, padding, spacing, dividers, and spacers
+- [demos/layout_horizontal_rows.v](demos/layout_horizontal_rows.v) — demonstrates side-by-side rows, spacers, action rows, and field rows
+- [demos/layout_form_sections.v](demos/layout_form_sections.v) — demonstrates semantic forms, section blocks, and form control validation
+- [demos/layout_group_boxes.v](demos/layout_group_boxes.v) — demonstrates visual panel containment boxes
+- [demos/layout_tabs.v](demos/layout_tabs.v) — demonstrates interactive native tabs switching between multi-view panels
+- [demos/layout_scroll_view.v](demos/layout_scroll_view.v) — demonstrates scrollable panel constraints
+- [demos/layout_struct_reflection.v](demos/layout_struct_reflection.v) — demonstrates auto-generating forms from structs using V reflection
+- [demos/layout_responsive_constraints.v](demos/layout_responsive_constraints.v) — demonstrates responsive auto-layout scaling, fixed dimensions, and a background color picker well
 
 ## Notes
 

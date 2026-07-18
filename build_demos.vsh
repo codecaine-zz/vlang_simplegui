@@ -77,6 +77,19 @@ fn main() {
 	demo_maps['window_controller_demo.v'] = DemoConfig{'Window Controller Demo', 'launcher.png'}
 	demo_maps['wrapped_sockets_demo.v'] = DemoConfig{'Wrapped Sockets Demo', 'network_analyzer.png'}
 	demo_maps['zstd_demo.v'] = DemoConfig{'Zstd Demo', 'archive_manager.png'}
+	demo_maps['guessing_game.v'] = DemoConfig{'Guessing Game Studio', 'game.png'}
+	demo_maps['rest_client_demo.v'] = DemoConfig{'REST Client Studio', 'rest_client.png'}
+	demo_maps['worker_pool_visualizer.v'] = DemoConfig{'Worker Pool Visualizer', 'pipeline_monitor.png'}
+
+	demo_maps['layout_vertical_stack.v'] = DemoConfig{'Layout: Vertical Stack', 'design.png'}
+	demo_maps['layout_horizontal_rows.v'] = DemoConfig{'Layout: Horizontal Rows', 'design.png'}
+	demo_maps['layout_form_sections.v'] = DemoConfig{'Layout: Form & Sections', 'form_builder.png'}
+	demo_maps['layout_group_boxes.v'] = DemoConfig{'Layout: Group Boxes', 'design.png'}
+	demo_maps['layout_tabs.v'] = DemoConfig{'Layout: Tabs & Views', 'design.png'}
+	demo_maps['layout_scroll_view.v'] = DemoConfig{'Layout: Scroll View', 'design.png'}
+	demo_maps['layout_struct_reflection.v'] = DemoConfig{'Layout: Struct Reflection', 'developer.png'}
+	demo_maps['layout_responsive_constraints.v'] = DemoConfig{'Layout: Responsive & Sizing', 'design.png'}
+
 
 	files := os.ls(demo_dir) or {
 		eprintln('❌ Failed to list demos: ${err}')
