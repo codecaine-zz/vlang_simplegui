@@ -223,6 +223,20 @@ fn C.window_set_toolbar_style(&WindowInfo, &u8)
 fn C.window_show_sheet_alert(&WindowInfo, &u8, &u8, &u8)
 fn C.window_add_dock_menu_item(&WindowInfo, &u8, &u8)
 
+// New controls C declarations
+fn C.window_begin_split_view(&WindowInfo, &u8, int)
+fn C.window_split_view_next_pane(&WindowInfo)
+fn C.window_end_split_view(&WindowInfo)
+fn C.window_add_collection_view_control(&WindowInfo, &u8, int, int) voidptr
+fn C.window_set_collection_items(&WindowInfo, &u8, &&u8, int)
+fn C.window_show_popover(&WindowInfo, &u8, &u8, &u8)
+fn C.window_add_calendar_control(&WindowInfo, &u8, &u8) voidptr
+fn C.window_add_canvas_control(&WindowInfo, &u8, int) voidptr
+fn C.window_draw_line(&WindowInfo, &u8, f64, f64, f64, f64, &u8, f64)
+fn C.window_draw_rect(&WindowInfo, &u8, f64, f64, f64, f64, &u8, int, f64)
+fn C.window_draw_circle(&WindowInfo, &u8, f64, f64, f64, &u8, int, f64)
+fn C.window_clear_canvas(&WindowInfo, &u8)
+
 pub type StringEventCallback = fn (mut win SimpleWindow, value string)
 
 pub type VoidEventCallback = fn (mut win SimpleWindow)
@@ -3921,5 +3935,130 @@ pub fn (win &SimpleWindow) clear_dock_icon() &SimpleWindow {
 
 pub fn play_sound(sound_name string) {
 	C.window_play_system_sound(sound_name.str)
+}
+
+pub fn (win &SimpleWindow) begin_split_view(name string, vertical bool) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		vert := if vertical { 1 } else { 0 }
+		C.window_begin_split_view(win.window_info, name.str, vert)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) split_view_next_pane() &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_split_view_next_pane(win.window_info)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) end_split_view() &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_end_split_view(win.window_info)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) add_collection_view(name string, item_width int, item_height int) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('collection')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name: real_name
+			kind: 'collection'
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_collection_view_control(win.window_info, real_name.str, item_width, item_height)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) set_collection_items(name string, items []string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		mut c_items := []&u8{}
+		for it in items {
+			c_items << it.str
+		}
+		C.window_set_collection_items(win.window_info, name.str, c_items.data, items.len)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) show_popover(anchor_name string, title string, message string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_show_popover(win.window_info, anchor_name.str, title.str, message.str)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) add_calendar(name string, date string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('calendar')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name: real_name
+			kind: 'calendar'
+			value: date
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_calendar_control(win.window_info, real_name.str, date.str)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) add_canvas(name string, height int) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('canvas')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name: real_name
+			kind: 'canvas'
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_canvas_control(win.window_info, real_name.str, height)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) draw_line(canvas_name string, x1 f64, y1 f64, x2 f64, y2 f64, color string, stroke_width f64) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_draw_line(win.window_info, canvas_name.str, x1, y1, x2, y2, color.str, stroke_width)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) draw_rect(canvas_name string, x f64, y f64, w f64, h f64, color string, fill bool, stroke_width f64) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		fill_val := if fill { 1 } else { 0 }
+		C.window_draw_rect(win.window_info, canvas_name.str, x, y, w, h, color.str, fill_val, stroke_width)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) draw_circle(canvas_name string, x f64, y f64, r f64, color string, fill bool, stroke_width f64) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		fill_val := if fill { 1 } else { 0 }
+		C.window_draw_circle(win.window_info, canvas_name.str, x, y, r, color.str, fill_val, stroke_width)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) clear_canvas(canvas_name string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_clear_canvas(win.window_info, canvas_name.str)
+	}
+	return win
 }
 

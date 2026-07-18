@@ -84,6 +84,103 @@ static NSLayoutConstraint *findHeightConstraint(NSView *view) {
   return nil;
 }
 
+@interface SimpleCollectionItem : NSCollectionViewItem
+@property (nonatomic, strong) NSImageView *customImageView;
+@property (nonatomic, strong) NSTextField *customLabel;
+@end
+
+@implementation SimpleCollectionItem
+- (void)loadView {
+  self.view = [[NSView alloc] initWithFrame:NSMakeRect(0, 0, 100, 100)];
+  self.view.wantsLayer = YES;
+  self.view.layer.cornerRadius = 8.0;
+  self.view.layer.borderWidth = 1.0;
+  self.view.layer.borderColor = [[NSColor separatorColor] CGColor];
+  self.view.layer.backgroundColor = [[NSColor controlBackgroundColor] CGColor];
+  
+  CGFloat w = self.view.bounds.size.width;
+  CGFloat h = self.view.bounds.size.height;
+  
+  self.customImageView = [[NSImageView alloc] initWithFrame:NSMakeRect(5, 25, w - 10, h - 30)];
+  [self.customImageView setImageScaling:NSImageScaleProportionallyUpOrDown];
+  [self.view addSubview:self.customImageView];
+  
+  self.customLabel = [NSTextField labelWithString:@""];
+  [self.customLabel setFrame:NSMakeRect(2, 2, w - 4, 20)];
+  [self.customLabel setAlignment:NSTextAlignmentCenter];
+  [self.customLabel setFont:[NSFont systemFontOfSize:11]];
+  [self.view addSubview:self.customLabel];
+}
+@end
+
+@interface DrawingCommand : NSObject
+@property (nonatomic, assign) int type; // 0 = line, 1 = rect, 2 = circle
+@property (nonatomic, assign) double x1, y1, x2, y2;
+@property (nonatomic, strong) NSColor *color;
+@property (nonatomic, assign) double strokeWidth;
+@property (nonatomic, assign) BOOL fill;
+@end
+
+@implementation DrawingCommand
+@end
+
+@interface CanvasView : NSView
+@property (nonatomic, strong) NSMutableArray<DrawingCommand *> *commands;
+@end
+
+@implementation CanvasView
+- (instancetype)initWithFrame:(NSRect)frameRect {
+  self = [super initWithFrame:frameRect];
+  if (self) {
+    _commands = [[NSMutableArray alloc] init];
+  }
+  return self;
+}
+- (void)drawRect:(NSRect)dirtyRect {
+  [super drawRect:dirtyRect];
+  [[NSColor textBackgroundColor] setFill];
+  NSRectFill(self.bounds);
+  
+  [[NSColor separatorColor] setStroke];
+  NSBezierPath *borderPath = [NSBezierPath bezierPathWithRect:self.bounds];
+  [borderPath setLineWidth:1.0];
+  [borderPath stroke];
+  
+  for (DrawingCommand *cmd in self.commands) {
+    if (cmd.type == 0) { // Line
+      [cmd.color setStroke];
+      NSBezierPath *path = [NSBezierPath bezierPath];
+      [path moveToPoint:NSMakePoint(cmd.x1, cmd.y1)];
+      [path lineToPoint:NSMakePoint(cmd.x2, cmd.y2)];
+      [path setLineWidth:cmd.strokeWidth];
+      [path stroke];
+    } else if (cmd.type == 1) { // Rect
+      NSRect r = NSMakeRect(cmd.x1, cmd.y1, cmd.x2, cmd.y2);
+      if (cmd.fill) {
+        [cmd.color setFill];
+        NSRectFill(r);
+      } else {
+        [cmd.color setStroke];
+        NSBezierPath *path = [NSBezierPath bezierPathWithRect:r];
+        [path setLineWidth:cmd.strokeWidth];
+        [path stroke];
+      }
+    } else if (cmd.type == 2) { // Circle
+      NSRect r = NSMakeRect(cmd.x1 - cmd.x2, cmd.y1 - cmd.x2, cmd.x2 * 2, cmd.x2 * 2);
+      if (cmd.fill) {
+        [cmd.color setFill];
+        [[NSBezierPath bezierPathWithOvalInRect:r] fill];
+      } else {
+        [cmd.color setStroke];
+        NSBezierPath *path = [NSBezierPath bezierPathWithOvalInRect:r];
+        [path setLineWidth:cmd.strokeWidth];
+        [path stroke];
+      }
+    }
+  }
+}
+@end
+
 @interface FlippedStackView : NSStackView
 @end
 
@@ -422,7 +519,7 @@ extern void vlang_dispatch_event(void *win_ptr, const char *name, const char *ev
 }
 @end
 
-@interface AppDelegate : NSObject <NSApplicationDelegate, NSWindowDelegate, NSTextFieldDelegate, NSTextViewDelegate, NSTableViewDataSource, NSTableViewDelegate, NSOutlineViewDataSource, NSOutlineViewDelegate, NSTabViewDelegate, NSToolbarDelegate>
+@interface AppDelegate : NSObject <NSApplicationDelegate, NSWindowDelegate, NSTextFieldDelegate, NSTextViewDelegate, NSTableViewDataSource, NSTableViewDelegate, NSOutlineViewDataSource, NSOutlineViewDelegate, NSTabViewDelegate, NSToolbarDelegate, NSCollectionViewDataSource, NSCollectionViewDelegate>
 @property (nonatomic, assign) main__WindowParams params;
 @property (nonatomic, assign) void *win_ptr;
 @property (nonatomic, strong) NSWindow *window;
@@ -443,6 +540,21 @@ extern void vlang_dispatch_event(void *win_ptr, const char *name, const char *ev
 @property (nonatomic, strong) NSMutableDictionary *toolbarItems;
 @property (nonatomic, strong) NSMutableArray *toolbarOrder;
 @property (nonatomic, strong) NSMenu *dockMenu;
+
+// Split View, Collection Grid, Canvas properties
+@property (nonatomic, strong) NSSplitView *currentSplitView;
+@property (nonatomic, strong) NSStackView *currentSplitPane;
+@property (nonatomic, strong) NSMutableArray<NSStackView *> *splitPanes;
+@property (nonatomic, assign) int activeSplitPaneIndex;
+@property (nonatomic, strong) NSMutableDictionary *collectionItemsByName;
+
+- (void)beginSplitViewWithName:(NSString *)name vertical:(BOOL)vertical;
+- (void)splitViewNextPane;
+- (void)endSplitView;
+- (NSView *)makeCollectionViewWithName:(NSString *)name itemWidth:(int)itemWidth itemHeight:(int)itemHeight;
+- (NSView *)makeCalendarWithName:(NSString *)name date:(NSString *)dateString;
+- (NSView *)makeCanvasWithName:(NSString *)name height:(int)height;
+
 
 - (void)setupToolbar;
 - (void)handleToolbarItemClicked:(id)sender;
@@ -1395,6 +1507,8 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
 - (void)addControlToLayout:(NSView *)view {
   if (self.currentRowStack) {
     [self.currentRowStack addArrangedSubview:view];
+  } else if (self.currentSplitPane) {
+    [self.currentSplitPane addArrangedSubview:view];
   } else {
     [self.mainStackView addArrangedSubview:view];
   }
@@ -2809,7 +2923,425 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
     vlang_dispatch_event(self.win_ptr, [name UTF8String], "click", "");
   }
 }
+
+// Split View implementation
+- (void)beginSplitViewWithName:(NSString *)name vertical:(BOOL)vertical {
+  NSSplitView *split = [[NSSplitView alloc] initWithFrame:NSZeroRect];
+  [split setVertical:vertical];
+  [split setDividerStyle:NSSplitViewDividerStyleThin];
+  [split setTranslatesAutoresizingMaskIntoConstraints:NO];
+  [split setWantsLayer:YES];
+  
+  NSStackView *pane1 = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [pane1 setOrientation:NSUserInterfaceLayoutOrientationVertical];
+  [pane1 setSpacing:10.0];
+  [pane1 setEdgeInsets:NSEdgeInsetsMake(8, 8, 8, 8)];
+  [pane1 setTranslatesAutoresizingMaskIntoConstraints:NO];
+  
+  NSStackView *pane2 = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [pane2 setOrientation:NSUserInterfaceLayoutOrientationVertical];
+  [pane2 setSpacing:10.0];
+  [pane2 setEdgeInsets:NSEdgeInsetsMake(8, 8, 8, 8)];
+  [pane2 setTranslatesAutoresizingMaskIntoConstraints:NO];
+  
+  [split addSubview:pane1];
+  [split addSubview:pane2];
+  
+  [self addControlToLayout:split];
+  
+  self.currentSplitView = split;
+  self.splitPanes = [NSMutableArray arrayWithObjects:pane1, pane2, nil];
+  self.activeSplitPaneIndex = 0;
+  self.currentSplitPane = pane1;
+  
+  self.controlsByName[[name lowercaseString]] = split;
+}
+
+- (void)splitViewNextPane {
+  if (self.splitPanes && self.splitPanes.count > 1) {
+    self.activeSplitPaneIndex = 1;
+    self.currentSplitPane = self.splitPanes[1];
+  }
+}
+
+- (void)endSplitView {
+  self.currentSplitView = nil;
+  self.currentSplitPane = nil;
+  self.splitPanes = nil;
+  self.activeSplitPaneIndex = 0;
+}
+
+// Collection Grid implementation
+- (NSView *)makeCollectionViewWithName:(NSString *)name itemWidth:(int)itemWidth itemHeight:(int)itemHeight {
+  NSScrollView *scroll = [[NSScrollView alloc] initWithFrame:NSZeroRect];
+  [scroll setHasVerticalScroller:YES];
+  [scroll setHasHorizontalScroller:NO];
+  [scroll setBorderType:NSNoBorder];
+  [scroll setWantsLayer:YES];
+  scroll.layer.cornerRadius = 8.0;
+  scroll.layer.borderWidth = 1.0;
+  scroll.layer.borderColor = [modernBorderColor() CGColor];
+  
+  [scroll.heightAnchor constraintEqualToConstant:250].active = YES;
+  
+  NSCollectionViewFlowLayout *layout = [[NSCollectionViewFlowLayout alloc] init];
+  [layout setItemSize:NSMakeSize(itemWidth > 0 ? itemWidth : 100, itemHeight > 0 ? itemHeight : 100)];
+  [layout setMinimumInteritemSpacing:10];
+  [layout setMinimumLineSpacing:10];
+  [layout setSectionInset:NSEdgeInsetsMake(10, 10, 10, 10)];
+  
+  NSCollectionView *collectionView = [[NSCollectionView alloc] initWithFrame:NSZeroRect];
+  [collectionView setCollectionViewLayout:layout];
+  [collectionView setIdentifier:name];
+  [collectionView setDataSource:self];
+  [collectionView setDelegate:self];
+  [collectionView setSelectable:YES];
+  [collectionView setAllowsMultipleSelection:NO];
+  
+  [collectionView registerClass:[SimpleCollectionItem class] forItemWithIdentifier:@"SimpleCollectionItem"];
+  
+  [scroll setDocumentView:collectionView];
+  
+  applyStyleToView(scroll, self.currentBackgroundColor, self.currentFontColor);
+  
+  NSString *key = [[name lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  [self addControlToLayout:scroll];
+  self.controlsByName[key] = collectionView;
+  return scroll;
+}
+
+// Collection View Datasource / Delegate
+- (NSInteger)numberOfSectionsInCollectionView:(NSCollectionView *)collectionView {
+  return 1;
+}
+
+- (NSInteger)collectionView:(NSCollectionView *)collectionView numberOfItemsInSection:(NSInteger)section {
+  NSString *key = [[collectionView identifier] lowercaseString];
+  if (self.collectionItemsByName && self.collectionItemsByName[key]) {
+    return [self.collectionItemsByName[key] count];
+  }
+  return 0;
+}
+
+- (NSCollectionViewItem *)collectionView:(NSCollectionView *)collectionView itemForRepresentedObjectAtIndexPath:(NSIndexPath *)indexPath {
+  SimpleCollectionItem *item = [collectionView makeItemWithIdentifier:@"SimpleCollectionItem" forIndexPath:indexPath];
+  
+  NSString *key = [[collectionView identifier] lowercaseString];
+  if (self.collectionItemsByName && self.collectionItemsByName[key]) {
+    NSString *rawVal = self.collectionItemsByName[key][indexPath.item];
+    NSArray *parts = [rawVal componentsSeparatedByString:@"|"];
+    NSString *labelVal = parts.firstObject;
+    NSString *imageVal = parts.count > 1 ? parts[1] : nil;
+    
+    item.customLabel.stringValue = labelVal;
+    if (imageVal && imageVal.length > 0) {
+      NSImage *img = [[NSImage alloc] initWithContentsOfFile:imageVal];
+      item.customImageView.image = img;
+    } else {
+      item.customImageView.image = nil;
+    }
+  }
+  return item;
+}
+
+- (void)collectionView:(NSCollectionView *)collectionView didSelectItemsAtIndexPaths:(NSSet<NSIndexPath *> *)indexPaths {
+  NSIndexPath *path = [indexPaths anyObject];
+  if (path && self.win_ptr) {
+    NSString *key = [[collectionView identifier] lowercaseString];
+    NSString *val = [NSString stringWithFormat:@"%ld", (long)path.item];
+    vlang_dispatch_event(self.win_ptr, [key UTF8String], "click", [val UTF8String]);
+  }
+}
+
+// Calendar View implementation
+- (NSView *)makeCalendarWithName:(NSString *)name date:(NSString *)dateString {
+  NSDatePicker *picker = [[NSDatePicker alloc] initWithFrame:NSZeroRect];
+  [picker setDatePickerStyle:NSDatePickerStyleClockAndCalendar];
+  [picker setDatePickerMode:NSDatePickerModeSingle];
+  
+  NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+  [formatter setDateFormat:@"yyyy-MM-dd"];
+  NSDate *date = [formatter dateFromString:dateString] ?: [NSDate date];
+  [picker setDateValue:date];
+  [picker setTarget:self];
+  [picker setAction:@selector(handleDatePickerChanged:)];
+  [picker setWantsLayer:YES];
+  
+  applyStyleToView(picker, self.currentBackgroundColor, self.currentFontColor);
+  
+  self.controlsByName[[name lowercaseString]] = picker;
+  [self addControlToLayout:picker];
+  return picker;
+}
+
+// Canvas implementation
+- (NSView *)makeCanvasWithName:(NSString *)name height:(int)height {
+  CanvasView *canvas = [[CanvasView alloc] initWithFrame:NSZeroRect];
+  [canvas setTranslatesAutoresizingMaskIntoConstraints:NO];
+  [canvas.heightAnchor constraintEqualToConstant:height > 0 ? height : 200].active = YES;
+  [canvas setWantsLayer:YES];
+  
+  self.controlsByName[[name lowercaseString]] = canvas;
+  [self addControlToLayout:canvas];
+  return canvas;
+}
 @end
+
+// C Bridge functions
+void window_begin_split_view(main__WindowInfo *info, const char *name, int vertical) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate beginSplitViewWithName:nsstring(name) vertical:vertical == 1];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+void window_split_view_next_pane(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate splitViewNextPane];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+void window_end_split_view(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate endSplitView];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+void *window_add_collection_view_control(main__WindowInfo *info, const char *name, int item_width, int item_height) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *scroll = nil;
+  void (^runBlock)(void) = ^{
+    scroll = [delegate makeCollectionViewWithName:nsstring(name) itemWidth:item_width itemHeight:item_height];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return (__bridge void *)scroll;
+}
+
+void window_set_collection_items(main__WindowInfo *info, const char *name, const char **items, int items_count) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  
+  void (^runBlock)(void) = ^{
+    NSMutableArray *arr = [NSMutableArray array];
+    for (int i = 0; i < items_count; i++) {
+      [arr addObject:nsstring(items[i])];
+    }
+    
+    if (!delegate.collectionItemsByName) {
+      delegate.collectionItemsByName = [NSMutableDictionary dictionary];
+    }
+    delegate.collectionItemsByName[key] = arr;
+    
+    id ctrl = delegate.controlsByName[key];
+    if ([ctrl isKindOfClass:[NSCollectionView class]]) {
+      [(NSCollectionView *)ctrl reloadData];
+    }
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+void window_show_popover(main__WindowInfo *info, const char *anchor_name, const char *title, const char *message) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *anchorName = [[nsstring(anchor_name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  NSString *titleStr = nsstring(title);
+  NSString *msgStr = nsstring(message);
+  
+  void (^runBlock)(void) = ^{
+    NSView *anchorView = delegate.controlsByName[anchorName];
+    if (!anchorView) return;
+    
+    NSPopover *popover = [[NSPopover alloc] init];
+    [popover setBehavior:NSPopoverBehaviorTransient];
+    
+    NSViewController *vc = [[NSViewController alloc] init];
+    NSView *popView = [[NSView alloc] initWithFrame:NSMakeRect(0, 0, 240, 90)];
+    [popView setWantsLayer:YES];
+    
+    NSTextField *titleLbl = [NSTextField labelWithString:titleStr];
+    [titleLbl setFont:[NSFont systemFontOfSize:13 weight:NSFontWeightBold]];
+    [titleLbl setFrame:NSMakeRect(10, 60, 220, 20)];
+    if (delegate.currentFontColor) {
+      [titleLbl setTextColor:delegate.currentFontColor];
+    }
+    [popView addSubview:titleLbl];
+    
+    NSTextField *msgLbl = [NSTextField labelWithString:msgStr];
+    [msgLbl setFont:[NSFont systemFontOfSize:11]];
+    [msgLbl setFrame:NSMakeRect(10, 5, 220, 50)];
+    [msgLbl setLineBreakMode:NSLineBreakByWordWrapping];
+    if (delegate.currentFontColor) {
+      [msgLbl setTextColor:delegate.currentFontColor];
+    }
+    [popView addSubview:msgLbl];
+    
+    [vc setView:popView];
+    [popover setContentViewController:vc];
+    
+    [popover showRelativeToRect:anchorView.bounds ofView:anchorView preferredEdge:NSRectEdgeMaxY];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_async(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+void *window_add_calendar_control(main__WindowInfo *info, const char *name, const char *date) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *picker = nil;
+  void (^runBlock)(void) = ^{
+    picker = [delegate makeCalendarWithName:nsstring(name) date:nsstring(date)];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return (__bridge void *)picker;
+}
+
+void *window_add_canvas_control(main__WindowInfo *info, const char *name, int height) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *canvas = nil;
+  void (^runBlock)(void) = ^{
+    canvas = [delegate makeCanvasWithName:nsstring(name) height:height];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return (__bridge void *)canvas;
+}
+
+void window_draw_line(main__WindowInfo *info, const char *canvas_name, double x1, double y1, double x2, double y2, const char *color_str, double stroke_width) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(canvas_name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  NSColor *color = colorFromString(color_str);
+  
+  void (^runBlock)(void) = ^{
+    id view = delegate.controlsByName[key];
+    if ([view isKindOfClass:[CanvasView class]]) {
+      CanvasView *canvas = (CanvasView *)view;
+      DrawingCommand *cmd = [[DrawingCommand alloc] init];
+      cmd.type = 0;
+      cmd.x1 = x1;
+      cmd.y1 = y1;
+      cmd.x2 = x2;
+      cmd.y2 = y2;
+      cmd.color = color;
+      cmd.strokeWidth = stroke_width;
+      [canvas.commands addObject:cmd];
+      [canvas setNeedsDisplay:YES];
+    }
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_async(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+void window_draw_rect(main__WindowInfo *info, const char *canvas_name, double x, double y, double w, double h, const char *color_str, int fill, double stroke_width) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(canvas_name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  NSColor *color = colorFromString(color_str);
+  
+  void (^runBlock)(void) = ^{
+    id view = delegate.controlsByName[key];
+    if ([view isKindOfClass:[CanvasView class]]) {
+      CanvasView *canvas = (CanvasView *)view;
+      DrawingCommand *cmd = [[DrawingCommand alloc] init];
+      cmd.type = 1;
+      cmd.x1 = x;
+      cmd.y1 = y;
+      cmd.x2 = w;
+      cmd.y2 = h;
+      cmd.color = color;
+      cmd.fill = fill == 1;
+      cmd.strokeWidth = stroke_width;
+      [canvas.commands addObject:cmd];
+      [canvas setNeedsDisplay:YES];
+    }
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_async(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+void window_draw_circle(main__WindowInfo *info, const char *canvas_name, double x, double y, double r, const char *color_str, int fill, double stroke_width) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(canvas_name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  NSColor *color = colorFromString(color_str);
+  
+  void (^runBlock)(void) = ^{
+    id view = delegate.controlsByName[key];
+    if ([view isKindOfClass:[CanvasView class]]) {
+      CanvasView *canvas = (CanvasView *)view;
+      DrawingCommand *cmd = [[DrawingCommand alloc] init];
+      cmd.type = 2;
+      cmd.x1 = x;
+      cmd.y1 = y;
+      cmd.x2 = r;
+      cmd.color = color;
+      cmd.fill = fill == 1;
+      cmd.strokeWidth = stroke_width;
+      [canvas.commands addObject:cmd];
+      [canvas setNeedsDisplay:YES];
+    }
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_async(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+void window_clear_canvas(main__WindowInfo *info, const char *canvas_name) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(canvas_name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  
+  void (^runBlock)(void) = ^{
+    id view = delegate.controlsByName[key];
+    if ([view isKindOfClass:[CanvasView class]]) {
+      CanvasView *canvas = (CanvasView *)view;
+      [canvas.commands removeAllObjects];
+      [canvas setNeedsDisplay:YES];
+    }
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_async(dispatch_get_main_queue(), runBlock);
+  }
+}
 
 void window_add_menu_item(main__WindowInfo *info, const char *menu_name, const char *item_title, const char *shortcut, const char *handler_name) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;

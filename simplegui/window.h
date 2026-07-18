@@ -228,5 +228,19 @@ void window_set_toolbar_style(main__WindowInfo *info, const char *style);
 void window_show_sheet_alert(main__WindowInfo *info, const char *title, const char *message, const char *style);
 void window_add_dock_menu_item(main__WindowInfo *info, const char *title, const char *handler_name);
 
+// New controls added in showcase
+void window_begin_split_view(main__WindowInfo *info, const char *name, int vertical);
+void window_split_view_next_pane(main__WindowInfo *info);
+void window_end_split_view(main__WindowInfo *info);
+void *window_add_collection_view_control(main__WindowInfo *info, const char *name, int item_width, int item_height);
+void window_set_collection_items(main__WindowInfo *info, const char *name, const char **items, int items_count);
+void window_show_popover(main__WindowInfo *info, const char *anchor_name, const char *title, const char *message);
+void *window_add_calendar_control(main__WindowInfo *info, const char *name, const char *date);
+void *window_add_canvas_control(main__WindowInfo *info, const char *name, int height);
+void window_draw_line(main__WindowInfo *info, const char *canvas_name, double x1, double y1, double x2, double y2, const char *color_str, double stroke_width);
+void window_draw_rect(main__WindowInfo *info, const char *canvas_name, double x, double y, double w, double h, const char *color_str, int fill, double stroke_width);
+void window_draw_circle(main__WindowInfo *info, const char *canvas_name, double x, double y, double r, const char *color_str, int fill, double stroke_width);
+void window_clear_canvas(main__WindowInfo *info, const char *canvas_name);
+
 #endif
 
