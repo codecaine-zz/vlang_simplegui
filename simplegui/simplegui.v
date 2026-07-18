@@ -193,6 +193,13 @@ pub type FileDropCallback = fn (mut win SimpleWindow, files []string)
 
 pub type ControlValidator = fn (value string) string
 
+pub struct MenuItem {
+pub:
+	title    string
+	shortcut string
+	callback VoidEventCallback = unsafe { nil }
+}
+
 pub struct WindowConfig {
 pub mut:
 	title                        string
@@ -2857,6 +2864,20 @@ pub fn (win &SimpleWindow) add_context_menu_item(control_name string, item_title
 	return win
 }
 
+pub fn (win &SimpleWindow) add_menu(menu_name string, items []MenuItem) &SimpleWindow {
+	for item in items {
+		win.add_menu_item(menu_name, item.title, item.shortcut, item.callback)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) add_context_menu(control_name string, items []MenuItem) &SimpleWindow {
+	for item in items {
+		win.add_context_menu_item(control_name, item.title, item.callback)
+	}
+	return win
+}
+
 pub fn (win &SimpleWindow) on_file_drop(callback FileDropCallback) &SimpleWindow {
 	unsafe {
 		mut w := &SimpleWindow(win)
@@ -3522,3 +3543,53 @@ pub fn (win &SimpleWindow) commit_changes() &SimpleWindow {
 	}
 	return win
 }
+
+pub fn (win &SimpleWindow) get_dirty_controls() []string {
+	mut dirty := []string{}
+	for entry in win.controls {
+		if win.is_control_dirty(entry.name) {
+			dirty << entry.name
+		}
+	}
+	return dirty
+}
+
+pub fn (win &SimpleWindow) get_dirty_values() map[string]string {
+	mut values := map[string]string{}
+	for entry in win.controls {
+		if win.is_control_dirty(entry.name) {
+			if entry.kind in ['checkbox', 'toggle', 'spinner'] {
+				values[entry.name] = win.get_checked(entry.name).str()
+			} else if entry.kind in ['number', 'slider', 'levelindicator'] {
+				values[entry.name] = win.get_value_int(entry.name).str()
+			} else {
+				values[entry.name] = win.get_text(entry.name)
+			}
+		}
+	}
+	return values
+}
+
+pub fn (win &SimpleWindow) set_status_temp(message string, ms int) &SimpleWindow {
+	current_status := win.get_status()
+	win.set_status(message)
+	win.after(ms, fn [current_status] (mut w SimpleWindow) {
+		w.set_status(current_status)
+	})
+	return win
+}
+
+pub fn (win &SimpleWindow) status_temp(message string, ms int) &SimpleWindow {
+	return win.set_status_temp(message, ms)
+}
+
+pub fn (win &SimpleWindow) style_controls(names []string, style_fn fn (name string, mut w SimpleWindow)) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		for name in names {
+			style_fn(name, mut w)
+		}
+	}
+	return win
+}
+

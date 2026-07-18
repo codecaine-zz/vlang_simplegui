@@ -1390,3 +1390,71 @@ fn test_new_ergonomic_features() {
 	)
 }
 
+fn test_rad_improvements() {
+	mut win := simplegui.new_simple_window('RAD Test', 100, 100)
+
+	// 1. Menu Builder & Context Menu Builder
+	mut menu_called := [false]
+	mut context_called := [false]
+	
+	win.add_menu('File', [
+		simplegui.MenuItem{
+			title: 'Save'
+			shortcut: 'cmd+s'
+			callback: fn [mut menu_called] (mut w simplegui.SimpleWindow) {
+				menu_called[0] = true
+			}
+		},
+		simplegui.MenuItem{
+			title: '-'
+		}
+	])
+
+	win.add_context_menu('window', [
+		simplegui.MenuItem{
+			title: 'Options'
+			callback: fn [mut context_called] (mut w simplegui.SimpleWindow) {
+				context_called[0] = true
+			}
+		}
+	])
+
+	// Dispatch events to test menu callbacks
+	win.dispatch_event('menu_File_Save', 'click', '')
+	win.dispatch_event('context_window_Options', 'click', '')
+	assert menu_called[0] == true
+	assert context_called[0] == true
+
+	// 2. Window Shortcut Hotkeys
+	mut shortcut_called := [false]
+	win.on_key('cmd+o', fn [mut shortcut_called] (mut w simplegui.SimpleWindow, value string) {
+		shortcut_called[0] = true
+	})
+	win.dispatch_event('window', 'key', 'cmd+o')
+	assert shortcut_called[0] == true
+
+	// 3. Status Bar Temp Message
+	win.set_status('Idle')
+	win.set_status_temp('Saving...', 10)
+	assert win.get_status() == 'Saving...'
+
+	// 4. Bulk Control Styling
+	win.add_input('first', 'a')
+	win.add_input('second', 'b')
+	win.style_controls(['first', 'second'], fn (name string, mut w simplegui.SimpleWindow) {
+		w.set_control_width(name, 150)
+	})
+	assert win.get_control_width('first') == 150
+	assert win.get_control_width('second') == 150
+
+	// 5. Dirty Diagnostics
+	assert win.get_dirty_controls().len == 0
+	assert win.get_dirty_values().len == 0
+
+	win.set('first', 'new_a')
+	assert win.get_dirty_controls().contains('first')
+	assert win.get_dirty_controls().len == 1
+	assert win.get_dirty_values()['first'] == 'new_a'
+}
+
+

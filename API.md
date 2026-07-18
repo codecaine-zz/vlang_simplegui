@@ -1146,6 +1146,14 @@ Adds a custom drop-down menu item under the main macOS application menu bar (e.g
 
 Binds a native right-click Context Menu item directly to any control by its `name` handle (or `"window"` to bind it to the general window background). Clicking the triggered choice executes the callback function.
 
+### `win.add_menu(menu_name string, items []MenuItem) &SimpleWindow`
+
+Creates a structured drop-down menu bar hierarchy. Supports native separators when `MenuItem.title` is `"-"`.
+
+### `win.add_context_menu(control_name string, items []MenuItem) &SimpleWindow`
+
+Creates a structured right-click Context Menu on any control or the general `"window"`.
+
 ---
 
 ## 12. Multi-Column Table / Data Grid
@@ -1464,3 +1472,10 @@ Rows are tracked automatically for every table, so you can manage them increment
 - `win.copy_control_to_clipboard(name)` copies the text value of a named control to the system clipboard.
 - `win.paste_from_clipboard_to_control(name)` replaces the named control's text with the system clipboard content.
 - `win.confirm_discard_changes(title, message) bool` prompts the user with a confirmation dialog if the window has unsaved dirty changes, returning `true` if it's safe to proceed.
+
+### RAD / DX Ergonomics
+
+- `win.set_status_temp(message string, ms int) &SimpleWindow` / `win.status_temp(message string, ms int) &SimpleWindow` displays a temporary message on the window's status bar that automatically reverts to the previous status message after `ms` milliseconds.
+- `win.style_controls(names []string, style_fn fn (name string, mut w SimpleWindow)) &SimpleWindow` applies a custom styling closure to a list of named controls in bulk.
+- `win.get_dirty_controls() []string` returns a list of modified control names since the last baseline commit.
+- `win.get_dirty_values() map[string]string` returns a map of modified control names and their new string values.

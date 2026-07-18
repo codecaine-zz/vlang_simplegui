@@ -3,7 +3,8 @@ module main
 // Easy API Demo - showcases the ergonomic helper APIs:
 // dialogs (info/warn/error_dialog/ask), batch control operations,
 // value shortcuts (increment, toggle_checked, set_progress, append_line),
-// labeled control rows, timers (every/after), and require_fields validation.
+// labeled control rows, timers (every/after), require_fields validation,
+// structured menus, hotkeys, bulk styling, and temporary status bar updates.
 import simplegui
 import time
 
@@ -17,6 +18,49 @@ fn main() {
 	win.set_theme('dark')
 	win.set_padding(16)
 	win.set_spacing(10)
+
+	// --- Structured Menu Bar Builder
+	win.add_menu('File', [
+		simplegui.MenuItem{
+			title: 'Save Session'
+			shortcut: 'cmd+s'
+			callback: fn (mut w simplegui.SimpleWindow) {
+				w.status_temp('Session saved successfully!', 2000)
+				w.append_line('log', 'Session saved via File Menu (cmd+s)')
+			}
+		},
+		simplegui.MenuItem{
+			title: '-'
+		},
+		simplegui.MenuItem{
+			title: 'Exit'
+			shortcut: 'cmd+q'
+			callback: fn (mut w simplegui.SimpleWindow) {
+				w.quit()
+			}
+		}
+	])
+
+	win.add_menu('Edit', [
+		simplegui.MenuItem{
+			title: 'Clear Log'
+			shortcut: 'cmd+k'
+			callback: fn (mut w simplegui.SimpleWindow) {
+				w.set('log', '')
+				w.status_temp('Activity log cleared!', 2000)
+			}
+		}
+	])
+
+	// --- Global window keyboard hotkey shortcut
+	win.on_key('cmd+l', fn (mut w simplegui.SimpleWindow, value string) {
+		w.status_temp('Bulk styled the form fields!', 2000)
+		w.style_controls(['name', 'email'], fn (name string, mut w2 simplegui.SimpleWindow) {
+			w2.set_control_background_color(name, '#2e3440')
+			w2.set_control_font_color(name, '#eceff4')
+		})
+		w.append_line('log', 'Applied bulk custom styling via shortcut (cmd+l)')
+	})
 
 	win.add_heading('Ergonomic Helpers')
 

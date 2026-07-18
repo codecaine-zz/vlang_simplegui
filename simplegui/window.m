@@ -419,8 +419,21 @@ extern void vlang_dispatch_event(void *win_ptr, const char *name, const char *ev
 @implementation CustomWindow
 - (BOOL)performKeyEquivalent:(NSEvent *)event {
   NSEventModifierFlags flags = [event modifierFlags] & NSEventModifierFlagDeviceIndependentFlagsMask;
+  NSString *chars = [event charactersIgnoringModifiers];
+  
+  AppDelegate *delegate = (AppDelegate *)[self delegate];
+  if (delegate && delegate.win_ptr) {
+    NSMutableString *keyStr = [NSMutableString string];
+    if (flags & NSEventModifierFlagCommand) [keyStr appendString:@"cmd+"];
+    if (flags & NSEventModifierFlagControl) [keyStr appendString:@"ctrl+"];
+    if (flags & NSEventModifierFlagOption) [keyStr appendString:@"opt+"];
+    if (flags & NSEventModifierFlagShift) [keyStr appendString:@"shift+"];
+    [keyStr appendString:[chars lowercaseString]];
+    
+    vlang_dispatch_event(delegate.win_ptr, "window", "key", [keyStr UTF8String]);
+  }
+
   if (flags == NSEventModifierFlagCommand) {
-    NSString *chars = [event charactersIgnoringModifiers];
     if ([chars isEqualToString:@"q"]) {
       [NSApp terminate:self];
       return YES;
@@ -2233,17 +2246,25 @@ void window_add_menu_item(main__WindowInfo *info, const char *menu_name, const c
   
   dispatch_async(dispatch_get_main_queue(), ^{
     if (delegate.statusBarMenu) {
-      NSMenuItem *item = [[NSMenuItem alloc] initWithTitle:itemTitle action:@selector(handleMenuItemClicked:) keyEquivalent:key];
-      [item setTarget:delegate];
-      [item setRepresentedObject:handlerName];
-      [delegate.statusBarMenu addItem:item];
-    } else {
-      NSMenu *submenu = [delegate findOrCreateMenuWithName:menuName];
-      if (submenu) {
+      if ([itemTitle isEqualToString:@"-"]) {
+        [delegate.statusBarMenu addItem:[NSMenuItem separatorItem]];
+      } else {
         NSMenuItem *item = [[NSMenuItem alloc] initWithTitle:itemTitle action:@selector(handleMenuItemClicked:) keyEquivalent:key];
         [item setTarget:delegate];
         [item setRepresentedObject:handlerName];
-        [submenu addItem:item];
+        [delegate.statusBarMenu addItem:item];
+      }
+    } else {
+      NSMenu *submenu = [delegate findOrCreateMenuWithName:menuName];
+      if (submenu) {
+        if ([itemTitle isEqualToString:@"-"]) {
+          [submenu addItem:[NSMenuItem separatorItem]];
+        } else {
+          NSMenuItem *item = [[NSMenuItem alloc] initWithTitle:itemTitle action:@selector(handleMenuItemClicked:) keyEquivalent:key];
+          [item setTarget:delegate];
+          [item setRepresentedObject:handlerName];
+          [submenu addItem:item];
+        }
       }
     }
   });
@@ -2267,10 +2288,14 @@ void window_add_context_menu_item(main__WindowInfo *info, const char *control_na
       if (!view.menu) {
         view.menu = [[NSMenu alloc] init];
       }
-      NSMenuItem *item = [[NSMenuItem alloc] initWithTitle:itemTitle action:@selector(handleMenuItemClicked:) keyEquivalent:@""];
-      [item setTarget:delegate];
-      [item setRepresentedObject:handlerName];
-      [view.menu addItem:item];
+      if ([itemTitle isEqualToString:@"-"]) {
+        [view.menu addItem:[NSMenuItem separatorItem]];
+      } else {
+        NSMenuItem *item = [[NSMenuItem alloc] initWithTitle:itemTitle action:@selector(handleMenuItemClicked:) keyEquivalent:@""];
+        [item setTarget:delegate];
+        [item setRepresentedObject:handlerName];
+        [view.menu addItem:item];
+      }
     }
   });
 }
@@ -2746,12 +2771,20 @@ void window_run_after(main__WindowInfo *info, int ms, const char *handler_name) 
 void window_show_toast(main__WindowInfo *info, const char *message) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
   dispatch_async(dispatch_get_main_queue(), ^{
+    NSWindow *parentWindow = (delegate && delegate.window) ? delegate.window : nil;
     NSAlert *alert = [[NSAlert alloc] init];
     [alert setMessageText:@"Notice"];
     [alert setInformativeText:nsstring(message)];
     [alert addButtonWithTitle:@"OK"];
     [alert setAlertStyle:NSAlertStyleInformational];
+    
+    if (parentWindow) {
+      [parentWindow addChildWindow:[alert window] ordered:NSWindowAbove];
+    }
     [alert runModal];
+    if (parentWindow) {
+      [parentWindow removeChildWindow:[alert window]];
+    }
   });
 }
 
@@ -3205,12 +3238,19 @@ void window_end_row(main__WindowInfo *info) {
 void window_show_alert(main__WindowInfo *info, const char *title, const char *message) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
   dispatch_async(dispatch_get_main_queue(), ^{
+    NSWindow *parentWindow = (delegate && delegate.window) ? delegate.window : nil;
     NSAlert *alert = [[NSAlert alloc] init];
     [alert setMessageText:nsstring(title)];
     [alert setInformativeText:nsstring(message)];
     [alert addButtonWithTitle:@"OK"];
     [alert setAlertStyle:NSAlertStyleInformational];
+    if (parentWindow) {
+      [parentWindow addChildWindow:[alert window] ordered:NSWindowAbove];
+    }
     [alert runModal];
+    if (parentWindow) {
+      [parentWindow removeChildWindow:[alert window]];
+    }
   });
 }
 
@@ -3218,6 +3258,7 @@ void window_show_alert_with_style(main__WindowInfo *info, const char *title, con
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
   NSString *alertStyle = [[nsstring(style) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
   dispatch_async(dispatch_get_main_queue(), ^{
+    NSWindow *parentWindow = (delegate && delegate.window) ? delegate.window : nil;
     NSAlert *alert = [[NSAlert alloc] init];
     [alert setMessageText:nsstring(title)];
     [alert setInformativeText:nsstring(message)];
@@ -3231,31 +3272,42 @@ void window_show_alert_with_style(main__WindowInfo *info, const char *title, con
       [alert setAlertStyle:NSAlertStyleInformational];
     }
     
+    if (parentWindow) {
+      [parentWindow addChildWindow:[alert window] ordered:NSWindowAbove];
+    }
     [alert runModal];
+    if (parentWindow) {
+      [parentWindow removeChildWindow:[alert window]];
+    }
   });
 }
 
 int window_show_confirm(main__WindowInfo *info, const char *title, const char *message) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
   __block NSModalResponse response;
-  if ([NSThread isMainThread]) {
+  
+  void (^runBlock)(void) = ^{
+    NSWindow *parentWindow = (delegate && delegate.window) ? delegate.window : nil;
     NSAlert *alert = [[NSAlert alloc] init];
     [alert setMessageText:nsstring(title)];
     [alert setInformativeText:nsstring(message)];
     [alert addButtonWithTitle:@"Yes"];
     [alert addButtonWithTitle:@"No"];
     [alert setAlertStyle:NSAlertStyleWarning];
+    
+    if (parentWindow) {
+      [parentWindow addChildWindow:[alert window] ordered:NSWindowAbove];
+    }
     response = [alert runModal];
+    if (parentWindow) {
+      [parentWindow removeChildWindow:[alert window]];
+    }
+  };
+
+  if ([NSThread isMainThread]) {
+    runBlock();
   } else {
-    dispatch_sync(dispatch_get_main_queue(), ^{
-      NSAlert *alert = [[NSAlert alloc] init];
-      [alert setMessageText:nsstring(title)];
-      [alert setInformativeText:nsstring(message)];
-      [alert addButtonWithTitle:@"Yes"];
-      [alert addButtonWithTitle:@"No"];
-      [alert setAlertStyle:NSAlertStyleWarning];
-      response = [alert runModal];
-    });
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
   }
   return (response == NSAlertFirstButtonReturn) ? 1 : 0;
 }
@@ -3265,6 +3317,7 @@ int window_show_choice_dialog(main__WindowInfo *info, const char *title, const c
   __block NSModalResponse response;
   
   void (^runBlock)(void) = ^{
+    NSWindow *parentWindow = (delegate && delegate.window) ? delegate.window : nil;
     NSAlert *alert = [[NSAlert alloc] init];
     [alert setMessageText:nsstring(title)];
     [alert setInformativeText:nsstring(message)];
@@ -3274,7 +3327,13 @@ int window_show_choice_dialog(main__WindowInfo *info, const char *title, const c
       [alert addButtonWithTitle:nsstring(choices[i])];
     }
     
+    if (parentWindow) {
+      [parentWindow addChildWindow:[alert window] ordered:NSWindowAbove];
+    }
     response = [alert runModal];
+    if (parentWindow) {
+      [parentWindow removeChildWindow:[alert window]];
+    }
   };
   
   if ([NSThread isMainThread]) {
@@ -3287,8 +3346,10 @@ int window_show_choice_dialog(main__WindowInfo *info, const char *title, const c
 }
 
 char *window_show_prompt(main__WindowInfo *info, const char *title, const char *message, const char *default_val) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
   __block NSString *inputString = nil;
   void (^runPrompt)(void) = ^{
+    NSWindow *parentWindow = (delegate && delegate.window) ? delegate.window : nil;
     NSAlert *alert = [[NSAlert alloc] init];
     [alert setMessageText:nsstring(title)];
     [alert setInformativeText:nsstring(message)];
@@ -3299,10 +3360,16 @@ char *window_show_prompt(main__WindowInfo *info, const char *title, const char *
     [input setStringValue:nsstring(default_val)];
     [alert setAccessoryView:input];
     
+    if (parentWindow) {
+      [parentWindow addChildWindow:[alert window] ordered:NSWindowAbove];
+    }
     NSModalResponse response = [alert runModal];
     if (response == NSAlertFirstButtonReturn) {
       [input validateEditing];
       inputString = [input stringValue];
+    }
+    if (parentWindow) {
+      [parentWindow removeChildWindow:[alert window]];
     }
   };
   
@@ -3321,15 +3388,23 @@ char *window_show_prompt(main__WindowInfo *info, const char *title, const char *
 }
 
 char *window_select_file(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
   __block NSString *filePath = nil;
   void (^runPanel)(void) = ^{
+    NSWindow *parentWindow = (delegate && delegate.window) ? delegate.window : nil;
     NSOpenPanel *panel = [NSOpenPanel openPanel];
     [panel setCanChooseFiles:YES];
     [panel setCanChooseDirectories:NO];
     [panel setAllowsMultipleSelection:NO];
     
+    if (parentWindow) {
+      [parentWindow addChildWindow:panel ordered:NSWindowAbove];
+    }
     if ([panel runModal] == NSModalResponseOK) {
       filePath = [[panel URL] path];
+    }
+    if (parentWindow) {
+      [parentWindow removeChildWindow:panel];
     }
   };
   
@@ -3348,9 +3423,11 @@ char *window_select_file(main__WindowInfo *info) {
 }
 
 char *window_select_file_with_extensions(main__WindowInfo *info, const char *extensions) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
   __block NSString *filePath = nil;
   NSString *extsString = nsstring(extensions);
   void (^runPanel)(void) = ^{
+    NSWindow *parentWindow = (delegate && delegate.window) ? delegate.window : nil;
     NSOpenPanel *panel = [NSOpenPanel openPanel];
     [panel setCanChooseFiles:YES];
     [panel setCanChooseDirectories:NO];
@@ -3371,8 +3448,14 @@ char *window_select_file_with_extensions(main__WindowInfo *info, const char *ext
       }
     }
     
+    if (parentWindow) {
+      [parentWindow addChildWindow:panel ordered:NSWindowAbove];
+    }
     if ([panel runModal] == NSModalResponseOK) {
       filePath = [[panel URL] path];
+    }
+    if (parentWindow) {
+      [parentWindow removeChildWindow:panel];
     }
   };
   
@@ -3391,15 +3474,23 @@ char *window_select_file_with_extensions(main__WindowInfo *info, const char *ext
 }
 
 char *window_select_folder(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
   __block NSString *folderPath = nil;
   void (^runPanel)(void) = ^{
+    NSWindow *parentWindow = (delegate && delegate.window) ? delegate.window : nil;
     NSOpenPanel *panel = [NSOpenPanel openPanel];
     [panel setCanChooseFiles:NO];
     [panel setCanChooseDirectories:YES];
     [panel setAllowsMultipleSelection:NO];
     
+    if (parentWindow) {
+      [parentWindow addChildWindow:panel ordered:NSWindowAbove];
+    }
     if ([panel runModal] == NSModalResponseOK) {
       folderPath = [[panel URL] path];
+    }
+    if (parentWindow) {
+      [parentWindow removeChildWindow:panel];
     }
   };
   
@@ -3418,11 +3509,20 @@ char *window_select_folder(main__WindowInfo *info) {
 }
 
 char *window_save_file_picker(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
   __block NSString *savePath = nil;
   void (^runPanel)(void) = ^{
+    NSWindow *parentWindow = (delegate && delegate.window) ? delegate.window : nil;
     NSSavePanel *panel = [NSSavePanel savePanel];
+    
+    if (parentWindow) {
+      [parentWindow addChildWindow:panel ordered:NSWindowAbove];
+    }
     if ([panel runModal] == NSModalResponseOK) {
       savePath = [[panel URL] path];
+    }
+    if (parentWindow) {
+      [parentWindow removeChildWindow:panel];
     }
   };
   
