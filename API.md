@@ -1263,19 +1263,21 @@ Adds a native editable data grid for spreadsheet-style layouts. It supports inli
 - `win.grid_delete_row(name, row_idx)` removes a row by index.
 - `win.grid_add_column(name, header)` appends a new column.
 - `win.grid_delete_column(name, col_idx)` removes a column by index.
+- `win.grid_get_rows(name)` and `win.grid_set_rows(name, rows)` read or replace the entire dataset.
+- `win.grid_get_row(name, row_idx)` / `win.grid_set_row(name, row_idx, values)` and `win.grid_get_column(name, col_idx)` / `win.grid_set_column(name, col_idx, values)` support common spreadsheet-style row and column updates.
 
 ### Grid cell and selection helpers
 
 - `win.grid_set_cell(name, row, col, value)` and `win.grid_get_cell(name, row, col)` read and write individual cells.
-- `win.grid_get_selected_row(name)` returns the currently selected row index.
-- `win.grid_set_selected_row(name, row_idx)` programmatically selects a row.
+- `win.grid_get_selected_row(name)` and `win.grid_get_selected_column(name)` return the current selection coordinates, and `win.grid_get_selected_cell(name)` returns them as a `(row, column)` pair.
+- `win.grid_set_selected_row(name, row_idx)`, `win.grid_set_selected_column(name, col_idx)`, and `win.grid_set_selected_cell(name, row, col)` select rows, columns, or cells programmatically.
 - `win.grid_get_row_values(name, row_idx)` and `win.grid_get_column_values(name, col_idx)` return the current contents of a row or column.
 - `win.grid_set_row_values(name, row_idx, values)` and `win.grid_set_column_values(name, col_idx, values)` update entire rows or columns.
 
 ### Grid filtering, sorting, and display options
 
 - `win.grid_set_filter(name, query)` and `win.grid_clear_filter(name)` filter visible rows by cell contents.
-- `win.grid_sort_by_column(name, col_idx, ascending)` sorts the current grid data by a specific column.
+- `win.grid_sort_by_column(name, col_idx, ascending)` sorts the current grid data by a specific column. Column header clicks select the column and keep sorting explicit via the API.
 - `win.grid_set_column_type(name, col_idx, type)` controls rendering for text, checkbox, or button cells.
 - `win.grid_set_column_width(name, col_idx, width)` and `win.grid_set_row_height(name, height)` adjust sizing.
 - `win.grid_autosize_columns(name)` resizes columns to fit their current content.

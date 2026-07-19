@@ -8801,6 +8801,91 @@ int window_grid_get_selected_row(main__WindowInfo *info, const char *name) {
   return row;
 }
 
+int window_grid_get_selected_column(main__WindowInfo *info, const char *name) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  __block int col = -1;
+  void (^runBlock)(void) = ^{
+    NSString *selectedCoord = delegate.gridSelectionByName[key];
+    if (selectedCoord) {
+      NSArray *parts = [selectedCoord componentsSeparatedByString:@"_"];
+      if (parts.count >= 2) {
+        col = [parts[1] intValue];
+      }
+    } else {
+      NSTableView *tv = gridTableViewForKey(delegate, key);
+      if (tv) {
+        col = (int)tv.selectedColumn;
+      }
+    }
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return col;
+}
+
+void window_grid_set_selected_column(main__WindowInfo *info, const char *name, int col_idx) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  void (^runBlock)(void) = ^{
+    NSTableView *tv = gridTableViewForKey(delegate, key);
+    if (!delegate.gridSelectionByName) {
+      delegate.gridSelectionByName = [NSMutableDictionary dictionary];
+    }
+    if (tv) {
+      NSInteger resolvedCol = col_idx;
+      if (resolvedCol >= 0 && resolvedCol < tv.tableColumns.count) {
+        delegate.gridSelectionByName[key] = [NSString stringWithFormat:@"-1_%ld", (long)resolvedCol];
+      } else {
+        [delegate.gridSelectionByName removeObjectForKey:key];
+      }
+      [tv reloadData];
+    } else if (col_idx >= 0) {
+      delegate.gridSelectionByName[key] = [NSString stringWithFormat:@"-1_%d", col_idx];
+    } else {
+      [delegate.gridSelectionByName removeObjectForKey:key];
+    }
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+void window_grid_set_selected_cell(main__WindowInfo *info, const char *name, int row_idx, int col_idx) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  void (^runBlock)(void) = ^{
+    NSTableView *tv = gridTableViewForKey(delegate, key);
+    if (!delegate.gridSelectionByName) {
+      delegate.gridSelectionByName = [NSMutableDictionary dictionary];
+    }
+    if (tv) {
+      NSInteger resolvedRow = row_idx;
+      NSInteger resolvedCol = col_idx;
+      if (resolvedRow >= 0 && resolvedRow < tv.numberOfRows) {
+        delegate.gridSelectionByName[key] = [NSString stringWithFormat:@"%ld_%ld", (long)resolvedRow, (long)resolvedCol];
+      } else {
+        [delegate.gridSelectionByName removeObjectForKey:key];
+      }
+      [tv reloadData];
+    } else if (row_idx >= 0 || col_idx >= 0) {
+      delegate.gridSelectionByName[key] = [NSString stringWithFormat:@"%d_%d", row_idx, col_idx];
+    } else {
+      [delegate.gridSelectionByName removeObjectForKey:key];
+    }
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+}
+
 int window_grid_get_column_editable(main__WindowInfo *info, const char *name, int col_idx) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
   NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];

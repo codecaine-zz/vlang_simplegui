@@ -271,6 +271,9 @@ void window_grid_delete_column(main__WindowInfo *info, const char *name, int col
 void window_grid_set_cell(main__WindowInfo *info, const char *name, int row, int col, const char *value);
 const char *window_grid_get_cell(main__WindowInfo *info, const char *name, int row, int col);
 int window_grid_get_selected_row(main__WindowInfo *info, const char *name);
+int window_grid_get_selected_column(main__WindowInfo *info, const char *name);
+void window_grid_set_selected_column(main__WindowInfo *info, const char *name, int col_idx);
+void window_grid_set_selected_cell(main__WindowInfo *info, const char *name, int row_idx, int col_idx);
 int window_grid_get_column_editable(main__WindowInfo *info, const char *name, int col_idx);
 int window_grid_get_row_editable(main__WindowInfo *info, const char *name, int row_idx);
 int window_grid_get_cell_editable(main__WindowInfo *info, const char *name, int row, int col);

@@ -179,6 +179,9 @@ fn C.window_grid_set_column_type(&WindowInfo, &u8, int, &u8)
 fn C.window_grid_set_column_width(&WindowInfo, &u8, int, int)
 fn C.window_grid_set_row_height(&WindowInfo, &u8, int)
 fn C.window_grid_sort_by_column(&WindowInfo, &u8, int, int)
+fn C.window_grid_get_selected_column(&WindowInfo, &u8) int
+fn C.window_grid_set_selected_column(&WindowInfo, &u8, int)
+fn C.window_grid_set_selected_cell(&WindowInfo, &u8, int, int)
 fn C.window_grid_set_filter(&WindowInfo, &u8, &u8)
 fn C.window_grid_clear_filter(&WindowInfo, &u8)
 fn C.window_grid_autosize_columns(&WindowInfo, &u8)
@@ -385,6 +388,8 @@ mut:
 	title_visible                bool = true
 	list_items                   map[string][]string
 	table_rows                   map[string][][]string
+	grid_rows                    map[string][][]string
+	grid_headers                 map[string][]string
 pub mut:
 	ws_client voidptr = unsafe { nil }
 }
@@ -437,6 +442,8 @@ pub fn new_simple_window(title string, width int, height int) &SimpleWindow {
 	win.placeholders = map[string]string{}
 	win.tooltips = map[string]string{}
 	win.errors = map[string]string{}
+	win.grid_rows = map[string][][]string{}
+	win.grid_headers = map[string][]string{}
 	win.ensure_window()
 	return win
 }
@@ -1311,7 +1318,7 @@ pub fn (win &SimpleWindow) set_color_grid_selected(name string, color string) &S
 }
 
 // add_grid adds a grid control with Excel-like editability and CRUD support.
-pub fn (win &SimpleWindow) add_grid(name string, headers []string, initial_rows [][]string) &SimpleWindow {
+pub fn (mut win SimpleWindow) add_grid(name string, headers []string, initial_rows [][]string) &SimpleWindow {
 	mut real_name := name
 	if real_name == '' {
 		real_name = win.auto_name('grid')
@@ -1323,22 +1330,30 @@ pub fn (win &SimpleWindow) add_grid(name string, headers []string, initial_rows 
 		mut w := &SimpleWindow(win)
 		w.upsert_control(real_name, 'grid', '', '', false, 0)
 	}
+	win.grid_rows[real_name] = initial_rows.clone()
+	win.grid_headers[real_name] = headers.clone()
 	if win.window_info != unsafe { nil } {
 		mut c_headers := []&u8{}
 		for h in headers {
 			c_headers << h.str
 		}
 		C.window_add_grid_control(win.window_info, real_name.str, c_headers.data, headers.len)
-		
 		for row in initial_rows {
-			win.grid_add_row(real_name, row)
+			mut c_vals := []&u8{}
+			for val in row {
+				c_vals << val.str
+			}
+			C.window_grid_add_row(win.window_info, real_name.str, c_vals.data, row.len)
 		}
 	}
-	return win
+	return &win
 }
 
 // grid_add_row appends a row of cell values to the grid.
-pub fn (win &SimpleWindow) grid_add_row(name string, row_values []string) &SimpleWindow {
+pub fn (mut win SimpleWindow) grid_add_row(name string, row_values []string) &SimpleWindow {
+	mut rows := win.grid_rows[name]
+	rows << row_values
+	win.grid_rows[name] = rows
 	if win.window_info != unsafe { nil } {
 		mut c_vals := []&u8{}
 		for val in row_values {
@@ -1346,39 +1361,65 @@ pub fn (win &SimpleWindow) grid_add_row(name string, row_values []string) &Simpl
 		}
 		C.window_grid_add_row(win.window_info, name.str, c_vals.data, row_values.len)
 	}
-	return win
+	return &win
 }
 
 // grid_delete_row removes the row at index row_idx.
-pub fn (win &SimpleWindow) grid_delete_row(name string, row_idx int) &SimpleWindow {
+pub fn (mut win SimpleWindow) grid_delete_row(name string, row_idx int) &SimpleWindow {
+	mut rows := win.grid_rows[name]
+	if row_idx >= 0 && row_idx < rows.len {
+		rows.delete(row_idx)
+		win.grid_rows[name] = rows
+	}
 	if win.window_info != unsafe { nil } {
 		C.window_grid_delete_row(win.window_info, name.str, row_idx)
 	}
-	return win
+	return &win
 }
 
 // grid_add_column appends a new column header.
-pub fn (win &SimpleWindow) grid_add_column(name string, header string) &SimpleWindow {
+pub fn (mut win SimpleWindow) grid_add_column(name string, header string) &SimpleWindow {
+	mut rows := win.grid_rows[name]
+	for i in 0 .. rows.len {
+		rows[i] << ''
+	}
+	win.grid_rows[name] = rows
 	if win.window_info != unsafe { nil } {
 		C.window_grid_add_column(win.window_info, name.str, header.str)
 	}
-	return win
+	return &win
 }
 
 // grid_delete_column removes a column at index col_idx.
-pub fn (win &SimpleWindow) grid_delete_column(name string, col_idx int) &SimpleWindow {
+pub fn (mut win SimpleWindow) grid_delete_column(name string, col_idx int) &SimpleWindow {
+	mut rows := win.grid_rows[name]
+	for i in 0 .. rows.len {
+		if col_idx >= 0 && col_idx < rows[i].len {
+			rows[i].delete(col_idx)
+		}
+	}
+	win.grid_rows[name] = rows
 	if win.window_info != unsafe { nil } {
 		C.window_grid_delete_column(win.window_info, name.str, col_idx)
 	}
-	return win
+	return &win
 }
 
 // grid_set_cell sets the value of cell at row, col.
-pub fn (win &SimpleWindow) grid_set_cell(name string, row int, col int, val string) &SimpleWindow {
+pub fn (mut win SimpleWindow) grid_set_cell(name string, row int, col int, val string) &SimpleWindow {
+	mut rows := win.grid_rows[name]
+	if row >= 0 && row < rows.len {
+		mut cols := rows[row].clone()
+		if col >= 0 && col < cols.len {
+			cols[col] = val
+			rows[row] = cols
+			win.grid_rows[name] = rows
+		}
+	}
 	if win.window_info != unsafe { nil } {
 		C.window_grid_set_cell(win.window_info, name.str, row, col, val.str)
 	}
-	return win
+	return &win
 }
 
 // grid_get_cell returns the string value of cell at row, col.
@@ -1387,6 +1428,13 @@ pub fn (win &SimpleWindow) grid_get_cell(name string, row int, col int) string {
 		res := C.window_grid_get_cell(win.window_info, name.str, row, col)
 		if res != unsafe { nil } {
 			return unsafe { tos_clone(res) }
+		}
+	}
+	rows := win.grid_rows[name]
+	if row >= 0 && row < rows.len {
+		cols := rows[row]
+		if col >= 0 && col < cols.len {
+			return cols[col]
 		}
 	}
 	return ''
@@ -1398,6 +1446,115 @@ pub fn (win &SimpleWindow) grid_get_selected_row(name string) int {
 		return C.window_grid_get_selected_row(win.window_info, name.str)
 	}
 	return -1
+}
+
+// grid_get_selected_column returns the 0-indexed selected column index, or -1 if none is selected.
+pub fn (win &SimpleWindow) grid_get_selected_column(name string) int {
+	if win.window_info != unsafe { nil } {
+		return C.window_grid_get_selected_column(win.window_info, name.str)
+	}
+	return -1
+}
+
+// grid_get_selected_cell returns the currently selected row/column coordinates.
+pub fn (win &SimpleWindow) grid_get_selected_cell(name string) (int, int) {
+	return win.grid_get_selected_row(name), win.grid_get_selected_column(name)
+}
+
+// grid_get_rows returns the current grid data as a [][]string.
+pub fn (win &SimpleWindow) grid_get_rows(name string) [][]string {
+	return win.grid_rows[name]
+}
+
+// grid_set_rows replaces the entire grid data set.
+pub fn (mut win SimpleWindow) grid_set_rows(name string, rows [][]string) &SimpleWindow {
+	win.grid_rows[name] = rows.clone()
+	if win.window_info != unsafe { nil } {
+		C.window_grid_clear(win.window_info, name.str)
+		for row in rows {
+			mut c_vals := []&u8{}
+			for val in row {
+				c_vals << val.str
+			}
+			C.window_grid_add_row(win.window_info, name.str, c_vals.data, row.len)
+		}
+	}
+	return &win
+}
+
+// grid_get_row returns the current values for a specific row.
+pub fn (win &SimpleWindow) grid_get_row(name string, row_idx int) []string {
+	rows := win.grid_rows[name]
+	if row_idx >= 0 && row_idx < rows.len {
+		return rows[row_idx]
+	}
+	return []string{}
+}
+
+// grid_set_row replaces the values for a specific row.
+pub fn (mut win SimpleWindow) grid_set_row(name string, row_idx int, values []string) &SimpleWindow {
+	mut rows := win.grid_rows[name]
+	if row_idx >= 0 && row_idx < rows.len {
+		rows[row_idx] = values.clone()
+		win.grid_rows[name] = rows
+		if win.window_info != unsafe { nil } {
+			for idx, value in values {
+				win.grid_set_cell(name, row_idx, idx, value)
+			}
+		}
+	}
+	return &win
+}
+
+// grid_get_column returns the current values for a specific column.
+pub fn (win &SimpleWindow) grid_get_column(name string, col_idx int) []string {
+	mut values := []string{}
+	rows := win.grid_rows[name]
+	for row in rows {
+		if col_idx >= 0 && col_idx < row.len {
+			values << row[col_idx]
+		} else {
+			values << ''
+		}
+	}
+	return values
+}
+
+// grid_set_column replaces the values for a specific column.
+pub fn (mut win SimpleWindow) grid_set_column(name string, col_idx int, values []string) &SimpleWindow {
+	mut rows := win.grid_rows[name]
+	for idx, value in values {
+		if idx >= 0 && idx < rows.len {
+			mut row_values := rows[idx].clone()
+			if col_idx >= 0 && col_idx < row_values.len {
+				row_values[col_idx] = value
+				rows[idx] = row_values
+			}
+		}
+	}
+	win.grid_rows[name] = rows
+	if win.window_info != unsafe { nil } {
+		for idx, value in values {
+			win.grid_set_cell(name, idx, col_idx, value)
+		}
+	}
+	return &win
+}
+
+// grid_set_selected_column selects the given column programmatically.
+pub fn (mut win SimpleWindow) grid_set_selected_column(name string, col_idx int) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_grid_set_selected_column(win.window_info, name.str, col_idx)
+	}
+	return &win
+}
+
+// grid_set_selected_cell selects the given row/column cell programmatically.
+pub fn (mut win SimpleWindow) grid_set_selected_cell(name string, row_idx int, col_idx int) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_grid_set_selected_cell(win.window_info, name.str, row_idx, col_idx)
+	}
+	return &win
 }
 
 // grid_get_column_editable returns whether a column is editable.
@@ -1622,23 +1779,23 @@ pub fn (win &SimpleWindow) grid_get_column_values(name string, col_idx int) []st
 }
 
 // grid_set_row_values updates every cell in a row from a []string.
-pub fn (win &SimpleWindow) grid_set_row_values(name string, row_idx int, values []string) &SimpleWindow {
+pub fn (mut win SimpleWindow) grid_set_row_values(name string, row_idx int, values []string) &SimpleWindow {
 	if row_idx >= 0 {
 		for idx, value in values {
 			win.grid_set_cell(name, row_idx, idx, value)
 		}
 	}
-	return win
+	return &win
 }
 
 // grid_set_column_values updates every cell in a column from a []string.
-pub fn (win &SimpleWindow) grid_set_column_values(name string, col_idx int, values []string) &SimpleWindow {
+pub fn (mut win SimpleWindow) grid_set_column_values(name string, col_idx int, values []string) &SimpleWindow {
 	if col_idx >= 0 {
 		for idx, value in values {
 			win.grid_set_cell(name, idx, col_idx, value)
 		}
 	}
-	return win
+	return &win
 }
 
 // grid_set_column_type sets the type of a column (e.g. 'text' or 'checkbox').

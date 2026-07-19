@@ -26,7 +26,7 @@ It is intended to make GUI programming feel more direct and less manual than the
 - **NSPathControl**: High-fidelity macOS native breadcrumb item displaying folders and file system links (drag/drop and editable)
 - **Activity Loading Spinner**: Native spinning wheel loader for background tasks and asynchronous operations
 - **Developer-oriented controls**: breadcrumb navigation, shortcut recording, charts, circular progress gauges, property inspector grids, color swatches, editable tables, and log consoles
-- **Editable native grids**: spreadsheet-like data grids with inline editing, persistent cell/row/column selection, checkbox and button cell types, row/column actions, filtering, and programmatic sorting
+- **Editable native grids**: spreadsheet-like data grids with inline editing, persistent cell/row/column selection, checkbox and button cell types, row/column actions, filtering, explicit programmatic sorting, and ergonomic helpers for reading and updating rows, columns, and individual cells
 - Set and read values by control name
 - Support multiple controls of the same kind using distinct names
 - Attach simple event handlers for clicks and value changes
@@ -34,7 +34,12 @@ It is intended to make GUI programming feel more direct and less manual than the
 - Support native keyboard shortcuts: **CMD + F** to toggle full screen, **CMD + Q** to quit the application
 - Pin a window above other windows with the new always-on-top API
 
-The developer controls demo in [demos/developer_controls_demo.v](demos/developer_controls_demo.v) showcases these richer UI helpers in one place, while [demos/editable_grid_showcase_demo.v](demos/editable_grid_showcase_demo.v) demonstrates the new editable-grid workflow with selection, filtering, and sorting.
+The developer controls demo in [demos/developer_controls_demo.v](demos/developer_controls_demo.v) showcases these richer UI helpers in one place, while [demos/editable_grid_showcase_demo.v](demos/editable_grid_showcase_demo.v) demonstrates the new editable-grid workflow with selection, filtering, sorting, and programmatic row/column/cell access.
+
+For app code, the grid helpers are intentionally ergonomic:
+- `grid_get_rows()` / `grid_set_rows()` replace the full data set in one step.
+- `grid_get_row()` / `grid_set_row()` and `grid_get_column()` / `grid_set_column()` cover the common spreadsheet-style operations.
+- `grid_get_selected_column()`, `grid_set_selected_column()`, and `grid_set_selected_cell()` make selection easy to drive from code.
 
 ## Example
 
