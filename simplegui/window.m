@@ -194,6 +194,7 @@ extern void vlang_dispatch_event(void *win_ptr, const char *name, const char *ev
 }
 @end
 
+
 @interface DropZoneView : NSBox
 @property (nonatomic, assign) void *win_ptr;
 @property (nonatomic, copy) NSString *controlName;
@@ -6742,27 +6743,45 @@ void window_enable_hover_events(main__WindowInfo *info, const char *name) {
 
 void window_add_vertical_spacer(main__WindowInfo *info, int height) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
-  dispatch_async(dispatch_get_main_queue(), ^{
-    NSView *spacer = [[NSView alloc] initWithFrame:NSZeroRect];
+  void (^runBlock)(void) = ^{
+    NSBox *spacer = [[NSBox alloc] initWithFrame:NSZeroRect];
+    [spacer setBoxType:NSBoxCustom];
+    [spacer setBorderType:NSNoBorder];
+    [spacer setWantsLayer:YES];
+    spacer.layer.backgroundColor = [NSColor clearColor].CGColor;
     spacer.translatesAutoresizingMaskIntoConstraints = NO;
     [spacer.heightAnchor constraintEqualToConstant:height].active = YES;
     [delegate addControlToLayout:spacer];
-  });
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
 }
 
 void window_add_horizontal_spacer(main__WindowInfo *info, int width) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
-  dispatch_async(dispatch_get_main_queue(), ^{
-    NSView *spacer = [[NSView alloc] initWithFrame:NSZeroRect];
+  void (^runBlock)(void) = ^{
+    NSBox *spacer = [[NSBox alloc] initWithFrame:NSZeroRect];
+    [spacer setBoxType:NSBoxCustom];
+    [spacer setBorderType:NSNoBorder];
+    [spacer setWantsLayer:YES];
+    spacer.layer.backgroundColor = [NSColor clearColor].CGColor;
     spacer.translatesAutoresizingMaskIntoConstraints = NO;
     [spacer.widthAnchor constraintEqualToConstant:width].active = YES;
     [delegate addControlToLayout:spacer];
-  });
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
 }
 
 void window_add_separator(main__WindowInfo *info) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
-  dispatch_async(dispatch_get_main_queue(), ^{
+  void (^runBlock)(void) = ^{
     NSBox *separator = [[NSBox alloc] initWithFrame:NSZeroRect];
     [separator setBoxType:NSBoxCustom];
     [separator setBorderType:NSLineBorder];
@@ -6772,7 +6791,12 @@ void window_add_separator(main__WindowInfo *info) {
     separator.translatesAutoresizingMaskIntoConstraints = NO;
     [separator.heightAnchor constraintEqualToConstant:1.0].active = YES;
     [delegate addControlToLayout:separator];
-  });
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
 }
 
 void *window_add_table_control(main__WindowInfo *info, const char *name, const char **columns, int columns_count) {
