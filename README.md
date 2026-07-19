@@ -26,6 +26,7 @@ It is intended to make GUI programming feel more direct and less manual than the
 - **NSPathControl**: High-fidelity macOS native breadcrumb item displaying folders and file system links (drag/drop and editable)
 - **Activity Loading Spinner**: Native spinning wheel loader for background tasks and asynchronous operations
 - **Developer-oriented controls**: breadcrumb navigation, shortcut recording, charts, circular progress gauges, property inspector grids, color swatches, editable tables, and log consoles
+- **Editable native grids**: spreadsheet-like data grids with inline editing, persistent cell/row/column selection, checkbox and button cell types, row/column actions, filtering, and programmatic sorting
 - Set and read values by control name
 - Support multiple controls of the same kind using distinct names
 - Attach simple event handlers for clicks and value changes
@@ -33,7 +34,7 @@ It is intended to make GUI programming feel more direct and less manual than the
 - Support native keyboard shortcuts: **CMD + F** to toggle full screen, **CMD + Q** to quit the application
 - Pin a window above other windows with the new always-on-top API
 
-The developer controls demo in [demos/developer_controls_demo.v](demos/developer_controls_demo.v) showcases these richer UI helpers in one place.
+The developer controls demo in [demos/developer_controls_demo.v](demos/developer_controls_demo.v) showcases these richer UI helpers in one place, while [demos/editable_grid_showcase_demo.v](demos/editable_grid_showcase_demo.v) demonstrates the new editable-grid workflow with selection, filtering, and sorting.
 
 ## Example
 

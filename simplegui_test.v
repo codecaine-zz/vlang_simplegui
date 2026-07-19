@@ -131,6 +131,32 @@ fn test_control_sizing_methods_store_values() {
 	assert win.get_control_font_size('run') == 16
 }
 
+fn test_grid_state_getters_and_setters_are_available() {
+	mut win := simplegui.SimpleWindow{}
+	win.add_grid('inventory', ['ID', 'Task'], [['1', 'Ship']])
+
+	win.grid_set_column_editable('inventory', 0, false)
+	win.grid_set_row_editable('inventory', 0, false)
+	win.grid_set_cell_editable('inventory', 0, 1, false)
+	win.grid_set_column_enabled('inventory', 1, false)
+	win.grid_set_row_enabled('inventory', 0, false)
+	win.grid_set_cell_enabled('inventory', 0, 0, false)
+
+	assert win.grid_get_column_editable('inventory', 0) == false
+	assert win.grid_get_row_editable('inventory', 0) == false
+	assert win.grid_get_cell_editable('inventory', 0, 1) == false
+	assert win.grid_get_column_enabled('inventory', 1) == false
+	assert win.grid_get_row_enabled('inventory', 0) == false
+	assert win.grid_get_cell_enabled('inventory', 0, 0) == false
+}
+
+fn test_grid_sort_api_is_available() {
+	mut win := simplegui.SimpleWindow{}
+	win.add_grid('inventory', ['ID', 'Task'], [['3', 'Ship'], ['1', 'Build'], ['2', 'Test']])
+
+	win.grid_sort_by_column('inventory', 0, true)
+}
+
 struct BindingExample {
 	username         string
 	age              int

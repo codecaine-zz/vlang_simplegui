@@ -562,12 +562,17 @@ extern void vlang_dispatch_event(void *win_ptr, const char *name, const char *ev
 @property (nonatomic, strong) NSMutableDictionary *gridItemsByName;
 @property (nonatomic, strong) NSMutableDictionary *gridHeadersByName;
 @property (nonatomic, strong) NSMutableDictionary *gridColumnTypesByName;
+@property (nonatomic, strong) NSMutableDictionary *gridVisibleRowIndexesByName;
+@property (nonatomic, strong) NSMutableDictionary *gridSelectionByName;
+@property (nonatomic, strong) NSMutableDictionary *gridSortDescriptorsByName;
 @property (nonatomic, strong) NSMutableDictionary *gridReadOnlyCellsByName;
 @property (nonatomic, strong) NSMutableDictionary *gridReadOnlyRowsByName;
 @property (nonatomic, strong) NSMutableDictionary *gridReadOnlyColsByName;
 @property (nonatomic, strong) NSMutableDictionary *gridDisabledCellsByName;
 @property (nonatomic, strong) NSMutableDictionary *gridDisabledRowsByName;
 @property (nonatomic, strong) NSMutableDictionary *gridDisabledColsByName;
+@property (nonatomic, strong) NSMutableDictionary *gridRowHeightsByName;
+@property (nonatomic, strong) NSMutableDictionary *gridFiltersByName;
 @property (nonatomic, strong) NSMutableDictionary *treeItemsByName;
 @property (nonatomic, strong) NSMutableDictionary *linkUrls;
 @property (nonatomic, strong) NSColor *currentBackgroundColor;
@@ -2867,6 +2872,44 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   }
 }
 
+- (BOOL)gridRowMatchesQuery:(NSArray *)row query:(NSString *)query {
+  if (!query || query.length == 0) return YES;
+  NSString *needle = [query lowercaseString];
+  for (id cell in row) {
+    NSString *value = [NSString stringWithFormat:@"%@", cell ?: @""];
+    if ([value.lowercaseString containsString:needle]) {
+      return YES;
+    }
+  }
+  return NO;
+}
+
+- (NSArray *)visibleRowsForGridName:(NSString *)name {
+  NSString *key = [[name lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  if (!self.gridItemsByName || !self.gridItemsByName[key]) {
+    return @[];
+  }
+
+  NSArray *allRows = self.gridItemsByName[key];
+  NSMutableArray *visibleRows = [NSMutableArray array];
+  NSMutableArray *visibleIndexes = [NSMutableArray array];
+  NSString *query = self.gridFiltersByName[key];
+
+  for (NSUInteger i = 0; i < allRows.count; i++) {
+    NSArray *row = allRows[i];
+    if ([self gridRowMatchesQuery:row query:query]) {
+      [visibleRows addObject:row];
+      [visibleIndexes addObject:@(i)];
+    }
+  }
+
+  if (!self.gridVisibleRowIndexesByName) {
+    self.gridVisibleRowIndexesByName = [NSMutableDictionary dictionary];
+  }
+  self.gridVisibleRowIndexesByName[key] = visibleIndexes;
+  return visibleRows;
+}
+
 // NSTableViewDataSource methods
 - (NSInteger)numberOfRowsInTableView:(NSTableView *)tableView {
   NSString *name = tableView.identifier;
@@ -2874,7 +2917,7 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   NSString *key = [[name lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
   
   if (self.gridItemsByName && self.gridItemsByName[key]) {
-    NSArray *rows = self.gridItemsByName[key];
+    NSArray *rows = [self visibleRowsForGridName:name];
     return rows.count;
   }
   
@@ -2959,9 +3002,12 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   NSString *key = [[name lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
   
   if (self.gridItemsByName && self.gridItemsByName[key]) {
-    NSArray *rows = self.gridItemsByName[key];
+    NSArray *rows = [self visibleRowsForGridName:name];
     if (row < 0 || row >= rows.count) return nil;
     NSArray *cols = rows[row];
+    
+    NSArray *visibleIndexes = self.gridVisibleRowIndexesByName[key];
+    NSInteger originalRow = (visibleIndexes && row < visibleIndexes.count) ? [visibleIndexes[row] integerValue] : row;
     
     NSString *colId = tableColumn.identifier;
     int colIdx = 0;
@@ -3073,10 +3119,43 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
         [textField.bottomAnchor constraintEqualToAnchor:cell.bottomAnchor constant:-2]
       ]];
     }
-    [cell.textField setIdentifier:[NSString stringWithFormat:@"%ld_%d", (long)row, colIdx]];
+    [cell.textField setIdentifier:[NSString stringWithFormat:@"%ld_%d", (long)originalRow, colIdx]];
     [cell.textField setStringValue:cols[colIdx]];
     [cell.textField setEditable:isEditable];
     [cell.textField setSelectable:YES];
+    [cell.textField setWantsLayer:YES];
+    [cell.textField setDrawsBackground:NO];
+    NSString *cellCoord = [NSString stringWithFormat:@"%ld_%d", (long)originalRow, colIdx];
+    NSString *selectedCoord = self.gridSelectionByName[key];
+    NSInteger selectedRow = -1;
+    NSInteger selectedCol = -1;
+    if (selectedCoord) {
+      NSArray *parts = [selectedCoord componentsSeparatedByString:@"_"];
+      if (parts.count >= 1) {
+        selectedRow = [parts[0] integerValue];
+      }
+      if (parts.count >= 2) {
+        selectedCol = [parts[1] integerValue];
+      }
+    }
+    BOOL isSelectedCell = (selectedRow == originalRow && selectedCol == colIdx);
+    BOOL isSelectedRow = (selectedRow == originalRow && selectedCol < 0);
+    BOOL isSelectedColumn = (selectedCol == colIdx && selectedRow < 0);
+    if (isSelectedCell) {
+      [cell.textField setDrawsBackground:YES];
+      [cell.textField setBackgroundColor:[NSColor selectedControlColor]];
+      [cell.textField.layer setBorderWidth:1.2];
+      [cell.textField.layer setBorderColor:[[NSColor controlAccentColor] CGColor]];
+    } else if (isSelectedRow || isSelectedColumn) {
+      [cell.textField setDrawsBackground:YES];
+      [cell.textField setBackgroundColor:[[NSColor controlAccentColor] colorWithAlphaComponent:0.14]];
+      [cell.textField.layer setBorderWidth:0.8];
+      [cell.textField.layer setBorderColor:[[NSColor controlAccentColor] colorWithAlphaComponent:0.5].CGColor];
+    } else {
+      [cell.textField setDrawsBackground:NO];
+      [cell.textField setBackgroundColor:[NSColor clearColor]];
+      [cell.textField.layer setBorderWidth:0.0];
+    }
     if (isCellEnabled) {
       if (self.currentFontColor) {
         [cell.textField setTextColor:self.currentFontColor];
@@ -3158,6 +3237,112 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   return cell;
 }
 
+- (void)updateGridSelectionHighlightForTableView:(NSTableView *)tableView row:(NSInteger)row col:(NSInteger)col {
+  NSString *name = tableView.identifier;
+  if (!name) return;
+  NSString *key = [[name lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  if (!self.gridSelectionByName) {
+    self.gridSelectionByName = [NSMutableDictionary dictionary];
+  }
+  if (row >= 0 || col >= 0) {
+    self.gridSelectionByName[key] = [NSString stringWithFormat:@"%ld_%ld", (long)row, (long)col];
+  } else {
+    [self.gridSelectionByName removeObjectForKey:key];
+  }
+  [tableView reloadData];
+}
+
+- (NSComparisonResult)compareGridValue:(NSString *)aValue withValue:(NSString *)bValue ascending:(BOOL)ascending {
+  NSString *left = aValue ?: @"";
+  NSString *right = bValue ?: @"";
+
+  NSNumber *leftNumber = [NSNumber numberWithDouble:[left doubleValue]];
+  NSNumber *rightNumber = [NSNumber numberWithDouble:[right doubleValue]];
+  if ([leftNumber doubleValue] != 0.0 || [rightNumber doubleValue] != 0.0 || [left isEqualToString:@"0"] || [right isEqualToString:@"0"]) {
+    BOOL leftNumeric = [left rangeOfString:@"[^0-9.+-]" options:NSRegularExpressionSearch].location == NSNotFound;
+    BOOL rightNumeric = [right rangeOfString:@"[^0-9.+-]" options:NSRegularExpressionSearch].location == NSNotFound;
+    if (leftNumeric && rightNumeric) {
+      double leftDouble = [left doubleValue];
+      double rightDouble = [right doubleValue];
+      if (leftDouble < rightDouble) {
+        return ascending ? NSOrderedAscending : NSOrderedDescending;
+      }
+      if (leftDouble > rightDouble) {
+        return ascending ? NSOrderedDescending : NSOrderedAscending;
+      }
+      return NSOrderedSame;
+    }
+  }
+
+  NSComparisonResult result = [left localizedCaseInsensitiveCompare:right];
+  if (result != NSOrderedSame) {
+    return ascending ? result : (result == NSOrderedAscending ? NSOrderedDescending : NSOrderedAscending);
+  }
+  return NSOrderedSame;
+}
+
+- (void)applyGridSortForTableView:(NSTableView *)tableView descriptors:(NSArray *)descriptors {
+  NSString *name = tableView.identifier;
+  if (!name) return;
+  NSString *key = [[name lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  if (!self.gridItemsByName || !self.gridItemsByName[key]) return;
+
+  NSMutableArray *rows = self.gridItemsByName[key];
+  if (!rows || rows.count == 0) return;
+
+  NSMutableArray *sortedRows = [rows mutableCopy];
+  [sortedRows sortUsingComparator:^NSComparisonResult(NSArray *rowA, NSArray *rowB) {
+    for (NSDictionary *descriptor in descriptors) {
+      NSInteger colIdx = [descriptor[@"column"] integerValue];
+      BOOL ascending = [descriptor[@"ascending"] boolValue];
+      NSString *aValue = (colIdx >= 0 && colIdx < rowA.count) ? [rowA[colIdx] description] : @"";
+      NSString *bValue = (colIdx >= 0 && colIdx < rowB.count) ? [rowB[colIdx] description] : @"";
+      NSComparisonResult result = [self compareGridValue:aValue withValue:bValue ascending:ascending];
+      if (result != NSOrderedSame) {
+        return result;
+      }
+    }
+    return NSOrderedSame;
+  }];
+
+  self.gridItemsByName[key] = sortedRows;
+  [tableView reloadData];
+}
+
+- (void)refreshGridHeaderTitlesForTableView:(NSTableView *)tableView {
+  NSString *name = tableView.identifier;
+  if (!name) return;
+  NSString *key = [[name lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  if (!self.gridHeadersByName || !self.gridHeadersByName[key]) return;
+
+  if (!self.gridSortDescriptorsByName) {
+    self.gridSortDescriptorsByName = [NSMutableDictionary dictionary];
+  }
+
+  NSArray *headers = self.gridHeadersByName[key];
+  NSArray *descriptors = self.gridSortDescriptorsByName[key] ?: @[];
+  for (NSUInteger i = 0; i < tableView.tableColumns.count; i++) {
+    NSTableColumn *column = tableView.tableColumns[i];
+    NSString *baseTitle = (i < headers.count) ? headers[i] : column.title;
+    if ([baseTitle hasSuffix:@" ▲"] || [baseTitle hasSuffix:@" ▼"]) {
+      baseTitle = [baseTitle substringToIndex:baseTitle.length - 2];
+    }
+    NSString *suffix = @"";
+    for (NSDictionary *descriptor in descriptors) {
+      if ([descriptor[@"column"] integerValue] == (NSInteger)i) {
+        suffix = [descriptor[@"ascending"] boolValue] ? @" ▲" : @" ▼";
+        break;
+      }
+    }
+    [column setTitle:[NSString stringWithFormat:@"%@%@", baseTitle, suffix]];
+  }
+
+  if (tableView.headerView) {
+    [tableView.headerView setNeedsDisplay:YES];
+  }
+  [tableView setNeedsDisplay:YES];
+}
+
 - (void)tableViewSelectionDidChange:(NSNotification *)notification {
   NSTableView *tableView = notification.object;
   NSString *name = tableView.identifier;
@@ -3166,6 +3351,12 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
       return; // Handled by outlineViewSelectionDidChange
     }
     NSInteger selectedRow = [tableView selectedRow];
+    NSInteger selectedCol = [tableView selectedColumn];
+    if (selectedRow >= 0 && selectedCol >= 0) {
+      [self updateGridSelectionHighlightForTableView:tableView row:selectedRow col:selectedCol];
+    } else {
+      [self updateGridSelectionHighlightForTableView:tableView row:-1 col:-1];
+    }
     NSString *value = [NSString stringWithFormat:@"%ld", (long)selectedRow];
     vlang_dispatch_event(self.win_ptr, [name UTF8String], "change", [value UTF8String]);
   }
@@ -4139,6 +4330,23 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   }
 }
 
+- (BOOL)tableView:(NSTableView *)tableView shouldSelectRow:(NSInteger)row {
+  NSString *name = tableView.identifier;
+  if (!name) return YES;
+  NSString *key = [[name lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  if (self.gridItemsByName && self.gridItemsByName[key]) {
+    NSArray *rows = [self visibleRowsForGridName:name];
+    if (row >= 0 && row < rows.count) {
+      NSInteger selectedCol = [tableView clickedColumn];
+      if (selectedCol < 0) {
+        selectedCol = -1;
+      }
+      [self updateGridSelectionHighlightForTableView:tableView row:row col:selectedCol];
+    }
+  }
+  return YES;
+}
+
 - (void)tableView:(NSTableView *)tableView didClickTableColumn:(NSTableColumn *)tableColumn {
   NSString *name = tableView.identifier;
   if (!name) return;
@@ -4147,9 +4355,13 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   if (self.gridItemsByName && self.gridItemsByName[key]) {
     NSArray *cols = tableView.tableColumns;
     NSInteger colIdx = [cols indexOfObject:tableColumn];
-    if (colIdx != NSNotFound && self.win_ptr) {
-      NSString *eventVal = [NSString stringWithFormat:@"%ld", (long)colIdx];
-      vlang_dispatch_event(self.win_ptr, [name UTF8String], "click_column", [eventVal UTF8String]);
+    if (colIdx != NSNotFound) {
+      [self updateGridSelectionHighlightForTableView:tableView row:-1 col:colIdx];
+
+      if (self.win_ptr) {
+        NSString *eventVal = [NSString stringWithFormat:@"%ld", (long)colIdx];
+        vlang_dispatch_event(self.win_ptr, [name UTF8String], "click_column", [eventVal UTF8String]);
+      }
     }
   }
 }
@@ -4304,8 +4516,10 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   NSTableView *tableView = [[NSTableView alloc] initWithFrame:NSMakeRect(0, 0, 450, 200)];
   [tableView setAllowsMultipleSelection:NO];
   [tableView setIdentifier:name];
+  [tableView setSelectionHighlightStyle:NSTableViewSelectionHighlightStyleNone];
   [tableView setGridStyleMask:NSTableViewSolidHorizontalGridLineMask | NSTableViewSolidVerticalGridLineMask];
   [tableView setRowHeight:26];
+  [tableView setAllowsColumnResizing:YES];
   [tableView setTarget:self];
   [tableView setDoubleAction:@selector(handleGridDoubleClicked:)];
   
@@ -4318,7 +4532,7 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
     [column setTitle:headers[i]];
     [column setWidth:100.0];
     [column setEditable:YES];
-    [column setResizingMask:NSTableColumnAutoresizingMask];
+    [column setResizingMask:NSTableColumnUserResizingMask | NSTableColumnAutoresizingMask];
     [tableView addTableColumn:column];
     [column release];
   }
@@ -8566,9 +8780,17 @@ int window_grid_get_selected_row(main__WindowInfo *info, const char *name) {
   NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
   __block int row = -1;
   void (^runBlock)(void) = ^{
-    NSTableView *tv = gridTableViewForKey(delegate, key);
-    if (tv) {
-      row = (int)tv.selectedRow;
+    NSString *selectedCoord = delegate.gridSelectionByName[key];
+    if (selectedCoord) {
+      NSArray *parts = [selectedCoord componentsSeparatedByString:@"_"];
+      if (parts.count >= 1) {
+        row = [parts[0] intValue];
+      }
+    } else {
+      NSTableView *tv = gridTableViewForKey(delegate, key);
+      if (tv) {
+        row = (int)tv.selectedRow;
+      }
     }
   };
   if ([NSThread isMainThread]) {
@@ -8577,6 +8799,183 @@ int window_grid_get_selected_row(main__WindowInfo *info, const char *name) {
     dispatch_sync(dispatch_get_main_queue(), runBlock);
   }
   return row;
+}
+
+int window_grid_get_column_editable(main__WindowInfo *info, const char *name, int col_idx) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  __block int editable = 1;
+  void (^runBlock)(void) = ^{
+    NSMutableSet *cols = delegate.gridReadOnlyColsByName[key];
+    editable = (cols && [cols containsObject:@(col_idx)]) ? 0 : 1;
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return editable;
+}
+
+int window_grid_get_row_editable(main__WindowInfo *info, const char *name, int row_idx) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  __block int editable = 1;
+  void (^runBlock)(void) = ^{
+    NSMutableSet *rows = delegate.gridReadOnlyRowsByName[key];
+    editable = (rows && [rows containsObject:@(row_idx)]) ? 0 : 1;
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return editable;
+}
+
+int window_grid_get_cell_editable(main__WindowInfo *info, const char *name, int row, int col) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  __block int editable = 1;
+  void (^runBlock)(void) = ^{
+    NSMutableSet *cells = delegate.gridReadOnlyCellsByName[key];
+    NSString *coord = [NSString stringWithFormat:@"%d_%d", row, col];
+    editable = (cells && [cells containsObject:coord]) ? 0 : 1;
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return editable;
+}
+
+int window_grid_get_column_enabled(main__WindowInfo *info, const char *name, int col_idx) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  __block int enabled = 1;
+  void (^runBlock)(void) = ^{
+    NSMutableSet *cols = delegate.gridDisabledColsByName[key];
+    enabled = (cols && [cols containsObject:@(col_idx)]) ? 0 : 1;
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return enabled;
+}
+
+int window_grid_get_row_enabled(main__WindowInfo *info, const char *name, int row_idx) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  __block int enabled = 1;
+  void (^runBlock)(void) = ^{
+    NSMutableSet *rows = delegate.gridDisabledRowsByName[key];
+    enabled = (rows && [rows containsObject:@(row_idx)]) ? 0 : 1;
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return enabled;
+}
+
+int window_grid_get_cell_enabled(main__WindowInfo *info, const char *name, int row, int col) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  __block int enabled = 1;
+  void (^runBlock)(void) = ^{
+    NSMutableSet *cells = delegate.gridDisabledCellsByName[key];
+    NSString *coord = [NSString stringWithFormat:@"%d_%d", row, col];
+    enabled = (cells && [cells containsObject:coord]) ? 0 : 1;
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return enabled;
+}
+
+const char *window_grid_get_filter(main__WindowInfo *info, const char *name) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  __block NSString *result = @"";
+  void (^runBlock)(void) = ^{
+    if (delegate.gridFiltersByName) {
+      result = delegate.gridFiltersByName[key] ?: @"";
+    }
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return [result autorelease].UTF8String;
+}
+
+int window_grid_get_row_count(main__WindowInfo *info, const char *name) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  __block int count = 0;
+  void (^runBlock)(void) = ^{
+    NSArray *rows = delegate.gridItemsByName[key];
+    count = (int)rows.count;
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return count;
+}
+
+int window_grid_get_column_count(main__WindowInfo *info, const char *name) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  __block int count = 0;
+  void (^runBlock)(void) = ^{
+    NSArray *headers = delegate.gridHeadersByName[key];
+    count = (int)headers.count;
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return count;
+}
+
+int window_grid_get_row_values(main__WindowInfo *info, const char *name, int row_idx, const char **values, int capacity) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  __block int count = 0;
+  __block NSMutableArray *resultValues = [NSMutableArray array];
+  void (^runBlock)(void) = ^{
+    NSArray *rows = delegate.gridItemsByName[key];
+    if (rows && row_idx >= 0 && row_idx < rows.count) {
+      NSArray *cols = rows[row_idx];
+      for (NSInteger i = 0; i < cols.count; i++) {
+        if (capacity > 0 && i >= capacity) {
+          break;
+        }
+        [resultValues addObject:[cols[i] description]];
+      }
+      count = (int)cols.count;
+    }
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+
+  for (int i = 0; i < count && i < capacity; i++) {
+    values[i] = [resultValues[i] UTF8String];
+  }
+  return count;
 }
 
 void window_grid_set_column_type(main__WindowInfo *info, const char *name, int col_idx, const char *col_type) {
@@ -8608,6 +9007,110 @@ void window_grid_set_column_type(main__WindowInfo *info, const char *name, int c
   }
 }
 
+void window_grid_set_column_width(main__WindowInfo *info, const char *name, int col_idx, int width) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  void (^runBlock)(void) = ^{
+    NSTableView *tv = gridTableViewForKey(delegate, key);
+    if (tv && col_idx >= 0 && col_idx < tv.tableColumns.count) {
+      NSTableColumn *column = tv.tableColumns[col_idx];
+      [column setWidth:(CGFloat)width];
+    }
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+void window_grid_set_row_height(main__WindowInfo *info, const char *name, int height) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  void (^runBlock)(void) = ^{
+    if (!delegate.gridRowHeightsByName) {
+      delegate.gridRowHeightsByName = [NSMutableDictionary dictionary];
+    }
+    delegate.gridRowHeightsByName[key] = @(height);
+
+    NSTableView *tv = gridTableViewForKey(delegate, key);
+    if (tv) {
+      [tv setRowHeight:(CGFloat)height];
+    }
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+void window_grid_sort_by_column(main__WindowInfo *info, const char *name, int col_idx, int ascending) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  void (^runBlock)(void) = ^{
+    if (!delegate.gridSortDescriptorsByName) {
+      delegate.gridSortDescriptorsByName = [NSMutableDictionary dictionary];
+    }
+
+    NSArray *updatedDescriptors = @[@{ @"column": @(col_idx), @"ascending": @(ascending == 1) }];
+    delegate.gridSortDescriptorsByName[key] = updatedDescriptors;
+
+    NSTableView *tv = gridTableViewForKey(delegate, key);
+    if (tv) {
+      [delegate applyGridSortForTableView:tv descriptors:updatedDescriptors];
+      [delegate refreshGridHeaderTitlesForTableView:tv];
+    }
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+void window_grid_set_filter(main__WindowInfo *info, const char *name, const char *query) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  NSString *filter = nsstring(query);
+  void (^runBlock)(void) = ^{
+    if (!delegate.gridFiltersByName) {
+      delegate.gridFiltersByName = [NSMutableDictionary dictionary];
+    }
+    delegate.gridFiltersByName[key] = filter;
+
+    NSTableView *tv = gridTableViewForKey(delegate, key);
+    if (tv) {
+      [tv reloadData];
+    }
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+void window_grid_clear_filter(main__WindowInfo *info, const char *name) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  void (^runBlock)(void) = ^{
+    if (delegate.gridFiltersByName) {
+      [delegate.gridFiltersByName removeObjectForKey:key];
+    }
+
+    NSTableView *tv = gridTableViewForKey(delegate, key);
+    if (tv) {
+      [tv reloadData];
+    }
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+}
+
 void window_grid_autosize_columns(main__WindowInfo *info, const char *name) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
   NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
@@ -8628,12 +9131,29 @@ void window_grid_set_selected_row(main__WindowInfo *info, const char *name, int 
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
   NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
   void (^runBlock)(void) = ^{
+    if (!delegate.gridSelectionByName) {
+      delegate.gridSelectionByName = [NSMutableDictionary dictionary];
+    }
     NSTableView *tv = gridTableViewForKey(delegate, key);
     if (tv) {
-      if (row_idx >= 0 && row_idx < tv.numberOfRows) {
-        [tv selectRowIndexes:[NSIndexSet indexSetWithIndex:row_idx] byExtendingSelection:NO];
+      [tv reloadData];
+      NSArray *visibleIndexes = delegate.gridVisibleRowIndexesByName[key];
+      NSInteger resolvedRow = row_idx;
+      if (visibleIndexes && row_idx >= 0 && row_idx < visibleIndexes.count) {
+        resolvedRow = [visibleIndexes[row_idx] integerValue];
+      }
+      if (resolvedRow >= 0 && resolvedRow < tv.numberOfRows) {
+        [tv selectRowIndexes:[NSIndexSet indexSetWithIndex:resolvedRow] byExtendingSelection:NO];
+        delegate.gridSelectionByName[key] = [NSString stringWithFormat:@"%ld_0", (long)resolvedRow];
       } else {
         [tv selectRowIndexes:[NSIndexSet indexSet] byExtendingSelection:NO];
+        [delegate.gridSelectionByName removeObjectForKey:key];
+      }
+    } else {
+      if (row_idx >= 0) {
+        delegate.gridSelectionByName[key] = [NSString stringWithFormat:@"%d_0", row_idx];
+      } else {
+        [delegate.gridSelectionByName removeObjectForKey:key];
       }
     }
   };

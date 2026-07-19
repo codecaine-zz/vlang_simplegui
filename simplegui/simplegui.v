@@ -166,7 +166,21 @@ fn C.window_grid_delete_column(&WindowInfo, &u8, int)
 fn C.window_grid_set_cell(&WindowInfo, &u8, int, int, &u8)
 fn C.window_grid_get_cell(&WindowInfo, &u8, int, int) &u8
 fn C.window_grid_get_selected_row(&WindowInfo, &u8) int
+fn C.window_grid_get_column_editable(&WindowInfo, &u8, int) int
+fn C.window_grid_get_row_editable(&WindowInfo, &u8, int) int
+fn C.window_grid_get_cell_editable(&WindowInfo, &u8, int, int) int
+fn C.window_grid_get_column_enabled(&WindowInfo, &u8, int) int
+fn C.window_grid_get_row_enabled(&WindowInfo, &u8, int) int
+fn C.window_grid_get_cell_enabled(&WindowInfo, &u8, int, int) int
+fn C.window_grid_get_filter(&WindowInfo, &u8) &u8
+fn C.window_grid_get_row_count(&WindowInfo, &u8) int
+fn C.window_grid_get_column_count(&WindowInfo, &u8) int
 fn C.window_grid_set_column_type(&WindowInfo, &u8, int, &u8)
+fn C.window_grid_set_column_width(&WindowInfo, &u8, int, int)
+fn C.window_grid_set_row_height(&WindowInfo, &u8, int)
+fn C.window_grid_sort_by_column(&WindowInfo, &u8, int, int)
+fn C.window_grid_set_filter(&WindowInfo, &u8, &u8)
+fn C.window_grid_clear_filter(&WindowInfo, &u8)
 fn C.window_grid_autosize_columns(&WindowInfo, &u8)
 fn C.window_grid_set_selected_row(&WindowInfo, &u8, int)
 fn C.window_grid_clear(&WindowInfo, &u8)
@@ -1386,10 +1400,291 @@ pub fn (win &SimpleWindow) grid_get_selected_row(name string) int {
 	return -1
 }
 
+// grid_get_column_editable returns whether a column is editable.
+pub fn (win &SimpleWindow) grid_get_column_editable(name string, col_idx int) bool {
+	if win.window_info != unsafe { nil } {
+		return C.window_grid_get_column_editable(win.window_info, name.str, col_idx) == 1
+	}
+	return false
+}
+
+// grid_get_columns_editable returns editability for a batch of columns.
+pub fn (win &SimpleWindow) grid_get_columns_editable(name string, col_idxs []int) map[int]bool {
+	mut result := map[int]bool{}
+	for col_idx in col_idxs {
+		result[col_idx] = win.grid_get_column_editable(name, col_idx)
+	}
+	return result
+}
+
+// grid_set_columns_editable updates editability for a batch of columns.
+pub fn (win &SimpleWindow) grid_set_columns_editable(name string, col_idxs []int, editable bool) &SimpleWindow {
+	for col_idx in col_idxs {
+		win.grid_set_column_editable(name, col_idx, editable)
+	}
+	return win
+}
+
+// grid_get_row_editable returns whether a row is editable.
+pub fn (win &SimpleWindow) grid_get_row_editable(name string, row_idx int) bool {
+	if win.window_info != unsafe { nil } {
+		return C.window_grid_get_row_editable(win.window_info, name.str, row_idx) == 1
+	}
+	return false
+}
+
+// grid_get_rows_editable returns editability for a batch of rows.
+pub fn (win &SimpleWindow) grid_get_rows_editable(name string, row_idxs []int) map[int]bool {
+	mut result := map[int]bool{}
+	for row_idx in row_idxs {
+		result[row_idx] = win.grid_get_row_editable(name, row_idx)
+	}
+	return result
+}
+
+// grid_set_rows_editable updates editability for a batch of rows.
+pub fn (win &SimpleWindow) grid_set_rows_editable(name string, row_idxs []int, editable bool) &SimpleWindow {
+	for row_idx in row_idxs {
+		win.grid_set_row_editable(name, row_idx, editable)
+	}
+	return win
+}
+
+// grid_get_cell_editable returns whether a cell is editable.
+pub fn (win &SimpleWindow) grid_get_cell_editable(name string, row int, col int) bool {
+	if win.window_info != unsafe { nil } {
+		return C.window_grid_get_cell_editable(win.window_info, name.str, row, col) == 1
+	}
+	return false
+}
+
+// grid_get_cells_editable returns editability for a batch of cells.
+pub fn (win &SimpleWindow) grid_get_cells_editable(name string, cells []string) map[string]bool {
+	mut result := map[string]bool{}
+	for coord in cells {
+		parts := coord.split('_')
+		if parts.len == 2 {
+			row_idx := parts[0].int()
+			col_idx := parts[1].int()
+			result[coord] = win.grid_get_cell_editable(name, row_idx, col_idx)
+		}
+	}
+	return result
+}
+
+// grid_set_cells_editable updates editability for a batch of cells.
+pub fn (win &SimpleWindow) grid_set_cells_editable(name string, cells []string, editable bool) &SimpleWindow {
+	for coord in cells {
+		parts := coord.split('_')
+		if parts.len == 2 {
+			row_idx := parts[0].int()
+			col_idx := parts[1].int()
+			win.grid_set_cell_editable(name, row_idx, col_idx, editable)
+		}
+	}
+	return win
+}
+
+// grid_get_column_enabled returns whether a column is enabled.
+pub fn (win &SimpleWindow) grid_get_column_enabled(name string, col_idx int) bool {
+	if win.window_info != unsafe { nil } {
+		return C.window_grid_get_column_enabled(win.window_info, name.str, col_idx) == 1
+	}
+	return false
+}
+
+// grid_get_columns_enabled returns enabled state for a batch of columns.
+pub fn (win &SimpleWindow) grid_get_columns_enabled(name string, col_idxs []int) map[int]bool {
+	mut result := map[int]bool{}
+	for col_idx in col_idxs {
+		result[col_idx] = win.grid_get_column_enabled(name, col_idx)
+	}
+	return result
+}
+
+// grid_set_columns_enabled updates enabled state for a batch of columns.
+pub fn (win &SimpleWindow) grid_set_columns_enabled(name string, col_idxs []int, enabled bool) &SimpleWindow {
+	for col_idx in col_idxs {
+		win.grid_set_column_enabled(name, col_idx, enabled)
+	}
+	return win
+}
+
+// grid_get_row_enabled returns whether a row is enabled.
+pub fn (win &SimpleWindow) grid_get_row_enabled(name string, row_idx int) bool {
+	if win.window_info != unsafe { nil } {
+		return C.window_grid_get_row_enabled(win.window_info, name.str, row_idx) == 1
+	}
+	return false
+}
+
+// grid_get_rows_enabled returns enabled state for a batch of rows.
+pub fn (win &SimpleWindow) grid_get_rows_enabled(name string, row_idxs []int) map[int]bool {
+	mut result := map[int]bool{}
+	for row_idx in row_idxs {
+		result[row_idx] = win.grid_get_row_enabled(name, row_idx)
+	}
+	return result
+}
+
+// grid_set_rows_enabled updates enabled state for a batch of rows.
+pub fn (win &SimpleWindow) grid_set_rows_enabled(name string, row_idxs []int, enabled bool) &SimpleWindow {
+	for row_idx in row_idxs {
+		win.grid_set_row_enabled(name, row_idx, enabled)
+	}
+	return win
+}
+
+// grid_get_cell_enabled returns whether a cell is enabled.
+pub fn (win &SimpleWindow) grid_get_cell_enabled(name string, row int, col int) bool {
+	if win.window_info != unsafe { nil } {
+		return C.window_grid_get_cell_enabled(win.window_info, name.str, row, col) == 1
+	}
+	return false
+}
+
+// grid_get_cells_enabled returns enabled state for a batch of cells.
+pub fn (win &SimpleWindow) grid_get_cells_enabled(name string, cells []string) map[string]bool {
+	mut result := map[string]bool{}
+	for coord in cells {
+		parts := coord.split('_')
+		if parts.len == 2 {
+			row_idx := parts[0].int()
+			col_idx := parts[1].int()
+			result[coord] = win.grid_get_cell_enabled(name, row_idx, col_idx)
+		}
+	}
+	return result
+}
+
+// grid_set_cells_enabled updates enabled state for a batch of cells.
+pub fn (win &SimpleWindow) grid_set_cells_enabled(name string, cells []string, enabled bool) &SimpleWindow {
+	for coord in cells {
+		parts := coord.split('_')
+		if parts.len == 2 {
+			row_idx := parts[0].int()
+			col_idx := parts[1].int()
+			win.grid_set_cell_enabled(name, row_idx, col_idx, enabled)
+		}
+	}
+	return win
+}
+
+// grid_get_filter returns the active filter text for a grid.
+pub fn (win &SimpleWindow) grid_get_filter(name string) string {
+	if win.window_info != unsafe { nil } {
+		res := C.window_grid_get_filter(win.window_info, name.str)
+		if res != unsafe { nil } {
+			return unsafe { tos_clone(res) }
+		}
+	}
+	return ''
+}
+
+// grid_get_row_count returns the current number of rows in a grid.
+pub fn (win &SimpleWindow) grid_get_row_count(name string) int {
+	if win.window_info != unsafe { nil } {
+		return C.window_grid_get_row_count(win.window_info, name.str)
+	}
+	return 0
+}
+
+// grid_get_column_count returns the current number of columns in a grid.
+pub fn (win &SimpleWindow) grid_get_column_count(name string) int {
+	if win.window_info != unsafe { nil } {
+		return C.window_grid_get_column_count(win.window_info, name.str)
+	}
+	return 0
+}
+
+// grid_get_row_values returns the current values for a row as a []string.
+pub fn (win &SimpleWindow) grid_get_row_values(name string, row_idx int) []string {
+	mut values := []string{}
+	if row_idx >= 0 {
+		col_count := win.grid_get_column_count(name)
+		for col_idx in 0 .. col_count {
+			values << win.grid_get_cell(name, row_idx, col_idx)
+		}
+	}
+	return values
+}
+
+// grid_get_column_values returns the current values for a column as a []string.
+pub fn (win &SimpleWindow) grid_get_column_values(name string, col_idx int) []string {
+	mut values := []string{}
+	if col_idx >= 0 {
+		row_count := win.grid_get_row_count(name)
+		for row_idx in 0 .. row_count {
+			values << win.grid_get_cell(name, row_idx, col_idx)
+		}
+	}
+	return values
+}
+
+// grid_set_row_values updates every cell in a row from a []string.
+pub fn (win &SimpleWindow) grid_set_row_values(name string, row_idx int, values []string) &SimpleWindow {
+	if row_idx >= 0 {
+		for idx, value in values {
+			win.grid_set_cell(name, row_idx, idx, value)
+		}
+	}
+	return win
+}
+
+// grid_set_column_values updates every cell in a column from a []string.
+pub fn (win &SimpleWindow) grid_set_column_values(name string, col_idx int, values []string) &SimpleWindow {
+	if col_idx >= 0 {
+		for idx, value in values {
+			win.grid_set_cell(name, idx, col_idx, value)
+		}
+	}
+	return win
+}
+
 // grid_set_column_type sets the type of a column (e.g. 'text' or 'checkbox').
 pub fn (win &SimpleWindow) grid_set_column_type(name string, col_idx int, col_type string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_grid_set_column_type(win.window_info, name.str, col_idx, col_type.str)
+	}
+	return win
+}
+
+// grid_set_column_width resizes a specific column to a fixed width.
+pub fn (win &SimpleWindow) grid_set_column_width(name string, col_idx int, width int) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_grid_set_column_width(win.window_info, name.str, col_idx, width)
+	}
+	return win
+}
+
+// grid_set_row_height resizes all rows to a fixed height.
+pub fn (win &SimpleWindow) grid_set_row_height(name string, height int) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_grid_set_row_height(win.window_info, name.str, height)
+	}
+	return win
+}
+
+// grid_sort_by_column sorts the grid rows by the given column using the current sort direction.
+pub fn (win &SimpleWindow) grid_sort_by_column(name string, col_idx int, ascending bool) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_grid_sort_by_column(win.window_info, name.str, col_idx, if ascending { 1 } else { 0 })
+	}
+	return win
+}
+
+// grid_set_filter filters visible rows by matching cell contents.
+pub fn (win &SimpleWindow) grid_set_filter(name string, query string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_grid_set_filter(win.window_info, name.str, query.str)
+	}
+	return win
+}
+
+// grid_clear_filter removes any active row filter.
+pub fn (win &SimpleWindow) grid_clear_filter(name string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_grid_clear_filter(win.window_info, name.str)
 	}
 	return win
 }
