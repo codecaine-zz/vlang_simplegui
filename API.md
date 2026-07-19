@@ -336,6 +336,20 @@ For common forms, these helpers reduce boilerplate and keep the API friendly for
 - `win.add_number_field(name string, value int) &SimpleWindow` creates a numeric input.
 - `win.add_action(name string, title string, callback VoidEventCallback) &SimpleWindow` creates a button and wires its click handler.
 - `win.add_heading(title string) &SimpleWindow` inserts a large, prominent title label followed by a separator line.
+- `win.add_breadcrumbs(name string, segments []string) &SimpleWindow` creates a breadcrumb/path navigator control.
+- `win.set_breadcrumbs(name string, segments []string) &SimpleWindow` updates the visible breadcrumb segments.
+- `win.add_shortcut_recorder(name string) &SimpleWindow` creates a shortcut capture field for keyboard combinations.
+- `win.add_chart(name string, chart_type string, height int) &SimpleWindow` creates a line or area chart control.
+- `win.set_chart_data(name string, values []f64) &SimpleWindow` updates the points shown in a chart.
+- `win.add_circular_progress(name string, value int, min_val int, max_val int) &SimpleWindow` creates a circular progress gauge.
+- `win.set_circular_progress(name string, value int) &SimpleWindow` updates the circular progress value.
+- `win.add_property_grid(name string, props map[string]string) &SimpleWindow` creates a property inspector grid with key/value rows.
+- `win.set_property_grid_value(name string, key string, value string) &SimpleWindow` updates a property grid entry.
+- `win.add_color_grid(name string, colors []string) &SimpleWindow` creates a grid of selectable color swatches.
+- `win.set_color_grid_selected(name string, color string) &SimpleWindow` selects a color swatch by hex value.
+- `win.add_grid(name string, headers []string, initial_rows [][]string) &SimpleWindow` creates an editable spreadsheet-style grid.
+- `win.grid_add_row(name string, row_values []string) &SimpleWindow`, `win.grid_delete_row(name string, row_idx int) &SimpleWindow`, `win.grid_add_column(name string, header string) &SimpleWindow`, and `win.grid_delete_column(name string, col_idx int) &SimpleWindow` manage grid rows and columns.
+- `win.add_console(name string, height int) &SimpleWindow`, `win.append_console(name string, text string, level int) &SimpleWindow`, and `win.clear_console(name string) &SimpleWindow` create and manage a developer-style log console.
 - `win.add_form_from_struct[T](default_data T) &SimpleWindow` automatically generates input/checkbox/numeric fields side-by-side and vertically from a V struct using compile-time reflection.
 - `win.configure(callback fn (mut cfg WindowConfig)) &SimpleWindow` applies a small fluent configuration block for window title, dimensions, spacing, colors, and resize behavior.
 - `win.form(title string, callback VoidEventCallback) &SimpleWindow` and `win.section(title string, callback VoidEventCallback) &SimpleWindow` create grouped form containers with a lightweight builder feel.

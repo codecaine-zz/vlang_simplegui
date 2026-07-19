@@ -1602,4 +1602,91 @@ fn test_native_macos_ui_additions() {
 	assert true
 }
 
+fn test_developer_controls() {
+	mut win := simplegui.new_simple_window('Developer Controls Test', 100, 100)
+
+	// 1. Console Control APIs
+	win.add_console('my_console', 150)
+	assert win.has_control('my_console')
+	assert win.get_control_kind('my_console') == 'console'
+
+	win.append_console('my_console', 'Log entry\n', 0)
+	win.clear_console('my_console')
+
+	// 2. Chart Control APIs
+	win.add_chart('my_chart', 'area', 200)
+	assert win.has_control('my_chart')
+	assert win.get_control_kind('my_chart') == 'chart'
+
+	win.set_chart_data('my_chart', [10.0, 20.0, 15.0])
+
+	// 3. Shortcut Recorder APIs
+	win.add_shortcut_recorder('my_recorder')
+	assert win.has_control('my_recorder')
+	assert win.get_control_kind('my_recorder') == 'shortcutrecorder'
+
+	// Verify generic get/set hooks work for ShortcutRecorder
+	win.set_text('my_recorder', 'cmd+shift+p')
+	assert win.get_value('my_recorder') == 'cmd+shift+p'
+
+	// 4. Circular Progress Gauge APIs
+	win.add_circular_progress('my_progress', 25, 0, 100)
+	assert win.has_control('my_progress')
+	assert win.get_control_kind('my_progress') == 'circularprogress'
+	win.set_circular_progress('my_progress', 50)
+
+	// 5. Breadcrumb APIs
+	win.add_breadcrumbs('my_breadcrumbs', ['a', 'b', 'c'])
+	assert win.has_control('my_breadcrumbs')
+	assert win.get_control_kind('my_breadcrumbs') == 'breadcrumbs'
+	win.set_breadcrumbs('my_breadcrumbs', ['a', 'b'])
+
+	// 6. Property Grid APIs
+	win.add_property_grid('my_propgrid', {
+		'Width': '100'
+		'Height': '200'
+	})
+	assert win.has_control('my_propgrid')
+	assert win.get_control_kind('my_propgrid') == 'propertygrid'
+	win.set_property_grid_value('my_propgrid', 'Width', '150')
+
+	// 7. Color Grid APIs
+	win.add_color_grid('my_colorgrid', ['#FF0000', '#00FF00', '#0000FF'])
+	assert win.has_control('my_colorgrid')
+	assert win.get_control_kind('my_colorgrid') == 'colorgrid'
+	win.set_color_grid_selected('my_colorgrid', '#00FF00')
+
+	// 8. Excel-like Editable Grid APIs (CRUD)
+	win.add_grid('my_grid', ['A', 'B'], [
+		['1', '2'],
+		['3', '4']
+	])
+	assert win.has_control('my_grid')
+	assert win.get_control_kind('my_grid') == 'grid'
+	win.grid_add_row('my_grid', ['5', '6'])
+	win.grid_set_cell('my_grid', 2, 0, '99')
+	assert win.grid_get_cell('my_grid', 2, 0) == '99'
+	win.grid_add_column('my_grid', 'C')
+	win.grid_delete_column('my_grid', 2)
+	win.grid_delete_row('my_grid', 1)
+	win.grid_set_column_type('my_grid', 1, 'checkbox')
+	win.grid_set_cell('my_grid', 0, 1, 'true')
+	assert win.grid_get_cell('my_grid', 0, 1) == 'true'
+	win.grid_set_column_type('my_grid', 0, 'readonly')
+	win.grid_set_selected_row('my_grid', 0)
+	assert win.grid_get_selected_row('my_grid') == 0
+	win.grid_set_column_editable('my_grid', 0, false)
+	win.grid_set_row_editable('my_grid', 1, false)
+	win.grid_set_cell_editable('my_grid', 0, 1, false)
+	win.grid_set_column_type('my_grid', 1, 'button')
+	win.grid_set_cell('my_grid', 0, 1, 'Run')
+	assert win.grid_get_cell('my_grid', 0, 1) == 'Run'
+	win.grid_set_column_enabled('my_grid', 0, false)
+	win.grid_set_row_enabled('my_grid', 1, false)
+	win.grid_set_cell_enabled('my_grid', 0, 1, false)
+	win.grid_autosize_columns('my_grid')
+	win.grid_clear('my_grid')
+}
+
+
 

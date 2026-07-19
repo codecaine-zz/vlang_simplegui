@@ -83,6 +83,7 @@ fn main() {
 	demo_maps['guessing_game.v'] = DemoConfig{'Guessing Game Studio', 'game.png'}
 	demo_maps['rest_client_demo.v'] = DemoConfig{'REST Client Studio', 'rest_client.png'}
 	demo_maps['worker_pool_visualizer.v'] = DemoConfig{'Worker Pool Visualizer', 'pipeline_monitor.png'}
+	demo_maps['developer_controls_demo.v'] = DemoConfig{'Developer Controls Demo', 'developer.png'}
 
 	demo_maps['layout_vertical_stack.v'] = DemoConfig{'Layout: Vertical Stack', 'design.png'}
 	demo_maps['layout_horizontal_rows.v'] = DemoConfig{'Layout: Horizontal Rows', 'design.png'}

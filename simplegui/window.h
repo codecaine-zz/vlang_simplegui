@@ -248,5 +248,39 @@ void window_end_glass_box(main__WindowInfo *info);
 void *window_add_badge_control(main__WindowInfo *info, const char *name, const char *text, const char *style);
 void *window_add_icon_segments_control(main__WindowInfo *info, const char *name, const char **symbols, int symbols_count, const char *selected);
 
+// Developer-oriented Custom controls
+void *window_add_console_control(main__WindowInfo *info, const char *name, int height);
+void window_append_console_text(main__WindowInfo *info, const char *name, const char *text, int level);
+void window_clear_console(main__WindowInfo *info, const char *name);
+void *window_add_chart_control(main__WindowInfo *info, const char *name, const char *chart_type, int height);
+void window_set_chart_data(main__WindowInfo *info, const char *name, const double *values, int count);
+void *window_add_shortcut_recorder_control(main__WindowInfo *info, const char *name);
+void *window_add_circular_progress_control(main__WindowInfo *info, const char *name, double value, double min_val, double max_val);
+void window_set_circular_progress_value(main__WindowInfo *info, const char *name, double value);
+void *window_add_breadcrumbs_control(main__WindowInfo *info, const char *name, const char **segments, int count);
+void window_set_breadcrumbs(main__WindowInfo *info, const char *name, const char **segments, int count);
+void *window_add_property_grid_control(main__WindowInfo *info, const char *name, const char **keys, const char **values, int count);
+void window_set_property_grid_value(main__WindowInfo *info, const char *name, const char *key, const char *value);
+void *window_add_color_grid_control(main__WindowInfo *info, const char *name, const char **colors, int count);
+void window_set_color_grid_selected(main__WindowInfo *info, const char *name, const char *color);
+void *window_add_grid_control(main__WindowInfo *info, const char *name, const char **headers, int headers_count);
+void window_grid_add_row(main__WindowInfo *info, const char *name, const char **values, int count);
+void window_grid_delete_row(main__WindowInfo *info, const char *name, int row_idx);
+void window_grid_add_column(main__WindowInfo *info, const char *name, const char *header);
+void window_grid_delete_column(main__WindowInfo *info, const char *name, int col_idx);
+void window_grid_set_cell(main__WindowInfo *info, const char *name, int row, int col, const char *value);
+const char *window_grid_get_cell(main__WindowInfo *info, const char *name, int row, int col);
+int window_grid_get_selected_row(main__WindowInfo *info, const char *name);
+void window_grid_set_column_type(main__WindowInfo *info, const char *name, int col_idx, const char *col_type);
+void window_grid_autosize_columns(main__WindowInfo *info, const char *name);
+void window_grid_set_selected_row(main__WindowInfo *info, const char *name, int row_idx);
+void window_grid_clear(main__WindowInfo *info, const char *name);
+void window_grid_set_column_editable(main__WindowInfo *info, const char *name, int col_idx, int editable);
+void window_grid_set_row_editable(main__WindowInfo *info, const char *name, int row_idx, int editable);
+void window_grid_set_cell_editable(main__WindowInfo *info, const char *name, int row, int col, int editable);
+void window_grid_set_column_enabled(main__WindowInfo *info, const char *name, int col_idx, int enabled);
+void window_grid_set_row_enabled(main__WindowInfo *info, const char *name, int row_idx, int enabled);
+void window_grid_set_cell_enabled(main__WindowInfo *info, const char *name, int row, int col, int enabled);
+
 #endif
 

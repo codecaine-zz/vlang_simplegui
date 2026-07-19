@@ -520,6 +520,33 @@ extern void vlang_dispatch_event(void *win_ptr, const char *name, const char *ev
   [super dealloc];
 }
 @end
+@class AppDelegate;
+
+@interface ShortcutRecorder : NSTextField
+@property (nonatomic, retain) NSString *shortcutString;
+@property (nonatomic, retain) NSString *displayString;
+@property (nonatomic, assign) id appDelegate;
+@end
+@interface ChartView : NSView
+@property (nonatomic, retain) NSMutableArray *dataPoints;
+@property (nonatomic, retain) NSColor *lineColor;
+@property (nonatomic, copy) NSString *chartType;
+@end
+
+@interface CircularProgressView : NSView
+@property (nonatomic, assign) double value;
+@property (nonatomic, assign) double minValue;
+@property (nonatomic, assign) double maxValue;
+@property (nonatomic, retain) NSColor *progressColor;
+@end
+
+@interface ColorGridView : NSView
+@property (nonatomic, retain) NSArray *colors;
+@property (nonatomic, retain) NSArray *colorHexStrings;
+@property (nonatomic, assign) NSInteger selectedIndex;
+@property (nonatomic, assign) NSInteger hoveredIndex;
+@property (nonatomic, assign) id appDelegate;
+@end
 
 @interface AppDelegate : NSObject <NSApplicationDelegate, NSWindowDelegate, NSTextFieldDelegate, NSTextViewDelegate, NSTableViewDataSource, NSTableViewDelegate, NSOutlineViewDataSource, NSOutlineViewDelegate, NSTabViewDelegate, NSToolbarDelegate, NSCollectionViewDataSource, NSCollectionViewDelegate>
 @property (nonatomic, assign) main__WindowParams params;
@@ -532,6 +559,15 @@ extern void vlang_dispatch_event(void *win_ptr, const char *name, const char *ev
 @property (nonatomic, strong) NSMutableDictionary *controlsByName;
 @property (nonatomic, strong) NSMutableDictionary *listItemsByName;
 @property (nonatomic, strong) NSMutableDictionary *tableItemsByName;
+@property (nonatomic, strong) NSMutableDictionary *gridItemsByName;
+@property (nonatomic, strong) NSMutableDictionary *gridHeadersByName;
+@property (nonatomic, strong) NSMutableDictionary *gridColumnTypesByName;
+@property (nonatomic, strong) NSMutableDictionary *gridReadOnlyCellsByName;
+@property (nonatomic, strong) NSMutableDictionary *gridReadOnlyRowsByName;
+@property (nonatomic, strong) NSMutableDictionary *gridReadOnlyColsByName;
+@property (nonatomic, strong) NSMutableDictionary *gridDisabledCellsByName;
+@property (nonatomic, strong) NSMutableDictionary *gridDisabledRowsByName;
+@property (nonatomic, strong) NSMutableDictionary *gridDisabledColsByName;
 @property (nonatomic, strong) NSMutableDictionary *treeItemsByName;
 @property (nonatomic, strong) NSMutableDictionary *linkUrls;
 @property (nonatomic, strong) NSColor *currentBackgroundColor;
@@ -561,6 +597,14 @@ extern void vlang_dispatch_event(void *win_ptr, const char *name, const char *ev
 - (void)endGlassBox;
 - (NSView *)makeBadgeWithName:(NSString *)name text:(NSString *)text style:(NSString *)style;
 - (NSView *)makeIconSegmentsWithName:(NSString *)name symbols:(NSArray<NSString *> *)symbols selected:(NSString *)selected;
+- (NSView *)makeConsoleWithName:(NSString *)name height:(int)height;
+- (NSView *)makeChartViewWithName:(NSString *)name chartType:(NSString *)chartType height:(int)height;
+- (NSView *)makeShortcutRecorderWithName:(NSString *)name;
+- (NSView *)makeCircularProgressWithName:(NSString *)name value:(double)value minVal:(double)minVal maxVal:(double)maxVal;
+- (NSView *)makeBreadcrumbsWithName:(NSString *)name segments:(NSArray<NSString *> *)segments;
+- (void)handleBreadcrumbClicked:(id)sender;
+- (NSView *)makePropertyGridWithName:(NSString *)name keys:(NSArray<NSString *> *)keys values:(NSArray<NSString *> *)values;
+- (NSView *)makeColorGridWithName:(NSString *)name colors:(NSArray<NSString *> *)colors;
 
 
 - (void)setupToolbar;
@@ -609,6 +653,436 @@ extern void vlang_dispatch_event(void *win_ptr, const char *name, const char *ev
 - (void)setupMenuBar;
 - (NSMenu *)findOrCreateMenuWithName:(NSString *)menuName;
 - (void)handleMenuItemClicked:(id)sender;
+@end
+
+@implementation ShortcutRecorder
+- (instancetype)initWithFrame:(NSRect)frameRect {
+  self = [super initWithFrame:frameRect];
+  if (self) {
+    ModernTextFieldCell *cell = [[ModernTextFieldCell alloc] init];
+    [cell setEditable:NO];
+    [cell setSelectable:NO];
+    [cell setScrollable:YES];
+    [cell setDrawsBackground:YES];
+    self.cell = cell;
+    [cell release];
+    self.wantsLayer = YES;
+    self.layer.cornerRadius = 8.0;
+    self.layer.borderWidth = 1.0;
+    self.layer.borderColor = [NSColor separatorColor].CGColor;
+    self.focusRingType = NSFocusRingTypeNone;
+    
+    _shortcutString = [[NSString alloc] initWithString:@""];
+    _displayString = [[NSString alloc] initWithString:@"Press shortcut..."];
+    [self setStringValue:_displayString];
+    [self setAlignment:NSTextAlignmentCenter];
+  }
+  return self;
+}
+- (void)dealloc {
+  [_shortcutString release];
+  [_displayString release];
+  [super dealloc];
+}
+- (void)layout {
+  [super layout];
+  NSColor *bgColor = self.backgroundColor ?: [NSColor textBackgroundColor];
+  self.layer.backgroundColor = bgColor.CGColor;
+  BOOL hasFocus = NO;
+  if (self.window && self.window.firstResponder) {
+    id responder = self.window.firstResponder;
+    if (responder == self) {
+      hasFocus = YES;
+    }
+  }
+  if (hasFocus) {
+    self.layer.borderColor = [NSColor controlAccentColor].CGColor;
+    self.layer.borderWidth = 1.5;
+    self.layer.shadowColor = [NSColor controlAccentColor].CGColor;
+    self.layer.shadowOffset = CGSizeZero;
+    self.layer.shadowRadius = 3.0;
+    self.layer.shadowOpacity = 0.35;
+    self.layer.masksToBounds = NO;
+  } else {
+    self.layer.borderColor = [NSColor separatorColor].CGColor;
+    self.layer.borderWidth = 1.0;
+    self.layer.shadowColor = nil;
+    self.layer.shadowOpacity = 0.0;
+  }
+}
+- (BOOL)becomeFirstResponder {
+  BOOL result = [super becomeFirstResponder];
+  [self setNeedsLayout:YES];
+  if (result) {
+    self.displayString = @"Press keys...";
+    [self setStringValue:self.displayString];
+  }
+  return result;
+}
+- (BOOL)resignFirstResponder {
+  BOOL result = [super resignFirstResponder];
+  [self setNeedsLayout:YES];
+  if (self.shortcutString.length == 0) {
+    self.displayString = @"Press shortcut...";
+    [self setStringValue:self.displayString];
+  } else {
+    [self setStringValue:self.displayString];
+  }
+  return result;
+}
+- (BOOL)acceptsFirstResponder {
+  return YES;
+}
+- (void)keyDown:(NSEvent *)event {
+  NSEventModifierFlags flags = [event modifierFlags];
+  unsigned short keyCode = [event keyCode];
+  NSString *chars = [event charactersIgnoringModifiers];
+  
+  if (keyCode == 53) { // Escape
+    self.shortcutString = @"";
+    self.displayString = @"Press shortcut...";
+    [self setStringValue:self.displayString];
+    [self dispatchChangeEvent];
+    [self.window makeFirstResponder:nil];
+    return;
+  }
+  if (keyCode == 48 || keyCode == 49 || keyCode == 51 ||
+      keyCode == 54 || keyCode == 55 || keyCode == 56 || keyCode == 57 ||
+      keyCode == 58 || keyCode == 59 || keyCode == 60 || keyCode == 61 || keyCode == 62 || keyCode == 63) {
+    return;
+  }
+  NSMutableString *disp = [NSMutableString string];
+  NSMutableString *code = [NSMutableString string];
+  if (flags & NSEventModifierFlagControl) {
+    [disp appendString:@"⌃"];
+    [code appendString:@"ctrl+"];
+  }
+  if (flags & NSEventModifierFlagOption) {
+    [disp appendString:@"⌥"];
+    [code appendString:@"opt+"];
+  }
+  if (flags & NSEventModifierFlagShift) {
+    [disp appendString:@"⇧"];
+    [code appendString:@"shift+"];
+  }
+  if (flags & NSEventModifierFlagCommand) {
+    [disp appendString:@"⌘"];
+    [code appendString:@"cmd+"];
+  }
+  NSString *keyChar = [chars uppercaseString];
+  if (keyChar.length > 0) {
+    [disp appendString:keyChar];
+    [code appendString:[chars lowercaseString]];
+    self.shortcutString = code;
+    self.displayString = disp;
+    [self setStringValue:self.displayString];
+    [self dispatchChangeEvent];
+    [self.window makeFirstResponder:nil];
+  }
+}
+- (void)dispatchChangeEvent {
+  AppDelegate *del = (AppDelegate *)self.appDelegate;
+  NSString *name = [del nameForControl:self];
+  if (name && del.win_ptr) {
+    vlang_dispatch_event(del.win_ptr, [name UTF8String], "change", [self.shortcutString UTF8String]);
+  }
+}
+- (BOOL)performKeyEquivalent:(NSEvent *)event {
+  [self keyDown:event];
+  return YES;
+}
+@end
+
+@implementation ChartView
+- (instancetype)initWithFrame:(NSRect)frameRect {
+  self = [super initWithFrame:frameRect];
+  if (self) {
+    _dataPoints = [[NSMutableArray alloc] init];
+    _lineColor = [[NSColor colorWithRed:0.0 green:0.6 blue:1.0 alpha:1.0] retain];
+    _chartType = [[NSString alloc] initWithString:@"line"];
+  }
+  return self;
+}
+- (void)dealloc {
+  [_dataPoints release];
+  [_lineColor release];
+  [_chartType release];
+  [super dealloc];
+}
+- (void)drawRect:(NSRect)dirtyRect {
+  [super drawRect:dirtyRect];
+  [[NSColor colorWithRed:0.08 green:0.08 blue:0.1 alpha:1.0] setFill];
+  NSBezierPath *bgPath = [NSBezierPath bezierPathWithRoundedRect:self.bounds xRadius:8.0 yRadius:8.0];
+  [bgPath fill];
+  [[NSColor colorWithWhite:1.0 alpha:0.1] setStroke];
+  [bgPath setLineWidth:1.0];
+  [bgPath stroke];
+  if (self.dataPoints.count < 2) {
+    return;
+  }
+  NSRect bounds = NSInsetRect(self.bounds, 10, 10);
+  CGFloat width = bounds.size.width;
+  CGFloat height = bounds.size.height;
+  CGFloat xMin = bounds.origin.x;
+  CGFloat yMin = bounds.origin.y;
+  int gridCount = 4;
+  [[NSColor colorWithWhite:1.0 alpha:0.07] setStroke];
+  for (int i = 0; i <= gridCount; i++) {
+    CGFloat y = yMin + (height / gridCount) * i;
+    NSBezierPath *gridPath = [NSBezierPath bezierPath];
+    [gridPath moveToPoint:NSMakePoint(xMin, y)];
+    [gridPath lineToPoint:NSMakePoint(xMin + width, y)];
+    [gridPath setLineWidth:1.0];
+    [gridPath stroke];
+  }
+  double minVal = [[self.dataPoints firstObject] doubleValue];
+  double maxVal = minVal;
+  for (NSNumber *num in self.dataPoints) {
+    double v = [num doubleValue];
+    if (v < minVal) minVal = v;
+    if (v > maxVal) maxVal = v;
+  }
+  if (maxVal == minVal) {
+    maxVal += 1.0;
+    minVal -= 1.0;
+  }
+  double range = maxVal - minVal;
+  int count = (int)self.dataPoints.count;
+  NSPoint *points = malloc(sizeof(NSPoint) * count);
+  for (int i = 0; i < count; i++) {
+    double val = [self.dataPoints[i] doubleValue];
+    CGFloat x = xMin + (width / (count - 1)) * i;
+    CGFloat y = yMin + ((val - minVal) / range) * height;
+    points[i] = NSMakePoint(x, y);
+  }
+  NSBezierPath *chartPath = [NSBezierPath bezierPath];
+  [chartPath moveToPoint:points[0]];
+  for (int i = 1; i < count; i++) {
+    [chartPath lineToPoint:points[i]];
+  }
+  NSColor *strokeColor = self.lineColor;
+  if ([self.chartType isEqualToString:@"area"]) {
+    NSBezierPath *areaPath = [chartPath copy];
+    [areaPath lineToPoint:NSMakePoint(points[count - 1].x, yMin)];
+    [areaPath lineToPoint:NSMakePoint(points[0].x, yMin)];
+    [areaPath closePath];
+    NSColor *startColor = [strokeColor colorWithAlphaComponent:0.4];
+    NSColor *endColor = [strokeColor colorWithAlphaComponent:0.0];
+    NSGradient *gradient = [[NSGradient alloc] initWithStartingColor:startColor endingColor:endColor];
+    [gradient drawInBezierPath:areaPath angle:270.0];
+    [gradient release];
+    [areaPath release];
+  }
+  [strokeColor setStroke];
+  [chartPath setLineWidth:2.0];
+  [chartPath setLineJoinStyle:NSLineJoinStyleRound];
+  [chartPath stroke];
+  free(points);
+}
+@end
+
+@implementation CircularProgressView
+- (instancetype)initWithFrame:(NSRect)frameRect {
+  self = [super initWithFrame:frameRect];
+  if (self) {
+    _value = 0.0;
+    _minValue = 0.0;
+    _maxValue = 100.0;
+    _progressColor = [[NSColor colorWithRed:0.0 green:0.6 blue:1.0 alpha:1.0] retain];
+  }
+  return self;
+}
+- (void)dealloc {
+  [_progressColor release];
+  [super dealloc];
+}
+- (void)drawRect:(NSRect)dirtyRect {
+  [super drawRect:dirtyRect];
+  [[NSColor clearColor] setFill];
+  NSRectFill(self.bounds);
+  
+  NSRect bounds = self.bounds;
+  CGFloat size = MIN(bounds.size.width, bounds.size.height);
+  CGFloat strokeWidth = 8.0;
+  CGFloat radius = (size - strokeWidth) / 2.0 - 4.0;
+  NSPoint center = NSMakePoint(bounds.origin.x + bounds.size.width / 2.0, bounds.origin.y + bounds.size.height / 2.0);
+  
+  [[NSColor colorWithWhite:1.0 alpha:0.1] setStroke];
+  NSBezierPath *trackPath = [NSBezierPath bezierPath];
+  [trackPath appendBezierPathWithArcWithCenter:center radius:radius startAngle:0 endAngle:360];
+  [trackPath setLineWidth:strokeWidth];
+  [trackPath stroke];
+  
+  double percent = (self.maxValue > self.minValue) ? (self.value - self.minValue) / (self.maxValue - self.minValue) : 0.0;
+  if (percent < 0.0) percent = 0.0;
+  if (percent > 1.0) percent = 1.0;
+  
+  if (percent > 0.0) {
+    [self.progressColor setStroke];
+    NSBezierPath *progressPath = [NSBezierPath bezierPath];
+    CGFloat startAngle = 90.0;
+    CGFloat endAngle = 90.0 - (percent * 360.0);
+    [progressPath appendBezierPathWithArcWithCenter:center radius:radius startAngle:startAngle endAngle:endAngle clockwise:YES];
+    [progressPath setLineWidth:strokeWidth];
+    [progressPath setLineCapStyle:NSLineCapStyleRound];
+    [progressPath stroke];
+  }
+  
+  int displayPercent = (int)(percent * 100.0);
+  NSString *text = [NSString stringWithFormat:@"%d%%", displayPercent];
+  NSDictionary *attrs = @{
+    NSFontAttributeName: [NSFont fontWithName:@"Menlo-Bold" size:radius * 0.5] ?: [NSFont boldSystemFontOfSize:radius * 0.5],
+    NSForegroundColorAttributeName: [NSColor textColor]
+  };
+  NSSize textSize = [text sizeWithAttributes:attrs];
+  NSPoint textPos = NSMakePoint(center.x - textSize.width / 2.0, center.y - textSize.height / 2.0);
+  [text drawAtPoint:textPos withAttributes:attrs];
+}
+@end
+
+static NSColor *colorFromHexString(NSString *hexString) {
+  NSString *cleanString = [hexString stringByReplacingOccurrencesOfString:@"#" withString:@""];
+  if (cleanString.length == 3) {
+    cleanString = [NSString stringWithFormat:@"%@%@%@%@%@%@",
+                   [cleanString substringWithRange:NSMakeRange(0, 1)], [cleanString substringWithRange:NSMakeRange(0, 1)],
+                   [cleanString substringWithRange:NSMakeRange(1, 1)], [cleanString substringWithRange:NSMakeRange(1, 1)],
+                   [cleanString substringWithRange:NSMakeRange(2, 1)], [cleanString substringWithRange:NSMakeRange(2, 1)]];
+  }
+  if (cleanString.length == 6) {
+    unsigned int baseValue;
+    [[NSScanner scannerWithString:cleanString] scanHexInt:&baseValue];
+    
+    float red = ((baseValue >> 16) & 0xFF) / 255.0f;
+    float green = ((baseValue >> 8) & 0xFF) / 255.0f;
+    float blue = (baseValue & 0xFF) / 255.0f;
+    
+    return [NSColor colorWithRed:red green:green blue:blue alpha:1.0f];
+  }
+  return [NSColor grayColor];
+}
+
+@implementation ColorGridView
+- (instancetype)initWithFrame:(NSRect)frameRect {
+  self = [super initWithFrame:frameRect];
+  if (self) {
+    _colors = [[NSArray alloc] init];
+    _colorHexStrings = [[NSArray alloc] init];
+    _selectedIndex = -1;
+    _hoveredIndex = -1;
+  }
+  return self;
+}
+- (void)dealloc {
+  [_colors release];
+  [_colorHexStrings release];
+  [super dealloc];
+}
+- (void)updateTrackingAreas {
+  [super updateTrackingAreas];
+  for (NSTrackingArea *area in self.trackingAreas) {
+    [self removeTrackingArea:area];
+  }
+  NSTrackingAreaOptions options = NSTrackingMouseMoved | NSTrackingMouseEnteredAndExited | NSTrackingActiveAlways | NSTrackingInVisibleRect;
+  NSTrackingArea *area = [[NSTrackingArea alloc] initWithRect:self.bounds options:options owner:self userInfo:nil];
+  [self addTrackingArea:area];
+  [area release];
+}
+- (NSInteger)colorIndexAtPoint:(NSPoint)point {
+  CGFloat boxSize = 32.0;
+  CGFloat spacing = 8.0;
+  CGFloat step = boxSize + spacing;
+  CGFloat width = self.bounds.size.width;
+  int cols = (int)floor((width + spacing) / step);
+  if (cols < 1) cols = 1;
+  
+  CGFloat yFromTop = self.bounds.size.height - point.y;
+  int col = (int)floor(point.x / step);
+  int row = (int)floor(yFromTop / step);
+  
+  CGFloat localX = point.x - col * step;
+  CGFloat localY = yFromTop - row * step;
+  
+  if (localX >= 0 && localX <= boxSize && localY >= 0 && localY <= boxSize) {
+    NSInteger index = row * cols + col;
+    if (index >= 0 && index < self.colorHexStrings.count) {
+      return index;
+    }
+  }
+  return -1;
+}
+- (void)mouseMoved:(NSEvent *)event {
+  NSPoint point = [self convertPoint:[event locationInWindow] fromView:nil];
+  NSInteger index = [self colorIndexAtPoint:point];
+  if (index != self.hoveredIndex) {
+    self.hoveredIndex = index;
+    [self setNeedsDisplay:YES];
+  }
+}
+- (void)mouseExited:(NSEvent *)event {
+  if (self.hoveredIndex != -1) {
+    self.hoveredIndex = -1;
+    [self setNeedsDisplay:YES];
+  }
+}
+- (void)mouseDown:(NSEvent *)event {
+  NSPoint point = [self convertPoint:[event locationInWindow] fromView:nil];
+  NSInteger index = [self colorIndexAtPoint:point];
+  if (index >= 0 && index < self.colorHexStrings.count) {
+    self.selectedIndex = index;
+    [self setNeedsDisplay:YES];
+    
+    AppDelegate *del = (AppDelegate *)self.appDelegate;
+    NSString *name = [del nameForControl:self];
+    if (name && del.win_ptr) {
+      NSString *hex = self.colorHexStrings[index];
+      vlang_dispatch_event(del.win_ptr, [name UTF8String], "change", [hex UTF8String]);
+    }
+  }
+}
+- (void)drawRect:(NSRect)dirtyRect {
+  [super drawRect:dirtyRect];
+  
+  [[NSColor clearColor] setFill];
+  NSRectFill(self.bounds);
+  
+  CGFloat boxSize = 32.0;
+  CGFloat spacing = 8.0;
+  CGFloat step = boxSize + spacing;
+  CGFloat width = self.bounds.size.width;
+  int cols = (int)floor((width + spacing) / step);
+  if (cols < 1) cols = 1;
+  
+  for (NSUInteger i = 0; i < self.colors.count; i++) {
+    int row = (int)(i / cols);
+    int col = (int)(i % cols);
+    
+    CGFloat x = col * step;
+    CGFloat y = self.bounds.size.height - (row + 1) * step + spacing;
+    
+    NSRect boxRect = NSMakeRect(x, y, boxSize, boxSize);
+    
+    NSColor *color = self.colors[i];
+    [color setFill];
+    NSBezierPath *path = [NSBezierPath bezierPathWithRoundedRect:boxRect xRadius:6.0 yRadius:6.0];
+    [path fill];
+    
+    [[NSColor colorWithWhite:1.0 alpha:0.15] setStroke];
+    [path setLineWidth:1.0];
+    [path stroke];
+    
+    if (self.selectedIndex == i) {
+      [[NSColor controlAccentColor] setStroke];
+      NSBezierPath *selPath = [NSBezierPath bezierPathWithRoundedRect:NSInsetRect(boxRect, -2.5, -2.5) xRadius:8.0 yRadius:8.0];
+      [selPath setLineWidth:2.0];
+      [selPath stroke];
+    } else if (self.hoveredIndex == i) {
+      [[NSColor colorWithWhite:1.0 alpha:0.4] setStroke];
+      NSBezierPath *hovPath = [NSBezierPath bezierPathWithRoundedRect:NSInsetRect(boxRect, -1.5, -1.5) xRadius:7.5 yRadius:7.5];
+      [hovPath setLineWidth:1.5];
+      [hovPath stroke];
+    }
+  }
+}
 @end
 
 @interface CustomWindow : NSWindow
@@ -945,6 +1419,22 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   NSColor *effectiveFont = fontColor;
   if (!effectiveFont) {
     effectiveFont = isStatus ? [NSColor secondaryLabelColor] : modernTextColor();
+  }
+
+  if ([view isKindOfClass:[ChartView class]]) {
+    ChartView *cv = (ChartView *)view;
+    if (fontColor) {
+      cv.lineColor = fontColor;
+    }
+    [cv setNeedsDisplay:YES];
+    return;
+  }
+  if ([view isKindOfClass:[ShortcutRecorder class]]) {
+    ShortcutRecorder *sr = (ShortcutRecorder *)view;
+    sr.backgroundColor = effectiveBackground;
+    sr.textColor = effectiveFont;
+    sr.layer.backgroundColor = effectiveBackground.CGColor;
+    return;
   }
 
   if ([view isKindOfClass:[NSTextField class]]) {
@@ -2383,6 +2873,11 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   if (!name) return 0;
   NSString *key = [[name lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
   
+  if (self.gridItemsByName && self.gridItemsByName[key]) {
+    NSArray *rows = self.gridItemsByName[key];
+    return rows.count;
+  }
+  
   if (self.tableItemsByName && self.tableItemsByName[key]) {
     NSArray *rows = self.tableItemsByName[key];
     return rows.count;
@@ -2392,11 +2887,207 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   return items ? items.count : 0;
 }
 
+- (BOOL)isGridCellEditableWithName:(NSString *)name row:(NSInteger)row col:(NSInteger)col {
+  NSString *key = [[name lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  
+  if (self.gridColumnTypesByName && self.gridColumnTypesByName[key]) {
+    NSArray *types = self.gridColumnTypesByName[key];
+    if (col >= 0 && col < types.count) {
+      if ([types[col] isEqualToString:@"readonly"]) {
+        return NO;
+      }
+    }
+  }
+  
+  if (self.gridReadOnlyColsByName && self.gridReadOnlyColsByName[key]) {
+    NSSet *cols = self.gridReadOnlyColsByName[key];
+    if ([cols containsObject:@(col)]) {
+      return NO;
+    }
+  }
+  
+  if (self.gridReadOnlyRowsByName && self.gridReadOnlyRowsByName[key]) {
+    NSSet *rows = self.gridReadOnlyRowsByName[key];
+    if ([rows containsObject:@(row)]) {
+      return NO;
+    }
+  }
+  
+  if (self.gridReadOnlyCellsByName && self.gridReadOnlyCellsByName[key]) {
+    NSSet *cells = self.gridReadOnlyCellsByName[key];
+    NSString *cellCoord = [NSString stringWithFormat:@"%ld_%ld", (long)row, (long)col];
+    if ([cells containsObject:cellCoord]) {
+      return NO;
+    }
+  }
+  
+  return YES;
+}
+
+- (BOOL)isGridCellEnabledWithName:(NSString *)name row:(NSInteger)row col:(NSInteger)col {
+  NSString *key = [[name lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  
+  if (self.gridDisabledColsByName && self.gridDisabledColsByName[key]) {
+    NSSet *cols = self.gridDisabledColsByName[key];
+    if ([cols containsObject:@(col)]) {
+      return NO;
+    }
+  }
+  
+  if (self.gridDisabledRowsByName && self.gridDisabledRowsByName[key]) {
+    NSSet *rows = self.gridDisabledRowsByName[key];
+    if ([rows containsObject:@(row)]) {
+      return NO;
+    }
+  }
+  
+  if (self.gridDisabledCellsByName && self.gridDisabledCellsByName[key]) {
+    NSSet *cells = self.gridDisabledCellsByName[key];
+    NSString *cellCoord = [NSString stringWithFormat:@"%ld_%ld", (long)row, (long)col];
+    if ([cells containsObject:cellCoord]) {
+      return NO;
+    }
+  }
+  
+  return YES;
+}
+
 // NSTableViewDelegate methods
 - (NSView *)tableView:(NSTableView *)tableView viewForTableColumn:(NSTableColumn *)tableColumn row:(NSInteger)row {
   NSString *name = tableView.identifier;
   if (!name) return nil;
   NSString *key = [[name lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  
+  if (self.gridItemsByName && self.gridItemsByName[key]) {
+    NSArray *rows = self.gridItemsByName[key];
+    if (row < 0 || row >= rows.count) return nil;
+    NSArray *cols = rows[row];
+    
+    NSString *colId = tableColumn.identifier;
+    int colIdx = 0;
+    if ([colId hasPrefix:@"Col_"]) {
+      colIdx = [[colId substringFromIndex:4] intValue];
+    }
+    if (colIdx < 0 || colIdx >= cols.count) return nil;
+    
+    BOOL isCheckbox = NO;
+    BOOL isButton = NO;
+    if (self.gridColumnTypesByName && self.gridColumnTypesByName[key]) {
+      NSArray *types = self.gridColumnTypesByName[key];
+      if (colIdx >= 0 && colIdx < types.count) {
+        if ([types[colIdx] isEqualToString:@"checkbox"]) {
+          isCheckbox = YES;
+        } else if ([types[colIdx] isEqualToString:@"button"]) {
+          isButton = YES;
+        }
+      }
+    }
+    
+    if (isButton) {
+      NSTableCellView *cell = [tableView makeViewWithIdentifier:@"GridButtonCell" owner:self];
+      NSButton *btn = nil;
+      if (!cell) {
+        cell = [[NSTableCellView alloc] initWithFrame:NSMakeRect(0, 0, 100, 20)];
+        btn = [[NSButton alloc] initWithFrame:NSMakeRect(0, 0, 100, 20)];
+        [btn setBezelStyle:NSBezelStyleRounded];
+        [btn setTarget:self];
+        [btn setAction:@selector(handleGridButtonClicked:)];
+        [cell addSubview:btn];
+        
+        btn.translatesAutoresizingMaskIntoConstraints = NO;
+        [NSLayoutConstraint activateConstraints:@[
+          [btn.leadingAnchor constraintEqualToAnchor:cell.leadingAnchor constant:4],
+          [btn.trailingAnchor constraintEqualToAnchor:cell.trailingAnchor constant:-4],
+          [btn.centerYAnchor constraintEqualToAnchor:cell.centerYAnchor]
+        ]];
+        
+        btn.tag = 998;
+        [btn release];
+      } else {
+        btn = [cell viewWithTag:998];
+      }
+      
+      BOOL isCellEnabled = [self isGridCellEnabledWithName:name row:row col:colIdx];
+      [btn setIdentifier:[NSString stringWithFormat:@"%ld_%d", (long)row, colIdx]];
+      [btn setTitle:cols[colIdx]];
+      [btn setEnabled:isCellEnabled];
+      return cell;
+    }
+    
+    if (isCheckbox) {
+      NSTableCellView *cell = [tableView makeViewWithIdentifier:@"GridCheckboxCell" owner:self];
+      NSButton *checkbox = nil;
+      if (!cell) {
+        cell = [[NSTableCellView alloc] initWithFrame:NSMakeRect(0, 0, 100, 20)];
+        checkbox = [[NSButton alloc] initWithFrame:NSMakeRect(0, 0, 100, 20)];
+        [checkbox setButtonType:NSButtonTypeSwitch];
+        [checkbox setTitle:@""];
+        [checkbox setTarget:self];
+        [checkbox setAction:@selector(handleGridCheckboxClicked:)];
+        [cell addSubview:checkbox];
+        
+        checkbox.translatesAutoresizingMaskIntoConstraints = NO;
+        [NSLayoutConstraint activateConstraints:@[
+          [checkbox.centerXAnchor constraintEqualToAnchor:cell.centerXAnchor],
+          [checkbox.centerYAnchor constraintEqualToAnchor:cell.centerYAnchor]
+        ]];
+        
+        checkbox.tag = 999;
+        [checkbox release];
+      } else {
+        checkbox = [cell viewWithTag:999];
+      }
+      
+      [checkbox setIdentifier:[NSString stringWithFormat:@"%ld_%d", (long)row, colIdx]];
+      NSString *val = cols[colIdx];
+      if ([val isEqualToString:@"true"] || [val isEqualToString:@"1"] || [val isEqualToString:@"yes"]) {
+        [checkbox setState:NSControlStateValueOn];
+      } else {
+        [checkbox setState:NSControlStateValueOff];
+      }
+      BOOL isCellEnabled = [self isGridCellEnabledWithName:name row:row col:colIdx];
+      [checkbox setEnabled:isCellEnabled];
+      return cell;
+    }
+    
+    BOOL isCellEnabled = [self isGridCellEnabledWithName:name row:row col:colIdx];
+    BOOL isEditable = isCellEnabled && [self isGridCellEditableWithName:name row:row col:colIdx];
+    
+    NSTableCellView *cell = [tableView makeViewWithIdentifier:@"GridCell" owner:self];
+    if (!cell) {
+      cell = [[NSTableCellView alloc] initWithFrame:NSMakeRect(0, 0, 100, 20)];
+      NSTextField *textField = [[NSTextField alloc] initWithFrame:NSMakeRect(0, 0, 100, 20)];
+      [textField setBezeled:NO];
+      [textField setDrawsBackground:NO];
+      [textField setEditable:YES];
+      [textField setSelectable:YES];
+      [textField setDelegate:self];
+      [cell addSubview:textField];
+      cell.textField = textField;
+      
+      textField.translatesAutoresizingMaskIntoConstraints = NO;
+      [NSLayoutConstraint activateConstraints:@[
+        [textField.leadingAnchor constraintEqualToAnchor:cell.leadingAnchor constant:4],
+        [textField.trailingAnchor constraintEqualToAnchor:cell.trailingAnchor constant:-4],
+        [textField.topAnchor constraintEqualToAnchor:cell.topAnchor constant:2],
+        [textField.bottomAnchor constraintEqualToAnchor:cell.bottomAnchor constant:-2]
+      ]];
+    }
+    [cell.textField setIdentifier:[NSString stringWithFormat:@"%ld_%d", (long)row, colIdx]];
+    [cell.textField setStringValue:cols[colIdx]];
+    [cell.textField setEditable:isEditable];
+    [cell.textField setSelectable:YES];
+    if (isCellEnabled) {
+      if (self.currentFontColor) {
+        [cell.textField setTextColor:self.currentFontColor];
+      } else {
+        [cell.textField setTextColor:[NSColor controlTextColor]];
+      }
+    } else {
+      [cell.textField setTextColor:[NSColor disabledControlTextColor]];
+    }
+    return cell;
+  }
   
   if (self.tableItemsByName && self.tableItemsByName[key]) {
     NSArray *rows = self.tableItemsByName[key];
@@ -2605,6 +3296,47 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   NSString *name = [self nameForControl:control];
   if (name && self.win_ptr) {
     vlang_dispatch_event(self.win_ptr, [name UTF8String], "blur", "");
+  } else if ([control isKindOfClass:[NSTextField class]]) {
+    NSTextField *tf = (NSTextField *)control;
+    NSString *key = tf.identifier;
+    
+    NSView *v = tf;
+    while (v && ![v isKindOfClass:[NSTableView class]]) {
+      v = v.superview;
+    }
+    if (v) {
+      NSTableView *tv = (NSTableView *)v;
+      NSString *gridName = tv.identifier;
+      NSString *gridKey = [[gridName lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+      if (gridName && self.gridItemsByName && self.gridItemsByName[gridKey]) {
+        NSString *coords = tf.identifier;
+        NSArray *parts = [coords componentsSeparatedByString:@"_"];
+        if (parts.count == 2) {
+          int rowIdx = [parts[0] intValue];
+          int colIdx = [parts[1] intValue];
+          
+          NSMutableArray *rows = self.gridItemsByName[gridKey];
+          if (rowIdx >= 0 && rowIdx < rows.count) {
+            NSMutableArray *cols = [rows[rowIdx] mutableCopy];
+            if (colIdx >= 0 && colIdx < cols.count) {
+              cols[colIdx] = tf.stringValue;
+              rows[rowIdx] = cols;
+            }
+            [cols release];
+          }
+          
+          NSString *eventVal = [NSString stringWithFormat:@"%d:%d:%@", rowIdx, colIdx, tf.stringValue];
+          vlang_dispatch_event(self.win_ptr, [gridName UTF8String], "change", [eventVal UTF8String]);
+        }
+      }
+    } else if (tf.superview && tf.superview.superview && [tf.superview.superview isKindOfClass:[NSStackView class]]) {
+      NSStackView *grid = (NSStackView *)tf.superview.superview;
+      NSString *gridName = [self nameForControl:grid];
+      if (gridName && self.win_ptr && key) {
+        NSString *eventVal = [NSString stringWithFormat:@"%@:%@", key, tf.stringValue];
+        vlang_dispatch_event(self.win_ptr, [gridName UTF8String], "change", [eventVal UTF8String]);
+      }
+    }
   }
 }
 
@@ -3262,6 +3994,343 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   self.controlsByName[[name lowercaseString]] = seg;
   [self addControlToLayout:seg];
   return seg;
+}
+
+- (NSView *)makeConsoleWithName:(NSString *)name height:(int)height {
+  NSScrollView *scroll = [[NSScrollView alloc] initWithFrame:NSZeroRect];
+  [scroll setIdentifier:name];
+  [scroll setHasVerticalScroller:YES];
+  [scroll setHasHorizontalScroller:YES];
+  [scroll setBorderType:NSNoBorder];
+  [scroll setWantsLayer:YES];
+  scroll.layer.cornerRadius = 8.0;
+  scroll.layer.borderWidth = 1.0;
+  scroll.layer.borderColor = [[NSColor darkGrayColor] CGColor];
+  [self makeStretchableView:scroll minimumWidth:320];
+  [scroll.heightAnchor constraintEqualToConstant:height > 0 ? height : 150].active = YES;
+  
+  NSTextView *textView = [[NSTextView alloc] initWithFrame:NSZeroRect];
+  [textView setIdentifier:name];
+  [textView setMinSize:NSMakeSize(0.0, height > 0 ? height : 150.0)];
+  [textView setMaxSize:NSMakeSize(FLT_MAX, FLT_MAX)];
+  [textView setVerticallyResizable:YES];
+  [textView setHorizontallyResizable:YES];
+  [textView setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
+  [textView setEditable:NO];
+  [textView setSelectable:YES];
+  [textView setWantsLayer:YES];
+  [textView setTextContainerInset:NSMakeSize(8.0, 8.0)];
+  
+  [textView setFont:[NSFont fontWithName:@"Menlo" size:11.0] ?: [NSFont userFixedPitchFontOfSize:11.0]];
+  [scroll setBackgroundColor:[NSColor colorWithRed:0.08 green:0.08 blue:0.1 alpha:1.0]];
+  [textView setBackgroundColor:[NSColor colorWithRed:0.08 green:0.08 blue:0.1 alpha:1.0]];
+  [textView setTextColor:[NSColor colorWithRed:0.9 green:0.9 blue:0.9 alpha:1.0]];
+  
+  [scroll setDocumentView:textView];
+  [textView release];
+  
+  self.controlsByName[[name lowercaseString]] = scroll;
+  [self addControlToLayout:scroll];
+  return scroll;
+}
+
+- (NSView *)makeChartViewWithName:(NSString *)name chartType:(NSString *)chartType height:(int)height {
+  ChartView *chart = [[ChartView alloc] initWithFrame:NSZeroRect];
+  [chart setIdentifier:name];
+  chart.chartType = chartType;
+  [self makeStretchableView:chart minimumWidth:250];
+  [chart.heightAnchor constraintEqualToConstant:height > 0 ? height : 150].active = YES;
+  [chart setWantsLayer:YES];
+  
+  self.controlsByName[[name lowercaseString]] = chart;
+  [self addControlToLayout:chart];
+  return chart;
+}
+
+- (NSView *)makeShortcutRecorderWithName:(NSString *)name {
+  ShortcutRecorder *recorder = [[ShortcutRecorder alloc] initWithFrame:NSZeroRect];
+  [recorder setIdentifier:name];
+  recorder.appDelegate = self;
+  [self makeStretchableView:recorder minimumWidth:180];
+  [recorder.heightAnchor constraintEqualToConstant:30].active = YES;
+  [recorder setWantsLayer:YES];
+  
+  self.controlsByName[[name lowercaseString]] = recorder;
+  [self addControlToLayout:recorder];
+  return recorder;
+}
+
+- (NSView *)makeCircularProgressWithName:(NSString *)name value:(double)value minVal:(double)minVal maxVal:(double)maxVal {
+  CircularProgressView *cp = [[CircularProgressView alloc] initWithFrame:NSZeroRect];
+  [cp setIdentifier:name];
+  cp.value = value;
+  cp.minValue = minVal;
+  cp.maxValue = maxVal;
+  [self makeStretchableView:cp minimumWidth:80];
+  [cp.heightAnchor constraintEqualToConstant:100].active = YES;
+  [cp setWantsLayer:YES];
+  
+  self.controlsByName[[name lowercaseString]] = cp;
+  [self addControlToLayout:cp];
+  return cp;
+}
+
+- (NSView *)makeBreadcrumbsWithName:(NSString *)name segments:(NSArray<NSString *> *)segments {
+  NSStackView *stack = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [stack setIdentifier:name];
+  [stack setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+  [stack setSpacing:6.0];
+  [stack setAlignment:NSLayoutAttributeCenterY];
+  
+  for (NSUInteger i = 0; i < segments.count; i++) {
+    NSString *segText = segments[i];
+    NSButton *btn = [[NSButton alloc] initWithFrame:NSZeroRect];
+    [btn setButtonType:NSButtonTypeMomentaryPushIn];
+    [btn setBordered:NO];
+    [btn setTitle:segText];
+    [btn setTarget:self];
+    [btn setAction:@selector(handleBreadcrumbClicked:)];
+    [btn setIdentifier:segText];
+    [btn setFont:[NSFont systemFontOfSize:12 weight:NSFontWeightMedium]];
+    [btn setWantsLayer:YES];
+    applyStyleToView(btn, nil, self.currentFontColor ?: [NSColor controlAccentColor]);
+    [stack addArrangedSubview:btn];
+    [btn release];
+    
+    if (i < segments.count - 1) {
+      NSTextField *chevron = [NSTextField labelWithString:@"›"];
+      [chevron setFont:[NSFont systemFontOfSize:12 weight:NSFontWeightBold]];
+      [chevron setTextColor:[NSColor secondaryLabelColor]];
+      [stack addArrangedSubview:chevron];
+    }
+  }
+  
+  self.controlsByName[[name lowercaseString]] = stack;
+  [self addControlToLayout:stack];
+  return stack;
+}
+
+- (void)handleBreadcrumbClicked:(id)sender {
+  NSButton *button = (NSButton *)sender;
+  NSString *segment = button.identifier;
+  NSString *name = [self nameForControl:button.superview];
+  if (name && self.win_ptr) {
+    vlang_dispatch_event(self.win_ptr, [name UTF8String], "change", [segment UTF8String]);
+  }
+}
+
+- (void)handleGridDoubleClicked:(id)sender {
+  NSTableView *tableView = (NSTableView *)sender;
+  NSInteger row = tableView.clickedRow;
+  NSInteger column = tableView.clickedColumn;
+  if (row != -1 && column != -1) {
+    if (![self isGridCellEnabledWithName:tableView.identifier row:row col:column] ||
+        ![self isGridCellEditableWithName:tableView.identifier row:row col:column]) {
+      return;
+    }
+
+    NSView *view = [tableView viewAtColumn:column row:row makeIfNecessary:YES];
+    if ([view isKindOfClass:[NSTableCellView class]]) {
+      NSTableCellView *cellView = (NSTableCellView *)view;
+      if (cellView.textField) {
+        [cellView.window makeFirstResponder:cellView.textField];
+      }
+    }
+  }
+}
+
+- (void)tableView:(NSTableView *)tableView didClickTableColumn:(NSTableColumn *)tableColumn {
+  NSString *name = tableView.identifier;
+  if (!name) return;
+  NSString *key = [[name lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  
+  if (self.gridItemsByName && self.gridItemsByName[key]) {
+    NSArray *cols = tableView.tableColumns;
+    NSInteger colIdx = [cols indexOfObject:tableColumn];
+    if (colIdx != NSNotFound && self.win_ptr) {
+      NSString *eventVal = [NSString stringWithFormat:@"%ld", (long)colIdx];
+      vlang_dispatch_event(self.win_ptr, [name UTF8String], "click_column", [eventVal UTF8String]);
+    }
+  }
+}
+
+- (void)handleGridCheckboxClicked:(id)sender {
+  NSButton *checkbox = (NSButton *)sender;
+  NSString *coords = checkbox.identifier;
+  NSArray *parts = [coords componentsSeparatedByString:@"_"];
+  if (parts.count == 2) {
+    int rowIdx = [parts[0] intValue];
+    int colIdx = [parts[1] intValue];
+    
+    NSView *v = checkbox;
+    while (v && ![v isKindOfClass:[NSTableView class]]) {
+      v = v.superview;
+    }
+    if (v) {
+      NSTableView *tv = (NSTableView *)v;
+      NSString *gridName = tv.identifier;
+      if (![self isGridCellEnabledWithName:gridName row:rowIdx col:colIdx] ||
+          ![self isGridCellEditableWithName:gridName row:rowIdx col:colIdx]) {
+        [checkbox setState:(checkbox.state == NSControlStateValueOn ? NSControlStateValueOff : NSControlStateValueOn)];
+        return;
+      }
+      NSString *gridKey = [[gridName lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+      
+      NSMutableArray *rows = self.gridItemsByName[gridKey];
+      if (rowIdx >= 0 && rowIdx < rows.count) {
+        NSMutableArray *cols = [rows[rowIdx] mutableCopy];
+        if (colIdx >= 0 && colIdx < cols.count) {
+          BOOL isOn = (checkbox.state == NSControlStateValueOn);
+          NSString *newVal = isOn ? @"true" : @"false";
+          cols[colIdx] = newVal;
+          rows[rowIdx] = cols;
+          
+          NSString *eventVal = [NSString stringWithFormat:@"%d:%d:%@", rowIdx, colIdx, newVal];
+          vlang_dispatch_event(self.win_ptr, [gridName UTF8String], "change", [eventVal UTF8String]);
+        }
+        [cols release];
+      }
+      [tv reloadData];
+    }
+  }
+}
+
+- (void)handleGridButtonClicked:(id)sender {
+  NSButton *btn = (NSButton *)sender;
+  NSString *coords = btn.identifier;
+  NSArray *parts = [coords componentsSeparatedByString:@"_"];
+  if (parts.count == 2) {
+    int rowIdx = [parts[0] intValue];
+    int colIdx = [parts[1] intValue];
+    
+    NSView *v = btn;
+    while (v && ![v isKindOfClass:[NSTableView class]]) {
+      v = v.superview;
+    }
+    if (v) {
+      NSTableView *tv = (NSTableView *)v;
+      NSString *gridName = tv.identifier;
+      if (![self isGridCellEnabledWithName:gridName row:rowIdx col:colIdx]) {
+        return;
+      }
+      if (self.win_ptr) {
+        NSString *eventVal = [NSString stringWithFormat:@"%d:%d", rowIdx, colIdx];
+        vlang_dispatch_event(self.win_ptr, [gridName UTF8String], "click_cell_button", [eventVal UTF8String]);
+      }
+    }
+  }
+}
+
+- (NSView *)makePropertyGridWithName:(NSString *)name keys:(NSArray<NSString *> *)keys values:(NSArray<NSString *> *)values {
+  NSStackView *grid = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [grid setIdentifier:name];
+  [grid setOrientation:NSUserInterfaceLayoutOrientationVertical];
+  [grid setSpacing:6.0];
+  [grid setAlignment:NSLayoutAttributeLeading];
+  
+  for (NSUInteger i = 0; i < keys.count; i++) {
+    NSString *key = keys[i];
+    NSString *val = (i < values.count) ? values[i] : @"";
+    
+    NSStackView *row = [[NSStackView alloc] initWithFrame:NSZeroRect];
+    [row setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+    [row setSpacing:8.0];
+    [row setAlignment:NSLayoutAttributeCenterY];
+    
+    NSTextField *label = [NSTextField labelWithString:[NSString stringWithFormat:@"%@:", key]];
+    [label setFont:[NSFont boldSystemFontOfSize:12]];
+    [label setTextColor:[NSColor secondaryLabelColor]];
+    [label.widthAnchor constraintEqualToConstant:120].active = YES;
+    [row addArrangedSubview:label];
+    
+    NSTextField *valueField = [[NSTextField alloc] initWithFrame:NSZeroRect];
+    [valueField setStringValue:val];
+    [valueField setFont:[NSFont systemFontOfSize:12]];
+    [valueField setBezeled:YES];
+    [valueField setBezelStyle:NSTextFieldSquareBezel];
+    [valueField setDelegate:self];
+    [valueField setIdentifier:key];
+    [valueField.widthAnchor constraintEqualToConstant:150].active = YES;
+    [row addArrangedSubview:valueField];
+    [valueField release];
+    
+    [grid addArrangedSubview:row];
+    [row release];
+  }
+  
+  self.controlsByName[[name lowercaseString]] = grid;
+  [self addControlToLayout:grid];
+  return grid;
+}
+
+- (NSView *)makeColorGridWithName:(NSString *)name colors:(NSArray<NSString *> *)colors {
+  ColorGridView *cg = [[ColorGridView alloc] initWithFrame:NSZeroRect];
+  [cg setIdentifier:name];
+  cg.appDelegate = self;
+  cg.colorHexStrings = colors;
+  
+  NSMutableArray *parsedColors = [NSMutableArray array];
+  for (NSString *hex in colors) {
+    [parsedColors addObject:colorFromHexString(hex)];
+  }
+  cg.colors = parsedColors;
+  
+  [self makeStretchableView:cg minimumWidth:200];
+  
+  int count = (int)colors.count;
+  int cols = 6;
+  int rows = (count + cols - 1) / cols;
+  CGFloat calculatedHeight = rows * 40.0 + 8.0;
+  [cg.heightAnchor constraintEqualToConstant:calculatedHeight].active = YES;
+  
+  self.controlsByName[[name lowercaseString]] = cg;
+  [self addControlToLayout:cg];
+  return cg;
+}
+
+- (NSView *)makeGridWithName:(NSString *)name headers:(NSArray<NSString *> *)headers {
+  NSScrollView *scrollView = [[NSScrollView alloc] initWithFrame:NSZeroRect];
+  [scrollView setHasVerticalScroller:YES];
+  [scrollView setHasHorizontalScroller:YES];
+  [scrollView setBorderType:NSNoBorder];
+  [scrollView setWantsLayer:YES];
+  scrollView.layer.cornerRadius = 8.0;
+  scrollView.layer.borderWidth = 1.0;
+  scrollView.layer.borderColor = [modernBorderColor() CGColor];
+  
+  [scrollView.widthAnchor constraintEqualToConstant:450].active = YES;
+  [scrollView.heightAnchor constraintEqualToConstant:200].active = YES;
+  
+  NSTableView *tableView = [[NSTableView alloc] initWithFrame:NSMakeRect(0, 0, 450, 200)];
+  [tableView setAllowsMultipleSelection:NO];
+  [tableView setIdentifier:name];
+  [tableView setGridStyleMask:NSTableViewSolidHorizontalGridLineMask | NSTableViewSolidVerticalGridLineMask];
+  [tableView setRowHeight:26];
+  [tableView setTarget:self];
+  [tableView setDoubleAction:@selector(handleGridDoubleClicked:)];
+  
+  if (@available(macOS 11.0, *)) {
+    [tableView setStyle:NSTableViewStyleFullWidth];
+  }
+  
+  for (NSUInteger i = 0; i < headers.count; i++) {
+    NSTableColumn *column = [[NSTableColumn alloc] initWithIdentifier:[NSString stringWithFormat:@"Col_%lu", (unsigned long)i]];
+    [column setTitle:headers[i]];
+    [column setWidth:100.0];
+    [column setEditable:YES];
+    [column setResizingMask:NSTableColumnAutoresizingMask];
+    [tableView addTableColumn:column];
+    [column release];
+  }
+  
+  [tableView setDataSource:self];
+  [tableView setDelegate:self];
+  [scrollView setDocumentView:tableView];
+  [tableView release];
+  
+  self.controlsByName[[name lowercaseString]] = scrollView;
+  [self addControlToLayout:scrollView];
+  return scrollView;
 }
 @end
 
@@ -4283,7 +5352,31 @@ void window_set_control_text(void *control, const char *text) {
     }
   }
   
-  if ([view isKindOfClass:[NSTextField class]]) {
+  if ([view isKindOfClass:[ShortcutRecorder class]]) {
+    ShortcutRecorder *sr = (ShortcutRecorder *)view;
+    sr.shortcutString = nsText;
+    NSMutableString *disp = [NSMutableString string];
+    NSArray *parts = [nsText componentsSeparatedByString:@"+"];
+    for (NSString *part in parts) {
+      NSString *p = [part lowercaseString];
+      if ([p isEqualToString:@"ctrl"]) {
+        [disp appendString:@"⌃"];
+      } else if ([p isEqualToString:@"opt"]) {
+        [disp appendString:@"⌥"];
+      } else if ([p isEqualToString:@"shift"]) {
+        [disp appendString:@"⇧"];
+      } else if ([p isEqualToString:@"cmd"]) {
+        [disp appendString:@"⌘"];
+      } else {
+        [disp appendString:[part uppercaseString]];
+      }
+    }
+    if (disp.length == 0) {
+      disp = [NSMutableString stringWithString:@"Press shortcut..."];
+    }
+    sr.displayString = disp;
+    [sr setStringValue:disp];
+  } else if ([view isKindOfClass:[NSTextField class]]) {
     [(NSTextField *)view setStringValue:nsText];
   } else if ([view isKindOfClass:[NSTextView class]]) {
     [(NSTextView *)view setString:nsText];
@@ -4363,7 +5456,9 @@ char *window_get_control_text(void *control) {
   }
   
   NSString *result = @"";
-  if ([view isKindOfClass:[NSTextField class]]) {
+  if ([view isKindOfClass:[ShortcutRecorder class]]) {
+    result = [(ShortcutRecorder *)view shortcutString];
+  } else if ([view isKindOfClass:[NSTextField class]]) {
     result = [(NSTextField *)view stringValue];
   } else if ([view isKindOfClass:[NSTextView class]]) {
     result = [(NSTextView *)view string];
@@ -6937,4 +8032,808 @@ void window_add_dock_menu_item(main__WindowInfo *info, const char *title, const 
     [item setRepresentedObject:handler];
     [delegate.dockMenu addItem:item];
   });
+}
+
+void *window_add_console_control(main__WindowInfo *info, const char *name, int height) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *scroll = nil;
+  void (^runBlock)(void) = ^{
+    scroll = [delegate makeConsoleWithName:nsstring(name) height:height];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return (__bridge void *)scroll;
+}
+
+void window_append_console_text(main__WindowInfo *info, const char *name, const char *text, int level) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  NSString *nsText = nsstring(text);
+  void (^runBlock)(void) = ^{
+    id view = delegate.controlsByName[key];
+    if ([view isKindOfClass:[NSScrollView class]]) {
+      NSView *doc = [(NSScrollView *)view documentView];
+      if ([doc isKindOfClass:[NSTextView class]]) {
+        NSTextView *tv = (NSTextView *)doc;
+        
+        NSColor *color = [NSColor colorWithRed:0.9 green:0.9 blue:0.9 alpha:1.0];
+        if (level == 1) {
+          color = [NSColor colorWithRed:0.4 green:0.7 blue:1.0 alpha:1.0];
+        } else if (level == 2) {
+          color = [NSColor colorWithRed:1.0 green:0.8 blue:0.2 alpha:1.0];
+        } else if (level == 3) {
+          color = [NSColor colorWithRed:1.0 green:0.3 blue:0.3 alpha:1.0];
+        } else if (level == 4) {
+          color = [NSColor colorWithRed:0.3 green:0.8 blue:0.4 alpha:1.0];
+        }
+        
+        NSDictionary *attrs = @{
+          NSForegroundColorAttributeName: color,
+          NSFontAttributeName: tv.font ?: [NSFont fontWithName:@"Menlo" size:11.0] ?: [NSFont userFixedPitchFontOfSize:11.0]
+        };
+        
+        NSAttributedString *attrStr = [[NSAttributedString alloc] initWithString:nsText attributes:attrs];
+        [[tv textStorage] appendAttributedString:attrStr];
+        [tv scrollRangeToVisible:NSMakeRange([[tv textStorage] length], 0)];
+        [attrStr release];
+      }
+    }
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+void window_clear_console(main__WindowInfo *info, const char *name) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  void (^runBlock)(void) = ^{
+    id view = delegate.controlsByName[key];
+    if ([view isKindOfClass:[NSScrollView class]]) {
+      NSView *doc = [(NSScrollView *)view documentView];
+      if ([doc isKindOfClass:[NSTextView class]]) {
+        NSTextView *tv = (NSTextView *)doc;
+        [tv setString:@""];
+      }
+    }
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+void *window_add_chart_control(main__WindowInfo *info, const char *name, const char *chart_type, int height) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *chart = nil;
+  void (^runBlock)(void) = ^{
+    chart = [delegate makeChartViewWithName:nsstring(name) chartType:nsstring(chart_type) height:height];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return (__bridge void *)chart;
+}
+
+void window_set_chart_data(main__WindowInfo *info, const char *name, const double *values, int count) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  void (^runBlock)(void) = ^{
+    id view = delegate.controlsByName[key];
+    if ([view isKindOfClass:[ChartView class]]) {
+      ChartView *cv = (ChartView *)view;
+      [cv.dataPoints removeAllObjects];
+      for (int i = 0; i < count; i++) {
+        [cv.dataPoints addObject:@(values[i])];
+      }
+      [cv setNeedsDisplay:YES];
+    }
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+void *window_add_shortcut_recorder_control(main__WindowInfo *info, const char *name) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *recorder = nil;
+  void (^runBlock)(void) = ^{
+    recorder = [delegate makeShortcutRecorderWithName:nsstring(name)];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return (__bridge void *)recorder;
+}
+
+void *window_add_circular_progress_control(main__WindowInfo *info, const char *name, double value, double min_val, double max_val) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *cp = nil;
+  void (^runBlock)(void) = ^{
+    cp = [delegate makeCircularProgressWithName:nsstring(name) value:value minVal:min_val maxVal:max_val];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return (__bridge void *)cp;
+}
+
+void window_set_circular_progress_value(main__WindowInfo *info, const char *name, double value) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  void (^runBlock)(void) = ^{
+    id view = delegate.controlsByName[key];
+    if ([view isKindOfClass:[CircularProgressView class]]) {
+      CircularProgressView *cp = (CircularProgressView *)view;
+      cp.value = value;
+      [cp setNeedsDisplay:YES];
+    }
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+void *window_add_breadcrumbs_control(main__WindowInfo *info, const char *name, const char **segments, int count) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *stack = nil;
+  void (^runBlock)(void) = ^{
+    NSMutableArray *arr = [NSMutableArray array];
+    for (int i = 0; i < count; i++) {
+      [arr addObject:nsstring(segments[i])];
+    }
+    stack = [delegate makeBreadcrumbsWithName:nsstring(name) segments:arr];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return (__bridge void *)stack;
+}
+
+void window_set_breadcrumbs(main__WindowInfo *info, const char *name, const char **segments, int count) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  void (^runBlock)(void) = ^{
+    id view = delegate.controlsByName[key];
+    if ([view isKindOfClass:[NSStackView class]]) {
+      NSStackView *stack = (NSStackView *)view;
+      NSArray *subviews = [stack.arrangedSubviews copy];
+      for (NSView *v in subviews) {
+        [stack removeArrangedSubview:v];
+        [v removeFromSuperview];
+      }
+      [subviews release];
+      
+      for (int i = 0; i < count; i++) {
+        NSString *segText = nsstring(segments[i]);
+        NSButton *btn = [[NSButton alloc] initWithFrame:NSZeroRect];
+        [btn setButtonType:NSButtonTypeMomentaryPushIn];
+        [btn setBordered:NO];
+        [btn setTitle:segText];
+        [btn setTarget:delegate];
+        [btn setAction:@selector(handleBreadcrumbClicked:)];
+        [btn setIdentifier:segText];
+        [btn setFont:[NSFont systemFontOfSize:12 weight:NSFontWeightMedium]];
+        [btn setWantsLayer:YES];
+        applyStyleToView(btn, nil, delegate.currentFontColor ?: [NSColor controlAccentColor]);
+        [stack addArrangedSubview:btn];
+        [btn release];
+        
+        if (i < count - 1) {
+          NSTextField *chevron = [NSTextField labelWithString:@"›"];
+          [chevron setFont:[NSFont systemFontOfSize:12 weight:NSFontWeightBold]];
+          [chevron setTextColor:[NSColor secondaryLabelColor]];
+          [stack addArrangedSubview:chevron];
+        }
+      }
+    }
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+void *window_add_property_grid_control(main__WindowInfo *info, const char *name, const char **keys, const char **values, int count) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *grid = nil;
+  void (^runBlock)(void) = ^{
+    NSMutableArray *kArr = [NSMutableArray array];
+    NSMutableArray *vArr = [NSMutableArray array];
+    for (int i = 0; i < count; i++) {
+      [kArr addObject:nsstring(keys[i])];
+      [vArr addObject:nsstring(values[i])];
+    }
+    grid = [delegate makePropertyGridWithName:nsstring(name) keys:kArr values:vArr];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return (__bridge void *)grid;
+}
+
+void window_set_property_grid_value(main__WindowInfo *info, const char *name, const char *key, const char *value) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *gKey = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  NSString *pKey = nsstring(key);
+  NSString *pVal = nsstring(value);
+  void (^runBlock)(void) = ^{
+    id view = delegate.controlsByName[gKey];
+    if ([view isKindOfClass:[NSStackView class]]) {
+      NSStackView *grid = (NSStackView *)view;
+      for (NSView *row in grid.arrangedSubviews) {
+        if ([row isKindOfClass:[NSStackView class]]) {
+          NSStackView *rowStack = (NSStackView *)row;
+          for (NSView *sub in rowStack.arrangedSubviews) {
+            if ([sub isKindOfClass:[NSTextField class]] && [sub.identifier isEqualToString:pKey]) {
+              [(NSTextField *)sub setStringValue:pVal];
+              break;
+            }
+          }
+        }
+      }
+    }
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+void *window_add_color_grid_control(main__WindowInfo *info, const char *name, const char **colors, int count) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *cg = nil;
+  void (^runBlock)(void) = ^{
+    NSMutableArray *arr = [NSMutableArray array];
+    for (int i = 0; i < count; i++) {
+      [arr addObject:nsstring(colors[i])];
+    }
+    cg = [delegate makeColorGridWithName:nsstring(name) colors:arr];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return (__bridge void *)cg;
+}
+
+void window_set_color_grid_selected(main__WindowInfo *info, const char *name, const char *color) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *gKey = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  NSString *cStr = nsstring(color);
+  void (^runBlock)(void) = ^{
+    id view = delegate.controlsByName[gKey];
+    if ([view isKindOfClass:[ColorGridView class]]) {
+      ColorGridView *cg = (ColorGridView *)view;
+      NSInteger index = -1;
+      for (NSUInteger i = 0; i < cg.colorHexStrings.count; i++) {
+        if ([cg.colorHexStrings[i] isEqualToString:cStr]) {
+          index = i;
+          break;
+        }
+      }
+      cg.selectedIndex = index;
+      [cg setNeedsDisplay:YES];
+    }
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+void *window_add_grid_control(main__WindowInfo *info, const char *name, const char **headers, int headers_count) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSScrollView *scrollView = nil;
+  void (^runBlock)(void) = ^{
+    NSMutableArray *arr = [NSMutableArray array];
+    for (int i = 0; i < headers_count; i++) {
+      [arr addObject:nsstring(headers[i])];
+    }
+    
+    NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    if (!delegate.gridItemsByName) {
+      delegate.gridItemsByName = [NSMutableDictionary dictionary];
+    }
+    if (!delegate.gridHeadersByName) {
+      delegate.gridHeadersByName = [NSMutableDictionary dictionary];
+    }
+    delegate.gridItemsByName[key] = [NSMutableArray array];
+    delegate.gridHeadersByName[key] = arr;
+    
+    scrollView = (NSScrollView *)[delegate makeGridWithName:nsstring(name) headers:arr];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return (__bridge void *)scrollView;
+}
+
+static NSTableView *gridTableViewForKey(AppDelegate *delegate, NSString *key) {
+  id view = delegate.controlsByName[key];
+  if ([view isKindOfClass:[NSScrollView class]]) {
+    NSScrollView *scroll = (NSScrollView *)view;
+    if ([scroll.documentView isKindOfClass:[NSTableView class]]) {
+      return (NSTableView *)scroll.documentView;
+    }
+  }
+  return nil;
+}
+
+void window_grid_add_row(main__WindowInfo *info, const char *name, const char **values, int count) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  void (^runBlock)(void) = ^{
+    if (!delegate.gridItemsByName) {
+      delegate.gridItemsByName = [NSMutableDictionary dictionary];
+    }
+    NSMutableArray *rows = delegate.gridItemsByName[key];
+    if (!rows) {
+      rows = [NSMutableArray array];
+      delegate.gridItemsByName[key] = rows;
+    }
+    
+    NSMutableArray *row = [NSMutableArray array];
+    for (int i = 0; i < count; i++) {
+      [row addObject:nsstring(values[i])];
+    }
+    [rows addObject:row];
+    
+    NSTableView *tv = gridTableViewForKey(delegate, key);
+    [tv reloadData];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+void window_grid_delete_row(main__WindowInfo *info, const char *name, int row_idx) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  void (^runBlock)(void) = ^{
+    NSMutableArray *rows = delegate.gridItemsByName[key];
+    if (rows && row_idx >= 0 && row_idx < rows.count) {
+      [rows removeObjectAtIndex:row_idx];
+      NSTableView *tv = gridTableViewForKey(delegate, key);
+      [tv reloadData];
+    }
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+void window_grid_add_column(main__WindowInfo *info, const char *name, const char *header) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  NSString *head = nsstring(header);
+  void (^runBlock)(void) = ^{
+    NSMutableArray *headers = delegate.gridHeadersByName[key];
+    if (!headers) {
+      headers = [NSMutableArray array];
+      delegate.gridHeadersByName[key] = headers;
+    }
+    [headers addObject:head];
+    
+    NSTableView *tv = gridTableViewForKey(delegate, key);
+    if (tv) {
+      NSTableColumn *column = [[NSTableColumn alloc] initWithIdentifier:[NSString stringWithFormat:@"Col_%lu", (unsigned long)(headers.count - 1)]];
+      [column setTitle:head];
+      [column setWidth:100.0];
+      [column setEditable:YES];
+      [column setResizingMask:NSTableColumnAutoresizingMask];
+      [tv addTableColumn:column];
+      [column release];
+      
+      NSMutableArray *rows = delegate.gridItemsByName[key];
+      for (NSUInteger i = 0; i < rows.count; i++) {
+        NSMutableArray *cols = [rows[i] mutableCopy];
+        [cols addObject:@""];
+        rows[i] = cols;
+        [cols release];
+      }
+      
+      [tv reloadData];
+    }
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+void window_grid_delete_column(main__WindowInfo *info, const char *name, int col_idx) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  void (^runBlock)(void) = ^{
+    NSMutableArray *headers = delegate.gridHeadersByName[key];
+    if (headers && col_idx >= 0 && col_idx < headers.count) {
+      [headers removeObjectAtIndex:col_idx];
+      
+      NSTableView *tv = gridTableViewForKey(delegate, key);
+      if (tv) {
+        NSArray *cols = [tv.tableColumns copy];
+        if (col_idx < cols.count) {
+          [tv removeTableColumn:cols[col_idx]];
+        }
+        [cols release];
+        
+        NSArray *updatedCols = tv.tableColumns;
+        for (NSUInteger i = 0; i < updatedCols.count; i++) {
+          [(NSTableColumn *)updatedCols[i] setIdentifier:[NSString stringWithFormat:@"Col_%lu", (unsigned long)i]];
+        }
+        
+        NSMutableArray *rows = delegate.gridItemsByName[key];
+        for (NSUInteger i = 0; i < rows.count; i++) {
+          NSMutableArray *colsArray = [rows[i] mutableCopy];
+          if (col_idx < colsArray.count) {
+            [colsArray removeObjectAtIndex:col_idx];
+          }
+          rows[i] = colsArray;
+          [colsArray release];
+        }
+        
+        [tv reloadData];
+      }
+    }
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+void window_grid_set_cell(main__WindowInfo *info, const char *name, int row, int col, const char *value) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  NSString *val = nsstring(value);
+  void (^runBlock)(void) = ^{
+    NSMutableArray *rows = delegate.gridItemsByName[key];
+    if (rows && row >= 0 && row < rows.count) {
+      NSMutableArray *cols = [rows[row] mutableCopy];
+      if (col >= 0 && col < cols.count) {
+        cols[col] = val;
+        rows[row] = cols;
+        
+        NSTableView *tv = gridTableViewForKey(delegate, key);
+        [tv reloadData];
+      }
+      [cols release];
+    }
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+const char *window_grid_get_cell(main__WindowInfo *info, const char *name, int row, int col) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  __block NSString *result = @"";
+  void (^runBlock)(void) = ^{
+    NSArray *rows = delegate.gridItemsByName[key];
+    if (rows && row >= 0 && row < rows.count) {
+      NSArray *cols = rows[row];
+      if (col >= 0 && col < cols.count) {
+        result = [cols[col] retain];
+      }
+    }
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return [result autorelease].UTF8String;
+}
+
+int window_grid_get_selected_row(main__WindowInfo *info, const char *name) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  __block int row = -1;
+  void (^runBlock)(void) = ^{
+    NSTableView *tv = gridTableViewForKey(delegate, key);
+    if (tv) {
+      row = (int)tv.selectedRow;
+    }
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return row;
+}
+
+void window_grid_set_column_type(main__WindowInfo *info, const char *name, int col_idx, const char *col_type) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  NSString *type = nsstring(col_type);
+  void (^runBlock)(void) = ^{
+    if (!delegate.gridColumnTypesByName) {
+      delegate.gridColumnTypesByName = [NSMutableDictionary dictionary];
+    }
+    NSMutableArray *types = delegate.gridColumnTypesByName[key];
+    if (!types) {
+      types = [NSMutableArray array];
+      delegate.gridColumnTypesByName[key] = types;
+    }
+    
+    while (types.count <= col_idx) {
+      [types addObject:@"text"];
+    }
+    types[col_idx] = type;
+    
+    NSTableView *tv = gridTableViewForKey(delegate, key);
+    [tv reloadData];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+void window_grid_autosize_columns(main__WindowInfo *info, const char *name) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  void (^runBlock)(void) = ^{
+    NSTableView *tv = gridTableViewForKey(delegate, key);
+    if (tv) {
+      [tv sizeToFit];
+    }
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+void window_grid_set_selected_row(main__WindowInfo *info, const char *name, int row_idx) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  void (^runBlock)(void) = ^{
+    NSTableView *tv = gridTableViewForKey(delegate, key);
+    if (tv) {
+      if (row_idx >= 0 && row_idx < tv.numberOfRows) {
+        [tv selectRowIndexes:[NSIndexSet indexSetWithIndex:row_idx] byExtendingSelection:NO];
+      } else {
+        [tv selectRowIndexes:[NSIndexSet indexSet] byExtendingSelection:NO];
+      }
+    }
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+void window_grid_clear(main__WindowInfo *info, const char *name) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  void (^runBlock)(void) = ^{
+    NSMutableArray *rows = delegate.gridItemsByName[key];
+    if (rows) {
+      [rows removeAllObjects];
+      NSTableView *tv = gridTableViewForKey(delegate, key);
+      [tv reloadData];
+    }
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+void window_grid_set_column_editable(main__WindowInfo *info, const char *name, int col_idx, int editable) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  void (^runBlock)(void) = ^{
+    if (!delegate.gridReadOnlyColsByName) {
+      delegate.gridReadOnlyColsByName = [NSMutableDictionary dictionary];
+    }
+    NSMutableSet *cols = delegate.gridReadOnlyColsByName[key];
+    if (!cols) {
+      cols = [NSMutableSet set];
+      delegate.gridReadOnlyColsByName[key] = cols;
+    }
+    
+    if (editable) {
+      [cols removeObject:@(col_idx)];
+    } else {
+      [cols addObject:@(col_idx)];
+    }
+    
+    NSTableView *tv = gridTableViewForKey(delegate, key);
+    [tv reloadData];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+void window_grid_set_row_editable(main__WindowInfo *info, const char *name, int row_idx, int editable) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  void (^runBlock)(void) = ^{
+    if (!delegate.gridReadOnlyRowsByName) {
+      delegate.gridReadOnlyRowsByName = [NSMutableDictionary dictionary];
+    }
+    NSMutableSet *rows = delegate.gridReadOnlyRowsByName[key];
+    if (!rows) {
+      rows = [NSMutableSet set];
+      delegate.gridReadOnlyRowsByName[key] = rows;
+    }
+    
+    if (editable) {
+      [rows removeObject:@(row_idx)];
+    } else {
+      [rows addObject:@(row_idx)];
+    }
+    
+    NSTableView *tv = gridTableViewForKey(delegate, key);
+    [tv reloadData];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+void window_grid_set_cell_editable(main__WindowInfo *info, const char *name, int row, int col, int editable) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  void (^runBlock)(void) = ^{
+    if (!delegate.gridReadOnlyCellsByName) {
+      delegate.gridReadOnlyCellsByName = [NSMutableDictionary dictionary];
+    }
+    NSMutableSet *cells = delegate.gridReadOnlyCellsByName[key];
+    if (!cells) {
+      cells = [NSMutableSet set];
+      delegate.gridReadOnlyCellsByName[key] = cells;
+    }
+    
+    NSString *cellCoord = [NSString stringWithFormat:@"%d_%d", row, col];
+    if (editable) {
+      [cells removeObject:cellCoord];
+    } else {
+      [cells addObject:cellCoord];
+    }
+    
+    NSTableView *tv = gridTableViewForKey(delegate, key);
+    [tv reloadData];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+void window_grid_set_column_enabled(main__WindowInfo *info, const char *name, int col_idx, int enabled) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  void (^runBlock)(void) = ^{
+    if (!delegate.gridDisabledColsByName) {
+      delegate.gridDisabledColsByName = [NSMutableDictionary dictionary];
+    }
+    NSMutableSet *cols = delegate.gridDisabledColsByName[key];
+    if (!cols) {
+      cols = [NSMutableSet set];
+      delegate.gridDisabledColsByName[key] = cols;
+    }
+    
+    if (enabled) {
+      [cols removeObject:@(col_idx)];
+    } else {
+      [cols addObject:@(col_idx)];
+    }
+    
+    NSTableView *tv = gridTableViewForKey(delegate, key);
+    [tv reloadData];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+void window_grid_set_row_enabled(main__WindowInfo *info, const char *name, int row_idx, int enabled) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  void (^runBlock)(void) = ^{
+    if (!delegate.gridDisabledRowsByName) {
+      delegate.gridDisabledRowsByName = [NSMutableDictionary dictionary];
+    }
+    NSMutableSet *rows = delegate.gridDisabledRowsByName[key];
+    if (!rows) {
+      rows = [NSMutableSet set];
+      delegate.gridDisabledRowsByName[key] = rows;
+    }
+    
+    if (enabled) {
+      [rows removeObject:@(row_idx)];
+    } else {
+      [rows addObject:@(row_idx)];
+    }
+    
+    NSTableView *tv = gridTableViewForKey(delegate, key);
+    [tv reloadData];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+void window_grid_set_cell_enabled(main__WindowInfo *info, const char *name, int row, int col, int enabled) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  void (^runBlock)(void) = ^{
+    if (!delegate.gridDisabledCellsByName) {
+      delegate.gridDisabledCellsByName = [NSMutableDictionary dictionary];
+    }
+    NSMutableSet *cells = delegate.gridDisabledCellsByName[key];
+    if (!cells) {
+      cells = [NSMutableSet set];
+      delegate.gridDisabledCellsByName[key] = cells;
+    }
+    
+    NSString *cellCoord = [NSString stringWithFormat:@"%d_%d", row, col];
+    if (enabled) {
+      [cells removeObject:cellCoord];
+    } else {
+      [cells addObject:cellCoord];
+    }
+    
+    NSTableView *tv = gridTableViewForKey(delegate, key);
+    [tv reloadData];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
 }
