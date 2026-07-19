@@ -3351,13 +3351,18 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
     if ([tableView isKindOfClass:[NSOutlineView class]]) {
       return; // Handled by outlineViewSelectionDidChange
     }
+    NSString *key = [[name lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
     NSInteger selectedRow = [tableView selectedRow];
-    NSInteger selectedCol = [tableView selectedColumn];
-    if (selectedRow >= 0 && selectedCol >= 0) {
-      [self updateGridSelectionHighlightForTableView:tableView row:selectedRow col:selectedCol];
-    } else {
-      [self updateGridSelectionHighlightForTableView:tableView row:-1 col:-1];
+    
+    if (self.gridItemsByName && self.gridItemsByName[key]) {
+      NSInteger selectedCol = [tableView selectedColumn];
+      if (selectedRow >= 0 && selectedCol >= 0) {
+        [self updateGridSelectionHighlightForTableView:tableView row:selectedRow col:selectedCol];
+      } else {
+        [self updateGridSelectionHighlightForTableView:tableView row:-1 col:-1];
+      }
     }
+    
     NSString *value = [NSString stringWithFormat:@"%ld", (long)selectedRow];
     vlang_dispatch_event(self.win_ptr, [name UTF8String], "change", [value UTF8String]);
   }
@@ -6504,7 +6509,7 @@ void window_update_list_items(main__WindowInfo *info, const char *name, const ch
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
   NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
   
-  dispatch_async(dispatch_get_main_queue(), ^{
+  void (^runBlock)(void) = ^{
     NSView *view = delegate.controlsByName[key];
     if ([view isKindOfClass:[NSScrollView class]]) {
       NSScrollView *scroll = (NSScrollView *)view;
@@ -6518,14 +6523,20 @@ void window_update_list_items(main__WindowInfo *info, const char *name, const ch
         [tableView reloadData];
       }
     }
-  });
+  };
+  
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
 }
 
 void window_set_list_selected(main__WindowInfo *info, const char *name, int index) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
   NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
   
-  dispatch_async(dispatch_get_main_queue(), ^{
+  void (^runBlock)(void) = ^{
     NSView *view = delegate.controlsByName[key];
     if ([view isKindOfClass:[NSScrollView class]]) {
       NSScrollView *scroll = (NSScrollView *)view;
@@ -6539,7 +6550,13 @@ void window_set_list_selected(main__WindowInfo *info, const char *name, int inde
         }
       }
     }
-  });
+  };
+  
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
 }
 
 int window_get_list_selected(main__WindowInfo *info, const char *name) {
@@ -6619,7 +6636,7 @@ void window_set_list_selected_indexes(main__WindowInfo *info, const char *name, 
   NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
   NSString *csv = nsstring(csv_indexes);
   
-  dispatch_async(dispatch_get_main_queue(), ^{
+  void (^runBlock)(void) = ^{
     NSTableView *tableView = listTableViewForKey(delegate, key);
     if (!tableView) return;
     NSMutableIndexSet *indexes = [NSMutableIndexSet indexSet];
@@ -6637,31 +6654,49 @@ void window_set_list_selected_indexes(main__WindowInfo *info, const char *name, 
       [tableView selectRowIndexes:indexes byExtendingSelection:NO];
       [tableView scrollRowToVisible:(NSInteger)[indexes firstIndex]];
     }
-  });
+  };
+  
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
 }
 
 void window_select_all_list_items(main__WindowInfo *info, const char *name) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
   NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
   
-  dispatch_async(dispatch_get_main_queue(), ^{
+  void (^runBlock)(void) = ^{
     NSTableView *tableView = listTableViewForKey(delegate, key);
     if (tableView) {
       [tableView selectAll:nil];
     }
-  });
+  };
+  
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
 }
 
 void window_clear_list_selection(main__WindowInfo *info, const char *name) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
   NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
   
-  dispatch_async(dispatch_get_main_queue(), ^{
+  void (^runBlock)(void) = ^{
     NSTableView *tableView = listTableViewForKey(delegate, key);
     if (tableView) {
       [tableView deselectAll:nil];
     }
-  });
+  };
+  
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
 }
 
 void *window_add_image_control(main__WindowInfo *info, const char *name, const char *file_path) {
