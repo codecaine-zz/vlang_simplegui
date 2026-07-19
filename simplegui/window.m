@@ -636,6 +636,7 @@ extern void vlang_dispatch_event(void *win_ptr, const char *name, const char *ev
 - (NSView *)makePopUpButtonWithName:(NSString *)name selected:(NSString *)selected;
 - (NSView *)makeColorWellWithName:(NSString *)name color:(NSString *)colorString;
 - (NSView *)makeDatePickerWithName:(NSString *)name date:(NSString *)dateString;
+- (NSView *)makeDateTimePickerWithName:(NSString *)name dateTime:(NSString *)dateTimeString;
 - (NSView *)makeSegmentedControlWithName:(NSString *)name selected:(NSString *)selected;
 - (NSView *)makeProgressIndicatorWithName:(NSString *)name value:(int)value;
 - (NSView *)makeDropdownWithName:(NSString *)name items:(NSArray<NSString *> *)items selected:(NSString *)selected;
@@ -2374,6 +2375,29 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   return picker;
 }
 
+- (NSView *)makeDateTimePickerWithName:(NSString *)name dateTime:(NSString *)dateTimeString {
+  NSDatePicker *picker = [[NSDatePicker alloc] initWithFrame:NSZeroRect];
+  [picker setDatePickerStyle:NSDatePickerStyleTextFieldAndStepper];
+  [picker setDatePickerMode:NSDatePickerModeSingle];
+  [picker setDatePickerElements:NSYearMonthDayDatePickerElementFlag | NSHourMinuteDatePickerElementFlag];
+  [picker setPresentsCalendarOverlay:YES];
+  
+  NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+  [formatter setDateFormat:@"yyyy-MM-dd HH:mm"];
+  NSDate *date = [formatter dateFromString:dateTimeString] ?: [NSDate date];
+  [picker setDateValue:date];
+  [picker setTarget:self];
+  [picker setAction:@selector(handleDatePickerChanged:)];
+  [self makeStretchableView:picker minimumWidth:200];
+  [picker setWantsLayer:YES];
+  
+  applyStyleToView(picker, self.currentBackgroundColor, self.currentFontColor);
+  
+  self.controlsByName[[name lowercaseString]] = picker;
+  [self addControlToLayout:picker];
+  return picker;
+}
+
 - (NSView *)makeSegmentedControlWithName:(NSString *)name selected:(NSString *)selected {
   NSSegmentedControl *seg = [[NSSegmentedControl alloc] initWithFrame:NSZeroRect];
   [seg setSegmentCount:3];
@@ -3693,7 +3717,29 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
 - (void)handleDatePickerChanged:(id)sender {
   NSDatePicker *picker = (NSDatePicker *)sender;
   NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
-  [formatter setDateFormat:@"yyyy-MM-dd"];
+  NSDatePickerElementFlags elements = [picker datePickerElements];
+  BOOL hasDate = (elements & NSYearMonthDayDatePickerElementFlag) != 0;
+  BOOL hasTime = (elements & (NSHourMinuteDatePickerElementFlag | NSHourMinuteSecondDatePickerElementFlag)) != 0;
+  BOOL hasSeconds = (elements & NSHourMinuteSecondDatePickerElementFlag) != 0;
+  
+  if (hasDate && hasTime) {
+    if (hasSeconds) {
+      [formatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
+    } else {
+      [formatter setDateFormat:@"yyyy-MM-dd HH:mm"];
+    }
+  } else if (hasDate) {
+    [formatter setDateFormat:@"yyyy-MM-dd"];
+  } else if (hasTime) {
+    if (hasSeconds) {
+      [formatter setDateFormat:@"HH:mm:ss"];
+    } else {
+      [formatter setDateFormat:@"HH:mm"];
+    }
+  } else {
+    [formatter setDateFormat:@"yyyy-MM-dd"];
+  }
+  
   NSString *dateText = [formatter stringFromDate:[picker dateValue]];
   NSString *name = [self nameForControl:picker];
   if (name && self.win_ptr) {
@@ -5567,6 +5613,11 @@ void *window_add_date_picker_control(main__WindowInfo *info, const char *name, c
   return [delegate makeDatePickerWithName:nsstring(name) date:nsstring(date)];
 }
 
+void *window_add_date_time_picker_control(main__WindowInfo *info, const char *name, const char *datetime) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  return [delegate makeDateTimePickerWithName:nsstring(name) dateTime:nsstring(datetime)];
+}
+
 void *window_add_mode_control_control(main__WindowInfo *info, const char *name, const char *selected) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
   return [delegate makeSegmentedControlWithName:nsstring(name) selected:nsstring(selected)];
@@ -5677,17 +5728,44 @@ void window_set_control_text(void *control, const char *text) {
   } else if ([view isKindOfClass:[NSColorWell class]]) {
     [(NSColorWell *)view setColor:colorFromString(text)];
   } else if ([view isKindOfClass:[NSDatePicker class]]) {
+    NSDatePicker *picker = (NSDatePicker *)view;
     NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
-    [formatter setDateFormat:@"yyyy-MM-dd"];
-    NSDate *date = [formatter dateFromString:nsText];
-    if (date) {
-      [(NSDatePicker *)view setDateValue:date];
-    } else {
+    NSDatePickerElementFlags elements = [picker datePickerElements];
+    BOOL hasDate = (elements & NSYearMonthDayDatePickerElementFlag) != 0;
+    BOOL hasTime = (elements & (NSHourMinuteDatePickerElementFlag | NSHourMinuteSecondDatePickerElementFlag)) != 0;
+    BOOL hasSeconds = (elements & NSHourMinuteSecondDatePickerElementFlag) != 0;
+    
+    NSDate *date = nil;
+    if (hasDate && hasTime) {
+      if (hasSeconds) {
+        [formatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
+      } else {
+        [formatter setDateFormat:@"yyyy-MM-dd HH:mm"];
+      }
+      date = [formatter dateFromString:nsText];
+    }
+    
+    if (!date && hasDate) {
+      [formatter setDateFormat:@"yyyy-MM-dd"];
+      date = [formatter dateFromString:nsText];
+    }
+    
+    if (!date && hasTime) {
+      if (hasSeconds) {
+        [formatter setDateFormat:@"HH:mm:ss"];
+      } else {
+        [formatter setDateFormat:@"HH:mm"];
+      }
+      date = [formatter dateFromString:nsText];
+    }
+    
+    if (!date) {
       [formatter setDateStyle:NSDateFormatterMediumStyle];
       date = [formatter dateFromString:nsText];
-      if (date) {
-        [(NSDatePicker *)view setDateValue:date];
-      }
+    }
+    
+    if (date) {
+      [picker setDateValue:date];
     }
   } else if ([view isKindOfClass:[NSPopUpButton class]]) {
     [(NSPopUpButton *)view selectItemWithTitle:nsText];
@@ -5790,9 +5868,31 @@ char *window_get_control_text(void *control) {
     }
     result = [NSString stringWithFormat:@"#%02x%02x%02x", (int)(r * 255.99), (int)(g * 255.99), (int)(b * 255.99)];
   } else if ([view isKindOfClass:[NSDatePicker class]]) {
+    NSDatePicker *picker = (NSDatePicker *)view;
     NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
-    [formatter setDateFormat:@"yyyy-MM-dd"];
-    result = [formatter stringFromDate:[(NSDatePicker *)view dateValue]];
+    NSDatePickerElementFlags elements = [picker datePickerElements];
+    BOOL hasDate = (elements & NSYearMonthDayDatePickerElementFlag) != 0;
+    BOOL hasTime = (elements & (NSHourMinuteDatePickerElementFlag | NSHourMinuteSecondDatePickerElementFlag)) != 0;
+    BOOL hasSeconds = (elements & NSHourMinuteSecondDatePickerElementFlag) != 0;
+    
+    if (hasDate && hasTime) {
+      if (hasSeconds) {
+        [formatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
+      } else {
+        [formatter setDateFormat:@"yyyy-MM-dd HH:mm"];
+      }
+    } else if (hasDate) {
+      [formatter setDateFormat:@"yyyy-MM-dd"];
+    } else if (hasTime) {
+      if (hasSeconds) {
+        [formatter setDateFormat:@"HH:mm:ss"];
+      } else {
+        [formatter setDateFormat:@"HH:mm"];
+      }
+    } else {
+      [formatter setDateFormat:@"yyyy-MM-dd"];
+    }
+    result = [formatter stringFromDate:[picker dateValue]];
   } else if ([view isKindOfClass:[NSPopUpButton class]]) {
     result = [(NSPopUpButton *)view titleOfSelectedItem] ?: @"";
   } else if ([view isKindOfClass:[NSSegmentedControl class]]) {

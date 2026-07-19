@@ -65,6 +65,7 @@ void *window_add_slider_control(main__WindowInfo *info, const char *name, int va
 void *window_add_theme_menu_control(main__WindowInfo *info, const char *name, const char *selected);
 void *window_add_color_well_control(main__WindowInfo *info, const char *name, const char *color);
 void *window_add_date_picker_control(main__WindowInfo *info, const char *name, const char *date);
+void *window_add_date_time_picker_control(main__WindowInfo *info, const char *name, const char *datetime);
 void *window_add_mode_control_control(main__WindowInfo *info, const char *name, const char *selected);
 void *window_add_progress_indicator_control(main__WindowInfo *info, const char *name, int value);
 

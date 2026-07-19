@@ -104,6 +104,7 @@ fn C.window_add_slider_control(&WindowInfo, &u8, int) voidptr
 fn C.window_add_theme_menu_control(&WindowInfo, &u8, &u8) voidptr
 fn C.window_add_color_well_control(&WindowInfo, &u8, &u8) voidptr
 fn C.window_add_date_picker_control(&WindowInfo, &u8, &u8) voidptr
+fn C.window_add_date_time_picker_control(&WindowInfo, &u8, &u8) voidptr
 fn C.window_add_mode_control_control(&WindowInfo, &u8, &u8) voidptr
 fn C.window_add_progress_indicator_control(&WindowInfo, &u8, int) voidptr
 
@@ -840,6 +841,24 @@ pub fn (win &SimpleWindow) add_date_picker(name string, date string) &SimpleWind
 	}
 	if win.window_info != unsafe { nil } {
 		C.window_add_date_picker_control(win.window_info, real_name.str, date.str)
+	}
+	return win
+}
+
+pub fn (win &SimpleWindow) add_date_time_picker(name string, datetime string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('datetime')
+	}
+	if win.debug_mode {
+		println('[simplegui DEBUG] Created Control: "${real_name}" (Type: "datetime", DateTime: "${datetime}")')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.upsert_control(real_name, 'datetime', '', datetime, false, 0)
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_date_time_picker_control(win.window_info, real_name.str, datetime.str)
 	}
 	return win
 }
@@ -2193,6 +2212,18 @@ pub fn (win &SimpleWindow) add_form_date_picker(label string, name string, date 
 	return win
 }
 
+pub fn (win &SimpleWindow) add_form_date_time_picker(label string, name string, datetime string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('datetime')
+	}
+	win.begin_row('${real_name}_row')
+	win.add_label('${real_name}_label', label)
+	win.add_date_time_picker(real_name, datetime)
+	win.end_row()
+	return win
+}
+
 pub fn (win &SimpleWindow) add_form_progress(label string, name string, value int) &SimpleWindow {
 	mut real_name := name
 	if real_name == '' {
@@ -2724,7 +2755,7 @@ pub fn (win &SimpleWindow) clear(name string) &SimpleWindow {
 		win.set_checked(name, false)
 	} else if entry.kind in ['number', 'slider', 'progress', 'levelindicator', 'stepper', 'knob'] {
 		win.set_value_int(name, 0)
-	} else if entry.kind in ['input', 'password', 'textarea', 'date', 'mode', 'theme', 'listbox',
+	} else if entry.kind in ['input', 'password', 'textarea', 'date', 'datetime', 'mode', 'theme', 'listbox',
 		'color', 'search', 'dropdown', 'segmented', 'radiogroup', 'combobox', 'pathcontrol',
 		'tokenfield'] {
 		win.set_text(name, '')
@@ -2746,7 +2777,7 @@ pub fn (win &SimpleWindow) reset_form() &SimpleWindow {
 			win.set_checked(entry.name, entry.initial_checked)
 		} else if entry.kind in ['number', 'slider', 'progress', 'levelindicator', 'stepper', 'knob'] {
 			win.set_value_int(entry.name, entry.initial_number)
-		} else if entry.kind in ['input', 'password', 'textarea', 'date', 'mode', 'theme', 'listbox',
+		} else if entry.kind in ['input', 'password', 'textarea', 'date', 'datetime', 'mode', 'theme', 'listbox',
 			'color', 'search', 'dropdown', 'segmented', 'radiogroup', 'combobox', 'pathcontrol',
 			'tokenfield'] {
 			win.set_text(entry.name, entry.initial_value)
