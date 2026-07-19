@@ -32,6 +32,10 @@ fn main() {
 	win.set_control_height('dropzone', 70)
 
 	win.add_label('utility_heading', 'Helpful actions and navigation')
+	win.add_label('menu_hint', 'The Quick Actions menu appears in the macOS menu bar at the top of the screen; the same items are listed below for visibility.')
+	win.add_list_box('menu_preview', ['Snapshot demo', 'Open docs'])
+	win.set_control_width('menu_preview', 780)
+	win.set_control_height('menu_preview', 70)
 	win.add_menu('Quick Actions', [
 		simplegui.MenuItem{
 			title:    'Snapshot demo'

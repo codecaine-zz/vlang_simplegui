@@ -10,6 +10,25 @@ fn main() {
 	win.set_spacing(10)
 	win.set_status('Interact with each control to see the demo in action.')
 
+	win.add_menu('Demo', [
+		simplegui.MenuItem{
+			title:    'Show Snapshot'
+			shortcut: 'cmd+shift+s'
+			callback: fn (mut w simplegui.SimpleWindow) {
+				w.set_status('Snapshot triggered from the Demo menu')
+			}
+		},
+		simplegui.MenuItem{
+			title: '-'
+		},
+		simplegui.MenuItem{
+			title:    'Reset Status'
+			callback: fn (mut w simplegui.SimpleWindow) {
+				w.set_status('Interact with each control to see the demo in action.')
+			}
+		},
+	])
+
 	win.add_label('header', 'Single-window control showcase')
 	win.set_control_font_size('header', 18)
 	win.add_separator()

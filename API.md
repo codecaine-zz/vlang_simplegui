@@ -1219,9 +1219,14 @@ Attaches an event handler when files are dragged and dropped onto the window or 
 
 ## 11. Custom Application Menus & Context Menus
 
+Custom top-level menus appear in the macOS menu bar between the application menu and the standard `Edit`/`Window` menus. Menus can be registered at any time — including before `win.run()` — and become visible as soon as the app launches.
+
 ### `win.add_menu_item(menu_name string, item_title string, shortcut string, callback VoidEventCallback) &SimpleWindow`
 
 Adds a custom drop-down menu item under the main macOS application menu bar (e.g. under a custom menu tab like "Actions"). Binds the menu click action directly to the callback.
+
+- **Shortcut format**: modifier tokens joined with `+`, e.g. `'cmd+s'`, `'cmd+shift+s'`, `'ctrl+alt+d'`. Supported modifiers: `cmd`/`command`, `ctrl`/`control`, `opt`/`option`/`alt`, `shift`. Special keys: `return`/`enter`, `escape`/`esc`, `space`. Pass `''` for no shortcut.
+- Passing `'-'` as `item_title` inserts a native separator line.
 
 ### `win.add_context_menu_item(control_name string, item_title string, callback VoidEventCallback) &SimpleWindow`
 
@@ -1230,6 +1235,29 @@ Binds a native right-click Context Menu item directly to any control by its `nam
 ### `win.add_menu(menu_name string, items []MenuItem) &SimpleWindow`
 
 Creates a structured drop-down menu bar hierarchy. Supports native separators when `MenuItem.title` is `"-"`.
+
+```v ignore
+win.add_menu('Demo', [
+    simplegui.MenuItem{
+        title:    'Show Snapshot'
+        shortcut: 'cmd+shift+s'
+        callback: fn (mut w simplegui.SimpleWindow) {
+            w.set_status('Snapshot triggered from the Demo menu')
+        }
+    },
+    simplegui.MenuItem{
+        title: '-' // separator
+    },
+    simplegui.MenuItem{
+        title:    'Reset Status'
+        callback: fn (mut w simplegui.SimpleWindow) {
+            w.set_status('Ready.')
+        }
+    },
+])
+```
+
+**Note**: When the app runs in status-bar accessory mode (after `enable_status_bar`), menu items are added to the status bar dropdown menu instead of the main menu bar.
 
 ### `win.add_context_menu(control_name string, items []MenuItem) &SimpleWindow`
 

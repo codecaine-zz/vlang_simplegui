@@ -3723,6 +3723,9 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
     [NSApp setMainMenu:mainMenu];
   }
   
+  // Ensure the menu bar is available even before the window shows.
+  [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
+  
   NSString *appName = nil;
   if (self.params.title.str && strlen(self.params.title.str) > 0) {
     appName = nsstring(self.params.title.str);
@@ -3819,8 +3822,8 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
 - (void)applicationWillFinishLaunching:(NSNotification *)notification {
   (void)notification;
   NSLog(@"applicationWillFinishLaunching");
-  [self setupWindow];
   [self setupMenuBar];
+  [self setupWindow];
 }
 
 - (void)applicationDidFinishLaunching:(NSNotification *)notification {
@@ -3875,6 +3878,14 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
     [NSApp setMainMenu:mainMenu];
   }
   
+  // The first item of the main menu is always the application menu on macOS;
+  // its title is never displayed. Make sure the standard menus (App/Edit/Window)
+  // exist first so custom menus never occupy that reserved slot.
+  if (mainMenu.itemArray.count == 0) {
+    [self setupMenuBar];
+    mainMenu = [NSApp mainMenu];
+  }
+  
   // Search existing submenus
   for (NSMenuItem *item in mainMenu.itemArray) {
     if (item.submenu && [[item.submenu title] isEqualToString:menuName]) {
@@ -3882,7 +3893,8 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
     }
   }
   
-  NSInteger insertionIndex = 0;
+  // Insert after the app menu (index >= 1), before Edit/Window when present.
+  NSInteger insertionIndex = MIN(1, (NSInteger)mainMenu.itemArray.count);
   for (NSMenuItem *item in mainMenu.itemArray) {
     if (item.submenu && [[item.submenu title] isEqualToString:@"Edit"]) {
       insertionIndex = [mainMenu.itemArray indexOfObject:item];
@@ -3892,6 +3904,9 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
       insertionIndex = [mainMenu.itemArray indexOfObject:item];
       break;
     }
+  }
+  if (insertionIndex < 1 && mainMenu.itemArray.count >= 1) {
+    insertionIndex = 1;
   }
   
   // Create a new top-level menu near the front so custom menus appear before the standard ones.
@@ -4917,7 +4932,7 @@ void window_add_menu_item(main__WindowInfo *info, const char *menu_name, const c
   NSString *shortcutText = nsstring(shortcut);
   NSString *handlerName = nsstring(handler_name);
   
-  dispatch_async(dispatch_get_main_queue(), ^{
+  void (^runBlock)(void) = ^{
     if (delegate.statusBarMenu) {
       if ([itemTitle isEqualToString:@"-"]) {
         [delegate.statusBarMenu addItem:[NSMenuItem separatorItem]];
@@ -4946,7 +4961,18 @@ void window_add_menu_item(main__WindowInfo *info, const char *menu_name, const c
         }
       }
     }
-  });
+
+    NSMenu *mainMenu = [NSApp mainMenu];
+    if (mainMenu) {
+      [NSApp setMainMenu:mainMenu];
+    }
+  };
+
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
 }
 
 void window_add_context_menu_item(main__WindowInfo *info, const char *control_name, const char *item_title, const char *handler_name) {
