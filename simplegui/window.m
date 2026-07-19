@@ -2358,6 +2358,7 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   NSDatePicker *picker = [[NSDatePicker alloc] initWithFrame:NSZeroRect];
   [picker setDatePickerStyle:NSDatePickerStyleTextField];
   [picker setDatePickerMode:NSDatePickerModeSingle];
+  [picker setDatePickerElements:NSYearMonthDayDatePickerElementFlag];
   
   NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
   [formatter setDateFormat:@"yyyy-MM-dd"];
@@ -4946,20 +4947,31 @@ static NSString *normalizeMenuShortcut(NSString *shortcut, NSEventModifierFlags 
   NSArray<NSString *> *parts = [shortcut componentsSeparatedByString:@"+"];
   NSEventModifierFlags mask = 0;
   NSString *key = @"";
+  BOOL hasModifier = NO;
 
   for (NSString *part in parts) {
     NSString *token = [[part lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
     if ([token isEqualToString:@""] || [token isEqualToString:@"cmd"] || [token isEqualToString:@"command"]) {
       mask |= NSEventModifierFlagCommand;
+      if (![token isEqualToString:@""]) {
+        hasModifier = YES;
+      }
     } else if ([token isEqualToString:@"ctrl"] || [token isEqualToString:@"control"]) {
       mask |= NSEventModifierFlagControl;
+      hasModifier = YES;
     } else if ([token isEqualToString:@"opt"] || [token isEqualToString:@"option"] || [token isEqualToString:@"alt"]) {
       mask |= NSEventModifierFlagOption;
+      hasModifier = YES;
     } else if ([token isEqualToString:@"shift"]) {
       mask |= NSEventModifierFlagShift;
+      hasModifier = YES;
     } else {
       key = token;
     }
+  }
+
+  if (!hasModifier && key.length > 0) {
+    mask |= NSEventModifierFlagCommand;
   }
 
   if (modifierMask) *modifierMask = mask;
