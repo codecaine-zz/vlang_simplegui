@@ -3677,7 +3677,7 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   } else {
     [color getRed:&r green:&g blue:&b alpha:&a];
   }
-  NSString *colorStr = [NSString stringWithFormat:@"#%02X%02X%02X", (int)(r * 255.99), (int)(g * 255.99), (int)(b * 255.99)];
+  NSString *colorStr = [NSString stringWithFormat:@"#%02x%02x%02x", (int)(r * 255.99), (int)(g * 255.99), (int)(b * 255.99)];
   NSString *name = [self nameForControl:well];
   if (name && self.win_ptr) {
     vlang_dispatch_event(self.win_ptr, [name UTF8String], "change", [colorStr UTF8String]);
@@ -5546,6 +5546,38 @@ void *window_add_progress_indicator_control(main__WindowInfo *info, const char *
 }
 
 // Generic control styling and access
+static void applySelectionToCollectionView(NSCollectionView *collectionView, NSString *text) {
+  if (!collectionView) {
+    return;
+  }
+
+  NSString *trimmed = [text stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  if (trimmed.length == 0 || [trimmed isEqualToString:@"-1"]) {
+    [collectionView deselectAll:nil];
+    return;
+  }
+
+  NSScanner *scanner = [NSScanner scannerWithString:trimmed];
+  long long parsed = 0;
+  if (![scanner scanLongLong:&parsed] || ![scanner isAtEnd]) {
+    [collectionView deselectAll:nil];
+    return;
+  }
+
+  NSInteger index = (NSInteger)parsed;
+  if (index < 0) {
+    [collectionView deselectAll:nil];
+    return;
+  }
+
+  NSIndexPath *path = [NSIndexPath indexPathForItem:index inSection:0];
+  NSSet *paths = [NSSet setWithObject:path];
+  [collectionView selectItemsAtIndexPaths:paths scrollPosition:NSCollectionViewScrollPositionNone];
+  if ([collectionView respondsToSelector:@selector(scrollToItemsAtIndexPaths:scrollPosition:)]) {
+    [collectionView scrollToItemsAtIndexPaths:paths scrollPosition:NSCollectionViewScrollPositionNearestHorizontalEdge];
+  }
+}
+
 void window_set_control_text(void *control, const char *text) {
   NSView *view = (NSView *)control;
   NSString *nsText = nsstring(text);
@@ -5563,7 +5595,15 @@ void window_set_control_text(void *control, const char *text) {
         [tableView deselectAll:nil];
       }
       return;
+    } else if ([doc isKindOfClass:[NSCollectionView class]]) {
+      applySelectionToCollectionView((NSCollectionView *)doc, nsText);
+      return;
     }
+  }
+
+  if ([view isKindOfClass:[NSCollectionView class]]) {
+    applySelectionToCollectionView((NSCollectionView *)view, nsText);
+    return;
   }
   
   if ([view isKindOfClass:[ShortcutRecorder class]]) {
@@ -5669,6 +5709,27 @@ char *window_get_control_text(void *control) {
     }
   }
   
+  if ([view isKindOfClass:[NSCollectionView class]]) {
+    NSCollectionView *collectionView = (NSCollectionView *)view;
+    NSIndexPath *selected = [[collectionView selectionIndexPaths] anyObject];
+    if (selected) {
+      return strdup([[NSString stringWithFormat:@"%ld", (long)selected.item] UTF8String]);
+    }
+    return strdup("");
+  }
+
+  if ([view isKindOfClass:[NSScrollView class]]) {
+    NSView *doc = [(NSScrollView *)view documentView];
+    if ([doc isKindOfClass:[NSCollectionView class]]) {
+      NSCollectionView *collectionView = (NSCollectionView *)doc;
+      NSIndexPath *selected = [[collectionView selectionIndexPaths] anyObject];
+      if (selected) {
+        return strdup([[NSString stringWithFormat:@"%ld", (long)selected.item] UTF8String]);
+      }
+      return strdup("");
+    }
+  }
+  
   NSString *result = @"";
   if ([view isKindOfClass:[ShortcutRecorder class]]) {
     result = [(ShortcutRecorder *)view shortcutString];
@@ -5695,7 +5756,7 @@ char *window_get_control_text(void *control) {
     } else {
       [color getRed:&r green:&g blue:&b alpha:&a];
     }
-    result = [NSString stringWithFormat:@"#%02X%02X%02X", (int)(r * 255.99), (int)(g * 255.99), (int)(b * 255.99)];
+    result = [NSString stringWithFormat:@"#%02x%02x%02x", (int)(r * 255.99), (int)(g * 255.99), (int)(b * 255.99)];
   } else if ([view isKindOfClass:[NSDatePicker class]]) {
     NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
     [formatter setDateFormat:@"yyyy-MM-dd"];

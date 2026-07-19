@@ -29,6 +29,7 @@ fn main() {
 	demo_maps['advanced_features_demo.v'] = DemoConfig{'Advanced Features Demo', 'developer.png'}
 	demo_maps['all_controls_demo.v'] = DemoConfig{'All Controls Demo', 'design.png'}
 	demo_maps['api_coverage_demo.v'] = DemoConfig{'API Coverage Demo', 'developer.png'}
+	demo_maps['api_control_showcase_demo.v'] = DemoConfig{'API Control Showcase', 'developer.png'}
 	demo_maps['always_on_top_demo.v'] = DemoConfig{'Always On Top Demo', 'utility.png'}
 	demo_maps['beginner_demo.v'] = DemoConfig{'Beginner Demo', 'launcher.png'}
 	demo_maps['benchmark_demo.v'] = DemoConfig{'Benchmark Demo', 'profiler.png'}

@@ -2302,17 +2302,22 @@ pub fn (win &SimpleWindow) set_value(name string, value string) &SimpleWindow {
 pub fn (win &SimpleWindow) get_value(name string) string {
 	win.require_control(name)
 	idx := win.find_control(name)
-	if win.window_info != unsafe { nil } {
-		res := C.window_get_control_text_by_name(win.window_info, name.str)
-		return unsafe { res.vstring() }
-	}
 	if idx >= 0 {
 		kind := win.controls[idx].kind
+		if kind == 'color' {
+			return win.controls[idx].value
+		}
 		if kind in ['checkbox', 'switch', 'spinner'] {
 			return if win.controls[idx].checked { 'true' } else { 'false' }
 		} else if kind in ['number', 'slider', 'progress', 'levelindicator', 'stepper', 'knob'] {
 			return win.controls[idx].number.str()
 		}
+	}
+	if win.window_info != unsafe { nil } {
+		res := C.window_get_control_text_by_name(win.window_info, name.str)
+		return unsafe { res.vstring() }
+	}
+	if idx >= 0 {
 		return win.controls[idx].value
 	}
 	return ''
@@ -2503,6 +2508,51 @@ pub fn (win &SimpleWindow) button(title string) &SimpleWindow {
 
 pub fn (win &SimpleWindow) set_button(title string) &SimpleWindow {
 	win.set_value('default_button', title)
+	return win
+}
+
+pub fn (win &SimpleWindow) slider(value int) &SimpleWindow {
+	win.add_slider('default_slider', value)
+	return win
+}
+
+pub fn (win &SimpleWindow) color_well(color string) &SimpleWindow {
+	win.add_color_well('default_color_well', color)
+	return win
+}
+
+pub fn (win &SimpleWindow) date_picker(date string) &SimpleWindow {
+	win.add_date_picker('default_date_picker', date)
+	return win
+}
+
+pub fn (win &SimpleWindow) progress_indicator(value int) &SimpleWindow {
+	win.add_progress_indicator('default_progress_indicator', value)
+	return win
+}
+
+pub fn (win &SimpleWindow) stepper(min_val int, max_val int, step int, value int) &SimpleWindow {
+	win.add_stepper('default_stepper', min_val, max_val, step, value)
+	return win
+}
+
+pub fn (win &SimpleWindow) help_button() &SimpleWindow {
+	win.add_help_button('default_help_button')
+	return win
+}
+
+pub fn (win &SimpleWindow) knob(value int) &SimpleWindow {
+	win.add_knob('default_knob', value)
+	return win
+}
+
+pub fn (win &SimpleWindow) pull_down(title string, items []string) &SimpleWindow {
+	win.add_pull_down('default_pull_down', title, items)
+	return win
+}
+
+pub fn (win &SimpleWindow) image_button(symbol string, title string) &SimpleWindow {
+	win.add_image_button('default_image_button', symbol, title)
 	return win
 }
 

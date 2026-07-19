@@ -157,6 +157,18 @@ fn test_grid_sort_api_is_available() {
 	win.grid_sort_by_column('inventory', 0, true)
 }
 
+fn test_collection_view_selection_can_be_set_and_read_via_generic_value_api() {
+	mut win := simplegui.SimpleWindow{}
+	win.add_collection_view('gallery', 80, 70)
+	win.set_collection_items('gallery', ['Alpha', 'Beta', 'Gamma'])
+
+	win.set_value('gallery', '1')
+	assert win.get_value('gallery') == '1'
+
+	win.set_value('gallery', '2')
+	assert win.get_value('gallery') == '2'
+}
+
 struct BindingExample {
 	username         string
 	age              int
@@ -410,6 +422,38 @@ fn test_method_chaining() {
 	assert win.get_text('second') == 'Hopper'
 }
 
+fn test_additional_shorthand_controls_are_available() {
+	mut win := simplegui.new_simple_window('Test Window', 100, 100)
+
+	win.slider(42)
+		.color_well('#ff00aa')
+		.date_picker('2026-07-19')
+		.progress_indicator(55)
+		.stepper(0, 100, 5, 25)
+		.help_button()
+		.knob(63)
+		.pull_down('Actions', ['Duplicate', 'Delete'])
+		.image_button('trash', 'Delete')
+
+	assert win.has_control('default_slider') == true
+	assert win.get_value_int('default_slider') == 42
+	assert win.has_control('default_color_well') == true
+	assert win.get_text('default_color_well') == '#ff00aa'
+	assert win.has_control('default_date_picker') == true
+	assert win.get_text('default_date_picker') == '2026-07-19'
+	assert win.has_control('default_progress_indicator') == true
+	assert win.get_value_int('default_progress_indicator') == 55
+	assert win.has_control('default_stepper') == true
+	assert win.get_value_int('default_stepper') == 25
+	assert win.has_control('default_help_button') == true
+	assert win.has_control('default_knob') == true
+	assert win.get_value_int('default_knob') == 63
+	assert win.has_control('default_pull_down') == true
+	assert win.get_text('default_pull_down') == 'Actions'
+	assert win.has_control('default_image_button') == true
+	assert win.get_text('default_image_button') == 'Delete'
+}
+
 fn test_new_control_helpers_and_window_constraints() {
 	mut win := simplegui.new_simple_window('Test Window', 100, 100)
 
@@ -536,6 +580,18 @@ fn test_native_macos_control_wrappers_are_available() {
 	assert win.get_text('role') == 'Admin'
 	assert win.get_checked('notifications') == false
 	assert win.get_text('search') == 'demo'
+}
+
+fn test_collection_view_selection_is_read_writeable() {
+	mut win := simplegui.new_simple_window('Test Window', 100, 100)
+	win.add_collection_view('grid_collection', 120, 120)
+	win.set_collection_items('grid_collection', ['Alpha', 'Beta', 'Gamma'])
+
+	win.set_text('grid_collection', '2')
+	assert win.get_text('grid_collection') == '2'
+
+	win.set_text('grid_collection', '0')
+	assert win.get_text('grid_collection') == '0'
 }
 
 fn test_auto_naming() {
