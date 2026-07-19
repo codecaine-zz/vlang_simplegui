@@ -37,6 +37,7 @@ It is intended to make GUI programming feel more direct and less manual than the
 The developer controls demo in [demos/developer_controls_demo.v](demos/developer_controls_demo.v) showcases these richer UI helpers in one place, while [demos/editable_grid_showcase_demo.v](demos/editable_grid_showcase_demo.v) demonstrates the new editable-grid workflow with selection, filtering, sorting, and programmatic row/column/cell access.
 
 For app code, the grid helpers are intentionally ergonomic:
+
 - `grid_get_rows()` / `grid_set_rows()` replace the full data set in one step.
 - `grid_get_row()` / `grid_set_row()` and `grid_get_column()` / `grid_set_column()` cover the common spreadsheet-style operations.
 - `grid_get_selected_column()`, `grid_set_selected_column()`, and `grid_set_selected_cell()` make selection easy to drive from code.
