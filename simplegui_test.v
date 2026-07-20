@@ -1602,4 +1602,120 @@ fn test_native_macos_ui_additions() {
 	assert true
 }
 
+fn test_new_ergonomic_helpers_added() {
+	mut win := simplegui.new_simple_window('New Ergonomic Helpers Test', 200, 200)
+
+	// 1. Global Reset & Cleanup Helpers
+	win.add_input('txt_input', 'initial text')
+	win.add_checkbox('chk_input', 'Check me', true)
+	win.add_spinner('loading_spinner', true)
+	win.add_progress_indicator('prog_bar', 50)
+	win.set_error('txt_input', 'Validation error')
+
+	assert win.get_error('txt_input') == 'Validation error'
+	win.clear_all_errors()
+	assert win.get_error('txt_input') == ''
+
+	assert win.get_text('txt_input') == 'initial text'
+	assert win.get_bool('chk_input') == true
+	assert win.get_bool('loading_spinner') == true
+	assert win.get_progress('prog_bar') == 50
+
+	win.clear_all_fields()
+	assert win.get_text('txt_input') == ''
+	assert win.get_bool('chk_input') == false
+	assert win.get_bool('loading_spinner') == false
+	assert win.get_progress('prog_bar') == 0
+
+	win.reset_all_fields()
+	assert win.get_text('txt_input') == 'initial text'
+	assert win.get_bool('chk_input') == true
+	assert win.get_bool('loading_spinner') == true
+	assert win.get_progress('prog_bar') == 50
+
+	// 2. Validation Additions
+	assert simplegui.validate_ip('192.168.1.1') == ''
+	assert simplegui.validate_ip('256.0.0.1') != ''
+	assert simplegui.validate_ip('192.168.1') != ''
+	assert simplegui.validate_ip('abc.def.ghi.jkl') != ''
+
+	assert simplegui.validate_phone('+1 (555) 123-4567') == ''
+	assert simplegui.validate_phone('123') != ''
+	assert simplegui.validate_phone('123-abc-4567') != ''
+
+	range_val := simplegui.range_validator(10.0, 50.0)
+	assert range_val('25') == ''
+	assert range_val('5') != ''
+	assert range_val('60') != ''
+	assert range_val('not-a-number') != ''
+
+	// 3. Token Field Ergonomics
+	win.add_token_field('tags', 'one, two')
+	assert win.get_tokens('tags') == ['one', 'two']
+
+	win.set_tokens('tags', ['alpha', 'beta', 'gamma'])
+	assert win.get_tokens('tags') == ['alpha', 'beta', 'gamma']
+
+	win.add_token('tags', 'delta')
+	assert win.get_tokens('tags') == ['alpha', 'beta', 'gamma', 'delta']
+	win.add_token('tags', 'beta') // duplicate
+	assert win.get_tokens('tags') == ['alpha', 'beta', 'gamma', 'delta']
+
+	win.remove_token('tags', 'gamma')
+	assert win.get_tokens('tags') == ['alpha', 'beta', 'delta']
+
+	// 4. Advanced Table Mapping & Filtering
+	win.add_table('users', ['Username', 'Role'])
+	win.add_table_rows('users', [
+		['alice', 'admin'],
+		['bob', 'user'],
+		['charlie', 'user'],
+	])
+
+	assert win.has_table_row('users', 0, 'bob') == true
+	assert win.has_table_row('users', 0, 'david') == false
+
+	assert win.find_table_row_where('users', fn (row []string) bool {
+		return row[1] == 'admin'
+	}) == 0
+
+	users_filtered := win.filter_table_rows('users', fn (row []string) bool {
+		return row[1] == 'user'
+	})
+	assert users_filtered.len == 2
+	assert users_filtered[0][0] == 'bob'
+	assert users_filtered[1][0] == 'charlie'
+
+	win.map_table_column('users', 0, fn (val string) string {
+		return val.to_upper()
+	})
+	assert win.get_table_cell('users', 0, 0) == 'ALICE'
+	assert win.get_table_cell('users', 1, 0) == 'BOB'
+
+	// 5. List Box Row Insertion & Safely Selected Text
+	win.add_list_box('tasks', ['Task A', 'Task B'])
+	assert win.get_list_selected_text_or('tasks', 'No Task') == 'No Task'
+
+	win.insert_list_item('tasks', 1, 'Task Intermediary')
+	assert win.get_list_items('tasks') == ['Task A', 'Task Intermediary', 'Task B']
+
+	win.update_list_item('tasks', 0, 'Task Alpha')
+	assert win.get_list_items('tasks') == ['Task Alpha', 'Task Intermediary', 'Task B']
+
+	// 6. Widget QoL Helpers
+	assert win.get_bool('loading_spinner') == true
+	assert win.toggle_spinner('loading_spinner') == false
+	assert win.get_bool('loading_spinner') == false
+	win.start_spinner('loading_spinner')
+	assert win.get_bool('loading_spinner') == true
+	win.stop_spinner('loading_spinner')
+	assert win.get_bool('loading_spinner') == false
+
+	assert win.get_progress('prog_bar') == 50
+	assert win.increment_progress('prog_bar', 10) == 60
+	assert win.get_progress('prog_bar') == 60
+	assert win.increment_progress('prog_bar', -70) == 0
+}
+
+
 

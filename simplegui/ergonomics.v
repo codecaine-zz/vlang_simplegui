@@ -1426,3 +1426,287 @@ pub fn (win &SimpleWindow) animate_window_bounds(x int, y int, width int, height
 	return win
 }
 
+// ==========================================
+// 15. Global Reset & Cleanup Helpers
+// ==========================================
+
+// clear_all_errors clears the inline error state for all registered controls.
+pub fn (win &SimpleWindow) clear_all_errors() &SimpleWindow {
+	for control in win.controls {
+		win.clear_error(control.name)
+	}
+	return win
+}
+
+// clear_all_fields clears the text or boolean states of all controls to empty/unchecked.
+pub fn (win &SimpleWindow) clear_all_fields() &SimpleWindow {
+	for control in win.controls {
+		if control.kind in ['checkbox', 'switch', 'spinner'] {
+			win.set_checked(control.name, false)
+		} else if control.kind in ['number', 'slider', 'progress', 'levelindicator', 'stepper',
+			'knob'] {
+			win.set_value_int(control.name, 0)
+		} else if control.kind in ['input', 'password', 'textarea', 'date', 'mode', 'theme',
+			'listbox', 'color', 'search', 'dropdown', 'segmented', 'radiogroup', 'combobox',
+			'pathcontrol', 'tokenfield'] {
+			win.set_text(control.name, '')
+		}
+	}
+	return win
+}
+
+// reset_all_fields restores every control in the window to its initial default value.
+pub fn (win &SimpleWindow) reset_all_fields() &SimpleWindow {
+	mut names := []string{cap: win.controls.len}
+	for control in win.controls {
+		names << control.name
+	}
+	return win.reset_many(names)
+}
+
+// ==========================================
+// 16. Additional Ready-Made Validation Rules
+// ==========================================
+
+// validate_ip is a ready-made ControlValidator that accepts basic IPv4 addresses.
+pub fn validate_ip(value string) string {
+	v := value.trim_space()
+	if v == '' {
+		return 'IP address is required'
+	}
+	parts := v.split('.')
+	if parts.len != 4 {
+		return 'Enter a valid IPv4 address (e.g. 192.168.1.1)'
+	}
+	for part in parts {
+		if part == '' {
+			return 'Enter a valid IPv4 address (e.g. 192.168.1.1)'
+		}
+		for c in part {
+			if !c.is_digit() {
+				return 'Enter a valid IPv4 address (e.g. 192.168.1.1)'
+			}
+		}
+		val := part.int()
+		if val < 0 || val > 255 {
+			return 'IP segments must be between 0 and 255'
+		}
+	}
+	return ''
+}
+
+// validate_phone is a ready-made ControlValidator that accepts digits, spaces, hyphens, parentheses, and a leading plus.
+pub fn validate_phone(value string) string {
+	v := value.trim_space()
+	if v == '' {
+		return 'Phone number is required'
+	}
+	mut digit_count := 0
+	for i, c in v {
+		if c.is_digit() {
+			digit_count++
+		} else if c in [` `, `-`, `(`, `)`] {
+			continue
+		} else if c == `+` && i == 0 {
+			continue
+		} else {
+			return 'Enter a valid phone number (only digits, spaces, -, (), + are allowed)'
+		}
+	}
+	if digit_count < 7 {
+		return 'Phone number is too short'
+	}
+	return ''
+}
+
+// range_validator builds a ControlValidator requiring the numeric value of the control to be within [min, max].
+pub fn range_validator(min f64, max f64) ControlValidator {
+	return fn [min, max] (value string) string {
+		v := value.trim_space()
+		if v == '' {
+			return 'A value is required'
+		}
+		num := strconv.atof64(v) or { return 'Enter a valid number' }
+		if num < min || num > max {
+			return 'Value must be between ${min} and ${max}'
+		}
+		return ''
+	}
+}
+
+// ==========================================
+// 17. Token Field (Bubble Tags) Ergonomics
+// ==========================================
+
+// get_tokens parses the comma-separated text value of a token field into a cleaned slice of strings.
+pub fn (win &SimpleWindow) get_tokens(name string) []string {
+	val := win.get_text(name)
+	mut tokens := []string{}
+	for part in val.split(',') {
+		trimmed := part.trim_space()
+		if trimmed != '' {
+			tokens << trimmed
+		}
+	}
+	return tokens
+}
+
+// set_tokens sets the value of a token field from a slice of strings.
+pub fn (win &SimpleWindow) set_tokens(name string, tokens []string) &SimpleWindow {
+	mut cleaned := []string{}
+	for t in tokens {
+		trimmed := t.trim_space()
+		if trimmed != '' {
+			cleaned << trimmed
+		}
+	}
+	win.set_text(name, cleaned.join(', '))
+	return win
+}
+
+// add_token appends a token to the token field if it isn't already present.
+pub fn (win &SimpleWindow) add_token(name string, token string) &SimpleWindow {
+	trimmed := token.trim_space()
+	if trimmed == '' {
+		return win
+	}
+	mut tokens := win.get_tokens(name)
+	if trimmed !in tokens {
+		tokens << trimmed
+		win.set_tokens(name, tokens)
+	}
+	return win
+}
+
+// remove_token removes a token from the token field if present.
+pub fn (win &SimpleWindow) remove_token(name string, token string) &SimpleWindow {
+	trimmed := token.trim_space()
+	if trimmed == '' {
+		return win
+	}
+	mut tokens := win.get_tokens(name)
+	idx := tokens.index(trimmed)
+	if idx >= 0 {
+		tokens.delete(idx)
+		win.set_tokens(name, tokens)
+	}
+	return win
+}
+
+// ==========================================
+// 18. Advanced Table Mapping & Filtering
+// ==========================================
+
+// has_table_row returns true if any row has row[column] == value.
+pub fn (win &SimpleWindow) has_table_row(name string, column int, value string) bool {
+	return win.find_table_row(name, column, value) != -1
+}
+
+// map_table_column maps a function over all values of a specific table column in-place.
+pub fn (win &SimpleWindow) map_table_column(name string, column int, f fn (val string) string) &SimpleWindow {
+	mut rows := win.get_table_rows(name)
+	mut modified := false
+	for mut row in rows {
+		if column >= 0 && column < row.len {
+			row[column] = f(row[column])
+			modified = true
+		}
+	}
+	if modified {
+		win.set_table_rows(name, rows)
+	}
+	return win
+}
+
+// filter_table_rows returns a filtered copy of rows that match the predicate.
+pub fn (win &SimpleWindow) filter_table_rows(name string, predicate fn (row []string) bool) [][]string {
+	rows := win.get_table_rows(name)
+	mut filtered := [][]string{}
+	for row in rows {
+		if predicate(row) {
+			filtered << row
+		}
+	}
+	return filtered
+}
+
+// find_table_row_where returns the index of the first row matching the predicate, or -1.
+pub fn (win &SimpleWindow) find_table_row_where(name string, predicate fn (row []string) bool) int {
+	rows := win.get_table_rows(name)
+	for i, row in rows {
+		if predicate(row) {
+			return i
+		}
+	}
+	return -1
+}
+
+// ==========================================
+// 19. List Box Row Insertion & Safely Selected Text
+// ==========================================
+
+// insert_list_item inserts a single item at the given 0-based index.
+pub fn (win &SimpleWindow) insert_list_item(name string, index int, item string) &SimpleWindow {
+	mut items := win.get_list_items(name)
+	if index >= 0 && index <= items.len {
+		items.insert(index, item)
+		win.update_list_items(name, items)
+	}
+	return win
+}
+
+// update_list_item replaces the list item at the given 0-based index.
+pub fn (win &SimpleWindow) update_list_item(name string, index int, item string) &SimpleWindow {
+	mut items := win.get_list_items(name)
+	if index >= 0 && index < items.len {
+		items[index] = item
+		win.update_list_items(name, items)
+	}
+	return win
+}
+
+// get_list_selected_text_or returns the text of the selected row, or a fallback if none selected.
+pub fn (win &SimpleWindow) get_list_selected_text_or(name string, fallback string) string {
+	val := win.get_list_selected_text(name)
+	if val == '' {
+		return fallback
+	}
+	return val
+}
+
+// ==========================================
+// 20. Widget QoL Helpers
+// ==========================================
+
+// toggle_spinner flips a spinner's active/spinning state and returns the new active state.
+pub fn (win &SimpleWindow) toggle_spinner(name string) bool {
+	new_state := !win.get_bool(name)
+	win.set_bool(name, new_state)
+	return new_state
+}
+
+// start_spinner starts the spinner's animation.
+pub fn (win &SimpleWindow) start_spinner(name string) &SimpleWindow {
+	win.set_bool(name, true)
+	return win
+}
+
+// stop_spinner stops the spinner's animation.
+pub fn (win &SimpleWindow) stop_spinner(name string) &SimpleWindow {
+	win.set_bool(name, false)
+	return win
+}
+
+// increment_progress increments/decrements a progress bar value, bounding it in 0..100.
+pub fn (win &SimpleWindow) increment_progress(name string, delta int) int {
+	mut current := win.get_progress(name)
+	mut new_val := current + delta
+	if new_val < 0 {
+		new_val = 0
+	}
+	if new_val > 100 {
+		new_val = 100
+	}
+	win.set_progress(name, new_val)
+	return new_val
+}

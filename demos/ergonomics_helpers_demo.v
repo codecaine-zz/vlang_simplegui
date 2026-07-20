@@ -65,6 +65,20 @@ fn main() {
 				w.set_status('batch_c checked: ${checked}')
 			}
 		})
+		w.add_action_row({
+			'Clear All Fields': fn (mut w simplegui.SimpleWindow) {
+				w.clear_all_fields()
+				w.set_status('Cleared all fields in the window.')
+			}
+			'Reset All Fields': fn (mut w simplegui.SimpleWindow) {
+				w.reset_all_fields()
+				w.set_status('Reset all fields in the window to initial values.')
+			}
+			'Clear All Errors': fn (mut w simplegui.SimpleWindow) {
+				w.clear_all_errors()
+				w.set_status('Cleared all errors in the window.')
+			}
+		})
 	})
 
 	// 3. Value accessors: get_int/set_int, increment, set_progress, append_line
@@ -114,6 +128,20 @@ fn main() {
 			}
 			'Clear List':      fn (mut w simplegui.SimpleWindow) {
 				w.clear_list_items('fruits')
+			}
+		})
+		w.add_action_row({
+			'Insert at Index 1': fn (mut w simplegui.SimpleWindow) {
+				w.insert_list_item('fruits', 1, 'Pineapple (Inserted)')
+				w.set_status('Inserted Pineapple at index 1.')
+			}
+			'Update Index 0': fn (mut w simplegui.SimpleWindow) {
+				w.update_list_item('fruits', 0, 'Apple (Updated)')
+				w.set_status('Updated index 0 item.')
+			}
+			'Get Selected or Fallback': fn (mut w simplegui.SimpleWindow) {
+				text := w.get_list_selected_text_or('fruits', 'No fruit selected')
+				w.info('Selection', 'Selected item: ${text}')
 			}
 		})
 	})
@@ -168,6 +196,24 @@ fn main() {
 					return
 				}
 				w.toast('Imported from ${path}')
+			}
+		})
+		w.add_action_row({
+			'Map Roles UPPER': fn (mut w simplegui.SimpleWindow) {
+				w.map_table_column('crew', 1, fn (val string) string {
+					return val.to_upper()
+				})
+				w.set_status('Mapped column 1 roles to uppercase.')
+			}
+			'Filter Recruits': fn (mut w simplegui.SimpleWindow) {
+				filtered := w.filter_table_rows('crew', fn (row []string) bool {
+					return row[1].to_lower().contains('recruit')
+				})
+				w.info('Recruits', 'Found ${filtered.len} recruit(s).')
+			}
+			'Has Admiral?': fn (mut w simplegui.SimpleWindow) {
+				has := w.has_table_row('crew', 1, 'ADMIRAL') || w.has_table_row('crew', 1, 'Admiral')
+				w.toast('Has Admiral: ${has}')
 			}
 		})
 	})
@@ -289,11 +335,17 @@ fn main() {
 	win.group('grp_persist', 'Validation & Persistence', fn (mut w simplegui.SimpleWindow) {
 		w.add_form_field('Username:', 'username', '')
 		w.add_form_field('Email:', 'email', '')
+		w.add_form_field('IP Address:', 'ip_addr', '192.168.1.1')
+		w.add_form_field('Phone Number:', 'phone_num', '+1 (555) 019-2834')
+		w.add_form_field('Port (10-100):', 'port_num', '80')
 		w.add_action_row({
-			'Validate': fn (mut w simplegui.SimpleWindow) {
+			'Validate All': fn (mut w simplegui.SimpleWindow) {
 				errors := w.validate_controls({
-					'username': simplegui.min_len_validator(3)
-					'email':    simplegui.validate_email
+					'username':  simplegui.min_len_validator(3)
+					'email':     simplegui.validate_email
+					'ip_addr':   simplegui.validate_ip
+					'phone_num': simplegui.validate_phone
+					'port_num':  simplegui.range_validator(10.0, 100.0)
 				})
 				if errors.len == 0 {
 					w.toast('All fields valid!')
@@ -302,7 +354,7 @@ fn main() {
 				}
 			}
 			'Clear':    fn (mut w simplegui.SimpleWindow) {
-				w.clear_fields(['username', 'email'])
+				w.clear_fields(['username', 'email', 'ip_addr', 'phone_num', 'port_num'])
 				w.set_status('Fields cleared.')
 			}
 			'Save':     fn (mut w simplegui.SimpleWindow) {
@@ -322,7 +374,32 @@ fn main() {
 		})
 	})
 
-	// 8. Timer sugar: every() heartbeat + after() one-shot
+	// 10. Token Field & Spinner/Progress QoL Helpers
+	win.group('grp_qol', 'Token Field & Widget QoL', fn (mut w simplegui.SimpleWindow) {
+		w.add_token_field('demo_tags', 'vlang, simplegui, cocoa')
+		w.add_spinner('demo_spinner', true)
+		w.add_progress_indicator('demo_progress', 30)
+		w.add_action_row({
+			'Add Token "macOS"': fn (mut w simplegui.SimpleWindow) {
+				w.add_token('demo_tags', 'macOS')
+				w.set_status('Tokens: ${w.get_tokens('demo_tags').join(', ')}')
+			}
+			'Remove "vlang"': fn (mut w simplegui.SimpleWindow) {
+				w.remove_token('demo_tags', 'vlang')
+				w.set_status('Tokens: ${w.get_tokens('demo_tags').join(', ')}')
+			}
+			'Toggle Spinner': fn (mut w simplegui.SimpleWindow) {
+				active := w.toggle_spinner('demo_spinner')
+				w.set_status('Spinner active: ${active}')
+			}
+			'Progress +15': fn (mut w simplegui.SimpleWindow) {
+				val := w.increment_progress('demo_progress', 15)
+				w.set_status('Progress incremented to ${val}')
+			}
+		})
+	})
+
+	// 11. Timer sugar: every() heartbeat + after() one-shot
 	win.add_label('clock_label', 'Uptime: 0s')
 	win.every(1000, fn (mut w simplegui.SimpleWindow) {
 		seconds := w.get_text('clock_label').replace('Uptime: ', '').replace('s', '').int() + 1
@@ -335,3 +412,4 @@ fn main() {
 	win.set_status('Ready.')
 	win.run()
 }
+

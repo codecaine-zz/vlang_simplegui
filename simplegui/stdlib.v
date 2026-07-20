@@ -657,22 +657,27 @@ mut:
 	s datatypes.Stack[T]
 }
 
+// push pushes an item onto the top of the stack.
 pub fn (mut ss SimpleStack[T]) push(item T) {
 	ss.s.push(item)
 }
 
+// pop removes and returns the item on top of the stack, or errors if empty.
 pub fn (mut ss SimpleStack[T]) pop() !T {
 	return ss.s.pop()
 }
 
+// peek returns the top item of the stack without removing it, or errors if empty.
 pub fn (ss &SimpleStack[T]) peek() !T {
 	return ss.s.peek()
 }
 
+// len returns the number of elements currently stored in the stack.
 pub fn (ss &SimpleStack[T]) len() int {
 	return ss.s.len()
 }
 
+// is_empty returns true if the stack contains no elements.
 pub fn (ss &SimpleStack[T]) is_empty() bool {
 	return ss.s.is_empty()
 }
@@ -688,22 +693,27 @@ mut:
 	q datatypes.Queue[T]
 }
 
+// push enqueues an item at the back of the queue.
 pub fn (mut sq SimpleQueue[T]) push(item T) {
 	sq.q.push(item)
 }
 
+// pop dequeues and returns the item at the front of the queue, or errors if empty.
 pub fn (mut sq SimpleQueue[T]) pop() !T {
 	return sq.q.pop()
 }
 
+// peek returns the front item of the queue without removing it, or errors if empty.
 pub fn (sq &SimpleQueue[T]) peek() !T {
 	return sq.q.peek()
 }
 
+// len returns the number of elements currently stored in the queue.
 pub fn (sq &SimpleQueue[T]) len() int {
 	return sq.q.len()
 }
 
+// is_empty returns true if the queue contains no elements.
 pub fn (sq &SimpleQueue[T]) is_empty() bool {
 	return sq.q.is_empty()
 }
@@ -719,26 +729,32 @@ mut:
 	set datatypes.Set[T]
 }
 
+// add inserts an item into the set.
 pub fn (mut ss SimpleSet[T]) add(item T) {
 	ss.set.add(item)
 }
 
+// remove removes an item from the set.
 pub fn (mut ss SimpleSet[T]) remove(item T) {
 	ss.set.remove(item)
 }
 
+// exists returns true if the item is present in the set.
 pub fn (ss &SimpleSet[T]) exists(item T) bool {
 	return ss.set.exists(item)
 }
 
+// len returns the total count of elements in the set.
 pub fn (ss &SimpleSet[T]) len() int {
 	return ss.set.size()
 }
 
+// is_empty returns true if the set contains no elements.
 pub fn (ss &SimpleSet[T]) is_empty() bool {
 	return ss.set.is_empty()
 }
 
+// to_array returns all items in the set as an array.
 pub fn (ss &SimpleSet[T]) to_array() []T {
 	return ss.set.array()
 }
@@ -754,26 +770,32 @@ mut:
 	rb datatypes.RingBuffer[T]
 }
 
+// push adds an item into the ring buffer, returning an error if full.
 pub fn (mut srb SimpleRingBuffer[T]) push(item T) ! {
 	srb.rb.push(item)!
 }
 
+// pop removes and returns the oldest item from the ring buffer, returning an error if empty.
 pub fn (mut srb SimpleRingBuffer[T]) pop() !T {
 	return srb.rb.pop()
 }
 
+// len returns the number of occupied elements in the ring buffer.
 pub fn (srb &SimpleRingBuffer[T]) len() int {
 	return srb.rb.occupied()
 }
 
+// capacity returns the maximum total capacity of the ring buffer.
 pub fn (srb &SimpleRingBuffer[T]) capacity() int {
 	return srb.rb.capacity()
 }
 
+// is_empty returns true if the ring buffer contains no elements.
 pub fn (srb &SimpleRingBuffer[T]) is_empty() bool {
 	return srb.rb.is_empty()
 }
 
+// is_full returns true if the ring buffer has reached its capacity.
 pub fn (srb &SimpleRingBuffer[T]) is_full() bool {
 	return srb.rb.is_full()
 }
@@ -1180,5 +1202,3 @@ pub fn base64_decode(b64_str string) string {
 pub fn (win &SimpleWindow) base64_decode(b64_str string) string {
 	return base64_decode(b64_str)
 }
-
-

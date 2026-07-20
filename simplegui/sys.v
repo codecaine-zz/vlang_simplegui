@@ -45,7 +45,7 @@ pub fn (win &SimpleWindow) exec_bg(command string) &SimpleWindow {
 			}
 		}
 	}(command, win.debug_mode)
-	
+
 	return win
 }
 
@@ -229,26 +229,26 @@ pub:
 // FileMetadata represents comprehensive file information and permissions.
 pub struct FileMetadata {
 pub:
-	size          i64
-	inode         u64
-	nlink         u64
-	dev           u64
-	uid           u32
-	gid           u32
-	atime         i64
-	mtime         i64
-	ctime         i64
-	file_type     string
-	mode_bitmask  u32
-	owner_r       bool
-	owner_w       bool
-	owner_x       bool
-	group_r       bool
-	group_w       bool
-	group_x       bool
-	others_r      bool
-	others_w      bool
-	others_x      bool
+	size         i64
+	inode        u64
+	nlink        u64
+	dev          u64
+	uid          u32
+	gid          u32
+	atime        i64
+	mtime        i64
+	ctime        i64
+	file_type    string
+	mode_bitmask u32
+	owner_r      bool
+	owner_w      bool
+	owner_x      bool
+	group_r      bool
+	group_w      bool
+	group_x      bool
+	others_r     bool
+	others_w     bool
+	others_x     bool
 }
 
 // SimpleProcess provides a high-level wrapper to control a background subprocess.
@@ -331,9 +331,9 @@ pub fn (win &SimpleWindow) get_executable_path() string {
 pub fn (win &SimpleWindow) get_disk_usage(path string) !DiskStats {
 	du := os.disk_usage(path)!
 	return DiskStats{
-		total: du.total
+		total:     du.total
 		available: du.available
-		used: du.used
+		used:      du.used
 	}
 }
 
@@ -519,26 +519,26 @@ pub fn (win &SimpleWindow) get_file_metadata(path string) !FileMetadata {
 	st := os.stat(path)!
 	fm := st.get_mode()
 	return FileMetadata{
-		size: st.size
-		inode: st.inode
-		nlink: st.nlink
-		dev: st.dev
-		uid: st.uid
-		gid: st.gid
-		atime: st.atime
-		mtime: st.mtime
-		ctime: st.ctime
-		file_type: st.get_filetype().str()
+		size:         st.size
+		inode:        st.inode
+		nlink:        st.nlink
+		dev:          st.dev
+		uid:          st.uid
+		gid:          st.gid
+		atime:        st.atime
+		mtime:        st.mtime
+		ctime:        st.ctime
+		file_type:    st.get_filetype().str()
 		mode_bitmask: fm.bitmask()
-		owner_r: fm.owner.read
-		owner_w: fm.owner.write
-		owner_x: fm.owner.execute
-		group_r: fm.group.read
-		group_w: fm.group.write
-		group_x: fm.group.execute
-		others_r: fm.others.read
-		others_w: fm.others.write
-		others_x: fm.others.execute
+		owner_r:      fm.owner.read
+		owner_w:      fm.owner.write
+		owner_x:      fm.owner.execute
+		group_r:      fm.group.read
+		group_w:      fm.group.write
+		group_x:      fm.group.execute
+		others_r:     fm.others.read
+		others_w:     fm.others.write
+		others_x:     fm.others.execute
 	}
 }
 
@@ -628,11 +628,10 @@ pub:
 pub fn (win &SimpleWindow) get_uname() Uname {
 	u := os.uname()
 	return Uname{
-		sysname: u.sysname
+		sysname:  u.sysname
 		nodename: u.nodename
-		release: u.release
-		version: u.version
-		machine: u.machine
+		release:  u.release
+		version:  u.version
+		machine:  u.machine
 	}
 }
-

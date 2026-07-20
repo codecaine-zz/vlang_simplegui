@@ -1502,6 +1502,13 @@ Rows are tracked automatically for every table, so you can manage them increment
 - `win.on_table_select(name, callback StringEventCallback)` fires on selection change; the callback receives the selected row index as a string (`-1` when cleared).
 - `win.on_table_double_click(name, callback StringEventCallback)` fires when a row is double-clicked; the callback receives the 0-based row index as a string.
 
+### Table Querying, Mapping & Filtering
+
+- `win.has_table_row(name string, column int, value string) bool` returns whether any row has `row[column] == value`.
+- `win.map_table_column(name string, column int, f fn (val string) string)` transforms all cells in a specific column in-place using `f`.
+- `win.filter_table_rows(name string, predicate fn (row []string) bool) [][]string` returns a filtered list of rows matching `predicate`.
+- `win.find_table_row_where(name string, predicate fn (row []string) bool) int` returns the index of the first row matching `predicate`, or `-1`.
+
 ### Quick Validation
 
 - `win.require_fields(names []string) bool` marks blank controls with an inline "required" error, clears errors on filled ones, and returns `true` only when all fields are filled.
@@ -1509,17 +1516,33 @@ Rows are tracked automatically for every table, so you can manage them increment
 - `simplegui.validate_number(value) string` is a ready-made `ControlValidator` accepting integers and floats.
 - `simplegui.validate_url(value) string` is a ready-made `ControlValidator` accepting basic `http://` or `https://` URLs.
 - `simplegui.validate_alphanumeric(value) string` is a ready-made `ControlValidator` accepting only letters and digits.
+- `simplegui.validate_ip(value) string` is a ready-made `ControlValidator` accepting valid IPv4 addresses (`a.b.c.d`).
+- `simplegui.validate_phone(value) string` is a ready-made `ControlValidator` accepting valid phone numbers (digits, spaces, `-`, `()`, `+`).
 - `simplegui.min_len_validator(min int) ControlValidator` builds a validator requiring at least `min` characters (whitespace trimmed).
 - `simplegui.max_len_validator(max int) ControlValidator` builds a validator requiring at most `max` characters.
+- `simplegui.range_validator(min f64, max f64) ControlValidator` builds a validator requiring the numeric value of a control to be within `[min, max]`.
 
-### Batch Value Access
+### Batch Value Access & Reset Helpers
 
 - `win.clear_fields(names []string)` empties every named text-based control and clears its error state in one call.
+- `win.clear_all_errors() &SimpleWindow` clears the inline error state for all registered controls.
+- `win.clear_all_fields() &SimpleWindow` empties the text or boolean states of all controls to empty/unchecked.
+- `win.reset_all_fields() &SimpleWindow` restores every control in the window to its initial default value.
+
+### Token Field Ergonomics
+
+- `win.get_tokens(name string) []string` parses the comma-separated text of a token field into a cleaned slice of strings.
+- `win.set_tokens(name string, tokens []string) &SimpleWindow` formats and sets a slice of strings into a token field.
+- `win.add_token(name string, token string) &SimpleWindow` appends a token if not already present.
+- `win.remove_token(name string, token string) &SimpleWindow` removes a token if present.
 
 ### List Sorting, Reordering & Live Search
 
 - `win.sort_list_items(name, ascending bool)` sorts list box items alphabetically (case-insensitive).
 - `win.move_list_item(name, from, to)` moves an item to a new index (great for Move Up/Down buttons).
+- `win.insert_list_item(name, index, item)` inserts a single item at a given index.
+- `win.update_list_item(name, index, item)` replaces a single item at a given index.
+- `win.get_list_selected_text_or(name, fallback)` returns the text of the selected row, or a fallback string if none is selected.
 - `win.move_selected_list_item_up(name)` / `win.move_selected_list_item_down(name)` shifts the currently selected list item up/down by 1 slot.
 - `win.bind_search_to_list(search_name, list_name)` wires a search field to a list box so typing filters the visible rows live (case-insensitive substring match; clearing the search restores the full set). The full item set is snapshotted at bind time, so re-bind after replacing the list's master items.
 - `win.save_list_to_file(name, path)` / `win.load_list_from_file(name, path)` saves/loads list box items to/from a line-separated text file.
@@ -1550,6 +1573,9 @@ Rows are tracked automatically for every table, so you can manage them increment
 - `win.badge(text string) &SimpleWindow` sets a badge text label on the application Dock icon (pass empty string `""` to clear).
 - `win.set_slider_range(name string, min_val f64, max_val f64) &SimpleWindow` / `win.range(min_val f64, max_val f64) &SimpleWindow` sets a custom min/max bounds range for a slider or level indicator.
 - `win.add_link(name string, text string, url string) &SimpleWindow` inserts a styled native hyperlink text button.
+- `win.toggle_spinner(name string) bool` flips a spinner's active/spinning state and returns the new active state.
+- `win.start_spinner(name string) &SimpleWindow` / `win.stop_spinner(name string) &SimpleWindow` starts or stops a spinner's animation.
+- `win.increment_progress(name string, delta int) int` increments/decrements a progress bar value, bounding it in `0..100`.
 - `simplegui.beep()` plays the native macOS system alert beep sound.
 - `win.add_disclosure(name string, title string, open bool) &SimpleWindow` inserts a collapsible native disclosure triangle toggle button.
 - `win.enable_search_history(name string, autosave_name string) &SimpleWindow` configures recent search item caches and history dropdowns automatically on a named search field.
@@ -1557,3 +1583,4 @@ Rows are tracked automatically for every table, so you can manage them increment
 - `win.set_status_bar_title(title string) &SimpleWindow` updates the status bar accessory title text dynamically.
 - `win.set_dock_icon(image_path string) &SimpleWindow` overrides the application dock icon dynamically using a custom file image (or clears it with `win.clear_dock_icon()`).
 - `simplegui.play_sound(sound_name string)` plays a native macOS system sound by name (e.g. `"Glass"`, `"Ping"`, `"Purr"`, `"Basso"`, `"Tink"`, `"Blow"`).
+
