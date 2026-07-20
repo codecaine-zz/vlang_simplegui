@@ -1840,5 +1840,53 @@ pub fn (win &SimpleWindow) set_collapsible_section_expanded(name string, expande
 	return win
 }
 
+// set_code_editor updates the text content of a code editor view.
+pub fn (win &SimpleWindow) set_code_editor(name string, code string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_code_editor_value(win.window_info, name.str, code.str)
+	}
+	return win.set_text(name, code)
+}
+
+// get_code_editor retrieves the text content of a code editor view.
+pub fn (win &SimpleWindow) get_code_editor(name string) string {
+	if win.window_info != unsafe { nil } {
+		res := C.window_get_code_editor_value(win.window_info, name.str)
+		if res != unsafe { nil } {
+			unsafe {
+				if res[0] != 0 {
+					return tos_clone(res)
+				}
+			}
+		}
+	}
+	return win.get_text(name)
+}
+
+// add_timeline_entry appends an event item with timestamp, title, detail, and status color to a timeline stream.
+pub fn (win &SimpleWindow) add_timeline_entry(name string, time_str string, title string, detail string, style string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_add_timeline_entry(win.window_info, name.str, time_str.str, title.str, detail.str, style.str)
+	}
+	return win
+}
+
+// clear_timeline removes all event items from a timeline activity stream view.
+pub fn (win &SimpleWindow) clear_timeline(name string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_clear_timeline(win.window_info, name.str)
+	}
+	return win
+}
+
+// set_toolbar_visible toggles the visibility of the native window titlebar toolbar.
+pub fn (win &SimpleWindow) set_toolbar_visible(visible bool) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_toolbar_visible(win.window_info, if visible { 1 } else { 0 })
+	}
+	return win
+}
+
+
 
 

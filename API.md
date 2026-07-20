@@ -261,6 +261,34 @@ Toggles and queries the visibility of the window title text in the titlebar, wit
 
 Returns whether the window's titlebar is currently visible (i.e. not hidden via titlebar visibility settings).
 
+### `win.set_subtitle(subtitle string)` &SimpleWindow / `win.get_subtitle() string`
+
+Sets or retrieves the window subtitle text displayed in the macOS titlebar (macOS 11.0+).
+
+### `win.set_titlebar_appears_transparent(transparent bool)` &SimpleWindow / `win.get_titlebar_appears_transparent() bool`
+
+Toggles or queries translucent/transparent titlebar background styling.
+
+### `win.set_full_size_content_view(enabled bool)` &SimpleWindow / `win.get_full_size_content_view() bool`
+
+Toggles or queries whether the window content view extends under the titlebar area.
+
+### `win.set_movable(enabled bool)` &SimpleWindow / `win.get_movable() bool`
+
+Enables, disables, or queries whether the window can be moved by dragging.
+
+### `win.set_window_level(level string)` &SimpleWindow
+
+Sets the window layer stacking level (`'normal'`, `'floating'`, `'modal'`, `'mainMenu'`, `'statusBar'`, `'screenSaver'`).
+
+### `win.set_aspect_ratio(width_ratio f64, height_ratio f64)` &SimpleWindow / `win.reset_aspect_ratio()` &SimpleWindow
+
+Locks or resets window resizing constraints to a fixed aspect ratio.
+
+### `win.bounce_dock_icon(critical bool)` &SimpleWindow
+
+Triggers an attention bounce request on the application Dock icon (`critical` bounces continuously until activated).
+
 ### `win.run()`
 
 Launches the native NSApplication event loop and displays the centered window.
@@ -550,6 +578,47 @@ Adds a dashboard metric stat card displaying an uppercase title, large metric va
 
 ### `win.add_banner(name string, text string, style string)` / `win.banner(text string, style string) &SimpleWindow`
 
+Adds an alert message banner strip across the layout. Acceptable `style` values are `"info"`, `"success"`, `"warning"`, or `"error"`.
+
+### `win.add_star_rating(name string, value int, max_stars int)` / `win.star_rating(value int, max_stars int) &SimpleWindow`
+
+Adds an interactive star rating selector control (★ ★ ★ ★ ☆) with custom `max_stars`.
+
+- **Parameters**: `value` sets initial rating; `max_stars` sets total star count (defaults to 5).
+- **Accessing**: Use `win.get_star_rating_value(name)` / `win.set_star_rating_value(name, val)`.
+- **Events**: Star clicks fire `change` events with the numeric rating string.
+
+### `win.add_range_slider(name string, min_val int, max_val int, low_val int, high_val int)` / `win.range_slider(min_val int, max_val int, low_val int, high_val int) &SimpleWindow`
+
+Adds a dual-thumb range selector slider widget for minimum and maximum boundaries.
+
+- **Parameters**: `min_val` and `max_val` bound the slider scale; `low_val` and `high_val` specify current active range handles.
+- **Accessing**: Use `win.get_range_slider_low(name)` / `win.get_range_slider_high(name)` / `win.set_range_slider_values(name, low, high)`.
+- **Events**: Handle adjustments fire `change` events formatted as `"low:high"`.
+
+### `win.add_split_button(name string, title string, menu_items []string)` / `win.split_button(title string, menu_items []string) &SimpleWindow`
+
+Adds a primary action button paired with a secondary dropdown popup menu.
+
+- **Parameters**: `title` sets main button text; `menu_items` specifies popup menu options.
+- **Events**: Main button click fires `click` events (`.on_click()`). Menu item selection fires `"select_item"` (`.on_select_item()`) and `"change"` (`.on_change()`).
+
+### `win.add_tag_cloud(name string, tags []string)` / `win.tag_cloud(tags []string) &SimpleWindow`
+
+Adds an interactive tag chips list widget.
+
+- **Parameters**: `tags` array contains active tag string labels.
+- **Updating**: `win.set_tag_cloud_tags(name, tags)` updates the chip list.
+- **Events**: Tag chip clicks fire `"click_tag"` (`.on_click_tag()`) events with the tag text.
+
+### `win.add_wizard_stepper(name string, steps []string, current_step int)` / `win.wizard_stepper(steps []string, current_step int) &SimpleWindow`
+
+Adds a multi-step process indicator bar showing active, completed, and pending step states.
+
+- **Parameters**: `steps` list of step titles; `current_step` 0-based active step index.
+- **Updating**: `win.set_wizard_stepper_step(name, step)` updates active step index.
+- **Events**: Step clicks fire `"change_step"` (`.on_change_step()`) events with the new step index string.
+
 Adds a styled notice banner callout box for contextual alert messages.
 
 - **Parameters**: `style` accepts `"info"`, `"success"`, `"warning"`, or `"error"`.
@@ -621,7 +690,24 @@ Adds a collapsible accordion container section header featuring an interactive d
 
 - **Accessing**: Use `win.set_collapsible_section_expanded(name, expanded)` to programmatically expand or collapse the section header.
 
+### `win.add_code_editor(name string, code string, height int)` / `win.code_editor(code string, height int) &SimpleWindow`
+
+Adds an integrated dark-themed monospaced code editor container view.
+
+- **Accessing**: Use `win.get_code_editor(name)` and `win.set_code_editor(name, code)` to read or update text source code dynamically.
+
+### `win.add_timeline_view(name string, height int)` / `win.timeline_view(height int) &SimpleWindow`
+
+Adds an activity feed timeline stream widget for displaying real-time event logs with colored status indicators.
+
+- **Accessing**: Append event entries using `win.add_timeline_entry(name, time, title, detail, style)` or clear with `win.clear_timeline(name)`. `style` accepts `"success"`, `"warning"`, `"error"`, or `"info"`.
+
+### `win.add_toolbar_item(name string, label string, tooltip string, symbol string)` & `win.on_toolbar_click(name, callback)`
+
+Adds a native macOS titlebar `NSToolbar` button with an SF Symbol icon and label, and wires click event handling.
+
 ---
+
 
 
 
@@ -1296,6 +1382,24 @@ Attaches an event handler triggered when the window is restored / deminiaturized
 Attaches an event handler when files are dragged and dropped onto the window or onto a drop zone control.
 
 - **Callback Signature**: `fn (mut win &simplegui.SimpleWindow, files []string)`
+
+### `win.on_change_step(name string, callback StringEventCallback) &SimpleWindow`
+
+Attaches an event handler for wizard stepper step changes (`"change_step"`).
+
+- **Callback Signature**: `fn (mut win &simplegui.SimpleWindow, step string)`
+
+### `win.on_click_tag(name string, callback StringEventCallback) &SimpleWindow`
+
+Attaches an event handler for tag cloud chip clicks (`"click_tag"`).
+
+- **Callback Signature**: `fn (mut win &simplegui.SimpleWindow, tag string)`
+
+### `win.on_select_item(name string, callback StringEventCallback) &SimpleWindow`
+
+Attaches an event handler for split button menu item selection (`"select_item"`).
+
+- **Callback Signature**: `fn (mut win &simplegui.SimpleWindow, item string)`
 
 ---
 

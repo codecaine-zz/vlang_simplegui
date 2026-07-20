@@ -1,6 +1,7 @@
 #import <Cocoa/Cocoa.h>
 #import <WebKit/WebKit.h>
 #import <QuartzCore/QuartzCore.h>
+#import <objc/runtime.h>
 #import <string.h>
 #import <stdlib.h>
 #import "window.h"
@@ -624,6 +625,24 @@ extern void vlang_dispatch_event(void *win_ptr, const char *name, const char *ev
 - (NSView *)makeTimePickerWithName:(NSString *)name time:(NSString *)timeString;
 - (void)makeTrayIconWithName:(NSString *)name symbol:(NSString *)symbolName title:(NSString *)title;
 - (NSView *)makeCollapsibleSectionWithName:(NSString *)name title:(NSString *)title expanded:(BOOL)expanded;
+- (NSView *)makeCodeEditorWithName:(NSString *)name code:(NSString *)code height:(int)height;
+- (NSView *)makeTimelineViewWithName:(NSString *)name height:(int)height;
+- (void)addTimelineEntryToName:(NSString *)name time:(NSString *)timeStr title:(NSString *)title detail:(NSString *)detail style:(NSString *)style;
+- (void)clearTimelineName:(NSString *)name;
+- (void)addToolbarItemWithIdentifier:(NSString *)identifier label:(NSString *)label symbol:(NSString *)symbol;
+
+- (NSView *)makeRatingWithName:(NSString *)name value:(int)value maxStars:(int)maxStars;
+- (void)setRatingValue:(int)value forName:(NSString *)name;
+- (int)ratingValueForName:(NSString *)name;
+- (NSView *)makeRangeSliderWithName:(NSString *)name min:(int)minVal max:(int)maxVal low:(int)lowVal high:(int)highVal;
+- (void)setRangeSliderLow:(int)lowVal high:(int)highVal forName:(NSString *)name;
+- (int)rangeSliderLowForName:(NSString *)name;
+- (int)rangeSliderHighForName:(NSString *)name;
+- (NSView *)makeSplitButtonWithName:(NSString *)name title:(NSString *)title menuItems:(NSArray<NSString *> *)menuItems;
+- (NSView *)makeTagCloudWithName:(NSString *)name tags:(NSArray<NSString *> *)tags;
+- (void)setTagCloudTags:(NSArray<NSString *> *)tags forName:(NSString *)name;
+- (NSView *)makeWizardStepperWithName:(NSString *)name steps:(NSArray<NSString *> *)steps currentStep:(int)currentStep;
+- (void)setWizardStepperStep:(int)step forName:(NSString *)name;
 
 
 - (void)setupToolbar;
@@ -5106,7 +5125,505 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [self addControlToLayout:box];
   return box;
 }
+
+- (NSView *)makeCodeEditorWithName:(NSString *)name code:(NSString *)codeString height:(int)height {
+  NSScrollView *scrollView = [[NSScrollView alloc] initWithFrame:NSZeroRect];
+  [scrollView setHasVerticalScroller:YES];
+  [scrollView setHasHorizontalScroller:YES];
+  [scrollView setBorderType:NSNoBorder];
+  [scrollView setWantsLayer:YES];
+  scrollView.layer.cornerRadius = 8.0;
+  scrollView.layer.borderWidth = 1.0;
+  scrollView.layer.borderColor = [[NSColor colorWithCalibratedWhite:0.5 alpha:0.2] CGColor];
+  
+  [scrollView.widthAnchor constraintGreaterThanOrEqualToConstant:200].active = YES;
+  if (height > 0) {
+    [scrollView.heightAnchor constraintEqualToConstant:(CGFloat)height].active = YES;
+  } else {
+    [scrollView.heightAnchor constraintEqualToConstant:200.0].active = YES;
+  }
+  
+  NSTextView *textView = [[NSTextView alloc] initWithFrame:NSMakeRect(0, 0, 400, height > 0 ? height : 200)];
+  [textView setHorizontallyResizable:YES];
+  [textView setVerticallyResizable:YES];
+  [textView setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
+  [textView setRichText:NO];
+  [textView setImportsGraphics:NO];
+  [textView setAutomaticQuoteSubstitutionEnabled:NO];
+  [textView setAutomaticDashSubstitutionEnabled:NO];
+  [textView setAutomaticTextReplacementEnabled:NO];
+  [textView setFont:[NSFont monospacedSystemFontOfSize:12.0 weight:NSFontWeightRegular]];
+  [textView setBackgroundColor:[NSColor colorWithCalibratedRed:0.09 green:0.12 blue:0.18 alpha:1.0]];
+  [textView setTextColor:[NSColor colorWithCalibratedRed:0.95 green:0.96 blue:0.98 alpha:1.0]];
+  [textView setInsertionPointColor:[NSColor whiteColor]];
+  
+  if (codeString) {
+    [textView setString:codeString];
+  }
+  [textView setDelegate:self];
+  
+  [scrollView setDocumentView:textView];
+  [textView release];
+  
+  self.controlsByName[[name lowercaseString]] = scrollView;
+  [self addControlToLayout:scrollView];
+  return scrollView;
+}
+
+- (NSView *)makeTimelineViewWithName:(NSString *)name height:(int)height {
+  NSScrollView *scrollView = [[NSScrollView alloc] initWithFrame:NSZeroRect];
+  [scrollView setHasVerticalScroller:YES];
+  [scrollView setHasHorizontalScroller:NO];
+  [scrollView setBorderType:NSNoBorder];
+  [scrollView setWantsLayer:YES];
+  scrollView.layer.cornerRadius = 8.0;
+  scrollView.layer.borderWidth = 1.0;
+  scrollView.layer.borderColor = [[NSColor colorWithCalibratedWhite:0.5 alpha:0.2] CGColor];
+  
+  [scrollView.widthAnchor constraintGreaterThanOrEqualToConstant:200].active = YES;
+  if (height > 0) {
+    [scrollView.heightAnchor constraintEqualToConstant:(CGFloat)height].active = YES;
+  } else {
+    [scrollView.heightAnchor constraintEqualToConstant:180.0].active = YES;
+  }
+  
+  NSStackView *vstack = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [vstack setOrientation:NSUserInterfaceLayoutOrientationVertical];
+  [vstack setSpacing:8.0];
+  [vstack setAlignment:NSLayoutAttributeLeading];
+  [vstack setEdgeInsets:NSEdgeInsetsMake(10, 12, 10, 12)];
+  
+  [scrollView setDocumentView:vstack];
+  [vstack release];
+  
+  self.controlsByName[[name lowercaseString]] = scrollView;
+  [self addControlToLayout:scrollView];
+  return scrollView;
+}
+
+- (void)addTimelineEntryToName:(NSString *)name time:(NSString *)timeStr title:(NSString *)titleStr detail:(NSString *)detailStr style:(NSString *)styleStr {
+  NSView *view = [self viewForControlName:name];
+  if ([view isKindOfClass:[NSScrollView class]]) {
+    NSScrollView *scroll = (NSScrollView *)view;
+    NSView *doc = [scroll documentView];
+    if ([doc isKindOfClass:[NSStackView class]]) {
+      NSStackView *vstack = (NSStackView *)doc;
+      
+      NSStackView *row = [[NSStackView alloc] initWithFrame:NSZeroRect];
+      [row setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+      [row setSpacing:10.0];
+      [row setAlignment:NSLayoutAttributeCenterY];
+      
+      NSBox *dot = [[NSBox alloc] initWithFrame:NSZeroRect];
+      [dot setBoxType:NSBoxCustom];
+      [dot setBorderType:NSNoBorder];
+      [dot setWantsLayer:YES];
+      dot.layer.cornerRadius = 4.0;
+      [dot.widthAnchor constraintEqualToConstant:8.0].active = YES;
+      [dot.heightAnchor constraintEqualToConstant:8.0].active = YES;
+      
+      NSColor *dotColor = [NSColor secondaryLabelColor];
+      NSString *st = [styleStr lowercaseString];
+      if ([st isEqualToString:@"active"] || [st isEqualToString:@"online"] || [st isEqualToString:@"success"]) {
+        dotColor = [NSColor systemGreenColor];
+      } else if ([st isEqualToString:@"warning"] || [st isEqualToString:@"busy"]) {
+        dotColor = [NSColor systemOrangeColor];
+      } else if ([st isEqualToString:@"error"] || [st isEqualToString:@"offline"]) {
+        dotColor = [NSColor systemRedColor];
+      } else if ([st isEqualToString:@"info"]) {
+        dotColor = [NSColor systemBlueColor];
+      }
+      dot.layer.backgroundColor = [dotColor CGColor];
+      
+      NSTextField *timeLabel = [NSTextField labelWithString:timeStr];
+      [timeLabel setFont:[NSFont monospacedSystemFontOfSize:11.0 weight:NSFontWeightMedium]];
+      [timeLabel setTextColor:[NSColor secondaryLabelColor]];
+      
+      NSTextField *titleLabel = [NSTextField labelWithString:titleStr];
+      [titleLabel setFont:[NSFont systemFontOfSize:12.0 weight:NSFontWeightBold]];
+      if (self.currentFontColor) {
+        [titleLabel setTextColor:self.currentFontColor];
+      }
+      
+      NSTextField *detailLabel = [NSTextField labelWithString:detailStr];
+      [detailLabel setFont:[NSFont systemFontOfSize:11.0 weight:NSFontWeightRegular]];
+      [detailLabel setTextColor:[NSColor secondaryLabelColor]];
+      
+      [row addArrangedSubview:dot];
+      [row addArrangedSubview:timeLabel];
+      [row addArrangedSubview:titleLabel];
+      [row addArrangedSubview:detailLabel];
+      
+      [vstack addArrangedSubview:row];
+    }
+  }
+}
+
+- (void)clearTimelineName:(NSString *)name {
+  NSView *view = [self viewForControlName:name];
+  if ([view isKindOfClass:[NSScrollView class]]) {
+    NSScrollView *scroll = (NSScrollView *)view;
+    NSView *doc = [scroll documentView];
+    if ([doc isKindOfClass:[NSStackView class]]) {
+      NSStackView *vstack = (NSStackView *)doc;
+      for (NSView *sub in [vstack.arrangedSubviews copy]) {
+        [vstack removeArrangedSubview:sub];
+        [sub removeFromSuperview];
+      }
+    }
+  }
+}
+
+- (void)addToolbarItemWithIdentifier:(NSString *)identifier label:(NSString *)labelStr symbol:(NSString *)symbolName {
+  if (!self.toolbarItems) {
+    self.toolbarItems = [NSMutableDictionary dictionary];
+  }
+  if (!self.toolbarOrder) {
+    self.toolbarOrder = [NSMutableArray array];
+  }
+  
+  NSToolbarItem *item = [[NSToolbarItem alloc] initWithItemIdentifier:identifier];
+  [item setLabel:labelStr];
+  [item setPaletteLabel:labelStr];
+
+  if (@available(macOS 11.0, *)) {
+    if (symbolName && symbolName.length > 0) {
+      NSImage *img = [NSImage imageWithSystemSymbolName:symbolName accessibilityDescription:nil];
+      if (img) {
+        [item setImage:img];
+      }
+    }
+  }
+  [item setTarget:self];
+  [item setAction:@selector(handleToolbarItemClicked:)];
+  
+  self.toolbarItems[identifier] = item;
+  [self.toolbarOrder addObject:identifier];
+  
+  [self setupToolbar];
+}
+
+- (NSView *)makeRatingWithName:(NSString *)name value:(int)val maxStars:(int)maxStars {
+  if (maxStars <= 0) maxStars = 5;
+  NSStackView *stack = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [stack setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+  [stack setSpacing:4.0];
+  [stack setAlignment:NSLayoutAttributeCenterY];
+
+  if (!self.controlsByName) self.controlsByName = [NSMutableDictionary dictionary];
+  self.controlsByName[[name lowercaseString]] = stack;
+
+  int currentVal = (val < 0) ? 0 : ((val > maxStars) ? maxStars : val);
+  objc_setAssociatedObject(stack, "ratingValue", @(currentVal), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(stack, "maxStars", @(maxStars), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+  [self rebuildRatingStack:stack name:name];
+  [self addControlToLayout:stack];
+  return stack;
+}
+
+- (void)rebuildRatingStack:(NSStackView *)stack name:(NSString *)name {
+  for (NSView *v in [stack.arrangedSubviews copy]) {
+    [stack removeArrangedSubview:v];
+    [v removeFromSuperview];
+  }
+  int currentVal = [objc_getAssociatedObject(stack, "ratingValue") intValue];
+  int maxStars = [objc_getAssociatedObject(stack, "maxStars") intValue];
+
+  for (int i = 1; i <= maxStars; i++) {
+    NSButton *btn = [NSButton buttonWithTitle:(i <= currentVal ? @"★" : @"☆") target:self action:@selector(handleRatingStarClicked:)];
+    [btn setBordered:NO];
+    [btn setFont:[NSFont systemFontOfSize:18.0 weight:NSFontWeightBold]];
+    [btn setButtonType:NSButtonTypeMomentaryPushIn];
+    btn.identifier = [NSString stringWithFormat:@"%@_%d", name, i];
+    [stack addArrangedSubview:btn];
+  }
+}
+
+- (void)handleRatingStarClicked:(id)sender {
+  NSButton *btn = (NSButton *)sender;
+  NSString *ident = btn.identifier;
+  NSRange range = [ident rangeOfString:@"_" options:NSBackwardsSearch];
+  if (range.location != NSNotFound) {
+    NSString *name = [ident substringToIndex:range.location];
+    int starIdx = [[ident substringFromIndex:range.location + 1] intValue];
+    NSStackView *stack = (NSStackView *)self.controlsByName[[name lowercaseString]];
+    if (stack) {
+      objc_setAssociatedObject(stack, "ratingValue", @(starIdx), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+      [self rebuildRatingStack:stack name:name];
+      vlang_dispatch_event(self.win_ptr, [name UTF8String], "change", [[NSString stringWithFormat:@"%d", starIdx] UTF8String]);
+    }
+  }
+}
+
+- (void)setRatingValue:(int)val forName:(NSString *)name {
+  NSStackView *stack = (NSStackView *)self.controlsByName[[name lowercaseString]];
+  if (stack) {
+    int maxStars = [objc_getAssociatedObject(stack, "maxStars") intValue];
+    if (maxStars <= 0) maxStars = 5;
+    int currentVal = (val < 0) ? 0 : ((val > maxStars) ? maxStars : val);
+    objc_setAssociatedObject(stack, "ratingValue", @(currentVal), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    [self rebuildRatingStack:stack name:name];
+  }
+}
+
+- (int)ratingValueForName:(NSString *)name {
+  NSStackView *stack = (NSStackView *)self.controlsByName[[name lowercaseString]];
+  if (stack) {
+    return [objc_getAssociatedObject(stack, "ratingValue") intValue];
+  }
+  return 0;
+}
+
+- (NSView *)makeRangeSliderWithName:(NSString *)name min:(int)minVal max:(int)maxVal low:(int)lowVal high:(int)highVal {
+  NSStackView *stack = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [stack setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+  [stack setSpacing:8.0];
+  [stack setAlignment:NSLayoutAttributeCenterY];
+
+  NSSlider *sliderLow = [NSSlider sliderWithValue:lowVal minValue:minVal maxValue:maxVal target:self action:@selector(handleRangeSliderChanged:)];
+  sliderLow.identifier = [NSString stringWithFormat:@"%@_low", name];
+  NSSlider *sliderHigh = [NSSlider sliderWithValue:highVal minValue:minVal maxValue:maxVal target:self action:@selector(handleRangeSliderChanged:)];
+  sliderHigh.identifier = [NSString stringWithFormat:@"%@_high", name];
+
+  NSTextField *label = [NSTextField labelWithString:[NSString stringWithFormat:@"%d - %d", lowVal, highVal]];
+  [label setFont:[NSFont monospacedDigitSystemFontOfSize:12.0 weight:NSFontWeightMedium]];
+  label.identifier = [NSString stringWithFormat:@"%@_lbl", name];
+
+  [stack addArrangedSubview:sliderLow];
+  [stack addArrangedSubview:sliderHigh];
+  [stack addArrangedSubview:label];
+
+  if (!self.controlsByName) self.controlsByName = [NSMutableDictionary dictionary];
+  self.controlsByName[[name lowercaseString]] = stack;
+
+  objc_setAssociatedObject(stack, "lowVal", @(lowVal), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(stack, "highVal", @(highVal), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(stack, "sliderLow", sliderLow, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(stack, "sliderHigh", sliderHigh, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(stack, "rangeLabel", label, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+  [self addControlToLayout:stack];
+  return stack;
+}
+
+- (void)handleRangeSliderChanged:(id)sender {
+  NSSlider *slider = (NSSlider *)sender;
+  NSString *ident = slider.identifier;
+  BOOL isLow = [ident hasSuffix:@"_low"];
+  NSString *name = [ident substringToIndex:ident.length - (isLow ? 4 : 5)];
+
+  NSStackView *stack = (NSStackView *)self.controlsByName[[name lowercaseString]];
+  if (stack) {
+    NSSlider *sliderLow = objc_getAssociatedObject(stack, "sliderLow");
+    NSSlider *sliderHigh = objc_getAssociatedObject(stack, "sliderHigh");
+    NSTextField *label = objc_getAssociatedObject(stack, "rangeLabel");
+
+    int lowVal = [sliderLow integerValue];
+    int highVal = [sliderHigh integerValue];
+
+    if (lowVal > highVal) {
+      if (isLow) { highVal = lowVal; [sliderHigh setIntegerValue:highVal]; }
+      else { lowVal = highVal; [sliderLow setIntegerValue:lowVal]; }
+    }
+
+    objc_setAssociatedObject(stack, "lowVal", @(lowVal), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    objc_setAssociatedObject(stack, "highVal", @(highVal), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    [label setStringValue:[NSString stringWithFormat:@"%d - %d", lowVal, highVal]];
+
+    vlang_dispatch_event(self.win_ptr, [name UTF8String], "change", [[NSString stringWithFormat:@"%d:%d", lowVal, highVal] UTF8String]);
+  }
+}
+
+- (void)setRangeSliderLow:(int)lowVal high:(int)highVal forName:(NSString *)name {
+  NSStackView *stack = (NSStackView *)self.controlsByName[[name lowercaseString]];
+  if (stack) {
+    NSSlider *sliderLow = objc_getAssociatedObject(stack, "sliderLow");
+    NSSlider *sliderHigh = objc_getAssociatedObject(stack, "sliderHigh");
+    NSTextField *label = objc_getAssociatedObject(stack, "rangeLabel");
+
+    [sliderLow setIntegerValue:lowVal];
+    [sliderHigh setIntegerValue:highVal];
+    objc_setAssociatedObject(stack, "lowVal", @(lowVal), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    objc_setAssociatedObject(stack, "highVal", @(highVal), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    [label setStringValue:[NSString stringWithFormat:@"%d - %d", lowVal, highVal]];
+  }
+}
+
+- (int)rangeSliderLowForName:(NSString *)name {
+  NSStackView *stack = (NSStackView *)self.controlsByName[[name lowercaseString]];
+  if (stack) { return [objc_getAssociatedObject(stack, "lowVal") intValue]; }
+  return 0;
+}
+
+- (int)rangeSliderHighForName:(NSString *)name {
+  NSStackView *stack = (NSStackView *)self.controlsByName[[name lowercaseString]];
+  if (stack) { return [objc_getAssociatedObject(stack, "highVal") intValue]; }
+  return 0;
+}
+
+- (NSView *)makeSplitButtonWithName:(NSString *)name title:(NSString *)title menuItems:(NSArray<NSString *> *)menuItems {
+  NSStackView *stack = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [stack setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+  [stack setSpacing:1.0];
+  [stack setAlignment:NSLayoutAttributeCenterY];
+
+  NSButton *mainBtn = [NSButton buttonWithTitle:title target:self action:@selector(handleSplitButtonMainClicked:)];
+  [mainBtn setBezelStyle:NSBezelStyleRounded];
+  mainBtn.identifier = name;
+
+  NSPopUpButton *menuBtn = [[NSPopUpButton alloc] initWithFrame:NSZeroRect pullsDown:YES];
+  [menuBtn setBezelStyle:NSBezelStyleRounded];
+  [menuBtn addItemWithTitle:@""];
+
+  for (NSString *item in menuItems) {
+    [menuBtn addItemWithTitle:item];
+  }
+  menuBtn.identifier = [NSString stringWithFormat:@"%@_popup", name];
+  [menuBtn setTarget:self];
+  [menuBtn setAction:@selector(handleSplitButtonPopupChanged:)];
+
+  [stack addArrangedSubview:mainBtn];
+  [stack addArrangedSubview:menuBtn];
+
+  if (!self.controlsByName) self.controlsByName = [NSMutableDictionary dictionary];
+  self.controlsByName[[name lowercaseString]] = stack;
+
+  [self addControlToLayout:stack];
+  return stack;
+}
+
+- (void)handleSplitButtonMainClicked:(id)sender {
+  NSButton *btn = (NSButton *)sender;
+  vlang_dispatch_event(self.win_ptr, [btn.identifier UTF8String], "click", "");
+}
+
+- (void)handleSplitButtonPopupChanged:(id)sender {
+  NSPopUpButton *menuBtn = (NSPopUpButton *)sender;
+  NSString *ident = menuBtn.identifier;
+  if ([ident hasSuffix:@"_popup"]) {
+    NSString *name = [ident substringToIndex:ident.length - 6];
+    NSString *choice = [menuBtn titleOfSelectedItem] ?: @"";
+    vlang_dispatch_event(self.win_ptr, [name UTF8String], "select_item", [choice UTF8String]);
+    vlang_dispatch_event(self.win_ptr, [name UTF8String], "change", [choice UTF8String]);
+  }
+}
+
+- (NSView *)makeTagCloudWithName:(NSString *)name tags:(NSArray<NSString *> *)tags {
+  NSStackView *stack = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [stack setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+  [stack setSpacing:6.0];
+  [stack setAlignment:NSLayoutAttributeCenterY];
+
+  if (!self.controlsByName) self.controlsByName = [NSMutableDictionary dictionary];
+  self.controlsByName[[name lowercaseString]] = stack;
+
+  [self rebuildTagCloud:stack name:name tags:tags];
+  [self addControlToLayout:stack];
+  return stack;
+}
+
+- (void)rebuildTagCloud:(NSStackView *)stack name:(NSString *)name tags:(NSArray<NSString *> *)tags {
+  for (NSView *v in [stack.arrangedSubviews copy]) {
+    [stack removeArrangedSubview:v];
+    [v removeFromSuperview];
+  }
+
+  for (NSString *tag in tags) {
+    NSButton *btn = [NSButton buttonWithTitle:[NSString stringWithFormat:@"%@  ✕", tag] target:self action:@selector(handleTagClicked:)];
+    [btn setBezelStyle:NSBezelStyleInline];
+    [btn setFont:[NSFont systemFontOfSize:11.0 weight:NSFontWeightMedium]];
+    btn.identifier = [NSString stringWithFormat:@"%@___%@", name, tag];
+    [stack addArrangedSubview:btn];
+  }
+}
+
+- (void)handleTagClicked:(id)sender {
+  NSButton *btn = (NSButton *)sender;
+  NSString *ident = btn.identifier;
+  NSRange range = [ident rangeOfString:@"___"];
+  if (range.location != NSNotFound) {
+    NSString *name = [ident substringToIndex:range.location];
+    NSString *tag = [ident substringFromIndex:range.location + 3];
+    vlang_dispatch_event(self.win_ptr, [name UTF8String], "click_tag", [tag UTF8String]);
+  }
+}
+
+- (void)setTagCloudTags:(NSArray<NSString *> *)tags forName:(NSString *)name {
+  NSStackView *stack = (NSStackView *)self.controlsByName[[name lowercaseString]];
+  if (stack) {
+    [self rebuildTagCloud:stack name:name tags:tags];
+  }
+}
+
+- (NSView *)makeWizardStepperWithName:(NSString *)name steps:(NSArray<NSString *> *)steps currentStep:(int)currentStep {
+  NSStackView *stack = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [stack setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+  [stack setSpacing:12.0];
+  [stack setAlignment:NSLayoutAttributeCenterY];
+
+  if (!self.controlsByName) self.controlsByName = [NSMutableDictionary dictionary];
+  self.controlsByName[[name lowercaseString]] = stack;
+
+  objc_setAssociatedObject(stack, "wizardSteps", steps, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(stack, "currentStep", @(currentStep), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+  [self rebuildWizardStepper:stack name:name];
+  [self addControlToLayout:stack];
+  return stack;
+}
+
+- (void)rebuildWizardStepper:(NSStackView *)stack name:(NSString *)name {
+  for (NSView *v in [stack.arrangedSubviews copy]) {
+    [stack removeArrangedSubview:v];
+    [v removeFromSuperview];
+  }
+  NSArray<NSString *> *steps = objc_getAssociatedObject(stack, "wizardSteps");
+  int currentStep = [objc_getAssociatedObject(stack, "currentStep") intValue];
+
+  for (int i = 0; i < steps.count; i++) {
+    NSString *symbol = (i < currentStep) ? @"✓" : [NSString stringWithFormat:@"%d", i + 1];
+    NSString *stepText = [NSString stringWithFormat:@"%@ %@", symbol, steps[i]];
+    NSButton *btn = [NSButton buttonWithTitle:stepText target:self action:@selector(handleWizardStepClicked:)];
+    [btn setBezelStyle:NSBezelStyleInline];
+    [btn setFont:[NSFont systemFontOfSize:11.0 weight:(i == currentStep ? NSFontWeightBold : NSFontWeightRegular)]];
+    btn.identifier = [NSString stringWithFormat:@"%@_%d", name, i];
+    [stack addArrangedSubview:btn];
+
+    if (i < steps.count - 1) {
+      NSTextField *sep = [NSTextField labelWithString:@"→"];
+      [sep setTextColor:[NSColor tertiaryLabelColor]];
+      [stack addArrangedSubview:sep];
+    }
+  }
+}
+
+- (void)handleWizardStepClicked:(id)sender {
+  NSButton *btn = (NSButton *)sender;
+  NSString *ident = btn.identifier;
+  NSRange range = [ident rangeOfString:@"_" options:NSBackwardsSearch];
+  if (range.location != NSNotFound) {
+    NSString *name = [ident substringToIndex:range.location];
+    int stepIdx = [[ident substringFromIndex:range.location + 1] intValue];
+    NSStackView *stack = (NSStackView *)self.controlsByName[[name lowercaseString]];
+    if (stack) {
+      objc_setAssociatedObject(stack, "currentStep", @(stepIdx), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+      [self rebuildWizardStepper:stack name:name];
+      vlang_dispatch_event(self.win_ptr, [name UTF8String], "change_step", [[NSString stringWithFormat:@"%d", stepIdx] UTF8String]);
+    }
+  }
+}
+
+- (void)setWizardStepperStep:(int)step forName:(NSString *)name {
+  NSStackView *stack = (NSStackView *)self.controlsByName[[name lowercaseString]];
+  if (stack) {
+    objc_setAssociatedObject(stack, "currentStep", @(step), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    [self rebuildWizardStepper:stack name:name];
+  }
+}
+
 @end
+
 
 
 
@@ -10658,4 +11175,355 @@ void window_set_collapsible_section_expanded(main__WindowInfo *info, const char 
     }
   });
 }
+
+void *window_add_code_editor_control(main__WindowInfo *info, const char *name, const char *code, int height) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeCodeEditorWithName:nsstring(name) code:nsstring(code) height:height];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return (__bridge void *)control;
+}
+
+void window_set_code_editor_value(main__WindowInfo *info, const char *name, const char *code) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    NSView *view = [delegate viewForControlName:nsstring(name)];
+    if ([view isKindOfClass:[NSScrollView class]]) {
+      NSView *doc = [(NSScrollView *)view documentView];
+      if ([doc isKindOfClass:[NSTextView class]]) {
+        [(NSTextView *)doc setString:nsstring(code)];
+      }
+    }
+  });
+}
+
+const char *window_get_code_editor_value(main__WindowInfo *info, const char *name) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block const char *res = "";
+  void (^runBlock)(void) = ^{
+    NSView *view = [delegate viewForControlName:nsstring(name)];
+    if ([view isKindOfClass:[NSScrollView class]]) {
+      NSView *doc = [(NSScrollView *)view documentView];
+      if ([doc isKindOfClass:[NSTextView class]]) {
+        NSString *str = [(NSTextView *)doc string];
+        if (str) {
+          res = strdup([str UTF8String]);
+        }
+      }
+    }
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return res;
+}
+
+void *window_add_timeline_view_control(main__WindowInfo *info, const char *name, int height) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeTimelineViewWithName:nsstring(name) height:height];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return (__bridge void *)control;
+}
+
+void window_add_timeline_entry(main__WindowInfo *info, const char *name, const char *time_str, const char *title, const char *detail, const char *style) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [delegate addTimelineEntryToName:nsstring(name) time:nsstring(time_str) title:nsstring(title) detail:nsstring(detail) style:nsstring(style)];
+  });
+}
+
+void window_clear_timeline(main__WindowInfo *info, const char *name) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [delegate clearTimelineName:nsstring(name)];
+  });
+}
+
+void window_add_toolbar_button(main__WindowInfo *info, const char *id_str, const char *label, const char *symbol) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate addToolbarItemWithIdentifier:nsstring(id_str) label:nsstring(label) symbol:nsstring(symbol)];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+void window_set_toolbar_visible(main__WindowInfo *info, int visible) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    if (delegate.window && delegate.window.toolbar) {
+      [delegate.window.toolbar setVisible:visible == 1];
+    }
+  });
+}
+
+void window_set_subtitle(main__WindowInfo *info, const char *subtitle) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    if (delegate.window && [delegate.window respondsToSelector:@selector(setSubtitle:)]) {
+      [delegate.window setSubtitle:nsstring(subtitle)];
+    }
+  });
+}
+
+const char *window_get_subtitle(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSString *res = @"";
+  void (^runBlock)(void) = ^{
+    if (delegate.window && [delegate.window respondsToSelector:@selector(subtitle)]) {
+      res = [delegate.window subtitle];
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return res ? [res UTF8String] : "";
+}
+
+void window_set_titlebar_appears_transparent(main__WindowInfo *info, int transparent) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    if (delegate.window) {
+      delegate.window.titlebarAppearsTransparent = (transparent != 0);
+    }
+  });
+}
+
+int window_get_titlebar_appears_transparent(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block BOOL res = NO;
+  void (^runBlock)(void) = ^{
+    if (delegate.window) { res = delegate.window.titlebarAppearsTransparent; }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return res ? 1 : 0;
+}
+
+void window_set_full_size_content_view(main__WindowInfo *info, int enabled) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    if (delegate.window) {
+      if (enabled) {
+        delegate.window.styleMask |= NSWindowStyleMaskFullSizeContentView;
+      } else {
+        delegate.window.styleMask &= ~NSWindowStyleMaskFullSizeContentView;
+      }
+    }
+  });
+}
+
+int window_get_full_size_content_view(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block BOOL res = NO;
+  void (^runBlock)(void) = ^{
+    if (delegate.window) { res = (delegate.window.styleMask & NSWindowStyleMaskFullSizeContentView) != 0; }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return res ? 1 : 0;
+}
+
+void window_set_movable(main__WindowInfo *info, int enabled) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    if (delegate.window) {
+      [delegate.window setMovable:(enabled != 0)];
+    }
+  });
+}
+
+int window_get_movable(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block BOOL res = YES;
+  void (^runBlock)(void) = ^{
+    if (delegate.window) { res = [delegate.window isMovable]; }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return res ? 1 : 0;
+}
+
+void window_set_window_level(main__WindowInfo *info, const char *level) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    if (!delegate.window) return;
+    NSString *lvlStr = nsstring(level);
+    if ([lvlStr isEqualToString:@"floating"]) {
+      [delegate.window setLevel:NSFloatingWindowLevel];
+    } else if ([lvlStr isEqualToString:@"modal"]) {
+      [delegate.window setLevel:NSModalPanelWindowLevel];
+    } else if ([lvlStr isEqualToString:@"mainMenu"]) {
+      [delegate.window setLevel:NSMainMenuWindowLevel];
+    } else if ([lvlStr isEqualToString:@"statusBar"]) {
+      [delegate.window setLevel:NSSubmenuWindowLevel];
+    } else if ([lvlStr isEqualToString:@"screenSaver"]) {
+      [delegate.window setLevel:NSScreenSaverWindowLevel];
+    } else {
+      [delegate.window setLevel:NSNormalWindowLevel];
+    }
+  });
+}
+
+void window_set_aspect_ratio(main__WindowInfo *info, double width_ratio, double height_ratio) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    if (delegate.window) {
+      [delegate.window setAspectRatio:NSMakeSize(width_ratio, height_ratio)];
+    }
+  });
+}
+
+void window_reset_aspect_ratio(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    if (delegate.window) {
+      [delegate.window setAspectRatio:NSMakeSize(0, 0)];
+    }
+  });
+}
+
+void window_bounce_dock_icon(int critical) {
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [NSApp requestUserAttention:critical ? NSCriticalRequest : NSInformationalRequest];
+  });
+}
+
+void *window_add_rating_control(main__WindowInfo *info, const char *name, int value, int max_stars) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSControl *control = nil;
+  void (^runBlock)(void) = ^{
+    control = (NSControl *)[delegate makeRatingWithName:nsstring(name) value:value maxStars:max_stars];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)control;
+}
+
+void window_set_rating_value(main__WindowInfo *info, const char *name, int value) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [delegate setRatingValue:value forName:nsstring(name)];
+  });
+}
+
+int window_get_rating_value(main__WindowInfo *info, const char *name) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block int res = 0;
+  void (^runBlock)(void) = ^{
+    res = [delegate ratingValueForName:nsstring(name)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return res;
+}
+
+void *window_add_range_slider_control(main__WindowInfo *info, const char *name, int min_val, int max_val, int low_val, int high_val) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSControl *control = nil;
+  void (^runBlock)(void) = ^{
+    control = (NSControl *)[delegate makeRangeSliderWithName:nsstring(name) min:min_val max:max_val low:low_val high:high_val];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)control;
+}
+
+void window_set_range_slider_values(main__WindowInfo *info, const char *name, int low_val, int high_val) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [delegate setRangeSliderLow:low_val high:high_val forName:nsstring(name)];
+  });
+}
+
+int window_get_range_slider_low(main__WindowInfo *info, const char *name) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block int res = 0;
+  void (^runBlock)(void) = ^{
+    res = [delegate rangeSliderLowForName:nsstring(name)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return res;
+}
+
+int window_get_range_slider_high(main__WindowInfo *info, const char *name) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block int res = 0;
+  void (^runBlock)(void) = ^{
+    res = [delegate rangeSliderHighForName:nsstring(name)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return res;
+}
+
+void *window_add_split_button_control(main__WindowInfo *info, const char *name, const char *title, const char **menu_items, int count) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSMutableArray *arr = [NSMutableArray arrayWithCapacity:count];
+  for (int i = 0; i < count; i++) {
+    [arr addObject:nsstring(menu_items[i])];
+  }
+  __block NSControl *control = nil;
+  void (^runBlock)(void) = ^{
+    control = (NSControl *)[delegate makeSplitButtonWithName:nsstring(name) title:nsstring(title) menuItems:arr];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)control;
+}
+
+void *window_add_tag_cloud_control(main__WindowInfo *info, const char *name, const char **tags, int count) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSMutableArray *arr = [NSMutableArray arrayWithCapacity:count];
+  for (int i = 0; i < count; i++) {
+    [arr addObject:nsstring(tags[i])];
+  }
+  __block NSControl *control = nil;
+  void (^runBlock)(void) = ^{
+    control = (NSControl *)[delegate makeTagCloudWithName:nsstring(name) tags:arr];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)control;
+}
+
+void window_set_tag_cloud_tags(main__WindowInfo *info, const char *name, const char **tags, int count) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSMutableArray *arr = [NSMutableArray arrayWithCapacity:count];
+  for (int i = 0; i < count; i++) {
+    [arr addObject:nsstring(tags[i])];
+  }
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [delegate setTagCloudTags:arr forName:nsstring(name)];
+  });
+}
+
+void *window_add_wizard_stepper_control(main__WindowInfo *info, const char *name, const char **steps, int count, int current_step) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSMutableArray *arr = [NSMutableArray arrayWithCapacity:count];
+  for (int i = 0; i < count; i++) {
+    [arr addObject:nsstring(steps[i])];
+  }
+  __block NSControl *control = nil;
+  void (^runBlock)(void) = ^{
+    control = (NSControl *)[delegate makeWizardStepperWithName:nsstring(name) steps:arr currentStep:current_step];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)control;
+}
+
+void window_set_wizard_stepper_step(main__WindowInfo *info, const char *name, int step) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [delegate setWizardStepperStep:step forName:nsstring(name)];
+  });
+}
+
 

@@ -315,6 +315,49 @@ fn C.window_add_tray_icon_control(&WindowInfo, &u8, &u8, &u8)
 fn C.window_set_tray_icon_value(&WindowInfo, &u8, &u8, &u8)
 fn C.window_add_collapsible_section_control(&WindowInfo, &u8, &u8, int) voidptr
 fn C.window_set_collapsible_section_expanded(&WindowInfo, &u8, int)
+fn C.window_add_code_editor_control(&WindowInfo, &u8, &u8, int) voidptr
+fn C.window_set_code_editor_value(&WindowInfo, &u8, &u8)
+fn C.window_get_code_editor_value(&WindowInfo, &u8) &u8
+fn C.window_add_timeline_view_control(&WindowInfo, &u8, int) voidptr
+fn C.window_add_timeline_entry(&WindowInfo, &u8, &u8, &u8, &u8, &u8)
+fn C.window_clear_timeline(&WindowInfo, &u8)
+fn C.window_add_toolbar_button(&WindowInfo, &u8, &u8, &u8)
+fn C.window_set_toolbar_visible(&WindowInfo, int)
+
+fn C.window_grid_get_row_values(&WindowInfo, &u8, int, &&u8, int) int
+fn C.window_set_checkbox_state(&WindowInfo, int)
+fn C.window_set_input_text(&WindowInfo, &u8)
+fn C.window_set_number_value(&WindowInfo, int)
+fn C.window_set_text_area(&WindowInfo, &u8)
+
+fn C.window_set_subtitle(&WindowInfo, &u8)
+fn C.window_get_subtitle(&WindowInfo) &u8
+fn C.window_set_titlebar_appears_transparent(&WindowInfo, int)
+fn C.window_get_titlebar_appears_transparent(&WindowInfo) int
+fn C.window_set_full_size_content_view(&WindowInfo, int)
+fn C.window_get_full_size_content_view(&WindowInfo) int
+fn C.window_set_movable(&WindowInfo, int)
+fn C.window_get_movable(&WindowInfo) int
+fn C.window_set_window_level(&WindowInfo, &u8)
+fn C.window_set_aspect_ratio(&WindowInfo, f64, f64)
+fn C.window_reset_aspect_ratio(&WindowInfo)
+fn C.window_bounce_dock_icon(int)
+
+fn C.window_add_rating_control(&WindowInfo, &u8, int, int) voidptr
+fn C.window_set_rating_value(&WindowInfo, &u8, int)
+fn C.window_get_rating_value(&WindowInfo, &u8) int
+
+fn C.window_add_range_slider_control(&WindowInfo, &u8, int, int, int, int) voidptr
+fn C.window_set_range_slider_values(&WindowInfo, &u8, int, int)
+fn C.window_get_range_slider_low(&WindowInfo, &u8) int
+fn C.window_get_range_slider_high(&WindowInfo, &u8) int
+
+fn C.window_add_split_button_control(&WindowInfo, &u8, &u8, &&u8, int) voidptr
+fn C.window_add_tag_cloud_control(&WindowInfo, &u8, &&u8, int) voidptr
+fn C.window_set_tag_cloud_tags(&WindowInfo, &u8, &&u8, int)
+fn C.window_add_wizard_stepper_control(&WindowInfo, &u8, &&u8, int, int) voidptr
+fn C.window_set_wizard_stepper_step(&WindowInfo, &u8, int)
+
 
 
 pub type StringEventCallback = fn (mut win SimpleWindow, value string)
@@ -3846,6 +3889,63 @@ pub fn (win &SimpleWindow) on_cell_button_click(name string, callback StringEven
 	return win
 }
 
+// on_change_step registers a callback for wizard stepper step changes.
+pub fn (win &SimpleWindow) on_change_step(name string, callback StringEventCallback) &SimpleWindow {
+	idx := win.find_handler(name, 'change_step')
+	mut handler := ControlEventHandler{
+		control_name: name
+		event_name:   'change_step'
+		string_cb:    callback
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		if idx >= 0 {
+			w.handlers[idx] = handler
+		} else {
+			w.handlers << handler
+		}
+	}
+	return win
+}
+
+// on_click_tag registers a callback for tag cloud chip clicks.
+pub fn (win &SimpleWindow) on_click_tag(name string, callback StringEventCallback) &SimpleWindow {
+	idx := win.find_handler(name, 'click_tag')
+	mut handler := ControlEventHandler{
+		control_name: name
+		event_name:   'click_tag'
+		string_cb:    callback
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		if idx >= 0 {
+			w.handlers[idx] = handler
+		} else {
+			w.handlers << handler
+		}
+	}
+	return win
+}
+
+// on_select_item registers a callback for split button menu item selection.
+pub fn (win &SimpleWindow) on_select_item(name string, callback StringEventCallback) &SimpleWindow {
+	idx := win.find_handler(name, 'select_item')
+	mut handler := ControlEventHandler{
+		control_name: name
+		event_name:   'select_item'
+		string_cb:    callback
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		if idx >= 0 {
+			w.handlers[idx] = handler
+		} else {
+			w.handlers << handler
+		}
+	}
+	return win
+}
+
 // dispatch_event performs dispatch event.
 pub fn (win &SimpleWindow) dispatch_event(name string, event_name string, value string) bool {
 	if win.debug_mode {
@@ -5762,5 +5862,339 @@ pub fn (win &SimpleWindow) add_collapsible_section(name string, title string, ex
 pub fn (win &SimpleWindow) collapsible_section(title string, expanded bool) &SimpleWindow {
 	return win.add_collapsible_section('', title, expanded)
 }
+
+// add_code_editor adds a dark monospaced code editor view.
+pub fn (win &SimpleWindow) add_code_editor(name string, code string, height int) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('code_editor')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name:  real_name
+			kind:  'code_editor'
+			value: code
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_code_editor_control(win.window_info, real_name.str, code.str, height)
+	}
+	return win
+}
+
+// code_editor inserts an auto-named code editor view.
+pub fn (win &SimpleWindow) code_editor(code string, height int) &SimpleWindow {
+	return win.add_code_editor('', code, height)
+}
+
+// add_timeline_view adds an activity feed timeline stream widget.
+pub fn (win &SimpleWindow) add_timeline_view(name string, height int) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('timeline_view')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name: real_name
+			kind: 'timeline_view'
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_timeline_view_control(win.window_info, real_name.str, height)
+	}
+	return win
+}
+
+// timeline_view inserts an auto-named timeline view widget.
+pub fn (win &SimpleWindow) timeline_view(height int) &SimpleWindow {
+	return win.add_timeline_view('', height)
+}
+
+// set_subtitle sets the window subtitle (macOS 11.0+).
+pub fn (win &SimpleWindow) set_subtitle(subtitle string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_subtitle(win.window_info, subtitle.str)
+	}
+	return win
+}
+
+// get_subtitle returns the window subtitle string.
+pub fn (win &SimpleWindow) get_subtitle() string {
+	if win.window_info != unsafe { nil } {
+		res := C.window_get_subtitle(win.window_info)
+		if res != unsafe { nil } {
+			return unsafe { tos3(res) }
+		}
+	}
+	return ''
+}
+
+// set_titlebar_appears_transparent enables or disables translucent/transparent titlebar.
+pub fn (win &SimpleWindow) set_titlebar_appears_transparent(transparent bool) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_titlebar_appears_transparent(win.window_info, if transparent { 1 } else { 0 })
+	}
+	return win
+}
+
+// get_titlebar_appears_transparent returns whether titlebar is set to transparent.
+pub fn (win &SimpleWindow) get_titlebar_appears_transparent() bool {
+	if win.window_info != unsafe { nil } {
+		return C.window_get_titlebar_appears_transparent(win.window_info) != 0
+	}
+	return false
+}
+
+// set_full_size_content_view enables or disables full size content view (extending under titlebar).
+pub fn (win &SimpleWindow) set_full_size_content_view(enabled bool) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_full_size_content_view(win.window_info, if enabled { 1 } else { 0 })
+	}
+	return win
+}
+
+// get_full_size_content_view returns whether full size content view is enabled.
+pub fn (win &SimpleWindow) get_full_size_content_view() bool {
+	if win.window_info != unsafe { nil } {
+		return C.window_get_full_size_content_view(win.window_info) != 0
+	}
+	return false
+}
+
+// set_movable enables or disables user window dragging.
+pub fn (win &SimpleWindow) set_movable(enabled bool) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_movable(win.window_info, if enabled { 1 } else { 0 })
+	}
+	return win
+}
+
+// get_movable returns whether the window is movable by the user.
+pub fn (win &SimpleWindow) get_movable() bool {
+	if win.window_info != unsafe { nil } {
+		return C.window_get_movable(win.window_info) != 0
+	}
+	return true
+}
+
+// set_window_level sets window layer level ('normal', 'floating', 'modal', 'mainMenu', 'statusBar', 'screenSaver').
+pub fn (win &SimpleWindow) set_window_level(level string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_window_level(win.window_info, level.str)
+	}
+	return win
+}
+
+// set_aspect_ratio locks the window resize aspect ratio.
+pub fn (win &SimpleWindow) set_aspect_ratio(width_ratio f64, height_ratio f64) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_aspect_ratio(win.window_info, width_ratio, height_ratio)
+	}
+	return win
+}
+
+// reset_aspect_ratio removes aspect ratio locking on resize.
+pub fn (win &SimpleWindow) reset_aspect_ratio() &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_reset_aspect_ratio(win.window_info)
+	}
+	return win
+}
+
+// bounce_dock_icon requests user attention by bouncing the dock icon.
+pub fn (win &SimpleWindow) bounce_dock_icon(critical bool) &SimpleWindow {
+	C.window_bounce_dock_icon(if critical { 1 } else { 0 })
+	return win
+}
+
+// add_star_rating adds an interactive star rating control.
+pub fn (win &SimpleWindow) add_star_rating(name string, value int, max_stars int) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('rating')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name: real_name
+			kind: 'rating'
+			value: value.str()
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_rating_control(win.window_info, real_name.str, value, max_stars)
+	}
+	return win
+}
+
+// star_rating inserts an auto-named star rating widget.
+pub fn (win &SimpleWindow) star_rating(value int, max_stars int) &SimpleWindow {
+	return win.add_star_rating('', value, max_stars)
+}
+
+// set_star_rating_value updates rating value for a control.
+pub fn (win &SimpleWindow) set_star_rating_value(name string, value int) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_rating_value(win.window_info, name.str, value)
+	}
+	return win
+}
+
+// get_star_rating_value gets selected rating value for a control.
+pub fn (win &SimpleWindow) get_star_rating_value(name string) int {
+	if win.window_info != unsafe { nil } {
+		return C.window_get_rating_value(win.window_info, name.str)
+	}
+	return 0
+}
+
+// add_range_slider adds a dual-thumb range selector slider widget.
+pub fn (win &SimpleWindow) add_range_slider(name string, min_val int, max_val int, low_val int, high_val int) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('range_slider')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name: real_name
+			kind: 'range_slider'
+			value: '${low_val}:${high_val}'
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_range_slider_control(win.window_info, real_name.str, min_val, max_val, low_val, high_val)
+	}
+	return win
+}
+
+// range_slider inserts an auto-named range slider widget.
+pub fn (win &SimpleWindow) range_slider(min_val int, max_val int, low_val int, high_val int) &SimpleWindow {
+	return win.add_range_slider('', min_val, max_val, low_val, high_val)
+}
+
+// set_range_slider_values sets the low and high range values for a range slider.
+pub fn (win &SimpleWindow) set_range_slider_values(name string, low_val int, high_val int) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_range_slider_values(win.window_info, name.str, low_val, high_val)
+	}
+	return win
+}
+
+// get_range_slider_low gets low range boundary.
+pub fn (win &SimpleWindow) get_range_slider_low(name string) int {
+	if win.window_info != unsafe { nil } {
+		return C.window_get_range_slider_low(win.window_info, name.str)
+	}
+	return 0
+}
+
+// get_range_slider_high gets high range boundary.
+pub fn (win &SimpleWindow) get_range_slider_high(name string) int {
+	if win.window_info != unsafe { nil } {
+		return C.window_get_range_slider_high(win.window_info, name.str)
+	}
+	return 0
+}
+
+// add_split_button adds a primary action button paired with a secondary drop-down popup menu.
+pub fn (win &SimpleWindow) add_split_button(name string, title string, menu_items []string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('split_button')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name: real_name
+			kind: 'split_button'
+			value: title
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		c_items := menu_items.map(it.str)
+		C.window_add_split_button_control(win.window_info, real_name.str, title.str, c_items.data, c_items.len)
+	}
+	return win
+}
+
+// split_button inserts an auto-named split button widget.
+pub fn (win &SimpleWindow) split_button(title string, menu_items []string) &SimpleWindow {
+	return win.add_split_button('', title, menu_items)
+}
+
+// add_tag_cloud adds an interactive tag chips list widget.
+pub fn (win &SimpleWindow) add_tag_cloud(name string, tags []string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('tag_cloud')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name: real_name
+			kind: 'tag_cloud'
+			value: tags.join(',')
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		c_tags := tags.map(it.str)
+		C.window_add_tag_cloud_control(win.window_info, real_name.str, c_tags.data, c_tags.len)
+	}
+	return win
+}
+
+// tag_cloud inserts an auto-named tag cloud widget.
+pub fn (win &SimpleWindow) tag_cloud(tags []string) &SimpleWindow {
+	return win.add_tag_cloud('', tags)
+}
+
+// set_tag_cloud_tags updates the active tag list in a tag cloud control.
+pub fn (win &SimpleWindow) set_tag_cloud_tags(name string, tags []string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		c_tags := tags.map(it.str)
+		C.window_set_tag_cloud_tags(win.window_info, name.str, c_tags.data, c_tags.len)
+	}
+	return win
+}
+
+// add_wizard_stepper adds a multi-step process flow indicator bar.
+pub fn (win &SimpleWindow) add_wizard_stepper(name string, steps []string, current_step int) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('wizard_stepper')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name: real_name
+			kind: 'wizard_stepper'
+			value: current_step.str()
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		c_steps := steps.map(it.str)
+		C.window_add_wizard_stepper_control(win.window_info, real_name.str, c_steps.data, c_steps.len, current_step)
+	}
+	return win
+}
+
+// wizard_stepper inserts an auto-named wizard stepper widget.
+pub fn (win &SimpleWindow) wizard_stepper(steps []string, current_step int) &SimpleWindow {
+	return win.add_wizard_stepper('', steps, current_step)
+}
+
+// set_wizard_stepper_step updates active step index in a wizard stepper.
+pub fn (win &SimpleWindow) set_wizard_stepper_step(name string, step int) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_wizard_stepper_step(win.window_info, name.str, step)
+	}
+	return win
+}
+
+
+
 
 

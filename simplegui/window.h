@@ -333,7 +333,51 @@ void window_set_tray_icon_value(main__WindowInfo *info, const char *name, const 
 void *window_add_collapsible_section_control(main__WindowInfo *info, const char *name, const char *title, int expanded);
 void window_set_collapsible_section_expanded(main__WindowInfo *info, const char *name, int expanded);
 
+void *window_add_code_editor_control(main__WindowInfo *info, const char *name, const char *code, int height);
+void window_set_code_editor_value(main__WindowInfo *info, const char *name, const char *code);
+const char *window_get_code_editor_value(main__WindowInfo *info, const char *name);
+
+void *window_add_timeline_view_control(main__WindowInfo *info, const char *name, int height);
+void window_add_timeline_entry(main__WindowInfo *info, const char *name, const char *time_str, const char *title, const char *detail, const char *style);
+void window_clear_timeline(main__WindowInfo *info, const char *name);
+
+void window_add_toolbar_button(main__WindowInfo *info, const char *id_str, const char *label, const char *symbol);
+void window_set_toolbar_visible(main__WindowInfo *info, int visible);
+
+// New Window Commands
+void window_set_subtitle(main__WindowInfo *info, const char *subtitle);
+const char *window_get_subtitle(main__WindowInfo *info);
+void window_set_titlebar_appears_transparent(main__WindowInfo *info, int transparent);
+int window_get_titlebar_appears_transparent(main__WindowInfo *info);
+void window_set_full_size_content_view(main__WindowInfo *info, int enabled);
+int window_get_full_size_content_view(main__WindowInfo *info);
+void window_set_movable(main__WindowInfo *info, int enabled);
+int window_get_movable(main__WindowInfo *info);
+void window_set_window_level(main__WindowInfo *info, const char *level);
+void window_set_aspect_ratio(main__WindowInfo *info, double width_ratio, double height_ratio);
+void window_reset_aspect_ratio(main__WindowInfo *info);
+void window_bounce_dock_icon(int critical);
+
+// New Controls (Rating, Range Slider, Split Button, Tag Cloud, Wizard Stepper)
+void *window_add_rating_control(main__WindowInfo *info, const char *name, int value, int max_stars);
+void window_set_rating_value(main__WindowInfo *info, const char *name, int value);
+int window_get_rating_value(main__WindowInfo *info, const char *name);
+
+void *window_add_range_slider_control(main__WindowInfo *info, const char *name, int min_val, int max_val, int low_val, int high_val);
+void window_set_range_slider_values(main__WindowInfo *info, const char *name, int low_val, int high_val);
+int window_get_range_slider_low(main__WindowInfo *info, const char *name);
+int window_get_range_slider_high(main__WindowInfo *info, const char *name);
+
+void *window_add_split_button_control(main__WindowInfo *info, const char *name, const char *title, const char **menu_items, int count);
+
+void *window_add_tag_cloud_control(main__WindowInfo *info, const char *name, const char **tags, int count);
+void window_set_tag_cloud_tags(main__WindowInfo *info, const char *name, const char **tags, int count);
+
+void *window_add_wizard_stepper_control(main__WindowInfo *info, const char *name, const char **steps, int count, int current_step);
+void window_set_wizard_stepper_step(main__WindowInfo *info, const char *name, int step);
+
 #endif
+
 
 
 

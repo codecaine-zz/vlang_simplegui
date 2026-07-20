@@ -1971,6 +1971,65 @@ fn test_new_extended_controls_api() {
 	win.add_collapsible_section('advanced_opt', 'Advanced Configuration', true)
 	assert win.has_control('advanced_opt') == true
 	assert win.get_control_kind('advanced_opt') == 'collapsible_section'
+
+	// Code Editor
+	win.add_code_editor('src_editor', 'fn main() { println("Hello") }', 150)
+	assert win.has_control('src_editor') == true
+	assert win.get_control_kind('src_editor') == 'code_editor'
+	assert win.get_code_editor('src_editor') == 'fn main() { println("Hello") }'
+	win.set_code_editor('src_editor', 'fn main() { return }')
+	assert win.get_code_editor('src_editor') == 'fn main() { return }'
+
+	// Timeline View
+	win.add_timeline_view('act_feed', 180)
+	assert win.has_control('act_feed') == true
+	assert win.get_control_kind('act_feed') == 'timeline_view'
+	win.add_timeline_entry('act_feed', '14:32:01', 'Build Completed', 'Artifact simplegui v2.4 compiled', 'success')
+
+	// Toolbar Item
+	win.add_toolbar_item('tb_refresh', 'Refresh Data', 'Refresh active dataset', 'arrow.clockwise')
 }
+
+fn test_new_window_commands_and_controls() {
+	mut win := simplegui.SimpleWindow{}
+
+	// Window commands
+	win.set_subtitle('Workspace Config')
+	win.set_titlebar_appears_transparent(true)
+	win.set_full_size_content_view(true)
+	win.set_movable(true)
+	win.set_window_level('normal')
+	win.set_aspect_ratio(16.0, 9.0)
+	win.reset_aspect_ratio()
+	win.bounce_dock_icon(false)
+
+	// Rating Control
+	win.add_star_rating('app_rating', 4, 5)
+	assert win.has_control('app_rating') == true
+	assert win.get_control_kind('app_rating') == 'rating'
+	win.set_star_rating_value('app_rating', 5)
+
+	// Range Slider Control
+	win.add_range_slider('price_range', 0, 1000, 200, 800)
+	assert win.has_control('price_range') == true
+	assert win.get_control_kind('price_range') == 'range_slider'
+
+	// Split Button Control
+	win.add_split_button('action_btn', 'Deploy', ['Deploy to Staging', 'Deploy to Prod'])
+	assert win.has_control('action_btn') == true
+	assert win.get_control_kind('action_btn') == 'split_button'
+
+	// Tag Cloud Control
+	win.add_tag_cloud('user_tags', ['vlang', 'gui', 'macos', 'cocoa'])
+	assert win.has_control('user_tags') == true
+	assert win.get_control_kind('user_tags') == 'tag_cloud'
+
+	// Wizard Stepper Control
+	win.add_wizard_stepper('checkout_flow', ['Cart', 'Shipping', 'Payment', 'Review'], 1)
+	assert win.has_control('checkout_flow') == true
+	assert win.get_control_kind('checkout_flow') == 'wizard_stepper'
+}
+
+
 
 
