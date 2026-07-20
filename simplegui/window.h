@@ -305,9 +305,35 @@ void window_grid_set_cell_enabled(main__WindowInfo *info, const char *name, int 
 void *window_add_stat_card_control(main__WindowInfo *info, const char *name, const char *title, const char *value, const char *trend, const char *trend_style);
 void window_set_stat_card_value(main__WindowInfo *info, const char *name, const char *value, const char *trend, const char *trend_style);
 void *window_add_banner_control(main__WindowInfo *info, const char *name, const char *text, const char *style);
+void window_set_banner_value(main__WindowInfo *info, const char *name, const char *text);
 void *window_add_section_header_control(main__WindowInfo *info, const char *name, const char *title, const char *subtitle);
 void *window_add_vertical_slider_control(main__WindowInfo *info, const char *name, int value, int min_val, int max_val, int height);
+void window_set_vertical_slider_value(main__WindowInfo *info, const char *name, int value);
 void *window_add_chip_group_control(main__WindowInfo *info, const char *name, const char **chips, int count, const char *selected);
+void window_set_chip_group_selected(main__WindowInfo *info, const char *name, const char *selected);
+
+void window_set_badge_value(main__WindowInfo *info, const char *name, const char *text, const char *style);
+
+void *window_add_status_indicator_control(main__WindowInfo *info, const char *name, const char *label, const char *status);
+void window_set_status_indicator_value(main__WindowInfo *info, const char *name, const char *status);
+
+void *window_add_metric_meter_control(main__WindowInfo *info, const char *name, const char *title, int value, int min_val, int max_val, const char *unit);
+void window_set_metric_meter_value(main__WindowInfo *info, const char *name, int value);
+
+void *window_add_avatar_card_control(main__WindowInfo *info, const char *name, const char *title, const char *subtitle, const char *status);
+void window_set_avatar_card_value(main__WindowInfo *info, const char *name, const char *title, const char *subtitle, const char *status);
+
+void *window_add_time_picker_control(main__WindowInfo *info, const char *name, const char *time);
+void window_set_time_picker_value(main__WindowInfo *info, const char *name, const char *time);
+const char *window_get_time_picker_value(main__WindowInfo *info, const char *name);
+
+void window_add_tray_icon_control(main__WindowInfo *info, const char *name, const char *symbol, const char *title);
+void window_set_tray_icon_value(main__WindowInfo *info, const char *name, const char *symbol, const char *title);
+
+void *window_add_collapsible_section_control(main__WindowInfo *info, const char *name, const char *title, int expanded);
+void window_set_collapsible_section_expanded(main__WindowInfo *info, const char *name, int expanded);
 
 #endif
+
+
 

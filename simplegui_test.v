@@ -1924,4 +1924,53 @@ fn test_new_extended_controls_api() {
 	assert win.get_chip_selected('filter_chips') == 'Active'
 	win.set_chip_selected('filter_chips', 'Pending')
 	assert win.get_chip_selected('filter_chips') == 'Pending'
+
+	// Badge
+	win.add_badge('ver_badge', 'v2.4.0', 'success')
+	assert win.has_control('ver_badge') == true
+	assert win.get_control_kind('ver_badge') == 'badge'
+	assert win.get_badge('ver_badge') == 'v2.4.0'
+	win.set_badge('ver_badge', 'v2.5.0-beta', 'info')
+	assert win.get_badge('ver_badge') == 'v2.5.0-beta'
+
+	// Status Indicator
+	win.add_status_indicator('sys_status', 'Database Service', 'active')
+	assert win.has_control('sys_status') == true
+	assert win.get_control_kind('sys_status') == 'status_indicator'
+	assert win.get_status_indicator('sys_status') == 'active'
+	win.set_status_indicator('sys_status', 'warning')
+	assert win.get_status_indicator('sys_status') == 'warning'
+
+	// Metric Meter
+	win.add_metric_meter('cpu_meter', 'CPU Usage', 42, 0, 100, '%')
+	assert win.has_control('cpu_meter') == true
+	assert win.get_control_kind('cpu_meter') == 'metric_meter'
+	assert win.get_metric_meter('cpu_meter') == 42
+	win.set_metric_meter('cpu_meter', 88)
+	assert win.get_metric_meter('cpu_meter') == 88
+
+	// Avatar Card
+	win.add_avatar_card('user_profile', 'Grace Hopper', 'Rear Admiral', 'Online')
+	assert win.has_control('user_profile') == true
+	assert win.get_control_kind('user_profile') == 'avatar_card'
+
+	// Time Picker
+	win.add_time_picker('shift_start', '14:30:00')
+	assert win.has_control('shift_start') == true
+	assert win.get_control_kind('shift_start') == 'time_picker'
+	assert win.get_time_picker('shift_start') == '14:30:00'
+	win.set_time_picker('shift_start', '16:45:00')
+	assert win.get_time_picker('shift_start') == '16:45:00'
+
+	// Tray Icon
+	win.add_tray_icon('sys_tray', 'gear', 'SimpleGUI Connected')
+	assert win.has_control('sys_tray') == true
+	assert win.get_control_kind('sys_tray') == 'tray_icon'
+
+	// Collapsible Section
+	win.add_collapsible_section('advanced_opt', 'Advanced Configuration', true)
+	assert win.has_control('advanced_opt') == true
+	assert win.get_control_kind('advanced_opt') == 'collapsible_section'
 }
+
+

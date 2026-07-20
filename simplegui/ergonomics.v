@@ -1721,7 +1721,57 @@ pub fn (win &SimpleWindow) set_stat_card(name string, value string, trend string
 
 // set_banner updates the message text of a banner callout.
 pub fn (win &SimpleWindow) set_banner(name string, text string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_banner_value(win.window_info, name.str, text.str)
+	}
 	return win.set_text(name, text)
+}
+
+// set_badge updates the text and style of a badge control.
+pub fn (win &SimpleWindow) set_badge(name string, text string, style string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_badge_value(win.window_info, name.str, text.str, style.str)
+	}
+	return win.set_text(name, text)
+}
+
+// get_badge retrieves the text of a badge control.
+pub fn (win &SimpleWindow) get_badge(name string) string {
+	return win.get_text(name)
+}
+
+// set_status_indicator updates the status state (active, warning, error, idle) of a status indicator light.
+pub fn (win &SimpleWindow) set_status_indicator(name string, status string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_status_indicator_value(win.window_info, name.str, status.str)
+	}
+	return win.set_text(name, status)
+}
+
+// get_status_indicator retrieves the status string of a status indicator control.
+pub fn (win &SimpleWindow) get_status_indicator(name string) string {
+	return win.get_text(name)
+}
+
+// set_metric_meter updates the numeric value of a metric meter control.
+pub fn (win &SimpleWindow) set_metric_meter(name string, value int) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_metric_meter_value(win.window_info, name.str, value)
+	}
+	return win.set_value_int(name, value)
+}
+
+// get_metric_meter retrieves the current integer value of a metric meter control.
+pub fn (win &SimpleWindow) get_metric_meter(name string) int {
+	return win.get_value_int(name)
+}
+
+// set_avatar_card updates title, subtitle, and status pill of an avatar card.
+pub fn (win &SimpleWindow) set_avatar_card(name string, title string, subtitle string, status string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_avatar_card_value(win.window_info, name.str, title.str, subtitle.str, status.str)
+	}
+	return win
 }
 
 // get_vertical_slider retrieves the integer value of a vertical slider control.
@@ -1731,6 +1781,9 @@ pub fn (win &SimpleWindow) get_vertical_slider(name string) int {
 
 // set_vertical_slider updates the integer value of a vertical slider control.
 pub fn (win &SimpleWindow) set_vertical_slider(name string, value int) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_vertical_slider_value(win.window_info, name.str, value)
+	}
 	return win.set_value_int(name, value)
 }
 
@@ -1741,6 +1794,51 @@ pub fn (win &SimpleWindow) get_chip_selected(name string) string {
 
 // set_chip_selected sets the selected chip in a chip group.
 pub fn (win &SimpleWindow) set_chip_selected(name string, chip string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_chip_group_selected(win.window_info, name.str, chip.str)
+	}
 	return win.set_text(name, chip)
 }
+
+// set_time_picker updates the time value of a standalone time picker control.
+pub fn (win &SimpleWindow) set_time_picker(name string, time string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_time_picker_value(win.window_info, name.str, time.str)
+	}
+	return win.set_text(name, time)
+}
+
+// get_time_picker retrieves the selected time string from a time picker control.
+pub fn (win &SimpleWindow) get_time_picker(name string) string {
+	if win.window_info != unsafe { nil } {
+		res := C.window_get_time_picker_value(win.window_info, name.str)
+		if res != unsafe { nil } {
+			unsafe {
+				if res[0] != 0 {
+					return tos_clone(res)
+				}
+			}
+		}
+	}
+	return win.get_text(name)
+}
+
+
+// set_tray_icon updates the symbol and title of a system menu bar tray icon.
+pub fn (win &SimpleWindow) set_tray_icon(name string, symbol string, title string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_tray_icon_value(win.window_info, name.str, symbol.str, title.str)
+	}
+	return win.set_text(name, title)
+}
+
+// set_collapsible_section_expanded updates the disclosure expand state of a collapsible section.
+pub fn (win &SimpleWindow) set_collapsible_section_expanded(name string, expanded bool) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_collapsible_section_expanded(win.window_info, name.str, if expanded { 1 } else { 0 })
+	}
+	return win
+}
+
+
 

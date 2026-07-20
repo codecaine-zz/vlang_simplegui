@@ -298,6 +298,24 @@ fn C.window_add_banner_control(&WindowInfo, &u8, &u8, &u8) voidptr
 fn C.window_add_section_header_control(&WindowInfo, &u8, &u8, &u8) voidptr
 fn C.window_add_vertical_slider_control(&WindowInfo, &u8, int, int, int, int) voidptr
 fn C.window_add_chip_group_control(&WindowInfo, &u8, &&u8, int, &u8) voidptr
+fn C.window_set_banner_value(&WindowInfo, &u8, &u8)
+fn C.window_set_vertical_slider_value(&WindowInfo, &u8, int)
+fn C.window_set_chip_group_selected(&WindowInfo, &u8, &u8)
+fn C.window_set_badge_value(&WindowInfo, &u8, &u8, &u8)
+fn C.window_add_status_indicator_control(&WindowInfo, &u8, &u8, &u8) voidptr
+fn C.window_set_status_indicator_value(&WindowInfo, &u8, &u8)
+fn C.window_add_metric_meter_control(&WindowInfo, &u8, &u8, int, int, int, &u8) voidptr
+fn C.window_set_metric_meter_value(&WindowInfo, &u8, int)
+fn C.window_add_avatar_card_control(&WindowInfo, &u8, &u8, &u8, &u8) voidptr
+fn C.window_set_avatar_card_value(&WindowInfo, &u8, &u8, &u8, &u8)
+fn C.window_add_time_picker_control(&WindowInfo, &u8, &u8) voidptr
+fn C.window_set_time_picker_value(&WindowInfo, &u8, &u8)
+fn C.window_get_time_picker_value(&WindowInfo, &u8) &u8
+fn C.window_add_tray_icon_control(&WindowInfo, &u8, &u8, &u8)
+fn C.window_set_tray_icon_value(&WindowInfo, &u8, &u8, &u8)
+fn C.window_add_collapsible_section_control(&WindowInfo, &u8, &u8, int) voidptr
+fn C.window_set_collapsible_section_expanded(&WindowInfo, &u8, int)
+
 
 pub type StringEventCallback = fn (mut win SimpleWindow, value string)
 
@@ -5586,3 +5604,163 @@ pub fn (win &SimpleWindow) add_chip_group(name string, chips []string, selected 
 pub fn (win &SimpleWindow) chip_group(chips []string, selected string) &SimpleWindow {
 	return win.add_chip_group('', chips, selected)
 }
+
+// icon_segments inserts an auto-named icon segments control.
+pub fn (win &SimpleWindow) icon_segments(symbols []string, selected string) &SimpleWindow {
+	return win.add_icon_segments('', symbols, selected)
+}
+
+
+// add_status_indicator adds a LED-styled status indicator light with text label.
+pub fn (win &SimpleWindow) add_status_indicator(name string, label string, status string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('status_indicator')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name:  real_name
+			kind:  'status_indicator'
+			value: status
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_status_indicator_control(win.window_info, real_name.str, label.str, status.str)
+	}
+	return win
+}
+
+// status_indicator inserts an auto-named status indicator light.
+pub fn (win &SimpleWindow) status_indicator(label string, status string) &SimpleWindow {
+	return win.add_status_indicator('', label, status)
+}
+
+// add_metric_meter adds a metric meter control with title, fill percentage bar, and right-aligned value label.
+pub fn (win &SimpleWindow) add_metric_meter(name string, title string, value int, min_val int, max_val int, unit string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('metric_meter')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name:   real_name
+			kind:   'metric_meter'
+			value:  value.str()
+			number: value
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_metric_meter_control(win.window_info, real_name.str, title.str, value, min_val, max_val, unit.str)
+	}
+	return win
+}
+
+// metric_meter inserts an auto-named metric meter control.
+pub fn (win &SimpleWindow) metric_meter(title string, value int, min_val int, max_val int, unit string) &SimpleWindow {
+	return win.add_metric_meter('', title, value, min_val, max_val, unit)
+}
+
+// add_avatar_card adds a user profile avatar tile with round initial icon, title, subtitle, and status pill.
+pub fn (win &SimpleWindow) add_avatar_card(name string, title string, subtitle string, status string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('avatar_card')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name:  real_name
+			kind:  'avatar_card'
+			value: title
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_avatar_card_control(win.window_info, real_name.str, title.str, subtitle.str, status.str)
+	}
+	return win
+}
+
+// avatar_card inserts an auto-named avatar card.
+pub fn (win &SimpleWindow) avatar_card(title string, subtitle string, status string) &SimpleWindow {
+	return win.add_avatar_card('', title, subtitle, status)
+}
+
+// add_time_picker adds a standalone time picker control (clock/time selector) to the layout.
+pub fn (win &SimpleWindow) add_time_picker(name string, time string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('time_picker')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name:  real_name
+			kind:  'time_picker'
+			value: time
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_time_picker_control(win.window_info, real_name.str, time.str)
+	}
+	return win
+}
+
+// time_picker inserts an auto-named time picker control.
+pub fn (win &SimpleWindow) time_picker(time string) &SimpleWindow {
+	return win.add_time_picker('', time)
+}
+
+// add_tray_icon creates a system menu bar status item / tray icon.
+pub fn (win &SimpleWindow) add_tray_icon(name string, symbol string, title string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('tray_icon')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name:  real_name
+			kind:  'tray_icon'
+			value: title
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_tray_icon_control(win.window_info, real_name.str, symbol.str, title.str)
+	}
+	return win
+}
+
+// tray_icon inserts an auto-named tray icon.
+pub fn (win &SimpleWindow) tray_icon(symbol string, title string) &SimpleWindow {
+	return win.add_tray_icon('', symbol, title)
+}
+
+// add_collapsible_section adds a collapsible accordion container section header.
+pub fn (win &SimpleWindow) add_collapsible_section(name string, title string, expanded bool) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('collapsible_section')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name:    real_name
+			kind:    'collapsible_section'
+			value:   title
+			checked: expanded
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_collapsible_section_control(win.window_info, real_name.str, title.str, if expanded { 1 } else { 0 })
+	}
+	return win
+}
+
+// collapsible_section inserts an auto-named collapsible section header.
+pub fn (win &SimpleWindow) collapsible_section(title string, expanded bool) &SimpleWindow {
+	return win.add_collapsible_section('', title, expanded)
+}
+
+

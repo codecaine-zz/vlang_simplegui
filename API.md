@@ -573,7 +573,57 @@ Adds a modern segmented tag/chip pill selection bar (`NSSegmentedControl`) for e
 - **Accessing**: Retrieve or update the active chip using `win.get_chip_selected(name)` / `win.set_chip_selected(name, chip)`.
 - **Events**: Segment selection fires `change` events with the selected chip's text string.
 
+### `win.add_badge(name string, text string, style string)` / `win.badge_pill(text string, style string) &SimpleWindow`
+
+Adds a pill-shaped status badge label with styled background tint and text color.
+
+- **Parameters**: `style` accepts `"success"`, `"error"`, `"warning"`, `"info"`, or `"neutral"`.
+- **Accessing**: Use `win.get_badge(name)` and `win.set_badge(name, text, style)` to retrieve or update badge content dynamically.
+
+### `win.add_icon_segments(name string, symbols []string, selected string)` / `win.icon_segments(symbols []string, selected string) &SimpleWindow`
+
+Adds an SF Symbol-powered segmented button bar for switching modes or views with native icons.
+
+### `win.add_status_indicator(name string, label string, status string)` / `win.status_indicator(label string, status string) &SimpleWindow`
+
+Adds an LED status indicator light dot alongside a text title.
+
+- **Parameters**: `status` accepts `"active"` / `"online"` (emerald green LED), `"warning"` / `"busy"` (orange LED), `"error"` / `"offline"` (red LED), or `"idle"` (gray LED).
+- **Accessing**: Use `win.get_status_indicator(name)` and `win.set_status_indicator(name, status)` to read or update state dynamically.
+
+### `win.add_metric_meter(name string, title string, value int, min_val int, max_val int, unit string)` / `win.metric_meter(title string, value int, min_val int, max_val int, unit string) &SimpleWindow`
+
+Adds a resource meter card widget displaying a title, percentage fill bar, and right-aligned numeric reading (e.g. `48%` or `28 MB/s`).
+
+- **Accessing**: Use `win.get_metric_meter(name)` and `win.set_metric_meter(name, value)` to read or update meter progress dynamically.
+
+### `win.add_avatar_card(name string, title string, subtitle string, status string)` / `win.avatar_card(title string, subtitle string, status string) &SimpleWindow`
+
+Adds a user/profile avatar tile widget featuring a round initial badge, title text, subtitle, and live status pill.
+
+- **Accessing**: Use `win.set_avatar_card(name, title, subtitle, status)` to update operator profile cards dynamically.
+
+### `win.add_time_picker(name string, time string)` / `win.time_picker(time string) &SimpleWindow`
+
+Adds a standalone native Cocoa clock/time selector (`NSDatePicker` with hour/minute/second stepper).
+
+- **Accessing**: Use `win.get_time_picker(name)` and `win.set_time_picker(name, time)` to read or update the selected time string (e.g. `"14:30:00"`).
+
+### `win.add_tray_icon(name string, symbol string, title string)` / `win.tray_icon(symbol string, title string) &SimpleWindow`
+
+Adds a macOS system menu bar status item / tray icon (`NSStatusItem`) in the top menu bar.
+
+- **Accessing**: Use `win.set_tray_icon(name, symbol, title)` to update the status bar icon or title dynamically.
+
+### `win.add_collapsible_section(name string, title string, expanded bool)` / `win.collapsible_section(title string, expanded bool) &SimpleWindow`
+
+Adds a collapsible accordion container section header featuring an interactive disclosure triangle toggle.
+
+- **Accessing**: Use `win.set_collapsible_section_expanded(name, expanded)` to programmatically expand or collapse the section header.
+
 ---
+
+
 
 ## 4. Control Sizing & Styling
 

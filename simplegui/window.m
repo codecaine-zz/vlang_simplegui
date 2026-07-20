@@ -612,10 +612,18 @@ extern void vlang_dispatch_event(void *win_ptr, const char *name, const char *ev
 - (NSView *)makeChartViewWithName:(NSString *)name chartType:(NSString *)chartType height:(int)height;
 - (NSView *)makeShortcutRecorderWithName:(NSString *)name;
 - (NSView *)makeCircularProgressWithName:(NSString *)name value:(double)value minVal:(double)minVal maxVal:(double)maxVal;
+@property (nonatomic, strong) NSMutableDictionary *trayIconsByName;
+
 - (NSView *)makeBreadcrumbsWithName:(NSString *)name segments:(NSArray<NSString *> *)segments;
 - (void)handleBreadcrumbClicked:(id)sender;
 - (NSView *)makePropertyGridWithName:(NSString *)name keys:(NSArray<NSString *> *)keys values:(NSArray<NSString *> *)values;
 - (NSView *)makeColorGridWithName:(NSString *)name colors:(NSArray<NSString *> *)colors;
+- (NSView *)makeStatusIndicatorWithName:(NSString *)name label:(NSString *)label status:(NSString *)status;
+- (NSView *)makeMetricMeterWithName:(NSString *)name title:(NSString *)title value:(double)val minVal:(double)minVal maxVal:(double)maxVal unit:(NSString *)unit;
+- (NSView *)makeAvatarCardWithName:(NSString *)name title:(NSString *)title subtitle:(NSString *)subtitle status:(NSString *)status;
+- (NSView *)makeTimePickerWithName:(NSString *)name time:(NSString *)timeString;
+- (void)makeTrayIconWithName:(NSString *)name symbol:(NSString *)symbolName title:(NSString *)title;
+- (NSView *)makeCollapsibleSectionWithName:(NSString *)name title:(NSString *)title expanded:(BOOL)expanded;
 
 
 - (void)setupToolbar;
@@ -1663,10 +1671,12 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
     _params = params;
     _win_ptr = params.win_ptr;
     _responsiveLayoutEnabled = params.responsive_layout != 0;
+    self.trayIconsByName = [NSMutableDictionary dictionary];
     [self setupWindow];
   }
   return self;
 }
+
 
 - (void)setupWindow {
   if (self.window) {
@@ -4818,7 +4828,287 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [self addControlToLayout:scrollView];
   return scrollView;
 }
+
+// Status Indicator control
+- (NSView *)makeStatusIndicatorWithName:(NSString *)name label:(NSString *)labelText status:(NSString *)statusStr {
+  NSStackView *stack = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [stack setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+  [stack setSpacing:8.0];
+  [stack setAlignment:NSLayoutAttributeCenterY];
+  
+  NSBox *dot = [[NSBox alloc] initWithFrame:NSZeroRect];
+  [dot setBoxType:NSBoxCustom];
+  [dot setBorderType:NSNoBorder];
+  [dot setWantsLayer:YES];
+  dot.layer.cornerRadius = 5.0;
+  [dot.widthAnchor constraintEqualToConstant:10.0].active = YES;
+  [dot.heightAnchor constraintEqualToConstant:10.0].active = YES;
+  
+  NSColor *dotColor = [NSColor secondaryLabelColor];
+  NSString *st = [statusStr lowercaseString];
+  if ([st isEqualToString:@"active"] || [st isEqualToString:@"online"] || [st isEqualToString:@"success"]) {
+    dotColor = [NSColor systemGreenColor];
+  } else if ([st isEqualToString:@"warning"] || [st isEqualToString:@"busy"]) {
+    dotColor = [NSColor systemOrangeColor];
+  } else if ([st isEqualToString:@"error"] || [st isEqualToString:@"offline"]) {
+    dotColor = [NSColor systemRedColor];
+  }
+  dot.layer.backgroundColor = [dotColor CGColor];
+  [dot setIdentifier:@"101"];
+  
+  NSTextField *label = [NSTextField labelWithString:labelText];
+  [label setFont:[NSFont systemFontOfSize:12.0 weight:NSFontWeightMedium]];
+  if (self.currentFontColor) {
+    [label setTextColor:self.currentFontColor];
+  }
+  [label setTag:102];
+  
+  [stack addArrangedSubview:dot];
+  [stack addArrangedSubview:label];
+  
+  self.controlsByName[[name lowercaseString]] = stack;
+  [self addControlToLayout:stack];
+  return stack;
+}
+
+// Metric Meter control
+- (NSView *)makeMetricMeterWithName:(NSString *)name title:(NSString *)titleStr value:(double)val minVal:(double)minVal maxVal:(double)maxVal unit:(NSString *)unitStr {
+  NSBox *box = [[NSBox alloc] initWithFrame:NSZeroRect];
+  [box setBoxType:NSBoxCustom];
+  [box setBorderType:NSLineBorder];
+  [box setBorderWidth:1.0];
+  [box setBorderColor:[NSColor colorWithCalibratedWhite:0.5 alpha:0.2]];
+  [box setContentViewMargins:NSMakeSize(12, 10)];
+  [box setWantsLayer:YES];
+  box.layer.cornerRadius = 8.0;
+  box.layer.backgroundColor = [[NSColor colorWithCalibratedWhite:0.5 alpha:0.05] CGColor];
+  
+  NSStackView *vstack = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [vstack setOrientation:NSUserInterfaceLayoutOrientationVertical];
+  [vstack setSpacing:6.0];
+  [vstack setAlignment:NSLayoutAttributeLeading];
+  
+  NSStackView *hstack = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [hstack setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+  [hstack setDistribution:NSStackViewDistributionFill];
+  [hstack setAlignment:NSLayoutAttributeCenterY];
+  
+  NSTextField *titleLabel = [NSTextField labelWithString:titleStr];
+  [titleLabel setFont:[NSFont systemFontOfSize:12.0 weight:NSFontWeightBold]];
+  if (self.currentFontColor) {
+    [titleLabel setTextColor:self.currentFontColor];
+  }
+  
+  NSString *valText = [NSString stringWithFormat:@"%.0f%@", val, unitStr ? unitStr : @""];
+  NSTextField *valLabel = [NSTextField labelWithString:valText];
+  [valLabel setFont:[NSFont systemFontOfSize:12.0 weight:NSFontWeightMedium]];
+  [valLabel setTextColor:[NSColor secondaryLabelColor]];
+  [valLabel setTag:101];
+  
+  [hstack addArrangedSubview:titleLabel];
+  [hstack addArrangedSubview:valLabel];
+  
+  NSProgressIndicator *bar = [[NSProgressIndicator alloc] initWithFrame:NSZeroRect];
+  [bar setIndeterminate:NO];
+  [bar setMinValue:minVal];
+  [bar setMaxValue:maxVal];
+  [bar setDoubleValue:val];
+  [bar setStyle:NSProgressIndicatorStyleBar];
+  [bar.heightAnchor constraintEqualToConstant:8.0].active = YES;
+  [bar setIdentifier:@"102"];
+  
+  [vstack addArrangedSubview:hstack];
+  [vstack addArrangedSubview:bar];
+  
+  [box setContentView:vstack];
+  
+  self.controlsByName[[name lowercaseString]] = box;
+  [self addControlToLayout:box];
+  return box;
+}
+
+// Avatar Card control
+- (NSView *)makeAvatarCardWithName:(NSString *)name title:(NSString *)titleStr subtitle:(NSString *)subStr status:(NSString *)statusStr {
+  NSBox *box = [[NSBox alloc] initWithFrame:NSZeroRect];
+  [box setBoxType:NSBoxCustom];
+  [box setBorderType:NSLineBorder];
+  [box setBorderWidth:1.0];
+  [box setBorderColor:[NSColor colorWithCalibratedWhite:0.5 alpha:0.2]];
+  [box setContentViewMargins:NSMakeSize(12, 10)];
+  [box setWantsLayer:YES];
+  box.layer.cornerRadius = 10.0;
+  box.layer.backgroundColor = [[NSColor colorWithCalibratedWhite:0.5 alpha:0.05] CGColor];
+  
+  NSStackView *hstack = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [hstack setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+  [hstack setSpacing:12.0];
+  [hstack setAlignment:NSLayoutAttributeCenterY];
+  
+  NSBox *avatar = [[NSBox alloc] initWithFrame:NSZeroRect];
+  [avatar setBoxType:NSBoxCustom];
+  [avatar setBorderType:NSNoBorder];
+  [avatar setWantsLayer:YES];
+  avatar.layer.cornerRadius = 18.0;
+  avatar.layer.backgroundColor = [[NSColor systemBlueColor] CGColor];
+  [avatar.widthAnchor constraintEqualToConstant:36.0].active = YES;
+  [avatar.heightAnchor constraintEqualToConstant:36.0].active = YES;
+  
+  NSString *initial = titleStr.length > 0 ? [[titleStr substringToIndex:1] uppercaseString] : @"A";
+  NSTextField *initialLabel = [NSTextField labelWithString:initial];
+  [initialLabel setFont:[NSFont boldSystemFontOfSize:16.0]];
+  [initialLabel setTextColor:[NSColor whiteColor]];
+  [initialLabel setAlignment:NSTextAlignmentCenter];
+  [avatar setContentView:initialLabel];
+  
+  NSStackView *vstack = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [vstack setOrientation:NSUserInterfaceLayoutOrientationVertical];
+  [vstack setSpacing:2.0];
+  [vstack setAlignment:NSLayoutAttributeLeading];
+  
+  NSTextField *titleLabel = [NSTextField labelWithString:titleStr];
+  [titleLabel setFont:[NSFont systemFontOfSize:13.0 weight:NSFontWeightBold]];
+  if (self.currentFontColor) {
+    [titleLabel setTextColor:self.currentFontColor];
+  }
+  [titleLabel setTag:101];
+  
+  NSTextField *subLabel = [NSTextField labelWithString:subStr];
+  [subLabel setFont:[NSFont systemFontOfSize:11.0 weight:NSFontWeightRegular]];
+  [subLabel setTextColor:[NSColor secondaryLabelColor]];
+  [subLabel setTag:102];
+  
+  [vstack addArrangedSubview:titleLabel];
+  [vstack addArrangedSubview:subLabel];
+  
+  NSBox *badge = [[NSBox alloc] initWithFrame:NSZeroRect];
+  [badge setBoxType:NSBoxCustom];
+  [badge setBorderType:NSNoBorder];
+  [badge setContentViewMargins:NSMakeSize(8, 3)];
+  [badge setWantsLayer:YES];
+  badge.layer.cornerRadius = 8.0;
+  
+  NSTextField *badgeLabel = [NSTextField labelWithString:statusStr];
+  [badgeLabel setFont:[NSFont boldSystemFontOfSize:10.0]];
+  [badgeLabel setTag:103];
+  
+  NSColor *bColor = [NSColor colorWithCalibratedWhite:0.5 alpha:0.15];
+  NSColor *tColor = [NSColor secondaryLabelColor];
+  NSString *st = [statusStr lowercaseString];
+  if ([st isEqualToString:@"online"] || [st isEqualToString:@"active"] || [st isEqualToString:@"success"]) {
+    bColor = [NSColor colorWithCalibratedRed:0.18 green:0.49 blue:0.20 alpha:0.15];
+    tColor = [NSColor systemGreenColor];
+  } else if ([st isEqualToString:@"busy"] || [st isEqualToString:@"warning"]) {
+    bColor = [NSColor colorWithCalibratedRed:0.95 green:0.60 blue:0.00 alpha:0.15];
+    tColor = [NSColor systemOrangeColor];
+  } else if ([st isEqualToString:@"offline"] || [st isEqualToString:@"error"]) {
+    bColor = [NSColor colorWithCalibratedRed:0.83 green:0.18 blue:0.18 alpha:0.15];
+    tColor = [NSColor systemRedColor];
+  }
+  badge.layer.backgroundColor = [bColor CGColor];
+  [badgeLabel setTextColor:tColor];
+  [badge setContentView:badgeLabel];
+  [badge setIdentifier:@"104"];
+
+  
+  [hstack addArrangedSubview:avatar];
+  [hstack addArrangedSubview:vstack];
+  [hstack addArrangedSubview:badge];
+  
+  [box setContentView:hstack];
+  
+  self.controlsByName[[name lowercaseString]] = box;
+  [self addControlToLayout:box];
+  return box;
+}
+
+- (NSView *)makeTimePickerWithName:(NSString *)name time:(NSString *)timeString {
+  NSDatePicker *picker = [[NSDatePicker alloc] initWithFrame:NSZeroRect];
+  [picker setDatePickerStyle:NSDatePickerStyleTextFieldAndStepper];
+  [picker setDatePickerMode:NSDatePickerModeSingle];
+  [picker setDatePickerElements:NSDatePickerElementFlagHourMinuteSecond];
+  [picker setTarget:self];
+  [picker setAction:@selector(handleInputChanged:)];
+  [picker setWantsLayer:YES];
+  
+  if (timeString && timeString.length > 0) {
+    NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+    [formatter setDateFormat:@"HH:mm:ss"];
+    NSDate *date = [formatter dateFromString:timeString];
+    if (!date) {
+      [formatter setDateFormat:@"HH:mm"];
+      date = [formatter dateFromString:timeString];
+    }
+    if (date) {
+      [picker setDateValue:date];
+    }
+    [formatter release];
+  }
+  
+  self.controlsByName[[name lowercaseString]] = picker;
+  [self addControlToLayout:picker];
+  return picker;
+}
+
+- (void)makeTrayIconWithName:(NSString *)name symbol:(NSString *)symbolName title:(NSString *)title {
+  NSStatusItem *item = [[NSStatusBar systemStatusBar] statusItemWithLength:NSVariableStatusItemLength];
+  if (@available(macOS 11.0, *)) {
+    if (symbolName && symbolName.length > 0) {
+      NSImage *img = [NSImage imageWithSystemSymbolName:symbolName accessibilityDescription:nil];
+      if (img) {
+        item.button.image = img;
+      }
+    }
+  }
+  if (title && title.length > 0) {
+    item.button.title = title;
+  }
+  if (!self.trayIconsByName) {
+    self.trayIconsByName = [NSMutableDictionary dictionary];
+  }
+  self.trayIconsByName[[name lowercaseString]] = item;
+}
+
+- (NSView *)makeCollapsibleSectionWithName:(NSString *)name title:(NSString *)title expanded:(BOOL)expanded {
+  NSBox *box = [[NSBox alloc] initWithFrame:NSZeroRect];
+  [box setBoxType:NSBoxCustom];
+  [box setBorderType:NSLineBorder];
+  [box setBorderWidth:1.0];
+  [box setBorderColor:[NSColor colorWithCalibratedWhite:0.5 alpha:0.2]];
+  [box setContentViewMargins:NSMakeSize(12, 10)];
+  [box setWantsLayer:YES];
+  box.layer.cornerRadius = 8.0;
+  box.layer.backgroundColor = [[NSColor colorWithCalibratedWhite:0.5 alpha:0.05] CGColor];
+  
+  NSStackView *hstack = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [hstack setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+  [hstack setSpacing:8.0];
+  [hstack setAlignment:NSLayoutAttributeCenterY];
+  
+  NSButton *toggle = [NSButton buttonWithTitle:@"" target:self action:@selector(handleDisclosureClicked:)];
+  [toggle setBezelStyle:NSBezelStyleDisclosure];
+  [toggle setButtonType:NSButtonTypePushOnPushOff];
+  [toggle setState:expanded ? NSControlStateValueOn : NSControlStateValueOff];
+  [toggle setIdentifier:@"101"];
+  
+  NSTextField *label = [NSTextField labelWithString:title];
+  [label setFont:[NSFont systemFontOfSize:13.0 weight:NSFontWeightBold]];
+  if (self.currentFontColor) {
+    [label setTextColor:self.currentFontColor];
+  }
+  [label setTag:102];
+  
+  [hstack addArrangedSubview:toggle];
+  [hstack addArrangedSubview:label];
+  
+  [box setContentView:hstack];
+  
+  self.controlsByName[[name lowercaseString]] = box;
+  [self addControlToLayout:box];
+  return box;
+}
 @end
+
+
 
 // C Bridge functions
 static NSVisualEffectMaterial materialFromString(NSString *materialStr) {
@@ -4998,6 +5288,227 @@ void *window_add_icon_segments_control(main__WindowInfo *info, const char *name,
   }
   return (__bridge void *)seg;
 }
+
+void window_set_banner_value(main__WindowInfo *info, const char *name, const char *text) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    NSView *view = [delegate viewForControlName:nsstring(name)];
+    if ([view isKindOfClass:[NSBox class]]) {
+      NSBox *box = (NSBox *)view;
+      NSView *content = [box contentView];
+      if ([content isKindOfClass:[NSTextField class]]) {
+        [(NSTextField *)content setStringValue:nsstring(text)];
+      }
+    }
+  });
+}
+
+void window_set_vertical_slider_value(main__WindowInfo *info, const char *name, int value) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    NSView *view = [delegate viewForControlName:nsstring(name)];
+    if ([view isKindOfClass:[NSSlider class]]) {
+      [(NSSlider *)view setIntegerValue:value];
+    }
+  });
+}
+
+void window_set_chip_group_selected(main__WindowInfo *info, const char *name, const char *selected) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    NSView *view = [delegate viewForControlName:nsstring(name)];
+    if ([view isKindOfClass:[NSSegmentedControl class]]) {
+      NSSegmentedControl *seg = (NSSegmentedControl *)view;
+      NSString *sel = nsstring(selected);
+      for (NSInteger i = 0; i < seg.segmentCount; i++) {
+        if ([[seg labelForSegment:i] isEqualToString:sel]) {
+          [seg setSelectedSegment:i];
+          break;
+        }
+      }
+    }
+  });
+}
+
+void window_set_badge_value(main__WindowInfo *info, const char *name, const char *text, const char *styleStr) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    NSView *view = [delegate viewForControlName:nsstring(name)];
+    if ([view isKindOfClass:[NSBox class]]) {
+      NSBox *box = (NSBox *)view;
+      NSView *content = [box contentView];
+      if ([content isKindOfClass:[NSTextField class]]) {
+        [(NSTextField *)content setStringValue:nsstring(text)];
+      }
+      if (styleStr) {
+        NSString *style = [nsstring(styleStr) lowercaseString];
+        NSColor *bgColor = [NSColor colorWithCalibratedWhite:0.5 alpha:0.15];
+        NSColor *textColor = [NSColor secondaryLabelColor];
+        if ([style isEqualToString:@"success"]) {
+          bgColor = [NSColor colorWithCalibratedRed:0.18 green:0.49 blue:0.20 alpha:0.15];
+          textColor = [NSColor systemGreenColor];
+        } else if ([style isEqualToString:@"error"]) {
+          bgColor = [NSColor colorWithCalibratedRed:0.83 green:0.18 blue:0.18 alpha:0.15];
+          textColor = [NSColor systemRedColor];
+        } else if ([style isEqualToString:@"warning"]) {
+          bgColor = [NSColor colorWithCalibratedRed:0.95 green:0.60 blue:0.00 alpha:0.15];
+          textColor = [NSColor systemOrangeColor];
+        } else if ([style isEqualToString:@"info"]) {
+          bgColor = [NSColor colorWithCalibratedRed:0.12 green:0.45 blue:0.74 alpha:0.15];
+          textColor = [NSColor systemBlueColor];
+        }
+        box.layer.backgroundColor = [bgColor CGColor];
+        if ([content isKindOfClass:[NSTextField class]]) {
+          [(NSTextField *)content setTextColor:textColor];
+        }
+      }
+    }
+  });
+}
+
+void *window_add_status_indicator_control(main__WindowInfo *info, const char *name, const char *label, const char *status) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeStatusIndicatorWithName:nsstring(name) label:nsstring(label) status:nsstring(status)];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return (__bridge void *)control;
+}
+
+void window_set_status_indicator_value(main__WindowInfo *info, const char *name, const char *statusStr) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    NSView *view = [delegate viewForControlName:nsstring(name)];
+    if ([view isKindOfClass:[NSStackView class]]) {
+      NSStackView *stack = (NSStackView *)view;
+      for (NSView *sub in stack.arrangedSubviews) {
+        if ([sub.identifier isEqualToString:@"101"] && [sub isKindOfClass:[NSBox class]]) {
+          NSBox *dot = (NSBox *)sub;
+          NSColor *dotColor = [NSColor secondaryLabelColor];
+          NSString *st = [nsstring(statusStr) lowercaseString];
+          if ([st isEqualToString:@"active"] || [st isEqualToString:@"online"] || [st isEqualToString:@"success"]) {
+            dotColor = [NSColor systemGreenColor];
+          } else if ([st isEqualToString:@"warning"] || [st isEqualToString:@"busy"]) {
+            dotColor = [NSColor systemOrangeColor];
+          } else if ([st isEqualToString:@"error"] || [st isEqualToString:@"offline"]) {
+            dotColor = [NSColor systemRedColor];
+          }
+          dot.layer.backgroundColor = [dotColor CGColor];
+        }
+      }
+    }
+  });
+}
+
+void *window_add_metric_meter_control(main__WindowInfo *info, const char *name, const char *title, int value, int min_val, int max_val, const char *unit) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeMetricMeterWithName:nsstring(name) title:nsstring(title) value:(double)value minVal:(double)min_val maxVal:(double)max_val unit:nsstring(unit)];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return (__bridge void *)control;
+}
+
+void window_set_metric_meter_value(main__WindowInfo *info, const char *name, int value) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    NSView *view = [delegate viewForControlName:nsstring(name)];
+    if ([view isKindOfClass:[NSBox class]]) {
+      NSBox *box = (NSBox *)view;
+      NSView *content = [box contentView];
+      if ([content isKindOfClass:[NSStackView class]]) {
+        NSStackView *vstack = (NSStackView *)content;
+        for (NSView *vsub in vstack.arrangedSubviews) {
+          if ([vsub isKindOfClass:[NSStackView class]]) {
+            NSStackView *hstack = (NSStackView *)vsub;
+            for (NSView *hsub in hstack.arrangedSubviews) {
+              if (hsub.tag == 101 && [hsub isKindOfClass:[NSTextField class]]) {
+                [(NSTextField *)hsub setIntegerValue:value];
+              }
+            }
+          } else if ([vsub.identifier isEqualToString:@"102"] && [vsub isKindOfClass:[NSProgressIndicator class]]) {
+            [(NSProgressIndicator *)vsub setDoubleValue:(double)value];
+          }
+        }
+      }
+    }
+  });
+}
+
+void *window_add_avatar_card_control(main__WindowInfo *info, const char *name, const char *title, const char *subtitle, const char *status) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeAvatarCardWithName:nsstring(name) title:nsstring(title) subtitle:nsstring(subtitle) status:nsstring(status)];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return (__bridge void *)control;
+}
+
+void window_set_avatar_card_value(main__WindowInfo *info, const char *name, const char *title, const char *subtitle, const char *statusStr) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    NSView *view = [delegate viewForControlName:nsstring(name)];
+    if ([view isKindOfClass:[NSBox class]]) {
+      NSBox *box = (NSBox *)view;
+      NSView *content = [box contentView];
+      if ([content isKindOfClass:[NSStackView class]]) {
+        NSStackView *hstack = (NSStackView *)content;
+        for (NSView *hsub in hstack.arrangedSubviews) {
+          if ([hsub isKindOfClass:[NSStackView class]]) {
+            NSStackView *vstack = (NSStackView *)hsub;
+            for (NSView *vsub in vstack.arrangedSubviews) {
+              if (vsub.tag == 101 && [vsub isKindOfClass:[NSTextField class]]) {
+                if (title) [(NSTextField *)vsub setStringValue:nsstring(title)];
+              } else if (vsub.tag == 102 && [vsub isKindOfClass:[NSTextField class]]) {
+                if (subtitle) [(NSTextField *)vsub setStringValue:nsstring(subtitle)];
+              }
+            }
+          } else if ([hsub.identifier isEqualToString:@"104"] && [hsub isKindOfClass:[NSBox class]]) {
+            NSBox *badge = (NSBox *)hsub;
+            if (statusStr) {
+              NSString *st = [nsstring(statusStr) lowercaseString];
+              NSColor *bColor = [NSColor colorWithCalibratedWhite:0.5 alpha:0.15];
+              NSColor *tColor = [NSColor secondaryLabelColor];
+              if ([st isEqualToString:@"online"] || [st isEqualToString:@"active"] || [st isEqualToString:@"success"]) {
+                bColor = [NSColor colorWithCalibratedRed:0.18 green:0.49 blue:0.20 alpha:0.15];
+                tColor = [NSColor systemGreenColor];
+              } else if ([st isEqualToString:@"busy"] || [st isEqualToString:@"warning"]) {
+                bColor = [NSColor colorWithCalibratedRed:0.95 green:0.60 blue:0.00 alpha:0.15];
+                tColor = [NSColor systemOrangeColor];
+              } else if ([st isEqualToString:@"offline"] || [st isEqualToString:@"error"]) {
+                bColor = [NSColor colorWithCalibratedRed:0.83 green:0.18 blue:0.18 alpha:0.15];
+                tColor = [NSColor systemRedColor];
+              }
+              badge.layer.backgroundColor = [bColor CGColor];
+              NSView *bContent = [badge contentView];
+              if ([bContent isKindOfClass:[NSTextField class]]) {
+                [(NSTextField *)bContent setStringValue:nsstring(statusStr)];
+                [(NSTextField *)bContent setTextColor:tColor];
+              }
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+
 void window_begin_split_view(main__WindowInfo *info, const char *name, int vertical) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
   void (^runBlock)(void) = ^{
@@ -10024,3 +10535,127 @@ void window_grid_set_cell_enabled(main__WindowInfo *info, const char *name, int 
     dispatch_sync(dispatch_get_main_queue(), runBlock);
   }
 }
+
+void *window_add_time_picker_control(main__WindowInfo *info, const char *name, const char *time) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeTimePickerWithName:nsstring(name) time:nsstring(time)];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return (__bridge void *)control;
+}
+
+void window_set_time_picker_value(main__WindowInfo *info, const char *name, const char *time) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    NSView *view = [delegate viewForControlName:nsstring(name)];
+    if ([view isKindOfClass:[NSDatePicker class]]) {
+      NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+      [formatter setDateFormat:@"HH:mm:ss"];
+      NSDate *date = [formatter dateFromString:nsstring(time)];
+      if (!date) {
+        [formatter setDateFormat:@"HH:mm"];
+        date = [formatter dateFromString:nsstring(time)];
+      }
+      if (date) {
+        [(NSDatePicker *)view setDateValue:date];
+      }
+      [formatter release];
+    }
+  });
+}
+
+const char *window_get_time_picker_value(main__WindowInfo *info, const char *name) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block const char *res = "";
+  void (^runBlock)(void) = ^{
+    NSView *view = [delegate viewForControlName:nsstring(name)];
+    if ([view isKindOfClass:[NSDatePicker class]]) {
+      NSDate *date = [(NSDatePicker *)view dateValue];
+      NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+      [formatter setDateFormat:@"HH:mm:ss"];
+      NSString *str = [formatter stringFromDate:date];
+      if (str) {
+        res = strdup([str UTF8String]);
+      }
+      [formatter release];
+    }
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return res;
+}
+
+void window_add_tray_icon_control(main__WindowInfo *info, const char *name, const char *symbol, const char *title) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate makeTrayIconWithName:nsstring(name) symbol:nsstring(symbol) title:nsstring(title)];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+void window_set_tray_icon_value(main__WindowInfo *info, const char *name, const char *symbol, const char *title) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    NSStatusItem *item = delegate.trayIconsByName[[nsstring(name) lowercaseString]];
+    if (item) {
+      if (@available(macOS 11.0, *)) {
+        if (symbol && strlen(symbol) > 0) {
+          NSImage *img = [NSImage imageWithSystemSymbolName:nsstring(symbol) accessibilityDescription:nil];
+          if (img) {
+            item.button.image = img;
+          }
+        }
+      }
+      if (title && strlen(title) > 0) {
+        item.button.title = nsstring(title);
+      }
+    }
+  });
+}
+
+void *window_add_collapsible_section_control(main__WindowInfo *info, const char *name, const char *title, int expanded) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeCollapsibleSectionWithName:nsstring(name) title:nsstring(title) expanded:expanded == 1];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return (__bridge void *)control;
+}
+
+void window_set_collapsible_section_expanded(main__WindowInfo *info, const char *name, int expanded) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    NSView *view = [delegate viewForControlName:nsstring(name)];
+    if ([view isKindOfClass:[NSBox class]]) {
+      NSBox *box = (NSBox *)view;
+      NSView *content = [box contentView];
+      if ([content isKindOfClass:[NSStackView class]]) {
+        NSStackView *hstack = (NSStackView *)content;
+        for (NSView *sub in hstack.arrangedSubviews) {
+          if ([sub.identifier isEqualToString:@"101"] && [sub isKindOfClass:[NSButton class]]) {
+            [(NSButton *)sub setState:expanded ? NSControlStateValueOn : NSControlStateValueOff];
+          }
+        }
+      }
+    }
+  });
+}
+
