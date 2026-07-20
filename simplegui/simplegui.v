@@ -391,6 +391,31 @@ fn C.window_add_color_palette_control(&WindowInfo, &u8, &&u8, int, &u8) voidptr
 fn C.window_set_color_palette_selected(&WindowInfo, &u8, &u8)
 fn C.window_get_color_palette_selected(&WindowInfo, &u8) &u8
 
+fn C.window_add_timeline_control(&WindowInfo, &u8, int) voidptr
+fn C.window_add_timeline_item(&WindowInfo, &u8, &u8, &u8, &u8, &u8)
+
+fn C.window_add_metric_card_control(&WindowInfo, &u8, &u8, &u8, &u8, &u8) voidptr
+
+fn C.window_set_metric_card_value(&WindowInfo, &u8, &u8, &u8)
+
+fn C.window_add_tab_pills_control(&WindowInfo, &u8, &&u8, int, &u8) voidptr
+fn C.window_set_tab_pills_active(&WindowInfo, &u8, &u8)
+fn C.window_get_tab_pills_active(&WindowInfo, &u8) &u8
+
+fn C.window_add_transfer_list_control(&WindowInfo, &u8, &&u8, int, &&u8, int, bool) voidptr
+
+
+fn C.window_add_audio_waveform_control(&WindowInfo, &u8, &f64, int, int) voidptr
+fn C.window_set_audio_waveform_data(&WindowInfo, &u8, &f64, int)
+
+fn C.window_add_rating_breakdown_control(&WindowInfo, &u8, f64, int, &f64, int) voidptr
+fn C.window_set_rating_breakdown_data(&WindowInfo, &u8, f64, int, &f64, int)
+
+fn C.window_add_code_view_control(&WindowInfo, &u8, &u8, &u8, int) voidptr
+fn C.window_set_code_view_text(&WindowInfo, &u8, &u8)
+fn C.window_get_code_view_text(&WindowInfo, &u8) &u8
+
+
 
 
 
@@ -6946,6 +6971,300 @@ pub fn (win &SimpleWindow) get_color_palette_selected(name string) string {
 	}
 	return ''
 }
+
+// add_timeline adds a vertical milestone timeline event list widget.
+pub fn (win &SimpleWindow) add_timeline(name string, height int) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('timeline')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name: real_name
+			kind: 'timeline'
+			value: ''
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_timeline_control(win.window_info, real_name.str, height)
+	}
+	return win
+}
+
+// timeline inserts an auto-named timeline widget.
+pub fn (win &SimpleWindow) timeline(height int) &SimpleWindow {
+	return win.add_timeline('', height)
+}
+
+// add_timeline_item appends a milestone item to a timeline widget.
+pub fn (win &SimpleWindow) add_timeline_item(name string, title string, subtitle string, time_str string, status string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_add_timeline_item(win.window_info, name.str, title.str, subtitle.str, time_str.str, status.str)
+	}
+	return win
+}
+
+// add_metric_card adds a KPI metric stats card widget.
+
+pub fn (win &SimpleWindow) add_metric_card(name string, title string, value string, change_badge string, subtitle string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('metric_card')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name: real_name
+			kind: 'metric_card'
+			value: value
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_metric_card_control(win.window_info, real_name.str, title.str, value.str, change_badge.str, subtitle.str)
+	}
+	return win
+}
+
+// metric_card inserts an auto-named metric card widget.
+pub fn (win &SimpleWindow) metric_card(title string, value string, change_badge string, subtitle string) &SimpleWindow {
+	return win.add_metric_card('', title, value, change_badge, subtitle)
+}
+
+// set_metric_card_value updates metric card numeric value and change badge.
+pub fn (win &SimpleWindow) set_metric_card_value(name string, value string, change_badge string) &SimpleWindow {
+	idx := win.find_control(name)
+	if idx >= 0 {
+		unsafe {
+			mut w := &SimpleWindow(win)
+			w.controls[idx].value = value
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_set_metric_card_value(win.window_info, name.str, value.str, change_badge.str)
+	}
+	return win
+}
+
+// add_tab_pills adds a pill-styled segmented tab bar widget.
+pub fn (win &SimpleWindow) add_tab_pills(name string, items []string, selected string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('tab_pills')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name: real_name
+			kind: 'tab_pills'
+			value: selected
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		c_items := items.map(it.str)
+		C.window_add_tab_pills_control(win.window_info, real_name.str, c_items.data, c_items.len, selected.str)
+	}
+	return win
+}
+
+// tab_pills inserts an auto-named tab pills widget.
+pub fn (win &SimpleWindow) tab_pills(items []string, selected string) &SimpleWindow {
+	return win.add_tab_pills('', items, selected)
+}
+
+// set_tab_pills_active updates active tab in tab pills widget.
+pub fn (win &SimpleWindow) set_tab_pills_active(name string, selected string) &SimpleWindow {
+	idx := win.find_control(name)
+	if idx >= 0 {
+		unsafe {
+			mut w := &SimpleWindow(win)
+			w.controls[idx].value = selected
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_set_tab_pills_active(win.window_info, name.str, selected.str)
+	}
+	return win
+}
+
+// get_tab_pills_active retrieves currently active tab title.
+pub fn (win &SimpleWindow) get_tab_pills_active(name string) string {
+	if win.window_info != unsafe { nil } {
+		unsafe {
+			res := C.window_get_tab_pills_active(win.window_info, name.str)
+			if res != nil {
+				return tos3(res)
+			}
+		}
+	}
+	idx := win.find_control(name)
+	if idx >= 0 {
+		return win.controls[idx].value
+	}
+	return ''
+}
+
+// add_transfer_list adds a dual-column transfer list widget (single-select mode by default).
+pub fn (win &SimpleWindow) add_transfer_list(name string, available []string, selected []string) &SimpleWindow {
+	return win.add_transfer_list_opts(name, available, selected, false)
+}
+
+// add_transfer_list_opts adds a dual-column transfer list widget with custom multi_select option.
+pub fn (win &SimpleWindow) add_transfer_list_opts(name string, available []string, selected []string, multi_select bool) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('transfer_list')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name: real_name
+			kind: 'transfer_list'
+			value: ''
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		c_avail := available.map(it.str)
+		c_sel := selected.map(it.str)
+		C.window_add_transfer_list_control(win.window_info, real_name.str, c_avail.data, c_avail.len, c_sel.data, c_sel.len, multi_select)
+	}
+	return win
+}
+
+// transfer_list inserts an auto-named transfer list widget.
+pub fn (win &SimpleWindow) transfer_list(available []string, selected []string) &SimpleWindow {
+	return win.add_transfer_list_opts('', available, selected, false)
+}
+
+// transfer_list_opts inserts an auto-named transfer list widget with multi_select option.
+pub fn (win &SimpleWindow) transfer_list_opts(available []string, selected []string, multi_select bool) &SimpleWindow {
+	return win.add_transfer_list_opts('', available, selected, multi_select)
+}
+
+
+// add_audio_waveform adds an audio sound level amplitude waveform visualizer widget.
+pub fn (win &SimpleWindow) add_audio_waveform(name string, amplitudes []f64, height int) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('audio_waveform')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name: real_name
+			kind: 'audio_waveform'
+			value: ''
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_audio_waveform_control(win.window_info, real_name.str, amplitudes.data, amplitudes.len, height)
+	}
+	return win
+}
+
+// audio_waveform inserts an auto-named audio waveform widget.
+pub fn (win &SimpleWindow) audio_waveform(amplitudes []f64, height int) &SimpleWindow {
+	return win.add_audio_waveform('', amplitudes, height)
+}
+
+// set_audio_waveform_data updates amplitude data points in audio waveform visualizer.
+pub fn (win &SimpleWindow) set_audio_waveform_data(name string, amplitudes []f64) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_add_audio_waveform_control(win.window_info, name.str, amplitudes.data, amplitudes.len, 60)
+	}
+	return win
+}
+
+// add_rating_breakdown adds a rating summary and percentage breakdown bar view.
+pub fn (win &SimpleWindow) add_rating_breakdown(name string, avg_score f64, total_reviews int, star_percentages []f64) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('rating_breakdown')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name: real_name
+			kind: 'rating_breakdown'
+			value: avg_score.str()
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_rating_breakdown_control(win.window_info, real_name.str, avg_score, total_reviews, star_percentages.data, star_percentages.len)
+	}
+	return win
+}
+
+// rating_breakdown inserts an auto-named rating breakdown widget.
+pub fn (win &SimpleWindow) rating_breakdown(avg_score f64, total_reviews int, star_percentages []f64) &SimpleWindow {
+	return win.add_rating_breakdown('', avg_score, total_reviews, star_percentages)
+}
+
+// set_rating_breakdown_data updates rating score and percentage data.
+pub fn (win &SimpleWindow) set_rating_breakdown_data(name string, avg_score f64, total_reviews int, star_percentages []f64) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_rating_breakdown_data(win.window_info, name.str, avg_score, total_reviews, star_percentages.data, star_percentages.len)
+	}
+	return win
+}
+
+// add_code_view adds a dark monospaced code snippet viewer with language header.
+pub fn (win &SimpleWindow) add_code_view(name string, lang string, code_text string, height int) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('code_view')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name: real_name
+			kind: 'code_view'
+			value: code_text
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_code_view_control(win.window_info, real_name.str, lang.str, code_text.str, height)
+	}
+	return win
+}
+
+// code_view inserts an auto-named code view widget.
+pub fn (win &SimpleWindow) code_view(lang string, code_text string, height int) &SimpleWindow {
+	return win.add_code_view('', lang, code_text, height)
+}
+
+// set_code_view_text updates code content in code viewer widget.
+pub fn (win &SimpleWindow) set_code_view_text(name string, code_text string) &SimpleWindow {
+	idx := win.find_control(name)
+	if idx >= 0 {
+		unsafe {
+			mut w := &SimpleWindow(win)
+			w.controls[idx].value = code_text
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_set_code_view_text(win.window_info, name.str, code_text.str)
+	}
+	return win
+}
+
+// get_code_view_text retrieves current raw code text from code viewer.
+pub fn (win &SimpleWindow) get_code_view_text(name string) string {
+	if win.window_info != unsafe { nil } {
+		unsafe {
+			res := C.window_get_code_view_text(win.window_info, name.str)
+			if res != nil {
+				return tos3(res)
+			}
+		}
+	}
+	idx := win.find_control(name)
+	if idx >= 0 {
+		return win.controls[idx].value
+	}
+	return ''
+}
+
 
 
 

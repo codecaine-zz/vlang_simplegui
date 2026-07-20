@@ -410,7 +410,34 @@ void *window_add_color_palette_control(main__WindowInfo *info, const char *name,
 void window_set_color_palette_selected(main__WindowInfo *info, const char *name, const char *hex_color);
 const char *window_get_color_palette_selected(main__WindowInfo *info, const char *name);
 
+// Additional Controls (Timeline, Metric Card, Tab Pills, Transfer List, Audio Waveform, Rating Breakdown, Code View)
+void *window_add_timeline_control(main__WindowInfo *info, const char *name, int height);
+void window_add_timeline_item(main__WindowInfo *info, const char *name, const char *title, const char *subtitle, const char *time_str, const char *status);
+
+void *window_add_metric_card_control(main__WindowInfo *info, const char *name, const char *title, const char *value, const char *change_badge, const char *subtitle);
+
+void window_set_metric_card_value(main__WindowInfo *info, const char *name, const char *value, const char *change_badge);
+
+void *window_add_tab_pills_control(main__WindowInfo *info, const char *name, const char **items, int count, const char *selected);
+void window_set_tab_pills_active(main__WindowInfo *info, const char *name, const char *selected);
+const char *window_get_tab_pills_active(main__WindowInfo *info, const char *name);
+
+void *window_add_transfer_list_control(main__WindowInfo *info, const char *name, const char **available, int avail_count, const char **selected, int sel_count, bool multi_select);
+
+const char **window_get_transfer_list_selected(main__WindowInfo *info, const char *name, int *out_count);
+
+void *window_add_audio_waveform_control(main__WindowInfo *info, const char *name, const double *amplitudes, int count, int height);
+void window_set_audio_waveform_data(main__WindowInfo *info, const char *name, const double *amplitudes, int count);
+
+void *window_add_rating_breakdown_control(main__WindowInfo *info, const char *name, double avg_score, int total_reviews, const double *star_percentages, int count);
+void window_set_rating_breakdown_data(main__WindowInfo *info, const char *name, double avg_score, int total_reviews, const double *star_percentages, int count);
+
+void *window_add_code_view_control(main__WindowInfo *info, const char *name, const char *lang, const char *code_text, int height);
+void window_set_code_view_text(main__WindowInfo *info, const char *name, const char *code_text);
+const char *window_get_code_view_text(main__WindowInfo *info, const char *name);
+
 #endif
+
 
 
 

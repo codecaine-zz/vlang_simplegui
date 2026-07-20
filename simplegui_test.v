@@ -2235,6 +2235,51 @@ fn test_additional_new_controls() {
 	assert win.get_color_palette_selected('palette') == '#00FF00'
 }
 
+fn test_even_more_new_controls() {
+	mut win := simplegui.new_simple_window('Even More Controls Test', 200, 200)
+
+	// 1. Timeline
+	win.add_timeline('flow_timeline', 150)
+	assert win.has_control('flow_timeline') == true
+	win.add_timeline_item('flow_timeline', 'Start', 'Init task', '09:00', 'done')
+	win.clear_timeline('flow_timeline')
+
+	// 2. Metric Card
+	win.add_metric_card('rev_card', 'Total Revenue', '$12,450', '+14.2%', 'vs last month')
+	assert win.has_control('rev_card') == true
+	win.set_metric_card_value('rev_card', '$15,800', '+18.5%')
+
+	// 3. Tab Pills
+	win.add_tab_pills('view_tabs', ['Overview', 'Analytics', 'Reports'], 'Overview')
+	assert win.has_control('view_tabs') == true
+	win.set_tab_pills_active('view_tabs', 'Analytics')
+	assert win.get_tab_pills_active('view_tabs') == 'Analytics'
+
+	// 4. Transfer List
+	win.add_transfer_list('role_picker', ['Admin', 'Editor', 'Viewer'], ['Owner'])
+	assert win.has_control('role_picker') == true
+	win.add_transfer_list_opts('multi_picker', ['Dev', 'QA', 'Ops'], ['Manager'], true)
+	assert win.has_control('multi_picker') == true
+
+
+	// 5. Audio Waveform Visualizer
+	win.add_audio_waveform('voice_wave', [0.2, 0.5, 0.8, 0.4, 0.9, 0.3], 50)
+	assert win.has_control('voice_wave') == true
+	win.set_audio_waveform_data('voice_wave', [0.1, 0.3, 0.6])
+
+	// 6. Rating Breakdown
+	win.add_rating_breakdown('reviews', 4.8, 120, [75.0, 15.0, 5.0, 3.0, 2.0])
+	assert win.has_control('reviews') == true
+	win.set_rating_breakdown_data('reviews', 4.9, 130, [80.0, 12.0, 4.0, 2.0, 2.0])
+
+	// 7. Code View
+	win.add_code_view('snippet', 'v', 'fn main() {\n\tprintln("Hello")\n}', 120)
+	assert win.has_control('snippet') == true
+	win.set_code_view_text('snippet', 'fn main() { println("Updated") }')
+	assert win.get_code_view_text('snippet') == 'fn main() { println("Updated") }'
+}
+
+
 
 
 

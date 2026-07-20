@@ -455,7 +455,16 @@ For common forms, these helpers reduce boilerplate and keep the API friendly for
 - `win.add_sparkline(name string, values []f64, height int) &SimpleWindow` and `win.set_sparkline_data(name string, values []f64) &SimpleWindow` create and update inline trend line charts.
 - `win.add_pin_code(name string, digits int) &SimpleWindow`, `win.set_pin_code_value(name string, code string) &SimpleWindow`, and `win.get_pin_code_value(name string) string` create digit verification PIN/OTP input fields.
 - `win.add_color_palette(name string, hex_colors []string, selected string) &SimpleWindow`, `win.set_color_palette_selected(name string, hex_color string) &SimpleWindow`, and `win.get_color_palette_selected(name string) string` create swatch color palette selectors.
+- `win.add_timeline(name string, height int) &SimpleWindow` and `win.add_timeline_item(name string, title string, subtitle string, time_str string, status string) &SimpleWindow` create and manage vertical milestone event timelines.
+- `win.add_metric_card(name string, title string, value string, change_badge string, subtitle string) &SimpleWindow` and `win.set_metric_card_value(name string, value string, change_badge string) &SimpleWindow` display KPI stats cards with trend badges.
+- `win.add_tab_pills(name string, items []string, selected string) &SimpleWindow`, `win.set_tab_pills_active(name string, selected string) &SimpleWindow`, and `win.get_tab_pills_active(name string) string` create pill-styled segmented tab bars.
+- `win.add_transfer_list(name string, available []string, selected []string) &SimpleWindow` and `win.add_transfer_list_opts(name string, available []string, selected []string, multi_select bool) &SimpleWindow` create a dual-column item transfer list picker with single-select or multi-select capabilities.
+
+- `win.add_audio_waveform(name string, amplitudes []f64, height int) &SimpleWindow` and `win.set_audio_waveform_data(name string, amplitudes []f64) &SimpleWindow` render sound level amplitude waveforms.
+- `win.add_rating_breakdown(name string, avg_score f64, total_reviews int, star_percentages []f64) &SimpleWindow` and `win.set_rating_breakdown_data(name string, avg_score f64, total_reviews int, star_percentages []f64) &SimpleWindow` display review rating scores and star percentage bars.
+- `win.add_code_view(name string, lang string, code_text string, height int) &SimpleWindow`, `win.set_code_view_text(name string, code_text string) &SimpleWindow`, and `win.get_code_view_text(name string) string` render dark monospaced code snippet blocks.
 - `win.add_form_from_struct[T](default_data T) &SimpleWindow` automatically generates input/checkbox/numeric fields side-by-side and vertically from a V struct using compile-time reflection.
+
 
 - `win.configure(callback fn (mut cfg WindowConfig)) &SimpleWindow` applies a small fluent configuration block for window title, dimensions, spacing, colors, and resize behavior.
 - `win.form(title string, callback VoidEventCallback) &SimpleWindow` and `win.section(title string, callback VoidEventCallback) &SimpleWindow` create grouped form containers with a lightweight builder feel.

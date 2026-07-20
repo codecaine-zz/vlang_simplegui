@@ -618,7 +618,26 @@ extern void vlang_dispatch_event(void *win_ptr, const char *name, const char *ev
 @property (nonatomic, retain) NSColor *fillColor;
 @end
 
+@interface AudioWaveformView : NSView
+@property (nonatomic, retain) NSArray<NSNumber *> *amplitudes;
+@property (nonatomic, retain) NSColor *barColor;
+@property (nonatomic, retain) NSColor *activeBarColor;
+@property (nonatomic, assign) double progress;
+@end
+
+@interface StarBarView : NSView
+@property (nonatomic, assign) double percentage;
+@property (nonatomic, assign) BOOL isSelected;
+@end
+
+@interface FlippedView : NSView
+@end
+
+
+
+
 @interface AppDelegate : NSObject <NSApplicationDelegate, NSWindowDelegate, NSTextFieldDelegate, NSTextViewDelegate, NSTableViewDataSource, NSTableViewDelegate, NSOutlineViewDataSource, NSOutlineViewDelegate, NSTabViewDelegate, NSToolbarDelegate, NSCollectionViewDataSource, NSCollectionViewDelegate>
+
 
 @property (nonatomic, assign) main__WindowParams params;
 @property (nonatomic, assign) void *win_ptr;
@@ -741,6 +760,34 @@ extern void vlang_dispatch_event(void *win_ptr, const char *name, const char *ev
 - (NSView *)makeColorPaletteWithName:(NSString *)name colors:(NSArray<NSString *> *)colors selected:(NSString *)selected;
 - (void)setColorPaletteSelected:(NSString *)hex forName:(NSString *)name;
 - (NSString *)colorPaletteSelectedForName:(NSString *)name;
+
+- (NSView *)makeTimelineWithName:(NSString *)name height:(int)height;
+- (void)addTimelineItemToName:(NSString *)name title:(NSString *)title subtitle:(NSString *)subtitle timeStr:(NSString *)timeStr status:(NSString *)status;
+
+- (NSView *)makeMetricCardWithName:(NSString *)name title:(NSString *)title value:(NSString *)value changeBadge:(NSString *)changeBadge subtitle:(NSString *)subtitle;
+
+- (void)setMetricCardValue:(NSString *)value changeBadge:(NSString *)changeBadge forName:(NSString *)name;
+
+- (NSView *)makeTabPillsWithName:(NSString *)name items:(NSArray<NSString *> *)items selected:(NSString *)selected;
+- (void)setTabPillsActive:(NSString *)selected forName:(NSString *)name;
+- (NSString *)tabPillsActiveForName:(NSString *)name;
+
+- (NSView *)makeTransferListWithName:(NSString *)name available:(NSArray<NSString *> *)available selected:(NSArray<NSString *> *)selected multiSelect:(BOOL)multiSelect;
+- (void)handleTransferItemClicked:(id)sender;
+
+
+- (NSArray<NSString *> *)transferListSelectedForName:(NSString *)name;
+
+- (NSView *)makeAudioWaveformWithName:(NSString *)name amplitudes:(NSArray<NSNumber *> *)amplitudes height:(int)height;
+- (void)setAudioWaveformAmplitudes:(NSArray<NSNumber *> *)amplitudes forName:(NSString *)name;
+
+- (NSView *)makeRatingBreakdownWithName:(NSString *)name avgScore:(double)avgScore totalReviews:(int)totalReviews starPercentages:(NSArray<NSNumber *> *)starPercentages;
+- (void)setRatingBreakdownData:(double)avgScore totalReviews:(int)totalReviews starPercentages:(NSArray<NSNumber *> *)starPercentages forName:(NSString *)name;
+
+- (NSView *)makeCodeViewWithName:(NSString *)name lang:(NSString *)lang codeText:(NSString *)codeText height:(int)height;
+- (void)setCodeViewText:(NSString *)codeText forName:(NSString *)name;
+- (NSString *)codeViewTextForName:(NSString *)name;
+
 
 
 
@@ -1284,6 +1331,103 @@ static NSColor *colorFromHexString(NSString *hexString) {
   [path stroke];
 }
 @end
+
+@implementation AudioWaveformView
+- (instancetype)initWithFrame:(NSRect)frameRect {
+  self = [super initWithFrame:frameRect];
+  if (self) {
+    _amplitudes = [[NSMutableArray alloc] init];
+    _barColor = [[NSColor colorWithRed:0.2 green:0.55 blue:0.95 alpha:0.35] retain];
+    _activeBarColor = [[NSColor colorWithRed:0.2 green:0.55 blue:0.95 alpha:1.0] retain];
+    _progress = 0.6;
+  }
+  return self;
+}
+
+- (void)dealloc {
+  [_amplitudes release];
+  [_barColor release];
+  [_activeBarColor release];
+  [super dealloc];
+}
+
+- (void)drawRect:(NSRect)dirtyRect {
+  [super drawRect:dirtyRect];
+  if (!_amplitudes || _amplitudes.count == 0) return;
+
+  NSRect bounds = [self bounds];
+  CGFloat w = bounds.size.width;
+  CGFloat h = bounds.size.height;
+  NSUInteger count = _amplitudes.count;
+  CGFloat gap = 3.0;
+  CGFloat barWidth = MAX(2.0, (w - (gap * (count - 1))) / (CGFloat)count);
+
+  for (NSUInteger i = 0; i < count; i++) {
+    double amp = MAX(0.08, MIN(1.0, [_amplitudes[i] doubleValue]));
+    CGFloat barH = MAX(4.0, h * amp);
+    CGFloat x = i * (barWidth + gap);
+    CGFloat y = (h - barH) / 2.0;
+    NSRect barRect = NSMakeRect(x, y, barWidth, barH);
+    NSBezierPath *barPath = [NSBezierPath bezierPathWithRoundedRect:barRect xRadius:barWidth/2.0 yRadius:barWidth/2.0];
+    
+    if ((CGFloat)i / (CGFloat)count <= _progress) {
+      [_activeBarColor setFill];
+    } else {
+      [_barColor setFill];
+    }
+    [barPath fill];
+  }
+}
+
+- (void)mouseDown:(NSEvent *)event {
+  NSPoint pt = [self convertPoint:[event locationInWindow] fromView:nil];
+  self.progress = MAX(0.0, MIN(1.0, pt.x / MAX(1.0, self.bounds.size.width)));
+  [self setNeedsDisplay:YES];
+  if (self.identifier) {
+    AppDelegate *del = (AppDelegate *)[NSApp delegate];
+    if (del && del.win_ptr) {
+      vlang_dispatch_event(del.win_ptr, [self.identifier UTF8String], "change", [[NSString stringWithFormat:@"%.2f", self.progress] UTF8String]);
+    }
+  }
+}
+
+- (void)mouseDragged:(NSEvent *)event {
+  [self mouseDown:event];
+}
+@end
+
+@implementation StarBarView
+- (void)drawRect:(NSRect)dirtyRect {
+  [super drawRect:dirtyRect];
+  NSRect bounds = [self bounds];
+
+  NSBezierPath *track = [NSBezierPath bezierPathWithRoundedRect:bounds xRadius:4.0 yRadius:4.0];
+  [[NSColor colorWithWhite:1.0 alpha:0.12] setFill];
+  [track fill];
+
+  CGFloat fillWidth = bounds.size.width * MAX(0.0, MIN(1.0, _percentage / 100.0));
+  if (fillWidth > 0) {
+    NSRect fillRect = NSMakeRect(0, 0, fillWidth, bounds.size.height);
+    NSBezierPath *fillPath = [NSBezierPath bezierPathWithRoundedRect:fillRect xRadius:4.0 yRadius:4.0];
+    if (_isSelected) {
+      [[NSColor colorWithRed:1.0 green:0.78 blue:0.0 alpha:1.0] setFill];
+    } else {
+      [[NSColor colorWithRed:0.95 green:0.65 blue:0.1 alpha:0.8] setFill];
+    }
+    [fillPath fill];
+  }
+}
+@end
+
+@implementation FlippedView
+- (BOOL)isFlipped {
+  return YES;
+}
+@end
+
+
+
+
 
 @interface CustomWindow : NSWindow
 
@@ -6464,7 +6608,762 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   return @"";
 }
 
+// 1. Timeline / Milestone Flow Control
+- (NSView *)makeTimelineWithName:(NSString *)name height:(int)height {
+  NSScrollView *scroll = [[NSScrollView alloc] initWithFrame:NSMakeRect(0, 0, 300, height > 0 ? height : 180)];
+  [scroll setHasVerticalScroller:YES];
+  [scroll setHasHorizontalScroller:NO];
+  [scroll setBorderType:NSLineBorder];
+  [scroll setDrawsBackground:NO];
+
+  NSStackView *stack = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [stack setOrientation:NSUserInterfaceLayoutOrientationVertical];
+  [stack setAlignment:NSLayoutAttributeLeading];
+  [stack setSpacing:10.0];
+  [stack setEdgeInsets:NSEdgeInsetsMake(8, 12, 8, 12)];
+
+  [scroll setDocumentView:stack];
+
+  if (!self.controlsByName) self.controlsByName = [NSMutableDictionary dictionary];
+  self.controlsByName[[name lowercaseString]] = scroll;
+  objc_setAssociatedObject(scroll, "timelineStack", stack, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+  [self addControlToLayout:scroll];
+  return scroll;
+}
+
+- (void)addTimelineItemToName:(NSString *)name title:(NSString *)title subtitle:(NSString *)subtitle timeStr:(NSString *)timeStr status:(NSString *)status {
+  NSScrollView *scroll = (NSScrollView *)self.controlsByName[[name lowercaseString]];
+  if (scroll) {
+    NSStackView *stack = objc_getAssociatedObject(scroll, "timelineStack");
+    if (stack) {
+      NSBox *card = [[NSBox alloc] initWithFrame:NSZeroRect];
+      [card setBoxType:NSBoxCustom];
+      [card setCornerRadius:6.0];
+      [card setFillColor:[NSColor colorWithWhite:1.0 alpha:0.04]];
+      [card setBorderColor:[NSColor colorWithWhite:1.0 alpha:0.1]];
+
+      NSStackView *row = [[NSStackView alloc] initWithFrame:NSZeroRect];
+      [row setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+      [row setAlignment:NSLayoutAttributeCenterY];
+      [row setSpacing:8.0];
+      [row setEdgeInsets:NSEdgeInsetsMake(6, 8, 6, 8)];
+
+      // Status indicator dot
+      NSBox *dot = [[NSBox alloc] initWithFrame:NSMakeRect(0, 0, 10, 10)];
+      [dot setBoxType:NSBoxCustom];
+      [dot setCornerRadius:5.0];
+      NSString *normSt = [status lowercaseString];
+      if ([normSt containsString:@"success"] || [normSt containsString:@"done"] || [normSt containsString:@"complete"]) {
+        [dot setFillColor:[NSColor systemGreenColor]];
+      } else if ([normSt containsString:@"warn"] || [normSt containsString:@"prog"]) {
+        [dot setFillColor:[NSColor systemOrangeColor]];
+      } else if ([normSt containsString:@"err"] || [normSt containsString:@"fail"]) {
+        [dot setFillColor:[NSColor systemRedColor]];
+      } else {
+        [dot setFillColor:[NSColor systemBlueColor]];
+      }
+      [dot setBorderColor:[NSColor clearColor]];
+      [row addArrangedSubview:dot];
+
+      NSStackView *textCol = [[NSStackView alloc] initWithFrame:NSZeroRect];
+      [textCol setOrientation:NSUserInterfaceLayoutOrientationVertical];
+      [textCol setAlignment:NSLayoutAttributeLeading];
+      [textCol setSpacing:2.0];
+
+      NSTextField *titleLbl = [NSTextField labelWithString:title ? title : @""];
+      [titleLbl setFont:[NSFont boldSystemFontOfSize:12.0]];
+      [textCol addArrangedSubview:titleLbl];
+
+      if (subtitle && subtitle.length > 0) {
+        NSTextField *subLbl = [NSTextField labelWithString:subtitle];
+        [subLbl setFont:[NSFont systemFontOfSize:11.0]];
+        [subLbl setTextColor:[NSColor secondaryLabelColor]];
+        [textCol addArrangedSubview:subLbl];
+      }
+      [row addArrangedSubview:textCol];
+
+      if (timeStr && timeStr.length > 0) {
+        NSTextField *timeLbl = [NSTextField labelWithString:timeStr];
+        [timeLbl setFont:[NSFont systemFontOfSize:10.0]];
+        [timeLbl setTextColor:[NSColor tertiaryLabelColor]];
+        [row addArrangedSubview:timeLbl];
+      }
+
+      [card setContentView:row];
+      [stack addArrangedSubview:card];
+    }
+  }
+}
+
+// 2. Metric / KPI Card Control
+
+- (NSView *)makeMetricCardWithName:(NSString *)name title:(NSString *)title value:(NSString *)value changeBadge:(NSString *)changeBadge subtitle:(NSString *)subtitle {
+  NSBox *card = [[NSBox alloc] initWithFrame:NSZeroRect];
+  [card setBoxType:NSBoxCustom];
+  [card setCornerRadius:10.0];
+  [card setFillColor:[NSColor colorWithWhite:1.0 alpha:0.05]];
+  [card setBorderColor:[NSColor colorWithWhite:1.0 alpha:0.12]];
+
+  NSStackView *col = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [col setOrientation:NSUserInterfaceLayoutOrientationVertical];
+  [col setAlignment:NSLayoutAttributeLeading];
+  [col setSpacing:4.0];
+  [col setEdgeInsets:NSEdgeInsetsMake(10, 12, 10, 12)];
+
+  NSTextField *tLbl = [NSTextField labelWithString:title ? title : @""];
+  [tLbl setFont:[NSFont systemFontOfSize:11.0 weight:NSFontWeightMedium]];
+  [tLbl setTextColor:[NSColor secondaryLabelColor]];
+  [col addArrangedSubview:tLbl];
+
+  NSStackView *valRow = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [valRow setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+  [valRow setAlignment:NSLayoutAttributeFirstBaseline];
+  [valRow setSpacing:8.0];
+
+  NSTextField *vLbl = [NSTextField labelWithString:value ? value : @"0"];
+  [vLbl setFont:[NSFont systemFontOfSize:22.0 weight:NSFontWeightBold]];
+  [valRow addArrangedSubview:vLbl];
+
+  if (changeBadge && changeBadge.length > 0) {
+    NSTextField *bLbl = [NSTextField labelWithString:changeBadge];
+    [bLbl setFont:[NSFont boldSystemFontOfSize:11.0]];
+    if ([changeBadge hasPrefix:@"+"]) {
+      [bLbl setTextColor:[NSColor systemGreenColor]];
+    } else if ([changeBadge hasPrefix:@"-"]) {
+      [bLbl setTextColor:[NSColor systemRedColor]];
+    } else {
+      [bLbl setTextColor:[NSColor secondaryLabelColor]];
+    }
+    [valRow addArrangedSubview:bLbl];
+  }
+  [col addArrangedSubview:valRow];
+
+  if (subtitle && subtitle.length > 0) {
+    NSTextField *sLbl = [NSTextField labelWithString:subtitle];
+    [sLbl setFont:[NSFont systemFontOfSize:10.0]];
+    [sLbl setTextColor:[NSColor tertiaryLabelColor]];
+    [col addArrangedSubview:sLbl];
+  }
+
+  [card setContentView:col];
+
+  if (!self.controlsByName) self.controlsByName = [NSMutableDictionary dictionary];
+  self.controlsByName[[name lowercaseString]] = card;
+  objc_setAssociatedObject(card, "metricValLabel", vLbl, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+  [self addControlToLayout:card];
+  return card;
+}
+
+- (void)setMetricCardValue:(NSString *)value changeBadge:(NSString *)changeBadge forName:(NSString *)name {
+  NSBox *card = (NSBox *)self.controlsByName[[name lowercaseString]];
+  if (card) {
+    NSTextField *vLbl = objc_getAssociatedObject(card, "metricValLabel");
+    if (vLbl) {
+      [vLbl setStringValue:value ? value : @""];
+    }
+  }
+}
+
+// 3. Tab Pills Control
+- (NSView *)makeTabPillsWithName:(NSString *)name items:(NSArray<NSString *> *)items selected:(NSString *)selected {
+  NSSegmentedControl *seg = [NSSegmentedControl segmentedControlWithLabels:items trackingMode:NSSegmentSwitchTrackingSelectOne target:self action:@selector(handleTabPillClicked:)];
+  [seg setSegmentStyle:NSSegmentStyleCapsule];
+  seg.identifier = name;
+
+  NSString *sel = selected ? selected : (items.count > 0 ? items[0] : @"");
+  NSUInteger idx = [items indexOfObject:sel];
+  if (idx != NSNotFound) {
+    [seg setSelectedSegment:idx];
+  }
+
+  if (!self.controlsByName) self.controlsByName = [NSMutableDictionary dictionary];
+  self.controlsByName[[name lowercaseString]] = seg;
+  objc_setAssociatedObject(seg, "tabItems", items, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+  [self addControlToLayout:seg];
+  return seg;
+}
+
+- (void)handleTabPillClicked:(id)sender {
+  NSSegmentedControl *seg = (NSSegmentedControl *)sender;
+  NSString *name = seg.identifier;
+  NSInteger selIdx = [seg selectedSegment];
+  NSArray *items = objc_getAssociatedObject(seg, "tabItems");
+  if (items && selIdx >= 0 && selIdx < items.count) {
+    NSString *val = items[selIdx];
+    vlang_dispatch_event(self.win_ptr, [name UTF8String], "change", [val UTF8String]);
+  }
+}
+
+- (void)setTabPillsActive:(NSString *)selected forName:(NSString *)name {
+  NSSegmentedControl *seg = (NSSegmentedControl *)self.controlsByName[[name lowercaseString]];
+  if (seg) {
+    NSArray *items = objc_getAssociatedObject(seg, "tabItems");
+    if (items && selected) {
+      NSUInteger idx = [items indexOfObject:selected];
+      if (idx != NSNotFound) {
+        [seg setSelectedSegment:idx];
+      }
+    }
+  }
+}
+
+- (NSString *)tabPillsActiveForName:(NSString *)name {
+  NSSegmentedControl *seg = (NSSegmentedControl *)self.controlsByName[[name lowercaseString]];
+  if (seg) {
+    NSInteger selIdx = [seg selectedSegment];
+    NSArray *items = objc_getAssociatedObject(seg, "tabItems");
+    if (items && selIdx >= 0 && selIdx < items.count) {
+      return items[selIdx];
+    }
+  }
+  return @"";
+}
+
+// 4. Transfer List Control
+- (NSView *)makeTransferListWithName:(NSString *)name available:(NSArray<NSString *> *)available selected:(NSArray<NSString *> *)selected multiSelect:(BOOL)multiSelect {
+  NSStackView *hstack = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [hstack setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+  [hstack setAlignment:NSLayoutAttributeCenterY];
+  [hstack setSpacing:10.0];
+
+  // Left Column (Available)
+  NSStackView *leftCol = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [leftCol setOrientation:NSUserInterfaceLayoutOrientationVertical];
+  [leftCol setAlignment:NSLayoutAttributeLeading];
+  [leftCol setSpacing:4.0];
+
+  NSTextField *leftHeader = [NSTextField labelWithString:@"Available (0)"];
+  [leftHeader setFont:[NSFont boldSystemFontOfSize:11.0]];
+  [leftHeader setTextColor:[NSColor secondaryLabelColor]];
+  [leftCol addArrangedSubview:leftHeader];
+
+  NSScrollView *leftScroll = [[NSScrollView alloc] initWithFrame:NSZeroRect];
+  leftScroll.translatesAutoresizingMaskIntoConstraints = NO;
+  [leftScroll setHasVerticalScroller:YES];
+  [leftScroll setBorderType:NSLineBorder];
+  [leftScroll.widthAnchor constraintEqualToConstant:130.0].active = YES;
+  [leftScroll.heightAnchor constraintEqualToConstant:120.0].active = YES;
+  [leftCol addArrangedSubview:leftScroll];
+
+  // Buttons Column
+  NSStackView *btnCol = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [btnCol setOrientation:NSUserInterfaceLayoutOrientationVertical];
+  [btnCol setSpacing:6.0];
+
+  NSButton *btnAdd = [NSButton buttonWithTitle:@">" target:self action:@selector(handleTransferAddClicked:)];
+  btnAdd.identifier = name;
+  [btnAdd setBezelStyle:NSBezelStyleRounded];
+
+  NSButton *btnRemove = [NSButton buttonWithTitle:@"<" target:self action:@selector(handleTransferRemoveClicked:)];
+  btnRemove.identifier = name;
+  [btnRemove setBezelStyle:NSBezelStyleRounded];
+
+  [btnCol addArrangedSubview:btnAdd];
+  [btnCol addArrangedSubview:btnRemove];
+
+  // Right Column (Selected)
+  NSStackView *rightCol = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [rightCol setOrientation:NSUserInterfaceLayoutOrientationVertical];
+  [rightCol setAlignment:NSLayoutAttributeLeading];
+  [rightCol setSpacing:4.0];
+
+  NSTextField *rightHeader = [NSTextField labelWithString:@"Selected (0)"];
+  [rightHeader setFont:[NSFont boldSystemFontOfSize:11.0]];
+  [rightHeader setTextColor:[NSColor secondaryLabelColor]];
+  [rightCol addArrangedSubview:rightHeader];
+
+  NSScrollView *rightScroll = [[NSScrollView alloc] initWithFrame:NSZeroRect];
+  rightScroll.translatesAutoresizingMaskIntoConstraints = NO;
+  [rightScroll setHasVerticalScroller:YES];
+  [rightScroll setBorderType:NSLineBorder];
+  [rightScroll.widthAnchor constraintEqualToConstant:130.0].active = YES;
+  [rightScroll.heightAnchor constraintEqualToConstant:120.0].active = YES;
+  [rightCol addArrangedSubview:rightScroll];
+
+  [hstack addArrangedSubview:leftCol];
+  [hstack addArrangedSubview:btnCol];
+  [hstack addArrangedSubview:rightCol];
+
+  NSMutableArray *availArr = [NSMutableArray arrayWithArray:available ? available : @[]];
+  NSMutableArray *selArr = [NSMutableArray arrayWithArray:selected ? selected : @[]];
+
+  objc_setAssociatedObject(hstack, "transferAvail", availArr, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(hstack, "transferSel", selArr, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(hstack, "leftScroll", leftScroll, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(hstack, "rightScroll", rightScroll, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(hstack, "leftHeader", leftHeader, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(hstack, "rightHeader", rightHeader, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(hstack, "transferMultiSelect", @(multiSelect), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(hstack, "selectedAvailSet", [NSMutableSet set], OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(hstack, "selectedSelSet", [NSMutableSet set], OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+  if (!self.controlsByName) self.controlsByName = [NSMutableDictionary dictionary];
+  self.controlsByName[[name lowercaseString]] = hstack;
+
+  [self rebuildTransferList:hstack name:name];
+  [self addControlToLayout:hstack];
+  return hstack;
+}
+
+- (void)rebuildTransferList:(NSStackView *)hstack name:(NSString *)name {
+  NSScrollView *leftScroll = objc_getAssociatedObject(hstack, "leftScroll");
+  NSScrollView *rightScroll = objc_getAssociatedObject(hstack, "rightScroll");
+  NSTextField *leftHeader = objc_getAssociatedObject(hstack, "leftHeader");
+  NSTextField *rightHeader = objc_getAssociatedObject(hstack, "rightHeader");
+  NSMutableArray *availArr = objc_getAssociatedObject(hstack, "transferAvail");
+  NSMutableArray *selArr = objc_getAssociatedObject(hstack, "transferSel");
+  NSMutableSet *availSet = objc_getAssociatedObject(hstack, "selectedAvailSet");
+  NSMutableSet *selSet = objc_getAssociatedObject(hstack, "selectedSelSet");
+
+  if (leftHeader && availArr) {
+    [leftHeader setStringValue:[NSString stringWithFormat:@"Available (%lu)", (unsigned long)availArr.count]];
+  }
+
+  if (rightHeader && selArr) {
+    [rightHeader setStringValue:[NSString stringWithFormat:@"Selected (%lu)", (unsigned long)selArr.count]];
+  }
+
+  if (leftScroll && availArr) {
+    CGFloat docH = MAX(120.0, availArr.count * 24.0 + 8.0);
+    FlippedView *leftDoc = [[FlippedView alloc] initWithFrame:NSMakeRect(0, 0, 128.0, docH)];
+    for (NSUInteger i = 0; i < availArr.count; i++) {
+      NSButton *itemBtn = [NSButton buttonWithTitle:[NSString stringWithFormat:@"• %@", availArr[i]] target:self action:@selector(handleTransferItemClicked:)];
+      itemBtn.identifier = [NSString stringWithFormat:@"%@_avail_%lu", name, (unsigned long)i];
+      [itemBtn setBezelStyle:NSBezelStyleInline];
+      [itemBtn setBordered:NO];
+      [itemBtn setFrame:NSMakeRect(4.0, i * 24.0 + 4.0, 120.0, 20.0)];
+
+      NSMutableAttributedString *attr = [[NSMutableAttributedString alloc] initWithString:[NSString stringWithFormat:@"• %@", availArr[i]]];
+      if (availSet && [availSet containsObject:@(i)]) {
+        [attr addAttribute:NSForegroundColorAttributeName value:[NSColor colorWithRed:0.0 green:0.5 blue:1.0 alpha:1.0] range:NSMakeRange(0, attr.length)];
+        [attr addAttribute:NSFontAttributeName value:[NSFont boldSystemFontOfSize:11.0] range:NSMakeRange(0, attr.length)];
+      } else {
+        [attr addAttribute:NSForegroundColorAttributeName value:[NSColor labelColor] range:NSMakeRange(0, attr.length)];
+        [attr addAttribute:NSFontAttributeName value:[NSFont systemFontOfSize:11.0] range:NSMakeRange(0, attr.length)];
+      }
+      [itemBtn setAttributedTitle:attr];
+      [leftDoc addSubview:itemBtn];
+    }
+    [leftScroll setDocumentView:leftDoc];
+  }
+
+  if (rightScroll && selArr) {
+    CGFloat docH = MAX(120.0, selArr.count * 24.0 + 8.0);
+    FlippedView *rightDoc = [[FlippedView alloc] initWithFrame:NSMakeRect(0, 0, 128.0, docH)];
+    for (NSUInteger i = 0; i < selArr.count; i++) {
+      NSButton *itemBtn = [NSButton buttonWithTitle:[NSString stringWithFormat:@"✓ %@", selArr[i]] target:self action:@selector(handleTransferItemClicked:)];
+      itemBtn.identifier = [NSString stringWithFormat:@"%@_sel_%lu", name, (unsigned long)i];
+      [itemBtn setBezelStyle:NSBezelStyleInline];
+      [itemBtn setBordered:NO];
+      [itemBtn setFrame:NSMakeRect(4.0, i * 24.0 + 4.0, 120.0, 20.0)];
+
+      NSMutableAttributedString *attr = [[NSMutableAttributedString alloc] initWithString:[NSString stringWithFormat:@"✓ %@", selArr[i]]];
+      if (selSet && [selSet containsObject:@(i)]) {
+        [attr addAttribute:NSForegroundColorAttributeName value:[NSColor colorWithRed:1.0 green:0.5 blue:0.0 alpha:1.0] range:NSMakeRange(0, attr.length)];
+        [attr addAttribute:NSFontAttributeName value:[NSFont boldSystemFontOfSize:11.0] range:NSMakeRange(0, attr.length)];
+      } else {
+        [attr addAttribute:NSForegroundColorAttributeName value:[NSColor colorWithRed:0.2 green:0.8 blue:0.4 alpha:1.0] range:NSMakeRange(0, attr.length)];
+        [attr addAttribute:NSFontAttributeName value:[NSFont systemFontOfSize:11.0] range:NSMakeRange(0, attr.length)];
+      }
+      [itemBtn setAttributedTitle:attr];
+      [rightDoc addSubview:itemBtn];
+    }
+    [rightScroll setDocumentView:rightDoc];
+  }
+
+  [leftScroll setNeedsDisplay:YES];
+  [rightScroll setNeedsDisplay:YES];
+  [hstack setNeedsDisplay:YES];
+}
+
+- (void)handleTransferItemClicked:(id)sender {
+  NSButton *btn = (NSButton *)sender;
+  NSString *ident = btn.identifier;
+
+  NSRange availRange = [ident rangeOfString:@"_avail_"];
+  NSRange selRange = [ident rangeOfString:@"_sel_"];
+
+  if (availRange.location != NSNotFound) {
+    NSString *name = [ident substringToIndex:availRange.location];
+    NSUInteger idx = [[ident substringFromIndex:availRange.location + availRange.length] integerValue];
+    NSStackView *hstack = (NSStackView *)self.controlsByName[[name lowercaseString]];
+    if (hstack) {
+      BOOL multi = [objc_getAssociatedObject(hstack, "transferMultiSelect") boolValue];
+      NSMutableSet *availSet = objc_getAssociatedObject(hstack, "selectedAvailSet");
+      NSMutableSet *selSet = objc_getAssociatedObject(hstack, "selectedSelSet");
+      [selSet removeAllObjects];
+
+      NSNumber *num = @(idx);
+      if (multi) {
+        if ([availSet containsObject:num]) {
+          [availSet removeObject:num];
+        } else {
+          [availSet addObject:num];
+        }
+      } else {
+        [availSet removeAllObjects];
+        [availSet addObject:num];
+      }
+      [self rebuildTransferList:hstack name:name];
+    }
+  } else if (selRange.location != NSNotFound) {
+    NSString *name = [ident substringToIndex:selRange.location];
+    NSUInteger idx = [[ident substringFromIndex:selRange.location + selRange.length] integerValue];
+    NSStackView *hstack = (NSStackView *)self.controlsByName[[name lowercaseString]];
+    if (hstack) {
+      BOOL multi = [objc_getAssociatedObject(hstack, "transferMultiSelect") boolValue];
+      NSMutableSet *availSet = objc_getAssociatedObject(hstack, "selectedAvailSet");
+      NSMutableSet *selSet = objc_getAssociatedObject(hstack, "selectedSelSet");
+      [availSet removeAllObjects];
+
+      NSNumber *num = @(idx);
+      if (multi) {
+        if ([selSet containsObject:num]) {
+          [selSet removeObject:num];
+        } else {
+          [selSet addObject:num];
+        }
+      } else {
+        [selSet removeAllObjects];
+        [selSet addObject:num];
+      }
+      [self rebuildTransferList:hstack name:name];
+    }
+  }
+}
+
+- (void)handleTransferAddClicked:(id)sender {
+  NSButton *btn = (NSButton *)sender;
+  NSString *name = btn.identifier;
+  NSStackView *hstack = (NSStackView *)self.controlsByName[[name lowercaseString]];
+  if (hstack) {
+    NSMutableArray *availArr = objc_getAssociatedObject(hstack, "transferAvail");
+    NSMutableArray *selArr = objc_getAssociatedObject(hstack, "transferSel");
+    NSMutableSet *availSet = objc_getAssociatedObject(hstack, "selectedAvailSet");
+
+    if (availSet.count > 0) {
+      NSArray *sorted = [[availSet allObjects] sortedArrayUsingComparator:^NSComparisonResult(id obj1, id obj2) {
+        return [obj2 compare:obj1]; // Descending
+      }];
+      NSMutableArray *movedItems = [NSMutableArray array];
+      for (NSNumber *num in sorted) {
+        NSUInteger idx = [num unsignedIntegerValue];
+        if (idx < availArr.count) {
+          NSString *item = availArr[idx];
+          [movedItems addObject:item];
+          [availArr removeObjectAtIndex:idx];
+        }
+      }
+      for (NSString *item in [movedItems reverseObjectEnumerator]) {
+        [selArr addObject:item];
+      }
+      [availSet removeAllObjects];
+      [self rebuildTransferList:hstack name:name];
+      vlang_dispatch_event(self.win_ptr, [name UTF8String], "change", [[movedItems componentsJoinedByString:@", "] UTF8String]);
+    } else if (availArr.count > 0) {
+      NSString *item = availArr[0];
+      [availArr removeObjectAtIndex:0];
+      [selArr addObject:item];
+      [self rebuildTransferList:hstack name:name];
+      vlang_dispatch_event(self.win_ptr, [name UTF8String], "change", [item UTF8String]);
+    }
+  }
+}
+
+- (void)handleTransferRemoveClicked:(id)sender {
+  NSButton *btn = (NSButton *)sender;
+  NSString *name = btn.identifier;
+  NSStackView *hstack = (NSStackView *)self.controlsByName[[name lowercaseString]];
+  if (hstack) {
+    NSMutableArray *availArr = objc_getAssociatedObject(hstack, "transferAvail");
+    NSMutableArray *selArr = objc_getAssociatedObject(hstack, "transferSel");
+    NSMutableSet *selSet = objc_getAssociatedObject(hstack, "selectedSelSet");
+
+    if (selSet.count > 0) {
+      NSArray *sorted = [[selSet allObjects] sortedArrayUsingComparator:^NSComparisonResult(id obj1, id obj2) {
+        return [obj2 compare:obj1]; // Descending
+      }];
+      NSMutableArray *movedItems = [NSMutableArray array];
+      for (NSNumber *num in sorted) {
+        NSUInteger idx = [num unsignedIntegerValue];
+        if (idx < selArr.count) {
+          NSString *item = selArr[idx];
+          [movedItems addObject:item];
+          [selArr removeObjectAtIndex:idx];
+        }
+      }
+      for (NSString *item in [movedItems reverseObjectEnumerator]) {
+        [availArr addObject:item];
+      }
+      [selSet removeAllObjects];
+      [self rebuildTransferList:hstack name:name];
+      vlang_dispatch_event(self.win_ptr, [name UTF8String], "change", [[movedItems componentsJoinedByString:@", "] UTF8String]);
+    } else if (selArr.count > 0) {
+      NSString *item = selArr[selArr.count - 1];
+      [selArr removeLastObject];
+      [availArr addObject:item];
+      [self rebuildTransferList:hstack name:name];
+      vlang_dispatch_event(self.win_ptr, [name UTF8String], "change", [item UTF8String]);
+    }
+  }
+}
+
+
+
+
+- (NSArray<NSString *> *)transferListSelectedForName:(NSString *)name {
+  NSStackView *hstack = (NSStackView *)self.controlsByName[[name lowercaseString]];
+  if (hstack) {
+    return objc_getAssociatedObject(hstack, "transferSel");
+  }
+  return @[];
+}
+
+// 5. Audio Waveform Control
+- (NSView *)makeAudioWaveformWithName:(NSString *)name amplitudes:(NSArray<NSNumber *> *)amplitudes height:(int)height {
+  int h = height > 0 ? height : 50;
+  AudioWaveformView *wave = [[AudioWaveformView alloc] initWithFrame:NSMakeRect(0, 0, 320, h)];
+  wave.identifier = name;
+  wave.translatesAutoresizingMaskIntoConstraints = NO;
+  [wave.widthAnchor constraintGreaterThanOrEqualToConstant:280.0].active = YES;
+  [wave.heightAnchor constraintEqualToConstant:(CGFloat)h].active = YES;
+
+  if (amplitudes) {
+    wave.amplitudes = amplitudes;
+  }
+
+  if (!self.controlsByName) self.controlsByName = [NSMutableDictionary dictionary];
+  self.controlsByName[[name lowercaseString]] = wave;
+
+  [self addControlToLayout:wave];
+  return wave;
+}
+
+
+- (void)setAudioWaveformAmplitudes:(NSArray<NSNumber *> *)amplitudes forName:(NSString *)name {
+  AudioWaveformView *wave = (AudioWaveformView *)self.controlsByName[[name lowercaseString]];
+  if (wave && [wave isKindOfClass:[AudioWaveformView class]]) {
+    wave.amplitudes = amplitudes;
+    [wave setNeedsDisplay:YES];
+  }
+}
+
+// 6. Rating Breakdown Control
+- (NSView *)makeRatingBreakdownWithName:(NSString *)name avgScore:(double)avgScore totalReviews:(int)totalReviews starPercentages:(NSArray<NSNumber *> *)starPercentages {
+  NSStackView *hstack = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [hstack setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+  [hstack setAlignment:NSLayoutAttributeCenterY];
+  [hstack setSpacing:14.0];
+
+  // Score Box
+  NSStackView *scoreCol = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [scoreCol setOrientation:NSUserInterfaceLayoutOrientationVertical];
+  [scoreCol setAlignment:NSLayoutAttributeCenterX];
+  [scoreCol setSpacing:2.0];
+
+  NSTextField *scoreLbl = [NSTextField labelWithString:[NSString stringWithFormat:@"%.1f", avgScore]];
+  [scoreLbl setFont:[NSFont systemFontOfSize:28.0 weight:NSFontWeightBold]];
+  [scoreCol addArrangedSubview:scoreLbl];
+
+  NSTextField *revLbl = [NSTextField labelWithString:[NSString stringWithFormat:@"%d reviews", totalReviews]];
+  [revLbl setFont:[NSFont systemFontOfSize:10.0]];
+  [revLbl setTextColor:[NSColor secondaryLabelColor]];
+  [scoreCol addArrangedSubview:revLbl];
+
+  [hstack addArrangedSubview:scoreCol];
+
+  // Bars Column
+  NSStackView *barsCol = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [barsCol setOrientation:NSUserInterfaceLayoutOrientationVertical];
+  [barsCol setAlignment:NSLayoutAttributeLeading];
+  [barsCol setSpacing:4.0];
+
+  NSMutableArray<StarBarView *> *barArr = [NSMutableArray arrayWithCapacity:5];
+  NSMutableArray<NSButton *> *starButtons = [NSMutableArray arrayWithCapacity:5];
+
+  for (int s = 5; s >= 1; s--) {
+    NSButton *starBtn = [NSButton buttonWithTitle:[NSString stringWithFormat:@"%d★", s] target:self action:@selector(handleStarRowClicked:)];
+    starBtn.identifier = [NSString stringWithFormat:@"%@_star_%d", name, s];
+    [starBtn setBezelStyle:NSBezelStyleInline];
+    [starBtn setBordered:NO];
+    [starButtons addObject:starBtn];
+
+    StarBarView *bar = [[StarBarView alloc] initWithFrame:NSMakeRect(0, 0, 100, 10)];
+    int idx = 5 - s;
+    double pct = (starPercentages && idx < starPercentages.count) ? [starPercentages[idx] doubleValue] : 0.0;
+    bar.percentage = pct;
+    [barArr addObject:bar];
+
+    NSStackView *starRow = [[NSStackView alloc] initWithFrame:NSZeroRect];
+    [starRow setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+    [starRow setAlignment:NSLayoutAttributeCenterY];
+    [starRow setSpacing:6.0];
+    [starRow addArrangedSubview:starBtn];
+    [starRow addArrangedSubview:bar];
+
+    [barsCol addArrangedSubview:starRow];
+  }
+  [hstack addArrangedSubview:barsCol];
+
+  objc_setAssociatedObject(hstack, "scoreLabel", scoreLbl, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(hstack, "reviewLabel", revLbl, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(hstack, "barArray", barArr, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(hstack, "starButtons", starButtons, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+  if (!self.controlsByName) self.controlsByName = [NSMutableDictionary dictionary];
+  self.controlsByName[[name lowercaseString]] = hstack;
+
+  [self addControlToLayout:hstack];
+  return hstack;
+}
+
+- (void)handleStarRowClicked:(id)sender {
+  NSButton *btn = (NSButton *)sender;
+  NSString *ident = btn.identifier;
+  NSRange range = [ident rangeOfString:@"_star_"];
+  if (range.location != NSNotFound) {
+    NSString *name = [ident substringToIndex:range.location];
+    NSString *starNum = [ident substringFromIndex:range.location + range.length];
+    int starVal = [starNum intValue];
+
+    NSStackView *hstack = (NSStackView *)self.controlsByName[[name lowercaseString]];
+    if (hstack) {
+      NSArray<NSButton *> *starButtons = objc_getAssociatedObject(hstack, "starButtons");
+      NSArray<StarBarView *> *barArr = objc_getAssociatedObject(hstack, "barArray");
+      for (int s = 5; s >= 1; s--) {
+        int idx = 5 - s;
+        if (idx < starButtons.count && idx < barArr.count) {
+          BOOL sel = (s <= starVal);
+          NSButton *sb = starButtons[idx];
+          StarBarView *bar = barArr[idx];
+          bar.isSelected = sel;
+          [bar setNeedsDisplay:YES];
+          if (sel) {
+            NSMutableAttributedString *attr = [[NSMutableAttributedString alloc] initWithString:[NSString stringWithFormat:@"%d★", s]];
+            [attr addAttribute:NSForegroundColorAttributeName value:[NSColor colorWithRed:1.0 green:0.8 blue:0.1 alpha:1.0] range:NSMakeRange(0, attr.length)];
+            [attr addAttribute:NSFontAttributeName value:[NSFont boldSystemFontOfSize:12.0] range:NSMakeRange(0, attr.length)];
+            [sb setAttributedTitle:attr];
+          } else {
+            NSMutableAttributedString *attr = [[NSMutableAttributedString alloc] initWithString:[NSString stringWithFormat:@"%d★", s]];
+            [attr addAttribute:NSForegroundColorAttributeName value:[NSColor secondaryLabelColor] range:NSMakeRange(0, attr.length)];
+            [attr addAttribute:NSFontAttributeName value:[NSFont systemFontOfSize:11.0] range:NSMakeRange(0, attr.length)];
+            [sb setAttributedTitle:attr];
+          }
+        }
+      }
+    }
+
+
+    vlang_dispatch_event(self.win_ptr, [name UTF8String], "change", [starNum UTF8String]);
+  }
+}
+
+- (void)setRatingBreakdownData:(double)avgScore totalReviews:(int)totalReviews starPercentages:(NSArray<NSNumber *> *)starPercentages forName:(NSString *)name {
+  NSStackView *hstack = (NSStackView *)self.controlsByName[[name lowercaseString]];
+  if (hstack) {
+    NSTextField *scoreLbl = objc_getAssociatedObject(hstack, "scoreLabel");
+    if (scoreLbl) {
+      [scoreLbl setStringValue:[NSString stringWithFormat:@"%.1f", avgScore]];
+    }
+    NSTextField *revLbl = objc_getAssociatedObject(hstack, "reviewLabel");
+    if (revLbl) {
+      [revLbl setStringValue:[NSString stringWithFormat:@"%d reviews", totalReviews]];
+    }
+    NSArray<StarBarView *> *barArr = objc_getAssociatedObject(hstack, "barArray");
+    if (barArr && starPercentages) {
+      for (int s = 5; s >= 1; s--) {
+        int idx = 5 - s;
+        if (idx < barArr.count && idx < starPercentages.count) {
+          barArr[idx].percentage = [starPercentages[idx] doubleValue];
+          [barArr[idx] setNeedsDisplay:YES];
+        }
+      }
+    }
+    [hstack setNeedsDisplay:YES];
+  }
+}
+
+
+
+// 7. Code View Control
+- (NSView *)makeCodeViewWithName:(NSString *)name lang:(NSString *)lang codeText:(NSString *)codeText height:(int)height {
+  NSBox *container = [[NSBox alloc] initWithFrame:NSZeroRect];
+  [container setBoxType:NSBoxCustom];
+  [container setCornerRadius:8.0];
+  [container setFillColor:[NSColor colorWithRed:0.1 green:0.1 blue:0.12 alpha:1.0]];
+  [container setBorderColor:[NSColor colorWithWhite:1.0 alpha:0.15]];
+
+  NSStackView *vcol = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [vcol setOrientation:NSUserInterfaceLayoutOrientationVertical];
+  [vcol setAlignment:NSLayoutAttributeLeading];
+  [vcol setSpacing:4.0];
+  [vcol setEdgeInsets:NSEdgeInsetsMake(6, 8, 6, 8)];
+
+  // Header tag row
+  NSStackView *hdr = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [hdr setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+  [hdr setAlignment:NSLayoutAttributeCenterY];
+  [hdr setSpacing:8.0];
+
+  NSTextField *tagLbl = [NSTextField labelWithString:lang ? [lang uppercaseString] : @"CODE"];
+  [tagLbl setFont:[NSFont boldSystemFontOfSize:10.0]];
+  [tagLbl setTextColor:[NSColor systemBlueColor]];
+  [hdr addArrangedSubview:tagLbl];
+
+  [vcol addArrangedSubview:hdr];
+
+  // Code Text ScrollView
+  NSScrollView *scroll = [[NSScrollView alloc] initWithFrame:NSMakeRect(0, 0, 360, height > 0 ? height : 140)];
+  [scroll setHasVerticalScroller:YES];
+  [scroll setHasHorizontalScroller:YES];
+  [scroll setDrawsBackground:NO];
+
+  NSTextView *tv = [[NSTextView alloc] initWithFrame:scroll.bounds];
+  [tv setFont:[NSFont fontWithName:@"Menlo" size:11.0] ?: [NSFont userFixedPitchFontOfSize:11.0]];
+  [tv setTextColor:[NSColor colorWithRed:0.9 green:0.9 blue:0.95 alpha:1.0]];
+  [tv setBackgroundColor:[NSColor clearColor]];
+  [tv setString:codeText ? codeText : @""];
+  [tv setEditable:NO];
+
+  [scroll setDocumentView:tv];
+  [vcol addArrangedSubview:scroll];
+
+  [container setContentView:vcol];
+
+  if (!self.controlsByName) self.controlsByName = [NSMutableDictionary dictionary];
+  self.controlsByName[[name lowercaseString]] = container;
+  objc_setAssociatedObject(container, "codeTextView", tv, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+  [self addControlToLayout:container];
+  return container;
+}
+
+- (void)setCodeViewText:(NSString *)codeText forName:(NSString *)name {
+  NSBox *container = (NSBox *)self.controlsByName[[name lowercaseString]];
+  if (container) {
+    NSTextView *tv = objc_getAssociatedObject(container, "codeTextView");
+    if (tv) {
+      [tv setString:codeText ? codeText : @""];
+    }
+  }
+}
+
+- (NSString *)codeViewTextForName:(NSString *)name {
+  NSBox *container = (NSBox *)self.controlsByName[[name lowercaseString]];
+  if (container) {
+    NSTextView *tv = objc_getAssociatedObject(container, "codeTextView");
+    if (tv) {
+      return [tv string];
+    }
+  }
+  return @"";
+}
+
 @end
+
 
 
 
@@ -12609,6 +13508,166 @@ const char *window_get_color_palette_selected(main__WindowInfo *info, const char
   if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
   return res;
 }
+
+void *window_add_timeline_control(main__WindowInfo *info, const char *name, int height) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeTimelineWithName:nsstring(name) height:height];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)control;
+}
+
+void window_add_timeline_item(main__WindowInfo *info, const char *name, const char *title, const char *subtitle, const char *time_str, const char *status) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate addTimelineItemToName:nsstring(name) title:nsstring(title) subtitle:nsstring(subtitle) timeStr:nsstring(time_str) status:nsstring(status)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+void *window_add_metric_card_control(main__WindowInfo *info, const char *name, const char *title, const char *value, const char *change_badge, const char *subtitle) {
+
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeMetricCardWithName:nsstring(name) title:nsstring(title) value:nsstring(value) changeBadge:nsstring(change_badge) subtitle:nsstring(subtitle)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)control;
+}
+
+void window_set_metric_card_value(main__WindowInfo *info, const char *name, const char *value, const char *change_badge) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate setMetricCardValue:nsstring(value) changeBadge:nsstring(change_badge) forName:nsstring(name)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+void *window_add_tab_pills_control(main__WindowInfo *info, const char *name, const char **items, int count, const char *selected) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSMutableArray *arr = [NSMutableArray arrayWithCapacity:count];
+  for (int i = 0; i < count; i++) {
+    [arr addObject:nsstring(items[i])];
+  }
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeTabPillsWithName:nsstring(name) items:arr selected:nsstring(selected)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)control;
+}
+
+void window_set_tab_pills_active(main__WindowInfo *info, const char *name, const char *selected) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate setTabPillsActive:nsstring(selected) forName:nsstring(name)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+const char *window_get_tab_pills_active(main__WindowInfo *info, const char *name) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block const char *res = "";
+  void (^runBlock)(void) = ^{
+    NSString *str = [delegate tabPillsActiveForName:nsstring(name)];
+    if (str) res = strdup([str UTF8String]);
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return res;
+}
+
+void *window_add_transfer_list_control(main__WindowInfo *info, const char *name, const char **available, int avail_count, const char **selected, int sel_count, bool multi_select) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSMutableArray *aArr = [NSMutableArray arrayWithCapacity:avail_count];
+  for (int i = 0; i < avail_count; i++) [aArr addObject:nsstring(available[i])];
+  NSMutableArray *sArr = [NSMutableArray arrayWithCapacity:sel_count];
+  for (int i = 0; i < sel_count; i++) [sArr addObject:nsstring(selected[i])];
+
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeTransferListWithName:nsstring(name) available:aArr selected:sArr multiSelect:(BOOL)multi_select];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)control;
+}
+
+
+void *window_add_audio_waveform_control(main__WindowInfo *info, const char *name, const double *amplitudes, int count, int height) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSMutableArray *arr = [NSMutableArray arrayWithCapacity:count];
+  for (int i = 0; i < count; i++) [arr addObject:@(amplitudes[i])];
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeAudioWaveformWithName:nsstring(name) amplitudes:arr height:height];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)control;
+}
+
+void window_set_audio_waveform_data(main__WindowInfo *info, const char *name, const double *amplitudes, int count) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSMutableArray *arr = [NSMutableArray arrayWithCapacity:count];
+  for (int i = 0; i < count; i++) [arr addObject:@(amplitudes[i])];
+  void (^runBlock)(void) = ^{
+    [delegate setAudioWaveformAmplitudes:arr forName:nsstring(name)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+void *window_add_rating_breakdown_control(main__WindowInfo *info, const char *name, double avg_score, int total_reviews, const double *star_percentages, int count) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSMutableArray *arr = [NSMutableArray arrayWithCapacity:count];
+  for (int i = 0; i < count; i++) [arr addObject:@(star_percentages[i])];
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeRatingBreakdownWithName:nsstring(name) avgScore:avg_score totalReviews:total_reviews starPercentages:arr];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)control;
+}
+
+void window_set_rating_breakdown_data(main__WindowInfo *info, const char *name, double avg_score, int total_reviews, const double *star_percentages, int count) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSMutableArray *arr = [NSMutableArray arrayWithCapacity:count];
+  for (int i = 0; i < count; i++) [arr addObject:@(star_percentages[i])];
+  void (^runBlock)(void) = ^{
+    [delegate setRatingBreakdownData:avg_score totalReviews:total_reviews starPercentages:arr forName:nsstring(name)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+void *window_add_code_view_control(main__WindowInfo *info, const char *name, const char *lang, const char *code_text, int height) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeCodeViewWithName:nsstring(name) lang:nsstring(lang) codeText:nsstring(code_text) height:height];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)control;
+}
+
+void window_set_code_view_text(main__WindowInfo *info, const char *name, const char *code_text) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate setCodeViewText:nsstring(code_text) forName:nsstring(name)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+const char *window_get_code_view_text(main__WindowInfo *info, const char *name) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block const char *res = "";
+  void (^runBlock)(void) = ^{
+    NSString *str = [delegate codeViewTextForName:nsstring(name)];
+    if (str) res = strdup([str UTF8String]);
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return res;
+}
+
 
 
 
