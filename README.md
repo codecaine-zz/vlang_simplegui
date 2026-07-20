@@ -541,6 +541,7 @@ v run .
 | [all_controls_demo.v](demos/all_controls_demo.v)                     | Single-window demo exercising many controls in one place                            |
 | [new_controls_demo.v](demos/new_controls_demo.v)                     | Segmented menus, popup selections, and search fields                                |
 | [new_controls_showcase.v](demos/new_controls_showcase.v)             | Showcase of the newest control additions                                            |
+| [more_controls_demo.v](demos/more_controls_demo.v)                   | Interactive showcase of Stat Cards, Banners, Section Headers, Vertical Sliders & Chip Groups |
 | [modern_widgets_demo.v](demos/modern_widgets_demo.v)                 | Level indicators, star ratings, and editable combo boxes                            |
 | [rich_widgets_demo.v](demos/rich_widgets_demo.v)                     | Advanced rich macOS controls suite                                                  |
 | [developer_controls_demo.v](demos/developer_controls_demo.v)         | Breadcrumbs, shortcut recorders, charts, gauges, property grids, and log consoles   |

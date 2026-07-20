@@ -292,6 +292,12 @@ fn C.window_begin_glass_box(&WindowInfo, &u8, &u8)
 fn C.window_end_glass_box(&WindowInfo)
 fn C.window_add_badge_control(&WindowInfo, &u8, &u8, &u8) voidptr
 fn C.window_add_icon_segments_control(&WindowInfo, &u8, &&u8, int, &u8) voidptr
+fn C.window_add_stat_card_control(&WindowInfo, &u8, &u8, &u8, &u8, &u8) voidptr
+fn C.window_set_stat_card_value(&WindowInfo, &u8, &u8, &u8, &u8)
+fn C.window_add_banner_control(&WindowInfo, &u8, &u8, &u8) voidptr
+fn C.window_add_section_header_control(&WindowInfo, &u8, &u8, &u8) voidptr
+fn C.window_add_vertical_slider_control(&WindowInfo, &u8, int, int, int, int) voidptr
+fn C.window_add_chip_group_control(&WindowInfo, &u8, &&u8, int, &u8) voidptr
 
 pub type StringEventCallback = fn (mut win SimpleWindow, value string)
 
@@ -2426,7 +2432,7 @@ pub fn (win &SimpleWindow) get_value(name string) string {
 		}
 		if kind in ['checkbox', 'switch', 'spinner'] {
 			return if win.controls[idx].checked { 'true' } else { 'false' }
-		} else if kind in ['number', 'slider', 'progress', 'levelindicator', 'stepper', 'knob'] {
+		} else if kind in ['number', 'slider', 'vertical_slider', 'progress', 'levelindicator', 'stepper', 'knob'] {
 			return win.controls[idx].number.str()
 		}
 	}
@@ -2888,11 +2894,11 @@ pub fn (win &SimpleWindow) clear(name string) &SimpleWindow {
 	entry := win.controls[idx]
 	if entry.kind in ['checkbox', 'switch', 'spinner'] {
 		win.set_checked(name, false)
-	} else if entry.kind in ['number', 'slider', 'progress', 'levelindicator', 'stepper', 'knob'] {
+	} else if entry.kind in ['number', 'slider', 'vertical_slider', 'progress', 'levelindicator', 'stepper', 'knob'] {
 		win.set_value_int(name, 0)
 	} else if entry.kind in ['input', 'password', 'textarea', 'date', 'datetime', 'mode', 'theme',
 		'listbox', 'color', 'search', 'dropdown', 'segmented', 'radiogroup', 'combobox',
-		'pathcontrol', 'tokenfield'] {
+		'pathcontrol', 'tokenfield', 'chip_group'] {
 		win.set_text(name, '')
 	}
 	return win
@@ -2912,11 +2918,11 @@ pub fn (win &SimpleWindow) reset_form() &SimpleWindow {
 		entry := win.controls[i]
 		if entry.kind in ['checkbox', 'switch', 'spinner'] {
 			win.set_checked(entry.name, entry.initial_checked)
-		} else if entry.kind in ['number', 'slider', 'progress', 'levelindicator', 'stepper', 'knob'] {
+		} else if entry.kind in ['number', 'slider', 'vertical_slider', 'progress', 'levelindicator', 'stepper', 'knob'] {
 			win.set_value_int(entry.name, entry.initial_number)
 		} else if entry.kind in ['input', 'password', 'textarea', 'date', 'datetime', 'mode', 'theme',
 			'listbox', 'color', 'search', 'dropdown', 'segmented', 'radiogroup', 'combobox',
-			'pathcontrol', 'tokenfield'] {
+			'pathcontrol', 'tokenfield', 'chip_group'] {
 			win.set_text(entry.name, entry.initial_value)
 		}
 	}
@@ -3897,7 +3903,7 @@ fn vlang_dispatch_event(win_ptr voidptr, name_str &u8, event_str &u8, value_str 
 			kind := win.controls[idx].kind
 			if kind == 'checkbox' || kind == 'toggle' {
 				win.controls[idx].checked = (value == 'true')
-			} else if kind in ['number', 'slider', 'progress', 'stepper', 'knob', 'levelindicator'] {
+			} else if kind in ['number', 'slider', 'vertical_slider', 'progress', 'stepper', 'knob', 'levelindicator'] {
 				win.controls[idx].number = value.int()
 			}
 			win.controls[idx].value = value
@@ -5086,13 +5092,13 @@ pub fn (win &SimpleWindow) is_control_dirty(name string) bool {
 	}
 	entry := win.controls[idx]
 	if entry.kind in ['label', 'button', 'image', 'html_view', 'progress', 'helpbutton',
-		'imagebutton'] {
+		'imagebutton', 'stat_card', 'banner', 'section_header'] {
 		return false
 	}
 	if entry.kind in ['checkbox', 'toggle', 'spinner'] {
 		return entry.checked != entry.initial_checked
 	}
-	if entry.kind in ['number', 'slider', 'levelindicator', 'stepper', 'knob'] {
+	if entry.kind in ['number', 'slider', 'vertical_slider', 'levelindicator', 'stepper', 'knob'] {
 		return entry.number != entry.initial_number
 	}
 	return entry.value != entry.initial_value
@@ -5139,7 +5145,7 @@ pub fn (win &SimpleWindow) get_dirty_values() map[string]string {
 		if win.is_control_dirty(entry.name) {
 			if entry.kind in ['checkbox', 'toggle', 'spinner'] {
 				values[entry.name] = win.get_checked(entry.name).str()
-			} else if entry.kind in ['number', 'slider', 'levelindicator', 'stepper', 'knob'] {
+			} else if entry.kind in ['number', 'slider', 'vertical_slider', 'levelindicator', 'stepper', 'knob'] {
 				values[entry.name] = win.get_value_int(entry.name).str()
 			} else {
 				values[entry.name] = win.get_text(entry.name)
@@ -5449,4 +5455,134 @@ pub fn (win &SimpleWindow) add_icon_segments(name string, symbols []string, sele
 			symbols.len, selected.str)
 	}
 	return win
+}
+
+// add_stat_card adds a stat card dashboard widget with custom title, value, trend and trend style.
+pub fn (win &SimpleWindow) add_stat_card(name string, title string, value string, trend string, trend_style string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('stat_card')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name:  real_name
+			kind:  'stat_card'
+			value: value
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_stat_card_control(win.window_info, real_name.str, title.str, value.str, trend.str, trend_style.str)
+	}
+	return win
+}
+
+// stat_card inserts an auto-named stat card.
+pub fn (win &SimpleWindow) stat_card(title string, value string, trend string, trend_style string) &SimpleWindow {
+	return win.add_stat_card('', title, value, trend, trend_style)
+}
+
+// add_banner adds a banner callout with a message and style.
+pub fn (win &SimpleWindow) add_banner(name string, text string, style string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('banner')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name:  real_name
+			kind:  'banner'
+			value: text
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_banner_control(win.window_info, real_name.str, text.str, style.str)
+	}
+	return win
+}
+
+// banner inserts an auto-named banner.
+pub fn (win &SimpleWindow) banner(text string, style string) &SimpleWindow {
+	return win.add_banner('', text, style)
+}
+
+// add_section_header adds a styled layout divider with title and optional subtitle.
+pub fn (win &SimpleWindow) add_section_header(name string, title string, subtitle string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('section_header')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name:  real_name
+			kind:  'section_header'
+			value: title
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_section_header_control(win.window_info, real_name.str, title.str, subtitle.str)
+	}
+	return win
+}
+
+// section_header inserts an auto-named section header.
+pub fn (win &SimpleWindow) section_header(title string, subtitle string) &SimpleWindow {
+	return win.add_section_header('', title, subtitle)
+}
+
+// add_vertical_slider adds a vertical slider to the layout.
+pub fn (win &SimpleWindow) add_vertical_slider(name string, value int, min_val int, max_val int, height int) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('vertical_slider')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name:   real_name
+			kind:   'vertical_slider'
+			value:  value.str()
+			number: value
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_vertical_slider_control(win.window_info, real_name.str, value, min_val, max_val, height)
+	}
+	return win
+}
+
+// vertical_slider inserts an auto-named vertical slider.
+pub fn (win &SimpleWindow) vertical_slider(value int, min_val int, max_val int, height int) &SimpleWindow {
+	return win.add_vertical_slider('', value, min_val, max_val, height)
+}
+
+// add_chip_group adds a segmented chip group selectors to the layout.
+pub fn (win &SimpleWindow) add_chip_group(name string, chips []string, selected string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('chip_group')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name:  real_name
+			kind:  'chip_group'
+			value: selected
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		mut c_chips := []&u8{}
+		for chip in chips {
+			c_chips << chip.str
+		}
+		C.window_add_chip_group_control(win.window_info, real_name.str, c_chips.data, chips.len, selected.str)
+	}
+	return win
+}
+
+// chip_group inserts an auto-named chip group.
+pub fn (win &SimpleWindow) chip_group(chips []string, selected string) &SimpleWindow {
+	return win.add_chip_group('', chips, selected)
 }

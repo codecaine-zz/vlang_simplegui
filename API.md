@@ -541,6 +541,38 @@ Adds a push button decorated with a native SF Symbol image (macOS 11+), e.g. `'t
 - **Icon-only**: Pass an empty `title` for a compact icon-only button.
 - **Events**: Fires standard `click` events (`.onclick()`).
 
+### `win.add_stat_card(name string, title string, value string, trend string, trend_style string)` / `win.stat_card(title string, value string, trend string, trend_style string) &SimpleWindow`
+
+Adds a dashboard metric stat card displaying an uppercase title, large metric value, and trend indicator (e.g. `+18.4%`).
+
+- **Parameters**: `trend_style` accepts `"success"`, `"error"`, `"warning"`, or `"info"` for custom status coloring.
+- **Updating**: Use `win.set_stat_card(name, value, trend, trend_style)` or `win.set_value(name, value)` to update live metrics programmatically.
+
+### `win.add_banner(name string, text string, style string)` / `win.banner(text string, style string) &SimpleWindow`
+
+Adds a styled notice banner callout box for contextual alert messages.
+
+- **Parameters**: `style` accepts `"info"`, `"success"`, `"warning"`, or `"error"`.
+- **Updating**: Update banner message text using `win.set_banner(name, text)` or `win.set_text(name, text)`.
+
+### `win.add_section_header(name string, title string, subtitle string)` / `win.section_header(title string, subtitle string) &SimpleWindow`
+
+Adds a section header layout widget featuring a bold section title, optional subtitle, and a full-width divider line.
+
+### `win.add_vertical_slider(name string, value int, min_val int, max_val int, height int)` / `win.vertical_slider(value int, min_val int, max_val int, height int) &SimpleWindow`
+
+Adds a standalone native vertical `NSSlider` control with a live numeric value indicator label.
+
+- **Accessing**: Use `win.get_vertical_slider(name)` / `win.set_vertical_slider(name, value)` to read or update numeric slider values.
+- **Events**: User interactions fire `change` events with the new integer value.
+
+### `win.add_chip_group(name string, chips []string, selected string)` / `win.chip_group(chips []string, selected string) &SimpleWindow`
+
+Adds a modern segmented tag/chip pill selection bar (`NSSegmentedControl`) for easy item or category selection.
+
+- **Accessing**: Retrieve or update the active chip using `win.get_chip_selected(name)` / `win.set_chip_selected(name, chip)`.
+- **Events**: Segment selection fires `change` events with the selected chip's text string.
+
 ---
 
 ## 4. Control Sizing & Styling

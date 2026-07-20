@@ -603,6 +603,11 @@ extern void vlang_dispatch_event(void *win_ptr, const char *name, const char *ev
 - (void)endGlassBox;
 - (NSView *)makeBadgeWithName:(NSString *)name text:(NSString *)text style:(NSString *)style;
 - (NSView *)makeIconSegmentsWithName:(NSString *)name symbols:(NSArray<NSString *> *)symbols selected:(NSString *)selected;
+- (NSView *)makeStatCardWithName:(NSString *)name title:(NSString *)title value:(NSString *)value trend:(NSString *)trend trendStyle:(NSString *)trendStyle;
+- (NSView *)makeBannerWithName:(NSString *)name text:(NSString *)text style:(NSString *)style;
+- (NSView *)makeSectionHeaderWithName:(NSString *)name title:(NSString *)title subtitle:(NSString *)subtitle;
+- (NSView *)makeVerticalSliderWithName:(NSString *)name value:(int)value minValue:(int)minValue maxValue:(int)maxValue height:(int)height;
+- (NSView *)makeChipGroupWithName:(NSString *)name chips:(NSArray<NSString *> *)chips selected:(NSString *)selected;
 - (NSView *)makeConsoleWithName:(NSString *)name height:(int)height;
 - (NSView *)makeChartViewWithName:(NSString *)name chartType:(NSString *)chartType height:(int)height;
 - (NSView *)makeShortcutRecorderWithName:(NSString *)name;
@@ -4255,6 +4260,205 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   return seg;
 }
 
+- (NSView *)makeStatCardWithName:(NSString *)name title:(NSString *)title value:(NSString *)value trend:(NSString *)trend trendStyle:(NSString *)trendStyle {
+  NSBox *box = [[NSBox alloc] initWithFrame:NSZeroRect];
+  [box setBoxType:NSBoxCustom];
+  [box setBorderType:NSLineBorder];
+  [box setBorderWidth:1.0];
+  [box setBorderColor:[NSColor colorWithCalibratedWhite:0.5 alpha:0.2]];
+  [box setContentViewMargins:NSMakeSize(12, 10)];
+  [box setWantsLayer:YES];
+  box.layer.cornerRadius = 8.0;
+  
+  if (self.currentBackgroundColor) {
+    box.layer.backgroundColor = [[self.currentBackgroundColor colorWithAlphaComponent:0.1] CGColor];
+  } else {
+    box.layer.backgroundColor = [[NSColor colorWithCalibratedWhite:0.5 alpha:0.05] CGColor];
+  }
+  
+  NSStackView *stack = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [stack setOrientation:NSUserInterfaceLayoutOrientationVertical];
+  [stack setSpacing:4.0];
+  [stack setAlignment:NSLayoutAttributeLeading];
+  
+  NSTextField *titleLabel = [NSTextField labelWithString:[title uppercaseString]];
+  [titleLabel setFont:[NSFont systemFontOfSize:10.0 weight:NSFontWeightMedium]];
+  [titleLabel setTextColor:[NSColor secondaryLabelColor]];
+  
+  NSTextField *valueLabel = [NSTextField labelWithString:value];
+  [valueLabel setFont:[NSFont systemFontOfSize:24.0 weight:NSFontWeightBold]];
+  if (self.currentFontColor) {
+    [valueLabel setTextColor:self.currentFontColor];
+  }
+  
+  NSTextField *trendLabel = [NSTextField labelWithString:trend];
+  [trendLabel setFont:[NSFont systemFontOfSize:11.0 weight:NSFontWeightRegular]];
+  
+  NSColor *trendColor = [NSColor secondaryLabelColor];
+  NSString *style = [trendStyle lowercaseString];
+  if ([style isEqualToString:@"success"]) {
+    trendColor = [NSColor systemGreenColor];
+  } else if ([style isEqualToString:@"error"]) {
+    trendColor = [NSColor systemRedColor];
+  } else if ([style isEqualToString:@"warning"]) {
+    trendColor = [NSColor systemOrangeColor];
+  } else if ([style isEqualToString:@"info"]) {
+    trendColor = [NSColor systemBlueColor];
+  }
+  [trendLabel setTextColor:trendColor];
+  
+  [stack addArrangedSubview:titleLabel];
+  [stack addArrangedSubview:valueLabel];
+  [stack addArrangedSubview:trendLabel];
+  
+  [box setContentView:stack];
+  
+  valueLabel.tag = 101;
+  trendLabel.tag = 102;
+  
+  self.controlsByName[[name lowercaseString]] = box;
+  [self addControlToLayout:box];
+  return box;
+}
+
+- (NSView *)makeBannerWithName:(NSString *)name text:(NSString *)text style:(NSString *)styleStr {
+  NSBox *box = [[NSBox alloc] initWithFrame:NSZeroRect];
+  [box setBoxType:NSBoxCustom];
+  [box setBorderType:NSLineBorder];
+  [box setBorderWidth:1.0];
+  [box setContentViewMargins:NSMakeSize(12, 10)];
+  [box setWantsLayer:YES];
+  box.layer.cornerRadius = 6.0;
+  
+  NSTextField *label = [NSTextField labelWithString:text];
+  [label setFont:[NSFont systemFontOfSize:12.0]];
+  [[label cell] setWraps:YES];
+  [label setTextColor:[NSColor labelColor]];
+  
+  NSColor *bgColor = nil;
+  NSColor *borderColor = nil;
+  
+  NSString *style = [styleStr lowercaseString];
+  if ([style isEqualToString:@"success"]) {
+    bgColor = [NSColor colorWithCalibratedRed:0.18 green:0.49 blue:0.20 alpha:0.12];
+    borderColor = [NSColor systemGreenColor];
+  } else if ([style isEqualToString:@"error"]) {
+    bgColor = [NSColor colorWithCalibratedRed:0.83 green:0.18 blue:0.18 alpha:0.12];
+    borderColor = [NSColor systemRedColor];
+  } else if ([style isEqualToString:@"warning"]) {
+    bgColor = [NSColor colorWithCalibratedRed:0.95 green:0.60 blue:0.00 alpha:0.12];
+    borderColor = [NSColor systemOrangeColor];
+  } else if ([style isEqualToString:@"info"]) {
+    bgColor = [NSColor colorWithCalibratedRed:0.12 green:0.45 blue:0.74 alpha:0.12];
+    borderColor = [NSColor systemBlueColor];
+  } else {
+    bgColor = [NSColor colorWithCalibratedWhite:0.5 alpha:0.1];
+    borderColor = [NSColor colorWithCalibratedWhite:0.5 alpha:0.3];
+  }
+  
+  box.layer.backgroundColor = [bgColor CGColor];
+  [box setBorderColor:borderColor];
+  [box setContentView:label];
+  
+  label.tag = 201;
+  
+  self.controlsByName[[name lowercaseString]] = box;
+  [self addControlToLayout:box];
+  return box;
+}
+
+- (NSView *)makeSectionHeaderWithName:(NSString *)name title:(NSString *)title subtitle:(NSString *)subtitle {
+  NSStackView *stack = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [stack setOrientation:NSUserInterfaceLayoutOrientationVertical];
+  [stack setSpacing:4.0];
+  [stack setAlignment:NSLayoutAttributeLeading];
+  
+  NSTextField *titleLabel = [NSTextField labelWithString:title];
+  [titleLabel setFont:[NSFont systemFontOfSize:16.0 weight:NSFontWeightBold]];
+  if (self.currentFontColor) {
+    [titleLabel setTextColor:self.currentFontColor];
+  }
+  [stack addArrangedSubview:titleLabel];
+  
+  if (subtitle && subtitle.length > 0) {
+    NSTextField *subLabel = [NSTextField labelWithString:subtitle];
+    [subLabel setFont:[NSFont systemFontOfSize:11.0]];
+    [subLabel setTextColor:[NSColor secondaryLabelColor]];
+    [stack addArrangedSubview:subLabel];
+  }
+  
+  NSBox *line = [[NSBox alloc] initWithFrame:NSZeroRect];
+  [line setBoxType:NSBoxCustom];
+  [line setBorderType:NSLineBorder];
+  [line setBorderWidth:1.0];
+  [line setBorderColor:modernBorderColor()];
+  [line setWantsLayer:YES];
+  [line.heightAnchor constraintEqualToConstant:1.0].active = YES;
+  [stack addArrangedSubview:line];
+  
+  self.controlsByName[[name lowercaseString]] = stack;
+  [self addControlToLayout:stack];
+  return stack;
+}
+
+- (NSView *)makeVerticalSliderWithName:(NSString *)name value:(int)value minValue:(int)minValue maxValue:(int)maxValue height:(int)height {
+  NSStackView *col = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [col setOrientation:NSUserInterfaceLayoutOrientationVertical];
+  [col setSpacing:6.0];
+  [col setAlignment:NSLayoutAttributeCenterX];
+  
+  NSSlider *slider = [[NSSlider alloc] initWithFrame:NSZeroRect];
+  [slider setMinValue:minValue];
+  [slider setMaxValue:maxValue];
+  [slider setIntValue:value];
+  [slider setVertical:YES];
+  [slider setTarget:self];
+  [slider setAction:@selector(handleSliderChanged:)];
+  [slider setWantsLayer:YES];
+  
+  int sliderHeight = height > 0 ? height : 150;
+  [slider.heightAnchor constraintEqualToConstant:sliderHeight].active = YES;
+  
+  NSTextField *label = [NSTextField labelWithString:[NSString stringWithFormat:@"Value: %d", value]];
+  [label setFont:[NSFont systemFontOfSize:11.0]];
+  [label setAlignment:NSTextAlignmentCenter];
+  if (self.currentFontColor) {
+    [label setTextColor:self.currentFontColor];
+  }
+  
+  [col addArrangedSubview:slider];
+  [col addArrangedSubview:label];
+  
+  self.controlsByName[[name lowercaseString]] = slider;
+  [self addControlToLayout:col];
+  return slider;
+}
+
+- (NSView *)makeChipGroupWithName:(NSString *)name chips:(NSArray<NSString *> *)chips selected:(NSString *)selected {
+  NSSegmentedControl *seg = [[NSSegmentedControl alloc] initWithFrame:NSZeroRect];
+  [seg setSegmentCount:chips.count];
+  [seg setSegmentStyle:NSSegmentStyleRoundRect];
+  [seg setTarget:self];
+  [seg setAction:@selector(handleSegmentedChanged:)];
+  [seg setWantsLayer:YES];
+  
+  NSInteger selectedIndex = -1;
+  for (NSUInteger i = 0; i < chips.count; i++) {
+    NSString *chip = chips[i];
+    [seg setLabel:chip forSegment:i];
+    if ([chip isEqualToString:selected]) {
+      selectedIndex = i;
+    }
+  }
+  if (selectedIndex >= 0) {
+    [seg setSelectedSegment:selectedIndex];
+  }
+  
+  self.controlsByName[[name lowercaseString]] = seg;
+  [self addControlToLayout:seg];
+  return seg;
+}
+
 - (NSView *)makeConsoleWithName:(NSString *)name height:(int)height {
   NSScrollView *scroll = [[NSScrollView alloc] initWithFrame:NSZeroRect];
   [scroll setIdentifier:name];
@@ -4650,6 +4854,117 @@ void window_end_glass_box(main__WindowInfo *info) {
   } else {
     dispatch_sync(dispatch_get_main_queue(), runBlock);
   }
+}
+
+void *window_add_stat_card_control(main__WindowInfo *info, const char *name, const char *title, const char *value, const char *trend, const char *trend_style) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeStatCardWithName:nsstring(name) title:nsstring(title) value:nsstring(value) trend:nsstring(trend) trendStyle:nsstring(trend_style)];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return (__bridge void *)control;
+}
+
+void window_set_stat_card_value(main__WindowInfo *info, const char *name, const char *value, const char *trend, const char *trend_style) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    NSView *view = [delegate viewForControlName:nsstring(name)];
+    if ([view isKindOfClass:[NSBox class]]) {
+      NSBox *box = (NSBox *)view;
+      NSView *content = [box contentView];
+      if ([content isKindOfClass:[NSStackView class]]) {
+        NSStackView *stack = (NSStackView *)content;
+        for (NSView *subview in stack.arrangedSubviews) {
+          if (subview.tag == 101 && [subview isKindOfClass:[NSTextField class]]) {
+            [(NSTextField *)subview setStringValue:nsstring(value)];
+          } else if (subview.tag == 102 && [subview isKindOfClass:[NSTextField class]]) {
+            if (trend) {
+              [(NSTextField *)subview setStringValue:nsstring(trend)];
+            }
+            if (trend_style) {
+              NSColor *trendColor = [NSColor secondaryLabelColor];
+              NSString *style = [nsstring(trend_style) lowercaseString];
+              if ([style isEqualToString:@"success"]) {
+                trendColor = [NSColor systemGreenColor];
+              } else if ([style isEqualToString:@"error"]) {
+                trendColor = [NSColor systemRedColor];
+              } else if ([style isEqualToString:@"warning"]) {
+                trendColor = [NSColor systemOrangeColor];
+              } else if ([style isEqualToString:@"info"]) {
+                trendColor = [NSColor systemBlueColor];
+              }
+              [(NSTextField *)subview setTextColor:trendColor];
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+void *window_add_banner_control(main__WindowInfo *info, const char *name, const char *text, const char *style) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeBannerWithName:nsstring(name) text:nsstring(text) style:nsstring(style)];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return (__bridge void *)control;
+}
+
+void *window_add_section_header_control(main__WindowInfo *info, const char *name, const char *title, const char *subtitle) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeSectionHeaderWithName:nsstring(name) title:nsstring(title) subtitle:nsstring(subtitle)];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return (__bridge void *)control;
+}
+
+void *window_add_vertical_slider_control(main__WindowInfo *info, const char *name, int value, int min_val, int max_val, int height) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeVerticalSliderWithName:nsstring(name) value:value minValue:min_val maxValue:max_val height:height];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return (__bridge void *)control;
+}
+
+void *window_add_chip_group_control(main__WindowInfo *info, const char *name, const char **chips, int count, const char *selected) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    NSMutableArray *arr = [NSMutableArray array];
+    for (int i = 0; i < count; i++) {
+      [arr addObject:nsstring(chips[i])];
+    }
+    control = [delegate makeChipGroupWithName:nsstring(name) chips:arr selected:nsstring(selected)];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return (__bridge void *)control;
 }
 
 void *window_add_badge_control(main__WindowInfo *info, const char *name, const char *text, const char *style) {
@@ -5737,6 +6052,19 @@ void window_set_control_text(void *control, const char *text) {
     [(NSSlider *)view setDoubleValue:[nsText doubleValue]];
   } else if ([view isKindOfClass:[NSStepper class]]) {
     [(NSStepper *)view setDoubleValue:[nsText doubleValue]];
+  } else if ([view isKindOfClass:[NSBox class]]) {
+    NSBox *box = (NSBox *)view;
+    NSView *content = [box contentView];
+    if ([content isKindOfClass:[NSTextField class]] && content.tag == 201) {
+      [(NSTextField *)content setStringValue:nsText];
+    } else if ([content isKindOfClass:[NSStackView class]]) {
+      NSStackView *stack = (NSStackView *)content;
+      for (NSView *subview in stack.arrangedSubviews) {
+        if (subview.tag == 101 && [subview isKindOfClass:[NSTextField class]]) {
+          [(NSTextField *)subview setStringValue:nsText];
+        }
+      }
+    }
   } else if ([view isKindOfClass:[NSColorWell class]]) {
     [(NSColorWell *)view setColor:colorFromString(text)];
   } else if ([view isKindOfClass:[NSDatePicker class]]) {

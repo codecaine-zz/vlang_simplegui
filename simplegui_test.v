@@ -1888,3 +1888,40 @@ fn test_developer_controls() {
 	win.grid_autosize_columns('my_grid')
 	win.grid_clear('my_grid')
 }
+
+fn test_new_extended_controls_api() {
+	mut win := simplegui.SimpleWindow{}
+
+	// Stat Card
+	win.add_stat_card('stat_revenue', 'Revenue', '$48,250', '+12.5% this month', 'success')
+	assert win.has_control('stat_revenue') == true
+	assert win.get_control_kind('stat_revenue') == 'stat_card'
+	assert win.get_value('stat_revenue') == '$48,250'
+
+	// Banner
+	win.add_banner('notice_banner', 'System maintenance scheduled for tonight.', 'warning')
+	assert win.has_control('notice_banner') == true
+	assert win.get_control_kind('notice_banner') == 'banner'
+	assert win.get_value('notice_banner') == 'System maintenance scheduled for tonight.'
+
+	// Section Header
+	win.add_section_header('sec_settings', 'Account Settings', 'Manage security and preferences')
+	assert win.has_control('sec_settings') == true
+	assert win.get_control_kind('sec_settings') == 'section_header'
+
+	// Vertical Slider
+	win.add_vertical_slider('volume_slider', 75, 0, 100, 180)
+	assert win.has_control('volume_slider') == true
+	assert win.get_control_kind('volume_slider') == 'vertical_slider'
+	assert win.get_vertical_slider('volume_slider') == 75
+	win.set_vertical_slider('volume_slider', 90)
+	assert win.get_vertical_slider('volume_slider') == 90
+
+	// Chip Group
+	win.add_chip_group('filter_chips', ['All', 'Active', 'Pending', 'Archived'], 'Active')
+	assert win.has_control('filter_chips') == true
+	assert win.get_control_kind('filter_chips') == 'chip_group'
+	assert win.get_chip_selected('filter_chips') == 'Active'
+	win.set_chip_selected('filter_chips', 'Pending')
+	assert win.get_chip_selected('filter_chips') == 'Pending'
+}

@@ -1710,3 +1710,37 @@ pub fn (win &SimpleWindow) increment_progress(name string, delta int) int {
 	win.set_progress(name, new_val)
 	return new_val
 }
+
+// set_stat_card updates the metric value, trend string, and trend style for a stat card.
+pub fn (win &SimpleWindow) set_stat_card(name string, value string, trend string, trend_style string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_stat_card_value(win.window_info, name.str, value.str, trend.str, trend_style.str)
+	}
+	return win
+}
+
+// set_banner updates the message text of a banner callout.
+pub fn (win &SimpleWindow) set_banner(name string, text string) &SimpleWindow {
+	return win.set_text(name, text)
+}
+
+// get_vertical_slider retrieves the integer value of a vertical slider control.
+pub fn (win &SimpleWindow) get_vertical_slider(name string) int {
+	return win.get_value_int(name)
+}
+
+// set_vertical_slider updates the integer value of a vertical slider control.
+pub fn (win &SimpleWindow) set_vertical_slider(name string, value int) &SimpleWindow {
+	return win.set_value_int(name, value)
+}
+
+// get_chip_selected returns the currently selected chip in a chip group.
+pub fn (win &SimpleWindow) get_chip_selected(name string) string {
+	return win.get_text(name)
+}
+
+// set_chip_selected sets the selected chip in a chip group.
+pub fn (win &SimpleWindow) set_chip_selected(name string, chip string) &SimpleWindow {
+	return win.set_text(name, chip)
+}
+

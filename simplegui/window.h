@@ -301,5 +301,13 @@ void window_grid_set_column_enabled(main__WindowInfo *info, const char *name, in
 void window_grid_set_row_enabled(main__WindowInfo *info, const char *name, int row_idx, int enabled);
 void window_grid_set_cell_enabled(main__WindowInfo *info, const char *name, int row, int col, int enabled);
 
+// New controls added
+void *window_add_stat_card_control(main__WindowInfo *info, const char *name, const char *title, const char *value, const char *trend, const char *trend_style);
+void window_set_stat_card_value(main__WindowInfo *info, const char *name, const char *value, const char *trend, const char *trend_style);
+void *window_add_banner_control(main__WindowInfo *info, const char *name, const char *text, const char *style);
+void *window_add_section_header_control(main__WindowInfo *info, const char *name, const char *title, const char *subtitle);
+void *window_add_vertical_slider_control(main__WindowInfo *info, const char *name, int value, int min_val, int max_val, int height);
+void *window_add_chip_group_control(main__WindowInfo *info, const char *name, const char **chips, int count, const char *selected);
+
 #endif
 
