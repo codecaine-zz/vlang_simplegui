@@ -437,6 +437,21 @@ fn C.window_get_radial_gauge_value(&WindowInfo, &u8) f64
 fn C.window_add_key_value_card_control(&WindowInfo, &u8, &u8, &&u8, &&u8, int) voidptr
 fn C.window_set_key_value_card_data(&WindowInfo, &u8, &&u8, &&u8, int)
 
+fn C.window_add_diff_view_control(&WindowInfo, &u8, &u8, &u8, int) voidptr
+fn C.window_set_diff_view_text(&WindowInfo, &u8, &u8, &u8)
+fn C.window_add_json_tree_control(&WindowInfo, &u8, &u8, int) voidptr
+fn C.window_set_json_tree_data(&WindowInfo, &u8, &u8)
+fn C.window_add_http_request_card_control(&WindowInfo, &u8, &u8, &u8, int, int) voidptr
+fn C.window_set_http_request_card_data(&WindowInfo, &u8, &u8, &u8, int, int)
+fn C.window_add_terminal_view_control(&WindowInfo, &u8, &u8, int) voidptr
+fn C.window_append_terminal_line(&WindowInfo, &u8, &u8, int)
+fn C.window_clear_terminal(&WindowInfo, &u8)
+fn C.window_add_resource_monitor_control(&WindowInfo, &u8, int, int, int, int) voidptr
+fn C.window_set_resource_monitor_metrics(&WindowInfo, &u8, int, int, int, int)
+fn C.window_add_env_vars_control(&WindowInfo, &u8, &u8, &&u8, &&u8, int) voidptr
+fn C.window_set_env_vars_data(&WindowInfo, &u8, &&u8, &&u8, int)
+
+
 
 
 
@@ -7604,6 +7619,230 @@ pub fn (win &SimpleWindow) set_key_value_card_data(name string, keys []string, v
 	}
 	return win
 }
+
+// add_diff_view adds a side-by-side / unified code diff comparison view widget.
+pub fn (win &SimpleWindow) add_diff_view(name string, old_text string, new_text string, height int) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('diff_view')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name: real_name
+			kind: 'diff_view'
+			value: old_text
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_diff_view_control(win.window_info, real_name.str, old_text.str, new_text.str, height)
+	}
+	return win
+}
+
+// diff_view adds an auto-named diff comparison view widget.
+pub fn (win &SimpleWindow) diff_view(old_text string, new_text string, height int) &SimpleWindow {
+	return win.add_diff_view('', old_text, new_text, height)
+}
+
+// set_diff_view updates the compared texts in diff view widget.
+pub fn (win &SimpleWindow) set_diff_view(name string, old_text string, new_text string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_diff_view_text(win.window_info, name.str, old_text.str, new_text.str)
+	}
+	return win
+}
+
+// add_json_tree adds a JSON / structured data syntax-highlighted inspector control.
+pub fn (win &SimpleWindow) add_json_tree(name string, json_str string, height int) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('json_tree')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name: real_name
+			kind: 'json_tree'
+			value: json_str
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_json_tree_control(win.window_info, real_name.str, json_str.str, height)
+	}
+	return win
+}
+
+// json_tree adds an auto-named JSON inspector control.
+pub fn (win &SimpleWindow) json_tree(json_str string, height int) &SimpleWindow {
+	return win.add_json_tree('', json_str, height)
+}
+
+// set_json_tree updates the JSON payload string in JSON tree inspector widget.
+pub fn (win &SimpleWindow) set_json_tree(name string, json_str string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_json_tree_data(win.window_info, name.str, json_str.str)
+	}
+	return win
+}
+
+// add_http_request_card adds an API / HTTP request status & metric inspector card.
+pub fn (win &SimpleWindow) add_http_request_card(name string, method string, url string, status_code int, response_time_ms int) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('http_request_card')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name: real_name
+			kind: 'http_request_card'
+			value: '${method} ${url}'
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_http_request_card_control(win.window_info, real_name.str, method.str, url.str, status_code, response_time_ms)
+	}
+	return win
+}
+
+// http_request_card adds an auto-named HTTP request inspector card.
+pub fn (win &SimpleWindow) http_request_card(method string, url string, status_code int, response_time_ms int) &SimpleWindow {
+	return win.add_http_request_card('', method, url, status_code, response_time_ms)
+}
+
+// set_http_request_card updates metrics and status of HTTP request inspector card.
+pub fn (win &SimpleWindow) set_http_request_card(name string, method string, url string, status_code int, response_time_ms int) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_http_request_card_data(win.window_info, name.str, method.str, url.str, status_code, response_time_ms)
+	}
+	return win
+}
+
+// add_terminal_view adds a shell / terminal command output view widget.
+pub fn (win &SimpleWindow) add_terminal_view(name string, prompt_text string, height int) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('terminal_view')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name: real_name
+			kind: 'terminal_view'
+			value: prompt_text
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_terminal_view_control(win.window_info, real_name.str, prompt_text.str, height)
+	}
+	return win
+}
+
+// terminal_view adds an auto-named terminal view widget.
+pub fn (win &SimpleWindow) terminal_view(prompt_text string, height int) &SimpleWindow {
+	return win.add_terminal_view('', prompt_text, height)
+}
+
+// append_terminal_line appends a styled line (0=prompt, 1=stdout, 2=stderr, 3=success) to terminal view.
+pub fn (win &SimpleWindow) append_terminal_line(name string, line_text string, line_type int) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_append_terminal_line(win.window_info, name.str, line_text.str, line_type)
+	}
+	return win
+}
+
+// clear_terminal clears output in terminal view widget.
+pub fn (win &SimpleWindow) clear_terminal(name string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_clear_terminal(win.window_info, name.str)
+	}
+	return win
+}
+
+// add_resource_monitor adds a system resource & telemetry monitor dashboard control.
+pub fn (win &SimpleWindow) add_resource_monitor(name string, cpu_pct int, mem_pct int, disk_pct int, net_kbps int) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('resource_monitor')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name: real_name
+			kind: 'resource_monitor'
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_resource_monitor_control(win.window_info, real_name.str, cpu_pct, mem_pct, disk_pct, net_kbps)
+	}
+	return win
+}
+
+// resource_monitor adds an auto-named resource monitor dashboard control.
+pub fn (win &SimpleWindow) resource_monitor(cpu_pct int, mem_pct int, disk_pct int, net_kbps int) &SimpleWindow {
+	return win.add_resource_monitor('', cpu_pct, mem_pct, disk_pct, net_kbps)
+}
+
+// set_resource_monitor updates live percentage metrics on resource monitor widget.
+pub fn (win &SimpleWindow) set_resource_monitor(name string, cpu_pct int, mem_pct int, disk_pct int, net_kbps int) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_resource_monitor_metrics(win.window_info, name.str, cpu_pct, mem_pct, disk_pct, net_kbps)
+	}
+	return win
+}
+
+// add_env_vars adds an environment & config variables viewer/editor card.
+pub fn (win &SimpleWindow) add_env_vars(name string, title string, keys []string, values []string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('env_vars')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name: real_name
+			kind: 'env_vars'
+			value: title
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		mut c_keys := []&u8{cap: keys.len}
+		for k in keys {
+			c_keys << k.str
+		}
+		mut c_vals := []&u8{cap: values.len}
+		for v in values {
+			c_vals << v.str
+		}
+		count := if keys.len < values.len { keys.len } else { values.len }
+		C.window_add_env_vars_control(win.window_info, real_name.str, title.str, c_keys.data, c_vals.data, count)
+	}
+	return win
+}
+
+// env_vars adds an auto-named environment variables card.
+pub fn (win &SimpleWindow) env_vars(title string, keys []string, values []string) &SimpleWindow {
+	return win.add_env_vars('', title, keys, values)
+}
+
+// set_env_vars updates keys and values in environment variables card.
+pub fn (win &SimpleWindow) set_env_vars(name string, keys []string, values []string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		mut c_keys := []&u8{cap: keys.len}
+		for k in keys {
+			c_keys << k.str
+		}
+		mut c_vals := []&u8{cap: values.len}
+		for v in values {
+			c_vals << v.str
+		}
+		count := if keys.len < values.len { keys.len } else { values.len }
+		C.window_set_env_vars_data(win.window_info, name.str, c_keys.data, c_vals.data, count)
+	}
+	return win
+}
+
 
 
 

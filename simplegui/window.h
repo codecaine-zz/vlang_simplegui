@@ -459,7 +459,29 @@ double window_get_radial_gauge_value(main__WindowInfo *info, const char *name);
 void *window_add_key_value_card_control(main__WindowInfo *info, const char *name, const char *title, const char **keys, const char **values, int count);
 void window_set_key_value_card_data(main__WindowInfo *info, const char *name, const char **keys, const char **values, int count);
 
+// 6 Useful Developer Controls (Diff View, JSON Tree, HTTP Request Card, Terminal View, Resource Monitor, Env Vars Editor)
+
+void *window_add_diff_view_control(main__WindowInfo *info, const char *name, const char *old_text, const char *new_text, int height);
+void window_set_diff_view_text(main__WindowInfo *info, const char *name, const char *old_text, const char *new_text);
+
+void *window_add_json_tree_control(main__WindowInfo *info, const char *name, const char *json_str, int height);
+void window_set_json_tree_data(main__WindowInfo *info, const char *name, const char *json_str);
+
+void *window_add_http_request_card_control(main__WindowInfo *info, const char *name, const char *method, const char *url, int status_code, int response_time_ms);
+void window_set_http_request_card_data(main__WindowInfo *info, const char *name, const char *method, const char *url, int status_code, int response_time_ms);
+
+void *window_add_terminal_view_control(main__WindowInfo *info, const char *name, const char *prompt_text, int height);
+void window_append_terminal_line(main__WindowInfo *info, const char *name, const char *line_text, int line_type);
+void window_clear_terminal(main__WindowInfo *info, const char *name);
+
+void *window_add_resource_monitor_control(main__WindowInfo *info, const char *name, int cpu_pct, int mem_pct, int disk_pct, int net_kbps);
+void window_set_resource_monitor_metrics(main__WindowInfo *info, const char *name, int cpu_pct, int mem_pct, int disk_pct, int net_kbps);
+
+void *window_add_env_vars_control(main__WindowInfo *info, const char *name, const char *title, const char **keys, const char **values, int count);
+void window_set_env_vars_data(main__WindowInfo *info, const char *name, const char **keys, const char **values, int count);
+
 #endif
+
 
 
 

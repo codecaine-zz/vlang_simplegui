@@ -818,6 +818,26 @@ extern void vlang_dispatch_event(void *win_ptr, const char *name, const char *ev
 - (NSView *)makeKeyValueCardWithName:(NSString *)name title:(NSString *)title keys:(NSArray<NSString *> *)keys values:(NSArray<NSString *> *)values;
 - (void)setKeyValueCardDataForName:(NSString *)name keys:(NSArray<NSString *> *)keys values:(NSArray<NSString *> *)values;
 
+- (NSView *)makeDiffViewWithName:(NSString *)name oldText:(NSString *)oldText newText:(NSString *)newText height:(int)height;
+- (void)setDiffViewTextForName:(NSString *)name oldText:(NSString *)oldText newText:(NSString *)newText;
+
+- (NSView *)makeJsonTreeWithName:(NSString *)name jsonStr:(NSString *)jsonStr height:(int)height;
+- (void)setJsonTreeDataForName:(NSString *)name jsonStr:(NSString *)jsonStr;
+
+- (NSView *)makeHttpRequestCardWithName:(NSString *)name method:(NSString *)method url:(NSString *)url statusCode:(int)statusCode responseTimeMs:(int)responseTimeMs;
+- (void)setHttpRequestCardDataForName:(NSString *)name method:(NSString *)method url:(NSString *)url statusCode:(int)statusCode responseTimeMs:(int)responseTimeMs;
+
+- (NSView *)makeTerminalViewWithName:(NSString *)name promptText:(NSString *)promptText height:(int)height;
+- (void)appendTerminalLine:(NSString *)lineText lineType:(int)lineType forName:(NSString *)name;
+- (void)clearTerminalForName:(NSString *)name;
+
+- (NSView *)makeResourceMonitorWithName:(NSString *)name cpuPct:(int)cpuPct memPct:(int)memPct diskPct:(int)diskPct netKbps:(int)netKbps;
+- (void)setResourceMonitorMetricsForName:(NSString *)name cpuPct:(int)cpuPct memPct:(int)memPct diskPct:(int)diskPct netKbps:(int)netKbps;
+
+- (NSView *)makeEnvVarsWithName:(NSString *)name title:(NSString *)title keys:(NSArray<NSString *> *)keys values:(NSArray<NSString *> *)values;
+- (void)setEnvVarsDataForName:(NSString *)name keys:(NSArray<NSString *> *)keys values:(NSArray<NSString *> *)values;
+
+
 
 
 
@@ -7756,16 +7776,21 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [hstack setAlignment:NSLayoutAttributeCenterY];
   [hstack setSpacing:8.0];
 
-  ModernTextField *tf = [[ModernTextField alloc] initWithFrame:NSMakeRect(0, 0, 260, 24)];
+  ModernTextField *tf = [[ModernTextField alloc] initWithFrame:NSZeroRect];
   [tf setStringValue:initialPath ? initialPath : @""];
   [tf setPlaceholderString:@"No file selected..."];
+  [tf.heightAnchor constraintEqualToConstant:34.0].active = YES;
+  [self makeStretchableView:tf minimumWidth:220];
   [hstack addArrangedSubview:tf];
 
   ModernButton *browseBtn = [ModernButton buttonWithTitle:buttonTitle ? buttonTitle : @"Browse..." target:self action:@selector(handleFilePickerBrowseClicked:)];
+  [browseBtn.heightAnchor constraintEqualToConstant:34.0].active = YES;
   objc_setAssociatedObject(browseBtn, "controlName", name, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
   objc_setAssociatedObject(browseBtn, "targetTextField", tf, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
   objc_setAssociatedObject(browseBtn, "folderOnly", @(folderOnly), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
   [hstack addArrangedSubview:browseBtn];
+
+  [hstack.heightAnchor constraintEqualToConstant:34.0].active = YES;
 
   if (!self.controlsByName) self.controlsByName = [NSMutableDictionary dictionary];
   self.controlsByName[[name lowercaseString]] = hstack;
@@ -7920,7 +7945,571 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   }
 }
 
+// Helper for Diff View formatting
+static NSAttributedString *formatDiffText(NSString *oldText, NSString *newText) {
+  NSMutableAttributedString *result = [[NSMutableAttributedString alloc] init];
+  NSArray *oldLines = oldText ? [oldText componentsSeparatedByString:@"\n"] : @[];
+  NSArray *newLines = newText ? [newText componentsSeparatedByString:@"\n"] : @[];
+
+  NSDictionary *removedAttrs = @{
+    NSForegroundColorAttributeName: [NSColor colorWithRed:1.0 green:0.4 blue:0.4 alpha:1.0],
+    NSBackgroundColorAttributeName: [NSColor colorWithRed:0.3 green:0.1 blue:0.1 alpha:0.6],
+    NSFontAttributeName: [NSFont userFixedPitchFontOfSize:11.5]
+  };
+  NSDictionary *addedAttrs = @{
+    NSForegroundColorAttributeName: [NSColor colorWithRed:0.4 green:0.9 blue:0.4 alpha:1.0],
+    NSBackgroundColorAttributeName: [NSColor colorWithRed:0.1 green:0.3 blue:0.1 alpha:0.6],
+    NSFontAttributeName: [NSFont userFixedPitchFontOfSize:11.5]
+  };
+  NSDictionary *normalAttrs = @{
+    NSForegroundColorAttributeName: [NSColor colorWithWhite:0.75 alpha:1.0],
+    NSFontAttributeName: [NSFont userFixedPitchFontOfSize:11.5]
+  };
+
+  NSSet *newSet = [NSSet setWithArray:newLines];
+  for (NSString *line in oldLines) {
+    if (![newSet containsObject:line] && line.length > 0) {
+      NSString *formatted = [NSString stringWithFormat:@"- %@\n", line];
+      [result appendAttributedString:[[NSAttributedString alloc] initWithString:formatted attributes:removedAttrs]];
+    }
+  }
+
+  NSSet *oldSet = [NSSet setWithArray:oldLines];
+  for (NSString *line in newLines) {
+    if (![oldSet containsObject:line] && line.length > 0) {
+      NSString *formatted = [NSString stringWithFormat:@"+ %@\n", line];
+      [result appendAttributedString:[[NSAttributedString alloc] initWithString:formatted attributes:addedAttrs]];
+    } else {
+      NSString *formatted = [NSString stringWithFormat:@"  %@\n", line];
+      [result appendAttributedString:[[NSAttributedString alloc] initWithString:formatted attributes:normalAttrs]];
+    }
+  }
+
+  return result;
+}
+
+// 7. Code Diff View Control
+- (NSView *)makeDiffViewWithName:(NSString *)name oldText:(NSString *)oldText newText:(NSString *)newText height:(int)height {
+  NSBox *box = [[NSBox alloc] initWithFrame:NSZeroRect];
+  [box setBoxType:NSBoxCustom];
+  [box setCornerRadius:8.0];
+  [box setFillColor:[NSColor colorWithRed:0.11 green:0.12 blue:0.14 alpha:0.95]];
+  [box setBorderColor:[NSColor colorWithWhite:1.0 alpha:0.15]];
+
+  NSScrollView *scroll = [[NSScrollView alloc] initWithFrame:NSZeroRect];
+  [scroll setHasVerticalScroller:YES];
+  [scroll setHasHorizontalScroller:YES];
+  [scroll setAutohidesScrollers:YES];
+  [scroll setDrawsBackground:NO];
+
+  NSTextView *textView = [[NSTextView alloc] initWithFrame:NSZeroRect];
+  [textView setEditable:NO];
+  [textView setSelectable:YES];
+  [textView setBackgroundColor:[NSColor colorWithRed:0.11 green:0.12 blue:0.14 alpha:1.0]];
+  [textView textContainer].widthTracksTextView = YES;
+
+  NSAttributedString *attrStr = formatDiffText(oldText, newText);
+  [[textView textStorage] setAttributedString:attrStr];
+
+  [scroll setDocumentView:textView];
+  [scroll.heightAnchor constraintEqualToConstant:height > 0 ? height : 140].active = YES;
+
+  [box setContentView:scroll];
+
+  if (!self.controlsByName) self.controlsByName = [NSMutableDictionary dictionary];
+  self.controlsByName[[name lowercaseString]] = box;
+  objc_setAssociatedObject(box, "diffTextView", textView, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+  [self addControlToLayout:box];
+  return box;
+}
+
+- (void)setDiffViewTextForName:(NSString *)name oldText:(NSString *)oldText newText:(NSString *)newText {
+  NSBox *box = (NSBox *)self.controlsByName[[name lowercaseString]];
+  if (box) {
+    NSTextView *textView = objc_getAssociatedObject(box, "diffTextView");
+    if (textView) {
+      NSAttributedString *attrStr = formatDiffText(oldText, newText);
+      [[textView textStorage] setAttributedString:attrStr];
+    }
+  }
+}
+
+// Helper for JSON Syntax Highlighting
+static NSAttributedString *formatJsonText(NSString *jsonStr) {
+  if (!jsonStr) jsonStr = @"{}";
+  NSMutableAttributedString *result = [[NSMutableAttributedString alloc] initWithString:jsonStr attributes:@{
+    NSForegroundColorAttributeName: [NSColor colorWithRed:0.8 green:0.82 blue:0.86 alpha:1.0],
+    NSFontAttributeName: [NSFont userFixedPitchFontOfSize:11.5]
+  }];
+
+  NSRegularExpression *keyRegex = [NSRegularExpression regularExpressionWithPattern:@"\"([^\"]+)\"\\s*:" options:0 error:nil];
+  NSRegularExpression *strRegex = [NSRegularExpression regularExpressionWithPattern:@":\\s*\"([^\"]*)\"" options:0 error:nil];
+  NSRegularExpression *numRegex = [NSRegularExpression regularExpressionWithPattern:@"\\b(-?\\d+(\\.\\d+)?)\\b" options:0 error:nil];
+  NSRegularExpression *boolRegex = [NSRegularExpression regularExpressionWithPattern:@"\\b(true|false|null)\\b" options:0 error:nil];
+
+  NSArray *matches = [keyRegex matchesInString:jsonStr options:0 range:NSMakeRange(0, jsonStr.length)];
+  for (NSTextCheckingResult *m in matches) {
+    [result addAttribute:NSForegroundColorAttributeName value:[NSColor colorWithRed:0.35 green:0.72 blue:0.76 alpha:1.0] range:[m rangeAtIndex:1]];
+  }
+
+  matches = [strRegex matchesInString:jsonStr options:0 range:NSMakeRange(0, jsonStr.length)];
+  for (NSTextCheckingResult *m in matches) {
+    if ([m numberOfRanges] > 1) {
+      [result addAttribute:NSForegroundColorAttributeName value:[NSColor colorWithRed:0.60 green:0.77 blue:0.47 alpha:1.0] range:[m rangeAtIndex:1]];
+    }
+  }
+
+  matches = [numRegex matchesInString:jsonStr options:0 range:NSMakeRange(0, jsonStr.length)];
+  for (NSTextCheckingResult *m in matches) {
+    [result addAttribute:NSForegroundColorAttributeName value:[NSColor colorWithRed:0.82 green:0.60 blue:0.40 alpha:1.0] range:m.range];
+  }
+
+  matches = [boolRegex matchesInString:jsonStr options:0 range:NSMakeRange(0, jsonStr.length)];
+  for (NSTextCheckingResult *m in matches) {
+    [result addAttribute:NSForegroundColorAttributeName value:[NSColor colorWithRed:0.78 green:0.47 blue:0.87 alpha:1.0] range:m.range];
+  }
+
+  return result;
+}
+
+// 8. JSON Tree / Inspector Control
+- (NSView *)makeJsonTreeWithName:(NSString *)name jsonStr:(NSString *)jsonStr height:(int)height {
+  NSBox *box = [[NSBox alloc] initWithFrame:NSZeroRect];
+  [box setBoxType:NSBoxCustom];
+  [box setCornerRadius:8.0];
+  [box setFillColor:[NSColor colorWithRed:0.09 green:0.10 blue:0.12 alpha:0.95]];
+  [box setBorderColor:[NSColor colorWithWhite:1.0 alpha:0.15]];
+
+  NSScrollView *scroll = [[NSScrollView alloc] initWithFrame:NSZeroRect];
+  [scroll setHasVerticalScroller:YES];
+  [scroll setHasHorizontalScroller:YES];
+  [scroll setAutohidesScrollers:YES];
+  [scroll setDrawsBackground:NO];
+
+  NSTextView *textView = [[NSTextView alloc] initWithFrame:NSZeroRect];
+  [textView setEditable:NO];
+  [textView setSelectable:YES];
+  [textView setBackgroundColor:[NSColor colorWithRed:0.09 green:0.10 blue:0.12 alpha:1.0]];
+  [textView textContainer].widthTracksTextView = YES;
+
+  NSAttributedString *attrStr = formatJsonText(jsonStr);
+  [[textView textStorage] setAttributedString:attrStr];
+
+  [scroll setDocumentView:textView];
+  [scroll.heightAnchor constraintEqualToConstant:height > 0 ? height : 140].active = YES;
+
+  [box setContentView:scroll];
+
+  if (!self.controlsByName) self.controlsByName = [NSMutableDictionary dictionary];
+  self.controlsByName[[name lowercaseString]] = box;
+  objc_setAssociatedObject(box, "jsonTextView", textView, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+  [self addControlToLayout:box];
+  return box;
+}
+
+- (void)setJsonTreeDataForName:(NSString *)name jsonStr:(NSString *)jsonStr {
+  NSBox *box = (NSBox *)self.controlsByName[[name lowercaseString]];
+  if (box) {
+    NSTextView *textView = objc_getAssociatedObject(box, "jsonTextView");
+    if (textView) {
+      NSAttributedString *attrStr = formatJsonText(jsonStr);
+      [[textView textStorage] setAttributedString:attrStr];
+    }
+  }
+}
+
+// 9. HTTP Request Inspector Card Control
+- (NSView *)makeHttpRequestCardWithName:(NSString *)name method:(NSString *)method url:(NSString *)url statusCode:(int)statusCode responseTimeMs:(int)responseTimeMs {
+  NSBox *card = [[NSBox alloc] initWithFrame:NSZeroRect];
+  [card setBoxType:NSBoxCustom];
+  [card setCornerRadius:8.0];
+  [card setFillColor:[NSColor colorWithRed:0.11 green:0.13 blue:0.17 alpha:0.9]];
+  [card setBorderColor:[NSColor colorWithWhite:1.0 alpha:0.15]];
+
+  NSStackView *vbox = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [vbox setOrientation:NSUserInterfaceLayoutOrientationVertical];
+  [vbox setAlignment:NSLayoutAttributeLeading];
+  [vbox setSpacing:8.0];
+  [vbox setEdgeInsets:NSEdgeInsetsMake(10, 12, 10, 12)];
+
+  // Top Row: Method Badge + URL
+  NSStackView *topRow = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [topRow setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+  [topRow setAlignment:NSLayoutAttributeCenterY];
+  [topRow setSpacing:10.0];
+
+  NSBox *methodBadge = [[NSBox alloc] initWithFrame:NSZeroRect];
+  [methodBadge setBoxType:NSBoxCustom];
+  [methodBadge setCornerRadius:4.0];
+
+  NSString *mUpper = [method uppercaseString];
+  if ([mUpper isEqualToString:@"GET"]) {
+    [methodBadge setFillColor:[NSColor colorWithRed:0.12 green:0.43 blue:0.92 alpha:1.0]];
+  } else if ([mUpper isEqualToString:@"POST"]) {
+    [methodBadge setFillColor:[NSColor colorWithRed:0.14 green:0.53 blue:0.21 alpha:1.0]];
+  } else if ([mUpper isEqualToString:@"PUT"]) {
+    [methodBadge setFillColor:[NSColor colorWithRed:0.85 green:0.47 blue:0.02 alpha:1.0]];
+  } else {
+    [methodBadge setFillColor:[NSColor colorWithRed:0.85 green:0.21 blue:0.20 alpha:1.0]];
+  }
+
+  NSTextField *methodLbl = [NSTextField labelWithString:mUpper];
+  [methodLbl setFont:[NSFont boldSystemFontOfSize:11.0]];
+  [methodLbl setTextColor:[NSColor whiteColor]];
+  [methodBadge setContentView:methodLbl];
+
+  NSTextField *urlLbl = [NSTextField labelWithString:url];
+  [urlLbl setFont:[NSFont userFixedPitchFontOfSize:12.0]];
+  [urlLbl setTextColor:[NSColor colorWithWhite:0.95 alpha:1.0]];
+
+  [topRow addArrangedSubview:methodBadge];
+  [topRow addArrangedSubview:urlLbl];
+
+  // Bottom Row: Status Badge + Response Time
+  NSStackView *btmRow = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [btmRow setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+  [btmRow setAlignment:NSLayoutAttributeCenterY];
+  [btmRow setSpacing:12.0];
+
+  NSBox *statusBadge = [[NSBox alloc] initWithFrame:NSZeroRect];
+  [statusBadge setBoxType:NSBoxCustom];
+  [statusBadge setCornerRadius:4.0];
+  if (statusCode >= 200 && statusCode < 300) {
+    [statusBadge setFillColor:[NSColor colorWithRed:0.14 green:0.53 blue:0.21 alpha:1.0]];
+  } else {
+    [statusBadge setFillColor:[NSColor colorWithRed:0.85 green:0.21 blue:0.20 alpha:1.0]];
+  }
+
+  NSTextField *statusLbl = [NSTextField labelWithString:[NSString stringWithFormat:@" %d OK ", statusCode]];
+  [statusLbl setFont:[NSFont boldSystemFontOfSize:10.0]];
+  [statusLbl setTextColor:[NSColor whiteColor]];
+  [statusBadge setContentView:statusLbl];
+
+  NSTextField *timeLbl = [NSTextField labelWithString:[NSString stringWithFormat:@"⚡ %d ms", responseTimeMs]];
+  [timeLbl setFont:[NSFont systemFontOfSize:11.0]];
+  [timeLbl setTextColor:[NSColor colorWithRed:0.6 green:0.65 blue:0.7 alpha:1.0]];
+
+  [btmRow addArrangedSubview:statusBadge];
+  [btmRow addArrangedSubview:timeLbl];
+
+  [vbox addArrangedSubview:topRow];
+  [vbox addArrangedSubview:btmRow];
+
+  [card setContentView:vbox];
+
+  if (!self.controlsByName) self.controlsByName = [NSMutableDictionary dictionary];
+  self.controlsByName[[name lowercaseString]] = card;
+  objc_setAssociatedObject(card, "methodBadge", methodBadge, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(card, "methodLbl", methodLbl, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(card, "urlLbl", urlLbl, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(card, "statusBadge", statusBadge, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(card, "statusLbl", statusLbl, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(card, "timeLbl", timeLbl, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+  [self addControlToLayout:card];
+  return card;
+}
+
+- (void)setHttpRequestCardDataForName:(NSString *)name method:(NSString *)method url:(NSString *)url statusCode:(int)statusCode responseTimeMs:(int)responseTimeMs {
+  NSBox *card = (NSBox *)self.controlsByName[[name lowercaseString]];
+  if (card) {
+    NSTextField *methodLbl = objc_getAssociatedObject(card, "methodLbl");
+    NSTextField *urlLbl = objc_getAssociatedObject(card, "urlLbl");
+    NSTextField *statusLbl = objc_getAssociatedObject(card, "statusLbl");
+    NSTextField *timeLbl = objc_getAssociatedObject(card, "timeLbl");
+    NSBox *methodBadge = objc_getAssociatedObject(card, "methodBadge");
+    NSBox *statusBadge = objc_getAssociatedObject(card, "statusBadge");
+
+    NSString *mUpper = [method uppercaseString];
+    if (methodLbl) [methodLbl setStringValue:mUpper];
+    if (urlLbl) [urlLbl setStringValue:url];
+    if (statusLbl) [statusLbl setStringValue:[NSString stringWithFormat:@" %d ", statusCode]];
+    if (timeLbl) [timeLbl setStringValue:[NSString stringWithFormat:@"⚡ %d ms", responseTimeMs]];
+
+    if (methodBadge) {
+      if ([mUpper isEqualToString:@"GET"]) [methodBadge setFillColor:[NSColor colorWithRed:0.12 green:0.43 blue:0.92 alpha:1.0]];
+      else if ([mUpper isEqualToString:@"POST"]) [methodBadge setFillColor:[NSColor colorWithRed:0.14 green:0.53 blue:0.21 alpha:1.0]];
+      else if ([mUpper isEqualToString:@"PUT"]) [methodBadge setFillColor:[NSColor colorWithRed:0.85 green:0.47 blue:0.02 alpha:1.0]];
+      else [methodBadge setFillColor:[NSColor colorWithRed:0.85 green:0.21 blue:0.20 alpha:1.0]];
+    }
+
+    if (statusBadge) {
+      if (statusCode >= 200 && statusCode < 300) [statusBadge setFillColor:[NSColor colorWithRed:0.14 green:0.53 blue:0.21 alpha:1.0]];
+      else [statusBadge setFillColor:[NSColor colorWithRed:0.85 green:0.21 blue:0.20 alpha:1.0]];
+    }
+  }
+}
+
+// 10. Terminal / Command Output View Control
+- (NSView *)makeTerminalViewWithName:(NSString *)name promptText:(NSString *)promptText height:(int)height {
+  NSBox *box = [[NSBox alloc] initWithFrame:NSZeroRect];
+  [box setBoxType:NSBoxCustom];
+  [box setCornerRadius:8.0];
+  [box setFillColor:[NSColor colorWithRed:0.05 green:0.07 blue:0.09 alpha:0.98]];
+  [box setBorderColor:[NSColor colorWithWhite:1.0 alpha:0.15]];
+
+  NSStackView *vbox = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [vbox setOrientation:NSUserInterfaceLayoutOrientationVertical];
+  [vbox setAlignment:NSLayoutAttributeLeading];
+  [vbox setSpacing:4.0];
+  [vbox setEdgeInsets:NSEdgeInsetsMake(6, 8, 6, 8)];
+
+  // Terminal title bar
+  NSStackView *dotRow = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [dotRow setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+  [dotRow setSpacing:6.0];
+
+  for (NSColor *c in @[[NSColor colorWithRed:0.95 green:0.35 blue:0.35 alpha:1.0], [NSColor colorWithRed:0.95 green:0.75 blue:0.25 alpha:1.0], [NSColor colorWithRed:0.25 green:0.85 blue:0.45 alpha:1.0]]) {
+    NSBox *dot = [[NSBox alloc] initWithFrame:NSMakeRect(0, 0, 10, 10)];
+    [dot setBoxType:NSBoxCustom];
+    [dot setCornerRadius:5.0];
+    [dot setFillColor:c];
+    [dot.widthAnchor constraintEqualToConstant:10].active = YES;
+    [dot.heightAnchor constraintEqualToConstant:10].active = YES;
+    [dotRow addArrangedSubview:dot];
+  }
+
+  NSTextField *titleLbl = [NSTextField labelWithString:@"Terminal / Shell Emulator"];
+  [titleLbl setFont:[NSFont boldSystemFontOfSize:11.0]];
+  [titleLbl setTextColor:[NSColor colorWithWhite:0.6 alpha:1.0]];
+  [dotRow addArrangedSubview:titleLbl];
+
+  NSScrollView *scroll = [[NSScrollView alloc] initWithFrame:NSZeroRect];
+  [scroll setHasVerticalScroller:YES];
+  [scroll setHasHorizontalScroller:YES];
+  [scroll setAutohidesScrollers:YES];
+  [scroll setDrawsBackground:NO];
+
+  NSTextView *textView = [[NSTextView alloc] initWithFrame:NSZeroRect];
+  [textView setEditable:NO];
+  [textView setSelectable:YES];
+  [textView setBackgroundColor:[NSColor colorWithRed:0.05 green:0.07 blue:0.09 alpha:1.0]];
+
+  NSString *initText = [NSString stringWithFormat:@"%@\n", promptText ? promptText : @"$ bash -l"];
+  NSAttributedString *initAttr = [[NSAttributedString alloc] initWithString:initText attributes:@{
+    NSForegroundColorAttributeName: [NSColor colorWithRed:0.22 green:0.74 blue:0.97 alpha:1.0],
+    NSFontAttributeName: [NSFont userFixedPitchFontOfSize:11.0]
+  }];
+  [[textView textStorage] setAttributedString:initAttr];
+
+  [scroll setDocumentView:textView];
+  [scroll.heightAnchor constraintEqualToConstant:height > 0 ? height : 130].active = YES;
+
+  [vbox addArrangedSubview:dotRow];
+  [vbox addArrangedSubview:scroll];
+
+  [box setContentView:vbox];
+
+  if (!self.controlsByName) self.controlsByName = [NSMutableDictionary dictionary];
+  self.controlsByName[[name lowercaseString]] = box;
+  objc_setAssociatedObject(box, "termTextView", textView, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+  [self addControlToLayout:box];
+  return box;
+}
+
+- (void)appendTerminalLine:(NSString *)lineText lineType:(int)lineType forName:(NSString *)name {
+  NSBox *box = (NSBox *)self.controlsByName[[name lowercaseString]];
+  if (box) {
+    NSTextView *textView = objc_getAssociatedObject(box, "termTextView");
+    if (textView) {
+      NSColor *color = [NSColor whiteColor];
+      if (lineType == 0) color = [NSColor colorWithRed:0.22 green:0.74 blue:0.97 alpha:1.0]; // prompt
+      else if (lineType == 1) color = [NSColor colorWithRed:0.89 green:0.91 blue:0.94 alpha:1.0]; // stdout
+      else if (lineType == 2) color = [NSColor colorWithRed:0.97 green:0.44 blue:0.44 alpha:1.0]; // stderr
+      else if (lineType == 3) color = [NSColor colorWithRed:0.29 green:0.87 blue:0.50 alpha:1.0]; // success
+
+      NSAttributedString *attrLine = [[NSAttributedString alloc] initWithString:lineText attributes:@{
+        NSForegroundColorAttributeName: color,
+        NSFontAttributeName: [NSFont userFixedPitchFontOfSize:11.0]
+      }];
+      [[textView textStorage] appendAttributedString:attrLine];
+      [textView scrollToEndOfDocument:nil];
+    }
+  }
+}
+
+- (void)clearTerminalForName:(NSString *)name {
+  NSBox *box = (NSBox *)self.controlsByName[[name lowercaseString]];
+  if (box) {
+    NSTextView *textView = objc_getAssociatedObject(box, "termTextView");
+    if (textView) {
+      [[textView textStorage] setAttributedString:[[NSAttributedString alloc] initWithString:@""]];
+    }
+  }
+}
+
+// 11. Resource & Telemetry Monitor Control
+- (NSView *)makeResourceMonitorWithName:(NSString *)name cpuPct:(int)cpuPct memPct:(int)memPct diskPct:(int)diskPct netKbps:(int)netKbps {
+  NSBox *card = [[NSBox alloc] initWithFrame:NSZeroRect];
+  [card setBoxType:NSBoxCustom];
+  [card setCornerRadius:8.0];
+  [card setFillColor:[NSColor colorWithRed:0.10 green:0.12 blue:0.16 alpha:0.9]];
+  [card setBorderColor:[NSColor colorWithWhite:1.0 alpha:0.15]];
+
+  NSStackView *vbox = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [vbox setOrientation:NSUserInterfaceLayoutOrientationVertical];
+  [vbox setAlignment:NSLayoutAttributeLeading];
+  [vbox setSpacing:6.0];
+  [vbox setEdgeInsets:NSEdgeInsetsMake(8, 12, 8, 12)];
+
+  NSTextField *titleLbl = [NSTextField labelWithString:@"⚡ Resource & System Performance Monitor"];
+  [titleLbl setFont:[NSFont boldSystemFontOfSize:12.0]];
+  [titleLbl setTextColor:[NSColor systemCyanColor]];
+  [vbox addArrangedSubview:titleLbl];
+
+  NSArray *metricNames = @[@"CPU Usage", @"Memory (RAM)", @"Disk Storage", @"Network NetIO"];
+  NSArray *values = @[@(cpuPct), @(memPct), @(diskPct), @(netKbps)];
+  NSMutableArray *valLabels = [NSMutableArray array];
+  NSMutableArray *indicators = [NSMutableArray array];
+
+  for (int i = 0; i < 4; i++) {
+    NSStackView *row = [[NSStackView alloc] initWithFrame:NSZeroRect];
+    [row setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+    [row setAlignment:NSLayoutAttributeCenterY];
+    [row setSpacing:8.0];
+
+    NSTextField *nameLbl = [NSTextField labelWithString:metricNames[i]];
+    [nameLbl setFont:[NSFont systemFontOfSize:11.0]];
+    [nameLbl setTextColor:[NSColor colorWithWhite:0.7 alpha:1.0]];
+    [nameLbl.widthAnchor constraintEqualToConstant:100].active = YES;
+
+    NSProgressIndicator *prog = [[NSProgressIndicator alloc] initWithFrame:NSZeroRect];
+    [prog setIndeterminate:NO];
+    [prog setMinValue:0];
+    [prog setMaxValue:100];
+    [prog setDoubleValue:[values[i] doubleValue]];
+    [prog.widthAnchor constraintEqualToConstant:140].active = YES;
+
+    int val = [values[i] intValue];
+    NSString *valStr = (i == 3) ? [NSString stringWithFormat:@"%d KB/s", val] : [NSString stringWithFormat:@"%d%%", val];
+    NSTextField *vLbl = [NSTextField labelWithString:valStr];
+    [vLbl setFont:[NSFont boldSystemFontOfSize:11.0]];
+    [vLbl setTextColor:[NSColor whiteColor]];
+
+    [row addArrangedSubview:nameLbl];
+    [row addArrangedSubview:prog];
+    [row addArrangedSubview:vLbl];
+
+    [vbox addArrangedSubview:row];
+
+    [valLabels addObject:vLbl];
+    [indicators addObject:prog];
+  }
+
+  [card setContentView:vbox];
+
+  if (!self.controlsByName) self.controlsByName = [NSMutableDictionary dictionary];
+  self.controlsByName[[name lowercaseString]] = card;
+  objc_setAssociatedObject(card, "resValLabels", valLabels, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(card, "resIndicators", indicators, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+  [self addControlToLayout:card];
+  return card;
+}
+
+- (void)setResourceMonitorMetricsForName:(NSString *)name cpuPct:(int)cpuPct memPct:(int)memPct diskPct:(int)diskPct netKbps:(int)netKbps {
+  NSBox *card = (NSBox *)self.controlsByName[[name lowercaseString]];
+  if (card) {
+    NSArray *valLabels = objc_getAssociatedObject(card, "resValLabels");
+    NSArray *indicators = objc_getAssociatedObject(card, "resIndicators");
+    if (valLabels.count >= 4 && indicators.count >= 4) {
+      int vals[4] = {cpuPct, memPct, diskPct, netKbps};
+      for (int i = 0; i < 4; i++) {
+        NSProgressIndicator *prog = indicators[i];
+        NSTextField *vLbl = valLabels[i];
+        [prog setDoubleValue:vals[i]];
+        NSString *valStr = (i == 3) ? [NSString stringWithFormat:@"%d KB/s", vals[i]] : [NSString stringWithFormat:@"%d%%", vals[i]];
+        [vLbl setStringValue:valStr];
+      }
+    }
+  }
+}
+
+// 12. Environment & Config Variables Editor Control
+- (NSView *)makeEnvVarsWithName:(NSString *)name title:(NSString *)title keys:(NSArray<NSString *> *)keys values:(NSArray<NSString *> *)values {
+  NSBox *card = [[NSBox alloc] initWithFrame:NSZeroRect];
+  [card setBoxType:NSBoxCustom];
+  [card setCornerRadius:8.0];
+  [card setFillColor:[NSColor colorWithRed:0.12 green:0.14 blue:0.18 alpha:0.9]];
+  [card setBorderColor:[NSColor colorWithWhite:1.0 alpha:0.15]];
+
+  NSStackView *vbox = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [vbox setOrientation:NSUserInterfaceLayoutOrientationVertical];
+  [vbox setAlignment:NSLayoutAttributeLeading];
+  [vbox setSpacing:6.0];
+  [vbox setEdgeInsets:NSEdgeInsetsMake(8, 12, 8, 12)];
+
+  if (title && title.length > 0) {
+    NSTextField *titleLbl = [NSTextField labelWithString:title];
+    [titleLbl setFont:[NSFont boldSystemFontOfSize:12.0]];
+    [titleLbl setTextColor:[NSColor systemGreenColor]];
+    [vbox addArrangedSubview:titleLbl];
+  }
+
+  NSMutableArray *kLabels = [NSMutableArray array];
+  NSMutableArray *vLabels = [NSMutableArray array];
+
+  int count = (int)MIN(keys.count, values.count);
+  for (int i = 0; i < count; i++) {
+    NSStackView *row = [[NSStackView alloc] initWithFrame:NSZeroRect];
+    [row setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+    [row setAlignment:NSLayoutAttributeCenterY];
+    [row setSpacing:8.0];
+
+    NSTextField *kLbl = [NSTextField labelWithString:keys[i]];
+    [kLbl setFont:[NSFont userFixedPitchFontOfSize:11.0]];
+    [kLbl setTextColor:[NSColor colorWithRed:0.22 green:0.74 blue:0.97 alpha:1.0]];
+    [kLbl.widthAnchor constraintEqualToConstant:130].active = YES;
+
+    NSTextField *eqLbl = [NSTextField labelWithString:@"="];
+    [eqLbl setFont:[NSFont boldSystemFontOfSize:11.0]];
+    [eqLbl setTextColor:[NSColor colorWithWhite:0.5 alpha:1.0]];
+
+    NSTextField *vLbl = [NSTextField labelWithString:values[i]];
+    [vLbl setFont:[NSFont userFixedPitchFontOfSize:11.0]];
+    [vLbl setTextColor:[NSColor colorWithWhite:0.9 alpha:1.0]];
+
+    [row addArrangedSubview:kLbl];
+    [row addArrangedSubview:eqLbl];
+    [row addArrangedSubview:vLbl];
+
+    [vbox addArrangedSubview:row];
+
+    [kLabels addObject:kLbl];
+    [vLabels addObject:vLbl];
+  }
+
+  [card setContentView:vbox];
+
+  if (!self.controlsByName) self.controlsByName = [NSMutableDictionary dictionary];
+  self.controlsByName[[name lowercaseString]] = card;
+  objc_setAssociatedObject(card, "envKeyLabels", kLabels, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(card, "envValLabels", vLabels, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+  [self addControlToLayout:card];
+  return card;
+}
+
+- (void)setEnvVarsDataForName:(NSString *)name keys:(NSArray<NSString *> *)keys values:(NSArray<NSString *> *)values {
+  NSBox *card = (NSBox *)self.controlsByName[[name lowercaseString]];
+  if (card) {
+    NSArray *kLabels = objc_getAssociatedObject(card, "envKeyLabels");
+    NSArray *vLabels = objc_getAssociatedObject(card, "envValLabels");
+    int count = (int)MIN(MIN(keys.count, values.count), MIN(kLabels.count, vLabels.count));
+    for (int i = 0; i < count; i++) {
+      NSTextField *kLbl = kLabels[i];
+      NSTextField *vLbl = vLabels[i];
+      [kLbl setStringValue:keys[i]];
+      [vLbl setStringValue:values[i]];
+    }
+  }
+}
+
 @end
+
 
 
 
@@ -14402,6 +14991,136 @@ void window_set_key_value_card_data(main__WindowInfo *info, const char *name, co
   };
   if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
 }
+
+// 6 Developer Controls C Bridges
+void *window_add_diff_view_control(main__WindowInfo *info, const char *name, const char *old_text, const char *new_text, int height) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeDiffViewWithName:nsstring(name) oldText:nsstring(old_text) newText:nsstring(new_text) height:height];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)control;
+}
+
+void window_set_diff_view_text(main__WindowInfo *info, const char *name, const char *old_text, const char *new_text) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate setDiffViewTextForName:nsstring(name) oldText:nsstring(old_text) newText:nsstring(new_text)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+void *window_add_json_tree_control(main__WindowInfo *info, const char *name, const char *json_str, int height) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeJsonTreeWithName:nsstring(name) jsonStr:nsstring(json_str) height:height];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)control;
+}
+
+void window_set_json_tree_data(main__WindowInfo *info, const char *name, const char *json_str) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate setJsonTreeDataForName:nsstring(name) jsonStr:nsstring(json_str)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+void *window_add_http_request_card_control(main__WindowInfo *info, const char *name, const char *method, const char *url, int status_code, int response_time_ms) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeHttpRequestCardWithName:nsstring(name) method:nsstring(method) url:nsstring(url) statusCode:status_code responseTimeMs:response_time_ms];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)control;
+}
+
+void window_set_http_request_card_data(main__WindowInfo *info, const char *name, const char *method, const char *url, int status_code, int response_time_ms) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate setHttpRequestCardDataForName:nsstring(name) method:nsstring(method) url:nsstring(url) statusCode:status_code responseTimeMs:response_time_ms];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+void *window_add_terminal_view_control(main__WindowInfo *info, const char *name, const char *prompt_text, int height) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeTerminalViewWithName:nsstring(name) promptText:nsstring(prompt_text) height:height];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)control;
+}
+
+void window_append_terminal_line(main__WindowInfo *info, const char *name, const char *line_text, int line_type) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate appendTerminalLine:nsstring(line_text) lineType:line_type forName:nsstring(name)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+void window_clear_terminal(main__WindowInfo *info, const char *name) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate clearTerminalForName:nsstring(name)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+void *window_add_resource_monitor_control(main__WindowInfo *info, const char *name, int cpu_pct, int mem_pct, int disk_pct, int net_kbps) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeResourceMonitorWithName:nsstring(name) cpuPct:cpu_pct memPct:mem_pct diskPct:disk_pct netKbps:net_kbps];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)control;
+}
+
+void window_set_resource_monitor_metrics(main__WindowInfo *info, const char *name, int cpu_pct, int mem_pct, int disk_pct, int net_kbps) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate setResourceMonitorMetricsForName:nsstring(name) cpuPct:cpu_pct memPct:mem_pct diskPct:disk_pct netKbps:net_kbps];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+void *window_add_env_vars_control(main__WindowInfo *info, const char *name, const char *title, const char **keys, const char **values, int count) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSMutableArray *kArr = [NSMutableArray arrayWithCapacity:count];
+  NSMutableArray *vArr = [NSMutableArray arrayWithCapacity:count];
+  for (int i = 0; i < count; i++) {
+    [kArr addObject:nsstring(keys[i])];
+    [vArr addObject:nsstring(values[i])];
+  }
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeEnvVarsWithName:nsstring(name) title:nsstring(title) keys:kArr values:vArr];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)control;
+}
+
+void window_set_env_vars_data(main__WindowInfo *info, const char *name, const char **keys, const char **values, int count) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSMutableArray *kArr = [NSMutableArray arrayWithCapacity:count];
+  NSMutableArray *vArr = [NSMutableArray arrayWithCapacity:count];
+  for (int i = 0; i < count; i++) {
+    [kArr addObject:nsstring(keys[i])];
+    [vArr addObject:nsstring(values[i])];
+  }
+  void (^runBlock)(void) = ^{
+    [delegate setEnvVarsDataForName:nsstring(name) keys:kArr values:vArr];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
 
 
 
