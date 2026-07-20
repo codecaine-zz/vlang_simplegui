@@ -7,7 +7,7 @@ Build real, native Cocoa desktop apps in [V](https://vlang.io) with a beginner-f
 ![License: MIT](https://img.shields.io/badge/license-MIT-green)
 ![Demos: 70+](https://img.shields.io/badge/demos-70%2B-orange)
 
-![SimpleGUI all-controls demo](screenshots/all_controls_demo.png)
+![SimpleGUI — All Controls Demo (20 sections, every win.add_* control)](screenshots/all_controls_demo.png)
 
 ## Table of contents
 
@@ -538,7 +538,7 @@ v run .
 
 | Demo                                                                 | Description                                                                         |
 | -------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| [all_controls_demo.v](demos/all_controls_demo.v)                     | Single-window demo exercising many controls in one place                            |
+| [all_controls_demo.v](demos/all_controls_demo.v)                     | Comprehensive 20-section showcase of every `win.add_*` control in API.md — text, buttons, sliders, pickers, charts, grids, badges, stat cards, code editor, timeline, and more |
 | [new_controls_demo.v](demos/new_controls_demo.v)                     | Segmented menus, popup selections, and search fields                                |
 | [new_controls_showcase.v](demos/new_controls_showcase.v)             | Showcase of the newest control additions                                            |
 | [more_controls_demo.v](demos/more_controls_demo.v)                   | Interactive showcase of Stat Cards, Banners, Section Headers, Vertical Sliders & Chip Groups |
@@ -1067,8 +1067,8 @@ Screenshots are auto-generated using `v run capture_demos.vsh`.
   ![Grid Layout](screenshots/grid_style.png)
 - **Advanced Preferences Settings**: `v run demos/settings_editor.v`
   ![Settings Editor](screenshots/settings_editor.png)
-- **Single-Window All Controls**: `v run demos/all_controls_demo.v`
-  ![All Controls Demo](screenshots/all_controls_demo.png)
+- **All Controls — Complete API Showcase** (20 sections, every `win.add_*` control): `v run demos/all_controls_demo.v`
+  ![All Controls Demo — 20 sections, every win.add_* control](screenshots/all_controls_demo.png)
 - **Hierarchical Tree View**: `v run demos/tree_view_demo.v`
   ![Tree View Demo](screenshots/tree_view_demo.png)
 - **Interactive Rich Level Indicators & ComboBox**: `v run demos/modern_widgets_demo.v`
