@@ -5,8 +5,8 @@ import simplegui
 fn main() {
 	mut win := simplegui.new_simple_window('Modern Widgets Showcase', 780, 580)
 
-	win.set_background_color('#1e1b4b') // Indigo background
-		.set_font_color('white')
+	win.set_background_color('#ffffffff') // Indigo background
+		.set_font_color('black')
 		.set_padding(20)
 		.set_spacing(12)
 		.set_title('macOS Rich Controls Showcase')

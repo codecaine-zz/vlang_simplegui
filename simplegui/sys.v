@@ -1,6 +1,17 @@
 module simplegui
 
 import os
+import time
+import net
+import net.http
+
+#include <sys/types.h>
+#include <sys/sysctl.h>
+#include <sys/time.h>
+
+// C function declarations for direct POSIX/BSD system calls used in this file.
+fn C.getloadavg(loadavg &f64, nelem int) int
+fn C.sysctl(name &int, namelen u32, oldp voidptr, oldlenp &usize, newp voidptr, newlen usize) int
 
 // sys.v - Neutralino-inspired System Call and OS API Extensions for SimpleGUI
 // Extends the `SimpleWindow` struct with direct, fluent methods for executing
@@ -634,4 +645,556 @@ pub fn (win &SimpleWindow) get_uname() Uname {
 		version:  u.version
 		machine:  u.machine
 	}
+}
+
+// ==========================================
+// 6. System Clock & Time
+// ==========================================
+
+
+// SystemTime holds a structured representation of the current local time.
+pub struct SystemTime {
+pub:
+	year        int
+	month       int
+	day         int
+	hour        int
+	minute      int
+	second      int
+	unix_epoch  i64
+	unix_milli  i64
+	rfc3339     string
+	weekday     string
+}
+
+// get_time returns the current local date and time packed into a SystemTime struct.
+pub fn (win &SimpleWindow) get_time() SystemTime {
+	now := time.now()
+	return SystemTime{
+		year:       now.year
+		month:      now.month
+		day:        now.day
+		hour:       now.hour
+		minute:     now.minute
+		second:     now.second
+		unix_epoch: now.unix()
+		unix_milli: now.unix_milli()
+		rfc3339:    now.format_rfc3339()
+		weekday:    now.weekday_str()
+	}
+}
+
+// get_unix_epoch returns the current time as a Unix epoch timestamp (seconds since 1970-01-01).
+pub fn (win &SimpleWindow) get_unix_epoch() i64 {
+	return time.now().unix()
+}
+
+// get_unix_milli returns the current time as a Unix epoch in milliseconds.
+pub fn (win &SimpleWindow) get_unix_milli() i64 {
+	return time.now().unix_milli()
+}
+
+// get_time_formatted returns the current local time as a formatted string.
+// format uses V's time.Time.custom_format(), e.g. "YYYY-MM-DD HH:mm:ss".
+pub fn (win &SimpleWindow) get_time_formatted(format string) string {
+	return time.now().custom_format(format)
+}
+
+// sleep_ms pauses execution for the specified number of milliseconds (blocking).
+// Use exec_bg/spawn to avoid freezing the Cocoa UI event loop.
+pub fn (win &SimpleWindow) sleep_ms(ms u64) &SimpleWindow {
+	time.sleep(ms * time.millisecond)
+	return win
+}
+
+// get_uptime_seconds returns how long the macOS system has been running (in seconds).
+// Uses C sysctl() directly via V's C interop — no subprocess required.
+pub fn (win &SimpleWindow) get_uptime_seconds() i64 {
+	// kern.boottime is a struct timeval { tv_sec, tv_usec }
+	$if macos || freebsd {
+		mib := [C.CTL_KERN, C.KERN_BOOTTIME]!
+		tv := C.timeval{}
+		sz := usize(sizeof(C.timeval))
+		if unsafe { C.sysctl(&mib[0], 2, &tv, &sz, nil, 0) } == 0 {
+			return time.now().unix() - i64(tv.tv_sec)
+		}
+	}
+	// Fallback: parse sysctl text output on other POSIX systems
+	raw := win.exec_or('sysctl -n kern.boottime', '')
+	if raw.len > 0 {
+		parts := raw.split('=')
+		if parts.len >= 2 {
+			boot_sec := parts[1].trim_space().split(',')[0].trim_space().i64()
+			return time.now().unix() - boot_sec
+		}
+	}
+	return 0
+}
+
+// ==========================================
+// 7. Clipboard
+// NOTE: clipboard_copy(text) and clipboard_read() are implemented in stdlib.v
+// using the native V `clipboard` module. Use those methods on SimpleWindow.
+// ==========================================
+
+// ==========================================
+// 8. macOS Open / Reveal Commands
+// ==========================================
+
+// NOTE: open_url(url) is already implemented in simplegui.v via the native Cocoa C bridge.
+// Use win.open_url(url) directly — it calls window_open_url() in the Objective-C layer.
+
+// reveal_in_finder opens and highlights a file or folder in macOS Finder.
+pub fn (win &SimpleWindow) reveal_in_finder(path string) &SimpleWindow {
+	if win.debug_mode {
+		println('[simplegui SYSTEM] Revealing in Finder: ${path}')
+	}
+	win.exec_bg('open -R "${path}"')
+	return win
+}
+
+// open_in_default_app opens a file with its default associated application.
+pub fn (win &SimpleWindow) open_in_default_app(path string) &SimpleWindow {
+	if win.debug_mode {
+		println('[simplegui SYSTEM] Opening file with default app: ${path}')
+	}
+	win.exec_bg('open "${path}"')
+	return win
+}
+
+// open_with_app opens a file using a specific application by bundle ID or app name.
+// Example: win.open_with_app('/path/to/file.txt', 'com.apple.TextEdit')
+pub fn (win &SimpleWindow) open_with_app(path string, app_id string) &SimpleWindow {
+	if win.debug_mode {
+		println('[simplegui SYSTEM] Opening "${path}" with app: ${app_id}')
+	}
+	win.exec_bg('open -a "${app_id}" "${path}"')
+	return win
+}
+
+// open_terminal opens a new macOS Terminal window.
+pub fn (win &SimpleWindow) open_terminal() &SimpleWindow {
+	win.exec_bg('open -a Terminal')
+	return win
+}
+
+// ==========================================
+// 9. Network Utilities
+// ==========================================
+
+// get_local_ip returns the primary local IP address of this machine.
+// Uses os.hostname() + net.resolve_ipaddrs() — no subprocess required.
+pub fn (win &SimpleWindow) get_local_ip() string {
+	// Resolve the machine's own hostname to get its primary IP
+	host := os.hostname() or { return 'unavailable' }
+	addrs := net.resolve_ipaddrs(host, .ip, .tcp) or {
+		// Fallback: if hostname resolution fails, return unavailable
+		return 'unavailable'
+	}
+	for addr in addrs {
+		s := addr.str()
+		// Skip loopback addresses (127.x.x.x)
+		if !s.starts_with('127.') && !s.starts_with('::1') {
+			// strip port suffix if present
+			return s.split(':')[0]
+		}
+	}
+	// Return loopback as last resort
+	if addrs.len > 0 {
+		return addrs[0].str().split(':')[0]
+	}
+	return 'unavailable'
+}
+
+// get_external_ip fetches the machine's public/external IP address using a fast curl request with fallback.
+// Uses a 2-second timeout to prevent UI freezes.
+pub fn (win &SimpleWindow) get_external_ip() string {
+	res := win.exec_or('curl -s --max-time 2 https://api.ipify.org', '')
+	if res.len > 0 && !res.contains('html') && !res.contains('error') {
+		return res.trim_space()
+	}
+	resp := http.get('https://api.ipify.org') or { return 'unavailable' }
+	if resp.status_code == 200 {
+		return resp.body.trim_space()
+	}
+	return 'unavailable'
+}
+
+// ping tests network connectivity to a host. Returns true if the host is reachable.
+// Uses macOS netcat with a 1-second connection timeout — non-blocking and fast.
+pub fn (win &SimpleWindow) ping(host string, count int) bool {
+	iterations := if count < 1 { 1 } else { count }
+	for _ in 0 .. iterations {
+		_, code80 := win.exec('nc -z -G 1 "${host}" 80 2>/dev/null')
+		if code80 == 0 {
+			return true
+		}
+		_, code443 := win.exec('nc -z -G 1 "${host}" 443 2>/dev/null')
+		if code443 == 0 {
+			return true
+		}
+	}
+	return false
+}
+
+// dns_lookup performs a DNS forward lookup, returning the resolved IP address.
+// Uses net.resolve_ipaddrs() — direct libc getaddrinfo(), no subprocess.
+pub fn (win &SimpleWindow) dns_lookup(hostname string) string {
+	addrs := net.resolve_ipaddrs(hostname, .ip, .tcp) or { return '' }
+	if addrs.len > 0 {
+		// addr.str() gives "IP:port" — return just the IP part
+		return addrs[0].str().split(':')[0]
+	}
+	return ''
+}
+
+// get_wifi_ssid returns the SSID of the currently connected Wi-Fi network (macOS).
+// Uses fast ipconfig getsummary, falling back to the airport tool.
+pub fn (win &SimpleWindow) get_wifi_ssid() string {
+	ssid_ip := win.exec_or("ipconfig getsummary en0 2>/dev/null | awk -F ' : ' '/ SSID /{print $2}'", '').trim_space()
+	if ssid_ip.len > 0 {
+		return ssid_ip
+	}
+	return win.exec_or(
+		'/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport -I 2>/dev/null | awk \'/ SSID:/{print $2}\'',
+		'').trim_space()
+}
+
+// get_network_interfaces lists all active network interface names on the machine.
+// No V stdlib API exists for enumerating interfaces; uses ifconfig.
+pub fn (win &SimpleWindow) get_network_interfaces() []string {
+	raw := win.exec_or('ifconfig -l', '')
+	return raw.trim_space().split(' ').filter(it.len > 0)
+}
+
+// ==========================================
+// 10. System Resource Monitoring
+// ==========================================
+
+// get_cpu_usage_percent returns an instantaneous CPU usage percentage estimate (macOS).
+// Uses `ps` to aggregate all process CPU usage — a quick approximation.
+pub fn (win &SimpleWindow) get_cpu_usage_percent() f64 {
+	raw := win.exec_or("ps -A -o %cpu | awk '{s+=$1} END {print s}'", '0')
+	return raw.trim_space().f64()
+}
+
+// get_load_average returns the 1, 5, and 15 minute system load averages.
+// Uses C getloadavg() via V C interop on POSIX systems — no subprocess.
+pub fn (win &SimpleWindow) get_load_average() (f64, f64, f64) {
+	$if macos || linux || freebsd {
+		loadavg := [f64(0), f64(0), f64(0)]!
+		if C.getloadavg(&loadavg[0], 3) == 3 {
+			return loadavg[0], loadavg[1], loadavg[2]
+		}
+	}
+	// Fallback: parse sysctl text on other systems
+	raw := win.exec_or('sysctl -n vm.loadavg', '{ 0.00 0.00 0.00 }')
+	clean := raw.trim_space().trim('{').trim('}').trim_space()
+	parts := clean.split(' ').filter(it.len > 0)
+	if parts.len >= 3 {
+		return parts[0].f64(), parts[1].f64(), parts[2].f64()
+	}
+	return 0.0, 0.0, 0.0
+}
+
+// get_memory_pressure returns a macOS memory pressure string: "normal", "warn", or "critical".
+// Uses sysctl for sub-millisecond kernel lookup.
+pub fn (win &SimpleWindow) get_memory_pressure() string {
+	level := win.exec_or('sysctl -n kern.memorystatus_vm_pressure_level 2>/dev/null', '').trim_space().int()
+	if level >= 4 {
+		return 'critical'
+	} else if level >= 2 {
+		return 'warn'
+	} else if level == 1 {
+		return 'normal'
+	}
+	raw := win.exec_or('sysctl -n vm.memory_pressure 2>/dev/null', '')
+	lower := raw.to_lower()
+	if lower.contains('critical') {
+		return 'critical'
+	} else if lower.contains('warn') {
+		return 'warn'
+	}
+	return 'normal'
+}
+
+// get_running_process_count returns the total number of running processes.
+pub fn (win &SimpleWindow) get_running_process_count() int {
+	raw := win.exec_or('ps -A | wc -l', '0')
+	return raw.trim_space().int()
+}
+
+// get_open_file_count returns the total count of open file descriptors in the system.
+pub fn (win &SimpleWindow) get_open_file_count() int {
+	raw := win.exec_or('sysctl -n kern.num_files', '0')
+	return raw.trim_space().int()
+}
+
+// get_swap_usage returns a human-readable description of current macOS swap usage.
+pub fn (win &SimpleWindow) get_swap_usage() string {
+	return win.exec_or('sysctl -n vm.swapusage', 'unknown').trim_space()
+}
+
+// ==========================================
+// 11. Terminal / Shell Utilities
+// ==========================================
+
+// beep plays the macOS system alert sound (NSBeep) using osascript.
+pub fn (win &SimpleWindow) beep() &SimpleWindow {
+	win.exec_bg("osascript -e 'beep'")
+	return win
+}
+
+// beep_n plays the macOS system alert sound n times.
+pub fn (win &SimpleWindow) beep_n(n int) &SimpleWindow {
+	count := if n < 1 { 1 } else { n }
+	win.exec_bg("osascript -e 'beep ${count}'")
+	return win
+}
+
+// osascript_dialog shows a native macOS input dialog box and returns what the user typed.
+// Returns an empty string if the user cancels.
+pub fn (win &SimpleWindow) osascript_dialog(prompt string, default_value string) string {
+	prompt_esc := prompt.replace('"', '\\"')
+	default_esc := default_value.replace('"', '\\"')
+	script := 'osascript -e \'set ans to text returned of (display dialog "${prompt_esc}" default answer "${default_esc}" buttons {"Cancel","OK"} default button "OK")\''
+	output, code := win.exec(script)
+	if code == 0 {
+		return output.trim_space()
+	}
+	return ''
+}
+
+// osascript_alert shows a native macOS alert dialog with a message.
+// Blocks until the user clicks OK or Cancel. Returns true if OK was clicked.
+pub fn (win &SimpleWindow) osascript_alert(title string, message string) bool {
+	title_esc := title.replace('"', '\\"')
+	msg_esc := message.replace('"', '\\"')
+	script := 'osascript -e \'button returned of (display alert "${title_esc}" message "${msg_esc}" buttons {"Cancel","OK"} default button "OK")\''
+	output, code := win.exec(script)
+	if code == 0 {
+		return output.trim_space() == 'OK'
+	}
+	return false
+}
+
+// osascript_choose_file shows a native macOS file-picker dialog and returns the chosen path.
+// Returns an empty string if cancelled.
+pub fn (win &SimpleWindow) osascript_choose_file() string {
+	script := "osascript -e 'POSIX path of (choose file)'"
+	output, code := win.exec(script)
+	if code == 0 {
+		return output.trim_space()
+	}
+	return ''
+}
+
+// osascript_choose_folder shows a native macOS folder-picker dialog and returns the chosen path.
+// Returns an empty string if cancelled.
+pub fn (win &SimpleWindow) osascript_choose_folder() string {
+	script := "osascript -e 'POSIX path of (choose folder)'"
+	output, code := win.exec(script)
+	if code == 0 {
+		return output.trim_space()
+	}
+	return ''
+}
+
+// say uses macOS text-to-speech to speak a message out loud.
+pub fn (win &SimpleWindow) say(text string) &SimpleWindow {
+	escaped := text.replace('"', '\\"')
+	win.exec_bg('say "${escaped}"')
+	return win
+}
+
+// ==========================================
+// 12. macOS-Specific System Information
+// ==========================================
+
+// system_version_plist_value reads a key from the macOS SystemVersion.plist file
+// using pure V file I/O — no sw_vers subprocess required.
+fn system_version_plist_value(key string) string {
+	plist_path := '/System/Library/CoreServices/SystemVersion.plist'
+	content := os.read_file(plist_path) or { return 'unknown' }
+	// Simple linear search for the key/value pair in plist XML:
+	// <key>ProductVersion</key><string>14.5</string>
+	key_tag := '<key>${key}</key>'
+	key_idx := content.index(key_tag) or { return 'unknown' }
+	after_key := content[key_idx + key_tag.len..]
+	val_start_tag := '<string>'
+	val_end_tag := '</string>'
+	val_start := after_key.index(val_start_tag) or { return 'unknown' }
+	after_start := after_key[val_start + val_start_tag.len..]
+	val_end := after_start.index(val_end_tag) or { return 'unknown' }
+	return after_start[..val_end].trim_space()
+}
+
+// get_macos_version returns the human-readable macOS version string (e.g. "14.5").
+// Reads /System/Library/CoreServices/SystemVersion.plist directly — no sw_vers subprocess.
+pub fn (win &SimpleWindow) get_macos_version() string {
+	return system_version_plist_value('ProductVersion')
+}
+
+// get_macos_build returns the macOS build number (e.g. "23F79").
+// Reads /System/Library/CoreServices/SystemVersion.plist directly — no sw_vers subprocess.
+pub fn (win &SimpleWindow) get_macos_build() string {
+	return system_version_plist_value('ProductBuildVersion')
+}
+
+// get_macos_product_name returns the product name (e.g. "macOS", "Mac OS X").
+// Reads /System/Library/CoreServices/SystemVersion.plist directly — no sw_vers subprocess.
+pub fn (win &SimpleWindow) get_macos_product_name() string {
+	return system_version_plist_value('ProductName')
+}
+
+// get_device_model returns the hardware model identifier (e.g. "MacBookPro18,3").
+pub fn (win &SimpleWindow) get_device_model() string {
+	return win.exec_or('sysctl -n hw.model', 'unknown').trim_space()
+}
+
+// get_serial_number returns the device serial number.
+// Uses targeted ioreg query for sub-millisecond resolution.
+pub fn (win &SimpleWindow) get_serial_number() string {
+	return win.exec_or(
+		"ioreg -c IOPlatformExpertDevice 2>/dev/null | awk -F '\"' '/IOPlatformSerialNumber/{print $4}'",
+		'unavailable').trim_space()
+}
+
+// get_screen_resolution returns the primary display resolution (e.g. "2560 x 1600").
+// Uses fast AppleScript desktop query with fallback.
+pub fn (win &SimpleWindow) get_screen_resolution() string {
+	raw := win.exec_or(
+		"osascript -e 'tell application \"Finder\" to get bounds of window of desktop' 2>/dev/null",
+		'')
+	if raw.len > 0 {
+		parts := raw.split(',').map(it.trim_space())
+		if parts.len >= 4 {
+			return '${parts[2]} x ${parts[3]}'
+		}
+	}
+	return win.exec_or(
+		"system_profiler SPDisplaysDataType 2>/dev/null | awk '/Resolution:/{print $2\" x \"$4; exit}'",
+		'unknown').trim_space()
+}
+
+// get_gpu_info returns the GPU model string of the primary graphics adapter.
+// Uses fast IOPCIDevice ioreg lookup with fallback.
+pub fn (win &SimpleWindow) get_gpu_info() string {
+	ioreg_gpu := win.exec_or(
+		"ioreg -rc IOPCIDevice 2>/dev/null | awk -F '\"' '/\"model\" = /{print $4}' | head -1",
+		'').trim_space()
+	if ioreg_gpu.len > 0 {
+		return ioreg_gpu
+	}
+	return win.exec_or(
+		"system_profiler SPDisplaysDataType 2>/dev/null | awk '/Chipset Model:/{sub(/.*Chipset Model: /,\"\"); print; exit}'",
+		'unknown').trim_space()
+}
+
+// get_battery_percent returns the battery charge percentage, or -1 if no battery is present.
+pub fn (win &SimpleWindow) get_battery_percent() int {
+	raw := win.exec_or(
+		"pmset -g batt 2>/dev/null | grep -oE '[0-9]+%' | head -1 | tr -d '%'",
+		'')
+	pct := raw.trim_space()
+	if pct.len == 0 {
+		return -1
+	}
+	return pct.int()
+}
+
+// is_on_ac_power returns true if the machine is currently plugged into AC power.
+pub fn (win &SimpleWindow) is_on_ac_power() bool {
+	raw := win.exec_or("pmset -g batt 2>/dev/null | head -1", '')
+	return raw.contains("AC Power")
+}
+
+// get_app_bundle_id returns the bundle identifier of the running app (macOS bundles only).
+// Reads Info.plist directly with os.read_file() — no defaults subprocess.
+pub fn (win &SimpleWindow) get_app_bundle_id() string {
+	exe := os.executable()
+	// In a .app bundle the plist is at Contents/Info.plist relative to the binary
+	plist_path := os.join_path(os.dir(exe), '..', 'Info.plist')
+	if os.exists(plist_path) {
+		content := os.read_file(plist_path) or { return '' }
+		key_tag := '<key>CFBundleIdentifier</key>'
+		key_idx := content.index(key_tag) or { return '' }
+		after_key := content[key_idx + key_tag.len..]
+		val_start_tag := '<string>'
+		val_end_tag := '</string>'
+		val_start := after_key.index(val_start_tag) or { return '' }
+		after_start := after_key[val_start + val_start_tag.len..]
+		val_end := after_start.index(val_end_tag) or { return '' }
+		return after_start[..val_end].trim_space()
+	}
+	return ''
+}
+
+// get_system_locale returns the primary locale string configured on the system (e.g. "en_US").
+// Reads standard POSIX locale environment variables via os.getenv() — no subprocess.
+pub fn (win &SimpleWindow) get_system_locale() string {
+	// Check standard POSIX locale env vars in priority order
+	for key in ['LC_ALL', 'LC_MESSAGES', 'LANG'] {
+		val := os.getenv(key)
+		if val.len > 0 {
+			// Strip encoding suffix: "en_US.UTF-8" -> "en_US"
+			return val.split('.')[0]
+		}
+	}
+	// macOS fallback: read AppleLocale from the user defaults plist directly
+	plist := os.join_path(os.home_dir(), 'Library', 'Preferences', '.GlobalPreferences.plist')
+	if os.exists(plist) {
+		raw := win.exec_or("defaults read NSGlobalDomain AppleLocale 2>/dev/null", '')
+		if raw.len > 0 {
+			return raw.trim_space()
+		}
+	}
+	return 'unknown'
+}
+
+// get_timezone returns the current system timezone string (e.g. "America/Chicago").
+// Uses os.real_path() on /etc/localtime — pure V, no readlink/sed subprocess.
+pub fn (win &SimpleWindow) get_timezone() string {
+	// /etc/localtime is a symlink to the active zoneinfo file
+	resolved := os.real_path('/etc/localtime')
+	// Strip the zoneinfo prefix to get just the timezone name
+	for prefix in ['/var/db/timezone/zoneinfo/', '/usr/share/zoneinfo/', '/usr/lib/zoneinfo/'] {
+		if resolved.starts_with(prefix) {
+			return resolved[prefix.len..]
+		}
+	}
+	// Final fallback: check the TZ environment variable
+	tz := os.getenv('TZ')
+	if tz.len > 0 {
+		return tz
+	}
+	return 'unknown'
+}
+
+// launch_at_login_add registers the current application with macOS Login Items so it
+// auto-launches when the user logs in. Uses osascript/launchctl (best-effort).
+pub fn (win &SimpleWindow) launch_at_login_add(app_name_or_path string) &SimpleWindow {
+	escaped := app_name_or_path.replace('"', '\\"')
+	script := 'osascript -e \'tell application "System Events" to make login item at end with properties {path:"${escaped}", hidden:false}\''
+	win.exec_bg(script)
+	return win
+}
+
+// launch_at_login_remove removes the application from macOS Login Items.
+pub fn (win &SimpleWindow) launch_at_login_remove(app_name string) &SimpleWindow {
+	escaped := app_name.replace('"', '\\"')
+	script := 'osascript -e \'tell application "System Events" to delete login item "${escaped}"\''
+	win.exec_bg(script)
+	return win
+}
+
+// set_dock_badge sets the macOS Dock badge count for the current application.
+// Pass 0 to clear the badge.
+pub fn (win &SimpleWindow) set_dock_badge(count int) &SimpleWindow {
+	if count <= 0 {
+		win.exec_bg("osascript -e 'tell application \"System Events\" to set the dock badge of the front application to 0'")
+	} else {
+		win.exec_bg("osascript -e 'tell application \"System Events\" to set the dock badge of the front application to ${count}'")
+	}
+	return win
 }

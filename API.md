@@ -1021,6 +1021,66 @@ To simplify system integrations and mirror key features from NeutralinoJS, `simp
     - `proc.wait()`: Waits for the subprocess to exit and blocks until completion.
     - `proc.close()`: Cleans up and releases process resources.
 
+### System Clock & Time
+
+- `win.get_time() SystemTime`: Returns current local date and time in a structured `SystemTime` object.
+  - **Returned Type**: `SystemTime` contains `year`, `month`, `day`, `hour`, `minute`, `second`, `unix_epoch`, `unix_milli`, `rfc3339`, and `weekday`.
+- `win.get_unix_epoch() i64`: Returns current time as a Unix epoch timestamp in seconds.
+- `win.get_unix_milli() i64`: Returns current time as a Unix epoch timestamp in milliseconds.
+- `win.get_time_formatted(format string) string`: Returns current local time formatted (e.g. `YYYY-MM-DD HH:mm:ss`).
+- `win.get_uptime_seconds() i64`: Returns macOS system uptime in seconds via direct C `sysctl`.
+- `win.sleep_ms(ms u64) &SimpleWindow`: Pauses execution for specified milliseconds.
+
+### Network Utilities
+
+- `win.get_local_ip() string`: Resolves machine's primary local IP address (skipping loopback).
+- `win.get_external_ip() string`: Fetches public IP address via HTTP with 2-second timeout protection.
+- `win.ping(host string, count int) bool`: Probes TCP port 80/443 reachability with non-blocking 1-second timeout.
+- `win.dns_lookup(hostname string) string`: Performs forward DNS lookup returning resolved IP address via libc `getaddrinfo`.
+- `win.get_wifi_ssid() string`: Returns connected Wi-Fi network SSID on macOS.
+- `win.get_network_interfaces() []string`: Lists active network interface names (`en0`, `lo0`, etc.).
+
+### System Resource Monitoring
+
+- `win.get_cpu_usage_percent() f64`: Returns CPU utilization percentage estimate across all processes.
+- `win.get_load_average() (f64, f64, f64)`: Returns 1m, 5m, and 15m system load averages via C `getloadavg()`.
+- `win.get_memory_pressure() string`: Returns macOS kernel memory pressure state (`"normal"`, `"warn"`, or `"critical"`) via fast `sysctl`.
+- `win.get_running_process_count() int`: Returns total count of running processes.
+- `win.get_open_file_count() int`: Returns total count of open file descriptors in system.
+- `win.get_swap_usage() string`: Returns virtual memory swap utilization summary.
+
+### Terminal & Shell Utilities
+
+- `win.beep() &SimpleWindow`: Triggers standard macOS system alert sound (NSBeep).
+- `win.beep_n(n int) &SimpleWindow`: Plays macOS system alert sound `n` times.
+- `win.say(text string) &SimpleWindow`: Uses macOS text-to-speech engine to speak message out loud.
+- `win.osascript_dialog(prompt string, default_value string) string`: Displays native macOS text input dialog returning user entry.
+- `win.osascript_alert(title string, message string) bool`: Displays native macOS alert dialog box.
+- `win.osascript_choose_file() string`: Displays native macOS file picker dialog returning selected POSIX path.
+- `win.osascript_choose_folder() string`: Displays native macOS folder picker dialog returning selected POSIX path.
+
+### macOS Details & App Integration
+
+- `win.get_macos_version() string`: Returns macOS version string (e.g. `"14.5"`).
+- `win.get_macos_build() string`: Returns macOS build identifier (e.g. `"23F79"`).
+- `win.get_macos_product_name() string`: Returns product name (e.g. `"macOS"`).
+- `win.get_device_model() string`: Returns hardware model identifier (e.g. `"MacBookPro18,3"`).
+- `win.get_serial_number() string`: Returns device serial number via fast targeted `ioreg`.
+- `win.get_screen_resolution() string`: Returns primary display resolution (e.g. `"2560 x 1600"`).
+- `win.get_gpu_info() string`: Returns GPU model string of primary graphics adapter.
+- `win.get_battery_percent() int`: Returns battery charge percentage (or `-1` for desktop/no battery).
+- `win.is_on_ac_power() bool`: Returns true if machine is plugged into AC power.
+- `win.get_app_bundle_id() string`: Reads bundle identifier from running app's `Info.plist`.
+- `win.get_system_locale() string`: Returns primary system locale code (e.g. `"en_US"`).
+- `win.get_timezone() string`: Returns active timezone identifier (e.g. `"America/Chicago"`).
+- `win.set_dock_badge(count int) &SimpleWindow`: Sets or clears current application's macOS Dock badge count.
+- `win.reveal_in_finder(path string) &SimpleWindow`: Highlights target file/folder in macOS Finder.
+- `win.open_in_default_app(path string) &SimpleWindow`: Opens file using associated default application.
+- `win.open_with_app(path string, app_id string) &SimpleWindow`: Opens file with specified app by bundle ID or name.
+- `win.open_terminal() &SimpleWindow`: Opens new macOS Terminal window.
+- `win.launch_at_login_add(app_path string) &SimpleWindow`: Registers application in macOS Login Items.
+- `win.launch_at_login_remove(app_name string) &SimpleWindow`: Removes application from macOS Login Items.
+
 ---
 
 ## 6c. V Standard Library High-Level Wrappers

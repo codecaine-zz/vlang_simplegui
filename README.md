@@ -53,6 +53,7 @@ The goal is a simple, high-abstraction GUI layer that feels familiar to anyone u
 - Support multiple controls of the same kind using distinct names
 - Attach simple event handlers for clicks and value changes
 - Open a real native macOS window with a built-in demo
+- **Neutralino-inspired System & OS API Extensions**: Fluent `SimpleWindow` methods for process execution (`exec`, `exec_bg`), environment variables, hardware specs, network tools (ping, local/external IP, DNS), system resource monitoring (CPU, load average, memory pressure), time, audio/speech, file pickers, and macOS app/Dock integration
 - Support native keyboard shortcuts: **CMD + F** to toggle full screen, **CMD + Q** to quit the application
 - Pin a window above other windows with the new always-on-top API
 
@@ -618,6 +619,7 @@ v run .
 | [deflate_demo.v](demos/deflate_demo.v)                                       | Compress and decompress strings using zlib deflate              |
 | [zstd_demo.v](demos/zstd_demo.v)                                             | Zstandard compression and decompression                         |
 | [encoding_and_system_info_demo.v](demos/encoding_and_system_info_demo.v)     | Hex/Base64 encoder-decoder with environment details viewer      |
+| [sys_demo.v](demos/sys_demo.v)                                               | Neutralino-inspired system call extensions, OS diagnostics, hardware specs, network tools, and shell utilities |
 | [system_calls_demo.v](demos/system_calls_demo.v)                             | Shell process invocation, stdout routing, and folder monitoring |
 | [system_and_stdlib_features_demo.v](demos/system_and_stdlib_features_demo.v) | Exhaustive showcase of V core system operations                 |
 | [benchmark_demo.v](demos/benchmark_demo.v)                                   | Wrapper operation latency benchmarks                            |
