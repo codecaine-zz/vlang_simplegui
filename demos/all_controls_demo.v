@@ -394,6 +394,198 @@ fn main() {
 	win.add_slider('scroll_slider', 33)
 
 	// ========================================================================
+	// SECTION 21 · Hierarchical Tree View
+	// ========================================================================
+	win.add_heading('Hierarchical Tree View')
+
+	win.add_tree_view('tree_view', 200)
+	win.set_control_width('tree_view', 860)
+	win.set_tree_nodes('tree_view', [
+		simplegui.TreeNode{ id: 'root1',  parent_id: '',      text: 'simplegui' }
+		simplegui.TreeNode{ id: 'src',    parent_id: 'root1', text: 'simplegui/' }
+		simplegui.TreeNode{ id: 'dem',    parent_id: 'root1', text: 'demos/' }
+		simplegui.TreeNode{ id: 'api',    parent_id: 'root1', text: 'API.md' }
+		simplegui.TreeNode{ id: 'sg_v',   parent_id: 'src',   text: 'simplegui.v' }
+		simplegui.TreeNode{ id: 'ergo_v', parent_id: 'src',   text: 'ergonomics.v' }
+		simplegui.TreeNode{ id: 'sys_v',  parent_id: 'src',   text: 'sys.v' }
+		simplegui.TreeNode{ id: 'all_d',  parent_id: 'dem',   text: 'all_controls_demo.v' }
+		simplegui.TreeNode{ id: 'easy_d', parent_id: 'dem',   text: 'easy_api_demo.v' }
+		simplegui.TreeNode{ id: 'root2',  parent_id: '',      text: 'tests/' }
+		simplegui.TreeNode{ id: 'test1',  parent_id: 'root2', text: 'simplegui_test.v' }
+	])
+
+	win.begin_row('row_tree_ops')
+	win.add_button('btn_tree_select', 'Select simplegui.v')
+	win.add_button('btn_tree_clear', 'Clear selection')
+	win.end_row()
+
+	// ========================================================================
+	// SECTION 22 · Links, Disclosure & Separators/Spacers
+	// ========================================================================
+	win.add_heading('Links, Disclosure & Separators')
+
+	win.add_label('lbl_links', 'Hyperlink buttons (add_link)')
+	win.begin_row('row_links')
+	win.add_link('link_vlang',  'V Language website',  'https://vlang.io')
+	win.add_link('link_github', 'simplegui on GitHub', 'https://github.com/codecaine-zz/vlang_simplegui')
+	win.end_row()
+
+	win.add_label('lbl_disc', 'Native disclosure triangle (add_disclosure)')
+	win.add_disclosure('disc_adv', 'Show advanced options', false)
+	win.add_input('disc_input', 'Hidden advanced field')
+	win.add_checkbox('disc_chk', 'Enable experimental feature', false)
+
+	win.add_label('lbl_sep', 'Horizontal separator (add_separator)')
+	win.add_separator()
+
+	win.add_label('lbl_spacers', 'Spacers (add_vertical_spacer & add_horizontal_spacer)')
+	win.begin_row('row_spacers')
+	win.add_badge('spacer_l', 'Left badge', 'info')
+	win.add_horizontal_spacer(40)
+	win.add_badge('spacer_r', 'Right badge (40px gap)', 'success')
+	win.end_row()
+	win.add_vertical_spacer(12)
+	win.add_label('lbl_after_spacer', '↑ 12px vertical spacer above this label')
+
+	// ========================================================================
+	// SECTION 23 · Form Helpers
+	// ========================================================================
+	win.add_heading('Form Helpers (add_form_*)')
+
+	win.add_form_field('First Name', 'form_fname', 'Grace')
+	win.add_form_field('Last Name',  'form_lname', 'Hopper')
+	win.add_form_password('Password', 'form_pass', '')
+	win.add_form_textarea('Bio', 'form_bio', 'Compiler pioneer & rear admiral.')
+	win.add_form_slider('Experience (yrs)', 'form_exp', 20)
+	win.add_form_number('Team size', 'form_team', 5)
+	win.add_form_dropdown('Department', 'form_dept', ['Engineering', 'Research', 'Operations', 'Design'], 'Engineering')
+	win.add_form_date_picker('Start date', 'form_start', '1944-01-01')
+	win.add_form_progress('Onboarding', 'form_prog', 60)
+	win.add_form_switch('Label', 'form_sw', 'Receive newsletters', true)
+	win.add_form_link('Homepage', 'form_link', 'grace-hopper.info', 'https://en.wikipedia.org/wiki/Grace_Hopper')
+
+	win.begin_row('row_form_ops')
+	win.add_button('btn_form_snapshot', 'Form snapshot')
+	win.add_button('btn_form_reset',    'Reset form')
+	win.end_row()
+
+	// ========================================================================
+	// SECTION 24 · Action Row & Fields Row
+	// ========================================================================
+	win.add_heading('Action Row & Fields Row')
+
+	win.add_label('lbl_action_row', 'add_action_row — buttons with inline callbacks')
+	win.add_action_row({
+		'btn_ar_save':   fn (mut w simplegui.SimpleWindow) {
+			w.set_status('Action row: Save clicked.')
+			w.append_console('log_console', '[SUCCESS] Action row: Save.\n', 4)
+		}
+		'btn_ar_cancel': fn (mut w simplegui.SimpleWindow) {
+			w.set_status('Action row: Cancel clicked.')
+			w.append_console('log_console', '[WARNING] Action row: Cancel.\n', 2)
+		}
+		'btn_ar_delete': fn (mut w simplegui.SimpleWindow) {
+			w.set_status('Action row: Delete clicked.')
+			w.append_console('log_console', '[ERROR] Action row: Delete.\n', 3)
+		}
+	})
+
+	win.add_label('lbl_fields_row', 'add_fields_row — side-by-side labeled inputs')
+	win.add_fields_row({
+		'City':    'fr_city'
+		'Country': 'fr_country'
+		'Zip':     'fr_zip'
+	})
+
+	win.begin_row('row_fr_ops')
+	win.add_button('btn_fr_snapshot', 'Fields row snapshot')
+	win.end_row()
+
+	// ========================================================================
+	// SECTION 25 · Menu Bar & Context Menus
+	// ========================================================================
+
+	// --- Native macOS menu bar menu ---
+	win.add_menu('Demo', [
+		simplegui.MenuItem{
+			title:    'Show Snapshot'
+			shortcut: 'cmd+shift+s'
+			callback: fn (mut w simplegui.SimpleWindow) {
+				w.set_status('Menu: Show Snapshot triggered.')
+				w.toast('Snapshot from menu!')
+			}
+		}
+		simplegui.MenuItem{ title: '-' }
+		simplegui.MenuItem{
+			title:    'Reset Status'
+			shortcut: 'cmd+shift+r'
+			callback: fn (mut w simplegui.SimpleWindow) {
+				w.set_status('Ready.')
+			}
+		}
+		simplegui.MenuItem{ title: '-' }
+		simplegui.MenuItem{
+			title:    'Log Info'
+			shortcut: 'cmd+shift+l'
+			callback: fn (mut w simplegui.SimpleWindow) {
+				w.append_console('log_console', '[INFO] Triggered from menu bar.\n', 1)
+				w.set_status('Menu: Log info triggered.')
+			}
+		}
+	])
+
+	// --- Right-click context menus on specific controls ---
+	win.add_context_menu('name', [
+		simplegui.MenuItem{
+			title:    'Copy value'
+			callback: fn (mut w simplegui.SimpleWindow) {
+				w.copy_to_clipboard(w.get_text('name'))
+				w.set_status('Name copied to clipboard.')
+			}
+		}
+		simplegui.MenuItem{ title: '-' }
+		simplegui.MenuItem{
+			title:    'Clear field'
+			callback: fn (mut w simplegui.SimpleWindow) {
+				w.set_text('name', '')
+				w.set_status('Name field cleared via context menu.')
+			}
+		}
+	])
+
+	win.add_context_menu('log_console', [
+		simplegui.MenuItem{
+			title:    'Clear console'
+			callback: fn (mut w simplegui.SimpleWindow) {
+				w.clear_console('log_console')
+				w.set_status('Console cleared via context menu.')
+			}
+		}
+		simplegui.MenuItem{
+			title:    'Log timestamp'
+			callback: fn (mut w simplegui.SimpleWindow) {
+				w.append_console('log_console', '[INFO] Timestamp: ${w.time_now()}\n', 1)
+			}
+		}
+	])
+
+	win.add_context_menu('window', [
+		simplegui.MenuItem{
+			title:    'Copy status text'
+			callback: fn (mut w simplegui.SimpleWindow) {
+				w.copy_to_clipboard(w.get_status())
+				w.toast('Status text copied!')
+			}
+		}
+		simplegui.MenuItem{
+			title:    'Reset status'
+			callback: fn (mut w simplegui.SimpleWindow) {
+				w.set_status('Ready.')
+			}
+		}
+	])
+
+	// ========================================================================
 	// EVENT WIRING
 	// ========================================================================
 
@@ -650,6 +842,86 @@ fn main() {
 	// --- Tab / group ---
 	win.on_click('btn_tab_action', fn (mut w simplegui.SimpleWindow) {
 		w.set_status('Tab action button clicked.')
+	})
+
+	// --- Tree view ---
+	win.on_change('tree_view', fn (mut w simplegui.SimpleWindow, v string) {
+		w.set_status('Tree node selected: ${v}')
+		w.append_console('log_console', '[INFO] Tree selected: ${v}\n', 1)
+	})
+	win.on_click('btn_tree_select', fn (mut w simplegui.SimpleWindow) {
+		w.set_tree_selected('tree_view', 'sg_v')
+		w.set_status('Tree: selected simplegui.v')
+	})
+	win.on_click('btn_tree_clear', fn (mut w simplegui.SimpleWindow) {
+		w.set_tree_selected('tree_view', '')
+		w.set_status('Tree: selection cleared.')
+	})
+
+	// --- Links ---
+	win.on_click('link_vlang', fn (mut w simplegui.SimpleWindow) {
+		w.set_status('Link: opened vlang.io')
+	})
+	win.on_click('link_github', fn (mut w simplegui.SimpleWindow) {
+		w.set_status('Link: opened simplegui on GitHub')
+	})
+
+	// --- Disclosure ---
+	win.on_change('disc_adv', fn (mut w simplegui.SimpleWindow, v string) {
+		w.set_status('Disclosure toggled → ${v}')
+	})
+
+	// --- Form helpers ---
+	win.on_change('form_fname', fn (mut w simplegui.SimpleWindow, v string) {
+		w.set_status('Form first name → ${v}')
+	})
+	win.on_change('form_lname', fn (mut w simplegui.SimpleWindow, v string) {
+		w.set_status('Form last name → ${v}')
+	})
+	win.on_change('form_exp', fn (mut w simplegui.SimpleWindow, v string) {
+		w.set_status('Form experience → ${v} yrs')
+	})
+	win.on_change('form_dept', fn (mut w simplegui.SimpleWindow, v string) {
+		w.set_status('Form department → ${v}')
+	})
+	win.on_change('form_sw', fn (mut w simplegui.SimpleWindow, v string) {
+		w.set_status('Form newsletter switch → ${v}')
+	})
+	win.on_click('btn_form_snapshot', fn (mut w simplegui.SimpleWindow) {
+		summary := 'Form snapshot:\n' +
+			'  First Name : ${w.get_text("form_fname")}\n' +
+			'  Last Name  : ${w.get_text("form_lname")}\n' +
+			'  Bio        : ${w.get_text("form_bio")}\n' +
+			'  Experience : ${w.get_value_int("form_exp")} yrs\n' +
+			'  Team size  : ${w.get_value_int("form_team")}\n' +
+			'  Department : ${w.get_text("form_dept")}\n' +
+			'  Start date : ${w.get_text("form_start")}\n' +
+			'  Newsletter : ${w.get_checked("form_sw")}'
+		w.alert('Form Snapshot', summary)
+		w.set_status('Form snapshot captured.')
+	})
+	win.on_click('btn_form_reset', fn (mut w simplegui.SimpleWindow) {
+		w.set_text('form_fname', 'Grace')
+		w.set_text('form_lname', 'Hopper')
+		w.set_text('form_pass', '')
+		w.set_text('form_bio', 'Compiler pioneer & rear admiral.')
+		w.set_value_int('form_exp', 20)
+		w.set_value_int('form_team', 5)
+		w.set_text('form_dept', 'Engineering')
+		w.set_text('form_start', '1944-01-01')
+		w.set_value_int('form_prog', 60)
+		w.set_checked('form_sw', true)
+		w.set_status('Form reset to defaults.')
+	})
+
+	// --- Fields row ---
+	win.on_click('btn_fr_snapshot', fn (mut w simplegui.SimpleWindow) {
+		summary := 'Fields row:\n' +
+			'  City    : ${w.get_text("fr_city")}\n' +
+			'  Country : ${w.get_text("fr_country")}\n' +
+			'  Zip     : ${w.get_text("fr_zip")}'
+		w.alert('Fields Row Snapshot', summary)
+		w.set_status('Fields row snapshot captured.')
 	})
 
 	// --- Initial console message ---
