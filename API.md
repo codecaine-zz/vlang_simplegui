@@ -114,11 +114,41 @@ Sets the default font text color for labels and form controls.
 
 - **Values**: `'white'`, `'black'`, or hex format.
 
+### `simplegui.list_themes() []string`
+
+Returns all 17 built-in production theme preset names:
+- **Apple Light**: Clean macOS Aqua system light canvas (`#ffffff` bg, `#1c1c1e` fg, `#007aff` accent).
+- **Apple Dark**: Vibrant macOS Dark Mode surface (`#1c1c1e` bg, `#f2f2f7` fg, `#0a84ff` accent).
+- **Midnight Space Gray**: Pro dark titanium space gray theme (`#161618` bg, `#ebebf5` fg, `#0a84ff` accent).
+- **Apple Sunset**: Warm macOS Mojave twilight sunset hues (`#281a24` bg, `#fdf7f4` fg, `#ff6b00` accent).
+- **Sonoma Emerald**: macOS Sonoma dark forest glass palette (`#0d1f18` bg, `#f0fdf4` fg, `#30d158` accent).
+- **Ventura Amber**: macOS Ventura golden sunset dark hues (`#211815` bg, `#fff8f0` fg, `#ff9500` accent).
+- **Soft Pastel**: Apple Studio warm soft light theme (`#faf6f0` bg, `#2d2b2a` fg, `#e07a5f` accent).
+- **Catppuccin Mocha**: Soothing lavender catppuccin dark mode (`#1e1e2e` bg, `#cdd6f4` fg, `#cba6f7` accent).
+- **Nord**: Arctic frost nord developer palette (`#2e3440` bg, `#eceff4` fg, `#88c0d0` accent).
+- **Dracula**: High-contrast vampire purple palette (`#282a36` bg, `#f8f8f2` fg, `#bd93f9` accent).
+- **Cyberpunk**: Neon glow dark contrast palette (`#0d0d15` bg, `#00f5d4` fg, `#ff007f` accent).
+- **Solarized Light**: Precision engineered light palette (`#fdf6e3` bg, `#657b83` fg, `#268bd2` accent).
+- **Solarized Dark**: Precision engineered dark palette (`#002b36` bg, `#839496` fg, `#2aa198` accent).
+- **GitHub Dark**: Official GitHub dark interface palette (`#0d1117` bg, `#c9d1d9` fg, `#58a6ff` accent).
+- **GitHub Light**: Clean GitHub light canvas palette (`#ffffff` bg, `#24292f` fg, `#0969da` accent).
+- **Navy Blue**: Deep slate navy dark theme (`#0f172a` bg, `#f8fafc` fg, `#38bdf8` accent).
+- **Forest Green**: Rich emerald green dark theme (`#14532d` bg, `#f0fdf4` fg, `#4ade80` accent).
+
+### `simplegui.get_theme(theme_name string) Theme`
+
+Retrieves a `Theme` struct configuration matching `theme_name`. Normalization allows flexible lookup (case-insensitive, space/hyphen/underscore tolerant).
+
+### `win.apply_theme(t Theme) &SimpleWindow`
+
+Applies a `Theme` struct configuration directly to the window and controls.
+
 ### `win.set_theme(theme_name string) &SimpleWindow`
 
-Applies a pre-configured theme preset for both the window background and font colors.
+Looks up a built-in production theme by name (or alias) and applies its background and font styling to the window and controls.
 
-- **Values**: `'dark'`, `'light'`, `'nord'`, or `'dracula'`.
+- **Values**: Accepts any built-in theme name (e.g. `'Apple Light'`, `'Apple Dark'`, `'Midnight Space Gray'`, `'Apple Sunset'`, `'Sonoma Emerald'`, `'Ventura Amber'`, `'Soft Pastel'`, `'Catppuccin'`, `'Nord'`, `'Dracula'`, `'Cyberpunk'`, `'Solarized Light'`, `'Solarized Dark'`, `'GitHub Dark'`, `'GitHub Light'`, `'Navy Blue'`, `'Forest Green'`).
+
 
 ### `win.set_padding(padding int) &SimpleWindow`
 

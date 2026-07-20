@@ -1524,19 +1524,27 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
     NSButton *button = (NSButton *)view;
     NSFont *currFont = button.font;
     CGFloat fSize = currFont ? currFont.pointSize : 13.0;
-    [button setFont:[NSFont systemFontOfSize:fSize weight:NSFontWeightRegular]];
+    [button setFont:[NSFont systemFontOfSize:fSize weight:NSFontWeightMedium]];
     [button setControlSize:NSControlSizeRegular];
 
     BOOL isCheckboxOrRadio = ![button isBordered] && button.bezelStyle != NSBezelStyleInline;
     BOOL isLinkButton = button.bezelStyle == NSBezelStyleInline;
     BOOL isDefaultButton = [button.keyEquivalent isEqualToString:@"\r"];
     
+    NSColor *winBg = button.window ? button.window.backgroundColor : nil;
+    BOOL isDark = YES;
+    if (winBg && ![winBg isEqual:[NSColor clearColor]]) {
+      isDark = isDarkColor(winBg);
+    } else {
+      isDark = isSystemDark();
+    }
+
     if (isCheckboxOrRadio && !isLinkButton) {
       [button setBezelStyle:NSBezelStyleRounded];
       [button setWantsLayer:YES];
       [button setBordered:NO];
       [button setContentTintColor:fontColor ?: modernAccentColor()];
-      setButtonTitleColor(button, effectiveFont);
+      setButtonTitleColor(button, fontColor ?: (isDark ? [NSColor whiteColor] : [NSColor colorWithSRGBRed:0.10 green:0.10 blue:0.12 alpha:1.0]));
     } else {
       [button setBezelStyle:NSBezelStyleRounded];
       [button setWantsLayer:YES];
@@ -1549,71 +1557,74 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
         [modButton setBordered:NO];
         modButton.layer.cornerRadius = 8.0;
         
-        NSColor *winBg = button.window ? button.window.backgroundColor : nil;
-        BOOL isDark = YES;
-        if (winBg && ![winBg isEqual:[NSColor clearColor]]) {
-          isDark = isDarkColor(winBg);
-        } else {
-          isDark = isSystemDark();
-        }
-        
         if (isDefaultButton) {
           modButton.baseBackgroundColor = primaryButtonColor();
           modButton.baseTextColor = getContrastColor(primaryButtonColor());
           modButton.layer.borderWidth = 0.0;
-        } else if (backgroundColor && ![backgroundColor isEqual:[NSColor clearColor]]) {
-          modButton.baseBackgroundColor = backgroundColor;
-          modButton.baseTextColor = fontColor ?: (isDark ? [NSColor whiteColor] : [NSColor labelColor]);
-          modButton.layer.borderWidth = 1.0;
-          modButton.layer.borderColor = modernBorderColorWithDark(isDark).CGColor;
         } else {
-          modButton.baseBackgroundColor = modernElevatedSurfaceColorWithDark(isDark);
-          modButton.baseTextColor = fontColor ?: (isDark ? [NSColor whiteColor] : [NSColor labelColor]);
-          modButton.layer.borderWidth = 1.0;
-          modButton.layer.borderColor = modernBorderColorWithDark(isDark).CGColor;
+          if (isDark) {
+            modButton.baseBackgroundColor = [NSColor colorWithSRGBRed:0.22 green:0.22 blue:0.25 alpha:1.0];
+            modButton.baseTextColor = fontColor ?: [NSColor colorWithSRGBRed:0.95 green:0.95 blue:0.97 alpha:1.0];
+            modButton.layer.borderWidth = 1.0;
+            modButton.layer.borderColor = [NSColor colorWithSRGBRed:0.35 green:0.35 blue:0.38 alpha:1.0].CGColor;
+          } else {
+            modButton.baseBackgroundColor = [NSColor colorWithSRGBRed:0.90 green:0.90 blue:0.93 alpha:1.0];
+            modButton.baseTextColor = fontColor ?: [NSColor colorWithSRGBRed:0.10 green:0.10 blue:0.12 alpha:1.0];
+            modButton.layer.borderWidth = 1.0;
+            modButton.layer.borderColor = [NSColor colorWithSRGBRed:0.75 green:0.75 blue:0.78 alpha:1.0].CGColor;
+          }
         }
         [modButton updateVisuals];
       } else {
         [button setBordered:NO];
         button.layer.cornerRadius = 8.0;
         
-        NSColor *winBg = button.window ? button.window.backgroundColor : nil;
-        BOOL isDark = YES;
-        if (winBg && ![winBg isEqual:[NSColor clearColor]]) {
-          isDark = isDarkColor(winBg);
-        } else {
-          isDark = isSystemDark();
-        }
-        
         if (isDefaultButton) {
           button.layer.backgroundColor = primaryButtonColor().CGColor;
           button.layer.borderWidth = 0.0;
           setButtonTitleColor(button, getContrastColor(primaryButtonColor()));
-        } else if (backgroundColor && ![backgroundColor isEqual:[NSColor clearColor]]) {
-          button.layer.backgroundColor = backgroundColor.CGColor;
-          button.layer.borderWidth = 1.0;
-          button.layer.borderColor = modernBorderColorWithDark(isDark).CGColor;
-          setButtonTitleColor(button, fontColor ?: (isDark ? [NSColor whiteColor] : [NSColor labelColor]));
         } else {
-          button.layer.backgroundColor = [modernElevatedSurfaceColorWithDark(isDark) CGColor];
-          button.layer.borderWidth = 1.0;
-          button.layer.borderColor = modernBorderColorWithDark(isDark).CGColor;
-          setButtonTitleColor(button, fontColor ?: (isDark ? [NSColor whiteColor] : [NSColor labelColor]));
+          if (isDark) {
+            button.layer.backgroundColor = [NSColor colorWithSRGBRed:0.22 green:0.22 blue:0.25 alpha:1.0].CGColor;
+            button.layer.borderWidth = 1.0;
+            button.layer.borderColor = [NSColor colorWithSRGBRed:0.35 green:0.35 blue:0.38 alpha:1.0].CGColor;
+            setButtonTitleColor(button, fontColor ?: [NSColor whiteColor]);
+          } else {
+            button.layer.backgroundColor = [NSColor colorWithSRGBRed:0.90 green:0.90 blue:0.93 alpha:1.0].CGColor;
+            button.layer.borderWidth = 1.0;
+            button.layer.borderColor = [NSColor colorWithSRGBRed:0.75 green:0.75 blue:0.78 alpha:1.0].CGColor;
+            setButtonTitleColor(button, fontColor ?: [NSColor colorWithSRGBRed:0.10 green:0.10 blue:0.12 alpha:1.0]);
+          }
         }
       }
     }
   } else if ([view isKindOfClass:[NSPopUpButton class]]) {
     NSPopUpButton *popup = (NSPopUpButton *)view;
-    [popup setFont:[NSFont systemFontOfSize:12 weight:NSFontWeightRegular]];
+    NSColor *winBg = popup.window ? popup.window.backgroundColor : nil;
+    BOOL isDark = YES;
+    if (winBg && ![winBg isEqual:[NSColor clearColor]]) {
+      isDark = isDarkColor(winBg);
+    } else {
+      isDark = isSystemDark();
+    }
+    [popup setFont:[NSFont systemFontOfSize:12 weight:NSFontWeightMedium]];
     [popup setControlSize:NSControlSizeRegular];
     [popup setBezelStyle:NSBezelStyleRounded];
     [popup setWantsLayer:YES];
     popup.layer.cornerRadius = 8.0;
     popup.layer.borderWidth = 1.0;
-    popup.layer.borderColor = [NSColor separatorColor].CGColor;
-    popup.layer.backgroundColor = (backgroundColor ?: modernElevatedSurfaceColor()).CGColor;
-    if ([popup respondsToSelector:@selector(setContentTintColor:)]) {
-      [popup setContentTintColor:effectiveFont];
+    if (isDark) {
+      popup.layer.backgroundColor = [NSColor colorWithSRGBRed:0.22 green:0.22 blue:0.25 alpha:1.0].CGColor;
+      popup.layer.borderColor = [NSColor colorWithSRGBRed:0.35 green:0.35 blue:0.38 alpha:1.0].CGColor;
+      if ([popup respondsToSelector:@selector(setContentTintColor:)]) {
+        [popup setContentTintColor:fontColor ?: [NSColor whiteColor]];
+      }
+    } else {
+      popup.layer.backgroundColor = [NSColor colorWithSRGBRed:0.90 green:0.90 blue:0.93 alpha:1.0].CGColor;
+      popup.layer.borderColor = [NSColor colorWithSRGBRed:0.75 green:0.75 blue:0.78 alpha:1.0].CGColor;
+      if ([popup respondsToSelector:@selector(setContentTintColor:)]) {
+        [popup setContentTintColor:fontColor ?: [NSColor colorWithSRGBRed:0.10 green:0.10 blue:0.12 alpha:1.0]];
+      }
     }
   } else if ([view isKindOfClass:[NSSegmentedControl class]]) {
     NSSegmentedControl *segment = (NSSegmentedControl *)view;
@@ -1901,25 +1912,28 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   self.currentFontColor = fontColor;
 
   if (self.window) {
-    if (backgroundColor) {
-      NSColor *rgbBg = [backgroundColor colorUsingColorSpace:[NSColorSpace deviceRGBColorSpace]];
-      if (rgbBg) {
-        CGFloat r=0, g=0, b=0, a=0;
-        [rgbBg getRed:&r green:&g blue:&b alpha:&a];
-        double luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-        if (luminance < 0.5) {
-          if (@available(macOS 10.14, *)) {
-            self.window.appearance = [NSAppearance appearanceNamed:NSAppearanceNameDarkAqua];
-          } else {
-            self.window.appearance = [NSAppearance appearanceNamed:NSAppearanceNameVibrantDark];
-          }
+    NSColor *srgbBg = backgroundColor ? ([backgroundColor colorUsingColorSpace:[NSColorSpace sRGBColorSpace]] ?: backgroundColor) : nil;
+    if (srgbBg) {
+      CGFloat r=0, g=0, b=0, a=0;
+      [srgbBg getRed:&r green:&g blue:&b alpha:&a];
+      double luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      NSAppearance *targetAppearance = nil;
+      if (luminance < 0.5) {
+        if (@available(macOS 10.14, *)) {
+          targetAppearance = [NSAppearance appearanceNamed:NSAppearanceNameDarkAqua];
         } else {
-          if (@available(macOS 10.14, *)) {
-            self.window.appearance = [NSAppearance appearanceNamed:NSAppearanceNameAqua];
-          } else {
-            self.window.appearance = [NSAppearance appearanceNamed:NSAppearanceNameVibrantLight];
-          }
+          targetAppearance = [NSAppearance appearanceNamed:NSAppearanceNameVibrantDark];
         }
+      } else {
+        if (@available(macOS 10.14, *)) {
+          targetAppearance = [NSAppearance appearanceNamed:NSAppearanceNameAqua];
+        } else {
+          targetAppearance = [NSAppearance appearanceNamed:NSAppearanceNameVibrantLight];
+        }
+      }
+      self.window.appearance = targetAppearance;
+      if (self.window.contentView) {
+        self.window.contentView.appearance = targetAppearance;
       }
     }
 
@@ -1933,24 +1947,38 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
       [self.window setBackgroundColor:[NSColor clearColor]];
       [self.window setOpaque:NO];
     } else {
-      [self.window setBackgroundColor:backgroundColor];
+      [self.window setBackgroundColor:srgbBg];
+      [self.window setOpaque:YES];
     }
     if (self.window.contentView) {
       [self.window.contentView setWantsLayer:YES];
       [self.window.contentView.layer setBorderWidth:0.5];
-      NSAppearance *appearance = [NSApp effectiveAppearance];
+      NSAppearance *appearance = self.window.appearance ?: [NSApp effectiveAppearance];
       if ([appearance bestMatchFromAppearancesWithNames:@[NSAppearanceNameDarkAqua, NSAppearanceNameAqua]] == NSAppearanceNameDarkAqua) {
         [self.window.contentView.layer setBorderColor:[[NSColor colorWithCalibratedWhite:1.0 alpha:0.15] CGColor]];
       } else {
         [self.window.contentView.layer setBorderColor:[[NSColor colorWithCalibratedWhite:0.0 alpha:0.10] CGColor]];
       }
-      if (isDefaultBg) {
-        [self.window.contentView.layer setBackgroundColor:[NSColor clearColor].CGColor];
+
+      if ([self.window.contentView isKindOfClass:[NSVisualEffectView class]]) {
+        NSVisualEffectView *vev = (NSVisualEffectView *)self.window.contentView;
+        if (isDefaultBg) {
+          [vev setState:NSVisualEffectStateActive];
+          [vev.layer setBackgroundColor:[NSColor clearColor].CGColor];
+        } else {
+          [vev setState:NSVisualEffectStateInactive];
+          [vev.layer setBackgroundColor:srgbBg.CGColor];
+        }
       } else {
-        [self.window.contentView.layer setBackgroundColor:backgroundColor.CGColor];
+        if (isDefaultBg) {
+          [self.window.contentView.layer setBackgroundColor:[NSColor clearColor].CGColor];
+        } else {
+          [self.window.contentView.layer setBackgroundColor:srgbBg.CGColor];
+        }
       }
     }
   }
+
   if (self.scrollView) {
     [self.scrollView setBackgroundColor:[NSColor clearColor]];
   }
