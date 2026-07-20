@@ -109,7 +109,7 @@ fn main() {
 
 		// Compile
 		println('Compiling ${demo_path}...')
-		comp_res := os.execute('v -o ${os.quoted_path(basename)} ${os.quoted_path(demo_path)}')
+		comp_res := os.execute('v -nocache -o ${os.quoted_path(basename)} ${os.quoted_path(demo_path)}')
 		if comp_res.exit_code != 0 {
 			eprintln('❌ Compilation failed for ${basename}:\n${comp_res.output}')
 			continue

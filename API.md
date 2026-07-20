@@ -336,6 +336,20 @@ For common forms, these helpers reduce boilerplate and keep the API friendly for
 - `win.add_number_field(name string, value int) &SimpleWindow` creates a numeric input.
 - `win.add_action(name string, title string, callback VoidEventCallback) &SimpleWindow` creates a button and wires its click handler.
 - `win.add_heading(title string) &SimpleWindow` inserts a large, prominent title label followed by a separator line.
+- `win.add_breadcrumbs(name string, segments []string) &SimpleWindow` creates a breadcrumb/path navigator control.
+- `win.set_breadcrumbs(name string, segments []string) &SimpleWindow` updates the visible breadcrumb segments.
+- `win.add_shortcut_recorder(name string) &SimpleWindow` creates a shortcut capture field for keyboard combinations.
+- `win.add_chart(name string, chart_type string, height int) &SimpleWindow` creates a line or area chart control.
+- `win.set_chart_data(name string, values []f64) &SimpleWindow` updates the points shown in a chart.
+- `win.add_circular_progress(name string, value int, min_val int, max_val int) &SimpleWindow` creates a circular progress gauge.
+- `win.set_circular_progress(name string, value int) &SimpleWindow` updates the circular progress value.
+- `win.add_property_grid(name string, props map[string]string) &SimpleWindow` creates a property inspector grid with key/value rows.
+- `win.set_property_grid_value(name string, key string, value string) &SimpleWindow` updates a property grid entry.
+- `win.add_color_grid(name string, colors []string) &SimpleWindow` creates a grid of selectable color swatches.
+- `win.set_color_grid_selected(name string, color string) &SimpleWindow` selects a color swatch by hex value.
+- `win.add_grid(name string, headers []string, initial_rows [][]string) &SimpleWindow` creates an editable spreadsheet-style grid.
+- `win.grid_add_row(name string, row_values []string) &SimpleWindow`, `win.grid_delete_row(name string, row_idx int) &SimpleWindow`, `win.grid_add_column(name string, header string) &SimpleWindow`, and `win.grid_delete_column(name string, col_idx int) &SimpleWindow` manage grid rows and columns.
+- `win.add_console(name string, height int) &SimpleWindow`, `win.append_console(name string, text string, level int) &SimpleWindow`, and `win.clear_console(name string) &SimpleWindow` create and manage a developer-style log console.
 - `win.add_form_from_struct[T](default_data T) &SimpleWindow` automatically generates input/checkbox/numeric fields side-by-side and vertically from a V struct using compile-time reflection.
 - `win.configure(callback fn (mut cfg WindowConfig)) &SimpleWindow` applies a small fluent configuration block for window title, dimensions, spacing, colors, and resize behavior.
 - `win.form(title string, callback VoidEventCallback) &SimpleWindow` and `win.section(title string, callback VoidEventCallback) &SimpleWindow` create grouped form containers with a lightweight builder feel.
@@ -1205,9 +1219,14 @@ Attaches an event handler when files are dragged and dropped onto the window or 
 
 ## 11. Custom Application Menus & Context Menus
 
+Custom top-level menus appear in the macOS menu bar between the application menu and the standard `Edit`/`Window` menus. Menus can be registered at any time — including before `win.run()` — and become visible as soon as the app launches.
+
 ### `win.add_menu_item(menu_name string, item_title string, shortcut string, callback VoidEventCallback) &SimpleWindow`
 
 Adds a custom drop-down menu item under the main macOS application menu bar (e.g. under a custom menu tab like "Actions"). Binds the menu click action directly to the callback.
+
+- **Shortcut format**: modifier tokens joined with `+`, e.g. `'cmd+s'`, `'cmd+shift+s'`, `'ctrl+alt+d'`. Supported modifiers: `cmd`/`command`, `ctrl`/`control`, `opt`/`option`/`alt`, `shift`. Special keys: `return`/`enter`, `escape`/`esc`, `space`. Pass `''` for no shortcut.
+- Passing `'-'` as `item_title` inserts a native separator line.
 
 ### `win.add_context_menu_item(control_name string, item_title string, callback VoidEventCallback) &SimpleWindow`
 
@@ -1216,6 +1235,29 @@ Binds a native right-click Context Menu item directly to any control by its `nam
 ### `win.add_menu(menu_name string, items []MenuItem) &SimpleWindow`
 
 Creates a structured drop-down menu bar hierarchy. Supports native separators when `MenuItem.title` is `"-"`.
+
+```v ignore
+win.add_menu('Demo', [
+    simplegui.MenuItem{
+        title:    'Show Snapshot'
+        shortcut: 'cmd+shift+s'
+        callback: fn (mut w simplegui.SimpleWindow) {
+            w.set_status('Snapshot triggered from the Demo menu')
+        }
+    },
+    simplegui.MenuItem{
+        title: '-' // separator
+    },
+    simplegui.MenuItem{
+        title:    'Reset Status'
+        callback: fn (mut w simplegui.SimpleWindow) {
+            w.set_status('Ready.')
+        }
+    },
+])
+```
+
+**Note**: When the app runs in status-bar accessory mode (after `enable_status_bar`), menu items are added to the status bar dropdown menu instead of the main menu bar.
 
 ### `win.add_context_menu(control_name string, items []MenuItem) &SimpleWindow`
 
@@ -1238,6 +1280,50 @@ Updates the entire set of row cells displayed inside the table grid.
 Populates and renders a scrollable multi-column table widget automatically using field names and values from an array of V structs of generic type `T`. Supports compile-time reflection of `string`, `int`, and `bool` fields.
 
 Table rows are tracked automatically on the V side, enabling the incremental row-management, selection, and event helpers described in [Section 17](#17-ergonomic-helpers) (`add_table_row`, `remove_selected_table_rows`, `on_table_select`, `on_table_double_click`, and more).
+
+### `win.add_grid(name string, headers []string, initial_rows [][]string) &SimpleWindow`
+
+Adds a native editable data grid for spreadsheet-style layouts. It supports inline editing, persistent selection, checkbox and button cell types, column resizing, filtering, and programmatic sorting.
+
+### Grid row and column management
+
+- `win.grid_add_row(name, row_values)` appends a new row.
+- `win.grid_delete_row(name, row_idx)` removes a row by index.
+- `win.grid_add_column(name, header)` appends a new column.
+- `win.grid_delete_column(name, col_idx)` removes a column by index.
+- `win.grid_get_rows(name)` and `win.grid_set_rows(name, rows)` read or replace the entire dataset.
+- `win.grid_get_row(name, row_idx)` / `win.grid_set_row(name, row_idx, values)` and `win.grid_get_column(name, col_idx)` / `win.grid_set_column(name, col_idx, values)` support common spreadsheet-style row and column updates.
+
+### Grid cell and selection helpers
+
+- `win.grid_set_cell(name, row, col, value)` and `win.grid_get_cell(name, row, col)` read and write individual cells.
+- `win.grid_get_selected_row(name)` and `win.grid_get_selected_column(name)` return the current selection coordinates, and `win.grid_get_selected_cell(name)` returns them as a `(row, column)` pair.
+- `win.grid_set_selected_row(name, row_idx)`, `win.grid_set_selected_column(name, col_idx)`, and `win.grid_set_selected_cell(name, row, col)` select rows, columns, or cells programmatically.
+- `win.grid_get_row_values(name, row_idx)` and `win.grid_get_column_values(name, col_idx)` return the current contents of a row or column.
+- `win.grid_set_row_values(name, row_idx, values)` and `win.grid_set_column_values(name, col_idx, values)` update entire rows or columns.
+
+### Grid filtering, sorting, and display options
+
+- `win.grid_set_filter(name, query)` and `win.grid_clear_filter(name)` filter visible rows by cell contents.
+- `win.grid_sort_by_column(name, col_idx, ascending)` sorts the current grid data by a specific column. Column header clicks select the column and keep sorting explicit via the API.
+- `win.grid_set_column_type(name, col_idx, type)` controls rendering for text, checkbox, or button cells.
+- `win.grid_set_column_width(name, col_idx, width)` and `win.grid_set_row_height(name, height)` adjust sizing.
+- `win.grid_autosize_columns(name)` resizes columns to fit their current content.
+
+### Grid editability and enabled-state helpers
+
+- `win.grid_set_column_editable(name, col_idx, editable)` / `win.grid_get_column_editable(name, col_idx)`
+- `win.grid_set_row_editable(name, row_idx, editable)` / `win.grid_get_row_editable(name, row_idx)`
+- `win.grid_set_cell_editable(name, row, col, editable)` / `win.grid_get_cell_editable(name, row, col)`
+- `win.grid_set_column_enabled(name, col_idx, enabled)` / `win.grid_get_column_enabled(name, col_idx)`
+- `win.grid_set_row_enabled(name, row_idx, enabled)` / `win.grid_get_row_enabled(name, row_idx)`
+- `win.grid_set_cell_enabled(name, row, col, enabled)` / `win.grid_get_cell_enabled(name, row, col)`
+
+### Grid event hooks
+
+- `on_change('grid_name', handler)` fires when the grid contents or selection changes.
+- `on_column_click('grid_name', handler)` fires when a column is selected.
+- `on_cell_button_click('grid_name', handler)` fires when a button-style cell is clicked.
 
 ---
 

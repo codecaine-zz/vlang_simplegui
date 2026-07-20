@@ -1,21 +1,43 @@
-# V macOS Native Window
+# SimpleGUI — Native macOS GUIs in V
 
-A small macOS-native GUI starter project written in V, designed to feel approachable for programmers coming from Python, Delphi, or VBA.
+Build real, native Cocoa desktop apps in [V](https://vlang.io) with a beginner-friendly API inspired by Delphi, VBA, and Python UI toolkits — no Objective-C required.
 
-## Documentation
+![Platform: macOS](https://img.shields.io/badge/platform-macOS-blue)
+![Language: V](https://img.shields.io/badge/language-V-4f87c4)
+![License: MIT](https://img.shields.io/badge/license-MIT-green)
+![Demos: 70+](https://img.shields.io/badge/demos-70%2B-orange)
 
-- API reference: [API.md](API.md)
-- Project overview and examples: [README.md](README.md)
+![SimpleGUI all-controls demo](screenshots/all_controls_demo.png)
 
-## What this project does
+## Table of contents
 
-This project combines:
+- [Overview](#overview)
+- [Features](#features)
+- [Installation](#installation)
+- [Quick start](#quick-start)
+- [Faster form building](#faster-form-building)
+- [Best and easiest ways to create GUIs and events](#best-and-easiest-ways-to-create-guis-and-events)
+- [Starter templates](#starter-templates)
+- [Developer tips](#developer-tips)
+- [Compiling & packaging as a macOS app](#compiling--packaging-as-a-macos-app)
+- [Capturing demo screenshots](#capturing-demo-screenshots)
+- [Demos](#demos)
+- [Testing](#testing)
+- [Project structure](#project-structure)
+- [Documentation](#documentation)
+- [Screenshots](#screenshots)
+- [Contributing](#contributing)
+- [License](#license)
+
+## Overview
+
+SimpleGUI combines:
 
 - a lightweight V-side wrapper for creating GUI controls
 - a native Cocoa bridge for real macOS windows and controls
 - a beginner-friendly API for adding named controls, setting/getting values, and attaching event handlers
 
-It is intended to make GUI programming feel more direct and less manual than the raw Cocoa/Objective-C approach.
+The goal is a simple, high-abstraction GUI layer that feels familiar to anyone used to event-driven environments like Delphi, VBA, or Python-based UI toolkits — far more direct and less manual than the raw Cocoa/Objective-C approach.
 
 ## Features
 
@@ -25,6 +47,8 @@ It is intended to make GUI programming feel more direct and less manual than the
 - **NSTokenField / Tags Entry**: Standard bubble tags & chips entry input field separated by delimiter (comma etc.)
 - **NSPathControl**: High-fidelity macOS native breadcrumb item displaying folders and file system links (drag/drop and editable)
 - **Activity Loading Spinner**: Native spinning wheel loader for background tasks and asynchronous operations
+- **Developer-oriented controls**: breadcrumb navigation, shortcut recording, charts, circular progress gauges, property inspector grids, color swatches, editable tables, and log consoles
+- **Editable native grids**: spreadsheet-like data grids with inline editing, persistent cell/row/column selection, checkbox and button cell types, row/column actions, filtering, explicit programmatic sorting, and ergonomic helpers for reading and updating rows, columns, and individual cells
 - Set and read values by control name
 - Support multiple controls of the same kind using distinct names
 - Attach simple event handlers for clicks and value changes
@@ -32,7 +56,56 @@ It is intended to make GUI programming feel more direct and less manual than the
 - Support native keyboard shortcuts: **CMD + F** to toggle full screen, **CMD + Q** to quit the application
 - Pin a window above other windows with the new always-on-top API
 
-## Example
+The developer controls demo in [demos/developer_controls_demo.v](demos/developer_controls_demo.v) showcases these richer UI helpers in one place, while [demos/editable_grid_showcase_demo.v](demos/editable_grid_showcase_demo.v) demonstrates the new editable-grid workflow with selection, filtering, sorting, and programmatic row/column/cell access.
+
+For app code, the grid helpers are intentionally ergonomic:
+
+- `grid_get_rows()` / `grid_set_rows()` replace the full data set in one step.
+- `grid_get_row()` / `grid_set_row()` and `grid_get_column()` / `grid_set_column()` cover the common spreadsheet-style operations.
+- `grid_get_selected_column()`, `grid_set_selected_column()`, and `grid_set_selected_cell()` make selection easy to drive from code.
+
+## Installation
+
+### Requirements
+
+- macOS
+- [V](https://github.com/vlang/v) installed and available on your `PATH`
+- Xcode Command Line Tools (`xcode-select --install`)
+
+### Setup
+
+```bash
+git clone https://github.com/codecaine-zz/vlang_simplegui.git
+cd vlang_simplegui
+
+# Verify everything works — launches the main demo window
+v run .
+
+# Run the test suite
+v test .
+```
+
+To use SimpleGUI in your own project, copy the [simplegui/](simplegui/) folder (including the native bridge files `window.h` and `window.m`) into your project root and `import simplegui`.
+
+## Quick start
+
+```v
+module main
+
+import simplegui
+
+fn main() {
+    mut win := simplegui.new_simple_window('Starter', 640, 420)
+    win.add_input('name', 'Ada')
+    win.add_button('save', 'Save')
+    win.on_click('save', fn (mut win &simplegui.SimpleWindow) {
+        println("saved: ${win.get_text('name')}")
+    })
+    win.run()
+}
+```
+
+Event handlers can also be free functions:
 
 ```v
 import simplegui
@@ -55,24 +128,6 @@ fn on_name_changed(mut win &simplegui.SimpleWindow, value string) {
 
 fn on_run_clicked(mut win &simplegui.SimpleWindow) {
     println('run clicked')
-}
-```
-
-## Quick start template
-
-```v
-module main
-
-import simplegui
-
-fn main() {
-    mut win := simplegui.new_simple_window('Starter', 640, 420)
-    win.add_input('name', 'Ada')
-    win.add_button('save', 'Save')
-    win.on_click('save', fn (mut win &simplegui.SimpleWindow) {
-        println("saved: ${win.get_text('name')}")
-    })
-    win.run()
 }
 ```
 
@@ -167,7 +222,9 @@ win.run()
 
 ---
 
-### 2. Starter Template: Vertical Stack Layout (Default Flow)
+## Starter templates
+
+### Vertical stack layout (default flow)
 
 Best for simple forms, log views, setup wizards, and linear layouts where controls stack nicely top-to-bottom.
 
@@ -205,7 +262,7 @@ fn on_submit(mut win &simplegui.SimpleWindow) {
 
 ---
 
-### 3. Starter Template: Side-by-Side Row Layout (Grid Columns)
+### Side-by-side row layout (grid columns)
 
 Best for tabular layouts, calculators, search bars with inline action buttons, or database filter fields aligned horizontally.
 
@@ -260,7 +317,7 @@ fn on_search_clicked(mut win &simplegui.SimpleWindow) {
 
 ---
 
-### 4. Interactive Getting, Setting, and Event Binding Pattern
+### Getting, setting, and event binding pattern
 
 Use this template to see how to programmatically manipulate labels, checkboxes, text values, sliders, and progress loaders dynamically on click or change.
 
@@ -436,55 +493,133 @@ v run capture_demos.vsh beginner_demo
 5. **Captures a cropped screenshot** of the window rect using macOS `screencapture -R`.
 6. **Saves** the PNG to `screenshots/<demo_name>.png`, then terminates the demo and cleans up the compiled binary.
 
-## Requirements
+## Demos
 
-- macOS
-- V installed and available on your PATH
-- Xcode Command Line Tools
-
-## Run the demos
-
-This project supports two different layout styles:
-
-1. **Vertical Stack Style**: The default linear, top-to-bottom layout.
-2. **Grid / Row-based Style**: Allows grouping multiple controls side-by-side inside rows.
-
-### Run the layout demos
+The [demos/](demos/) folder contains 70+ runnable examples covering every control, layout style, and stdlib integration. Run any demo with:
 
 ```bash
-# 1. Linear Vertical Stacking
-v run demos/layout_vertical_stack.v
-
-# 2. Side-by-Side Horizontal Rows
-v run demos/layout_horizontal_rows.v
-
-# 3. Forms & Sections with Validation
-v run demos/layout_form_sections.v
-
-# 4. Bordered Group Boxes
-v run demos/layout_group_boxes.v
-
-# 5. Interactive Native Tabs & View Swapping
-v run demos/layout_tabs.v
-
-# 6. Fixed-Height Scroll Views
-v run demos/layout_scroll_view.v
-
-# 7. Compile-Time Reflection Form Builder
-v run demos/layout_struct_reflection.v
-
-# 8. Responsive Auto-Layout vs Fixed Constraints
-v run demos/layout_responsive_constraints.v
-
-# 9. Compact Layouts + Events Showcase
-v run demos/layout_events_mini_demo.v
+v run demos/<demo_name>.v
 ```
 
-### Run the main demo (which combines both styles)
+Run the main demo, which combines the vertical stack and grid layout styles:
 
 ```bash
 v run .
 ```
+
+### Getting started & starter templates
+
+| Demo                                                           | Description                                                                 |
+| -------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| [starter_template.v](demos/starter_template.v)                 | Minimal starter app for new developers                                      |
+| [beginner_demo.v](demos/beginner_demo.v)                       | Beginner-friendly signup form and profile builder                           |
+| [vertical_stack_starter.v](demos/vertical_stack_starter.v)     | Best-practice template for vertical stack forms                             |
+| [grid_column_starter.v](demos/grid_column_starter.v)           | Best-practice template for horizontal row layouts and events                |
+| [state_controller_pattern.v](demos/state_controller_pattern.v) | State manipulation and reactive controls pattern                            |
+| [stack_style.v](demos/stack_style.v)                           | Clean, vertical form stacking                                               |
+| [grid_style.v](demos/grid_style.v)                             | Side-by-side row-based grids                                                |
+| [guessing_game.v](demos/guessing_game.v)                       | Guess-the-number game with level indicators, rating stars, and history logs |
+
+### Layout system
+
+| Demo                                                                     | Description                                                           |
+| ------------------------------------------------------------------------ | --------------------------------------------------------------------- |
+| [layout_vertical_stack.v](demos/layout_vertical_stack.v)                 | Linear vertical stacking, padding, spacing, dividers, and spacers     |
+| [layout_horizontal_rows.v](demos/layout_horizontal_rows.v)               | Side-by-side rows, spacers, action rows, and field rows               |
+| [layout_form_sections.v](demos/layout_form_sections.v)                   | Semantic forms, section blocks, and form control validation           |
+| [layout_group_boxes.v](demos/layout_group_boxes.v)                       | Visual panel containment boxes                                        |
+| [layout_tabs.v](demos/layout_tabs.v)                                     | Interactive native tabs switching between multi-view panels           |
+| [layout_scroll_view.v](demos/layout_scroll_view.v)                       | Scrollable panel constraints                                          |
+| [layout_struct_reflection.v](demos/layout_struct_reflection.v)           | Auto-generating forms from structs using compile-time reflection      |
+| [layout_responsive_constraints.v](demos/layout_responsive_constraints.v) | Responsive auto-layout scaling vs fixed constraints                   |
+| [layout_events_mini_demo.v](demos/layout_events_mini_demo.v)             | Compact showcase combining sections, rows, groups, and event bindings |
+
+### Controls & widgets
+
+| Demo                                                                 | Description                                                                         |
+| -------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| [all_controls_demo.v](demos/all_controls_demo.v)                     | Single-window demo exercising many controls in one place                            |
+| [new_controls_demo.v](demos/new_controls_demo.v)                     | Segmented menus, popup selections, and search fields                                |
+| [new_controls_showcase.v](demos/new_controls_showcase.v)             | Showcase of the newest control additions                                            |
+| [modern_widgets_demo.v](demos/modern_widgets_demo.v)                 | Level indicators, star ratings, and editable combo boxes                            |
+| [rich_widgets_demo.v](demos/rich_widgets_demo.v)                     | Advanced rich macOS controls suite                                                  |
+| [developer_controls_demo.v](demos/developer_controls_demo.v)         | Breadcrumbs, shortcut recorders, charts, gauges, property grids, and log consoles   |
+| [editable_grid_showcase_demo.v](demos/editable_grid_showcase_demo.v) | Editable grid workflow: selection, filtering, sorting, and programmatic cell access |
+| [tree_view_demo.v](demos/tree_view_demo.v)                           | Hierarchical tree view                                                              |
+| [advanced_features_demo.v](demos/advanced_features_demo.v)           | Advanced typography and macOS APIs                                                  |
+| [menu_demo.v](demos/menu_demo.v)                                     | Standard macOS application menus and text editing shortcuts                         |
+| [colors_demo.v](demos/colors_demo.v)                                 | Live custom colors styling sandbox for typography and backgrounds                   |
+| [animation_demo.v](demos/animation_demo.v)                           | Animated control and window effects                                                 |
+| [api_control_showcase_demo.v](demos/api_control_showcase_demo.v)     | End-to-end tour of the control APIs                                                 |
+| [api_coverage_demo.v](demos/api_coverage_demo.v)                     | Broad coverage exercise of the wrapper API surface                                  |
+| [lorem_and_html_demo.v](demos/lorem_and_html_demo.v)                 | Placeholder text generation and HTML rendering                                      |
+
+### Complete example apps
+
+| Demo                                                       | Description                                                             |
+| ---------------------------------------------------------- | ----------------------------------------------------------------------- |
+| [calculator.v](demos/calculator.v)                         | Interactive math calculator with nested grid rows                       |
+| [settings_editor.v](demos/settings_editor.v)               | Advanced dashboard with date picker, color wells, and modes             |
+| [data_viewer.v](demos/data_viewer.v)                       | Mock database user records lookup table with filters                    |
+| [markdown_editor.v](demos/markdown_editor.v)               | Live Markdown Studio with full WebKit render updates                    |
+| [web_studio_demo.v](demos/web_studio_demo.v)               | BI KPI & fintech analytics board mixing native widgets with HTML/CSS/JS |
+| [grid_data_editor.v](demos/grid_data_editor.v)             | Reactive inventory-catalog CRUD grid editing dashboard                  |
+| [sqlite_crud_demo.v](demos/sqlite_crud_demo.v)             | SQLite dashboard performing CREATE, READ, UPDATE, DELETE actions        |
+| [todo_list_demo.v](demos/todo_list_demo.v)                 | Todo list built on the list box item-management helpers                 |
+| [table_manager_demo.v](demos/table_manager_demo.v)         | Inventory manager built on the table row-management helpers             |
+| [pomodoro_timer_demo.v](demos/pomodoro_timer_demo.v)       | Focus clock with live progress timer, toasts, and session settings      |
+| [password_dashboard.v](demos/password_dashboard.v)         | Lockbox security dashboard with credentials table and detail forms      |
+| [rest_client_demo.v](demos/rest_client_demo.v)             | REST client API studio with methods, params, headers, and JSON viewer   |
+| [timer_demo.v](demos/timer_demo.v)                         | Background timer tasks updating progress indicators periodically        |
+| [list_image_demo.v](demos/list_image_demo.v)               | Interactive list selector previewing images in real time                |
+| [clipboard_demo.v](demos/clipboard_demo.v)                 | Clipboard monitor with history log                                      |
+| [overlay_widget_demo.v](demos/overlay_widget_demo.v)       | Sticky floating yellow notepad overlay widget                           |
+| [worker_pool_visualizer.v](demos/worker_pool_visualizer.v) | Concurrent task queue monitor with progress bars and worker states      |
+| [grid_beginner_demo.v](demos/grid_beginner_demo.v)         | Interactive 2D painting grid with presets and native color wells        |
+
+### Developer experience & ergonomics
+
+| Demo                                                         | Description                                                                        |
+| ------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| [dx_features_demo.v](demos/dx_features_demo.v)               | Reflection form building, chaining, nameless controls, action rows, and debug mode |
+| [dx_showcase.v](demos/dx_showcase.v)                         | High-level horizontal rows, layout nesting, and fluent styling modifiers           |
+| [high_level_demo.v](demos/high_level_demo.v)                 | Beginner-friendly helper API for forms and actions                                 |
+| [ergonomic_demo.v](demos/ergonomic_demo.v)                   | Lightweight ergonomic helpers for window configuration and forms                   |
+| [ergonomics_helpers_demo.v](demos/ergonomics_helpers_demo.v) | Grouped tour of every ergonomics helper family                                     |
+| [easy_api_demo.v](demos/easy_api_demo.v)                     | Dialog shortcuts, batch operations, labeled rows, timer sugar, and validation      |
+| [list_table_toolkit_demo.v](demos/list_table_toolkit_demo.v) | Live search filtering, sorting, reordering, CSV export/import, and validators      |
+| [features_demo.v](demos/features_demo.v)                     | Compile-time struct binding and automatic multi-column tables                      |
+| [configuration_demo.v](demos/configuration_demo.v)           | Fluent configuration using `WindowConfig`                                          |
+| [dirty_form_demo.v](demos/dirty_form_demo.v)                 | Live form dirty-tracking state and control validation callbacks                    |
+| [save_restore_demo.v](demos/save_restore_demo.v)             | One-call JSON settings persistence with unsaved-changes prompts                    |
+| [delphi_inspired_demo.v](demos/delphi_inspired_demo.v)       | Classic Delphi RAD tool look and event bindings                                    |
+| [events_demo.v](demos/events_demo.v)                         | Hover, focus, blur, and window resize event listeners                              |
+| [window_controller_demo.v](demos/window_controller_demo.v)   | Programmatic window resize, move, center, and opacity control                      |
+| [always_on_top_demo.v](demos/always_on_top_demo.v)           | Window z-axis float levels and the always-on-top API                               |
+
+### Networking & security
+
+| Demo                                                     | Description                                      |
+| -------------------------------------------------------- | ------------------------------------------------ |
+| [tcp_socket_demo.v](demos/tcp_socket_demo.v)             | Client-server TCP networking with message logs   |
+| [udp_socket_demo.v](demos/udp_socket_demo.v)             | Datagram packet transfer over UDP sockets        |
+| [unix_socket_demo.v](demos/unix_socket_demo.v)           | Local IPC using Unix domain sockets              |
+| [secure_socket_demo.v](demos/secure_socket_demo.v)       | TLS-encrypted client-server socket communication |
+| [secure_udp_demo.v](demos/secure_udp_demo.v)             | DTLS-encrypted datagram transfers                |
+| [secure_unix_demo.v](demos/secure_unix_demo.v)           | TLS-encrypted Unix domain sockets                |
+| [secure_websocket_demo.v](demos/secure_websocket_demo.v) | Secure WebSocket client-server networking        |
+| [wrapped_sockets_demo.v](demos/wrapped_sockets_demo.v)   | Simplified wrapper APIs for TCP socket streams   |
+
+### System, data & performance
+
+| Demo                                                                         | Description                                                     |
+| ---------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| [deflate_demo.v](demos/deflate_demo.v)                                       | Compress and decompress strings using zlib deflate              |
+| [zstd_demo.v](demos/zstd_demo.v)                                             | Zstandard compression and decompression                         |
+| [encoding_and_system_info_demo.v](demos/encoding_and_system_info_demo.v)     | Hex/Base64 encoder-decoder with environment details viewer      |
+| [system_calls_demo.v](demos/system_calls_demo.v)                             | Shell process invocation, stdout routing, and folder monitoring |
+| [system_and_stdlib_features_demo.v](demos/system_and_stdlib_features_demo.v) | Exhaustive showcase of V core system operations                 |
+| [benchmark_demo.v](demos/benchmark_demo.v)                                   | Wrapper operation latency benchmarks                            |
 
 ### Run the Stack Style demo
 

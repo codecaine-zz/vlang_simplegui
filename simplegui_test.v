@@ -131,6 +131,45 @@ fn test_control_sizing_methods_store_values() {
 	assert win.get_control_font_size('run') == 16
 }
 
+fn test_grid_state_getters_and_setters_are_available() {
+	mut win := simplegui.SimpleWindow{}
+	win.add_grid('inventory', ['ID', 'Task'], [['1', 'Ship']])
+
+	win.grid_set_column_editable('inventory', 0, false)
+	win.grid_set_row_editable('inventory', 0, false)
+	win.grid_set_cell_editable('inventory', 0, 1, false)
+	win.grid_set_column_enabled('inventory', 1, false)
+	win.grid_set_row_enabled('inventory', 0, false)
+	win.grid_set_cell_enabled('inventory', 0, 0, false)
+
+	assert win.grid_get_column_editable('inventory', 0) == false
+	assert win.grid_get_row_editable('inventory', 0) == false
+	assert win.grid_get_cell_editable('inventory', 0, 1) == false
+	assert win.grid_get_column_enabled('inventory', 1) == false
+	assert win.grid_get_row_enabled('inventory', 0) == false
+	assert win.grid_get_cell_enabled('inventory', 0, 0) == false
+}
+
+fn test_grid_sort_api_is_available() {
+	mut win := simplegui.SimpleWindow{}
+	win.add_grid('inventory', ['ID', 'Task'], [['3', 'Ship'],
+		['1', 'Build'], ['2', 'Test']])
+
+	win.grid_sort_by_column('inventory', 0, true)
+}
+
+fn test_collection_view_selection_can_be_set_and_read_via_generic_value_api() {
+	mut win := simplegui.SimpleWindow{}
+	win.add_collection_view('gallery', 80, 70)
+	win.set_collection_items('gallery', ['Alpha', 'Beta', 'Gamma'])
+
+	win.set_value('gallery', '1')
+	assert win.get_value('gallery') == '1'
+
+	win.set_value('gallery', '2')
+	assert win.get_value('gallery') == '2'
+}
+
 struct BindingExample {
 	username         string
 	age              int
@@ -384,6 +423,38 @@ fn test_method_chaining() {
 	assert win.get_text('second') == 'Hopper'
 }
 
+fn test_additional_shorthand_controls_are_available() {
+	mut win := simplegui.new_simple_window('Test Window', 100, 100)
+
+	win.slider(42)
+		.color_well('#ff00aa')
+		.date_picker('2026-07-19')
+		.progress_indicator(55)
+		.stepper(0, 100, 5, 25)
+		.help_button()
+		.knob(63)
+		.pull_down('Actions', ['Duplicate', 'Delete'])
+		.image_button('trash', 'Delete')
+
+	assert win.has_control('default_slider') == true
+	assert win.get_value_int('default_slider') == 42
+	assert win.has_control('default_color_well') == true
+	assert win.get_text('default_color_well') == '#ff00aa'
+	assert win.has_control('default_date_picker') == true
+	assert win.get_text('default_date_picker') == '2026-07-19'
+	assert win.has_control('default_progress_indicator') == true
+	assert win.get_value_int('default_progress_indicator') == 55
+	assert win.has_control('default_stepper') == true
+	assert win.get_value_int('default_stepper') == 25
+	assert win.has_control('default_help_button') == true
+	assert win.has_control('default_knob') == true
+	assert win.get_value_int('default_knob') == 63
+	assert win.has_control('default_pull_down') == true
+	assert win.get_text('default_pull_down') == 'Actions'
+	assert win.has_control('default_image_button') == true
+	assert win.get_text('default_image_button') == 'Delete'
+}
+
 fn test_new_control_helpers_and_window_constraints() {
 	mut win := simplegui.new_simple_window('Test Window', 100, 100)
 
@@ -510,6 +581,18 @@ fn test_native_macos_control_wrappers_are_available() {
 	assert win.get_text('role') == 'Admin'
 	assert win.get_checked('notifications') == false
 	assert win.get_text('search') == 'demo'
+}
+
+fn test_collection_view_selection_is_read_writeable() {
+	mut win := simplegui.new_simple_window('Test Window', 100, 100)
+	win.add_collection_view('grid_collection', 120, 120)
+	win.set_collection_items('grid_collection', ['Alpha', 'Beta', 'Gamma'])
+
+	win.set_text('grid_collection', '2')
+	assert win.get_text('grid_collection') == '2'
+
+	win.set_text('grid_collection', '0')
+	assert win.get_text('grid_collection') == '0'
 }
 
 fn test_auto_naming() {
@@ -1287,7 +1370,7 @@ fn test_additional_ergonomics_helpers() {
 	// Test settings persistence with checkboxes and numbers
 	settings_path := os.join_path(os.temp_dir(), 'simplegui_persist_test.json')
 	win.save_values_to_file(settings_path) or { assert false, err.msg() }
-	
+
 	// Reset values
 	win.set_checked('chk', false)
 	win.set_value_int('num_slider', 0)
@@ -1302,14 +1385,14 @@ fn test_additional_ergonomics_helpers() {
 }
 
 struct TestValidationStruct {
-	name  string @[required; min_len: '3']
-	email string @[required; email]
-	age   int    @[min: '18'; max: '99']
+	name  string @[min_len: '3'; required]
+	email string @[email; required]
+	age   int    @[max: '99'; min: '18']
 }
 
 fn test_new_ergonomic_features() {
 	mut win := simplegui.new_simple_window('Ergonomic Test', 100, 100)
-	
+
 	// 1. Labeled form helpers / aliases
 	win.add_form_password('Password:', 'pwd', 's3cr3t')
 	win.add_form_slider('Slider:', 'sld', 45)
@@ -1367,7 +1450,8 @@ fn test_new_ergonomic_features() {
 
 	assert win.get_table_row_where('scores', 0, 'Grace') == ['Grace', '25']
 	assert win.get_table_row_where('scores', 0, 'Nobody') == []string{}
-	assert win.get_table_rows_where('scores', 1, '25') == [['Grace', '25'], ['Linus', '25']]
+	assert win.get_table_rows_where('scores', 1, '25') == [['Grace', '25'],
+		['Linus', '25']]
 	assert win.get_table_column_sum('scores', 1) == 60.0
 	assert win.get_table_column_average('scores', 1) == 20.0
 
@@ -1384,21 +1468,19 @@ fn test_new_ergonomic_features() {
 	win.save_table_to_json('scores', table_json_path) or { assert false, err.msg() }
 	win.clear_table('scores')
 	win.load_table_from_json('scores', table_json_path) or { assert false, err.msg() }
-	assert win.get_table_rows('scores') == [['Ada', '10'], ['Grace', '25'], ['Linus', '25']]
+	assert win.get_table_rows('scores') == [['Ada', '10'], ['Grace', '25'],
+		['Linus', '25']]
 
 	os.rm(list_json_path) or {}
 	os.rm(table_json_path) or {}
 
 	// 6. Async task runner
 	mut async_called := false
-	win.run_async(
-		fn () {
-			// background task
-		},
-		fn [mut async_called] (mut w simplegui.SimpleWindow) {
-			async_called = true
-		}
-	)
+	win.run_async(fn () {
+		// background task
+	}, fn [mut async_called] (mut w simplegui.SimpleWindow) {
+		async_called = true
+	})
 }
 
 fn test_rad_improvements() {
@@ -1407,10 +1489,10 @@ fn test_rad_improvements() {
 	// 1. Menu Builder & Context Menu Builder
 	mut menu_called := [false]
 	mut context_called := [false]
-	
+
 	win.add_menu('File', [
 		simplegui.MenuItem{
-			title: 'Save'
+			title:    'Save'
 			shortcut: 'cmd+s'
 			callback: fn [mut menu_called] (mut w simplegui.SimpleWindow) {
 				menu_called[0] = true
@@ -1418,16 +1500,16 @@ fn test_rad_improvements() {
 		},
 		simplegui.MenuItem{
 			title: '-'
-		}
+		},
 	])
 
 	win.add_context_menu('window', [
 		simplegui.MenuItem{
-			title: 'Options'
+			title:    'Options'
 			callback: fn [mut context_called] (mut w simplegui.SimpleWindow) {
 				context_called[0] = true
 			}
-		}
+		},
 	])
 
 	// Dispatch events to test menu callbacks
@@ -1557,29 +1639,33 @@ fn test_extra_native_controls() {
 fn test_animation_helpers() {
 	mut win := simplegui.SimpleWindow{}
 	win.add_input('test_input', 'value')
-	
+
 	// Test opacity methods (can be chained)
+
 	win.animate_opacity(0.5, 500)
 		.animate_control_opacity('test_input', 0.8, 400)
 		.fade_in('test_input', 300)
 		.fade_out('test_input', 300)
 		.fade_in_window(300)
 		.fade_out_window(300)
-	
+
 	// Test shake methods
+
 	win.shake('test_input')
 		.shake_window()
-		
+
 	// Test size methods
+
 	win.animate_width('test_input', 120, 300)
 		.animate_height('test_input', 40, 300)
 		.animate_size('test_input', 150, 45, 300)
-		
+
 	// Test window size/position methods
+
 	win.animate_window_size(800, 600, 300)
 		.animate_window_position(100, 100, 300)
 		.animate_window_bounds(100, 100, 800, 600, 300)
-		
+
 	assert true
 }
 
@@ -1717,5 +1803,88 @@ fn test_new_ergonomic_helpers_added() {
 	assert win.increment_progress('prog_bar', -70) == 0
 }
 
+fn test_developer_controls() {
+	mut win := simplegui.new_simple_window('Developer Controls Test', 100, 100)
 
+	// 1. Console Control APIs
+	win.add_console('my_console', 150)
+	assert win.has_control('my_console')
+	assert win.get_control_kind('my_console') == 'console'
 
+	win.append_console('my_console', 'Log entry\n', 0)
+	win.clear_console('my_console')
+
+	// 2. Chart Control APIs
+	win.add_chart('my_chart', 'area', 200)
+	assert win.has_control('my_chart')
+	assert win.get_control_kind('my_chart') == 'chart'
+
+	win.set_chart_data('my_chart', [10.0, 20.0, 15.0])
+
+	// 3. Shortcut Recorder APIs
+	win.add_shortcut_recorder('my_recorder')
+	assert win.has_control('my_recorder')
+	assert win.get_control_kind('my_recorder') == 'shortcutrecorder'
+
+	// Verify generic get/set hooks work for ShortcutRecorder
+	win.set_text('my_recorder', 'cmd+shift+p')
+	assert win.get_value('my_recorder') == 'cmd+shift+p'
+
+	// 4. Circular Progress Gauge APIs
+	win.add_circular_progress('my_progress', 25, 0, 100)
+	assert win.has_control('my_progress')
+	assert win.get_control_kind('my_progress') == 'circularprogress'
+	win.set_circular_progress('my_progress', 50)
+
+	// 5. Breadcrumb APIs
+	win.add_breadcrumbs('my_breadcrumbs', ['a', 'b', 'c'])
+	assert win.has_control('my_breadcrumbs')
+	assert win.get_control_kind('my_breadcrumbs') == 'breadcrumbs'
+	win.set_breadcrumbs('my_breadcrumbs', ['a', 'b'])
+
+	// 6. Property Grid APIs
+	win.add_property_grid('my_propgrid', {
+		'Width':  '100'
+		'Height': '200'
+	})
+	assert win.has_control('my_propgrid')
+	assert win.get_control_kind('my_propgrid') == 'propertygrid'
+	win.set_property_grid_value('my_propgrid', 'Width', '150')
+
+	// 7. Color Grid APIs
+	win.add_color_grid('my_colorgrid', ['#FF0000', '#00FF00', '#0000FF'])
+	assert win.has_control('my_colorgrid')
+	assert win.get_control_kind('my_colorgrid') == 'colorgrid'
+	win.set_color_grid_selected('my_colorgrid', '#00FF00')
+
+	// 8. Excel-like Editable Grid APIs (CRUD)
+	win.add_grid('my_grid', ['A', 'B'], [
+		['1', '2'],
+		['3', '4'],
+	])
+	assert win.has_control('my_grid')
+	assert win.get_control_kind('my_grid') == 'grid'
+	win.grid_add_row('my_grid', ['5', '6'])
+	win.grid_set_cell('my_grid', 2, 0, '99')
+	assert win.grid_get_cell('my_grid', 2, 0) == '99'
+	win.grid_add_column('my_grid', 'C')
+	win.grid_delete_column('my_grid', 2)
+	win.grid_delete_row('my_grid', 1)
+	win.grid_set_column_type('my_grid', 1, 'checkbox')
+	win.grid_set_cell('my_grid', 0, 1, 'true')
+	assert win.grid_get_cell('my_grid', 0, 1) == 'true'
+	win.grid_set_column_type('my_grid', 0, 'readonly')
+	win.grid_set_selected_row('my_grid', 0)
+	assert win.grid_get_selected_row('my_grid') == 0
+	win.grid_set_column_editable('my_grid', 0, false)
+	win.grid_set_row_editable('my_grid', 1, false)
+	win.grid_set_cell_editable('my_grid', 0, 1, false)
+	win.grid_set_column_type('my_grid', 1, 'button')
+	win.grid_set_cell('my_grid', 0, 1, 'Run')
+	assert win.grid_get_cell('my_grid', 0, 1) == 'Run'
+	win.grid_set_column_enabled('my_grid', 0, false)
+	win.grid_set_row_enabled('my_grid', 1, false)
+	win.grid_set_cell_enabled('my_grid', 0, 1, false)
+	win.grid_autosize_columns('my_grid')
+	win.grid_clear('my_grid')
+}
