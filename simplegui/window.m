@@ -4351,14 +4351,10 @@ char *window_get_control_text(void *control) {
   NSView *view = (NSView *)control;
   if ([view isKindOfClass:[NSScrollView class]]) {
     NSView *doc = [(NSScrollView *)view documentView];
-    if ([doc isKindOfClass:[NSTextView class]]) {
+    if ([doc isKindOfClass:[NSTextView class]] ||
+        [doc isKindOfClass:[NSOutlineView class]] ||
+        [doc isKindOfClass:[NSTableView class]]) {
       view = doc;
-    } else if ([doc isKindOfClass:[NSOutlineView class]]) {
-      view = doc;
-    } else if ([doc isKindOfClass:[NSTableView class]]) {
-      NSTableView *tableView = (NSTableView *)doc;
-      NSInteger selectedRow = [tableView selectedRow];
-      return strdup([[NSString stringWithFormat:@"%ld", (long)selectedRow] UTF8String]);
     }
   }
   
