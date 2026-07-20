@@ -292,6 +292,94 @@ pub fn (win &SimpleWindow) rand_shuffle_strings(mut arr []string) &SimpleWindow 
 	return win
 }
 
+// rand_choice_strings picks a single string item from an array at uniform random probability.
+pub fn rand_choice_strings(items []string) string {
+	if items.len == 0 {
+		return ''
+	}
+	return rand.element(items) or { items[0] }
+}
+
+// rand_choice_strings delegates to standalone rand_choice_strings.
+pub fn (win &SimpleWindow) rand_choice_strings(items []string) string {
+	return rand_choice_strings(items)
+}
+
+// rand_choice_ints picks a single integer item from an array at uniform random probability.
+pub fn rand_choice_ints(items []int) int {
+	if items.len == 0 {
+		return 0
+	}
+	return rand.element(items) or { items[0] }
+}
+
+// rand_choice_ints delegates to standalone rand_choice_ints.
+pub fn (win &SimpleWindow) rand_choice_ints(items []int) int {
+	return rand_choice_ints(items)
+}
+
+// rand_weighted_choice_strings picks a string item from an array according to relative weights.
+pub fn rand_weighted_choice_strings(items []string, weights []f64) string {
+	if items.len == 0 || items.len != weights.len {
+		return ''
+	}
+	mut total_weight := 0.0
+	for w in weights {
+		if w > 0.0 {
+			total_weight += w
+		}
+	}
+	if total_weight <= 0.0 {
+		return items[0]
+	}
+	r := rand.f64_in_range(0.0, total_weight) or { 0.0 }
+	mut cumulative := 0.0
+	for i in 0 .. items.len {
+		w := if weights[i] > 0.0 { weights[i] } else { 0.0 }
+		cumulative += w
+		if r <= cumulative {
+			return items[i]
+		}
+	}
+	return items[items.len - 1]
+}
+
+// rand_weighted_choice_strings delegates to standalone rand_weighted_choice_strings.
+pub fn (win &SimpleWindow) rand_weighted_choice_strings(items []string, weights []f64) string {
+	return rand_weighted_choice_strings(items, weights)
+}
+
+// rand_weighted_choice_ints picks an integer item from an array according to relative weights.
+pub fn rand_weighted_choice_ints(items []int, weights []f64) int {
+	if items.len == 0 || items.len != weights.len {
+		return 0
+	}
+	mut total_weight := 0.0
+	for w in weights {
+		if w > 0.0 {
+			total_weight += w
+		}
+	}
+	if total_weight <= 0.0 {
+		return items[0]
+	}
+	r := rand.f64_in_range(0.0, total_weight) or { 0.0 }
+	mut cumulative := 0.0
+	for i in 0 .. items.len {
+		w := if weights[i] > 0.0 { weights[i] } else { 0.0 }
+		cumulative += w
+		if r <= cumulative {
+			return items[i]
+		}
+	}
+	return items[items.len - 1]
+}
+
+// rand_weighted_choice_ints delegates to standalone rand_weighted_choice_ints.
+pub fn (win &SimpleWindow) rand_weighted_choice_ints(items []int, weights []f64) int {
+	return rand_weighted_choice_ints(items, weights)
+}
+
 // ==========================================
 // 6. Time and Measurement (Chapter 13: time)
 // ==========================================

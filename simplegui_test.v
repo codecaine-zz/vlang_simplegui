@@ -2106,6 +2106,23 @@ fn test_extended_stdlib_apis() {
 	wg.done()
 	wg.done()
 	wg.wait()
+
+	// 11. Random Choice & Weighted Choice Pickers
+	str_options := ['alpha', 'beta', 'gamma']
+	chosen_str := win.rand_choice_strings(str_options)
+	assert str_options.contains(chosen_str)
+
+	int_options := [10, 20, 30]
+	chosen_int := win.rand_choice_ints(int_options)
+	assert int_options.contains(chosen_int)
+
+	weighted_strs := ['common', 'legendary']
+	str_weights := [100.0, 0.0]
+	assert win.rand_weighted_choice_strings(weighted_strs, str_weights) == 'common'
+
+	weighted_ints := [100, 999]
+	int_weights := [0.0, 50.0]
+	assert win.rand_weighted_choice_ints(weighted_ints, int_weights) == 999
 }
 
 

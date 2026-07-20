@@ -1073,6 +1073,10 @@ To simplify system integrations and mirror key features from NeutralinoJS, `simp
 - `win.rand_int(min int, max int) int`: Generates a secure random integer between min (inclusive) and max (exclusive).
 - `win.rand_string(length int) string`: Produces a random alphanumeric string token of target length.
 - `win.rand_shuffle_strings(mut arr []string) &SimpleWindow`: Shuffles the items within a string array in-place.
+- `win.rand_choice_strings(items []string) string`: Selects a random string from an array with uniform probability.
+- `win.rand_choice_ints(items []int) int`: Selects a random integer from an array with uniform probability.
+- `win.rand_weighted_choice_strings(items []string, weights []f64) string`: Selects a string element from an array proportional to relative non-negative probabilities in `weights`.
+- `win.rand_weighted_choice_ints(items []int, weights []f64) int`: Selects an integer element from an array proportional to relative weights.
 
 ### Time & Measuring Duration (`time`)
 

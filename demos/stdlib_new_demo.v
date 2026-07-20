@@ -32,6 +32,12 @@ fn main() {
 	unique_tags := simplegui.array_unique_strings(tags)
 	println('Unique tags: ${unique_tags}')
 
+	// Weighted Choice Picker
+	rarities := ['Common', 'Uncommon', 'Rare', 'Legendary']
+	weights := [70.0, 20.0, 9.0, 1.0]
+	picked_rarity := simplegui.rand_weighted_choice_strings(rarities, weights)
+	println('Weighted random choice pick: ${picked_rarity}')
+
 	// 5. UTF-8 & Strings
 	utf8_text := 'SimpleGUI 🚀'
 	println('UTF-8 len of "${utf8_text}": ${simplegui.utf8_len(utf8_text)}, valid: ${simplegui.utf8_is_valid(utf8_text)}')
