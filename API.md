@@ -934,11 +934,13 @@ To simplify system integrations and mirror key features from NeutralinoJS, `simp
 - `win.exec(command string) (string, int)`: Runs a command synchronously in the system terminal and returns a tuple of `(output, exit_code)`.
 - `win.exec_or(command string, fallback string) string`: Runs a command, returning its stdout if successful (code 0) or the `fallback` value if it failed.
 - `win.exec_bg(command string) &SimpleWindow`: Spawns a shell command in the background (asynchronous concurrent thread) so the application GUI doesn't block or freeze.
+- `win.exec_timeout(command string, timeout_ms int) (string, int, bool)`: Runs a command synchronously with a maximum timeout in milliseconds, returning `(output, exit_code, timed_out)`.
 
 ### Environment Variables
 
 - `win.get_env(key string) string`: Retrieves the value of a system environment variable.
 - `win.get_env_opt(key string) ?string`: Retrieves the optional value of an environment variable, returning `none` if not defined.
+- `win.get_env_or(key string, default_val string) string`: Retrieves an environment variable, returning `default_val` if missing or empty.
 - `win.get_envs() map[string]string`: Retrieves all system environment variables as a key-value map.
 - `win.set_env(key string, val string) &SimpleWindow`: Sets or overrides an environment variable for the running app.
 - `win.unset_env(key string) &SimpleWindow`: Removes an environment variable.
@@ -950,6 +952,8 @@ To simplify system integrations and mirror key features from NeutralinoJS, `simp
 - `win.get_user_os() string`: Returns the host operating system name (e.g. `macos`, `linux`, `windows`).
 - `win.get_pid() int`: Returns the current Process ID (PID).
 - `win.get_ppid() int`: Returns the Parent Process ID (PPID).
+- `win.get_parent_pid() int`: Returns the Parent Process ID (PPID).
+- `win.get_parent_process_name() string`: Returns the executable name of the parent process.
 - `win.get_uid() int`: Returns the real User ID (UID).
 - `win.get_gid() int`: Returns the real Group ID (GID).
 - `win.get_euid() int`: Returns the effective User ID (EUID).
@@ -968,7 +972,12 @@ To simplify system integrations and mirror key features from NeutralinoJS, `simp
 
 - `win.get_cpu_info() string`: Returns the local processor model string (e.g., `Apple M2 Max` or `Intel Core i7`).
 - `win.get_cpu_cores() int`: Returns the physical + virtual core count of the processor.
+- `win.get_physical_cpu_cores() int`: Returns the physical CPU core count (`sysctl hw.physicalcpu`).
+- `win.get_logical_cpu_cores() int`: Returns the logical CPU core count (`sysctl hw.logicalcpu`).
+- `win.get_cpu_frequency_hz() u64`: Returns the CPU clock speed frequency in Hz (if available).
+- `win.get_cpu_architecture() string`: Returns the machine CPU architecture string (e.g. `arm64`, `x86_64`).
 - `win.get_memory_info() string`: Returns the total capacity of system physical memory (e.g., `16.0 GB RAM`).
+- `win.get_total_memory_bytes() u64`: Returns total physical RAM capacity in bytes (`sysctl hw.memsize`).
 - `win.get_disk_usage(path string) !DiskStats`: Retrieves disk space usage statistics for the given folder path.
   - **Returned Type**: `DiskStats` has `total`, `available`, and `used` as `u64` fields representing size in bytes.
 
@@ -984,6 +993,10 @@ To simplify system integrations and mirror key features from NeutralinoJS, `simp
   - `'config'`: User config folder.
   - `'data'`: User data folder.
   - `'app'`: App executable folder.
+- `win.get_app_data_dir(app_name string) string`: Resolves the application support directory path (`~/Library/Application Support/<app_name>`).
+- `win.get_user_downloads_dir() string`: Returns absolute path to the user's Downloads folder.
+- `win.get_user_documents_dir() string`: Returns absolute path to the user's Documents folder.
+- `win.get_user_desktop_dir() string`: Returns absolute path to the user's Desktop folder.
 
 ### Filesystem IO Utilities (`NL_FILESYSTEM`)
 
@@ -991,6 +1004,8 @@ To simplify system integrations and mirror key features from NeutralinoJS, `simp
 - `win.is_dir(path string) bool`: Reports true if the target path is a directory.
 - `win.is_file(path string) bool`: Reports true if the target path is a regular file.
 - `win.is_dir_empty(path string) bool`: Reports true if the directory has no files or subfolders.
+- `win.get_free_disk_space(path string) u64`: Returns free bytes available on the filesystem volume hosting `path`.
+- `win.copy_directory(src string, dest string) !&SimpleWindow`: Recursively copies a directory tree and its contents to destination.
 - `win.read_file(path string) string`: Reads file contents, returning an empty string if reading fails.
 - `win.read_file_opt(path string) !string`: Reads file contents with V's `!` error-handling/propagation.
 - `win.read_lines(path string) ![]string`: Reads a file line-by-line and returns an array of strings.
@@ -1059,6 +1074,8 @@ To simplify system integrations and mirror key features from NeutralinoJS, `simp
 - `win.get_unix_milli() i64`: Returns current time as a Unix epoch timestamp in milliseconds.
 - `win.get_time_formatted(format string) string`: Returns current local time formatted (e.g. `YYYY-MM-DD HH:mm:ss`).
 - `win.get_uptime_seconds() i64`: Returns macOS system uptime in seconds via direct C `sysctl`.
+- `win.get_uptime_formatted() string`: Returns human-readable system uptime string (e.g. `"3 days, 4 hours, 12 mins"`).
+- `win.get_boot_timestamp() i64`: Returns system boot Unix epoch timestamp.
 - `win.sleep_ms(ms u64) &SimpleWindow`: Pauses execution for specified milliseconds.
 
 ### Network Utilities
@@ -1069,10 +1086,17 @@ To simplify system integrations and mirror key features from NeutralinoJS, `simp
 - `win.dns_lookup(hostname string) string`: Performs forward DNS lookup returning resolved IP address via libc `getaddrinfo`.
 - `win.get_wifi_ssid() string`: Returns connected Wi-Fi network SSID on macOS.
 - `win.get_network_interfaces() []string`: Lists active network interface names (`en0`, `lo0`, etc.).
+- `win.get_mac_address() string`: Returns hardware MAC address of primary Wi-Fi/Ethernet interface (`en0`).
+- `win.get_dns_servers() []string`: Returns array of configured DNS server IP addresses.
+- `win.get_default_gateway() string`: Returns IP address of default network gateway.
+- `win.is_internet_connected() bool`: Tests active internet connectivity via ping host checks.
+- `win.get_listening_ports() []int`: Returns array of active listening TCP ports on system.
 
 ### System Resource Monitoring
 
 - `win.get_cpu_usage_percent() f64`: Returns CPU utilization percentage estimate across all processes.
+- `win.get_process_memory_mb(pid int) f64`: Returns resident set size (RSS) memory usage of process `pid` (or current PID if `0`) in Megabytes.
+- `win.get_process_cpu_percent(pid int) f64`: Returns CPU usage percentage for process `pid` (or current PID if `0`).
 - `win.get_load_average() (f64, f64, f64)`: Returns 1m, 5m, and 15m system load averages via C `getloadavg()`.
 - `win.get_memory_pressure() string`: Returns macOS kernel memory pressure state (`"normal"`, `"warn"`, or `"critical"`) via fast `sysctl`.
 - `win.get_running_process_count() int`: Returns total count of running processes.
@@ -1083,7 +1107,9 @@ To simplify system integrations and mirror key features from NeutralinoJS, `simp
 
 - `win.beep() &SimpleWindow`: Triggers standard macOS system alert sound (NSBeep).
 - `win.beep_n(n int) &SimpleWindow`: Plays macOS system alert sound `n` times.
+- `win.play_system_sound(sound_name string) &SimpleWindow`: Plays macOS system alert sound by name (`Glass`, `Ping`, `Hero`, `Pop`, `Tink`, `Submarine`).
 - `win.say(text string) &SimpleWindow`: Uses macOS text-to-speech engine to speak message out loud.
+- `win.speak_with_voice(text string, voice string) &SimpleWindow`: Text-to-speech with specific macOS voice name (`Samantha`, `Alex`, `Fred`).
 - `win.osascript_dialog(prompt string, default_value string) string`: Displays native macOS text input dialog returning user entry.
 - `win.osascript_alert(title string, message string) bool`: Displays native macOS alert dialog box.
 - `win.osascript_choose_file() string`: Displays native macOS file picker dialog returning selected POSIX path.
@@ -1103,6 +1129,8 @@ To simplify system integrations and mirror key features from NeutralinoJS, `simp
 - `win.get_screen_resolution() string`: Returns primary display resolution (e.g. `"2560 x 1600"`).
 - `win.get_screen_count() int`: Returns the total number of connected monitors.
 - `win.is_retina_display() bool`: Returns `true` if primary display is a high-DPI (Retina) screen.
+- `win.get_main_display_bounds() (int, int, int, int)`: Returns `(x, y, width, height)` bounds of primary display screen.
+- `win.get_display_scale_factor() f64`: Returns display scale factor multiplier (`2.0` Retina, `1.0` Standard).
 - `win.get_gpu_info() string`: Returns GPU model string of primary graphics adapter.
 - `win.get_battery_percent() int`: Returns battery charge percentage (or `-1` for desktop/no battery).
 - `win.get_battery_time_remaining() string`: Returns estimated remaining battery operating time (e.g. `"2:30"`).
@@ -1110,6 +1138,9 @@ To simplify system integrations and mirror key features from NeutralinoJS, `simp
 - `win.is_low_power_mode() bool`: Returns true if macOS Low Power Mode is currently enabled.
 - `win.is_dark_mode() bool`: Returns true if macOS global appearance is set to Dark Mode.
 - `win.get_system_theme() string`: Returns `"dark"` if macOS is in Dark Mode, otherwise `"light"`.
+- `win.toggle_dark_mode() &SimpleWindow`: Toggles macOS system appearance mode between Light and Dark.
+- `win.get_system_accent_color() string`: Returns current macOS system accent color name (`Red`, `Blue`, `Purple`, `Multicolor`, etc.).
+- `win.is_do_not_disturb_enabled() bool`: Returns true if macOS Focus / Do Not Disturb is currently active.
 - `win.get_volume() int`: Returns system output volume level percentage (0–100).
 - `win.set_volume(level int) &SimpleWindow`: Sets system output volume level (0–100).
 - `win.is_muted() bool`: Returns true if system output volume is muted.
@@ -1118,7 +1149,10 @@ To simplify system integrations and mirror key features from NeutralinoJS, `simp
 - `win.get_active_window_title() string`: Returns the title of the frontmost focused window.
 - `win.get_running_app_names() []string`: Returns a string array of names of all active GUI applications running on macOS.
 - `win.is_process_running(proc_name string) bool`: Checks if a process matching the given name pattern is active (`pgrep`).
-- `win.kill_process(proc_name string) bool`: Terminates matching processes by name (`pkill`).
+- `win.kill_process(proc_name string) bool`: Terminates matching processes by name pattern (`pkill -f`).
+- `win.kill_process_by_name(proc_name string) bool`: Alias for `kill_process(proc_name)`.
+- `win.kill_process_exact(proc_name string) bool`: Terminates processes matching the exact process name (`pkill -x`).
+- `win.kill_process_by_pid(pid int) bool`: Terminates process with specified PID (`kill -9`).
 - `win.exec_in_dir(dir_path string, command string) (string, int)`: Executes shell command synchronously inside a specified directory (`cd <dir> && <cmd>`).
 - `win.download_file(url string, dest_path string) !&SimpleWindow`: Downloads a remote HTTP/HTTPS file directly to disk.
 - `win.trash_file(path string) !&SimpleWindow`: Safely moves a file or directory to macOS Trash bin via Finder AppleScript.
@@ -2073,5 +2107,7 @@ Rows are tracked automatically for every table, so you can manage them increment
 - `win.set_status_bar_icon(icon_path string) &SimpleWindow` updates the status bar accessory icon dynamically.
 - `win.set_status_bar_title(title string) &SimpleWindow` updates the status bar accessory title text dynamically.
 - `win.set_dock_icon(image_path string) &SimpleWindow` overrides the application dock icon dynamically using a custom file image (or clears it with `win.clear_dock_icon()`).
-- `simplegui.play_sound(sound_name string)` plays a native macOS system sound by name (e.g. `"Glass"`, `"Ping"`, `"Purr"`, `"Basso"`, `"Tink"`, `"Blow"`).
+- `simplegui.play_sound(sound_name string)` / `simplegui.play_system_sound(sound_name string)` plays a native macOS system sound by name (e.g. `"Glass"`, `"Ping"`, `"Purr"`, `"Basso"`, `"Tink"`, `"Blow"`).
+- `simplegui.speak_with_voice(text string, voice string)` speaks text out loud using a specific macOS voice name (e.g. `"Samantha"`, `"Alex"`, `"Fred"`).
+- `simplegui.toggle_dark_mode()` toggles macOS system appearance mode between Light and Dark.
 

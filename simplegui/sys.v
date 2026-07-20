@@ -1550,5 +1550,322 @@ pub fn (win &SimpleWindow) empty_trash() &SimpleWindow {
 	return win
 }
 
+// ==========================================
+// 16. Extended Useful System Calls
+// ==========================================
+
+// get_process_memory_mb returns the resident set size (RSS) memory usage of a process in Megabytes.
+// If pid is 0, retrieves memory for the current process.
+pub fn (win &SimpleWindow) get_process_memory_mb(pid int) f64 {
+	target_pid := if pid <= 0 { os.getpid() } else { pid }
+	raw := win.exec_or("ps -p ${target_pid} -o rss= 2>/dev/null", '0').trim_space()
+	kb := raw.f64()
+	return kb / 1024.0
+}
+
+// get_process_cpu_percent returns CPU usage percentage for a process (or current process if pid is 0).
+pub fn (win &SimpleWindow) get_process_cpu_percent(pid int) f64 {
+	target_pid := if pid <= 0 { os.getpid() } else { pid }
+	raw := win.exec_or("ps -p ${target_pid} -o %cpu= 2>/dev/null", '0').trim_space()
+	return raw.f64()
+}
+
+// get_parent_pid returns the parent process ID (PPID).
+pub fn (win &SimpleWindow) get_parent_pid() int {
+	return os.getppid()
+}
+
+// get_parent_process_name returns the executable name of the parent process.
+pub fn (win &SimpleWindow) get_parent_process_name() string {
+	ppid := os.getppid()
+	return win.exec_or("ps -p ${ppid} -o comm= 2>/dev/null", 'unknown').trim_space()
+}
+
+// get_env_or retrieves an environment variable or returns the default fallback if unset or empty.
+pub fn (win &SimpleWindow) get_env_or(key string, default_val string) string {
+	val := os.getenv(key)
+	if val.len > 0 {
+		return val
+	}
+	return default_val
+}
+
+// get_uptime_formatted returns a human-readable system uptime string (e.g. "3 days, 4 hours, 12 mins").
+pub fn (win &SimpleWindow) get_uptime_formatted() string {
+	sec := win.get_uptime_seconds()
+	if sec <= 0 {
+		return 'unknown'
+	}
+	days := sec / 86400
+	hours := (sec % 86400) / 3600
+	mins := (sec % 3600) / 60
+	secs := sec % 60
+
+	if days > 0 {
+		return '${days} days, ${hours} hours, ${mins} mins'
+	} else if hours > 0 {
+		return '${hours} hours, ${mins} mins'
+	}
+	return '${mins} mins, ${secs} secs'
+}
+
+// get_boot_timestamp returns the Unix epoch timestamp of system boot time.
+pub fn (win &SimpleWindow) get_boot_timestamp() i64 {
+	up := win.get_uptime_seconds()
+	if up > 0 {
+		return time.now().unix() - up
+	}
+	return 0
+}
+
+// exec_timeout executes a command synchronously with a maximum timeout in milliseconds.
+// Returns (output, exit_code, timed_out).
+pub fn (win &SimpleWindow) exec_timeout(command string, timeout_ms int) (string, int, bool) {
+	ms := if timeout_ms <= 0 { 1000 } else { timeout_ms }
+	sec := f64(ms) / 1000.0
+	cmd := "perl -e 'alarm ${sec}; exec @ARGV' ${command}"
+	res := os.execute(cmd)
+	if res.exit_code == 142 || res.exit_code == 124 {
+		return '', -1, true
+	}
+	return res.output.trim_space(), res.exit_code, false
+}
+
+// get_total_memory_bytes returns total physical RAM in bytes.
+pub fn (win &SimpleWindow) get_total_memory_bytes() u64 {
+	bytes_str := win.exec_or('sysctl -n hw.memsize 2>/dev/null', '0')
+	return bytes_str.trim_space().u64()
+}
+
+// get_physical_cpu_cores returns the number of physical CPU cores.
+pub fn (win &SimpleWindow) get_physical_cpu_cores() int {
+	cores_str := win.exec_or('sysctl -n hw.physicalcpu 2>/dev/null', '0')
+	return cores_str.trim_space().int()
+}
+
+// get_logical_cpu_cores returns the number of logical CPU cores.
+pub fn (win &SimpleWindow) get_logical_cpu_cores() int {
+	cores_str := win.exec_or('sysctl -n hw.logicalcpu 2>/dev/null', '0')
+	return cores_str.trim_space().int()
+}
+
+// get_cpu_frequency_hz returns the CPU clock speed frequency in Hz (if available).
+pub fn (win &SimpleWindow) get_cpu_frequency_hz() u64 {
+	freq_str := win.exec_or('sysctl -n hw.cpufreq 2>/dev/null', '0')
+	return freq_str.trim_space().u64()
+}
+
+// get_cpu_architecture returns the machine CPU architecture string (e.g. "arm64", "x86_64").
+pub fn (win &SimpleWindow) get_cpu_architecture() string {
+	return win.exec_or('uname -m 2>/dev/null', 'unknown').trim_space()
+}
+
+// get_main_display_bounds returns (x, y, width, height) of the primary display.
+pub fn (win &SimpleWindow) get_main_display_bounds() (int, int, int, int) {
+	raw := win.exec_or("osascript -e 'tell application \"Finder\" to get bounds of window of desktop' 2>/dev/null", '')
+	if raw.len > 0 {
+		parts := raw.split(',').map(it.trim_space().int())
+		if parts.len >= 4 {
+			return parts[0], parts[1], parts[2] - parts[0], parts[3] - parts[1]
+		}
+	}
+	return 0, 0, 1920, 1080
+}
+
+// get_display_scale_factor returns display scale factor (2.0 for Retina, 1.0 for Standard).
+pub fn (win &SimpleWindow) get_display_scale_factor() f64 {
+	if win.is_retina_display() {
+		return 2.0
+	}
+	return 1.0
+}
+
+// get_system_accent_color returns the current macOS accent color name.
+pub fn (win &SimpleWindow) get_system_accent_color() string {
+	raw := win.exec_or("defaults read -g AppleAccentColor 2>/dev/null", '-1').trim_space()
+	return match raw {
+		'-1' { 'Multicolor / Default' }
+		'0' { 'Red' }
+		'1' { 'Orange' }
+		'2' { 'Yellow' }
+		'3' { 'Green' }
+		'4' { 'Blue' }
+		'5' { 'Purple' }
+		'6' { 'Pink' }
+		else { 'Custom (${raw})' }
+	}
+}
+
+// is_do_not_disturb_enabled returns true if macOS Do Not Disturb / Focus Mode is active.
+pub fn (win &SimpleWindow) is_do_not_disturb_enabled() bool {
+	raw := win.exec_or("defaults read com.apple.controlcenter 'NSStatusItem Visible FocusModes' 2>/dev/null", '0').trim_space()
+	if raw == '1' {
+		return true
+	}
+	dnd := win.exec_or("defaults read com.apple.ncprefs dnd_enabled 2>/dev/null", '0').trim_space()
+	return dnd == '1'
+}
+
+// get_mac_address returns the hardware MAC address of the primary interface (en0).
+pub fn (win &SimpleWindow) get_mac_address() string {
+	return win.exec_or("ifconfig en0 2>/dev/null | awk '/ether /{print $2}'", '00:00:00:00:00:00').trim_space()
+}
+
+// get_dns_servers returns a list of configured DNS server IP addresses.
+pub fn (win &SimpleWindow) get_dns_servers() []string {
+	raw := win.exec_or("scutil --dns 2>/dev/null | awk '/nameserver\\[[0-9]+\\]/{print $3}' | sort -u", '')
+	if raw.len == 0 {
+		return []string{}
+	}
+	return raw.split('\n').map(it.trim_space()).filter(it.len > 0)
+}
+
+// get_default_gateway returns the IP address of the default network gateway.
+pub fn (win &SimpleWindow) get_default_gateway() string {
+	return win.exec_or("route -n get default 2>/dev/null | awk '/gateway:/{print $2}'", 'unknown').trim_space()
+}
+
+// is_internet_connected tests if the machine currently has active internet connectivity.
+pub fn (win &SimpleWindow) is_internet_connected() bool {
+	return win.ping('1.1.1.1', 1) || win.ping('8.8.8.8', 1)
+}
+
+// get_listening_ports returns a list of TCP ports currently listening for connections on the machine.
+pub fn (win &SimpleWindow) get_listening_ports() []int {
+	raw := win.exec_or("lsof -iTCP -sTCP:LISTEN -P -n 2>/dev/null | awk 'NR>1 {print \$9}' | awk -F: '{print \$NF}' | sort -n -u", '')
+	if raw.len == 0 {
+		return []int{}
+	}
+	lines := raw.split('\n')
+	mut ports := []int{}
+	for l in lines {
+		p := l.trim_space().int()
+		if p > 0 && p !in ports {
+			ports << p
+		}
+	}
+	return ports
+}
+
+// get_app_data_dir returns the user application support directory path for app_name.
+pub fn (win &SimpleWindow) get_app_data_dir(app_name string) string {
+	dir := os.join_path(os.home_dir(), 'Library', 'Application Support', app_name)
+	if !os.exists(dir) {
+		os.mkdir_all(dir) or {}
+	}
+	return dir
+}
+
+// get_user_downloads_dir returns absolute path to Downloads folder.
+pub fn (win &SimpleWindow) get_user_downloads_dir() string {
+	return win.get_system_path('downloads')
+}
+
+// get_user_documents_dir returns absolute path to Documents folder.
+pub fn (win &SimpleWindow) get_user_documents_dir() string {
+	return win.get_system_path('documents')
+}
+
+// get_user_desktop_dir returns absolute path to Desktop folder.
+pub fn (win &SimpleWindow) get_user_desktop_dir() string {
+	return win.get_system_path('desktop')
+}
+
+// get_free_disk_space returns free bytes available on the volume hosting the given path.
+pub fn (win &SimpleWindow) get_free_disk_space(path string) u64 {
+	ds := win.get_disk_usage(path) or { return 0 }
+	return ds.available
+}
+
+// copy_directory copies a directory and its contents recursively to dest.
+pub fn (win &SimpleWindow) copy_directory(src string, dest string) !&SimpleWindow {
+	abs_src := os.real_path(src)
+	if !os.exists(abs_src) {
+		return error('Source directory does not exist: ${src}')
+	}
+	os.mkdir_all(dest)!
+	abs_dest := os.real_path(dest)
+	output, code := win.exec('cp -R "${abs_src}/." "${abs_dest}/"')
+	if code != 0 {
+		return error('Failed to copy directory: ${output}')
+	}
+	return win
+}
+
+// play_system_sound plays a macOS system alert sound (e.g. "Glass", "Ping", "Hero", "Pop", "Tink", "Submarine").
+pub fn (win &SimpleWindow) play_system_sound(sound_name string) &SimpleWindow {
+	sound_path := '/System/Library/Sounds/${sound_name}.aiff'
+	if os.exists(sound_path) {
+		win.exec_bg('afplay "${sound_path}"')
+	} else {
+		win.beep()
+	}
+	return win
+}
+
+// speak_with_voice speaks text out loud using a specific macOS voice name (e.g. "Samantha", "Alex", "Fred", "Victoria").
+pub fn (win &SimpleWindow) speak_with_voice(text string, voice string) &SimpleWindow {
+	escaped := text.replace('"', '\\"')
+	v_esc := voice.replace('"', '\\"')
+	win.exec_bg('say -v "${v_esc}" "${escaped}"')
+	return win
+}
+
+// toggle_dark_mode toggles macOS appearance between Light Mode and Dark Mode.
+pub fn (win &SimpleWindow) toggle_dark_mode() &SimpleWindow {
+	win.exec_bg("osascript -e 'tell application \"System Events\" to tell appearance preferences to set dark mode to not dark mode'")
+	return win
+}
+
+// kill_process_by_pid terminates a process using its process ID (PID).
+pub fn (win &SimpleWindow) kill_process_by_pid(pid int) bool {
+	if pid <= 0 {
+		return false
+	}
+	_, code := win.exec('kill -9 ${pid} 2>/dev/null')
+	return code == 0
+}
+
+// kill_process_by_name terminates processes matching the given name (`pkill -f`). Alias for `kill_process`.
+pub fn (win &SimpleWindow) kill_process_by_name(proc_name string) bool {
+	return win.kill_process(proc_name)
+}
+
+// kill_process_exact terminates processes matching the exact name (`pkill -x`).
+pub fn (win &SimpleWindow) kill_process_exact(proc_name string) bool {
+	if proc_name.len == 0 {
+		return false
+	}
+	_, code := win.exec('pkill -x "${proc_name}" 2>/dev/null')
+	return code == 0
+}
+
+// ==========================================
+// Standalone Package-Level Helpers
+// ==========================================
+
+// play_system_sound plays a native macOS system sound by name (e.g. "Glass", "Ping", "Hero", "Pop", "Tink", "Submarine").
+pub fn play_system_sound(sound_name string) {
+	sound_path := '/System/Library/Sounds/${sound_name}.aiff'
+	if os.exists(sound_path) {
+		os.execute_opt('afplay "${sound_path}" &') or {}
+	} else {
+		beep()
+	}
+}
+
+// speak_with_voice speaks text out loud using a specific macOS voice (e.g. "Samantha", "Alex", "Fred").
+pub fn speak_with_voice(text string, voice string) {
+	escaped := text.replace('"', '\\"')
+	v_esc := voice.replace('"', '\\"')
+	os.execute_opt('say -v "${v_esc}" "${escaped}" &') or {}
+}
+
+// toggle_dark_mode toggles macOS system appearance mode between Light Mode and Dark Mode.
+pub fn toggle_dark_mode() {
+	os.execute_opt("osascript -e 'tell application \"System Events\" to tell appearance preferences to set dark mode to not dark mode' &") or {}
+}
+
+
 
 
