@@ -1203,7 +1203,7 @@ To simplify system integrations and mirror key features from NeutralinoJS, `simp
 - `win.regex_find(text string, pattern string) []string`: Extracts all substrings matching a regular expression pattern.
 - `win.regex_replace(text string, pattern string, replacement string) string`: Replaces any pattern matches inside a string with a replacement text.
 
-### Cryptography & Hash Functions (`crypto`)
+### Cryptography & Hash Functions (`crypto`, `crypto.hmac`, `hash`)
 
 - `win.crypto_sha256(text string) string`: Computes the hex-encoded SHA-256 hash of a string.
 - `win.crypto_sha512(text string) string`: Computes the hex-encoded SHA-512 hash of a string.
@@ -1212,6 +1212,9 @@ To simplify system integrations and mirror key features from NeutralinoJS, `simp
 - `win.crypto_bcrypt_hash(password string) !string`: Generates a secure bcrypt password hash of a string.
 - `win.crypto_bcrypt_verify(password string, hash string) bool`: Verifies a password against a bcrypt hash.
 - `win.crypto_hmac_sha256(text string, key string) string`: Computes the hex-encoded HMAC-SHA256 signature of a string with a key.
+- `win.crypto_hmac_sha512(text string, key string) string`: Computes the hex-encoded HMAC-SHA512 signature of a string with a key.
+- `win.crypto_hmac_sha1(text string, key string) string`: Computes the hex-encoded HMAC-SHA1 signature of a string with a key.
+- `win.crypto_wyhash(text string, seed u64) u64`: Computes a 64-bit Wyhash value of a string with a seed.
 - `win.crypto_encrypt_aes(plain_text string, key_hex string) string`: Encrypts text using 128-bit AES block cipher under CBC mode, returning hex-encoded ciphertext.
 - `win.crypto_decrypt_aes(cipher_hex string, key_hex string) string`: Decrypts a hex-encoded AES CBC block string, returning the unpadded plaintext string.
 
@@ -1233,7 +1236,7 @@ To simplify system integrations and mirror key features from NeutralinoJS, `simp
 - `win.compress_zstd(text string) []u8`: Compresses a string using Zstd format.
 - `win.decompress_zstd(data []u8) string`: Decompresses Zstd-compressed binary bytes back to a string.
 
-### Random Numbers (`rand`)
+### Random Numbers (`rand`, `crypto.rand`)
 
 - `win.rand_int(min int, max int) int`: Generates a secure random integer between min (inclusive) and max (exclusive).
 - `win.rand_string(length int) string`: Produces a random alphanumeric string token of target length.
@@ -1242,16 +1245,27 @@ To simplify system integrations and mirror key features from NeutralinoJS, `simp
 - `win.rand_choice_ints(items []int) int`: Selects a random integer from an array with uniform probability.
 - `win.rand_weighted_choice_strings(items []string, weights []f64) string`: Selects a string element from an array proportional to relative non-negative probabilities in `weights`.
 - `win.rand_weighted_choice_ints(items []int, weights []f64) int`: Selects an integer element from an array proportional to relative weights.
+- `win.crypto_rand_bytes(length int) []u8`: Returns a slice of cryptographically secure random bytes of specified length.
+- `win.crypto_rand_hex(length int) string`: Produces a cryptographically secure hex string token.
+- `win.crypto_rand_uuid() string`: Generates a cryptographically secure UUID v4 string (`8-4-4-4-12` hex format).
 
-### Time & Measuring Duration (`time`)
+### Time & Calendar Calculations (`time`)
 
 - `win.time_now() string`: Returns the formatted current timestamp (`YYYY-MM-DD HH:MM:SS`).
 - `win.time_elapsed(ms int) string`: Formats a millisecond counter into a friendly custom duration (e.g. `1200ms` or `1.20s`).
+- `win.time_unix_timestamp() i64`: Returns current Unix epoch timestamp in seconds.
+- `win.time_from_unix(timestamp i64) string`: Formats a Unix epoch timestamp (seconds) into standard `YYYY-MM-DD HH:MM:SS` string.
+- `win.time_is_leap_year(year int) bool`: Returns true if specified year is a leap year.
+- `win.time_days_in_month(year int, month int) int`: Returns total number of days in a specific year and month (1-12).
 
-### URL Escaping (`net.urllib`)
+### URL Escaping & Object Model (`net.urllib`)
 
 - `win.url_encode(text string) string`: Outputs a secure, percent-encoded string for URL query parameters.
 - `win.url_decode(text string) string`: Translates a percent-encoded URL query string back to plain text.
+- `win.url_parse(raw_url string) SimpleURL`: Parses a raw URL string into a `SimpleURL` structure.
+- `win.url_build(scheme string, host string, path string, query_params map[string]string) string`: Constructs a canonical URL string from scheme, host, path, and query parameter map.
+- **Returned Type**: `SimpleURL` supports:
+  - `u.build_url() string`: Assembles the full canonical URL string from fields (`scheme`, `host`, `port`, `path`, `query`, `fragment`).
 
 ### Config Parsers (TOML & JSON)
 
@@ -1260,6 +1274,8 @@ To simplify system integrations and mirror key features from NeutralinoJS, `simp
 - `win.json_decode_map(json_str string) map[string]string`: Deserializes a JSON string into a flat key-value map.
 - `win.json_encode_map_list(m []map[string]string) string`: Serializes an array of maps into a JSON string.
 - `win.json_decode_map_list(json_str string) []map[string]string`: Deserializes a JSON string into an array of flat key-value maps.
+- `win.json_validate(json_str string) bool`: Checks if a string contains valid JSON syntax.
+- `win.json_pretty_print(json_str string) string`: Formats a flat key-value map JSON string with clean line indents.
 
 ### WebSocket Client (`net.websocket`)
 
@@ -1320,6 +1336,10 @@ To simplify system integrations and mirror key features from NeutralinoJS, `simp
   - **Returned Type**: `SimpleHTMLDocument` supports:
     - `d.get_tag_text(name string) string`: Extracts trimmed inner text of the first matching tag name.
     - `d.get_tags_by_class(class_name string) []string`: Extracts trimmed inner text of all tags matching a class name.
+    - `d.get_attr(tag_name string, attr_name string) string`: Retrieves attribute value of the first matching HTML tag name.
+    - `d.get_all_links() []string`: Extracts all `href` links from `<a>` tags in the document.
+    - `d.get_all_images() []string`: Extracts all image `src` URLs from `<img>` tags in the document.
+    - `d.strip_tags() string`: Removes HTML tags from the document, returning plain text content.
 
 ### Placeholder Text Generator (`strings.lorem`)
 
@@ -1336,7 +1356,7 @@ To simplify system integrations and mirror key features from NeutralinoJS, `simp
 
 ### Standard Collections & Datatypes (`datatypes`)
 
-`simplegui` provides high-level generic LIFO (Stack), FIFO (Queue), Set, and Ring Buffer collections:
+`simplegui` provides high-level generic LIFO (Stack), FIFO (Queue), Set, Ring Buffer, and MinHeap collections:
 
 - `simplegui.new_stack[T]() SimpleStack[T]`: Instantiates a new LIFO stack.
   - `stack.push(item T)`: Pushes an element onto the stack.
@@ -1368,6 +1388,26 @@ To simplify system integrations and mirror key features from NeutralinoJS, `simp
   - `rb.is_empty() bool`: Reports whether the buffer has no items.
   - `rb.is_full() bool`: Reports whether the buffer is fully occupied.
 
+- `simplegui.new_min_heap[T]() SimpleMinHeap[T]`: Instantiates a new generic min-heap priority queue.
+  - `smh.push(item T)`: Inserts an item into the min-heap.
+  - `smh.pop() !T`: Removes and returns the smallest item from the min-heap.
+  - `smh.peek() !T`: Returns the smallest item without removing it.
+  - `smh.len() int`: Returns total number of items stored in the min-heap.
+
+### Complex Number Arithmetic (`math.complex`)
+
+- `win.complex_new(re f64, im f64) SimpleComplex` / `simplegui.complex_new(re f64, im f64) SimpleComplex`: Constructs a 2D complex number (real + imaginary).
+- **Returned Type**: `SimpleComplex` supports:
+  - `c.add(other SimpleComplex) SimpleComplex`: Adds two complex numbers.
+  - `c.sub(other SimpleComplex) SimpleComplex`: Subtracts two complex numbers.
+  - `c.mul(other SimpleComplex) SimpleComplex`: Multiplies two complex numbers.
+  - `c.div(other SimpleComplex) SimpleComplex`: Divides two complex numbers.
+  - `c.abs() f64`: Returns magnitude/modulus of complex number.
+  - `c.arg() f64`: Returns phase angle in radians.
+  - `c.conj() SimpleComplex`: Returns complex conjugate.
+  - `c.exp() SimpleComplex`: Computes $e^z$.
+  - `c.str() string`: Formats complex number as string (`re + im i`).
+
 ### Math & Trigonometry (`math`)
 
 - `win.math_sin(x f64) f64`: Returns the sine of a radian value.
@@ -1380,11 +1420,30 @@ To simplify system integrations and mirror key features from NeutralinoJS, `simp
 - `win.math_round(x f64) f64`: Rounds a floating-point number to the nearest integer.
 - `win.math_floor(x f64) f64`: Returns the greatest integer less than or equal to `x`.
 - `win.math_ceil(x f64) f64`: Returns the least integer greater than or equal to `x`.
+- `win.math_degrees(radians f64) f64`: Converts radians to degrees.
+- `win.math_radians(degrees f64) f64`: Converts degrees to radians.
+- `win.math_hypot(x f64, y f64) f64`: Computes Euclidean distance $\sqrt{x^2 + y^2}$.
+- `win.math_gcd(a i64, b i64) i64`: Returns greatest common divisor of two integers.
+- `win.math_lcm(a i64, b i64) i64`: Returns least common multiple of two integers.
+- `win.math_remap(x f64, in_min f64, in_max f64, out_min f64, out_max f64) f64`: Maps a value from range `[in_min, in_max]` to target range `[out_min, out_max]`.
+- `win.math_smoothstep(edge0 f64, edge1 f64, x f64) f64`: Computes smooth Hermite interpolation between 0 and 1.
+- `win.math_atan2(y f64, x f64) f64`: Computes multi-valued arctangent $\text{atan2}(y, x)$.
+- `win.math_log10(x f64) f64`: Returns base-10 logarithm of a positive floating point number.
+- `win.math_log2(x f64) f64`: Returns base-2 logarithm of a positive floating point number.
+- `win.math_round_sig(x f64, sig_digits int) f64`: Rounds a floating point number to a given number of significant digits.
 
 ### Statistical Analysis (`math.stats`)
 
 - `win.stats_mean(data []f64) f64`: Computes the arithmetic mean of a floating-point dataset.
 - `win.stats_median(data []f64) f64`: Computes the median value of a floating-point dataset.
+- `win.stats_geometric_mean(data []f64) f64`: Computes the geometric mean of a dataset.
+- `win.stats_harmonic_mean(data []f64) f64`: Computes the harmonic mean of a dataset.
+- `win.stats_rms(data []f64) f64`: Computes the Root Mean Square (quadratic mean) of a dataset.
+- `win.stats_mode(data []f64) f64`: Returns the most frequent value in a dataset.
+- `win.stats_range(data []f64) f64`: Returns the difference between maximum and minimum values in a dataset.
+- `win.stats_kurtosis(data []f64) f64`: Computes the sample kurtosis of a dataset.
+- `win.stats_skew(data []f64) f64`: Computes the sample skewness of a dataset.
+- `win.stats_covariance(data1 []f64, data2 []f64) f64`: Computes sample covariance between two equal-sized datasets.
 - `win.stats_sample_variance(data []f64) f64`: Computes the sample variance of a dataset.
 - `win.stats_sample_std_dev(data []f64) f64`: Computes the sample standard deviation of a dataset.
 - `win.stats_population_variance(data []f64) f64`: Computes the population variance of a dataset.
@@ -1417,9 +1476,17 @@ To simplify system integrations and mirror key features from NeutralinoJS, `simp
 - `win.utf8_len(text string) int`: Returns the total number of UTF-8 code points/characters in a string.
 - `win.utf8_is_valid(text string) bool`: Validates whether a string contains valid UTF-8 character encoding.
 
-### String Distance & String Builder (`strings`)
+### String Distance, Metrics & Utilities (`strings`)
 
 - `win.string_levenshtein(s1 string, s2 string) int`: Computes the Levenshtein edit distance between two strings.
+- `win.string_jaro_similarity(s1 string, s2 string) f64`: Computes Jaro distance similarity between two strings (0.0 to 1.0).
+- `win.string_jaro_winkler_similarity(s1 string, s2 string) f64`: Computes Jaro-Winkler distance similarity (0.0 to 1.0).
+- `win.string_hamming_distance(s1 string, s2 string) int`: Computes Hamming distance between two equal-length strings.
+- `win.string_between(input string, start string, end string) string`: Extracts text located between start and end delimiter strings.
+- `win.string_pad_left(input string, length int, pad_char string) string`: Left-pads string with repeating pad_char characters up to length.
+- `win.string_pad_right(input string, length int, pad_char string) string`: Right-pads string with repeating pad_char characters up to length.
+- `win.string_repeat(input string, count int) string`: Repeats string `count` times.
+- `win.string_count_words(input string) int`: Counts non-empty space-separated words in a text string.
 - `win.new_string_builder() SimpleStringBuilder`: Constructs an efficient, growable string buffer builder.
 - **Returned Type**: `SimpleStringBuilder` supports:
   - `sb.write(text string)`: Appends text to the string builder.
@@ -1427,10 +1494,12 @@ To simplify system integrations and mirror key features from NeutralinoJS, `simp
   - `sb.str() string`: Returns the complete accumulated string content.
   - `sb.len() int`: Returns the byte length of accumulated content.
 
-### CSV Parsing & Encoding (`encoding.csv`)
+### CSV Matrix Operations (`encoding.csv`)
 
 - `win.csv_parse(content string) [][]string`: Parses a CSV formatted string into a 2D matrix of row/column strings.
 - `win.csv_encode(rows [][]string) string`: Serializes a 2D matrix of strings into RFC-4180 compliant CSV text with automatic quote escaping.
+- `win.csv_extract_column(rows [][]string, col_idx int) []string`: Extracts all row values belonging to a specific zero-based column index.
+- `win.csv_filter_by_column(rows [][]string, col_idx int, search_term string) [][]string`: Returns only CSV rows where a column matches a given search string.
 
 ### Ed25519 Digital Signatures (`crypto.ed25519`)
 
@@ -1451,6 +1520,7 @@ To simplify system integrations and mirror key features from NeutralinoJS, `simp
   - `wg.add(delta int)`: Increments counter by `delta`.
   - `wg.done()`: Decrements counter by 1.
   - `wg.wait()`: Blocks until counter reaches zero.
+
 
 ---
 

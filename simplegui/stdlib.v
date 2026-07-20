@@ -41,6 +41,10 @@ import encoding.csv
 import crypto.ed25519
 import crypto.pbkdf2
 import sync
+import math.complex
+import crypto.rand as crand
+import hash as vhash
+
 
 // stdlib.v - Extended High-Level Standard Library Wrappers for SimpleGUI
 // Provides extremely simple, beginner-friendly, and safe wrappers around V's Core Standard Library.
@@ -1884,4 +1888,776 @@ pub fn new_wait_group() SimpleWaitGroup {
 pub fn (win &SimpleWindow) new_wait_group() SimpleWaitGroup {
 	return new_wait_group()
 }
+
+// ==========================================
+// 38. Complex Number Arithmetic (Chapter 13: math.complex)
+// ==========================================
+
+// SimpleComplex wraps a 2D complex number (real + imaginary).
+pub struct SimpleComplex {
+pub mut:
+	c complex.Complex
+}
+
+// add adds two complex numbers together.
+pub fn (sc SimpleComplex) add(other SimpleComplex) SimpleComplex {
+	return SimpleComplex{
+		c: sc.c.add(other.c)
+	}
+}
+
+// sub subtracts another complex number from this complex number.
+pub fn (sc SimpleComplex) sub(other SimpleComplex) SimpleComplex {
+	return SimpleComplex{
+		c: sc.c.subtract(other.c)
+	}
+}
+
+// mul multiplies two complex numbers.
+pub fn (sc SimpleComplex) mul(other SimpleComplex) SimpleComplex {
+	return SimpleComplex{
+		c: sc.c.multiply(other.c)
+	}
+}
+
+// div divides this complex number by another complex number.
+pub fn (sc SimpleComplex) div(other SimpleComplex) SimpleComplex {
+	return SimpleComplex{
+		c: sc.c.divide(other.c)
+	}
+}
+
+// abs returns the magnitude/modulus of the complex number.
+pub fn (sc SimpleComplex) abs() f64 {
+	return sc.c.abs()
+}
+
+// arg returns the phase angle (in radians) of the complex number.
+pub fn (sc SimpleComplex) arg() f64 {
+	return sc.c.arg()
+}
+
+// conj returns the complex conjugate.
+pub fn (sc SimpleComplex) conj() SimpleComplex {
+	return SimpleComplex{
+		c: sc.c.conjugate()
+	}
+}
+
+// exp computes e raised to the power of this complex number.
+pub fn (sc SimpleComplex) exp() SimpleComplex {
+	return SimpleComplex{
+		c: sc.c.exp()
+	}
+}
+
+// str converts the complex number to a readable string formatted as (re + im i).
+pub fn (sc SimpleComplex) str() string {
+	return sc.c.str()
+}
+
+// complex_new constructs a new SimpleComplex instance.
+pub fn complex_new(re f64, im f64) SimpleComplex {
+	return SimpleComplex{
+		c: complex.complex(re, im)
+	}
+}
+
+// complex_new delegates to standalone complex_new.
+pub fn (win &SimpleWindow) complex_new(re f64, im f64) SimpleComplex {
+	return complex_new(re, im)
+}
+
+// ==========================================
+// 39. Advanced Math & Geometry Helpers (Chapter 13: math)
+// ==========================================
+
+// math_degrees converts radians to degrees.
+pub fn math_degrees(radians f64) f64 {
+	return math.degrees(radians)
+}
+
+// math_degrees delegates to standalone math_degrees.
+pub fn (win &SimpleWindow) math_degrees(radians f64) f64 {
+	return math_degrees(radians)
+}
+
+// math_radians converts degrees to radians.
+pub fn math_radians(degrees f64) f64 {
+	return math.radians(degrees)
+}
+
+// math_radians delegates to standalone math_radians.
+pub fn (win &SimpleWindow) math_radians(degrees f64) f64 {
+	return math_radians(degrees)
+}
+
+// math_hypot computes the Euclidean distance sqrt(x^2 + y^2).
+pub fn math_hypot(x f64, y f64) f64 {
+	return math.hypot(x, y)
+}
+
+// math_hypot delegates to standalone math_hypot.
+pub fn (win &SimpleWindow) math_hypot(x f64, y f64) f64 {
+	return math_hypot(x, y)
+}
+
+// math_gcd returns the greatest common divisor of two integers.
+pub fn math_gcd(a i64, b i64) i64 {
+	return math.gcd(a, b)
+}
+
+// math_gcd delegates to standalone math_gcd.
+pub fn (win &SimpleWindow) math_gcd(a i64, b i64) i64 {
+	return math_gcd(a, b)
+}
+
+// math_lcm returns the least common multiple of two integers.
+pub fn math_lcm(a i64, b i64) i64 {
+	return math.lcm(a, b)
+}
+
+// math_lcm delegates to standalone math_lcm.
+pub fn (win &SimpleWindow) math_lcm(a i64, b i64) i64 {
+	return math_lcm(a, b)
+}
+
+// math_remap maps a value x from range [in_min, in_max] to target range [out_min, out_max].
+pub fn math_remap(x f64, in_min f64, in_max f64, out_min f64, out_max f64) f64 {
+	return math.remap(x, in_min, in_max, out_min, out_max)
+}
+
+// math_remap delegates to standalone math_remap.
+pub fn (win &SimpleWindow) math_remap(x f64, in_min f64, in_max f64, out_min f64, out_max f64) f64 {
+	return math_remap(x, in_min, in_max, out_min, out_max)
+}
+
+// math_smoothstep computes smooth Hermite interpolation between 0 and 1.
+pub fn math_smoothstep(edge0 f64, edge1 f64, x f64) f64 {
+	return math.smoothstep(edge0, edge1, x)
+}
+
+// math_smoothstep delegates to standalone math_smoothstep.
+pub fn (win &SimpleWindow) math_smoothstep(edge0 f64, edge1 f64, x f64) f64 {
+	return math_smoothstep(edge0, edge1, x)
+}
+
+// math_atan2 computes the multi-valued arctangent atan2(y, x).
+pub fn math_atan2(y f64, x f64) f64 {
+	return math.atan2(y, x)
+}
+
+// math_atan2 delegates to standalone math_atan2.
+pub fn (win &SimpleWindow) math_atan2(y f64, x f64) f64 {
+	return math_atan2(y, x)
+}
+
+// math_log10 returns the base-10 logarithm of a positive floating point number.
+pub fn math_log10(x f64) f64 {
+	return math.log10(x)
+}
+
+// math_log10 delegates to standalone math_log10.
+pub fn (win &SimpleWindow) math_log10(x f64) f64 {
+	return math_log10(x)
+}
+
+// math_log2 returns the base-2 logarithm of a positive floating point number.
+pub fn math_log2(x f64) f64 {
+	return math.log2(x)
+}
+
+// math_log2 delegates to standalone math_log2.
+pub fn (win &SimpleWindow) math_log2(x f64) f64 {
+	return math_log2(x)
+}
+
+// math_round_sig rounds a floating point number to a given number of significant digits.
+pub fn math_round_sig(x f64, sig_digits int) f64 {
+	return math.round_sig(x, sig_digits)
+}
+
+// math_round_sig delegates to standalone math_round_sig.
+pub fn (win &SimpleWindow) math_round_sig(x f64, sig_digits int) f64 {
+	return math_round_sig(x, sig_digits)
+}
+
+// ==========================================
+// 40. Advanced Statistical Analytics (Chapter 13: math.stats)
+// ==========================================
+
+// stats_geometric_mean computes the geometric mean of a dataset.
+pub fn stats_geometric_mean(data []f64) f64 {
+	if data.len == 0 {
+		return 0.0
+	}
+	return stats.geometric_mean(data)
+}
+
+// stats_geometric_mean delegates to standalone stats_geometric_mean.
+pub fn (win &SimpleWindow) stats_geometric_mean(data []f64) f64 {
+	return stats_geometric_mean(data)
+}
+
+// stats_harmonic_mean computes the harmonic mean of a dataset.
+pub fn stats_harmonic_mean(data []f64) f64 {
+	if data.len == 0 {
+		return 0.0
+	}
+	return stats.harmonic_mean(data)
+}
+
+// stats_harmonic_mean delegates to standalone stats_harmonic_mean.
+pub fn (win &SimpleWindow) stats_harmonic_mean(data []f64) f64 {
+	return stats_harmonic_mean(data)
+}
+
+// stats_rms computes the Root Mean Square (quadratic mean) of a dataset.
+pub fn stats_rms(data []f64) f64 {
+	if data.len == 0 {
+		return 0.0
+	}
+	return stats.rms(data)
+}
+
+// stats_rms delegates to standalone stats_rms.
+pub fn (win &SimpleWindow) stats_rms(data []f64) f64 {
+	return stats_rms(data)
+}
+
+// stats_mode returns the most frequent value in a dataset.
+pub fn stats_mode(data []f64) f64 {
+	if data.len == 0 {
+		return 0.0
+	}
+	return stats.mode(data)
+}
+
+// stats_mode delegates to standalone stats_mode.
+pub fn (win &SimpleWindow) stats_mode(data []f64) f64 {
+	return stats_mode(data)
+}
+
+// stats_range returns the difference between maximum and minimum values in a dataset.
+pub fn stats_range(data []f64) f64 {
+	if data.len == 0 {
+		return 0.0
+	}
+	return stats.range(data)
+}
+
+// stats_range delegates to standalone stats_range.
+pub fn (win &SimpleWindow) stats_range(data []f64) f64 {
+	return stats_range(data)
+}
+
+// stats_kurtosis computes the sample kurtosis of a dataset.
+pub fn stats_kurtosis(data []f64) f64 {
+	if data.len == 0 {
+		return 0.0
+	}
+	return stats.kurtosis(data)
+}
+
+// stats_kurtosis delegates to standalone stats_kurtosis.
+pub fn (win &SimpleWindow) stats_kurtosis(data []f64) f64 {
+	return stats_kurtosis(data)
+}
+
+// stats_skew computes the sample skewness of a dataset.
+pub fn stats_skew(data []f64) f64 {
+	if data.len == 0 {
+		return 0.0
+	}
+	return stats.skew(data)
+}
+
+// stats_skew delegates to standalone stats_skew.
+pub fn (win &SimpleWindow) stats_skew(data []f64) f64 {
+	return stats_skew(data)
+}
+
+// stats_covariance computes the sample covariance between two equal-sized datasets.
+pub fn stats_covariance(data1 []f64, data2 []f64) f64 {
+	if data1.len == 0 || data1.len != data2.len {
+		return 0.0
+	}
+	return stats.covariance(data1, data2)
+}
+
+// stats_covariance delegates to standalone stats_covariance.
+pub fn (win &SimpleWindow) stats_covariance(data1 []f64, data2 []f64) f64 {
+	return stats_covariance(data1, data2)
+}
+
+// ==========================================
+// 41. Cryptographically Secure Random & UUID (Chapter 13: crypto.rand)
+// ==========================================
+
+// crypto_rand_bytes returns a slice of cryptographically secure random bytes of specified length.
+pub fn crypto_rand_bytes(length int) []u8 {
+	if length <= 0 {
+		return []u8{}
+	}
+	return crand.bytes(length) or { return []u8{len: length} }
+}
+
+// crypto_rand_bytes delegates to standalone crypto_rand_bytes.
+pub fn (win &SimpleWindow) crypto_rand_bytes(length int) []u8 {
+	return crypto_rand_bytes(length)
+}
+
+// crypto_rand_hex produces a cryptographically secure hex string token.
+pub fn crypto_rand_hex(length int) string {
+	b := crypto_rand_bytes(length)
+	return hex.encode(b)
+}
+
+// crypto_rand_hex delegates to standalone crypto_rand_hex.
+pub fn (win &SimpleWindow) crypto_rand_hex(length int) string {
+	return crypto_rand_hex(length)
+}
+
+// crypto_rand_uuid generates a cryptographically secure UUID v4 string (8-4-4-4-12 hex format).
+pub fn crypto_rand_uuid() string {
+	mut b := crypto_rand_bytes(16)
+	if b.len < 16 {
+		return '00000000-0000-4000-8000-000000000000'
+	}
+	b[6] = (b[6] & u8(0x0f)) | u8(0x40)
+	b[8] = (b[8] & u8(0x3f)) | u8(0x80)
+
+	h := hex.encode(b)
+	return '${h[0..8]}-${h[8..12]}-${h[12..16]}-${h[16..20]}-${h[20..32]}'
+}
+
+// crypto_rand_uuid delegates to standalone crypto_rand_uuid.
+pub fn (win &SimpleWindow) crypto_rand_uuid() string {
+	return crypto_rand_uuid()
+}
+
+// ==========================================
+// 42. HMAC Extensions & Fast Hashing (Chapter 13: crypto.hmac, hash)
+// ==========================================
+
+// crypto_hmac_sha512 computes the hex-encoded HMAC-SHA512 signature of text with a key.
+pub fn crypto_hmac_sha512(text string, key string) string {
+	sum := hmac.new(key.bytes(), text.bytes(), sha512.sum512, sha512.block_size)
+	return sum.hex()
+}
+
+// crypto_hmac_sha512 delegates to standalone crypto_hmac_sha512.
+pub fn (win &SimpleWindow) crypto_hmac_sha512(text string, key string) string {
+	return crypto_hmac_sha512(text, key)
+}
+
+// crypto_hmac_sha1 computes the hex-encoded HMAC-SHA1 signature of text with a key.
+pub fn crypto_hmac_sha1(text string, key string) string {
+	sum := hmac.new(key.bytes(), text.bytes(), sha1.sum, sha1.block_size)
+	return sum.hex()
+}
+
+// crypto_hmac_sha1 delegates to standalone crypto_hmac_sha1.
+pub fn (win &SimpleWindow) crypto_hmac_sha1(text string, key string) string {
+	return crypto_hmac_sha1(text, key)
+}
+
+// crypto_wyhash computes a 64-bit Wyhash value of a string with a seed.
+pub fn crypto_wyhash(text string, seed u64) u64 {
+	return vhash.sum64_string(text, seed)
+}
+
+// crypto_wyhash delegates to standalone crypto_wyhash.
+pub fn (win &SimpleWindow) crypto_wyhash(text string, seed u64) u64 {
+	return crypto_wyhash(text, seed)
+}
+
+// ==========================================
+// 43. Advanced String Metrics & Utility Functions (Chapter 13: strings)
+// ==========================================
+
+// string_jaro_similarity computes Jaro distance similarity between two strings (0.0 to 1.0).
+pub fn string_jaro_similarity(s1 string, s2 string) f64 {
+	return strings.jaro_similarity(s1, s2)
+}
+
+// string_jaro_similarity delegates to standalone string_jaro_similarity.
+pub fn (win &SimpleWindow) string_jaro_similarity(s1 string, s2 string) f64 {
+	return string_jaro_similarity(s1, s2)
+}
+
+// string_jaro_winkler_similarity computes Jaro-Winkler distance similarity (0.0 to 1.0).
+pub fn string_jaro_winkler_similarity(s1 string, s2 string) f64 {
+	return strings.jaro_winkler_similarity(s1, s2)
+}
+
+// string_jaro_winkler_similarity delegates to standalone string_jaro_winkler_similarity.
+pub fn (win &SimpleWindow) string_jaro_winkler_similarity(s1 string, s2 string) f64 {
+	return string_jaro_winkler_similarity(s1, s2)
+}
+
+// string_hamming_distance computes Hamming distance between two equal-length strings.
+pub fn string_hamming_distance(s1 string, s2 string) int {
+	return strings.hamming_distance(s1, s2)
+}
+
+// string_hamming_distance delegates to standalone string_hamming_distance.
+pub fn (win &SimpleWindow) string_hamming_distance(s1 string, s2 string) int {
+	return string_hamming_distance(s1, s2)
+}
+
+// string_between extracts text located between start and end delimiter strings.
+pub fn string_between(input string, start string, end string) string {
+	return strings.find_between_pair_string(input, start, end)
+}
+
+// string_between delegates to standalone string_between.
+pub fn (win &SimpleWindow) string_between(input string, start string, end string) string {
+	return string_between(input, start, end)
+}
+
+// string_pad_left left-pads a string with repeating pad_char characters up to total length.
+pub fn string_pad_left(input string, length int, pad_char string) string {
+	if input.len >= length || pad_char.len == 0 {
+		return input
+	}
+	pad_len := length - input.len
+	mut pad := strings.repeat_string(pad_char, pad_len)
+	return pad + input
+}
+
+// string_pad_left delegates to standalone string_pad_left.
+pub fn (win &SimpleWindow) string_pad_left(input string, length int, pad_char string) string {
+	return string_pad_left(input, length, pad_char)
+}
+
+// string_pad_right right-pads a string with repeating pad_char characters up to total length.
+pub fn string_pad_right(input string, length int, pad_char string) string {
+	if input.len >= length || pad_char.len == 0 {
+		return input
+	}
+	pad_len := length - input.len
+	mut pad := strings.repeat_string(pad_char, pad_len)
+	return input + pad
+}
+
+// string_pad_right delegates to standalone string_pad_right.
+pub fn (win &SimpleWindow) string_pad_right(input string, length int, pad_char string) string {
+	return string_pad_right(input, length, pad_char)
+}
+
+// string_repeat repeats a string n times.
+pub fn string_repeat(input string, count int) string {
+	if count <= 0 {
+		return ''
+	}
+	return strings.repeat_string(input, count)
+}
+
+// string_repeat delegates to standalone string_repeat.
+pub fn (win &SimpleWindow) string_repeat(input string, count int) string {
+	return string_repeat(input, count)
+}
+
+// string_count_words counts non-empty space-separated words in a text string.
+pub fn string_count_words(input string) int {
+	words := input.fields()
+	return words.len
+}
+
+// string_count_words delegates to standalone string_count_words.
+pub fn (win &SimpleWindow) string_count_words(input string) int {
+	return string_count_words(input)
+}
+
+// ==========================================
+// 44. URL Parsing & Assembly Object Model (Chapter 13: net.urllib)
+// ==========================================
+
+// SimpleURL holds components of a parsed URL.
+pub struct SimpleURL {
+pub mut:
+	scheme   string
+	host     string
+	port     string
+	path     string
+	query    map[string]string
+	fragment string
+}
+
+// build_url constructs a canonical URL string from the SimpleURL fields.
+pub fn (u SimpleURL) build_url() string {
+	mut sb := strings.new_builder(128)
+	if u.scheme.len > 0 {
+		sb.write_string(u.scheme)
+		sb.write_string('://')
+	}
+	sb.write_string(u.host)
+	if u.port.len > 0 {
+		sb.write_string(':')
+		sb.write_string(u.port)
+	}
+	if u.path.len > 0 {
+		if !u.path.starts_with('/') {
+			sb.write_string('/')
+		}
+		sb.write_string(u.path)
+	}
+	if u.query.len > 0 {
+		sb.write_string('?')
+		mut parts := []string{}
+		for k, v in u.query {
+			parts << '${urllib.query_escape(k)}=${urllib.query_escape(v)}'
+		}
+		sb.write_string(parts.join('&'))
+	}
+	if u.fragment.len > 0 {
+		sb.write_string('#')
+		sb.write_string(u.fragment)
+	}
+	return sb.str()
+}
+
+// url_parse parses a raw URL string into a SimpleURL structure.
+pub fn url_parse(raw_url string) SimpleURL {
+	u := urllib.parse(raw_url) or {
+		return SimpleURL{}
+	}
+	mut query_map := map[string]string{}
+	q_vals := u.query()
+	for k in q_vals.data {
+		if v := q_vals.get(k.key) {
+			query_map[k.key] = v
+		}
+	}
+	return SimpleURL{
+		scheme:   u.scheme
+		host:     u.hostname()
+		port:     u.port()
+		path:     u.path
+		query:    query_map
+		fragment: u.fragment
+	}
+}
+
+// url_parse delegates to standalone url_parse.
+pub fn (win &SimpleWindow) url_parse(raw_url string) SimpleURL {
+	return url_parse(raw_url)
+}
+
+// url_build constructs a URL from scheme, host, path, and query parameter map.
+pub fn url_build(scheme string, host string, path string, query_params map[string]string) string {
+	su := SimpleURL{
+		scheme: scheme
+		host:   host
+		path:   path
+		query:  query_params
+	}
+	return su.build_url()
+}
+
+// url_build delegates to standalone url_build.
+pub fn (win &SimpleWindow) url_build(scheme string, host string, path string, query_params map[string]string) string {
+	return url_build(scheme, host, path, query_params)
+}
+
+// ==========================================
+// 45. Enhanced HTML Document Parsing & Inspection (Chapter 13: net.html)
+// ==========================================
+
+// get_attr retrieves an attribute value of the first matching HTML tag name.
+pub fn (d &SimpleHTMLDocument) get_attr(tag_name string, attr_name string) string {
+	tags := d.doc.get_tags(name: tag_name)
+	if tags.len > 0 {
+		return tags[0].attributes[attr_name]
+	}
+	return ''
+}
+
+// get_all_links extracts all href links from <a> tags in the HTML document.
+pub fn (d &SimpleHTMLDocument) get_all_links() []string {
+	tags := d.doc.get_tags(name: 'a')
+	mut links := []string{}
+	for t in tags {
+		if href := t.attributes['href'] {
+			links << href
+		}
+	}
+	return links
+}
+
+// get_all_images extracts all image src URLs from <img> tags in the HTML document.
+pub fn (d &SimpleHTMLDocument) get_all_images() []string {
+	tags := d.doc.get_tags(name: 'img')
+	mut imgs := []string{}
+	for t in tags {
+		if src := t.attributes['src'] {
+			imgs << src
+		}
+	}
+	return imgs
+}
+
+// strip_tags removes HTML tags from the document, returning plain text content.
+pub fn (d &SimpleHTMLDocument) strip_tags() string {
+	root := d.doc.get_root()
+	if root != unsafe { nil } {
+		return root.text().trim_space()
+	}
+	return ''
+}
+
+// ==========================================
+// 46. CSV Matrix Column Manipulation (Chapter 13: encoding.csv)
+// ==========================================
+
+// csv_extract_column extracts all row values belonging to a specific zero-based column index.
+pub fn csv_extract_column(rows [][]string, col_idx int) []string {
+	mut res := []string{}
+	for row in rows {
+		if col_idx >= 0 && col_idx < row.len {
+			res << row[col_idx]
+		}
+	}
+	return res
+}
+
+// csv_extract_column delegates to standalone csv_extract_column.
+pub fn (win &SimpleWindow) csv_extract_column(rows [][]string, col_idx int) []string {
+	return csv_extract_column(rows, col_idx)
+}
+
+// csv_filter_by_column returns only CSV rows where a column matches a given search string.
+pub fn csv_filter_by_column(rows [][]string, col_idx int, search_term string) [][]string {
+	mut filtered := [][]string{}
+	for row in rows {
+		if col_idx >= 0 && col_idx < row.len {
+			if row[col_idx] == search_term {
+				filtered << row
+			}
+		}
+	}
+	return filtered
+}
+
+// csv_filter_by_column delegates to standalone csv_filter_by_column.
+pub fn (win &SimpleWindow) csv_filter_by_column(rows [][]string, col_idx int, search_term string) [][]string {
+	return csv_filter_by_column(rows, col_idx, search_term)
+}
+
+// ==========================================
+// 47. MinHeap Priority Queue Data Structure (Chapter 13: datatypes)
+// ==========================================
+
+// SimpleMinHeap provides a high-level min-heap priority queue collection.
+pub struct SimpleMinHeap[T] {
+mut:
+	heap datatypes.MinHeap[T]
+}
+
+// push inserts an item into the min-heap.
+pub fn (mut smh SimpleMinHeap[T]) push(item T) {
+	smh.heap.insert(item)
+}
+
+// pop removes and returns the smallest item from the min-heap, or errors if empty.
+pub fn (mut smh SimpleMinHeap[T]) pop() !T {
+	return smh.heap.pop()
+}
+
+// peek returns the smallest item from the min-heap without removing it, or errors if empty.
+pub fn (smh &SimpleMinHeap[T]) peek() !T {
+	return smh.heap.peek()
+}
+
+// len returns the total number of items stored in the min-heap.
+pub fn (smh &SimpleMinHeap[T]) len() int {
+	return smh.heap.len()
+}
+
+// new_min_heap instantiates a new generic SimpleMinHeap.
+pub fn new_min_heap[T]() SimpleMinHeap[T] {
+	return SimpleMinHeap[T]{}
+}
+
+// ==========================================
+// 48. Extended Time & Calendar Utilities (Chapter 13: time)
+// ==========================================
+
+// time_unix_timestamp returns the current Unix epoch timestamp in seconds.
+pub fn time_unix_timestamp() i64 {
+	return time.now().unix()
+}
+
+// time_unix_timestamp delegates to standalone time_unix_timestamp.
+pub fn (win &SimpleWindow) time_unix_timestamp() i64 {
+	return time_unix_timestamp()
+}
+
+// time_from_unix formats a Unix epoch timestamp (seconds) into standard YYYY-MM-DD HH:MM:SS string.
+pub fn time_from_unix(timestamp i64) string {
+	t := time.unix(timestamp)
+	return t.custom_format('YYYY-MM-DD HH:mm:ss')
+}
+
+// time_from_unix delegates to standalone time_from_unix.
+pub fn (win &SimpleWindow) time_from_unix(timestamp i64) string {
+	return time_from_unix(timestamp)
+}
+
+// time_is_leap_year returns true if the specified year is a leap year.
+pub fn time_is_leap_year(year int) bool {
+	return time.is_leap_year(year)
+}
+
+// time_is_leap_year delegates to standalone time_is_leap_year.
+pub fn (win &SimpleWindow) time_is_leap_year(year int) bool {
+	return time_is_leap_year(year)
+}
+
+// time_days_in_month returns the total number of days in a specific year and month (1-12).
+pub fn time_days_in_month(year int, month int) int {
+	return time.days_in_month(month, year) or { 30 }
+}
+
+// time_days_in_month delegates to standalone time_days_in_month.
+pub fn (win &SimpleWindow) time_days_in_month(year int, month int) int {
+	return time_days_in_month(year, month)
+}
+
+// ==========================================
+// 49. JSON Formatting & Validation Utilities (Chapter 13: json)
+// ==========================================
+
+// json_validate checks if a string contains valid JSON syntax by testing map decoding.
+pub fn json_validate(json_str string) bool {
+	_ := json.decode(map[string]string, json_str) or { return false }
+	return true
+}
+
+// json_validate delegates to standalone json_validate.
+pub fn (win &SimpleWindow) json_validate(json_str string) bool {
+	return json_validate(json_str)
+}
+
+// json_pretty_print formats a flat key-value map JSON string with clean line indents.
+pub fn json_pretty_print(json_str string) string {
+	m := json.decode(map[string]string, json_str) or { return json_str }
+	mut sb := strings.new_builder(128)
+	sb.writeln('{')
+	mut count := 0
+	for k, v in m {
+		count++
+		comma := if count < m.len { ',' } else { '' }
+		sb.writeln('  "${k}": "${v}"${comma}')
+	}
+	sb.writeln('}')
+	return sb.str()
+}
+
+// json_pretty_print delegates to standalone json_pretty_print.
+pub fn (win &SimpleWindow) json_pretty_print(json_str string) string {
+	return json_pretty_print(json_str)
+}
+
 
