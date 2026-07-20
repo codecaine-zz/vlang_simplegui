@@ -480,7 +480,27 @@ void window_set_resource_monitor_metrics(main__WindowInfo *info, const char *nam
 void *window_add_env_vars_control(main__WindowInfo *info, const char *name, const char *title, const char **keys, const char **values, int count);
 void window_set_env_vars_data(main__WindowInfo *info, const char *name, const char **keys, const char **values, int count);
 
+// 6 Additional Useful UI Controls (Badge Button, Command Palette, Status Banner, Pill Toggle, Color Swatch Panel, Hotkey Badge)
+void *window_add_badge_button_control(main__WindowInfo *info, const char *name, const char *title, int count, const char *badge_color);
+void window_set_badge_button_count(main__WindowInfo *info, const char *name, int count);
+
+void *window_add_command_palette_control(main__WindowInfo *info, const char *name, const char *placeholder, const char *shortcut_hint);
+void window_set_command_palette_text(main__WindowInfo *info, const char *name, const char *text);
+
+void *window_add_status_banner_control(main__WindowInfo *info, const char *name, const char *title, const char *message, const char *style_type);
+void window_set_status_banner_text(main__WindowInfo *info, const char *name, const char *title, const char *message, const char *style_type);
+
+void *window_add_pill_toggle_control(main__WindowInfo *info, const char *name, const char **options, int count, int selected_index);
+void window_set_pill_toggle_selected(main__WindowInfo *info, const char *name, int selected_index);
+
+void *window_add_color_swatch_panel_control(main__WindowInfo *info, const char *name, const char **hex_colors, int count, const char *selected_color);
+void window_set_color_swatch_selected(main__WindowInfo *info, const char *name, const char *hex_color);
+
+void *window_add_hotkey_badge_control(main__WindowInfo *info, const char *name, const char *shortcut_str, const char *description);
+void window_set_hotkey_badge_shortcut(main__WindowInfo *info, const char *name, const char *shortcut_str, const char *description);
+
 #endif
+
 
 
 

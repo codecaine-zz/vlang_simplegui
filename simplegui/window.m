@@ -187,7 +187,7 @@ static NSVisualEffectMaterial materialFromString(NSString *materialStr);
 @interface FlippedStackView : NSStackView
 @end
 
-extern void vlang_dispatch_event(void *win_ptr, const char *name, const char *event, const char *value);
+extern BOOL vlang_dispatch_event(void *win_ptr, const char *name, const char *event, const char *value);
 
 @implementation FlippedStackView
 - (BOOL)isFlipped {
@@ -836,6 +836,25 @@ extern void vlang_dispatch_event(void *win_ptr, const char *name, const char *ev
 
 - (NSView *)makeEnvVarsWithName:(NSString *)name title:(NSString *)title keys:(NSArray<NSString *> *)keys values:(NSArray<NSString *> *)values;
 - (void)setEnvVarsDataForName:(NSString *)name keys:(NSArray<NSString *> *)keys values:(NSArray<NSString *> *)values;
+
+- (NSView *)makeBadgeButtonWithName:(NSString *)name title:(NSString *)title count:(int)count badgeColor:(NSString *)badgeColor;
+- (void)setBadgeButtonCount:(int)count forName:(NSString *)name;
+
+- (NSView *)makeCommandPaletteWithName:(NSString *)name placeholder:(NSString *)placeholder shortcutHint:(NSString *)shortcutHint;
+- (void)setCommandPaletteText:(NSString *)text forName:(NSString *)name;
+
+- (NSView *)makeStatusBannerWithName:(NSString *)name title:(NSString *)title message:(NSString *)message styleType:(NSString *)styleType;
+- (void)setStatusBannerTextForName:(NSString *)name title:(NSString *)title message:(NSString *)message styleType:(NSString *)styleType;
+
+- (NSView *)makePillToggleWithName:(NSString *)name options:(NSArray<NSString *> *)options selectedIndex:(int)selectedIndex;
+- (void)setPillToggleSelected:(int)selectedIndex forName:(NSString *)name;
+
+- (NSView *)makeColorSwatchPanelWithName:(NSString *)name hexColors:(NSArray<NSString *> *)hexColors selectedColor:(NSString *)selectedColor;
+- (void)setColorSwatchSelected:(NSString *)hexColor forName:(NSString *)name;
+
+- (NSView *)makeHotkeyBadgeWithName:(NSString *)name shortcutStr:(NSString *)shortcutStr description:(NSString *)description;
+- (void)setHotkeyBadgeShortcutForName:(NSString *)name shortcutStr:(NSString *)shortcutStr description:(NSString *)description;
+
 
 
 
@@ -1567,7 +1586,8 @@ static NSColor *colorFromHexString(NSString *hexString) {
     if (flags & NSEventModifierFlagShift) [keyStr appendString:@"shift+"];
     [keyStr appendString:[chars lowercaseString]];
     
-    vlang_dispatch_event(delegate.win_ptr, "window", "key", [keyStr UTF8String]);
+    BOOL handled = vlang_dispatch_event(delegate.win_ptr, "window", "key", [keyStr UTF8String]);
+    if (handled) return YES;
   }
 
   if (flags == NSEventModifierFlagCommand) {
@@ -1581,6 +1601,46 @@ static NSColor *colorFromHexString(NSString *hexString) {
   }
   return [super performKeyEquivalent:event];
 }
+
+- (void)keyDown:(NSEvent *)event {
+  AppDelegate *delegate = (AppDelegate *)[self delegate];
+  if (delegate && delegate.win_ptr) {
+    NSEventModifierFlags flags = [event modifierFlags] & NSEventModifierFlagDeviceIndependentFlagsMask;
+    NSString *chars = [event charactersIgnoringModifiers];
+    unsigned short keyCode = [event keyCode];
+    
+    NSMutableString *keyStr = [NSMutableString string];
+    if (flags & NSEventModifierFlagCommand) [keyStr appendString:@"cmd+"];
+    if (flags & NSEventModifierFlagControl) [keyStr appendString:@"ctrl+"];
+    if (flags & NSEventModifierFlagOption) [keyStr appendString:@"opt+"];
+    if (flags & NSEventModifierFlagShift) [keyStr appendString:@"shift+"];
+    
+    if (keyCode == 53) {
+      [keyStr appendString:@"escape"];
+    } else if (keyCode == 36 || keyCode == 76) {
+      [keyStr appendString:@"enter"];
+    } else if (keyCode == 49) {
+      [keyStr appendString:@"space"];
+    } else if (keyCode == 48) {
+      [keyStr appendString:@"tab"];
+    } else if (keyCode == 123) {
+      [keyStr appendString:@"left"];
+    } else if (keyCode == 124) {
+      [keyStr appendString:@"right"];
+    } else if (keyCode == 125) {
+      [keyStr appendString:@"down"];
+    } else if (keyCode == 126) {
+      [keyStr appendString:@"up"];
+    } else if (chars.length > 0) {
+      [keyStr appendString:[chars lowercaseString]];
+    }
+    
+    BOOL handled = vlang_dispatch_event(delegate.win_ptr, "window", "key", [keyStr UTF8String]);
+    if (handled) return;
+  }
+  [super keyDown:event];
+}
+
 
 - (NSDragOperation)draggingEntered:(id<NSDraggingInfo>)sender {
   NSPasteboard *pboard = [sender draggingPasteboard];
@@ -2240,6 +2300,9 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
 }
 
 - (NSString *)nameForControl:(NSView *)control {
+  if (!control) return nil;
+  NSString *assoc = objc_getAssociatedObject(control, "parentControlName");
+  if (assoc) return assoc;
   for (NSString *key in self.controlsByName) {
     if (self.controlsByName[key] == control) {
       return key;
@@ -3530,6 +3593,22 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
     vlang_dispatch_event(self.win_ptr, [name UTF8String], "change", [value UTF8String]);
   }
 }
+
+- (void)textViewDidChangeSelection:(NSNotification *)notification {
+  NSTextView *textView = (NSTextView *)notification.object;
+  NSString *name = [self nameForControl:textView];
+  if (!name) {
+    name = objc_getAssociatedObject(textView, "parentControlName");
+  }
+  if (name && self.win_ptr) {
+    NSRange sel = [textView selectedRange];
+    if (sel.length > 0 && (sel.location + sel.length) <= [textView string].length) {
+      NSString *selectedText = [[textView string] substringWithRange:sel];
+      vlang_dispatch_event(self.win_ptr, [name UTF8String], "select", [selectedText UTF8String]);
+    }
+  }
+}
+
 
 - (BOOL)gridRowMatchesQuery:(NSArray *)row query:(NSString *)query {
   if (!query || query.length == 0) return YES;
@@ -8005,7 +8084,14 @@ static NSAttributedString *formatDiffText(NSString *oldText, NSString *newText) 
   NSTextView *textView = [[NSTextView alloc] initWithFrame:NSZeroRect];
   [textView setEditable:NO];
   [textView setSelectable:YES];
+  [textView setDelegate:self];
   [textView setBackgroundColor:[NSColor colorWithRed:0.11 green:0.12 blue:0.14 alpha:1.0]];
+  [textView setMinSize:NSMakeSize(0.0, 100.0)];
+  [textView setMaxSize:NSMakeSize(FLT_MAX, FLT_MAX)];
+  [textView setVerticallyResizable:YES];
+  [textView setHorizontallyResizable:NO];
+  [textView setAutoresizingMask:NSViewWidthSizable];
+  [textView setWantsLayer:YES];
   [textView textContainer].widthTracksTextView = YES;
 
   NSAttributedString *attrStr = formatDiffText(oldText, newText);
@@ -8019,6 +8105,7 @@ static NSAttributedString *formatDiffText(NSString *oldText, NSString *newText) 
   if (!self.controlsByName) self.controlsByName = [NSMutableDictionary dictionary];
   self.controlsByName[[name lowercaseString]] = box;
   objc_setAssociatedObject(box, "diffTextView", textView, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(textView, "parentControlName", name, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 
   [self addControlToLayout:box];
   return box;
@@ -8030,7 +8117,9 @@ static NSAttributedString *formatDiffText(NSString *oldText, NSString *newText) 
     NSTextView *textView = objc_getAssociatedObject(box, "diffTextView");
     if (textView) {
       NSAttributedString *attrStr = formatDiffText(oldText, newText);
-      [[textView textStorage] setAttributedString:attrStr];
+      [textView insertText:attrStr replacementRange:NSMakeRange(0, textView.string.length)];
+      [textView scrollRangeToVisible:NSMakeRange(0, 0)];
+      if (self.win_ptr) vlang_dispatch_event(self.win_ptr, [name UTF8String], "change", [newText UTF8String]);
     }
   }
 }
@@ -8090,7 +8179,14 @@ static NSAttributedString *formatJsonText(NSString *jsonStr) {
   NSTextView *textView = [[NSTextView alloc] initWithFrame:NSZeroRect];
   [textView setEditable:NO];
   [textView setSelectable:YES];
+  [textView setDelegate:self];
   [textView setBackgroundColor:[NSColor colorWithRed:0.09 green:0.10 blue:0.12 alpha:1.0]];
+  [textView setMinSize:NSMakeSize(0.0, 100.0)];
+  [textView setMaxSize:NSMakeSize(FLT_MAX, FLT_MAX)];
+  [textView setVerticallyResizable:YES];
+  [textView setHorizontallyResizable:NO];
+  [textView setAutoresizingMask:NSViewWidthSizable];
+  [textView setWantsLayer:YES];
   [textView textContainer].widthTracksTextView = YES;
 
   NSAttributedString *attrStr = formatJsonText(jsonStr);
@@ -8104,6 +8200,7 @@ static NSAttributedString *formatJsonText(NSString *jsonStr) {
   if (!self.controlsByName) self.controlsByName = [NSMutableDictionary dictionary];
   self.controlsByName[[name lowercaseString]] = box;
   objc_setAssociatedObject(box, "jsonTextView", textView, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(textView, "parentControlName", name, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 
   [self addControlToLayout:box];
   return box;
@@ -8115,7 +8212,9 @@ static NSAttributedString *formatJsonText(NSString *jsonStr) {
     NSTextView *textView = objc_getAssociatedObject(box, "jsonTextView");
     if (textView) {
       NSAttributedString *attrStr = formatJsonText(jsonStr);
-      [[textView textStorage] setAttributedString:attrStr];
+      [textView insertText:attrStr replacementRange:NSMakeRange(0, textView.string.length)];
+      [textView scrollRangeToVisible:NSMakeRange(0, 0)];
+      if (self.win_ptr) vlang_dispatch_event(self.win_ptr, [name UTF8String], "change", [jsonStr UTF8String]);
     }
   }
 }
@@ -8508,7 +8607,349 @@ static NSAttributedString *formatJsonText(NSString *jsonStr) {
   }
 }
 
+// 13. Badge Button Control
+- (NSView *)makeBadgeButtonWithName:(NSString *)name title:(NSString *)title count:(int)count badgeColor:(NSString *)badgeColor {
+  NSStackView *row = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [row setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+  [row setAlignment:NSLayoutAttributeCenterY];
+  [row setSpacing:6.0];
+
+  ModernButton *btn = [ModernButton buttonWithTitle:title target:self action:@selector(handleButtonClicked:)];
+  objc_setAssociatedObject(btn, "controlName", name, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  [btn.heightAnchor constraintEqualToConstant:34.0].active = YES;
+  [row addArrangedSubview:btn];
+
+  NSBox *badge = [[NSBox alloc] initWithFrame:NSZeroRect];
+  [badge setBoxType:NSBoxCustom];
+  [badge setCornerRadius:10.0];
+  [badge setFillColor:[NSColor colorWithRed:0.94 green:0.27 blue:0.27 alpha:1.0]];
+
+  NSTextField *countLbl = [NSTextField labelWithString:[NSString stringWithFormat:@" %d ", count]];
+  [countLbl setFont:[NSFont boldSystemFontOfSize:11.0]];
+  [countLbl setTextColor:[NSColor whiteColor]];
+  [badge setContentView:countLbl];
+
+  [row addArrangedSubview:badge];
+
+  if (!self.controlsByName) self.controlsByName = [NSMutableDictionary dictionary];
+  self.controlsByName[[name lowercaseString]] = row;
+  objc_setAssociatedObject(row, "badgeCountLbl", countLbl, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(row, "badgeBox", badge, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+  [self addControlToLayout:row];
+  return row;
+}
+
+- (void)setBadgeButtonCount:(int)count forName:(NSString *)name {
+  NSStackView *row = (NSStackView *)self.controlsByName[[name lowercaseString]];
+  if (row) {
+    NSTextField *countLbl = objc_getAssociatedObject(row, "badgeCountLbl");
+    NSBox *badgeBox = objc_getAssociatedObject(row, "badgeBox");
+    if (countLbl) [countLbl setStringValue:[NSString stringWithFormat:@" %d ", count]];
+    if (badgeBox) [badgeBox setHidden:(count <= 0)];
+  }
+}
+
+// 14. Command Palette Input Bar Control
+- (NSView *)makeCommandPaletteWithName:(NSString *)name placeholder:(NSString *)placeholder shortcutHint:(NSString *)shortcutHint {
+  NSBox *box = [[NSBox alloc] initWithFrame:NSZeroRect];
+  [box setBoxType:NSBoxCustom];
+  [box setCornerRadius:8.0];
+  [box setFillColor:[NSColor colorWithRed:0.12 green:0.14 blue:0.18 alpha:0.95]];
+  [box setBorderColor:[NSColor colorWithWhite:1.0 alpha:0.15]];
+
+  NSStackView *hstack = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [hstack setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+  [hstack setAlignment:NSLayoutAttributeCenterY];
+  [hstack setSpacing:8.0];
+  [hstack setEdgeInsets:NSEdgeInsetsMake(6, 12, 6, 12)];
+
+  NSTextField *iconLbl = [NSTextField labelWithString:@"🔍"];
+  [iconLbl setFont:[NSFont systemFontOfSize:13.0]];
+  [hstack addArrangedSubview:iconLbl];
+
+  ModernTextField *tf = [[ModernTextField alloc] initWithFrame:NSZeroRect];
+  [tf setPlaceholderString:placeholder ? placeholder : @"Type a command or search..."];
+  [tf setDelegate:self];
+  [tf setTarget:self];
+  [tf setAction:@selector(handleInputChanged:)];
+  [tf.heightAnchor constraintEqualToConstant:30.0].active = YES;
+  [self makeStretchableView:tf minimumWidth:240];
+  [hstack addArrangedSubview:tf];
+
+  if (shortcutHint && shortcutHint.length > 0) {
+    NSBox *keyBadge = [[NSBox alloc] initWithFrame:NSZeroRect];
+    [keyBadge setBoxType:NSBoxCustom];
+    [keyBadge setCornerRadius:4.0];
+    [keyBadge setFillColor:[NSColor colorWithWhite:1.0 alpha:0.1]];
+
+    NSTextField *hintLbl = [NSTextField labelWithString:shortcutHint];
+    [hintLbl setFont:[NSFont userFixedPitchFontOfSize:11.0]];
+    [hintLbl setTextColor:[NSColor colorWithWhite:0.7 alpha:1.0]];
+    [keyBadge setContentView:hintLbl];
+    [hstack addArrangedSubview:keyBadge];
+  }
+
+  [box setContentView:hstack];
+  [box.heightAnchor constraintEqualToConstant:44.0].active = YES;
+
+  if (!self.controlsByName) self.controlsByName = [NSMutableDictionary dictionary];
+  self.controlsByName[[name lowercaseString]] = box;
+  objc_setAssociatedObject(box, "cmdTextField", tf, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+  [self addControlToLayout:box];
+  return box;
+}
+
+- (void)setCommandPaletteText:(NSString *)text forName:(NSString *)name {
+  NSBox *box = (NSBox *)self.controlsByName[[name lowercaseString]];
+  if (box) {
+    ModernTextField *tf = objc_getAssociatedObject(box, "cmdTextField");
+    if (tf) [tf setStringValue:text ? text : @""];
+  }
+}
+
+// 15. Status Banner Alert Strip Control
+- (NSView *)makeStatusBannerWithName:(NSString *)name title:(NSString *)title message:(NSString *)message styleType:(NSString *)styleType {
+  NSBox *banner = [[NSBox alloc] initWithFrame:NSZeroRect];
+  [banner setBoxType:NSBoxCustom];
+  [banner setCornerRadius:8.0];
+
+  NSString *st = [styleType lowercaseString];
+  NSColor *accentColor = [NSColor systemBlueColor];
+  NSColor *bgColor = [NSColor colorWithRed:0.11 green:0.15 blue:0.22 alpha:0.9];
+  NSString *icon = @"ℹ️";
+
+  if ([st isEqualToString:@"success"]) {
+    accentColor = [NSColor colorWithRed:0.2 green:0.8 blue:0.4 alpha:1.0];
+    bgColor = [NSColor colorWithRed:0.09 green:0.18 blue:0.12 alpha:0.9];
+    icon = @"✅";
+  } else if ([st isEqualToString:@"warning"]) {
+    accentColor = [NSColor colorWithRed:0.95 green:0.75 blue:0.2 alpha:1.0];
+    bgColor = [NSColor colorWithRed:0.22 green:0.18 blue:0.08 alpha:0.9];
+    icon = @"⚠️";
+  } else if ([st isEqualToString:@"error"]) {
+    accentColor = [NSColor colorWithRed:0.95 green:0.3 blue:0.3 alpha:1.0];
+    bgColor = [NSColor colorWithRed:0.22 green:0.09 blue:0.09 alpha:0.9];
+    icon = @"❌";
+  }
+
+  [banner setFillColor:bgColor];
+  [banner setBorderColor:accentColor];
+
+  NSStackView *hstack = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [hstack setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+  [hstack setAlignment:NSLayoutAttributeCenterY];
+  [hstack setSpacing:10.0];
+  [hstack setEdgeInsets:NSEdgeInsetsMake(8, 12, 8, 12)];
+
+  NSTextField *iconLbl = [NSTextField labelWithString:icon];
+  [iconLbl setFont:[NSFont systemFontOfSize:14.0]];
+  [hstack addArrangedSubview:iconLbl];
+
+  NSStackView *vbox = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [vbox setOrientation:NSUserInterfaceLayoutOrientationVertical];
+  [vbox setAlignment:NSLayoutAttributeLeading];
+  [vbox setSpacing:2.0];
+
+  NSTextField *tLbl = [NSTextField labelWithString:title ? title : @""];
+  [tLbl setFont:[NSFont boldSystemFontOfSize:12.0]];
+  [tLbl setTextColor:[NSColor whiteColor]];
+
+  NSTextField *mLbl = [NSTextField labelWithString:message ? message : @""];
+  [mLbl setFont:[NSFont systemFontOfSize:11.0]];
+  [mLbl setTextColor:[NSColor colorWithWhite:0.8 alpha:1.0]];
+
+  [vbox addArrangedSubview:tLbl];
+  [vbox addArrangedSubview:mLbl];
+  [hstack addArrangedSubview:vbox];
+
+  [banner setContentView:hstack];
+
+  if (!self.controlsByName) self.controlsByName = [NSMutableDictionary dictionary];
+  self.controlsByName[[name lowercaseString]] = banner;
+  objc_setAssociatedObject(banner, "bannerTitleLbl", tLbl, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(banner, "bannerMsgLbl", mLbl, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+  [self addControlToLayout:banner];
+  return banner;
+}
+
+- (void)setStatusBannerTextForName:(NSString *)name title:(NSString *)title message:(NSString *)message styleType:(NSString *)styleType {
+  NSBox *banner = (NSBox *)self.controlsByName[[name lowercaseString]];
+  if (banner) {
+    NSTextField *tLbl = objc_getAssociatedObject(banner, "bannerTitleLbl");
+    NSTextField *mLbl = objc_getAssociatedObject(banner, "bannerMsgLbl");
+    if (tLbl) [tLbl setStringValue:title ? title : @""];
+    if (mLbl) [mLbl setStringValue:message ? message : @""];
+  }
+}
+
+// 16. Pill Toggle Switch Control
+- (NSView *)makePillToggleWithName:(NSString *)name options:(NSArray<NSString *> *)options selectedIndex:(int)selectedIndex {
+  NSBox *pillBox = [[NSBox alloc] initWithFrame:NSZeroRect];
+  [pillBox setBoxType:NSBoxCustom];
+  [pillBox setCornerRadius:14.0];
+  [pillBox setFillColor:[NSColor colorWithRed:0.12 green:0.14 blue:0.18 alpha:0.95]];
+  [pillBox setBorderColor:[NSColor colorWithWhite:1.0 alpha:0.15]];
+
+  NSStackView *hstack = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [hstack setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+  [hstack setAlignment:NSLayoutAttributeCenterY];
+  [hstack setSpacing:4.0];
+  [hstack setEdgeInsets:NSEdgeInsetsMake(3, 4, 3, 4)];
+
+  NSMutableArray *buttons = [NSMutableArray array];
+
+  for (int i = 0; i < (int)options.count; i++) {
+    NSButton *btn = [NSButton buttonWithTitle:options[i] target:self action:@selector(handlePillToggleClicked:)];
+    [btn setButtonType:NSButtonTypeMomentaryPushIn];
+    [btn setBezelStyle:NSBezelStyleInline];
+
+    BOOL isSel = (i == selectedIndex);
+    if (isSel) {
+      [btn setContentTintColor:[NSColor whiteColor]];
+    } else {
+      [btn setContentTintColor:[NSColor colorWithWhite:0.6 alpha:1.0]];
+    }
+
+    objc_setAssociatedObject(btn, "pillControlName", name, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    objc_setAssociatedObject(btn, "pillIndex", @(i), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+    [hstack addArrangedSubview:btn];
+    [buttons addObject:btn];
+  }
+
+  [pillBox setContentView:hstack];
+  [pillBox.heightAnchor constraintEqualToConstant:32.0].active = YES;
+
+  if (!self.controlsByName) self.controlsByName = [NSMutableDictionary dictionary];
+  self.controlsByName[[name lowercaseString]] = pillBox;
+  objc_setAssociatedObject(pillBox, "pillButtons", buttons, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+  [self addControlToLayout:pillBox];
+  return pillBox;
+}
+
+- (void)handlePillToggleClicked:(NSButton *)sender {
+  NSString *name = objc_getAssociatedObject(sender, "pillControlName");
+  NSNumber *idxNum = objc_getAssociatedObject(sender, "pillIndex");
+  if (name && idxNum) {
+    int idx = [idxNum intValue];
+    [self setPillToggleSelected:idx forName:name];
+    vlang_dispatch_event(self.win_ptr, [name UTF8String], "change", [[NSString stringWithFormat:@"%d", idx] UTF8String]);
+  }
+}
+
+- (void)setPillToggleSelected:(int)selectedIndex forName:(NSString *)name {
+  NSBox *pillBox = (NSBox *)self.controlsByName[[name lowercaseString]];
+  if (pillBox) {
+    NSArray *buttons = objc_getAssociatedObject(pillBox, "pillButtons");
+    for (int i = 0; i < (int)buttons.count; i++) {
+      NSButton *btn = buttons[i];
+      if (i == selectedIndex) {
+        [btn setContentTintColor:[NSColor systemBlueColor]];
+      } else {
+        [btn setContentTintColor:[NSColor colorWithWhite:0.6 alpha:1.0]];
+      }
+    }
+  }
+}
+
+// 17. Color Swatch Panel Control
+- (NSView *)makeColorSwatchPanelWithName:(NSString *)name hexColors:(NSArray<NSString *> *)hexColors selectedColor:(NSString *)selectedColor {
+  NSBox *box = [[NSBox alloc] initWithFrame:NSZeroRect];
+  [box setBoxType:NSBoxCustom];
+  [box setCornerRadius:8.0];
+  [box setFillColor:[NSColor colorWithRed:0.12 green:0.14 blue:0.18 alpha:0.9]];
+  [box setBorderColor:[NSColor colorWithWhite:1.0 alpha:0.15]];
+
+  NSStackView *hstack = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [hstack setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+  [hstack setAlignment:NSLayoutAttributeCenterY];
+  [hstack setSpacing:8.0];
+  [hstack setEdgeInsets:NSEdgeInsetsMake(6, 8, 6, 8)];
+
+  NSMutableArray *swatches = [NSMutableArray array];
+
+  for (NSString *hex in hexColors) {
+    NSBox *swatch = [[NSBox alloc] initWithFrame:NSMakeRect(0, 0, 24, 24)];
+    [swatch setBoxType:NSBoxCustom];
+    [swatch setCornerRadius:12.0];
+    [swatch setFillColor:colorFromHexString(hex)];
+
+    BOOL isSel = [hex isEqualToString:selectedColor];
+    [swatch setBorderColor:isSel ? [NSColor whiteColor] : [NSColor clearColor]];
+
+    [swatch.widthAnchor constraintEqualToConstant:24].active = YES;
+    [swatch.heightAnchor constraintEqualToConstant:24].active = YES;
+
+    [hstack addArrangedSubview:swatch];
+    [swatches addObject:swatch];
+  }
+
+  [box setContentView:hstack];
+  [box.heightAnchor constraintEqualToConstant:38.0].active = YES;
+
+  if (!self.controlsByName) self.controlsByName = [NSMutableDictionary dictionary];
+  self.controlsByName[[name lowercaseString]] = box;
+
+  [self addControlToLayout:box];
+  return box;
+}
+
+- (void)setColorSwatchSelected:(NSString *)hexColor forName:(NSString *)name {
+  // Color swatch selection handler
+}
+
+// 18. Hotkey / Key Combo Badge Display Control
+- (NSView *)makeHotkeyBadgeWithName:(NSString *)name shortcutStr:(NSString *)shortcutStr description:(NSString *)description {
+  NSStackView *hstack = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [hstack setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+  [hstack setAlignment:NSLayoutAttributeCenterY];
+  [hstack setSpacing:10.0];
+
+  NSBox *keyBox = [[NSBox alloc] initWithFrame:NSZeroRect];
+  [keyBox setBoxType:NSBoxCustom];
+  [keyBox setCornerRadius:6.0];
+  [keyBox setFillColor:[NSColor colorWithRed:0.2 green:0.22 blue:0.26 alpha:1.0]];
+  [keyBox setBorderColor:[NSColor colorWithWhite:1.0 alpha:0.25]];
+
+  NSTextField *kLbl = [NSTextField labelWithString:shortcutStr ? shortcutStr : @"⌘K"];
+  [kLbl setFont:[NSFont boldSystemFontOfSize:11.0]];
+  [kLbl setTextColor:[NSColor whiteColor]];
+  [keyBox setContentView:kLbl];
+
+  NSTextField *dLbl = [NSTextField labelWithString:description ? description : @""];
+  [dLbl setFont:[NSFont systemFontOfSize:12.0]];
+  [dLbl setTextColor:[NSColor colorWithWhite:0.8 alpha:1.0]];
+
+  [hstack addArrangedSubview:keyBox];
+  [hstack addArrangedSubview:dLbl];
+
+  [hstack.heightAnchor constraintEqualToConstant:28.0].active = YES;
+
+  if (!self.controlsByName) self.controlsByName = [NSMutableDictionary dictionary];
+  self.controlsByName[[name lowercaseString]] = hstack;
+  objc_setAssociatedObject(hstack, "hotkeyLbl", kLbl, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(hstack, "hotkeyDescLbl", dLbl, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+  [self addControlToLayout:hstack];
+  return hstack;
+}
+
+- (void)setHotkeyBadgeShortcutForName:(NSString *)name shortcutStr:(NSString *)shortcutStr description:(NSString *)description {
+  NSStackView *hstack = (NSStackView *)self.controlsByName[[name lowercaseString]];
+  if (hstack) {
+    NSTextField *kLbl = objc_getAssociatedObject(hstack, "hotkeyLbl");
+    NSTextField *dLbl = objc_getAssociatedObject(hstack, "hotkeyDescLbl");
+    if (kLbl) [kLbl setStringValue:shortcutStr ? shortcutStr : @""];
+    if (dLbl) [dLbl setStringValue:description ? description : @""];
+  }
+}
+
 @end
+
 
 
 
@@ -9693,10 +10134,16 @@ void window_focus_control(main__WindowInfo *info, const char *name) {
   dispatch_async(dispatch_get_main_queue(), ^{
     NSView *view = [delegate viewForControlName:nsstring(name)];
     if (view) {
-      [delegate.window makeFirstResponder:view];
+      NSView *targetView = view;
+      ModernTextField *cmdTf = objc_getAssociatedObject(view, "cmdTextField");
+      if (cmdTf) {
+        targetView = cmdTf;
+      }
+      [delegate.window makeFirstResponder:targetView];
     }
   });
 }
+
 
 void window_set_placeholder_by_name(main__WindowInfo *info, const char *name, const char *text) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
@@ -15120,6 +15567,123 @@ void window_set_env_vars_data(main__WindowInfo *info, const char *name, const ch
   };
   if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
 }
+
+void *window_add_badge_button_control(main__WindowInfo *info, const char *name, const char *title, int count, const char *badge_color) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeBadgeButtonWithName:nsstring(name) title:nsstring(title) count:count badgeColor:nsstring(badge_color)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)control;
+}
+
+void window_set_badge_button_count(main__WindowInfo *info, const char *name, int count) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate setBadgeButtonCount:count forName:nsstring(name)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+void *window_add_command_palette_control(main__WindowInfo *info, const char *name, const char *placeholder, const char *shortcut_hint) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeCommandPaletteWithName:nsstring(name) placeholder:nsstring(placeholder) shortcutHint:nsstring(shortcut_hint)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)control;
+}
+
+void window_set_command_palette_text(main__WindowInfo *info, const char *name, const char *text) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate setCommandPaletteText:nsstring(text) forName:nsstring(name)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+void *window_add_status_banner_control(main__WindowInfo *info, const char *name, const char *title, const char *message, const char *style_type) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeStatusBannerWithName:nsstring(name) title:nsstring(title) message:nsstring(message) styleType:nsstring(style_type)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)control;
+}
+
+void window_set_status_banner_text(main__WindowInfo *info, const char *name, const char *title, const char *message, const char *style_type) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate setStatusBannerTextForName:nsstring(name) title:nsstring(title) message:nsstring(message) styleType:nsstring(style_type)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+void *window_add_pill_toggle_control(main__WindowInfo *info, const char *name, const char **options, int count, int selected_index) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSMutableArray *oArr = [NSMutableArray arrayWithCapacity:count];
+  for (int i = 0; i < count; i++) {
+    [oArr addObject:nsstring(options[i])];
+  }
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makePillToggleWithName:nsstring(name) options:oArr selectedIndex:selected_index];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)control;
+}
+
+void window_set_pill_toggle_selected(main__WindowInfo *info, const char *name, int selected_index) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate setPillToggleSelected:selected_index forName:nsstring(name)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+void *window_add_color_swatch_panel_control(main__WindowInfo *info, const char *name, const char **hex_colors, int count, const char *selected_color) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSMutableArray *cArr = [NSMutableArray arrayWithCapacity:count];
+  for (int i = 0; i < count; i++) {
+    [cArr addObject:nsstring(hex_colors[i])];
+  }
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeColorSwatchPanelWithName:nsstring(name) hexColors:cArr selectedColor:nsstring(selected_color)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)control;
+}
+
+void window_set_color_swatch_selected(main__WindowInfo *info, const char *name, const char *hex_color) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate setColorSwatchSelected:nsstring(hex_color) forName:nsstring(name)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+void *window_add_hotkey_badge_control(main__WindowInfo *info, const char *name, const char *shortcut_str, const char *description) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeHotkeyBadgeWithName:nsstring(name) shortcutStr:nsstring(shortcut_str) description:nsstring(description)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)control;
+}
+
+void window_set_hotkey_badge_shortcut(main__WindowInfo *info, const char *name, const char *shortcut_str, const char *description) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate setHotkeyBadgeShortcutForName:nsstring(name) shortcutStr:nsstring(shortcut_str) description:nsstring(description)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
 
 
 

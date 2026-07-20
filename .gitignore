@@ -29,4 +29,8 @@ modules/
 # Ignore build output folder
 dist/
 
+build_app
+build_demos
+list_windows
+
 practice.v

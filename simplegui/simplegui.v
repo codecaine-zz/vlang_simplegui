@@ -451,6 +451,20 @@ fn C.window_set_resource_monitor_metrics(&WindowInfo, &u8, int, int, int, int)
 fn C.window_add_env_vars_control(&WindowInfo, &u8, &u8, &&u8, &&u8, int) voidptr
 fn C.window_set_env_vars_data(&WindowInfo, &u8, &&u8, &&u8, int)
 
+fn C.window_add_badge_button_control(&WindowInfo, &u8, &u8, int, &u8) voidptr
+fn C.window_set_badge_button_count(&WindowInfo, &u8, int)
+fn C.window_add_command_palette_control(&WindowInfo, &u8, &u8, &u8) voidptr
+fn C.window_set_command_palette_text(&WindowInfo, &u8, &u8)
+fn C.window_add_status_banner_control(&WindowInfo, &u8, &u8, &u8, &u8) voidptr
+fn C.window_set_status_banner_text(&WindowInfo, &u8, &u8, &u8, &u8)
+fn C.window_add_pill_toggle_control(&WindowInfo, &u8, &&u8, int, int) voidptr
+fn C.window_set_pill_toggle_selected(&WindowInfo, &u8, int)
+fn C.window_add_color_swatch_panel_control(&WindowInfo, &u8, &&u8, int, &u8) voidptr
+fn C.window_set_color_swatch_selected(&WindowInfo, &u8, &u8)
+fn C.window_add_hotkey_badge_control(&WindowInfo, &u8, &u8, &u8) voidptr
+fn C.window_set_hotkey_badge_shortcut(&WindowInfo, &u8, &u8, &u8)
+
+
 
 
 
@@ -695,16 +709,76 @@ fn (win &SimpleWindow) find_handler(control_name string, event_name string) int 
 	return -1
 }
 
+// normalize_key_shortcut converts key shortcut strings (e.g. "⌘+⇧+P", "Cmd+Shift+P", "cmd+shift+p") into canonical form "cmd+shift+p".
+pub fn normalize_key_shortcut(input string) string {
+	if input == '' {
+		return ''
+	}
+	mut s := input.to_lower()
+	s = s.replace('⌘', 'cmd+')
+	s = s.replace('⇧', 'shift+')
+	s = s.replace('⌥', 'opt+')
+	s = s.replace('⌃', 'ctrl+')
+	s = s.replace('command', 'cmd')
+	s = s.replace('control', 'ctrl')
+	s = s.replace('option', 'opt')
+	s = s.replace('alt', 'opt')
+	s = s.replace(' ', '')
+
+	parts := s.split('+')
+	mut has_cmd := false
+	mut has_ctrl := false
+	mut has_opt := false
+	mut has_shift := false
+	mut key_parts := []string{}
+
+	for part in parts {
+		match part {
+			'cmd', 'meta' { has_cmd = true }
+			'ctrl' { has_ctrl = true }
+			'opt' { has_opt = true }
+			'shift' { has_shift = true }
+			'' {}
+			else { key_parts << part }
+		}
+	}
+
+	mut res := []string{}
+	if has_cmd { res << 'cmd' }
+	if has_ctrl { res << 'ctrl' }
+	if has_opt { res << 'opt' }
+	if has_shift { res << 'shift' }
+	if key_parts.len > 0 {
+		res << key_parts.join('+')
+	}
+
+	return res.join('+')
+}
+
 // find_handler_by_filter performs find handler by filter.
 fn (win &SimpleWindow) find_handler_by_filter(control_name string, event_name string, filter_value string) int {
+	norm_filter := if event_name == 'key' { normalize_key_shortcut(filter_value) } else { filter_value }
+	// First pass: exact filter match
 	for i, handler in win.handlers {
-		if handler.control_name == control_name && handler.event_name == event_name
-			&& (handler.filter_value == '' || handler.filter_value == filter_value) {
-			return i
+		if handler.control_name == control_name && handler.event_name == event_name {
+			h_filter := if event_name == 'key' { normalize_key_shortcut(handler.filter_value) } else { handler.filter_value }
+			if h_filter != '' && h_filter == norm_filter {
+				return i
+			}
+		}
+	}
+	// Second pass: wildcard match
+	for i, handler in win.handlers {
+		if handler.control_name == control_name && handler.event_name == event_name {
+			h_filter := if event_name == 'key' { normalize_key_shortcut(handler.filter_value) } else { handler.filter_value }
+			if h_filter == '' {
+				return i
+			}
 		}
 	}
 	return -1
 }
+
 
 // auto_name performs auto name.
 fn (win &SimpleWindow) auto_name(kind string) string {
@@ -3175,17 +3249,34 @@ pub fn (win &SimpleWindow) on_enter(name string, callback VoidEventCallback) &Si
 
 // on_key registers an event handler for on key events.
 pub fn (win &SimpleWindow) on_key(key string, callback StringEventCallback) &SimpleWindow {
+	norm_key := normalize_key_shortcut(key)
 	unsafe {
 		mut w := &SimpleWindow(win)
 		w.handlers << ControlEventHandler{
 			control_name: 'window'
 			event_name:   'key'
-			filter_value: key
+			filter_value: norm_key
 			string_cb:    callback
 		}
 	}
 	return win
 }
+
+// on_shortcut registers a global keyboard shortcut handler.
+pub fn (win &SimpleWindow) on_shortcut(shortcut string, callback VoidEventCallback) &SimpleWindow {
+	norm_shortcut := normalize_key_shortcut(shortcut)
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.handlers << ControlEventHandler{
+			control_name: 'window'
+			event_name:   'key'
+			filter_value: norm_shortcut
+			void_cb:      callback
+		}
+	}
+	return win
+}
+
 
 // on_close registers an event handler for on close events.
 pub fn (win &SimpleWindow) on_close(callback VoidEventCallback) &SimpleWindow {
@@ -4043,6 +4134,26 @@ pub fn (win &SimpleWindow) on_select_item(name string, callback StringEventCallb
 	}
 	return win
 }
+
+// on_select registers a callback for text selection events.
+pub fn (win &SimpleWindow) on_select(name string, callback StringEventCallback) &SimpleWindow {
+	idx := win.find_handler(name, 'select')
+	mut handler := ControlEventHandler{
+		control_name: name
+		event_name:   'select'
+		string_cb:    callback
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		if idx >= 0 {
+			w.handlers[idx] = handler
+		} else {
+			w.handlers << handler
+		}
+	}
+	return win
+}
+
 
 // dispatch_event performs dispatch event.
 pub fn (win &SimpleWindow) dispatch_event(name string, event_name string, value string) bool {
@@ -7842,6 +7953,212 @@ pub fn (win &SimpleWindow) set_env_vars(name string, keys []string, values []str
 	}
 	return win
 }
+
+// add_badge_button adds an action button with an attached notification counter badge.
+pub fn (win &SimpleWindow) add_badge_button(name string, title string, count int, badge_color string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('badge_button')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name: real_name
+			kind: 'badge_button'
+			value: title
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_badge_button_control(win.window_info, real_name.str, title.str, count, badge_color.str)
+	}
+	return win
+}
+
+// badge_button adds an auto-named action button with a badge counter.
+pub fn (win &SimpleWindow) badge_button(title string, count int, badge_color string) &SimpleWindow {
+	return win.add_badge_button('', title, count, badge_color)
+}
+
+// set_badge_button_count updates the counter number on badge button widget.
+pub fn (win &SimpleWindow) set_badge_button_count(name string, count int) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_badge_button_count(win.window_info, name.str, count)
+	}
+	return win
+}
+
+// add_command_palette adds a search / command palette bar with search icon & shortcut hint.
+pub fn (win &SimpleWindow) add_command_palette(name string, placeholder string, shortcut_hint string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('command_palette')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name: real_name
+			kind: 'command_palette'
+			value: placeholder
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_command_palette_control(win.window_info, real_name.str, placeholder.str, shortcut_hint.str)
+	}
+	return win
+}
+
+// command_palette adds an auto-named command palette search bar.
+pub fn (win &SimpleWindow) command_palette(placeholder string, shortcut_hint string) &SimpleWindow {
+	return win.add_command_palette('', placeholder, shortcut_hint)
+}
+
+// set_command_palette_text updates query text in command palette bar.
+pub fn (win &SimpleWindow) set_command_palette_text(name string, text string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_command_palette_text(win.window_info, name.str, text.str)
+	}
+	return win
+}
+
+// add_status_banner adds an alert message strip banner with icon and accent border.
+pub fn (win &SimpleWindow) add_status_banner(name string, title string, message string, style_type string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('status_banner')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name: real_name
+			kind: 'status_banner'
+			value: title
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_status_banner_control(win.window_info, real_name.str, title.str, message.str, style_type.str)
+	}
+	return win
+}
+
+// status_banner adds an auto-named status banner alert strip.
+pub fn (win &SimpleWindow) status_banner(title string, message string, style_type string) &SimpleWindow {
+	return win.add_status_banner('', title, message, style_type)
+}
+
+// set_status_banner updates title and message in status banner alert strip.
+pub fn (win &SimpleWindow) set_status_banner(name string, title string, message string, style_type string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_status_banner_text(win.window_info, name.str, title.str, message.str, style_type.str)
+	}
+	return win
+}
+
+// add_pill_toggle adds a rounded pill segment option toggle bar.
+pub fn (win &SimpleWindow) add_pill_toggle(name string, options []string, selected_index int) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('pill_toggle')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name: real_name
+			kind: 'pill_toggle'
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		mut c_opts := []&u8{cap: options.len}
+		for o in options {
+			c_opts << o.str
+		}
+		C.window_add_pill_toggle_control(win.window_info, real_name.str, c_opts.data, options.len, selected_index)
+	}
+	return win
+}
+
+// pill_toggle adds an auto-named pill segment option toggle bar.
+pub fn (win &SimpleWindow) pill_toggle(options []string, selected_index int) &SimpleWindow {
+	return win.add_pill_toggle('', options, selected_index)
+}
+
+// set_pill_toggle_selected updates active selected option index in pill toggle bar.
+pub fn (win &SimpleWindow) set_pill_toggle_selected(name string, selected_index int) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_pill_toggle_selected(win.window_info, name.str, selected_index)
+	}
+	return win
+}
+
+// add_color_swatch_panel adds a palette panel with circular color swatches.
+pub fn (win &SimpleWindow) add_color_swatch_panel(name string, hex_colors []string, selected_color string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('color_swatch_panel')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name: real_name
+			kind: 'color_swatch_panel'
+			value: selected_color
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		mut c_hex := []&u8{cap: hex_colors.len}
+		for h in hex_colors {
+			c_hex << h.str
+		}
+		C.window_add_color_swatch_panel_control(win.window_info, real_name.str, c_hex.data, hex_colors.len, selected_color.str)
+	}
+	return win
+}
+
+// color_swatch_panel adds an auto-named color swatch palette panel.
+pub fn (win &SimpleWindow) color_swatch_panel(hex_colors []string, selected_color string) &SimpleWindow {
+	return win.add_color_swatch_panel('', hex_colors, selected_color)
+}
+
+// set_color_swatch_selected updates selected color hex in swatch panel.
+pub fn (win &SimpleWindow) set_color_swatch_selected(name string, hex_color string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_color_swatch_selected(win.window_info, name.str, hex_color.str)
+	}
+	return win
+}
+
+// add_hotkey_badge adds a macOS metallic keycap hotkey display badge with description.
+pub fn (win &SimpleWindow) add_hotkey_badge(name string, shortcut_str string, description string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('hotkey_badge')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name: real_name
+			kind: 'hotkey_badge'
+			value: shortcut_str
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_hotkey_badge_control(win.window_info, real_name.str, shortcut_str.str, description.str)
+	}
+	return win
+}
+
+// hotkey_badge adds an auto-named hotkey badge display.
+pub fn (win &SimpleWindow) hotkey_badge(shortcut_str string, description string) &SimpleWindow {
+	return win.add_hotkey_badge('', shortcut_str, description)
+}
+
+// set_hotkey_badge_shortcut updates keyboard shortcut string and description in hotkey badge.
+pub fn (win &SimpleWindow) set_hotkey_badge_shortcut(name string, shortcut_str string, description string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_hotkey_badge_shortcut(win.window_info, name.str, shortcut_str.str, description.str)
+	}
+	return win
+}
+
 
 
 

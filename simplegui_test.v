@@ -2318,6 +2318,101 @@ fn test_high_utility_controls() {
 	win.set_key_value_card_data('card_1', ['Status', 'Uptime'], ['Healthy', '100%'])
 }
 
+fn test_developer_inspection_controls() {
+	mut win := simplegui.new_simple_window('Developer Inspection Controls Test', 800, 600)
+
+	// 1. Diff View
+	win.add_diff_view('diff_1', 'line 1\nline 2', 'line 1\nline 2 updated', 120)
+	assert win.has_control('diff_1') == true
+	win.set_diff_view('diff_1', 'old', 'new')
+
+	// 2. JSON Tree
+	win.add_json_tree('json_1', '{"key": "value"}', 100)
+	assert win.has_control('json_1') == true
+	win.set_json_tree('json_1', '{"updated": true}')
+
+	// 3. HTTP Request Card
+	win.add_http_request_card('http_1', 'GET', 'https://api.example.com', 200, 45)
+	assert win.has_control('http_1') == true
+	win.set_http_request_card('http_1', 'POST', 'https://api.example.com/v2', 201, 80)
+
+	// 4. Terminal View
+	win.add_terminal_view('term_1', '$ echo hello', 100)
+	assert win.has_control('term_1') == true
+	win.append_terminal_line('term_1', 'hello', 0)
+	win.clear_terminal('term_1')
+
+	// 5. Resource Monitor
+	win.add_resource_monitor('res_1', 25, 50, 10, 1024)
+	assert win.has_control('res_1') == true
+	win.set_resource_monitor('res_1', 80, 90, 40, 2048)
+
+	// 6. Env Vars
+	win.add_env_vars('env_1', 'App Config', ['PORT', 'ENV'], ['8080', 'prod'])
+	assert win.has_control('env_1') == true
+	win.set_env_vars('env_1', ['PORT'], ['9090'])
+}
+
+fn test_new_interactive_widgets() {
+	mut win := simplegui.new_simple_window('New Interactive Widgets Test', 800, 600)
+
+	// 1. Badge Button
+	win.add_badge_button('badge_btn', 'Notifications', 3, '#ff0000')
+	assert win.has_control('badge_btn') == true
+	win.set_badge_button_count('badge_btn', 10)
+
+	// 2. Command Palette
+	win.add_command_palette('cmd_pal', 'Search...', 'Cmd+K')
+	assert win.has_control('cmd_pal') == true
+	win.set_command_palette_text('cmd_pal', 'open file')
+
+	// 3. Status Banner
+	win.add_status_banner('stat_ban', 'Alert', 'All good', 'info')
+	assert win.has_control('stat_ban') == true
+	win.set_status_banner('stat_ban', 'Warning', 'Check logs', 'warning')
+
+	// 4. Pill Toggle
+	win.add_pill_toggle('pill_tog', ['Option A', 'Option B'], 0)
+	assert win.has_control('pill_tog') == true
+	win.set_pill_toggle_selected('pill_tog', 1)
+
+	// 5. Color Swatch Panel
+	win.add_color_swatch_panel('swatches', ['#ff0000', '#00ff00'], '#ff0000')
+	assert win.has_control('swatches') == true
+	win.set_color_swatch_selected('swatches', '#00ff00')
+
+	// 6. Hotkey Badge
+	win.add_hotkey_badge('hotkey', 'Cmd+P', 'Print')
+	assert win.has_control('hotkey') == true
+	win.set_hotkey_badge_shortcut('hotkey', 'Cmd+S', 'Save')
+}
+
+fn test_key_shortcut_normalization_and_handling() {
+	// Test shortcut string normalization across representation styles
+	assert simplegui.normalize_key_shortcut('cmd+shift+p') == 'cmd+shift+p'
+	assert simplegui.normalize_key_shortcut('Cmd+Shift+P') == 'cmd+shift+p'
+	assert simplegui.normalize_key_shortcut('⌘+⇧+P') == 'cmd+shift+p'
+	assert simplegui.normalize_key_shortcut('⌘⇧P') == 'cmd+shift+p'
+	assert simplegui.normalize_key_shortcut('Shift+Cmd+P') == 'cmd+shift+p'
+	assert simplegui.normalize_key_shortcut('⌘P') == 'cmd+p'
+
+	mut win := simplegui.new_simple_window('Shortcut Test', 200, 200)
+	win.add_label('status_lbl', 'initial')
+
+	// Register with unicode symbols
+	win.on_shortcut('⌘+⇧+P', fn (mut w simplegui.SimpleWindow) {
+		w.set_text('status_lbl', 'triggered')
+	})
+
+	// Dispatch with canonical format
+	handled := win.dispatch_event('window', 'key', 'cmd+shift+p')
+	assert handled == true
+	assert win.get_text('status_lbl') == 'triggered'
+}
+
+
+
+
 
 
 

@@ -2245,3 +2245,22 @@ Rows are tracked automatically for every table, so you can manage them increment
 - `simplegui.speak_with_voice(text string, voice string)` speaks text out loud using a specific macOS voice name (e.g. `"Samantha"`, `"Alex"`, `"Fred"`).
 - `simplegui.toggle_dark_mode()` toggles macOS system appearance mode between Light and Dark.
 
+### Developer Inspection & Interactive UI Controls
+
+- `win.add_diff_view(name, old_code, new_code, height)` / `win.set_diff_view(name, old_code, new_code)`: Renders a unified side-by-side code diff comparison view with syntax highlighting and added (`+` green) / removed (`-` red) line indicators.
+- `win.add_json_tree(name, json_str, height)` / `win.set_json_tree(name, json_str)`: Monospaced structured JSON data viewer with syntax highlighting and text selection event support.
+- `win.add_http_request_card(name, method, url, status_code, response_ms)` / `win.set_http_request_card(name, method, url, status_code, response_ms)`: Visual API request card component with HTTP method badge, status code label, and latency telemetry.
+- `win.add_terminal_view(name, initial_command, height)` / `win.append_terminal_line(name, text, style)` / `win.clear_terminal(name)`: Monospaced terminal / shell output log emulator widget with color-coded line styles (normal, info, error, success).
+- `win.add_resource_monitor(name, cpu, ram, disk, net_kbps)` / `win.set_resource_monitor(name, cpu, ram, disk, net_kbps)`: Real-time telemetry monitoring component showing CPU, Memory, Disk usage percentages and network throughput.
+- `win.add_env_vars(name, title, keys, values)` / `win.set_env_vars(name, keys, values)`: Monospaced key-value environment and configuration variables editor card.
+- `win.add_badge_button(name, title, count, badge_color)` / `win.set_badge_button_count(name, count)`: Action button widget featuring an attached notification counter badge pill.
+- `win.add_command_palette(name, placeholder, shortcut_hint)` / `win.set_command_palette_text(name, text)`: Search / command palette bar with magnifying glass icon and keyboard shortcut hint badge.
+- `win.add_status_banner(name, title, message, style_type)` / `win.set_status_banner(name, title, message, style_type)`: Notification alert banner strip with accent border and status icon (`info`, `success`, `warning`, `error`).
+- `win.add_pill_toggle(name, options, selected_index)` / `win.set_pill_toggle_selected(name, index)`: Rounded pill segment option toggle bar for mode switching.
+- `win.add_color_swatch_panel(name, hex_colors, selected_color)` / `win.set_color_swatch_selected(name, hex_color)`: Design system palette panel with circular color swatch selection.
+- `win.add_hotkey_badge(name, shortcut_str, description)` / `win.set_hotkey_badge_shortcut(name, shortcut_str, description)`: macOS metallic keycap hotkey display badge paired with description text.
+- `win.on_shortcut(shortcut_str, callback)`: Registers a global keyboard shortcut handler using flexible formats (e.g. `'cmd+shift+p'`, `'Cmd+Shift+P'`, `'⌘+⇧+P'`, `'⌘K'`). Automatically normalizes modifier tokens and suppresses standard unhandled alert beeps when triggered.
+- `simplegui.normalize_key_shortcut(input)`: Utility function converting shortcut notation variants into canonical format (`cmd+shift+p`).
+
+
+
