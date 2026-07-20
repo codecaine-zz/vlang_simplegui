@@ -195,6 +195,68 @@ extern void vlang_dispatch_event(void *win_ptr, const char *name, const char *ev
 }
 @end
 
+@interface GridContainerView : NSView
+@property (nonatomic, assign) NSInteger columns;
+@property (nonatomic, assign) CGFloat spacing;
+@property (nonatomic, strong) NSStackView *verticalStack;
+@property (nonatomic, strong) NSMutableArray<NSStackView *> *rowStacks;
+@property (nonatomic, assign) NSInteger currentChildCount;
+- (instancetype)initWithColumns:(NSInteger)cols spacing:(CGFloat)spc;
+- (void)addControlView:(NSView *)view;
+@end
+
+@implementation GridContainerView
+- (instancetype)initWithColumns:(NSInteger)cols spacing:(CGFloat)spc {
+  self = [super initWithFrame:NSZeroRect];
+  if (self) {
+    _columns = (cols > 0) ? cols : 1;
+    _spacing = spc;
+    _currentChildCount = 0;
+    _rowStacks = [NSMutableArray array];
+    
+    [self setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [self setWantsLayer:YES];
+    
+    _verticalStack = [[NSStackView alloc] init];
+    [_verticalStack setOrientation:NSUserInterfaceLayoutOrientationVertical];
+    [_verticalStack setAlignment:NSLayoutAttributeLeading];
+    [_verticalStack setDistribution:NSStackViewDistributionFill];
+    [_verticalStack setSpacing:spc];
+    [_verticalStack setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [_verticalStack setWantsLayer:YES];
+    
+    [self addSubview:_verticalStack];
+    [NSLayoutConstraint activateConstraints:@[
+      [_verticalStack.topAnchor constraintEqualToAnchor:self.topAnchor],
+      [_verticalStack.bottomAnchor constraintEqualToAnchor:self.bottomAnchor],
+      [_verticalStack.leadingAnchor constraintEqualToAnchor:self.leadingAnchor],
+      [_verticalStack.trailingAnchor constraintEqualToAnchor:self.trailingAnchor]
+    ]];
+  }
+  return self;
+}
+
+- (void)addControlView:(NSView *)view {
+  NSStackView *currentRowStack = nil;
+  if (self.currentChildCount % self.columns == 0) {
+    currentRowStack = [[NSStackView alloc] init];
+    [currentRowStack setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+    [currentRowStack setAlignment:NSLayoutAttributeCenterY];
+    [currentRowStack setDistribution:NSStackViewDistributionFillEqually];
+    [currentRowStack setSpacing:self.spacing];
+    [currentRowStack setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [currentRowStack setWantsLayer:YES];
+    [self.verticalStack addArrangedSubview:currentRowStack];
+    [self.rowStacks addObject:currentRowStack];
+    [currentRowStack.widthAnchor constraintEqualToAnchor:self.verticalStack.widthAnchor].active = YES;
+  } else {
+    currentRowStack = [self.rowStacks lastObject];
+  }
+  [currentRowStack addArrangedSubview:view];
+  self.currentChildCount++;
+}
+@end
+
 
 @interface DropZoneView : NSBox
 @property (nonatomic, assign) void *win_ptr;
@@ -593,6 +655,14 @@ extern void vlang_dispatch_event(void *win_ptr, const char *name, const char *ev
 @property (nonatomic, assign) int activeSplitPaneIndex;
 @property (nonatomic, strong) NSMutableDictionary *collectionItemsByName;
 @property (nonatomic, strong) NSStackView *currentGlassBoxStack;
+@property (nonatomic, strong) NSMutableArray<NSView *> *containerStack;
+
+- (void)beginGridWithName:(NSString *)name columns:(int)columns spacing:(int)spacing;
+- (void)endGrid;
+- (void)beginFlexBoxWithName:(NSString *)name direction:(NSString *)direction justify:(NSString *)justify align:(NSString *)align;
+- (void)endFlexBox;
+- (void)setControlAlignment:(NSString *)alignment forName:(NSString *)name;
+- (void)setControlExpandFill:(BOOL)expand forName:(NSString *)name;
 
 - (void)beginSplitViewWithName:(NSString *)name vertical:(BOOL)vertical;
 - (void)splitViewNextPane;
@@ -2071,7 +2141,16 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
 }
 
 - (void)addControlToLayout:(NSView *)view {
-  if (self.currentRowStack) {
+  if (self.containerStack && self.containerStack.count > 0) {
+    NSView *currentContainer = [self.containerStack lastObject];
+    if ([currentContainer isKindOfClass:[NSStackView class]]) {
+      [(NSStackView *)currentContainer addArrangedSubview:view];
+    } else if ([currentContainer isKindOfClass:[GridContainerView class]]) {
+      [(GridContainerView *)currentContainer addControlView:view];
+    } else {
+      [currentContainer addSubview:view];
+    }
+  } else if (self.currentRowStack) {
     [self.currentRowStack addArrangedSubview:view];
   } else if (self.currentGlassBoxStack) {
     [self.currentGlassBoxStack addArrangedSubview:view];
@@ -2083,6 +2162,9 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
 }
 
 - (void)beginRowWithName:(NSString *)name {
+  if (!self.containerStack) {
+    self.containerStack = [NSMutableArray array];
+  }
   NSStackView *row = [[NSStackView alloc] init];
   [row setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
   [row setAlignment:NSLayoutAttributeCenterY];
@@ -2092,12 +2174,145 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [row setTranslatesAutoresizingMaskIntoConstraints:NO];
   
   [self addControlToLayout:row];
+  [self.containerStack addObject:row];
   self.currentRowStack = row;
   self.controlsByName[[name lowercaseString]] = row;
 }
 
 - (void)endRow {
+  if (self.containerStack && self.containerStack.count > 0) {
+    [self.containerStack removeLastObject];
+  }
   self.currentRowStack = nil;
+}
+
+- (void)beginGridWithName:(NSString *)name columns:(int)columns spacing:(int)spacing {
+  if (!self.containerStack) {
+    self.containerStack = [NSMutableArray array];
+  }
+  GridContainerView *grid = [[GridContainerView alloc] initWithColumns:columns spacing:(CGFloat)spacing];
+  [self addControlToLayout:grid];
+  
+  NSView *parentContainer = (self.containerStack && self.containerStack.count > 0) ? [self.containerStack lastObject] : self.mainStackView;
+  if (parentContainer) {
+    [grid.widthAnchor constraintEqualToAnchor:parentContainer.widthAnchor].active = YES;
+  }
+  
+  [self.containerStack addObject:grid];
+  self.controlsByName[[name lowercaseString]] = grid;
+}
+
+- (void)endGrid {
+  if (self.containerStack && self.containerStack.count > 0) {
+    [self.containerStack removeLastObject];
+  }
+}
+
+- (void)beginFlexBoxWithName:(NSString *)name direction:(NSString *)direction justify:(NSString *)justify align:(NSString *)align {
+  if (!self.containerStack) {
+    self.containerStack = [NSMutableArray array];
+  }
+  NSStackView *flex = [[NSStackView alloc] init];
+  [flex setWantsLayer:YES];
+  [flex setTranslatesAutoresizingMaskIntoConstraints:NO];
+  
+  NSString *dirStr = [direction lowercaseString];
+  if ([dirStr isEqualToString:@"column"] || [dirStr isEqualToString:@"vertical"]) {
+    [flex setOrientation:NSUserInterfaceLayoutOrientationVertical];
+  } else {
+    [flex setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+  }
+  
+  NSString *justStr = [justify lowercaseString];
+  if ([justStr isEqualToString:@"center"]) {
+    [flex setDistribution:NSStackViewDistributionGravityAreas];
+  } else if ([justStr isEqualToString:@"space_between"] || [justStr isEqualToString:@"space-between"]) {
+    [flex setDistribution:NSStackViewDistributionEqualSpacing];
+  } else if ([justStr isEqualToString:@"space_around"] || [justStr isEqualToString:@"space_evenly"] || [justStr isEqualToString:@"space-around"]) {
+    [flex setDistribution:NSStackViewDistributionEqualCentering];
+  } else if ([justStr isEqualToString:@"fill"] || [justStr isEqualToString:@"stretch"] || [justStr isEqualToString:@"fill_equally"]) {
+    [flex setDistribution:NSStackViewDistributionFillEqually];
+  } else {
+    [flex setDistribution:NSStackViewDistributionFill];
+  }
+  
+  NSString *alignStr = [align lowercaseString];
+  if ([dirStr isEqualToString:@"column"] || [dirStr isEqualToString:@"vertical"]) {
+    if ([alignStr isEqualToString:@"center"]) {
+      [flex setAlignment:NSLayoutAttributeCenterX];
+    } else if ([alignStr isEqualToString:@"end"] || [alignStr isEqualToString:@"right"] || [alignStr isEqualToString:@"trailing"]) {
+      [flex setAlignment:NSLayoutAttributeTrailing];
+    } else {
+      [flex setAlignment:NSLayoutAttributeLeading];
+    }
+  } else {
+    if ([alignStr isEqualToString:@"center"]) {
+      [flex setAlignment:NSLayoutAttributeCenterY];
+    } else if ([alignStr isEqualToString:@"end"] || [alignStr isEqualToString:@"bottom"] || [alignStr isEqualToString:@"trailing"]) {
+      [flex setAlignment:NSLayoutAttributeBottom];
+    } else {
+      [flex setAlignment:NSLayoutAttributeTop];
+    }
+  }
+  
+  [flex setSpacing:12.0];
+  [self addControlToLayout:flex];
+  
+  NSView *parentContainer = (self.containerStack && self.containerStack.count > 0) ? [self.containerStack lastObject] : self.mainStackView;
+  if (parentContainer) {
+    [flex.widthAnchor constraintEqualToAnchor:parentContainer.widthAnchor].active = YES;
+  }
+  
+  [self.containerStack addObject:flex];
+  self.controlsByName[[name lowercaseString]] = flex;
+}
+
+- (void)endFlexBox {
+  if (self.containerStack && self.containerStack.count > 0) {
+    [self.containerStack removeLastObject];
+  }
+}
+
+- (void)setControlAlignment:(NSString *)alignment forName:(NSString *)name {
+  NSView *view = self.controlsByName[[name lowercaseString]];
+  if (!view) return;
+  
+  NSString *alignStr = [alignment lowercaseString];
+  if ([view isKindOfClass:[NSTextField class]]) {
+    NSTextField *tf = (NSTextField *)view;
+    if ([alignStr rangeOfString:@"center"].location != NSNotFound) {
+      [tf setAlignment:NSTextAlignmentCenter];
+    } else if ([alignStr rangeOfString:@"right"].location != NSNotFound || [alignStr rangeOfString:@"trailing"].location != NSNotFound) {
+      [tf setAlignment:NSTextAlignmentRight];
+    } else {
+      [tf setAlignment:NSTextAlignmentLeft];
+    }
+  } else if ([view respondsToSelector:@selector(setAlignment:)]) {
+    if ([alignStr rangeOfString:@"center"].location != NSNotFound) {
+      [(id)view setAlignment:NSTextAlignmentCenter];
+    } else if ([alignStr rangeOfString:@"right"].location != NSNotFound || [alignStr rangeOfString:@"trailing"].location != NSNotFound) {
+      [(id)view setAlignment:NSTextAlignmentRight];
+    } else {
+      [(id)view setAlignment:NSTextAlignmentLeft];
+    }
+  }
+}
+
+- (void)setControlExpandFill:(BOOL)expand forName:(NSString *)name {
+  NSView *view = self.controlsByName[[name lowercaseString]];
+  if (!view) return;
+  
+  if (expand) {
+    [view setContentHuggingPriority:1.0 forOrientation:NSLayoutConstraintOrientationHorizontal];
+    [view setContentHuggingPriority:1.0 forOrientation:NSLayoutConstraintOrientationVertical];
+    [view setContentCompressionResistancePriority:NSLayoutPriorityDefaultLow forOrientation:NSLayoutConstraintOrientationHorizontal];
+    if ([view.superview isKindOfClass:[NSStackView class]]) {
+      NSStackView *parentStack = (NSStackView *)view.superview;
+      if (parentStack.orientation == NSUserInterfaceLayoutOrientationHorizontal) {
+        [parentStack setVisibilityPriority:NSStackViewVisibilityPriorityMustHold forView:view];
+      }
+    }
+  }
 }
 
 // Control creation methods
@@ -11553,5 +11768,48 @@ void window_set_wizard_stepper_step(main__WindowInfo *info, const char *name, in
     [delegate setWizardStepperStep:step forName:nsstring(name)];
   });
 }
+
+void window_begin_grid(main__WindowInfo *info, const char *name, int columns, int spacing) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [delegate beginGridWithName:nsstring(name) columns:columns spacing:spacing];
+  });
+}
+
+void window_end_grid(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [delegate endGrid];
+  });
+}
+
+void window_begin_flex_box(main__WindowInfo *info, const char *name, const char *direction, const char *justify, const char *align) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [delegate beginFlexBoxWithName:nsstring(name) direction:nsstring(direction) justify:nsstring(justify) align:nsstring(align)];
+  });
+}
+
+void window_end_flex_box(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [delegate endFlexBox];
+  });
+}
+
+void window_set_control_alignment_by_name(main__WindowInfo *info, const char *name, const char *alignment) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [delegate setControlAlignment:nsstring(alignment) forName:nsstring(name)];
+  });
+}
+
+void window_set_control_expand_fill_by_name(main__WindowInfo *info, const char *name, int expand) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [delegate setControlExpandFill:(expand != 0) forName:nsstring(name)];
+  });
+}
+
 
 

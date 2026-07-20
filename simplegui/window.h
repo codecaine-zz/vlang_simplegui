@@ -69,9 +69,15 @@ void *window_add_date_time_picker_control(main__WindowInfo *info, const char *na
 void *window_add_mode_control_control(main__WindowInfo *info, const char *name, const char *selected);
 void *window_add_progress_indicator_control(main__WindowInfo *info, const char *name, int value);
 
-// Layout row groupings
+// Layout row & container groupings
 void window_begin_row(main__WindowInfo *info, const char *name);
 void window_end_row(main__WindowInfo *info);
+void window_begin_grid(main__WindowInfo *info, const char *name, int columns, int spacing);
+void window_end_grid(main__WindowInfo *info);
+void window_begin_flex_box(main__WindowInfo *info, const char *name, const char *direction, const char *justify, const char *align);
+void window_end_flex_box(main__WindowInfo *info);
+void window_set_control_alignment_by_name(main__WindowInfo *info, const char *name, const char *alignment);
+void window_set_control_expand_fill_by_name(main__WindowInfo *info, const char *name, int expand);
 
 // Popups and Dialogs
 void window_show_alert(main__WindowInfo *info, const char *title, const char *message);

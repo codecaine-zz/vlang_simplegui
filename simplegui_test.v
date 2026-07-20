@@ -2152,6 +2152,45 @@ fn test_extended_stdlib_apis() {
 	assert win.rand_weighted_choice_ints(weighted_ints, int_weights) == 999
 }
 
+fn test_advanced_layout_grid_flex_and_alignment() {
+	mut win := simplegui.SimpleWindow{}
+
+	// Grid closure container
+	win.grid('user_grid', 2, 12, fn (mut w simplegui.SimpleWindow) {
+		w.add_input('first_name', 'Grace')
+			.align_left()
+			.expand_fill()
+		w.add_input('last_name', 'Hopper')
+			.align_right()
+	})
+
+	// Flexbox closure container
+	win.flex_box('toolbar_flex', 'row', 'space_between', 'center', fn (mut w simplegui.SimpleWindow) {
+		w.add_button('btn_left', 'Back')
+			.align_center()
+		w.add_button('btn_right', 'Next')
+	})
+
+	assert win.has_control('first_name') == true
+	assert win.has_control('last_name') == true
+	assert win.has_control('btn_left') == true
+	assert win.has_control('btn_right') == true
+
+	assert win.get_control_alignment('first_name') == 'left'
+	assert win.get_control_alignment('last_name') == 'right'
+	assert win.get_control_alignment('btn_left') == 'center'
+
+	assert win.get_control_expand_fill('first_name') == true
+	assert win.get_control_expand_fill('last_name') == false
+
+	win.set_control_alignment('last_name', 'center')
+	assert win.get_control_alignment('last_name') == 'center'
+
+	win.set_control_expand_fill('last_name', true)
+	assert win.get_control_expand_fill('last_name') == true
+}
+
+
 
 
 

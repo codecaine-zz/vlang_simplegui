@@ -342,6 +342,46 @@ Starts a horizontal layout container. Any subsequent widgets added will align ho
 
 Closes the active horizontal container. Subsequent controls return to vertical stacking.
 
+### `win.begin_grid(name string, columns int, spacing int) &SimpleWindow`
+
+Starts a CSS-like multi-column grid layout container with specified column count and item spacing. Automatically wraps controls across columns without manual row nesting.
+
+### `win.end_grid() &SimpleWindow`
+
+Closes the active multi-column grid layout container.
+
+### `win.grid(name string, columns int, spacing int, callback VoidEventCallback) &SimpleWindow`
+
+Closure-based grid layout container helper. Executes the callback closure and automatically ends the grid layout.
+
+### `win.begin_flex_box(name string, direction string, justify string, align string) &SimpleWindow`
+
+Starts a Flexbox layout container with specified `direction` (`'row'` | `'column'`), main-axis `justify` (`'start'` | `'center'` | `'end'` | `'space_between'` | `'space_around'` | `'fill'`), and cross-axis `align` (`'start'` | `'center'` | `'end'` | `'stretch'`).
+
+### `win.end_flex_box() &SimpleWindow`
+
+Closes the active flexbox container.
+
+### `win.flex_box(name string, direction string, justify string, align string, callback VoidEventCallback) &SimpleWindow`
+
+Closure-based flexbox container helper. Executes the callback closure and automatically ends the flexbox layout.
+
+### `win.align_left() &SimpleWindow` / `win.align_center()` / `win.align_right()` / `win.align_top()` / `win.align_bottom()`
+
+Fluent builder alignment modifiers for explicit control placement within containers. Attaches to the last created control.
+
+### `win.expand_fill() &SimpleWindow`
+
+Fluent builder modifier that configures the last created control to expand and fill available container space.
+
+### `win.set_control_alignment(name string, alignment string) &SimpleWindow` / `win.get_control_alignment(name string) string`
+
+Sets or retrieves explicit alignment (`'left'`, `'center'`, `'right'`, `'top'`, `'bottom'`) for a named control.
+
+### `win.set_control_expand_fill(name string, expand bool) &SimpleWindow` / `win.get_control_expand_fill(name string) bool`
+
+Enables or checks fill expansion configuration for a named control in its container.
+
 ### `win.add_action_row(actions map[string]VoidEventCallback) &SimpleWindow`
 
 Lays out a set of buttons horizontally in a single call, binding each to its respective click event callback.

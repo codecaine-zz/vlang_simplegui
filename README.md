@@ -41,6 +41,11 @@ The goal is a simple, high-abstraction GUI layer that feels familiar to anyone u
 
 ## Features
 
+- **Advanced Layout & Auto-Sizing Capabilities**:
+  - CSS-like Multi-Column Grid layout containers (`win.begin_grid` / `win.end_grid` and `win.grid(...)`) for responsive multi-column forms without manual row nesting.
+  - Flexbox containers (`win.begin_flex_box` / `win.end_flex_box` and `win.flex_box(...)`) supporting `row`/`column` directions, main-axis justification (`start`, `center`, `end`, `space_between`, `space_around`, `fill`), and cross-axis alignment (`start`, `center`, `end`, `stretch`).
+  - Native Cocoa `containerStack` backend supporting arbitrary nested container hierarchies (Grid inside Flexbox inside Cards).
+  - Explicit control alignment modifiers (`.align_left()`, `.align_center()`, `.align_right()`, `.align_top()`, `.align_bottom()`) and fill expansion (`.expand_fill()`).
 - **40+ Native macOS Controls**:
   - **Standard Controls**: Labels, text inputs, password fields, scrollable text areas, push buttons, checkboxes, radio groups, dropdowns, segmented controls, search fields, sliders, steppers, progress bars, and image boxes.
   - **Rich macOS Widgets**: `NSComboBox` (editable combo box with suggestions), `NSLevelIndicator` & Star Ratings, `NSTokenField` (bubble tag editor), `NSPathControl` (interactive breadcrumb path navigator), and Activity Loading Spinners.
@@ -556,6 +561,7 @@ v run .
 | [layout_struct_reflection.v](demos/layout_struct_reflection.v)           | Auto-generating forms from structs using compile-time reflection      |
 | [layout_responsive_constraints.v](demos/layout_responsive_constraints.v) | Responsive auto-layout scaling vs fixed constraints                   |
 | [layout_events_mini_demo.v](demos/layout_events_mini_demo.v)             | Compact showcase combining sections, rows, groups, and event bindings |
+| [layout_advanced_grid_flex_demo.v](demos/layout_advanced_grid_flex_demo.v) | Multi-column grid forms, flexbox directions & distribution, alignment, and nested containers |
 
 ### Controls & widgets
 
@@ -1037,6 +1043,7 @@ v test .
 - [demos/layout_events_mini_demo.v](demos/layout_events_mini_demo.v) — compact showcase combining sections, rows, groups, and event bindings
 - [demos/layout_struct_reflection.v](demos/layout_struct_reflection.v) — demonstrates auto-generating forms from structs using V reflection
 - [demos/layout_responsive_constraints.v](demos/layout_responsive_constraints.v) — demonstrates responsive auto-layout scaling, fixed dimensions, and a background color picker well
+- [demos/layout_advanced_grid_flex_demo.v](demos/layout_advanced_grid_flex_demo.v) — demonstrates multi-column grid forms, flexbox directions & distribution modes, explicit control alignment & fill expansion modifiers, and container nesting
 - [demos/grid_beginner_demo.v](demos/grid_beginner_demo.v) — beginner-friendly interactive 2D painting grid/canvas illustrating row/column structures, pointer-shared mutable state, presets, and native color well integrations
 - [demos/sqlite_crud_demo.v](demos/sqlite_crud_demo.v) — SQLite database dashboard performing CREATE, READ, UPDATE, DELETE actions on database tables
 - [demos/guessing_game.v](demos/guessing_game.v) — guess-the-number game showcasing native level indicators, ratings stars, color wells, and guess history logs
@@ -1074,6 +1081,8 @@ Full API documentation and detailed signature references are maintained in [API.
 
 ### 2. Control Layout & Containers
 - **Horizontal Stacking**: `win.begin_row(name)`, `win.end_row()`, `win.row(name, callback)`
+- **Multi-Column Grid Containers**: `win.begin_grid(name, columns, spacing)`, `win.end_grid()`, `win.grid(name, columns, spacing, callback)`
+- **Flexbox Containers**: `win.begin_flex_box(name, direction, justify, align)`, `win.end_flex_box()`, `win.flex_box(name, direction, justify, align, callback)`
 - **Bulk Rows**: `win.add_action_row(map)`, `win.add_fields_row(map)`, `win.add_labeled_*`
 - **Group Containers**: `win.add_group_box(name, title)` / `win.group(...)`, `win.add_tabs(name, titles)`, `win.add_scroll_view(name, height)`
 - **Layout Spacers**: `win.add_vertical_spacer(h)`, `win.add_horizontal_spacer(w)`, `win.add_separator()`
@@ -1084,9 +1093,9 @@ Full API documentation and detailed signature references are maintained in [API.
 - **Dashboard & Developer Widgets**: `add_breadcrumbs`, `add_shortcut_recorder`, `add_chart`, `add_circular_progress`, `add_property_grid`, `add_color_grid`, `add_console`, `add_code_editor`, `add_timeline_view`, `add_stat_card`, `add_banner`, `add_star_rating`, `add_range_slider`, `add_split_button`, `add_tag_cloud`, `add_wizard_stepper`, `add_section_header`, `add_vertical_slider`, `add_chip_group`, `add_badge`, `add_icon_segments`, `add_status_indicator`, `add_metric_meter`, `add_avatar_card`, `add_time_picker`, `add_tray_icon`, `add_collapsible_section`, `add_toolbar_item`, `add_html_view`, `add_drop_zone`
 - **Reflection & Struct Validation**: `win.add_form_from_struct[T](default_data)` auto-builds forms from V structs; `win.validate_struct[T]()` validates struct field attributes (`@[required]`, `@[min_len]`, `@[max_len]`, `@[email]`, `@[url]`, `@[alphanumeric]`, `@[min]`, `@[max]`).
 
-### 4. Sizing, Styling & Fluent Chaining
-- `set_control_width`, `set_control_height`, `set_control_font_size`, `set_control_font_bold`, `set_control_font_name`, `set_control_background_color`, `set_control_font_color`, `set_control_visible`, `set_control_enabled`, `set_placeholder`, `set_error`, `set_tooltip`
-- **Fluent Modifiers**: Chain directly on creation: `.width(w)`, `.height(h)`, `.font_size(s)`, `.bold(b)`, `.font_name(f)`, `.color(hex)`, `.font_color(hex)`, `.placeholder(t)`, `.error(err)`, `.tooltip(t)`, `.visible(b)`, `.enabled(b)`, `.onclick(cb)`, `.onchange(cb)`, `.onenter(cb)`, `.onfocus(cb)`, `.onblur(cb)`, `.onhover(cb)`
+### 4. Sizing, Styling, Alignment & Fluent Chaining
+- `set_control_width`, `set_control_height`, `set_control_font_size`, `set_control_font_bold`, `set_control_font_name`, `set_control_background_color`, `set_control_font_color`, `set_control_visible`, `set_control_enabled`, `set_control_alignment`, `set_control_expand_fill`, `set_placeholder`, `set_error`, `set_tooltip`
+- **Fluent Modifiers**: Chain directly on creation: `.width(w)`, `.height(h)`, `.font_size(s)`, `.bold(b)`, `.font_name(f)`, `.color(hex)`, `.font_color(hex)`, `.align_left()`, `.align_center()`, `.align_right()`, `.align_top()`, `.align_bottom()`, `.expand_fill()`, `.placeholder(t)`, `.error(err)`, `.tooltip(t)`, `.visible(b)`, `.enabled(b)`, `.onclick(cb)`, `.onchange(cb)`, `.onenter(cb)`, `.onfocus(cb)`, `.onblur(cb)`, `.onhover(cb)`
 
 ### 5. Dialogs, Popups & File Pickers
 - `win.alert(title, msg)`, `win.alert_with_style(title, msg, style)`, `win.confirm(title, msg)`, `win.prompt(title, msg, default)`, `win.choice_dialog(title, msg, choices)`

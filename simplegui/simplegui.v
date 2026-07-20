@@ -108,9 +108,15 @@ fn C.window_add_date_time_picker_control(&WindowInfo, &u8, &u8) voidptr
 fn C.window_add_mode_control_control(&WindowInfo, &u8, &u8) voidptr
 fn C.window_add_progress_indicator_control(&WindowInfo, &u8, int) voidptr
 
-// Layout row groupings
+// Layout row & container groupings
 fn C.window_begin_row(&WindowInfo, &u8)
 fn C.window_end_row(&WindowInfo)
+fn C.window_begin_grid(&WindowInfo, &u8, int, int)
+fn C.window_end_grid(&WindowInfo)
+fn C.window_begin_flex_box(&WindowInfo, &u8, &u8, &u8, &u8)
+fn C.window_end_flex_box(&WindowInfo)
+fn C.window_set_control_alignment_by_name(&WindowInfo, &u8, &u8)
+fn C.window_set_control_expand_fill_by_name(&WindowInfo, &u8, int)
 
 // Spacers and Separators
 fn C.window_add_vertical_spacer(&WindowInfo, int)
@@ -482,6 +488,8 @@ mut:
 	initial_number   int
 	placeholder      string
 	error_text       string
+	alignment        string
+	expand_fill      bool
 }
 
 struct ControlEventHandler {
@@ -4047,6 +4055,38 @@ pub fn (win &SimpleWindow) end_row() &SimpleWindow {
 	return win
 }
 
+// begin_grid begins a multi-column grid layout container with specified column count and item spacing.
+pub fn (win &SimpleWindow) begin_grid(name string, columns int, spacing int) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_begin_grid(win.window_info, name.str, columns, spacing)
+	}
+	return win
+}
+
+// end_grid ends the current grid layout container.
+pub fn (win &SimpleWindow) end_grid() &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_end_grid(win.window_info)
+	}
+	return win
+}
+
+// begin_flex_box begins a flexbox container with direction ('row'|'column'), main-axis justification ('start'|'center'|'end'|'space_between'|'space_around'|'fill'), and cross-axis alignment ('start'|'center'|'end'|'stretch').
+pub fn (win &SimpleWindow) begin_flex_box(name string, direction string, justify string, align string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_begin_flex_box(win.window_info, name.str, direction.str, justify.str, align.str)
+	}
+	return win
+}
+
+// end_flex_box ends the current flexbox container.
+pub fn (win &SimpleWindow) end_flex_box() &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_end_flex_box(win.window_info)
+	}
+	return win
+}
+
 // Dialogs & Popups
 pub fn (win &SimpleWindow) alert(title string, message string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
@@ -4955,6 +4995,28 @@ pub fn (win &SimpleWindow) row(name string, callback VoidEventCallback) &SimpleW
 	return win
 }
 
+// Closure-based grid layout container
+pub fn (win &SimpleWindow) grid(name string, columns int, spacing int, callback VoidEventCallback) &SimpleWindow {
+	win.begin_grid(name, columns, spacing)
+	unsafe {
+		mut w := &SimpleWindow(win)
+		callback(mut w)
+	}
+	win.end_grid()
+	return win
+}
+
+// Closure-based flexbox layout container
+pub fn (win &SimpleWindow) flex_box(name string, direction string, justify string, align string, callback VoidEventCallback) &SimpleWindow {
+	win.begin_flex_box(name, direction, justify, align)
+	unsafe {
+		mut w := &SimpleWindow(win)
+		callback(mut w)
+	}
+	win.end_flex_box()
+	return win
+}
+
 // Theme represents a complete color scheme for SimpleWindow interface styling.
 pub struct Theme {
 pub:
@@ -5283,6 +5345,106 @@ pub fn (win &SimpleWindow) visible(visible bool) &SimpleWindow {
 pub fn (win &SimpleWindow) enabled(enabled bool) &SimpleWindow {
 	if win.last_control != '' {
 		win.set_control_enabled(win.last_control, enabled)
+	}
+	return win
+}
+
+// set_control_alignment sets explicit layout alignment ('left', 'center', 'right', 'top', 'bottom') for a named control.
+pub fn (win &SimpleWindow) set_control_alignment(name string, alignment string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_control_alignment_by_name(win.window_info, name.str, alignment.str)
+	}
+	for i in 0 .. win.controls.len {
+		if win.controls[i].name == name {
+			unsafe {
+				win.controls[i].alignment = alignment
+			}
+			break
+		}
+	}
+	return win
+}
+
+// get_control_alignment returns the alignment of a named control.
+pub fn (win &SimpleWindow) get_control_alignment(name string) string {
+	for control in win.controls {
+		if control.name == name {
+			return control.alignment
+		}
+	}
+	return ''
+}
+
+// set_control_expand_fill enables or disables fill expansion for a named control in its container.
+pub fn (win &SimpleWindow) set_control_expand_fill(name string, expand bool) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_control_expand_fill_by_name(win.window_info, name.str, if expand { 1 } else { 0 })
+	}
+	for i in 0 .. win.controls.len {
+		if win.controls[i].name == name {
+			unsafe {
+				win.controls[i].expand_fill = expand
+			}
+			break
+		}
+	}
+	return win
+}
+
+// get_control_expand_fill returns true if fill expansion is enabled for a named control.
+pub fn (win &SimpleWindow) get_control_expand_fill(name string) bool {
+	for control in win.controls {
+		if control.name == name {
+			return control.expand_fill
+		}
+	}
+	return false
+}
+
+// align_left aligns the last created control to the left.
+pub fn (win &SimpleWindow) align_left() &SimpleWindow {
+	if win.last_control != '' {
+		win.set_control_alignment(win.last_control, 'left')
+	}
+	return win
+}
+
+// align_center aligns the last created control to the center.
+pub fn (win &SimpleWindow) align_center() &SimpleWindow {
+	if win.last_control != '' {
+		win.set_control_alignment(win.last_control, 'center')
+	}
+	return win
+}
+
+// align_right aligns the last created control to the right.
+pub fn (win &SimpleWindow) align_right() &SimpleWindow {
+	if win.last_control != '' {
+		win.set_control_alignment(win.last_control, 'right')
+	}
+	return win
+}
+
+// align_top aligns the last created control to the top.
+pub fn (win &SimpleWindow) align_top() &SimpleWindow {
+	if win.last_control != '' {
+		win.set_control_alignment(win.last_control, 'top')
+	}
+	return win
+}
+
+// align_bottom aligns the last created control to the bottom.
+pub fn (win &SimpleWindow) align_bottom() &SimpleWindow {
+	if win.last_control != '' {
+		win.set_control_alignment(win.last_control, 'bottom')
+	}
+	return win
+}
+
+// expand_fill configures the last created control to expand and fill available container space.
+pub fn (win &SimpleWindow) expand_fill() &SimpleWindow {
+	if win.last_control != '' {
+		win.set_control_expand_fill(win.last_control, true)
 	}
 	return win
 }
