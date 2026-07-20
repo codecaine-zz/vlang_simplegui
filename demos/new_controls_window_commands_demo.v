@@ -95,6 +95,26 @@ fn main() {
 		'true'
 	])
 
+	win.add_vertical_spacer(10)
+	win.add_section_header('sec_new_controls', '12. High-Utility Window Controls & Commands', 'Quick Actions, Accordion, Proportional Distribution, Tag Input, Status Dock & Info Callout')
+	
+	win.add_quick_action_bar('main_actions', ['Refresh View', 'Export Report', 'System Settings'], ['🔄', '📤', '⚙️'])
+	
+	win.add_vertical_spacer(8)
+	win.add_accordion_group('config_accordion', ['1. Application Configuration', '2. Security & Credentials', '3. Notification Preferences'], 0)
+
+	win.add_vertical_spacer(8)
+	win.add_segment_distribution_bar('disk_usage_bar', ['System', 'Applications', 'UserData', 'Free Space'], [35.0, 30.0, 20.0, 15.0], ['#007aff', '#34c759', '#ff9500', '#8e8e93'], 14)
+
+	win.add_vertical_spacer(8)
+	win.add_tag_input_field('project_tags', ['vlang', 'simplegui', 'macos', 'native-ui'])
+
+	win.add_vertical_spacer(8)
+	win.add_info_callout('update_callout', 'System Update Available', 'SimpleGUI v1.5 features 6 new native window controls and enhanced window management commands.', 'info', 'Upgrade Now')
+
+	win.add_vertical_spacer(8)
+	win.add_status_dock('window_footer_dock', 'System Status: Active & Operational', '#34c759', '42 Active Threads')
+
 	win.add_vertical_spacer(15)
 	win.add_separator()
 

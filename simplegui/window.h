@@ -499,6 +499,34 @@ void window_set_color_swatch_selected(main__WindowInfo *info, const char *name, 
 void *window_add_hotkey_badge_control(main__WindowInfo *info, const char *name, const char *shortcut_str, const char *description);
 void window_set_hotkey_badge_shortcut(main__WindowInfo *info, const char *name, const char *shortcut_str, const char *description);
 
+// 6 New High-Utility UI Controls (Quick Action Bar, Accordion Group, Segment Distribution Bar, Tag Input Field, Status Dock, Info Callout Card)
+void *window_add_quick_action_bar_control(main__WindowInfo *info, const char *name, const char **labels, const char **symbols, int count);
+void window_set_quick_action_enabled(main__WindowInfo *info, const char *name, int index, int enabled);
+
+void *window_add_accordion_group_control(main__WindowInfo *info, const char *name, const char **section_titles, int count, int expanded_index);
+void window_set_accordion_expanded(main__WindowInfo *info, const char *name, int index, int expanded);
+
+void *window_add_segment_distribution_bar_control(main__WindowInfo *info, const char *name, const char **labels, const double *values, const char **hex_colors, int count, int height);
+void window_set_segment_distribution_values(main__WindowInfo *info, const char *name, const double *values, int count);
+
+void *window_add_tag_input_field_control(main__WindowInfo *info, const char *name, const char **tags, int count);
+void window_set_tag_input_tags(main__WindowInfo *info, const char *name, const char **tags, int count);
+const char *window_get_tag_input_tags(main__WindowInfo *info, const char *name);
+
+void *window_add_status_dock_control(main__WindowInfo *info, const char *name, const char *status_text, const char *dot_color, const char *count_text);
+void window_set_status_dock_info(main__WindowInfo *info, const char *name, const char *status_text, const char *dot_color, const char *count_text);
+
+void *window_add_info_callout_control(main__WindowInfo *info, const char *name, const char *title, const char *message, const char *style_type, const char *button_text);
+void window_set_info_callout_text(main__WindowInfo *info, const char *name, const char *title, const char *message);
+
+// 6 New Window Commands
+void window_set_vibrancy(main__WindowInfo *info, const char *material);
+void window_set_corner_radius(main__WindowInfo *info, double radius);
+void window_set_background_blur(main__WindowInfo *info, int enabled);
+void window_flash_frame(main__WindowInfo *info, int critical);
+void window_center_on_active_screen(main__WindowInfo *info);
+void window_set_level_type(main__WindowInfo *info, const char *level_type);
+
 #endif
 
 

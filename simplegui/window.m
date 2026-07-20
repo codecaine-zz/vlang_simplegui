@@ -855,6 +855,32 @@ extern BOOL vlang_dispatch_event(void *win_ptr, const char *name, const char *ev
 - (NSView *)makeHotkeyBadgeWithName:(NSString *)name shortcutStr:(NSString *)shortcutStr description:(NSString *)description;
 - (void)setHotkeyBadgeShortcutForName:(NSString *)name shortcutStr:(NSString *)shortcutStr description:(NSString *)description;
 
+- (NSView *)makeQuickActionBarWithName:(NSString *)name labels:(NSArray<NSString *> *)labels symbols:(NSArray<NSString *> *)symbols;
+- (void)setQuickActionEnabled:(BOOL)enabled index:(int)index forName:(NSString *)name;
+
+- (NSView *)makeAccordionGroupWithName:(NSString *)name sectionTitles:(NSArray<NSString *> *)sectionTitles expandedIndex:(int)expandedIndex;
+- (void)setAccordionExpanded:(BOOL)expanded index:(int)index forName:(NSString *)name;
+
+- (NSView *)makeSegmentDistributionBarWithName:(NSString *)name labels:(NSArray<NSString *> *)labels values:(NSArray<NSNumber *> *)values hexColors:(NSArray<NSString *> *)hexColors height:(int)height;
+- (void)setSegmentDistributionValues:(NSArray<NSNumber *> *)values forName:(NSString *)name;
+
+- (NSView *)makeTagInputFieldWithName:(NSString *)name tags:(NSArray<NSString *> *)tags;
+- (void)setTagInputTags:(NSArray<NSString *> *)tags forName:(NSString *)name;
+- (NSString *)getTagInputTagsForName:(NSString *)name;
+
+- (NSView *)makeStatusDockWithName:(NSString *)name statusText:(NSString *)statusText dotColor:(NSString *)dotColor countText:(NSString *)countText;
+- (void)setStatusDockInfoForName:(NSString *)name statusText:(NSString *)statusText dotColor:(NSString *)dotColor countText:(NSString *)countText;
+
+- (NSView *)makeInfoCalloutWithName:(NSString *)name title:(NSString *)title message:(NSString *)message styleType:(NSString *)styleType buttonText:(NSString *)buttonText;
+- (void)setInfoCalloutTextForName:(NSString *)name title:(NSString *)title message:(NSString *)message;
+
+- (void)setWindowVibrancy:(NSString *)materialStr;
+- (void)setWindowCornerRadius:(double)radius;
+- (void)setWindowBackgroundBlur:(BOOL)enabled;
+- (void)flashWindowFrame:(BOOL)critical;
+- (void)centerWindowOnActiveScreen;
+- (void)setWindowLevelType:(NSString *)levelType;
+
 
 
 
@@ -8948,7 +8974,754 @@ static NSAttributedString *formatJsonText(NSString *jsonStr) {
   }
 }
 
+// 19. Quick Action Bar Control
+- (NSView *)makeQuickActionBarWithName:(NSString *)name labels:(NSArray<NSString *> *)labels symbols:(NSArray<NSString *> *)symbols {
+  NSStackView *hstack = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [hstack setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+  [hstack setAlignment:NSLayoutAttributeCenterY];
+  [hstack setSpacing:8.0];
+
+  NSMutableArray<NSButton *> *buttons = [NSMutableArray array];
+  NSUInteger count = labels.count;
+  for (NSUInteger i = 0; i < count; i++) {
+    NSString *label = labels[i];
+    NSString *symbol = (i < symbols.count) ? symbols[i] : @"⚡";
+    NSString *titleStr = [NSString stringWithFormat:@"%@ %@", symbol, label];
+    NSButton *btn = [NSButton buttonWithTitle:titleStr target:self action:@selector(handleQuickActionBtnClicked:)];
+    [btn setBezelStyle:NSBezelStyleRounded];
+    [btn setFont:[NSFont systemFontOfSize:12.0 weight:NSFontWeightMedium]];
+    btn.identifier = [NSString stringWithFormat:@"%@___%d", name, (int)i];
+    [hstack addArrangedSubview:btn];
+    [buttons addObject:btn];
+  }
+
+  [hstack.heightAnchor constraintEqualToConstant:32.0].active = YES;
+
+  if (!self.controlsByName) self.controlsByName = [NSMutableDictionary dictionary];
+  self.controlsByName[[name lowercaseString]] = hstack;
+  objc_setAssociatedObject(hstack, "quickActionBtns", buttons, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+  [self addControlToLayout:hstack];
+  return hstack;
+}
+
+- (void)handleQuickActionBtnClicked:(id)sender {
+  NSButton *btn = (NSButton *)sender;
+  NSString *ident = btn.identifier;
+  NSRange range = [ident rangeOfString:@"___"];
+  if (range.location != NSNotFound) {
+    NSString *name = [ident substringToIndex:range.location];
+    NSString *idxStr = [ident substringFromIndex:range.location + 3];
+    vlang_dispatch_event(self.win_ptr, [name UTF8String], "click_action", [idxStr UTF8String]);
+  }
+}
+
+- (void)setQuickActionEnabled:(BOOL)enabled index:(int)index forName:(NSString *)name {
+  NSStackView *hstack = (NSStackView *)self.controlsByName[[name lowercaseString]];
+  if (hstack) {
+    NSArray<NSButton *> *buttons = objc_getAssociatedObject(hstack, "quickActionBtns");
+    if (buttons && index >= 0 && index < (int)buttons.count) {
+      [buttons[index] setEnabled:enabled];
+    }
+  }
+}
+
+// 20. Accordion Multi-Section Group Control
+- (NSView *)makeAccordionGroupWithName:(NSString *)name sectionTitles:(NSArray<NSString *> *)sectionTitles expandedIndex:(int)expandedIndex {
+  NSStackView *vstack = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [vstack setOrientation:NSUserInterfaceLayoutOrientationVertical];
+  [vstack setAlignment:NSLayoutAttributeLeading];
+  [vstack setSpacing:6.0];
+
+  NSMutableArray<NSButton *> *headers = [NSMutableArray array];
+  NSMutableArray<NSBox *> *panels = [NSMutableArray array];
+
+  for (NSUInteger i = 0; i < sectionTitles.count; i++) {
+    NSString *stitle = sectionTitles[i];
+    BOOL isExp = ((int)i == expandedIndex);
+
+    NSButton *hdrBtn = [NSButton buttonWithTitle:[NSString stringWithFormat:@"%@  %@", isExp ? @"▼" : @"▶", stitle] target:self action:@selector(handleAccordionHeaderClicked:)];
+    [hdrBtn setBezelStyle:NSBezelStyleInline];
+    [hdrBtn setFont:[NSFont boldSystemFontOfSize:12.0]];
+    hdrBtn.identifier = [NSString stringWithFormat:@"%@___%d", name, (int)i];
+    [vstack addArrangedSubview:hdrBtn];
+    [headers addObject:hdrBtn];
+
+    NSBox *panelBox = [[NSBox alloc] initWithFrame:NSZeroRect];
+    [panelBox setBoxType:NSBoxCustom];
+    [panelBox setCornerRadius:6.0];
+    [panelBox setFillColor:[NSColor colorWithWhite:0.15 alpha:1.0]];
+    [panelBox setBorderColor:[NSColor colorWithWhite:0.3 alpha:0.5]];
+
+    NSTextField *panelText = [NSTextField labelWithString:[NSString stringWithFormat:@"Content for Section #%d (%@)", (int)i + 1, stitle]];
+    [panelText setFont:[NSFont systemFontOfSize:11.0]];
+    [panelText setTextColor:[NSColor colorWithWhite:0.8 alpha:1.0]];
+    [panelBox setContentView:panelText];
+    [panelBox setHidden:!isExp];
+
+    [vstack addArrangedSubview:panelBox];
+    [panels addObject:panelBox];
+  }
+
+  if (!self.controlsByName) self.controlsByName = [NSMutableDictionary dictionary];
+  self.controlsByName[[name lowercaseString]] = vstack;
+  objc_setAssociatedObject(vstack, "accordionHeaders", headers, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(vstack, "accordionPanels", panels, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(vstack, "accordionTitles", sectionTitles, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+  [self addControlToLayout:vstack];
+  return vstack;
+}
+
+- (void)handleAccordionHeaderClicked:(id)sender {
+  NSButton *btn = (NSButton *)sender;
+  NSString *ident = btn.identifier;
+  NSRange range = [ident rangeOfString:@"___"];
+  if (range.location != NSNotFound) {
+    NSString *name = [ident substringToIndex:range.location];
+    int idx = [[ident substringFromIndex:range.location + 3] intValue];
+    NSStackView *vstack = (NSStackView *)self.controlsByName[[name lowercaseString]];
+    if (vstack) {
+      NSArray<NSBox *> *panels = objc_getAssociatedObject(vstack, "accordionPanels");
+      NSArray<NSButton *> *headers = objc_getAssociatedObject(vstack, "accordionHeaders");
+      NSArray<NSString *> *titles = objc_getAssociatedObject(vstack, "accordionTitles");
+      if (panels && headers && idx >= 0 && idx < (int)panels.count) {
+        BOOL curHidden = [panels[idx] isHidden];
+        [panels[idx] setHidden:!curHidden];
+        NSString *stitle = (idx < (int)titles.count) ? titles[idx] : @"";
+        [headers[idx] setTitle:[NSString stringWithFormat:@"%@  %@", curHidden ? @"▼" : @"▶", stitle]];
+      }
+    }
+    vlang_dispatch_event(self.win_ptr, [name UTF8String], "toggle_section", [[NSString stringWithFormat:@"%d", idx] UTF8String]);
+  }
+}
+
+- (void)setAccordionExpanded:(BOOL)expanded index:(int)index forName:(NSString *)name {
+  NSStackView *vstack = (NSStackView *)self.controlsByName[[name lowercaseString]];
+  if (vstack) {
+    NSArray<NSBox *> *panels = objc_getAssociatedObject(vstack, "accordionPanels");
+    NSArray<NSButton *> *headers = objc_getAssociatedObject(vstack, "accordionHeaders");
+    NSArray<NSString *> *titles = objc_getAssociatedObject(vstack, "accordionTitles");
+    if (panels && headers && index >= 0 && index < (int)panels.count) {
+      [panels[index] setHidden:!expanded];
+      NSString *stitle = (index < (int)titles.count) ? titles[index] : @"";
+      [headers[index] setTitle:[NSString stringWithFormat:@"%@  %@", expanded ? @"▼" : @"▶", stitle]];
+    }
+  }
+}
+
+// 21. Proportional Segment Distribution Bar Control
+- (NSView *)makeSegmentDistributionBarWithName:(NSString *)name labels:(NSArray<NSString *> *)labels values:(NSArray<NSNumber *> *)values hexColors:(NSArray<NSString *> *)hexColors height:(int)height {
+  NSStackView *container = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [container setOrientation:NSUserInterfaceLayoutOrientationVertical];
+  [container setAlignment:NSLayoutAttributeLeading];
+  [container setSpacing:6.0];
+
+  int barH = height > 0 ? height : 14;
+
+  NSStackView *barStack = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [barStack setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+  [barStack setSpacing:2.0];
+  [barStack setAlignment:NSLayoutAttributeCenterY];
+  [barStack.heightAnchor constraintEqualToConstant:barH].active = YES;
+
+  NSStackView *legendStack = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [legendStack setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+  [legendStack setSpacing:12.0];
+  [legendStack setAlignment:NSLayoutAttributeCenterY];
+
+  [container addArrangedSubview:barStack];
+  [container addArrangedSubview:legendStack];
+
+  if (!self.controlsByName) self.controlsByName = [NSMutableDictionary dictionary];
+  self.controlsByName[[name lowercaseString]] = container;
+  objc_setAssociatedObject(container, "segBarStack", barStack, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(container, "segLegendStack", legendStack, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(container, "segLabels", labels, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(container, "segHexColors", hexColors, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+  [self rebuildSegmentDistributionBar:container values:values];
+  [self addControlToLayout:container];
+  return container;
+}
+
+- (void)rebuildSegmentDistributionBar:(NSStackView *)container values:(NSArray<NSNumber *> *)values {
+  NSStackView *barStack = objc_getAssociatedObject(container, "segBarStack");
+  NSStackView *legendStack = objc_getAssociatedObject(container, "segLegendStack");
+  NSArray<NSString *> *labels = objc_getAssociatedObject(container, "segLabels");
+  NSArray<NSString *> *hexColors = objc_getAssociatedObject(container, "segHexColors");
+
+  if (!barStack || !legendStack) return;
+
+  for (NSView *v in [barStack.arrangedSubviews copy]) {
+    [barStack removeArrangedSubview:v];
+    [v removeFromSuperview];
+  }
+  for (NSView *v in [legendStack.arrangedSubviews copy]) {
+    [legendStack removeArrangedSubview:v];
+    [v removeFromSuperview];
+  }
+
+  double sum = 0.0;
+  for (NSNumber *val in values) sum += [val doubleValue];
+  if (sum <= 0.0) sum = 1.0;
+
+  for (NSUInteger i = 0; i < values.count; i++) {
+    double val = [values[i] doubleValue];
+    double pct = (val / sum) * 100.0;
+    NSString *hex = (i < hexColors.count) ? hexColors[i] : @"#007aff";
+    NSString *label = (i < labels.count) ? labels[i] : [NSString stringWithFormat:@"Item %d", (int)i+1];
+
+    NSBox *segBox = [[NSBox alloc] initWithFrame:NSZeroRect];
+    [segBox setBoxType:NSBoxCustom];
+    [segBox setCornerRadius:3.0];
+    [segBox setFillColor:colorFromHexString(hex)];
+    [segBox setBorderColor:[NSColor clearColor]];
+    [segBox.widthAnchor constraintEqualToConstant:MAX(8.0, pct * 4.0)].active = YES;
+    [barStack addArrangedSubview:segBox];
+
+    NSStackView *legItem = [[NSStackView alloc] initWithFrame:NSZeroRect];
+    [legItem setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+    [legItem setSpacing:4.0];
+
+    NSBox *dot = [[NSBox alloc] initWithFrame:NSZeroRect];
+    [dot setBoxType:NSBoxCustom];
+    [dot setCornerRadius:4.0];
+    [dot setFillColor:colorFromHexString(hex)];
+    [dot.widthAnchor constraintEqualToConstant:8.0].active = YES;
+    [dot.heightAnchor constraintEqualToConstant:8.0].active = YES;
+
+    NSTextField *lText = [NSTextField labelWithString:[NSString stringWithFormat:@"%@ (%.0f%%)", label, pct]];
+    [lText setFont:[NSFont systemFontOfSize:11.0]];
+    [lText setTextColor:[NSColor colorWithWhite:0.8 alpha:1.0]];
+
+    [legItem addArrangedSubview:dot];
+    [legItem addArrangedSubview:lText];
+    [legendStack addArrangedSubview:legItem];
+  }
+}
+
+- (void)setSegmentDistributionValues:(NSArray<NSNumber *> *)values forName:(NSString *)name {
+  NSStackView *container = (NSStackView *)self.controlsByName[[name lowercaseString]];
+  if (container) {
+    [self rebuildSegmentDistributionBar:container values:values];
+  }
+}
+
+// 22. Tag Input Field Control
+- (NSView *)makeTagInputFieldWithName:(NSString *)name tags:(NSArray<NSString *> *)tags {
+  NSStackView *vstack = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [vstack setOrientation:NSUserInterfaceLayoutOrientationVertical];
+  [vstack setAlignment:NSLayoutAttributeLeading];
+  [vstack setSpacing:6.0];
+
+  NSStackView *tagFlow = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [tagFlow setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+  [tagFlow setSpacing:6.0];
+  [tagFlow setAlignment:NSLayoutAttributeCenterY];
+
+  NSTextField *input = [[NSTextField alloc] initWithFrame:NSZeroRect];
+  [input setPlaceholderString:@"Add tag and press Enter..."];
+  [input setTarget:self];
+  [input setAction:@selector(handleTagInputSubmitted:)];
+  input.identifier = name;
+  [input.widthAnchor constraintEqualToConstant:180.0].active = YES;
+
+  NSStackView *row = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [row setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+  [row setSpacing:8.0];
+  [row setAlignment:NSLayoutAttributeCenterY];
+
+  [row addArrangedSubview:tagFlow];
+  [row addArrangedSubview:input];
+  [vstack addArrangedSubview:row];
+
+  if (!self.controlsByName) self.controlsByName = [NSMutableDictionary dictionary];
+  self.controlsByName[[name lowercaseString]] = vstack;
+  objc_setAssociatedObject(vstack, "tagFlowStack", tagFlow, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(vstack, "tagInputField", input, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(vstack, "currentTags", [NSMutableArray arrayWithArray:tags], OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+  [self rebuildTagInputField:vstack name:name];
+  [self addControlToLayout:vstack];
+  return vstack;
+}
+
+- (void)rebuildTagInputField:(NSStackView *)vstack name:(NSString *)name {
+  NSStackView *tagFlow = objc_getAssociatedObject(vstack, "tagFlowStack");
+  NSMutableArray<NSString *> *tags = objc_getAssociatedObject(vstack, "currentTags");
+  if (!tagFlow || !tags) return;
+
+  for (NSView *v in [tagFlow.arrangedSubviews copy]) {
+    [tagFlow removeArrangedSubview:v];
+    [v removeFromSuperview];
+  }
+
+  for (NSString *tag in tags) {
+    NSButton *btn = [NSButton buttonWithTitle:[NSString stringWithFormat:@"%@  ✕", tag] target:self action:@selector(handleTagInputFieldRemove:)];
+    [btn setBezelStyle:NSBezelStyleInline];
+    [btn setFont:[NSFont systemFontOfSize:11.0 weight:NSFontWeightMedium]];
+    btn.identifier = [NSString stringWithFormat:@"%@___%@", name, tag];
+    [tagFlow addArrangedSubview:btn];
+  }
+}
+
+- (void)handleTagInputSubmitted:(id)sender {
+  NSTextField *input = (NSTextField *)sender;
+  NSString *name = input.identifier;
+  NSString *val = [[input stringValue] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  if (val.length > 0) {
+    NSStackView *vstack = (NSStackView *)self.controlsByName[[name lowercaseString]];
+    if (vstack) {
+      NSMutableArray<NSString *> *tags = objc_getAssociatedObject(vstack, "currentTags");
+      if (tags && ![tags containsObject:val]) {
+        [tags addObject:val];
+        [self rebuildTagInputField:vstack name:name];
+      }
+    }
+    [input setStringValue:@""];
+    vlang_dispatch_event(self.win_ptr, [name UTF8String], "add_tag", [val UTF8String]);
+  }
+}
+
+- (void)handleTagInputFieldRemove:(id)sender {
+  NSButton *btn = (NSButton *)sender;
+  NSString *ident = btn.identifier;
+  NSRange range = [ident rangeOfString:@"___"];
+  if (range.location != NSNotFound) {
+    NSString *name = [ident substringToIndex:range.location];
+    NSString *tag = [ident substringFromIndex:range.location + 3];
+    NSStackView *vstack = (NSStackView *)self.controlsByName[[name lowercaseString]];
+    if (vstack) {
+      NSMutableArray<NSString *> *tags = objc_getAssociatedObject(vstack, "currentTags");
+      if (tags) {
+        [tags removeObject:tag];
+        [self rebuildTagInputField:vstack name:name];
+      }
+    }
+    vlang_dispatch_event(self.win_ptr, [name UTF8String], "delete_tag", [tag UTF8String]);
+  }
+}
+
+- (void)setTagInputTags:(NSArray<NSString *> *)tags forName:(NSString *)name {
+  NSStackView *vstack = (NSStackView *)self.controlsByName[[name lowercaseString]];
+  if (vstack) {
+    objc_setAssociatedObject(vstack, "currentTags", [NSMutableArray arrayWithArray:tags], OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    [self rebuildTagInputField:vstack name:name];
+  }
+}
+
+- (NSString *)getTagInputTagsForName:(NSString *)name {
+  NSStackView *vstack = (NSStackView *)self.controlsByName[[name lowercaseString]];
+  if (vstack) {
+    NSMutableArray<NSString *> *tags = objc_getAssociatedObject(vstack, "currentTags");
+    if (tags) return [tags componentsJoinedByString:@","];
+  }
+  return @"";
+}
+
+// 23. Window Status Dock Footer Control
+- (NSView *)makeStatusDockWithName:(NSString *)name statusText:(NSString *)statusText dotColor:(NSString *)dotColor countText:(NSString *)countText {
+  NSBox *box = [[NSBox alloc] initWithFrame:NSZeroRect];
+  [box setBoxType:NSBoxCustom];
+  [box setCornerRadius:8.0];
+  [box setFillColor:[NSColor colorWithRed:0.12 green:0.14 blue:0.18 alpha:1.0]];
+  [box setBorderColor:[NSColor colorWithWhite:1.0 alpha:0.15]];
+
+  NSStackView *hstack = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [hstack setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+  [hstack setAlignment:NSLayoutAttributeCenterY];
+  [hstack setSpacing:10.0];
+  [hstack setEdgeInsets:NSEdgeInsetsMake(6, 12, 6, 12)];
+
+  NSBox *dot = [[NSBox alloc] initWithFrame:NSZeroRect];
+  [dot setBoxType:NSBoxCustom];
+  [dot setCornerRadius:5.0];
+  [dot setFillColor:colorFromHexString(dotColor ? dotColor : @"#34c759")];
+  [dot.widthAnchor constraintEqualToConstant:10.0].active = YES;
+  [dot.heightAnchor constraintEqualToConstant:10.0].active = YES;
+
+  NSTextField *sLbl = [NSTextField labelWithString:statusText ? statusText : @"System Ready"];
+  [sLbl setFont:[NSFont systemFontOfSize:12.0 weight:NSFontWeightMedium]];
+  [sLbl setTextColor:[NSColor whiteColor]];
+
+  NSBox *cntBox = [[NSBox alloc] initWithFrame:NSZeroRect];
+  [cntBox setBoxType:NSBoxCustom];
+  [cntBox setCornerRadius:4.0];
+  [cntBox setFillColor:[NSColor colorWithWhite:1.0 alpha:0.15]];
+
+  NSTextField *cLbl = [NSTextField labelWithString:countText ? countText : @"0 items"];
+  [cLbl setFont:[NSFont boldSystemFontOfSize:11.0]];
+  [cLbl setTextColor:[NSColor colorWithWhite:0.8 alpha:1.0]];
+  [cntBox setContentView:cLbl];
+
+  [hstack addArrangedSubview:dot];
+  [hstack addArrangedSubview:sLbl];
+  [hstack addArrangedSubview:[NSView new]]; // spacer
+  [hstack addArrangedSubview:cntBox];
+
+  [box setContentView:hstack];
+  [box.heightAnchor constraintEqualToConstant:34.0].active = YES;
+
+  if (!self.controlsByName) self.controlsByName = [NSMutableDictionary dictionary];
+  self.controlsByName[[name lowercaseString]] = box;
+  objc_setAssociatedObject(box, "dockDot", dot, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(box, "dockStatusLbl", sLbl, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(box, "dockCountLbl", cLbl, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+  [self addControlToLayout:box];
+  return box;
+}
+
+- (void)setStatusDockInfoForName:(NSString *)name statusText:(NSString *)statusText dotColor:(NSString *)dotColor countText:(NSString *)countText {
+  NSBox *box = (NSBox *)self.controlsByName[[name lowercaseString]];
+  if (box) {
+    NSBox *dot = objc_getAssociatedObject(box, "dockDot");
+    NSTextField *sLbl = objc_getAssociatedObject(box, "dockStatusLbl");
+    NSTextField *cLbl = objc_getAssociatedObject(box, "dockCountLbl");
+    if (dot && dotColor) [dot setFillColor:colorFromHexString(dotColor)];
+    if (sLbl && statusText) [sLbl setStringValue:statusText];
+    if (cLbl && countText) [cLbl setStringValue:countText];
+  }
+}
+
+// 24. Styled Info Callout Alert Card Control
+- (NSView *)makeInfoCalloutWithName:(NSString *)name title:(NSString *)title message:(NSString *)message styleType:(NSString *)styleType buttonText:(NSString *)buttonText {
+  NSBox *box = [[NSBox alloc] initWithFrame:NSZeroRect];
+  [box setBoxType:NSBoxCustom];
+  [box setCornerRadius:8.0];
+
+  NSString *accentHex = @"#007aff";
+  NSColor *bgColor = [NSColor colorWithRed:0.1 green:0.15 blue:0.25 alpha:1.0];
+  if ([styleType isEqualToString:@"warning"]) {
+    accentHex = @"#ff9500";
+    bgColor = [NSColor colorWithRed:0.25 green:0.18 blue:0.1 alpha:1.0];
+  } else if ([styleType isEqualToString:@"danger"]) {
+    accentHex = @"#ff3b30";
+    bgColor = [NSColor colorWithRed:0.25 green:0.12 blue:0.12 alpha:1.0];
+  } else if ([styleType isEqualToString:@"success"]) {
+    accentHex = @"#34c759";
+    bgColor = [NSColor colorWithRed:0.1 green:0.22 blue:0.14 alpha:1.0];
+  }
+  [box setFillColor:bgColor];
+  [box setBorderColor:[NSColor clearColor]];
+
+  NSStackView *hstack = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [hstack setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+  [hstack setAlignment:NSLayoutAttributeCenterY];
+  [hstack setSpacing:12.0];
+  [hstack setEdgeInsets:NSEdgeInsetsMake(10, 12, 10, 12)];
+
+  NSBox *accentBar = [[NSBox alloc] initWithFrame:NSZeroRect];
+  [accentBar setBoxType:NSBoxCustom];
+  [accentBar setCornerRadius:2.0];
+  [accentBar setFillColor:colorFromHexString(accentHex)];
+  [accentBar.widthAnchor constraintEqualToConstant:4.0].active = YES;
+  [accentBar.heightAnchor constraintEqualToConstant:32.0].active = YES;
+
+  NSStackView *vstack = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [vstack setOrientation:NSUserInterfaceLayoutOrientationVertical];
+  [vstack setAlignment:NSLayoutAttributeLeading];
+  [vstack setSpacing:2.0];
+
+  NSTextField *tLbl = [NSTextField labelWithString:title ? title : @"Information"];
+  [tLbl setFont:[NSFont boldSystemFontOfSize:13.0]];
+  [tLbl setTextColor:[NSColor whiteColor]];
+
+  NSTextField *mLbl = [NSTextField labelWithString:message ? message : @""];
+  [mLbl setFont:[NSFont systemFontOfSize:11.0]];
+  [mLbl setTextColor:[NSColor colorWithWhite:0.85 alpha:1.0]];
+
+  [vstack addArrangedSubview:tLbl];
+  [vstack addArrangedSubview:mLbl];
+
+  [hstack addArrangedSubview:accentBar];
+  [hstack addArrangedSubview:vstack];
+
+  if (buttonText && buttonText.length > 0) {
+    NSButton *btn = [NSButton buttonWithTitle:buttonText target:self action:@selector(handleCalloutBtnClicked:)];
+    [btn setBezelStyle:NSBezelStyleRounded];
+    [btn setFont:[NSFont systemFontOfSize:11.0 weight:NSFontWeightMedium]];
+    btn.identifier = name;
+    [hstack addArrangedSubview:btn];
+  }
+
+  [box setContentView:hstack];
+
+  if (!self.controlsByName) self.controlsByName = [NSMutableDictionary dictionary];
+  self.controlsByName[[name lowercaseString]] = box;
+  objc_setAssociatedObject(box, "calloutTLbl", tLbl, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(box, "calloutMLbl", mLbl, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+  [self addControlToLayout:box];
+  return box;
+}
+
+- (void)handleCalloutBtnClicked:(id)sender {
+  NSButton *btn = (NSButton *)sender;
+  vlang_dispatch_event(self.win_ptr, [btn.identifier UTF8String], "click_action", "callout_action");
+}
+
+- (void)setInfoCalloutTextForName:(NSString *)name title:(NSString *)title message:(NSString *)message {
+  NSBox *box = (NSBox *)self.controlsByName[[name lowercaseString]];
+  if (box) {
+    NSTextField *tLbl = objc_getAssociatedObject(box, "calloutTLbl");
+    NSTextField *mLbl = objc_getAssociatedObject(box, "calloutMLbl");
+    if (tLbl && title) [tLbl setStringValue:title];
+    if (mLbl && message) [mLbl setStringValue:message];
+  }
+}
+
+// Window management commands implementations
+- (void)setWindowVibrancy:(NSString *)materialStr {
+  if (!self.window) return;
+  NSVisualEffectView *vibrancyView = [[NSVisualEffectView alloc] initWithFrame:self.window.contentView.bounds];
+  [vibrancyView setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
+  [vibrancyView setBlendingMode:NSVisualEffectBlendingModeBehindWindow];
+  if ([materialStr isEqualToString:@"hud"]) [vibrancyView setMaterial:NSVisualEffectMaterialHUDWindow];
+  else if ([materialStr isEqualToString:@"sidebar"]) [vibrancyView setMaterial:NSVisualEffectMaterialSidebar];
+  else if ([materialStr isEqualToString:@"popover"]) [vibrancyView setMaterial:NSVisualEffectMaterialPopover];
+  else if ([materialStr isEqualToString:@"header"]) [vibrancyView setMaterial:NSVisualEffectMaterialHeaderView];
+  else [vibrancyView setMaterial:NSVisualEffectMaterialWindowBackground];
+  [self.window.contentView addSubview:vibrancyView positioned:NSWindowBelow relativeTo:nil];
+}
+
+- (void)setWindowCornerRadius:(double)radius {
+  if (!self.window || !self.window.contentView) return;
+  self.window.contentView.wantsLayer = YES;
+  self.window.contentView.layer.cornerRadius = radius;
+  self.window.contentView.layer.masksToBounds = YES;
+}
+
+- (void)setWindowBackgroundBlur:(BOOL)enabled {
+  if (!self.window) return;
+  [self.window setOpaque:!enabled];
+  if (enabled) [self.window setBackgroundColor:[NSColor clearColor]];
+}
+
+- (void)flashWindowFrame:(BOOL)critical {
+  [NSApp requestUserAttention:critical ? NSCriticalRequest : NSInformationalRequest];
+}
+
+- (void)centerWindowOnActiveScreen {
+  if (!self.window) return;
+  NSScreen *screen = [NSScreen mainScreen];
+  if (screen) {
+    NSRect sRect = [screen visibleFrame];
+    NSRect wRect = [self.window frame];
+    CGFloat x = sRect.origin.x + (sRect.size.width - wRect.size.width) / 2.0;
+    CGFloat y = sRect.origin.y + (sRect.size.height - wRect.size.height) / 2.0;
+    [self.window setFrameOrigin:NSMakePoint(x, y)];
+  }
+}
+
+- (void)setWindowLevelType:(NSString *)levelType {
+  if (!self.window) return;
+  if ([levelType isEqualToString:@"desktop"]) [self.window setLevel:kCGDesktopWindowLevel];
+  else if ([levelType isEqualToString:@"floating"]) [self.window setLevel:NSFloatingWindowLevel];
+  else if ([levelType isEqualToString:@"modal"]) [self.window setLevel:NSModalPanelWindowLevel];
+  else if ([levelType isEqualToString:@"status"]) [self.window setLevel:NSSubmenuWindowLevel];
+  else [self.window setLevel:NSNormalWindowLevel];
+}
+
 @end
+
+// C Bridge functions for new controls and window commands
+void *window_add_quick_action_bar_control(main__WindowInfo *info, const char *name, const char **labels, const char **symbols, int count) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSMutableArray *lArr = [NSMutableArray arrayWithCapacity:count];
+  NSMutableArray *sArr = [NSMutableArray arrayWithCapacity:count];
+  for (int i = 0; i < count; i++) {
+    [lArr addObject:nsstring(labels[i])];
+    [sArr addObject:nsstring(symbols[i])];
+  }
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeQuickActionBarWithName:nsstring(name) labels:lArr symbols:sArr];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)control;
+}
+
+void window_set_quick_action_enabled(main__WindowInfo *info, const char *name, int index, int enabled) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate setQuickActionEnabled:(BOOL)enabled index:index forName:nsstring(name)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+void *window_add_accordion_group_control(main__WindowInfo *info, const char *name, const char **section_titles, int count, int expanded_index) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSMutableArray *tArr = [NSMutableArray arrayWithCapacity:count];
+  for (int i = 0; i < count; i++) {
+    [tArr addObject:nsstring(section_titles[i])];
+  }
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeAccordionGroupWithName:nsstring(name) sectionTitles:tArr expandedIndex:expanded_index];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)control;
+}
+
+void window_set_accordion_expanded(main__WindowInfo *info, const char *name, int index, int expanded) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate setAccordionExpanded:(BOOL)expanded index:index forName:nsstring(name)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+void *window_add_segment_distribution_bar_control(main__WindowInfo *info, const char *name, const char **labels, const double *values, const char **hex_colors, int count, int height) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSMutableArray *lArr = [NSMutableArray arrayWithCapacity:count];
+  NSMutableArray *vArr = [NSMutableArray arrayWithCapacity:count];
+  NSMutableArray *cArr = [NSMutableArray arrayWithCapacity:count];
+  for (int i = 0; i < count; i++) {
+    [lArr addObject:nsstring(labels[i])];
+    [vArr addObject:@(values[i])];
+    [cArr addObject:nsstring(hex_colors[i])];
+  }
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeSegmentDistributionBarWithName:nsstring(name) labels:lArr values:vArr hexColors:cArr height:height];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)control;
+}
+
+void window_set_segment_distribution_values(main__WindowInfo *info, const char *name, const double *values, int count) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSMutableArray *vArr = [NSMutableArray arrayWithCapacity:count];
+  for (int i = 0; i < count; i++) {
+    [vArr addObject:@(values[i])];
+  }
+  void (^runBlock)(void) = ^{
+    [delegate setSegmentDistributionValues:vArr forName:nsstring(name)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+void *window_add_tag_input_field_control(main__WindowInfo *info, const char *name, const char **tags, int count) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSMutableArray *tArr = [NSMutableArray arrayWithCapacity:count];
+  for (int i = 0; i < count; i++) {
+    [tArr addObject:nsstring(tags[i])];
+  }
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeTagInputFieldWithName:nsstring(name) tags:tArr];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)control;
+}
+
+void window_set_tag_input_tags(main__WindowInfo *info, const char *name, const char **tags, int count) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSMutableArray *tArr = [NSMutableArray arrayWithCapacity:count];
+  for (int i = 0; i < count; i++) {
+    [tArr addObject:nsstring(tags[i])];
+  }
+  void (^runBlock)(void) = ^{
+    [delegate setTagInputTags:tArr forName:nsstring(name)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+const char *window_get_tag_input_tags(main__WindowInfo *info, const char *name) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSString *res = @"";
+  void (^runBlock)(void) = ^{
+    res = [delegate getTagInputTagsForName:nsstring(name)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return [res UTF8String];
+}
+
+void *window_add_status_dock_control(main__WindowInfo *info, const char *name, const char *status_text, const char *dot_color, const char *count_text) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeStatusDockWithName:nsstring(name) statusText:nsstring(status_text) dotColor:nsstring(dot_color) countText:nsstring(count_text)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)control;
+}
+
+void window_set_status_dock_info(main__WindowInfo *info, const char *name, const char *status_text, const char *dot_color, const char *count_text) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate setStatusDockInfoForName:nsstring(name) statusText:nsstring(status_text) dotColor:nsstring(dot_color) countText:nsstring(count_text)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+void *window_add_info_callout_control(main__WindowInfo *info, const char *name, const char *title, const char *message, const char *style_type, const char *button_text) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeInfoCalloutWithName:nsstring(name) title:nsstring(title) message:nsstring(message) styleType:nsstring(style_type) buttonText:nsstring(button_text)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)control;
+}
+
+void window_set_info_callout_text(main__WindowInfo *info, const char *name, const char *title, const char *message) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate setInfoCalloutTextForName:nsstring(name) title:nsstring(title) message:nsstring(message)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+void window_set_vibrancy(main__WindowInfo *info, const char *material) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate setWindowVibrancy:nsstring(material)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+void window_set_corner_radius(main__WindowInfo *info, double radius) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate setWindowCornerRadius:radius];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+void window_set_background_blur(main__WindowInfo *info, int enabled) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate setWindowBackgroundBlur:(BOOL)enabled];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+void window_flash_frame(main__WindowInfo *info, int critical) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate flashWindowFrame:(BOOL)critical];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+void window_center_on_active_screen(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate centerWindowOnActiveScreen];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+void window_set_level_type(main__WindowInfo *info, const char *level_type) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate setWindowLevelType:nsstring(level_type)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
 
 
 

@@ -464,6 +464,29 @@ fn C.window_set_color_swatch_selected(&WindowInfo, &u8, &u8)
 fn C.window_add_hotkey_badge_control(&WindowInfo, &u8, &u8, &u8) voidptr
 fn C.window_set_hotkey_badge_shortcut(&WindowInfo, &u8, &u8, &u8)
 
+// 6 New UI Controls C declarations
+fn C.window_add_quick_action_bar_control(&WindowInfo, &u8, &&u8, &&u8, int) voidptr
+fn C.window_set_quick_action_enabled(&WindowInfo, &u8, int, int)
+fn C.window_add_accordion_group_control(&WindowInfo, &u8, &&u8, int, int) voidptr
+fn C.window_set_accordion_expanded(&WindowInfo, &u8, int, int)
+fn C.window_add_segment_distribution_bar_control(&WindowInfo, &u8, &&u8, &f64, &&u8, int, int) voidptr
+fn C.window_set_segment_distribution_values(&WindowInfo, &u8, &f64, int)
+fn C.window_add_tag_input_field_control(&WindowInfo, &u8, &&u8, int) voidptr
+fn C.window_set_tag_input_tags(&WindowInfo, &u8, &&u8, int)
+fn C.window_get_tag_input_tags(&WindowInfo, &u8) &u8
+fn C.window_add_status_dock_control(&WindowInfo, &u8, &u8, &u8, &u8) voidptr
+fn C.window_set_status_dock_info(&WindowInfo, &u8, &u8, &u8, &u8)
+fn C.window_add_info_callout_control(&WindowInfo, &u8, &u8, &u8, &u8, &u8) voidptr
+fn C.window_set_info_callout_text(&WindowInfo, &u8, &u8, &u8)
+
+// 6 New Window Commands C declarations
+fn C.window_set_vibrancy(&WindowInfo, &u8)
+fn C.window_set_corner_radius(&WindowInfo, f64)
+fn C.window_set_background_blur(&WindowInfo, int)
+fn C.window_flash_frame(&WindowInfo, int)
+fn C.window_center_on_active_screen(&WindowInfo)
+fn C.window_set_level_type(&WindowInfo, &u8)
+
 
 
 
@@ -8155,6 +8178,289 @@ pub fn (win &SimpleWindow) hotkey_badge(shortcut_str string, description string)
 pub fn (win &SimpleWindow) set_hotkey_badge_shortcut(name string, shortcut_str string, description string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_set_hotkey_badge_shortcut(win.window_info, name.str, shortcut_str.str, description.str)
+	}
+	return win
+}
+
+// add_quick_action_bar adds a quick action bar control with interactive action buttons.
+pub fn (win &SimpleWindow) add_quick_action_bar(name string, labels []string, symbols []string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('quick_action_bar')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name: real_name
+			kind: 'quick_action_bar'
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		mut c_labels := []&u8{cap: labels.len}
+		for l in labels {
+			c_labels << l.str
+		}
+		mut c_symbols := []&u8{cap: symbols.len}
+		for s in symbols {
+			c_symbols << s.str
+		}
+		C.window_add_quick_action_bar_control(win.window_info, real_name.str, c_labels.data, c_symbols.data, labels.len)
+	}
+	return win
+}
+
+// quick_action_bar adds an auto-named quick action bar control.
+pub fn (win &SimpleWindow) quick_action_bar(labels []string, symbols []string) &SimpleWindow {
+	return win.add_quick_action_bar('', labels, symbols)
+}
+
+// set_quick_action_enabled sets enabled state for a specific action button inside a quick action bar.
+pub fn (win &SimpleWindow) set_quick_action_enabled(name string, index int, enabled bool) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_quick_action_enabled(win.window_info, name.str, index, if enabled { 1 } else { 0 })
+	}
+	return win
+}
+
+// add_accordion_group adds a multi-section expandable accordion group widget.
+pub fn (win &SimpleWindow) add_accordion_group(name string, section_titles []string, expanded_index int) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('accordion_group')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name: real_name
+			kind: 'accordion_group'
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		mut c_titles := []&u8{cap: section_titles.len}
+		for t in section_titles {
+			c_titles << t.str
+		}
+		C.window_add_accordion_group_control(win.window_info, real_name.str, c_titles.data, section_titles.len, expanded_index)
+	}
+	return win
+}
+
+// accordion_group adds an auto-named accordion group widget.
+pub fn (win &SimpleWindow) accordion_group(section_titles []string, expanded_index int) &SimpleWindow {
+	return win.add_accordion_group('', section_titles, expanded_index)
+}
+
+// set_accordion_expanded updates expanded/collapsed state for an accordion section by index.
+pub fn (win &SimpleWindow) set_accordion_expanded(name string, index int, expanded bool) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_accordion_expanded(win.window_info, name.str, index, if expanded { 1 } else { 0 })
+	}
+	return win
+}
+
+// add_segment_distribution_bar adds a proportional segment distribution bar displaying breakdown ratios.
+pub fn (win &SimpleWindow) add_segment_distribution_bar(name string, labels []string, values []f64, hex_colors []string, height int) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('segment_distribution_bar')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name: real_name
+			kind: 'segment_distribution_bar'
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		mut c_labels := []&u8{cap: labels.len}
+		for l in labels {
+			c_labels << l.str
+		}
+		mut c_colors := []&u8{cap: hex_colors.len}
+		for c in hex_colors {
+			c_colors << c.str
+		}
+		C.window_add_segment_distribution_bar_control(win.window_info, real_name.str, c_labels.data, values.data, c_colors.data, values.len, height)
+	}
+	return win
+}
+
+// segment_distribution_bar adds an auto-named segment distribution bar widget.
+pub fn (win &SimpleWindow) segment_distribution_bar(labels []string, values []f64, hex_colors []string, height int) &SimpleWindow {
+	return win.add_segment_distribution_bar('', labels, values, hex_colors, height)
+}
+
+// set_segment_distribution_values updates values of a segment distribution bar.
+pub fn (win &SimpleWindow) set_segment_distribution_values(name string, values []f64) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_segment_distribution_values(win.window_info, name.str, values.data, values.len)
+	}
+	return win
+}
+
+// add_tag_input_field adds an interactive tag pill field with add/remove capability.
+pub fn (win &SimpleWindow) add_tag_input_field(name string, tags []string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('tag_input_field')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name: real_name
+			kind: 'tag_input_field'
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		mut c_tags := []&u8{cap: tags.len}
+		for t in tags {
+			c_tags << t.str
+		}
+		C.window_add_tag_input_field_control(win.window_info, real_name.str, c_tags.data, tags.len)
+	}
+	return win
+}
+
+// tag_input_field adds an auto-named tag input field widget.
+pub fn (win &SimpleWindow) tag_input_field(tags []string) &SimpleWindow {
+	return win.add_tag_input_field('', tags)
+}
+
+// set_tag_input_tags updates tags list in a tag input field.
+pub fn (win &SimpleWindow) set_tag_input_tags(name string, tags []string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		mut c_tags := []&u8{cap: tags.len}
+		for t in tags {
+			c_tags << t.str
+		}
+		C.window_set_tag_input_tags(win.window_info, name.str, c_tags.data, tags.len)
+	}
+	return win
+}
+
+// get_tag_input_tags returns comma-separated tags from a tag input field.
+pub fn (win &SimpleWindow) get_tag_input_tags(name string) string {
+	if win.window_info != unsafe { nil } {
+		res := C.window_get_tag_input_tags(win.window_info, name.str)
+		if res != unsafe { nil } {
+			return unsafe { tos3(res) }
+		}
+	}
+	return ''
+}
+
+// add_status_dock adds a window footer status dock control with status dot, status text, and count badge.
+pub fn (win &SimpleWindow) add_status_dock(name string, status_text string, dot_color string, count_text string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('status_dock')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name: real_name
+			kind: 'status_dock'
+			value: status_text
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_status_dock_control(win.window_info, real_name.str, status_text.str, dot_color.str, count_text.str)
+	}
+	return win
+}
+
+// status_dock adds an auto-named status dock footer widget.
+pub fn (win &SimpleWindow) status_dock(status_text string, dot_color string, count_text string) &SimpleWindow {
+	return win.add_status_dock('', status_text, dot_color, count_text)
+}
+
+// set_status_dock_info updates status text, indicator dot color, and count text in status dock.
+pub fn (win &SimpleWindow) set_status_dock_info(name string, status_text string, dot_color string, count_text string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_status_dock_info(win.window_info, name.str, status_text.str, dot_color.str, count_text.str)
+	}
+	return win
+}
+
+// add_info_callout adds a styled info/alert callout card with accent border and optional action button.
+pub fn (win &SimpleWindow) add_info_callout(name string, title string, message string, style_type string, button_text string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('info_callout')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name: real_name
+			kind: 'info_callout'
+			value: title
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_info_callout_control(win.window_info, real_name.str, title.str, message.str, style_type.str, button_text.str)
+	}
+	return win
+}
+
+// info_callout adds an auto-named info callout card widget.
+pub fn (win &SimpleWindow) info_callout(title string, message string, style_type string, button_text string) &SimpleWindow {
+	return win.add_info_callout('', title, message, style_type, button_text)
+}
+
+// set_info_callout_text updates title and message text in an info callout card.
+pub fn (win &SimpleWindow) set_info_callout_text(name string, title string, message string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_info_callout_text(win.window_info, name.str, title.str, message.str)
+	}
+	return win
+}
+
+// Window management commands V methods
+
+// set_vibrancy configures window visual effect backdrop material ('hud', 'sidebar', 'popover', 'header', 'menu').
+pub fn (win &SimpleWindow) set_vibrancy(material string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_vibrancy(win.window_info, material.str)
+	}
+	return win
+}
+
+// set_corner_radius configures native window corner rounding radius.
+pub fn (win &SimpleWindow) set_corner_radius(radius f64) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_corner_radius(win.window_info, radius)
+	}
+	return win
+}
+
+// set_background_blur enables or disables window background blur.
+pub fn (win &SimpleWindow) set_background_blur(enabled bool) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_background_blur(win.window_info, if enabled { 1 } else { 0 })
+	}
+	return win
+}
+
+// flash_frame requests user attention by bouncing dock icon / flashing window frame.
+pub fn (win &SimpleWindow) flash_frame(critical bool) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_flash_frame(win.window_info, if critical { 1 } else { 0 })
+	}
+	return win
+}
+
+// center_on_active_screen repositions window to center of active monitor screen.
+pub fn (win &SimpleWindow) center_on_active_screen() &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_center_on_active_screen(win.window_info)
+	}
+	return win
+}
+
+// set_level_type configures window depth level ('desktop', 'normal', 'floating', 'modal', 'status').
+pub fn (win &SimpleWindow) set_level_type(level_type string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_level_type(win.window_info, level_type.str)
 	}
 	return win
 }
