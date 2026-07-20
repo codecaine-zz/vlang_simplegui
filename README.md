@@ -41,23 +41,45 @@ The goal is a simple, high-abstraction GUI layer that feels familiar to anyone u
 
 ## Features
 
-- Create named controls such as labels, text inputs, text areas, buttons, checkboxes, and number fields
-- **NSComboBox**: Rich editable dropdown combo box combining a text field with popup select options (freeform typing and suggestions)
-- **NSLevelIndicator / Rating**: Beautiful interactive 5-star rating systems and discrete/continuous capacity, level, and value indicators
-- **NSTokenField / Tags Entry**: Standard bubble tags & chips entry input field separated by delimiter (comma etc.)
-- **NSPathControl**: High-fidelity macOS native breadcrumb item displaying folders and file system links (drag/drop and editable)
-- **Activity Loading Spinner**: Native spinning wheel loader for background tasks and asynchronous operations
-- **Developer-oriented controls**: breadcrumb navigation, shortcut recording, charts, circular progress gauges, property inspector grids, color swatches, editable tables, and log consoles
-- **Editable native grids**: spreadsheet-like data grids with inline editing, persistent cell/row/column selection, checkbox and button cell types, row/column actions, filtering, explicit programmatic sorting, and ergonomic helpers for reading and updating rows, columns, and individual cells
-- Set and read values by control name
-- Support multiple controls of the same kind using distinct names
-- Attach simple event handlers for clicks and value changes
-- Open a real native macOS window with a built-in demo
-- **Neutralino-inspired System & OS API Extensions**: Fluent `SimpleWindow` methods for process execution (`exec`, `exec_bg`), environment variables, hardware specs, network tools (ping, local/external IP, DNS), system resource monitoring (CPU, load average, memory pressure), time, audio/speech, file pickers, and macOS app/Dock integration
-- Support native keyboard shortcuts: **CMD + F** to toggle full screen, **CMD + Q** to quit the application
-- Pin a window above other windows with the new always-on-top API
+- **40+ Native macOS Controls**:
+  - **Standard Controls**: Labels, text inputs, password fields, scrollable text areas, push buttons, checkboxes, radio groups, dropdowns, segmented controls, search fields, sliders, steppers, progress bars, and image boxes.
+  - **Rich macOS Widgets**: `NSComboBox` (editable combo box with suggestions), `NSLevelIndicator` & Star Ratings, `NSTokenField` (bubble tag editor), `NSPathControl` (interactive breadcrumb path navigator), and Activity Loading Spinners.
+  - **Developer & Dashboard Controls**: Breadcrumb bars, keyboard shortcut recorders, line & area charts, circular progress gauges, property inspector grids, color swatches/wells, editable spreadsheet-style grids, tree views, code editors, timeline event feeds, badges, avatar cards, stat cards, notice banners, split buttons, tag clouds, wizard steppers, status indicators, metric meters, system tray status items, collapsible sections, titlebar toolbar items, WebKit HTML preview panels, and drag-and-drop file drop zones.
+- **17 Production Built-in Themes**:
+  - Light & Dark macOS Aqua system themes (`Apple Light`, `Apple Dark`).
+  - Pro & Custom Dark Mode themes: `Midnight Space Gray`, `Apple Sunset`, `Sonoma Emerald`, `Ventura Amber`, `Soft Pastel`, `Catppuccin Mocha`, `Nord`, `Dracula`, `Cyberpunk`, `Solarized Light`, `Solarized Dark`, `GitHub Dark`, `GitHub Light`, `Navy Blue`, and `Forest Green`.
+- **Form Automation & Validation Engine**:
+  - Auto-generate complete forms from V structs using compile-time reflection (`win.add_form_from_struct[T]()`).
+  - Struct field attribute validation (`win.validate_struct[T]()`) supporting `@[required]`, `@[min_len]`, `@[max_len]`, `@[email]`, `@[url]`, `@[alphanumeric]`, `@[min]`, `@[max]`.
+  - Built-in ready-made validators for email, numeric input, URLs, IP addresses, phone numbers, alphanumeric string constraints, and numeric ranges.
+- **Neutralino-inspired OS & System APIs**:
+  - Synchronous, asynchronous, and timeout shell process execution (`exec`, `exec_bg`, `exec_timeout`, `spawn_process`).
+  - Environment variable accessors, system paths lookup (`home`, `temp`, `desktop`, `documents`, `downloads`, `cache`, `app_data`).
+  - Hardware & system diagnostics: Processor model, CPU physical/logical cores, frequency, architecture, RAM memory, disk space, and disk usage stats (`DiskStats`).
+  - Network tools: Local IP, public external IP, TCP ping reachability, DNS lookup, Wi-Fi SSID, network interface listing, MAC address, DNS servers, default gateway, and listening ports detection.
+  - Resource monitoring: CPU utilization %, RSS memory usage per process, load average (1m/5m/15m), and kernel memory pressure.
+  - macOS App & Dock Integration: Bouncing dock icon for alerts, dock badges, native system notifications via AppleScript, volume/mute control, system accent color, dark mode toggle, and launch-at-login management.
+- **V Standard Library High-Level Wrappers**:
+  - **HTTP & WebSockets**: Synchronous HTTP GET/POST and background WebSocket client thread wrappers.
+  - **Cryptography & Hashing**: SHA-256, SHA-512, SHA-1, MD5, bcrypt password hashing/verification, HMAC (SHA256/SHA512/SHA1), Wyhash, and AES CBC 128-bit block encryption/decryption.
+  - **Encodings & Compression**: Hex, Base64 encoding/decoding, and Gzip, Zlib, Deflate, and Zstd data compression/decompression.
+  - **Random Numbers & UUIDs**: Cryptographically secure random bytes, hex strings, UUID v4 generation, and weighted choice arrays.
+  - **Parsing & Data Formats**: TOML configuration parser (`TOMLWrapperDoc`), JSON serialization/deserialization map helpers, URL parsing/building (`SimpleURL`), HTML DOM parser (`SimpleHTMLDocument`), and Markov-chain placeholder text generator (`lorem`).
+  - **Networking & IPC**: Low-level stream wrappers for TCP client, UDP datagram socket, and Unix domain socket IPC.
+  - **Datatypes & Collections**: Generic LIFO Stack (`SimpleStack`), FIFO Queue (`SimpleQueue`), Unique Set (`SimpleSet`), Ring Buffer (`SimpleRingBuffer`), and Min-Heap priority queue (`SimpleMinHeap`).
+  - **Math & Stats**: 2D Complex number arithmetic ($e^z$, conjugate, phase), trigonometry, logarithmic functions, smoothstep interpolation, and statistical utilities (mean, median, geometric/harmonic mean, RMS).
+- **Ergonomics, RAD Productivity & Threading**:
+  - One-call JSON settings persistence (`save_values_to_file` / `load_values_from_file`).
+  - Baseline form dirty-tracking state (`is_dirty`, `is_control_dirty`, `commit_changes`).
+  - Multi-select List Box and Table helpers with Cmd/Shift selection and double-click actions.
+  - Live search filtering (`bind_search_to_list`) and CSV/JSON table import/export.
+  - Application top menu bar (`add_menu`) and right-click context menu binding (`add_context_menu`).
+  - Async thread execution (`run_async`, `run_on_main_thread`) to run intensive tasks off the UI thread cleanly.
+- **Native Keyboard Shortcuts & Overlay Levels**:
+  - `CMD + F` for full screen, `CMD + Q` to quit, custom shortcut recorder widget, and window always-on-top level control.
 
-The developer controls demo in [demos/developer_controls_demo.v](demos/developer_controls_demo.v) showcases these richer UI helpers in one place, while [demos/editable_grid_showcase_demo.v](demos/editable_grid_showcase_demo.v) demonstrates the new editable-grid workflow with selection, filtering, sorting, and programmatic row/column/cell access.
+The developer controls demo in [demos/developer_controls_demo.v](demos/developer_controls_demo.v) showcases these richer UI helpers in one place, while [demos/editable_grid_showcase_demo.v](demos/editable_grid_showcase_demo.v) demonstrates the editable-grid workflow with selection, filtering, sorting, and programmatic cell access.
+
 
 For app code, the grid helpers are intentionally ergonomic:
 
@@ -954,13 +976,13 @@ v run demos/clipboard_demo.v
 v run demos/benchmark_demo.v
 ```
 
-## Run tests
+## Testing
 
 ```bash
 v test .
 ```
 
-## Project files
+## Project structure
 
 - [build.vsh](build.vsh) — macOS binary compilation and packaging script for `.app` bundle with icons
 - [build_demos.vsh](build_demos.vsh) — batch compilation script to package all demos concurrently with their premium icons
@@ -1038,6 +1060,74 @@ v test .
 - [demos/system_and_stdlib_features_demo.v](demos/system_and_stdlib_features_demo.v) — exhaustive showcases of V core systems operations
 - [demos/clipboard_demo.v](demos/clipboard_demo.v) — monitors clipboard entries and displays history log
 - [demos/benchmark_demo.v](demos/benchmark_demo.v) — measures wrapper operation latency benchmarks
+
+## Documentation
+
+Full API documentation and detailed signature references are maintained in [API.md](API.md). Below is an architectural overview of SimpleGUI's API surface:
+
+### 1. Window Operations & Themes
+- **Lifecycle**: `new_simple_window(title, w, h)`, `win.run()`, `win.close()`, `win.hide()`, `win.show_window()`
+- **Geometry & Alignment**: `win.center()`, `win.align(pos)`, `win.set_size(w, h)`, `win.set_position(x, y)`, `win.set_min_size()`, `win.set_max_size()`, `win.set_resizable()`, `win.set_aspect_ratio()`
+- **Appearance & Opacity**: `win.set_title(t)`, `win.set_subtitle(s)`, `win.set_opacity(alpha)`, `win.set_background_color(hex)`, `win.set_font_color(color)`, `win.set_titlebar_visible()`, `win.set_titlebar_appears_transparent()`, `win.set_full_size_content_view()`
+- **17 Theme Presets**: `win.set_theme(name)` applies any built-in theme (`Apple Light`, `Apple Dark`, `Midnight Space Gray`, `Apple Sunset`, `Sonoma Emerald`, `Ventura Amber`, `Soft Pastel`, `Catppuccin`, `Nord`, `Dracula`, `Cyberpunk`, `Solarized Light`, `Solarized Dark`, `GitHub Dark`, `GitHub Light`, `Navy Blue`, `Forest Green`). List all themes with `simplegui.list_themes()`.
+- **Window Stacking & Dock**: `win.set_always_on_top(bool)`, `win.set_window_level(level)`, `win.toggle_fullscreen()`, `win.bounce_dock(critical)`, `win.set_dock_badge(count)`, `win.set_movable_by_window_background()`
+
+### 2. Control Layout & Containers
+- **Horizontal Stacking**: `win.begin_row(name)`, `win.end_row()`, `win.row(name, callback)`
+- **Bulk Rows**: `win.add_action_row(map)`, `win.add_fields_row(map)`, `win.add_labeled_*`
+- **Group Containers**: `win.add_group_box(name, title)` / `win.group(...)`, `win.add_tabs(name, titles)`, `win.add_scroll_view(name, height)`
+- **Layout Spacers**: `win.add_vertical_spacer(h)`, `win.add_horizontal_spacer(w)`, `win.add_separator()`
+
+### 3. Controls & Widgets (40+ Native Controls)
+- **Standard Controls**: `add_input`, `add_password`, `add_textarea`, `add_checkbox`, `add_button`, `add_number`, `add_slider`, `add_dropdown`, `add_segmented_control`, `add_radio_group`, `add_switch`, `add_search_field`
+- **Rich Cocoa Controls**: `add_combo_box`, `add_level_indicator`, `add_rating`, `add_spinner`, `add_path_control`, `add_token_field`, `add_stepper`, `add_knob`, `add_pull_down`, `add_image_button`
+- **Dashboard & Developer Widgets**: `add_breadcrumbs`, `add_shortcut_recorder`, `add_chart`, `add_circular_progress`, `add_property_grid`, `add_color_grid`, `add_console`, `add_code_editor`, `add_timeline_view`, `add_stat_card`, `add_banner`, `add_star_rating`, `add_range_slider`, `add_split_button`, `add_tag_cloud`, `add_wizard_stepper`, `add_section_header`, `add_vertical_slider`, `add_chip_group`, `add_badge`, `add_icon_segments`, `add_status_indicator`, `add_metric_meter`, `add_avatar_card`, `add_time_picker`, `add_tray_icon`, `add_collapsible_section`, `add_toolbar_item`, `add_html_view`, `add_drop_zone`
+- **Reflection & Struct Validation**: `win.add_form_from_struct[T](default_data)` auto-builds forms from V structs; `win.validate_struct[T]()` validates struct field attributes (`@[required]`, `@[min_len]`, `@[max_len]`, `@[email]`, `@[url]`, `@[alphanumeric]`, `@[min]`, `@[max]`).
+
+### 4. Sizing, Styling & Fluent Chaining
+- `set_control_width`, `set_control_height`, `set_control_font_size`, `set_control_font_bold`, `set_control_font_name`, `set_control_background_color`, `set_control_font_color`, `set_control_visible`, `set_control_enabled`, `set_placeholder`, `set_error`, `set_tooltip`
+- **Fluent Modifiers**: Chain directly on creation: `.width(w)`, `.height(h)`, `.font_size(s)`, `.bold(b)`, `.font_name(f)`, `.color(hex)`, `.font_color(hex)`, `.placeholder(t)`, `.error(err)`, `.tooltip(t)`, `.visible(b)`, `.enabled(b)`, `.onclick(cb)`, `.onchange(cb)`, `.onenter(cb)`, `.onfocus(cb)`, `.onblur(cb)`, `.onhover(cb)`
+
+### 5. Dialogs, Popups & File Pickers
+- `win.alert(title, msg)`, `win.alert_with_style(title, msg, style)`, `win.confirm(title, msg)`, `win.prompt(title, msg, default)`, `win.choice_dialog(title, msg, choices)`
+- `win.info()`, `win.warn()`, `win.error_dialog()`, `win.ask()`, `win.choose()`, `win.ask_text()`
+- `win.select_file()`, `win.select_file_with_extensions(exts)`, `win.select_folder()`, `win.save_file_picker()`, `win.choose_file()`, `win.choose_folder()`, `win.choose_save_file()`
+
+### 6. System & Platform APIs (`NL_OS`, `NL_COMPUTER`, `NL_FILESYSTEM`)
+- **Process Execution**: `win.exec(cmd)`, `win.exec_bg(cmd)`, `win.exec_timeout(cmd, ms)`, `win.spawn_process(path, args, env)`
+- **Environment & System Paths**: `win.get_env(key)`, `win.set_env(key, val)`, `win.get_system_path(name)` (`home`, `temp`, `desktop`, `documents`, `downloads`, `cache`, `app_data`)
+- **Hardware & Computer Specs**: `win.get_hostname()`, `win.get_username()`, `win.get_pid()`, `win.get_cpu_info()`, `win.get_cpu_cores()`, `win.get_memory_info()`, `win.get_disk_usage(path)`, `win.get_file_metadata(path)`
+- **Network Tools**: `win.get_local_ip()`, `win.get_external_ip()`, `win.ping(host, count)`, `win.dns_lookup(host)`, `win.get_wifi_ssid()`, `win.get_listening_ports()`, `win.is_internet_connected()`
+- **Resource Monitoring**: `win.get_cpu_usage_percent()`, `win.get_process_memory_mb(pid)`, `win.get_load_average()`, `win.get_memory_pressure()`
+- **macOS System Actions**: `win.show_system_notification()`, `win.say()`, `win.speak_with_voice()`, `win.toggle_dark_mode()`, `win.get_battery_percent()`, `win.get_volume()`, `win.take_screenshot()`, `win.trash_file()`, `win.defaults_read/write`
+
+### 7. V Standard Library High-Level Wrappers
+- **HTTP & WebSockets**: `win.http_get(url)`, `win.http_post(url, data)`, `win.websocket_client(url, callback)`
+- **Crypto & Hashing**: `win.crypto_sha256()`, `win.crypto_sha512()`, `win.crypto_md5()`, `win.crypto_bcrypt_hash()`, `win.crypto_bcrypt_verify()`, `win.crypto_hmac_sha256()`, `win.crypto_wyhash()`, `win.crypto_encrypt_aes()`, `win.crypto_decrypt_aes()`
+- **Encodings & Compression**: `win.hex_encode()`, `win.hex_decode()`, `win.base64_encode()`, `win.base64_decode()`, `win.compress_gzip()`, `win.decompress_gzip()`, `win.compress_zlib()`, `win.compress_deflate()`, `win.compress_zstd()`
+- **Random & Time**: `win.rand_int()`, `win.rand_string()`, `win.crypto_rand_uuid()`, `win.start_stopwatch()`, `win.start_benchmark()`
+- **Collections**: `simplegui.new_stack[T]()`, `simplegui.new_queue[T]()`, `simplegui.new_set[T]()`, `simplegui.new_ringbuffer[T]()`, `simplegui.new_min_heap[T]()`
+- **Math & Stats**: `win.complex_new(re, im)` ($e^z$, conjugate, phase), `win.math_sin()`, `win.math_cos()`, `win.math_sqrt()`, `win.math_clamp()`, `win.math_remap()`, `win.math_smoothstep()`, `win.stats_mean()`, `win.stats_median()`, `win.stats_rms()`
+
+### 8. Event Handling & Custom Menus
+- **Control Events**: `win.on_click(name, cb)`, `win.on_change(name, cb)`, `win.on_hover(name, cb)`, `win.on_focus(name, cb)`, `win.on_blur(name, cb)`, `win.on_enter(name, cb)`, `win.on_key(key, cb)`
+- **Window Events**: `win.on_resize(cb)`, `win.on_window_focus(cb)`, `win.on_window_blur(cb)`, `win.on_window_minimize(cb)`, `win.on_window_restore(cb)`, `win.on_close(cb)`, `win.on_file_drop(cb)`
+- **Application Menus**: `win.add_menu_item(menu, title, shortcut, cb)`, `win.add_menu(menu, items)`
+- **Context Menus**: `win.add_context_menu_item(control, title, cb)`, `win.add_context_menu(control, items)`
+
+### 9. Multi-Column Tables, Data Grids & Tree Views
+- **Tables**: `win.add_table(name, columns)`, `win.set_table_rows(name, rows)`, `win.load_table_from_structs[T](name, items)`, `win.add_table_row()`, `win.get_table_selected()`, `win.on_table_select()`, `win.on_table_double_click()`, `win.save_table_to_csv()`, `win.load_table_from_csv()`
+- **Editable Data Grids**: `win.add_grid(name, headers, initial_rows)`, `win.grid_add_row()`, `win.grid_delete_row()`, `win.grid_get_cell()`, `win.grid_set_cell()`, `win.grid_get_selected_cell()`, `win.grid_set_filter()`, `win.grid_sort_by_column()`, `win.grid_set_column_type()`
+- **Tree Views**: `TreeNode` struct (`id`, `parent_id`, `text`), `win.add_tree_view(name, height)`, `win.set_tree_nodes(name, nodes)`, `win.get_tree_selected()`, `win.set_tree_selected()`
+
+### 10. Ergonomics, Settings Persistence & Async Execution
+- **Settings Persistence**: `win.save_values_to_file("settings.json")!`, `win.load_values_from_file("settings.json")!`
+- **Form Dirty Tracking**: `win.is_dirty()`, `win.is_control_dirty(name)`, `win.commit_changes()`, `win.confirm_discard_changes()`
+- **Live Search Filtering**: `win.bind_search_to_list(search_name, list_name)`
+- **Async Execution**: `win.run_async(bg_task_fn, on_complete_cb)`, `win.run_on_main_thread(cb)`
+- **System Tray Mode**: `win.enable_status_bar(icon_path)`
+
+For complete method details, arguments, and full code examples, view [API.md](API.md).
 
 ## Notes
 
@@ -1175,3 +1265,19 @@ Screenshots are auto-generated using `v run capture_demos.vsh`.
   ![Grid Column Starter](screenshots/grid_column_starter.png)
 - **High-Level Form Builder**: `v run demos/high_level_demo.v`
   ![High-Level Form Builder](screenshots/high_level_demo.png)
+
+## Contributing
+
+Contributions are welcome! If you find a bug, have a feature request, or want to contribute new controls or themes:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/my-feature`)
+3. Commit your changes (`git commit -am 'Add new feature'`)
+4. Run tests (`v test .`)
+5. Push to your branch (`git push origin feature/my-feature`)
+6. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License.
+
