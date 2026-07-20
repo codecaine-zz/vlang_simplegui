@@ -436,6 +436,29 @@ void *window_add_code_view_control(main__WindowInfo *info, const char *name, con
 void window_set_code_view_text(main__WindowInfo *info, const char *name, const char *code_text);
 const char *window_get_code_view_text(main__WindowInfo *info, const char *name);
 
+// 6 New Useful Controls (Alert Banner, Step Tracker, Filter Chips, File Picker Field, Radial Gauge, Key Value Card)
+void *window_add_alert_banner_control(main__WindowInfo *info, const char *name, const char *title, const char *message, const char *style);
+void window_set_alert_banner_value(main__WindowInfo *info, const char *name, const char *title, const char *message, const char *style);
+
+void *window_add_step_tracker_control(main__WindowInfo *info, const char *name, const char **steps, int count, int current_step);
+void window_set_step_tracker_step(main__WindowInfo *info, const char *name, int step);
+int window_get_step_tracker_step(main__WindowInfo *info, const char *name);
+
+void *window_add_filter_chips_control(main__WindowInfo *info, const char *name, const char **chips, int count, const char **selected, int sel_count, bool multi_select);
+void window_set_filter_chips_selected(main__WindowInfo *info, const char *name, const char **selected, int count);
+const char *window_get_filter_chips_selected(main__WindowInfo *info, const char *name);
+
+void *window_add_file_picker_field_control(main__WindowInfo *info, const char *name, const char *initial_path, const char *button_title, bool folder_only);
+void window_set_file_picker_path(main__WindowInfo *info, const char *name, const char *path);
+const char *window_get_file_picker_path(main__WindowInfo *info, const char *name);
+
+void *window_add_radial_gauge_control(main__WindowInfo *info, const char *name, const char *title, double value, double min_val, double max_val, const char *unit);
+void window_set_radial_gauge_value(main__WindowInfo *info, const char *name, double value);
+double window_get_radial_gauge_value(main__WindowInfo *info, const char *name);
+
+void *window_add_key_value_card_control(main__WindowInfo *info, const char *name, const char *title, const char **keys, const char **values, int count);
+void window_set_key_value_card_data(main__WindowInfo *info, const char *name, const char **keys, const char **values, int count);
+
 #endif
 
 

@@ -1887,6 +1887,12 @@ pub fn (win &SimpleWindow) set_toolbar_visible(visible bool) &SimpleWindow {
 	return win
 }
 
+// add_labeled_file_picker adds a descriptive label above or alongside a native file picker field.
+pub fn (win &SimpleWindow) add_labeled_file_picker(label string, name string, initial_path string, button_title string, folder_only bool) &SimpleWindow {
+	win.add_label('${name}_label', label)
+	return win.add_file_picker_field(name, initial_path, button_title, folder_only)
+}
+
 
 
 

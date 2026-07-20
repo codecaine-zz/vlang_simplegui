@@ -158,6 +158,60 @@ fn main() {
 		win.end_row()
 	win.end_glass_box()
 
+	// Section 5: High-Utility Controls Suite
+	win.begin_glass_box('section_utility_controls', 'hudwindow')
+		win.add_label('lbl_suite_head', 'Modern High-Utility Controls Suite')
+
+		// Alert Banner Notification
+		win.add_alert_banner('alert_sys', 'System Upgrade Ready', 'macOS AppKit native simplegui 2.0 is now active.', 'info')
+		win.on_change('alert_sys', fn (mut w simplegui.SimpleWindow, msg string) {
+			w.set_status('Notification Banner event: ${msg}')
+		})
+
+		win.begin_row('row_suite_widgets')
+			// Radial Speedometer Gauge
+			win.add_radial_gauge('radial_speed', 'Net Speed', 78.5, 0.0, 100.0, 'MB/s')
+
+			win.add_horizontal_spacer(16)
+
+			// Key-Value Card Summary
+			win.add_key_value_card('card_specs', 'System Specs', ['Host OS', 'Architecture', 'CPU Cores', 'Memory'], ['macOS 15.1', 'Apple M-Series', '10 Cores', '32 GB Unified'])
+
+			win.add_horizontal_spacer(16)
+
+			// File Picker Field
+			win.begin_row('col_file_picker')
+				win.add_label('lbl_picker_title', 'Native File Chooser Field:')
+				win.add_file_picker_field('app_target_path', '/Users/codecaine/vlang_simplegui', 'Select Folder...', true)
+				win.on_change('app_target_path', fn (mut w simplegui.SimpleWindow, chosen string) {
+					w.set_status('Selected Path: ${chosen}')
+				})
+			win.end_row()
+		win.end_row()
+
+		win.begin_row('row_steps_and_chips')
+			// Step Process Tracker
+			win.begin_row('col_steps')
+				win.add_label('lbl_steps_head', 'Process Workflow Steps:')
+				win.add_step_tracker('workflow_steps', ['Initiate', 'Configure', 'Compile', 'Release'], 2)
+				win.on_change('workflow_steps', fn (mut w simplegui.SimpleWindow, s string) {
+					w.set_status('Workflow Step changed to #${s}')
+				})
+			win.end_row()
+
+			win.add_horizontal_spacer(20)
+
+			// Interactive Filter Chips Tag Group
+			win.begin_row('col_chips')
+				win.add_label('lbl_chips_head', 'Filter Tags:')
+				win.add_filter_chips('app_filter_chips', ['All', 'GUI', 'Network', 'Graphics', 'Async'], ['GUI', 'Graphics'], true)
+				win.on_change('app_filter_chips', fn (mut w simplegui.SimpleWindow, selected string) {
+					w.set_status('Active Filter Tags: ${selected}')
+				})
+			win.end_row()
+		win.end_row()
+	win.end_glass_box()
+
 	// Initial activity feed items
 	win.add_activity_feed_item('log_feed', '10:00:01', 'Application initialized', 'info')
 	win.add_activity_feed_item('log_feed', '10:00:02', 'Connected to local runtime', 'success')

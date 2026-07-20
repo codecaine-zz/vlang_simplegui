@@ -2279,6 +2279,46 @@ fn test_even_more_new_controls() {
 	assert win.get_code_view_text('snippet') == 'fn main() { println("Updated") }'
 }
 
+fn test_high_utility_controls() {
+	mut win := simplegui.new_simple_window('Test Utility Controls Suite', 800, 600)
+
+	// 1. Alert Banner
+
+	win.add_alert_banner('alert_1', 'Warning', 'Disk space low', 'warning')
+	assert win.has_control('alert_1') == true
+	win.set_alert_banner_value('alert_1', 'Success', 'File downloaded', 'success')
+
+	// 2. Step Tracker
+	win.add_step_tracker('steps_1', ['Order', 'Shipping', 'Delivered'], 1)
+	assert win.has_control('steps_1') == true
+	win.set_step_tracker_step('steps_1', 2)
+	assert win.get_step_tracker_step('steps_1') == 2
+
+	// 3. Filter Chips
+	win.add_filter_chips('chips_1', ['Active', 'Pending', 'Closed'], ['Active'], true)
+	assert win.has_control('chips_1') == true
+	win.set_filter_chips_selected('chips_1', ['Active', 'Closed'])
+	assert win.get_filter_chips_selected('chips_1') == 'Active,Closed'
+
+	// 4. File Picker Field
+	win.add_file_picker_field('file_1', '/tmp/test.txt', 'Select...', false)
+	assert win.has_control('file_1') == true
+	win.set_file_picker_path('file_1', '/tmp/updated.txt')
+	assert win.get_file_picker_path('file_1') == '/tmp/updated.txt'
+
+	// 5. Radial Gauge
+	win.add_radial_gauge('gauge_1', 'CPU', 65.0, 0.0, 100.0, '%')
+	assert win.has_control('gauge_1') == true
+	win.set_radial_gauge_value('gauge_1', 82.5)
+	assert win.get_radial_gauge_value('gauge_1') == 82.5
+
+	// 6. Key Value Card
+	win.add_key_value_card('card_1', 'Details', ['Status', 'Uptime'], ['Running', '99.9%'])
+	assert win.has_control('card_1') == true
+	win.set_key_value_card_data('card_1', ['Status', 'Uptime'], ['Healthy', '100%'])
+}
+
+
 
 
 

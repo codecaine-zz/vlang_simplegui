@@ -415,6 +415,28 @@ fn C.window_add_code_view_control(&WindowInfo, &u8, &u8, &u8, int) voidptr
 fn C.window_set_code_view_text(&WindowInfo, &u8, &u8)
 fn C.window_get_code_view_text(&WindowInfo, &u8) &u8
 
+fn C.window_add_alert_banner_control(&WindowInfo, &u8, &u8, &u8, &u8) voidptr
+fn C.window_set_alert_banner_value(&WindowInfo, &u8, &u8, &u8, &u8)
+
+fn C.window_add_step_tracker_control(&WindowInfo, &u8, &&u8, int, int) voidptr
+fn C.window_set_step_tracker_step(&WindowInfo, &u8, int)
+fn C.window_get_step_tracker_step(&WindowInfo, &u8) int
+
+fn C.window_add_filter_chips_control(&WindowInfo, &u8, &&u8, int, &&u8, int, bool) voidptr
+fn C.window_set_filter_chips_selected(&WindowInfo, &u8, &&u8, int)
+fn C.window_get_filter_chips_selected(&WindowInfo, &u8) &u8
+
+fn C.window_add_file_picker_field_control(&WindowInfo, &u8, &u8, &u8, bool) voidptr
+fn C.window_set_file_picker_path(&WindowInfo, &u8, &u8)
+fn C.window_get_file_picker_path(&WindowInfo, &u8) &u8
+
+fn C.window_add_radial_gauge_control(&WindowInfo, &u8, &u8, f64, f64, f64, &u8) voidptr
+fn C.window_set_radial_gauge_value(&WindowInfo, &u8, f64)
+fn C.window_get_radial_gauge_value(&WindowInfo, &u8) f64
+
+fn C.window_add_key_value_card_control(&WindowInfo, &u8, &u8, &&u8, &&u8, int) voidptr
+fn C.window_set_key_value_card_data(&WindowInfo, &u8, &&u8, &&u8, int)
+
 
 
 
@@ -7263,6 +7285,324 @@ pub fn (win &SimpleWindow) get_code_view_text(name string) string {
 		return win.controls[idx].value
 	}
 	return ''
+}
+
+// add_alert_banner adds a dismissible notification banner with icon, title, message, and close button.
+pub fn (win &SimpleWindow) add_alert_banner(name string, title string, message string, style string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('alert_banner')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name: real_name
+			kind: 'alert_banner'
+			value: title
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_alert_banner_control(win.window_info, real_name.str, title.str, message.str, style.str)
+	}
+	return win
+}
+
+// alert_banner adds an auto-named notification banner.
+pub fn (win &SimpleWindow) alert_banner(title string, message string, style string) &SimpleWindow {
+	return win.add_alert_banner('', title, message, style)
+}
+
+// set_alert_banner_value updates alert banner content and makes it visible.
+pub fn (win &SimpleWindow) set_alert_banner_value(name string, title string, message string, style string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_alert_banner_value(win.window_info, name.str, title.str, message.str, style.str)
+	}
+	return win
+}
+
+// add_step_tracker adds a horizontal process step progress bar with interactive step nodes.
+pub fn (win &SimpleWindow) add_step_tracker(name string, steps []string, current_step int) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('step_tracker')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name: real_name
+			kind: 'step_tracker'
+			value: '${current_step}'
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		mut c_steps := []&u8{cap: steps.len}
+		for s in steps {
+			c_steps << s.str
+		}
+		C.window_add_step_tracker_control(win.window_info, real_name.str, c_steps.data, steps.len, current_step)
+	}
+	return win
+}
+
+// step_tracker adds an auto-named process step tracker widget.
+pub fn (win &SimpleWindow) step_tracker(steps []string, current_step int) &SimpleWindow {
+	return win.add_step_tracker('', steps, current_step)
+}
+
+// set_step_tracker_step updates the currently active step node.
+pub fn (win &SimpleWindow) set_step_tracker_step(name string, step int) &SimpleWindow {
+	idx := win.find_control(name)
+	if idx >= 0 {
+		unsafe {
+			mut w := &SimpleWindow(win)
+			w.controls[idx].value = '${step}'
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_set_step_tracker_step(win.window_info, name.str, step)
+	}
+	return win
+}
+
+// get_step_tracker_step returns the current step index.
+pub fn (win &SimpleWindow) get_step_tracker_step(name string) int {
+	if win.window_info != unsafe { nil } {
+		return C.window_get_step_tracker_step(win.window_info, name.str)
+	}
+	idx := win.find_control(name)
+	if idx >= 0 {
+		return win.controls[idx].value.int()
+	}
+	return 0
+}
+
+// add_filter_chips adds an interactive filter chip tag group with single/multi selection.
+pub fn (win &SimpleWindow) add_filter_chips(name string, chips []string, selected []string, multi_select bool) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('filter_chips')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name: real_name
+			kind: 'filter_chips'
+			value: selected.join(',')
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		mut c_chips := []&u8{cap: chips.len}
+		for c in chips {
+			c_chips << c.str
+		}
+		mut c_sel := []&u8{cap: selected.len}
+		for s in selected {
+			c_sel << s.str
+		}
+		C.window_add_filter_chips_control(win.window_info, real_name.str, c_chips.data, chips.len, c_sel.data, selected.len, multi_select)
+	}
+	return win
+}
+
+// filter_chips adds an auto-named filter chip group.
+pub fn (win &SimpleWindow) filter_chips(chips []string, selected []string, multi_select bool) &SimpleWindow {
+	return win.add_filter_chips('', chips, selected, multi_select)
+}
+
+// set_filter_chips_selected updates active selected chips.
+pub fn (win &SimpleWindow) set_filter_chips_selected(name string, selected []string) &SimpleWindow {
+	idx := win.find_control(name)
+	if idx >= 0 {
+		unsafe {
+			mut w := &SimpleWindow(win)
+			w.controls[idx].value = selected.join(',')
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		mut c_sel := []&u8{cap: selected.len}
+		for s in selected {
+			c_sel << s.str
+		}
+		C.window_set_filter_chips_selected(win.window_info, name.str, c_sel.data, selected.len)
+	}
+	return win
+}
+
+// get_filter_chips_selected returns active selected filter chips as comma-separated string.
+pub fn (win &SimpleWindow) get_filter_chips_selected(name string) string {
+	if win.window_info != unsafe { nil } {
+		unsafe {
+			res := C.window_get_filter_chips_selected(win.window_info, name.str)
+			if res != nil {
+				return tos3(res)
+			}
+		}
+	}
+	idx := win.find_control(name)
+	if idx >= 0 {
+		return win.controls[idx].value
+	}
+	return ''
+}
+
+// add_file_picker_field adds a path input with native Cocoa NSOpenPanel file chooser button.
+pub fn (win &SimpleWindow) add_file_picker_field(name string, initial_path string, button_title string, folder_only bool) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('file_picker')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name: real_name
+			kind: 'file_picker'
+			value: initial_path
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_file_picker_field_control(win.window_info, real_name.str, initial_path.str, button_title.str, folder_only)
+	}
+	return win
+}
+
+// file_picker_field adds an auto-named file picker input widget.
+pub fn (win &SimpleWindow) file_picker_field(initial_path string, button_title string, folder_only bool) &SimpleWindow {
+	return win.add_file_picker_field('', initial_path, button_title, folder_only)
+}
+
+// set_file_picker_path updates the displayed file/folder path.
+pub fn (win &SimpleWindow) set_file_picker_path(name string, path string) &SimpleWindow {
+	idx := win.find_control(name)
+	if idx >= 0 {
+		unsafe {
+			mut w := &SimpleWindow(win)
+			w.controls[idx].value = path
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_set_file_picker_path(win.window_info, name.str, path.str)
+	}
+	return win
+}
+
+// get_file_picker_path returns current path string from file picker widget.
+pub fn (win &SimpleWindow) get_file_picker_path(name string) string {
+	if win.window_info != unsafe { nil } {
+		unsafe {
+			res := C.window_get_file_picker_path(win.window_info, name.str)
+			if res != nil {
+				return tos3(res)
+			}
+		}
+	}
+	idx := win.find_control(name)
+	if idx >= 0 {
+		return win.controls[idx].value
+	}
+	return ''
+}
+
+// add_radial_gauge adds a semi-circular dial meter with gradient arc and digital value readout.
+pub fn (win &SimpleWindow) add_radial_gauge(name string, title string, value f64, min_val f64, max_val f64, unit string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('radial_gauge')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name: real_name
+			kind: 'radial_gauge'
+			value: '${value}'
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_radial_gauge_control(win.window_info, real_name.str, title.str, value, min_val, max_val, unit.str)
+	}
+	return win
+}
+
+// radial_gauge adds an auto-named radial gauge dial.
+pub fn (win &SimpleWindow) radial_gauge(title string, value f64, min_val f64, max_val f64, unit string) &SimpleWindow {
+	return win.add_radial_gauge('', title, value, min_val, max_val, unit)
+}
+
+// set_radial_gauge_value updates value displayed on radial gauge dial.
+pub fn (win &SimpleWindow) set_radial_gauge_value(name string, value f64) &SimpleWindow {
+	idx := win.find_control(name)
+	if idx >= 0 {
+		unsafe {
+			mut w := &SimpleWindow(win)
+			w.controls[idx].value = '${value}'
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_set_radial_gauge_value(win.window_info, name.str, value)
+	}
+	return win
+}
+
+// get_radial_gauge_value retrieves current numerical value from radial gauge.
+pub fn (win &SimpleWindow) get_radial_gauge_value(name string) f64 {
+	if win.window_info != unsafe { nil } {
+		return C.window_get_radial_gauge_value(win.window_info, name.str)
+	}
+	idx := win.find_control(name)
+	if idx >= 0 {
+		return win.controls[idx].value.f64()
+	}
+	return 0.0
+}
+
+// add_key_value_card adds a structured summary card for displaying key-value data rows.
+pub fn (win &SimpleWindow) add_key_value_card(name string, title string, keys []string, values []string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('key_value_card')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name: real_name
+			kind: 'key_value_card'
+			value: title
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		mut c_keys := []&u8{cap: keys.len}
+		for k in keys {
+			c_keys << k.str
+		}
+		mut c_vals := []&u8{cap: values.len}
+		for v in values {
+			c_vals << v.str
+		}
+		count := if keys.len < values.len { keys.len } else { values.len }
+		C.window_add_key_value_card_control(win.window_info, real_name.str, title.str, c_keys.data, c_vals.data, count)
+	}
+	return win
+}
+
+// key_value_card adds an auto-named key-value summary card.
+pub fn (win &SimpleWindow) key_value_card(title string, keys []string, values []string) &SimpleWindow {
+	return win.add_key_value_card('', title, keys, values)
+}
+
+// set_key_value_card_data updates key and value row labels in card.
+pub fn (win &SimpleWindow) set_key_value_card_data(name string, keys []string, values []string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		mut c_keys := []&u8{cap: keys.len}
+		for k in keys {
+			c_keys << k.str
+		}
+		mut c_vals := []&u8{cap: values.len}
+		for v in values {
+			c_vals << v.str
+		}
+		count := if keys.len < values.len { keys.len } else { values.len }
+		C.window_set_key_value_card_data(win.window_info, name.str, c_keys.data, c_vals.data, count)
+	}
+	return win
 }
 
 

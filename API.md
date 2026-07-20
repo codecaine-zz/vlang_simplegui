@@ -463,7 +463,14 @@ For common forms, these helpers reduce boilerplate and keep the API friendly for
 - `win.add_audio_waveform(name string, amplitudes []f64, height int) &SimpleWindow` and `win.set_audio_waveform_data(name string, amplitudes []f64) &SimpleWindow` render sound level amplitude waveforms.
 - `win.add_rating_breakdown(name string, avg_score f64, total_reviews int, star_percentages []f64) &SimpleWindow` and `win.set_rating_breakdown_data(name string, avg_score f64, total_reviews int, star_percentages []f64) &SimpleWindow` display review rating scores and star percentage bars.
 - `win.add_code_view(name string, lang string, code_text string, height int) &SimpleWindow`, `win.set_code_view_text(name string, code_text string) &SimpleWindow`, and `win.get_code_view_text(name string) string` render dark monospaced code snippet blocks.
+- `win.add_alert_banner(name string, title string, message string, style string) &SimpleWindow` and `win.set_alert_banner_value(...)` create dismissible notification banners with status icons.
+- `win.add_step_tracker(name string, steps []string, current_step int) &SimpleWindow`, `win.set_step_tracker_step(...)`, and `win.get_step_tracker_step(...)` create horizontal workflow process trackers.
+- `win.add_filter_chips(name string, chips []string, selected []string, multi_select bool) &SimpleWindow`, `win.set_filter_chips_selected(...)`, and `win.get_filter_chips_selected(...)` create interactive filter chip tag groups.
+- `win.add_file_picker_field(name string, initial_path string, button_title string, folder_only bool) &SimpleWindow`, `win.set_file_picker_path(...)`, and `win.get_file_picker_path(...)` create path input fields with native Cocoa `NSOpenPanel` file chooser dialog buttons.
+- `win.add_radial_gauge(name string, title string, value f64, min_val f64, max_val f64, unit string) &SimpleWindow`, `win.set_radial_gauge_value(...)`, and `win.get_radial_gauge_value(...)` render semi-circular dial speedometer meters.
+- `win.add_key_value_card(name string, title string, keys []string, values []string) &SimpleWindow` and `win.set_key_value_card_data(...)` render key-value summary cards.
 - `win.add_form_from_struct[T](default_data T) &SimpleWindow` automatically generates input/checkbox/numeric fields side-by-side and vertically from a V struct using compile-time reflection.
+
 
 
 - `win.configure(callback fn (mut cfg WindowConfig)) &SimpleWindow` applies a small fluent configuration block for window title, dimensions, spacing, colors, and resize behavior.

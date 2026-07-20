@@ -630,6 +630,14 @@ extern void vlang_dispatch_event(void *win_ptr, const char *name, const char *ev
 @property (nonatomic, assign) BOOL isSelected;
 @end
 
+@interface RadialGaugeView : NSView
+@property (nonatomic, assign) double value;
+@property (nonatomic, assign) double minVal;
+@property (nonatomic, assign) double maxVal;
+@property (nonatomic, retain) NSString *title;
+@property (nonatomic, retain) NSString *unit;
+@end
+
 @interface FlippedView : NSView
 @end
 
@@ -787,6 +795,28 @@ extern void vlang_dispatch_event(void *win_ptr, const char *name, const char *ev
 - (NSView *)makeCodeViewWithName:(NSString *)name lang:(NSString *)lang codeText:(NSString *)codeText height:(int)height;
 - (void)setCodeViewText:(NSString *)codeText forName:(NSString *)name;
 - (NSString *)codeViewTextForName:(NSString *)name;
+
+- (NSView *)makeAlertBannerWithName:(NSString *)name title:(NSString *)title message:(NSString *)message style:(NSString *)style;
+- (void)setAlertBannerValueForName:(NSString *)name title:(NSString *)title message:(NSString *)message style:(NSString *)style;
+
+- (NSView *)makeStepTrackerWithName:(NSString *)name steps:(NSArray<NSString *> *)steps currentStep:(int)currentStep;
+- (void)setStepTrackerStep:(int)step forName:(NSString *)name;
+- (int)stepTrackerStepForName:(NSString *)name;
+
+- (NSView *)makeFilterChipsWithName:(NSString *)name chips:(NSArray<NSString *> *)chips selected:(NSArray<NSString *> *)selected multiSelect:(BOOL)multiSelect;
+- (void)setFilterChipsSelected:(NSArray<NSString *> *)selected forName:(NSString *)name;
+- (NSString *)filterChipsSelectedForName:(NSString *)name;
+
+- (NSView *)makeFilePickerFieldWithName:(NSString *)name initialPath:(NSString *)initialPath buttonTitle:(NSString *)buttonTitle folderOnly:(BOOL)folderOnly;
+- (void)setFilePickerPath:(NSString *)path forName:(NSString *)name;
+- (NSString *)filePickerPathForName:(NSString *)name;
+
+- (NSView *)makeRadialGaugeWithName:(NSString *)name title:(NSString *)title value:(double)value minVal:(double)minVal maxVal:(double)maxVal unit:(NSString *)unit;
+- (void)setRadialGaugeValue:(double)value forName:(NSString *)name;
+- (double)radialGaugeValueForName:(NSString *)name;
+
+- (NSView *)makeKeyValueCardWithName:(NSString *)name title:(NSString *)title keys:(NSArray<NSString *> *)keys values:(NSArray<NSString *> *)values;
+- (void)setKeyValueCardDataForName:(NSString *)name keys:(NSArray<NSString *> *)keys values:(NSArray<NSString *> *)values;
 
 
 
@@ -1329,6 +1359,76 @@ static NSColor *colorFromHexString(NSString *hexString) {
   [_lineColor setStroke];
   [path setLineWidth:2.0];
   [path stroke];
+}
+@end
+
+@implementation RadialGaugeView
+- (instancetype)initWithFrame:(NSRect)frameRect {
+  self = [super initWithFrame:frameRect];
+  if (self) {
+    _value = 50.0;
+    _minVal = 0.0;
+    _maxVal = 100.0;
+    _title = [@"Gauge" retain];
+    _unit = [@"%" retain];
+  }
+  return self;
+}
+
+- (void)dealloc {
+  [_title release];
+  [_unit release];
+  [super dealloc];
+}
+
+- (void)drawRect:(NSRect)dirtyRect {
+  [super drawRect:dirtyRect];
+  NSRect bounds = [self bounds];
+  CGFloat w = bounds.size.width;
+  CGFloat h = bounds.size.height;
+
+  NSPoint center = NSMakePoint(w / 2.0, h / 2.0 - 5.0);
+  CGFloat radius = MIN(w / 2.0 - 12.0, h / 2.0 - 12.0);
+  if (radius < 10.0) return;
+
+  // Background Arc
+  NSBezierPath *bgPath = [NSBezierPath bezierPath];
+  [bgPath appendBezierPathWithArcWithCenter:center radius:radius startAngle:180.0 endAngle:0.0 clockwise:YES];
+  [bgPath setLineWidth:8.0];
+  [[NSColor colorWithRed:0.2 green:0.25 blue:0.35 alpha:0.4] setStroke];
+  [bgPath stroke];
+
+  // Value Arc
+  double pct = MAX(0.0, MIN(1.0, (_value - _minVal) / (_maxVal - _minVal > 0 ? _maxVal - _minVal : 1.0)));
+  CGFloat endAngle = 180.0 - (180.0 * pct);
+  if (pct > 0.001) {
+    NSBezierPath *valPath = [NSBezierPath bezierPath];
+    [valPath appendBezierPathWithArcWithCenter:center radius:radius startAngle:180.0 endAngle:endAngle clockwise:YES];
+    [valPath setLineWidth:8.0];
+
+    NSColor *gaugeColor = (pct > 0.8) ? [NSColor systemRedColor] : ((pct > 0.5) ? [NSColor systemOrangeColor] : [NSColor systemBlueColor]);
+    [gaugeColor setStroke];
+    [valPath stroke];
+  }
+
+  // Draw Value Text in center
+  NSString *valStr = [NSString stringWithFormat:@"%.1f %@", _value, _unit ? _unit : @""];
+  NSDictionary *valAttrs = @{
+    NSFontAttributeName: [NSFont boldSystemFontOfSize:13.0],
+    NSForegroundColorAttributeName: [NSColor whiteColor]
+  };
+  NSSize valSize = [valStr sizeWithAttributes:valAttrs];
+  [valStr drawAtPoint:NSMakePoint(center.x - valSize.width / 2.0, center.y - 2.0) withAttributes:valAttrs];
+
+  // Draw Title Text below
+  if (_title) {
+    NSDictionary *titleAttrs = @{
+      NSFontAttributeName: [NSFont systemFontOfSize:10.0],
+      NSForegroundColorAttributeName: [NSColor colorWithWhite:0.7 alpha:1.0]
+    };
+    NSSize titleSize = [_title sizeWithAttributes:titleAttrs];
+    [_title drawAtPoint:NSMakePoint(center.x - titleSize.width / 2.0, center.y - 18.0) withAttributes:titleAttrs];
+  }
 }
 @end
 
@@ -7360,6 +7460,464 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
     }
   }
   return @"";
+}
+
+// 1. Alert Banner Control
+- (NSView *)makeAlertBannerWithName:(NSString *)name title:(NSString *)title message:(NSString *)message style:(NSString *)style {
+  NSBox *banner = [[NSBox alloc] initWithFrame:NSZeroRect];
+  [banner setBoxType:NSBoxCustom];
+  [banner setCornerRadius:8.0];
+
+  NSString *st = style ? [style lowercaseString] : @"info";
+  NSColor *bgColor = [NSColor colorWithRed:0.12 green:0.18 blue:0.28 alpha:0.9];
+  NSColor *accentColor = [NSColor systemBlueColor];
+  NSString *iconSymbol = @"ℹ️";
+
+  if ([st isEqualToString:@"success"]) {
+    bgColor = [NSColor colorWithRed:0.12 green:0.25 blue:0.18 alpha:0.9];
+    accentColor = [NSColor systemGreenColor];
+    iconSymbol = @"✓";
+  } else if ([st isEqualToString:@"warning"]) {
+    bgColor = [NSColor colorWithRed:0.28 green:0.22 blue:0.12 alpha:0.9];
+    accentColor = [NSColor systemOrangeColor];
+    iconSymbol = @"⚠️";
+  } else if ([st isEqualToString:@"error"]) {
+    bgColor = [NSColor colorWithRed:0.28 green:0.14 blue:0.14 alpha:0.9];
+    accentColor = [NSColor systemRedColor];
+    iconSymbol = @"❌";
+  }
+
+  [banner setFillColor:bgColor];
+  [banner setBorderColor:accentColor];
+
+  NSStackView *hstack = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [hstack setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+  [hstack setAlignment:NSLayoutAttributeCenterY];
+  [hstack setSpacing:10.0];
+  [hstack setEdgeInsets:NSEdgeInsetsMake(8, 12, 8, 12)];
+
+  NSTextField *iconLbl = [NSTextField labelWithString:iconSymbol];
+  [iconLbl setFont:[NSFont boldSystemFontOfSize:14.0]];
+  [hstack addArrangedSubview:iconLbl];
+
+  NSStackView *vtext = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [vtext setOrientation:NSUserInterfaceLayoutOrientationVertical];
+  [vtext setAlignment:NSLayoutAttributeLeading];
+  [vtext setSpacing:2.0];
+
+  NSTextField *titleLbl = [NSTextField labelWithString:title ? title : @"Alert"];
+  [titleLbl setFont:[NSFont boldSystemFontOfSize:12.0]];
+  [titleLbl setTextColor:[NSColor whiteColor]];
+  [vtext addArrangedSubview:titleLbl];
+
+  if (message && message.length > 0) {
+    NSTextField *msgLbl = [NSTextField labelWithString:message];
+    [msgLbl setFont:[NSFont systemFontOfSize:11.0]];
+    [msgLbl setTextColor:[NSColor colorWithWhite:0.8 alpha:1.0]];
+    [vtext addArrangedSubview:msgLbl];
+  }
+  [hstack addArrangedSubview:vtext];
+
+  NSButton *closeBtn = [NSButton buttonWithTitle:@"✕" target:self action:@selector(handleAlertBannerDismiss:)];
+  [closeBtn setBezelStyle:NSBezelStyleInline];
+  [closeBtn setBordered:NO];
+  [closeBtn setFont:[NSFont boldSystemFontOfSize:12.0]];
+  [closeBtn setContentTintColor:[NSColor colorWithWhite:0.7 alpha:1.0]];
+  objc_setAssociatedObject(closeBtn, "controlName", name, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(closeBtn, "bannerBox", banner, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  [hstack addArrangedSubview:closeBtn];
+
+  [banner setContentView:hstack];
+
+  if (!self.controlsByName) self.controlsByName = [NSMutableDictionary dictionary];
+  self.controlsByName[[name lowercaseString]] = banner;
+  [self addControlToLayout:banner];
+  return banner;
+}
+
+- (void)handleAlertBannerDismiss:(NSButton *)sender {
+  NSString *name = objc_getAssociatedObject(sender, "controlName");
+  NSBox *banner = objc_getAssociatedObject(sender, "bannerBox");
+  if (banner) {
+    [banner setHidden:YES];
+  }
+  if (name) {
+    vlang_dispatch_event(self.win_ptr, [name UTF8String], "change", "close");
+  }
+}
+
+- (void)setAlertBannerValueForName:(NSString *)name title:(NSString *)title message:(NSString *)message style:(NSString *)style {
+  NSBox *banner = (NSBox *)self.controlsByName[[name lowercaseString]];
+  if (banner) {
+    [banner setHidden:NO];
+  }
+}
+
+// 2. Step Process Tracker Control
+- (NSView *)makeStepTrackerWithName:(NSString *)name steps:(NSArray<NSString *> *)steps currentStep:(int)currentStep {
+  NSStackView *hstack = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [hstack setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+  [hstack setAlignment:NSLayoutAttributeCenterY];
+  [hstack setSpacing:6.0];
+  [hstack setEdgeInsets:NSEdgeInsetsMake(6, 8, 6, 8)];
+
+  NSMutableArray *buttons = [NSMutableArray array];
+
+  for (int i = 0; i < (int)steps.count; i++) {
+    BOOL isDone = i < currentStep;
+    BOOL isCurrent = i == currentStep;
+    NSString *numStr = isDone ? @"✓" : [NSString stringWithFormat:@"%d", i + 1];
+
+    NSButton *stepBtn = [NSButton buttonWithTitle:[NSString stringWithFormat:@"%@  %@", numStr, steps[i]] target:self action:@selector(handleStepTrackerClicked:)];
+    [stepBtn setBezelStyle:NSBezelStyleInline];
+    [stepBtn setFont:[NSFont boldSystemFontOfSize:11.0]];
+    if (isCurrent) {
+      [stepBtn setContentTintColor:[NSColor systemBlueColor]];
+    } else if (isDone) {
+      [stepBtn setContentTintColor:[NSColor systemGreenColor]];
+    } else {
+      [stepBtn setContentTintColor:[NSColor colorWithWhite:0.6 alpha:1.0]];
+    }
+    objc_setAssociatedObject(stepBtn, "controlName", name, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    objc_setAssociatedObject(stepBtn, "stepIndex", @(i), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    [buttons addObject:stepBtn];
+    [hstack addArrangedSubview:stepBtn];
+
+    if (i < (int)steps.count - 1) {
+      NSTextField *arrow = [NSTextField labelWithString:@"→"];
+      [arrow setTextColor:[NSColor colorWithWhite:0.4 alpha:1.0]];
+      [arrow setFont:[NSFont systemFontOfSize:11.0]];
+      [hstack addArrangedSubview:arrow];
+    }
+  }
+
+  if (!self.controlsByName) self.controlsByName = [NSMutableDictionary dictionary];
+  self.controlsByName[[name lowercaseString]] = hstack;
+  objc_setAssociatedObject(hstack, "stepButtons", buttons, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(hstack, "stepList", steps, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(hstack, "currentStep", @(currentStep), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+  [self addControlToLayout:hstack];
+  return hstack;
+}
+
+- (void)handleStepTrackerClicked:(NSButton *)sender {
+  NSString *name = objc_getAssociatedObject(sender, "controlName");
+  NSNumber *idxNum = objc_getAssociatedObject(sender, "stepIndex");
+  if (name && idxNum) {
+    int idx = [idxNum intValue];
+    [self setStepTrackerStep:idx forName:name];
+    vlang_dispatch_event(self.win_ptr, [name UTF8String], "change", [[NSString stringWithFormat:@"%d", idx] UTF8String]);
+  }
+}
+
+- (void)setStepTrackerStep:(int)step forName:(NSString *)name {
+  NSStackView *hstack = (NSStackView *)self.controlsByName[[name lowercaseString]];
+  if (hstack) {
+    NSArray *buttons = objc_getAssociatedObject(hstack, "stepButtons");
+    NSArray *steps = objc_getAssociatedObject(hstack, "stepList");
+    objc_setAssociatedObject(hstack, "currentStep", @(step), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    for (int i = 0; i < (int)buttons.count; i++) {
+      NSButton *btn = buttons[i];
+      BOOL isDone = i < step;
+      BOOL isCurrent = i == step;
+      NSString *numStr = isDone ? @"✓" : [NSString stringWithFormat:@"%d", i + 1];
+      [btn setTitle:[NSString stringWithFormat:@"%@  %@", numStr, steps[i]]];
+      if (isCurrent) {
+        [btn setContentTintColor:[NSColor systemBlueColor]];
+      } else if (isDone) {
+        [btn setContentTintColor:[NSColor systemGreenColor]];
+      } else {
+        [btn setContentTintColor:[NSColor colorWithWhite:0.6 alpha:1.0]];
+      }
+    }
+  }
+}
+
+- (int)stepTrackerStepForName:(NSString *)name {
+  NSStackView *hstack = (NSStackView *)self.controlsByName[[name lowercaseString]];
+  if (hstack) {
+    NSNumber *num = objc_getAssociatedObject(hstack, "currentStep");
+    if (num) return [num intValue];
+  }
+  return 0;
+}
+
+// 3. Filter Chips Control
+- (NSView *)makeFilterChipsWithName:(NSString *)name chips:(NSArray<NSString *> *)chips selected:(NSArray<NSString *> *)selected multiSelect:(BOOL)multiSelect {
+  NSStackView *hstack = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [hstack setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+  [hstack setAlignment:NSLayoutAttributeCenterY];
+  [hstack setSpacing:8.0];
+
+  NSMutableArray *buttons = [NSMutableArray array];
+  NSMutableSet *selSet = [NSMutableSet setWithArray:selected ? selected : @[]];
+
+  for (NSString *chip in chips) {
+    BOOL isSel = [selSet containsObject:chip];
+    NSButton *btn = [NSButton buttonWithTitle:[NSString stringWithFormat:@"%@ %@", isSel ? @"✓" : @"", chip] target:self action:@selector(handleFilterChipClicked:)];
+    [btn setBezelStyle:NSBezelStyleInline];
+    [btn setFont:[NSFont systemFontOfSize:11.0 weight:NSFontWeightMedium]];
+    if (isSel) {
+      [btn setContentTintColor:[NSColor systemPurpleColor]];
+    } else {
+      [btn setContentTintColor:[NSColor colorWithWhite:0.7 alpha:1.0]];
+    }
+    objc_setAssociatedObject(btn, "controlName", name, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    objc_setAssociatedObject(btn, "chipTitle", chip, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    [buttons addObject:btn];
+    [hstack addArrangedSubview:btn];
+  }
+
+  if (!self.controlsByName) self.controlsByName = [NSMutableDictionary dictionary];
+  self.controlsByName[[name lowercaseString]] = hstack;
+  objc_setAssociatedObject(hstack, "chipButtons", buttons, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(hstack, "chipList", chips, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(hstack, "selectedSet", selSet, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(hstack, "multiSelect", @(multiSelect), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+  [self addControlToLayout:hstack];
+  return hstack;
+}
+
+- (void)handleFilterChipClicked:(NSButton *)sender {
+  NSString *name = objc_getAssociatedObject(sender, "controlName");
+  NSString *chip = objc_getAssociatedObject(sender, "chipTitle");
+  if (!name || !chip) return;
+
+  NSStackView *hstack = (NSStackView *)self.controlsByName[[name lowercaseString]];
+  if (!hstack) return;
+
+  NSMutableSet *selSet = objc_getAssociatedObject(hstack, "selectedSet");
+  NSNumber *multiNum = objc_getAssociatedObject(hstack, "multiSelect");
+  BOOL multi = [multiNum boolValue];
+
+  if (multi) {
+    if ([selSet containsObject:chip]) {
+      [selSet removeObject:chip];
+    } else {
+      [selSet addObject:chip];
+    }
+  } else {
+    [selSet removeAllObjects];
+    [selSet addObject:chip];
+  }
+
+  NSArray *buttons = objc_getAssociatedObject(hstack, "chipButtons");
+  for (NSButton *btn in buttons) {
+    NSString *cTitle = objc_getAssociatedObject(btn, "chipTitle");
+    BOOL isSel = [selSet containsObject:cTitle];
+    [btn setTitle:[NSString stringWithFormat:@"%@ %@", isSel ? @"✓" : @"", cTitle]];
+    if (isSel) {
+      [btn setContentTintColor:[NSColor systemPurpleColor]];
+    } else {
+      [btn setContentTintColor:[NSColor colorWithWhite:0.7 alpha:1.0]];
+    }
+  }
+
+  NSString *csv = [[selSet allObjects] componentsJoinedByString:@","];
+  vlang_dispatch_event(self.win_ptr, [name UTF8String], "change", [csv UTF8String]);
+}
+
+- (void)setFilterChipsSelected:(NSArray<NSString *> *)selected forName:(NSString *)name {
+  NSStackView *hstack = (NSStackView *)self.controlsByName[[name lowercaseString]];
+  if (hstack) {
+    NSMutableSet *selSet = [NSMutableSet setWithArray:selected ? selected : @[]];
+    objc_setAssociatedObject(hstack, "selectedSet", selSet, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    NSArray *buttons = objc_getAssociatedObject(hstack, "chipButtons");
+    for (NSButton *btn in buttons) {
+      NSString *cTitle = objc_getAssociatedObject(btn, "chipTitle");
+      BOOL isSel = [selSet containsObject:cTitle];
+      [btn setTitle:[NSString stringWithFormat:@"%@ %@", isSel ? @"✓" : @"", cTitle]];
+      if (isSel) {
+        [btn setContentTintColor:[NSColor systemPurpleColor]];
+      } else {
+        [btn setContentTintColor:[NSColor colorWithWhite:0.7 alpha:1.0]];
+      }
+    }
+  }
+}
+
+- (NSString *)filterChipsSelectedForName:(NSString *)name {
+  NSStackView *hstack = (NSStackView *)self.controlsByName[[name lowercaseString]];
+  if (hstack) {
+    NSMutableSet *selSet = objc_getAssociatedObject(hstack, "selectedSet");
+    if (selSet) {
+      return [[selSet allObjects] componentsJoinedByString:@","];
+    }
+  }
+  return @"";
+}
+
+// 4. Native File Picker Field Control
+- (NSView *)makeFilePickerFieldWithName:(NSString *)name initialPath:(NSString *)initialPath buttonTitle:(NSString *)buttonTitle folderOnly:(BOOL)folderOnly {
+  NSStackView *hstack = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [hstack setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+  [hstack setAlignment:NSLayoutAttributeCenterY];
+  [hstack setSpacing:8.0];
+
+  ModernTextField *tf = [[ModernTextField alloc] initWithFrame:NSMakeRect(0, 0, 260, 24)];
+  [tf setStringValue:initialPath ? initialPath : @""];
+  [tf setPlaceholderString:@"No file selected..."];
+  [hstack addArrangedSubview:tf];
+
+  ModernButton *browseBtn = [ModernButton buttonWithTitle:buttonTitle ? buttonTitle : @"Browse..." target:self action:@selector(handleFilePickerBrowseClicked:)];
+  objc_setAssociatedObject(browseBtn, "controlName", name, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(browseBtn, "targetTextField", tf, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(browseBtn, "folderOnly", @(folderOnly), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  [hstack addArrangedSubview:browseBtn];
+
+  if (!self.controlsByName) self.controlsByName = [NSMutableDictionary dictionary];
+  self.controlsByName[[name lowercaseString]] = hstack;
+  objc_setAssociatedObject(hstack, "pathTextField", tf, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+  [self addControlToLayout:hstack];
+  return hstack;
+}
+
+- (void)handleFilePickerBrowseClicked:(NSButton *)sender {
+  NSString *name = objc_getAssociatedObject(sender, "controlName");
+  ModernTextField *tf = objc_getAssociatedObject(sender, "targetTextField");
+  NSNumber *folderNum = objc_getAssociatedObject(sender, "folderOnly");
+  BOOL folderOnly = [folderNum boolValue];
+
+  NSOpenPanel *panel = [NSOpenPanel openPanel];
+  [panel setCanChooseFiles:!folderOnly];
+  [panel setCanChooseDirectories:YES];
+  [panel setAllowsMultipleSelection:NO];
+
+  [panel beginSheetModalForWindow:self.window completionHandler:^(NSModalResponse result) {
+    if (result == NSModalResponseOK) {
+      NSURL *url = [panel URL];
+      if (url) {
+        NSString *path = [url path];
+        if (tf) [tf setStringValue:path];
+        if (name) vlang_dispatch_event(self.win_ptr, [name UTF8String], "change", [path UTF8String]);
+      }
+    }
+  }];
+}
+
+- (void)setFilePickerPath:(NSString *)path forName:(NSString *)name {
+  NSStackView *hstack = (NSStackView *)self.controlsByName[[name lowercaseString]];
+  if (hstack) {
+    ModernTextField *tf = objc_getAssociatedObject(hstack, "pathTextField");
+    if (tf) [tf setStringValue:path ? path : @""];
+  }
+}
+
+- (NSString *)filePickerPathForName:(NSString *)name {
+  NSStackView *hstack = (NSStackView *)self.controlsByName[[name lowercaseString]];
+  if (hstack) {
+    ModernTextField *tf = objc_getAssociatedObject(hstack, "pathTextField");
+    if (tf) return [tf stringValue];
+  }
+  return @"";
+}
+
+// 5. Radial Gauge Control
+- (NSView *)makeRadialGaugeWithName:(NSString *)name title:(NSString *)title value:(double)value minVal:(double)minVal maxVal:(double)maxVal unit:(NSString *)unit {
+  RadialGaugeView *gauge = [[RadialGaugeView alloc] initWithFrame:NSMakeRect(0, 0, 140, 100)];
+  gauge.value = value;
+  gauge.minVal = minVal;
+  gauge.maxVal = maxVal;
+  gauge.title = title ? title : @"Gauge";
+  gauge.unit = unit ? unit : @"%";
+
+  if (!self.controlsByName) self.controlsByName = [NSMutableDictionary dictionary];
+  self.controlsByName[[name lowercaseString]] = gauge;
+  [self addControlToLayout:gauge];
+  return gauge;
+}
+
+- (void)setRadialGaugeValue:(double)value forName:(NSString *)name {
+  RadialGaugeView *gauge = (RadialGaugeView *)self.controlsByName[[name lowercaseString]];
+  if (gauge && [gauge isKindOfClass:[RadialGaugeView class]]) {
+    gauge.value = value;
+    [gauge setNeedsDisplay:YES];
+  }
+}
+
+- (double)radialGaugeValueForName:(NSString *)name {
+  RadialGaugeView *gauge = (RadialGaugeView *)self.controlsByName[[name lowercaseString]];
+  if (gauge && [gauge isKindOfClass:[RadialGaugeView class]]) {
+    return gauge.value;
+  }
+  return 0.0;
+}
+
+// 6. Key Value Card Control
+- (NSView *)makeKeyValueCardWithName:(NSString *)name title:(NSString *)title keys:(NSArray<NSString *> *)keys values:(NSArray<NSString *> *)values {
+  NSBox *card = [[NSBox alloc] initWithFrame:NSZeroRect];
+  [card setBoxType:NSBoxCustom];
+  [card setCornerRadius:8.0];
+  [card setFillColor:[NSColor colorWithRed:0.12 green:0.14 blue:0.18 alpha:0.85]];
+  [card setBorderColor:[NSColor colorWithWhite:1.0 alpha:0.12]];
+
+  NSStackView *vbox = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [vbox setOrientation:NSUserInterfaceLayoutOrientationVertical];
+  [vbox setAlignment:NSLayoutAttributeLeading];
+  [vbox setSpacing:6.0];
+  [vbox setEdgeInsets:NSEdgeInsetsMake(8, 12, 8, 12)];
+
+  if (title && title.length > 0) {
+    NSTextField *titleLbl = [NSTextField labelWithString:title];
+    [titleLbl setFont:[NSFont boldSystemFontOfSize:12.0]];
+    [titleLbl setTextColor:[NSColor systemBlueColor]];
+    [vbox addArrangedSubview:titleLbl];
+  }
+
+  NSMutableArray *keyLabels = [NSMutableArray array];
+  NSMutableArray *valLabels = [NSMutableArray array];
+
+  int count = (int)MIN(keys.count, values.count);
+  for (int i = 0; i < count; i++) {
+    NSStackView *row = [[NSStackView alloc] initWithFrame:NSZeroRect];
+    [row setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+    [row setAlignment:NSLayoutAttributeCenterY];
+    [row setSpacing:12.0];
+
+    NSTextField *kLbl = [NSTextField labelWithString:keys[i]];
+    [kLbl setFont:[NSFont systemFontOfSize:11.0]];
+    [kLbl setTextColor:[NSColor colorWithWhite:0.6 alpha:1.0]];
+    [kLbl setFrameSize:NSMakeSize(90, 16)];
+
+    NSTextField *vLbl = [NSTextField labelWithString:values[i]];
+    [vLbl setFont:[NSFont boldSystemFontOfSize:11.0]];
+    [vLbl setTextColor:[NSColor whiteColor]];
+
+    [row addArrangedSubview:kLbl];
+    [row addArrangedSubview:vLbl];
+    [vbox addArrangedSubview:row];
+
+    [keyLabels addObject:kLbl];
+    [valLabels addObject:vLbl];
+  }
+
+  [card setContentView:vbox];
+
+  if (!self.controlsByName) self.controlsByName = [NSMutableDictionary dictionary];
+  self.controlsByName[[name lowercaseString]] = card;
+  objc_setAssociatedObject(card, "keyLabels", keyLabels, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(card, "valLabels", valLabels, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+  [self addControlToLayout:card];
+  return card;
+}
+
+- (void)setKeyValueCardDataForName:(NSString *)name keys:(NSArray<NSString *> *)keys values:(NSArray<NSString *> *)values {
+  NSBox *card = (NSBox *)self.controlsByName[[name lowercaseString]];
+  if (card) {
+    NSArray *kLabels = objc_getAssociatedObject(card, "keyLabels");
+    NSArray *vLabels = objc_getAssociatedObject(card, "valLabels");
+    int count = (int)MIN(MIN(keys.count, values.count), MIN(kLabels.count, vLabels.count));
+    for (int i = 0; i < count; i++) {
+      NSTextField *kLbl = kLabels[i];
+      NSTextField *vLbl = vLabels[i];
+      [kLbl setStringValue:keys[i]];
+      [vLbl setStringValue:values[i]];
+    }
+  }
 }
 
 @end
@@ -13666,6 +14224,183 @@ const char *window_get_code_view_text(main__WindowInfo *info, const char *name) 
   };
   if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
   return res;
+}
+
+// Alert Banner C Bridge
+void *window_add_alert_banner_control(main__WindowInfo *info, const char *name, const char *title, const char *message, const char *style) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeAlertBannerWithName:nsstring(name) title:nsstring(title) message:nsstring(message) style:nsstring(style)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)control;
+}
+
+void window_set_alert_banner_value(main__WindowInfo *info, const char *name, const char *title, const char *message, const char *style) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate setAlertBannerValueForName:nsstring(name) title:nsstring(title) message:nsstring(message) style:nsstring(style)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+// Step Tracker C Bridge
+void *window_add_step_tracker_control(main__WindowInfo *info, const char *name, const char **steps, int count, int current_step) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSMutableArray *arr = [NSMutableArray arrayWithCapacity:count];
+  for (int i = 0; i < count; i++) [arr addObject:nsstring(steps[i])];
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeStepTrackerWithName:nsstring(name) steps:arr currentStep:current_step];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)control;
+}
+
+void window_set_step_tracker_step(main__WindowInfo *info, const char *name, int step) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate setStepTrackerStep:step forName:nsstring(name)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+int window_get_step_tracker_step(main__WindowInfo *info, const char *name) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block int res = 0;
+  void (^runBlock)(void) = ^{
+    res = [delegate stepTrackerStepForName:nsstring(name)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return res;
+}
+
+// Filter Chips C Bridge
+void *window_add_filter_chips_control(main__WindowInfo *info, const char *name, const char **chips, int count, const char **selected, int sel_count, bool multi_select) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSMutableArray *chipArr = [NSMutableArray arrayWithCapacity:count];
+  for (int i = 0; i < count; i++) [chipArr addObject:nsstring(chips[i])];
+  NSMutableArray *selArr = [NSMutableArray arrayWithCapacity:sel_count];
+  for (int i = 0; i < sel_count; i++) [selArr addObject:nsstring(selected[i])];
+
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeFilterChipsWithName:nsstring(name) chips:chipArr selected:selArr multiSelect:multi_select];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)control;
+}
+
+void window_set_filter_chips_selected(main__WindowInfo *info, const char *name, const char **selected, int count) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSMutableArray *selArr = [NSMutableArray arrayWithCapacity:count];
+  for (int i = 0; i < count; i++) [selArr addObject:nsstring(selected[i])];
+  void (^runBlock)(void) = ^{
+    [delegate setFilterChipsSelected:selArr forName:nsstring(name)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+const char *window_get_filter_chips_selected(main__WindowInfo *info, const char *name) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block const char *res = "";
+  void (^runBlock)(void) = ^{
+    NSString *str = [delegate filterChipsSelectedForName:nsstring(name)];
+    if (str) res = strdup([str UTF8String]);
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return res;
+}
+
+// File Picker Field C Bridge
+void *window_add_file_picker_field_control(main__WindowInfo *info, const char *name, const char *initial_path, const char *button_title, bool folder_only) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeFilePickerFieldWithName:nsstring(name) initialPath:nsstring(initial_path) buttonTitle:nsstring(button_title) folderOnly:folder_only];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)control;
+}
+
+void window_set_file_picker_path(main__WindowInfo *info, const char *name, const char *path) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate setFilePickerPath:nsstring(path) forName:nsstring(name)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+const char *window_get_file_picker_path(main__WindowInfo *info, const char *name) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block const char *res = "";
+  void (^runBlock)(void) = ^{
+    NSString *str = [delegate filePickerPathForName:nsstring(name)];
+    if (str) res = strdup([str UTF8String]);
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return res;
+}
+
+// Radial Gauge C Bridge
+void *window_add_radial_gauge_control(main__WindowInfo *info, const char *name, const char *title, double value, double min_val, double max_val, const char *unit) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeRadialGaugeWithName:nsstring(name) title:nsstring(title) value:value minVal:min_val maxVal:max_val unit:nsstring(unit)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)control;
+}
+
+void window_set_radial_gauge_value(main__WindowInfo *info, const char *name, double value) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate setRadialGaugeValue:value forName:nsstring(name)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+double window_get_radial_gauge_value(main__WindowInfo *info, const char *name) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block double res = 0.0;
+  void (^runBlock)(void) = ^{
+    res = [delegate radialGaugeValueForName:nsstring(name)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return res;
+}
+
+// Key Value Card C Bridge
+void *window_add_key_value_card_control(main__WindowInfo *info, const char *name, const char *title, const char **keys, const char **values, int count) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSMutableArray *kArr = [NSMutableArray arrayWithCapacity:count];
+  NSMutableArray *vArr = [NSMutableArray arrayWithCapacity:count];
+  for (int i = 0; i < count; i++) {
+    [kArr addObject:nsstring(keys[i])];
+    [vArr addObject:nsstring(values[i])];
+  }
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeKeyValueCardWithName:nsstring(name) title:nsstring(title) keys:kArr values:vArr];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)control;
+}
+
+void window_set_key_value_card_data(main__WindowInfo *info, const char *name, const char **keys, const char **values, int count) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSMutableArray *kArr = [NSMutableArray arrayWithCapacity:count];
+  NSMutableArray *vArr = [NSMutableArray arrayWithCapacity:count];
+  for (int i = 0; i < count; i++) {
+    [kArr addObject:nsstring(keys[i])];
+    [vArr addObject:nsstring(values[i])];
+  }
+  void (^runBlock)(void) = ^{
+    [delegate setKeyValueCardDataForName:nsstring(name) keys:kArr values:vArr];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
 }
 
 
