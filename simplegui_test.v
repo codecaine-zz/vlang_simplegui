@@ -2190,6 +2190,52 @@ fn test_advanced_layout_grid_flex_and_alignment() {
 	assert win.get_control_expand_fill('last_name') == true
 }
 
+fn test_additional_new_controls() {
+	mut win := simplegui.new_simple_window('New Controls Test', 200, 200)
+
+	// 1. Gauge
+	win.add_gauge('cpu_gauge', 'CPU Load', 45, 0, 100, '%')
+	assert win.has_control('cpu_gauge') == true
+	win.set_gauge_value('cpu_gauge', 80)
+	assert win.get_gauge_value('cpu_gauge') == 80
+
+	// 2. Pagination
+	win.add_pagination('page_bar', 10, 1)
+	assert win.has_control('page_bar') == true
+	win.set_pagination_page('page_bar', 3, 10)
+	assert win.get_pagination_page('page_bar') == 3
+
+	// 3. Activity Feed
+	win.add_activity_feed('events', 150)
+	assert win.has_control('events') == true
+	win.add_activity_feed_item('events', '12:00:00', 'Server started', 'info')
+	win.clear_activity_feed('events')
+
+	// 4. Markdown View
+	win.add_markdown_view('doc_view', '# Title\n- Item 1\n- Item 2', 200)
+	assert win.has_control('doc_view') == true
+	win.set_markdown_view_text('doc_view', '## Subtitle')
+	assert win.get_markdown_view_text('doc_view') == '## Subtitle'
+
+	// 5. Sparkline
+	win.add_sparkline('trend', [10.0, 20.0, 15.0, 30.0], 50)
+	assert win.has_control('trend') == true
+	win.set_sparkline_data('trend', [5.0, 10.0, 25.0])
+
+	// 6. PIN Code Input
+	win.add_pin_code('otp', 6)
+	assert win.has_control('otp') == true
+	win.set_pin_code_value('otp', '123456')
+	assert win.get_pin_code_value('otp') == '123456'
+
+	// 7. Color Palette
+	win.add_color_palette('palette', ['#FF0000', '#00FF00', '#0000FF'], '#FF0000')
+	assert win.has_control('palette') == true
+	win.set_color_palette_selected('palette', '#00FF00')
+	assert win.get_color_palette_selected('palette') == '#00FF00'
+}
+
+
 
 
 

@@ -382,7 +382,36 @@ void window_set_tag_cloud_tags(main__WindowInfo *info, const char *name, const c
 void *window_add_wizard_stepper_control(main__WindowInfo *info, const char *name, const char **steps, int count, int current_step);
 void window_set_wizard_stepper_step(main__WindowInfo *info, const char *name, int step);
 
+// Additional Controls (Gauge, Pagination, Activity Feed, Markdown View, Sparkline, PIN Code, Color Palette)
+void *window_add_gauge_control(main__WindowInfo *info, const char *name, const char *title, int value, int min_val, int max_val, const char *unit);
+void window_set_gauge_value(main__WindowInfo *info, const char *name, int value);
+int window_get_gauge_value(main__WindowInfo *info, const char *name);
+
+void *window_add_pagination_control(main__WindowInfo *info, const char *name, int total_pages, int current_page);
+void window_set_pagination_page(main__WindowInfo *info, const char *name, int page, int total_pages);
+int window_get_pagination_page(main__WindowInfo *info, const char *name);
+
+void *window_add_activity_feed_control(main__WindowInfo *info, const char *name, int height);
+void window_add_activity_feed_item(main__WindowInfo *info, const char *name, const char *timestamp, const char *message, const char *level);
+void window_clear_activity_feed(main__WindowInfo *info, const char *name);
+
+void *window_add_markdown_view_control(main__WindowInfo *info, const char *name, const char *markdown_text, int height);
+void window_set_markdown_view_text(main__WindowInfo *info, const char *name, const char *markdown_text);
+const char *window_get_markdown_view_text(main__WindowInfo *info, const char *name);
+
+void *window_add_sparkline_control(main__WindowInfo *info, const char *name, const double *values, int count, int height);
+void window_set_sparkline_data(main__WindowInfo *info, const char *name, const double *values, int count);
+
+void *window_add_pin_code_control(main__WindowInfo *info, const char *name, int digits);
+void window_set_pin_code_value(main__WindowInfo *info, const char *name, const char *code);
+const char *window_get_pin_code_value(main__WindowInfo *info, const char *name);
+
+void *window_add_color_palette_control(main__WindowInfo *info, const char *name, const char **hex_colors, int count, const char *selected);
+void window_set_color_palette_selected(main__WindowInfo *info, const char *name, const char *hex_color);
+const char *window_get_color_palette_selected(main__WindowInfo *info, const char *name);
+
 #endif
+
 
 
 

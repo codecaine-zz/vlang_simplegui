@@ -612,7 +612,14 @@ extern void vlang_dispatch_event(void *win_ptr, const char *name, const char *ev
 @property (nonatomic, assign) id appDelegate;
 @end
 
+@interface SparklineView : NSView
+@property (nonatomic, retain) NSArray<NSNumber *> *values;
+@property (nonatomic, retain) NSColor *lineColor;
+@property (nonatomic, retain) NSColor *fillColor;
+@end
+
 @interface AppDelegate : NSObject <NSApplicationDelegate, NSWindowDelegate, NSTextFieldDelegate, NSTextViewDelegate, NSTableViewDataSource, NSTableViewDelegate, NSOutlineViewDataSource, NSOutlineViewDelegate, NSTabViewDelegate, NSToolbarDelegate, NSCollectionViewDataSource, NSCollectionViewDelegate>
+
 @property (nonatomic, assign) main__WindowParams params;
 @property (nonatomic, assign) void *win_ptr;
 @property (nonatomic, strong) NSWindow *window;
@@ -713,6 +720,28 @@ extern void vlang_dispatch_event(void *win_ptr, const char *name, const char *ev
 - (void)setTagCloudTags:(NSArray<NSString *> *)tags forName:(NSString *)name;
 - (NSView *)makeWizardStepperWithName:(NSString *)name steps:(NSArray<NSString *> *)steps currentStep:(int)currentStep;
 - (void)setWizardStepperStep:(int)step forName:(NSString *)name;
+
+- (NSView *)makeGaugeWithName:(NSString *)name title:(NSString *)title value:(int)val minVal:(int)minVal maxVal:(int)maxVal unit:(NSString *)unit;
+- (void)setGaugeValue:(int)val forName:(NSString *)name;
+- (int)gaugeValueForName:(NSString *)name;
+- (NSView *)makePaginationWithName:(NSString *)name totalPages:(int)totalPages currentPage:(int)currentPage;
+- (void)setPaginationPage:(int)page totalPages:(int)totalPages forName:(NSString *)name;
+- (int)paginationPageForName:(NSString *)name;
+- (NSView *)makeActivityFeedWithName:(NSString *)name height:(int)height;
+- (void)addActivityFeedItemToName:(NSString *)name timestamp:(NSString *)timestamp message:(NSString *)message level:(NSString *)level;
+- (void)clearActivityFeedName:(NSString *)name;
+- (NSView *)makeMarkdownViewWithName:(NSString *)name markdownText:(NSString *)markdownText height:(int)height;
+- (void)setMarkdownViewText:(NSString *)markdownText forName:(NSString *)name;
+- (NSString *)markdownViewTextForName:(NSString *)name;
+- (NSView *)makeSparklineWithName:(NSString *)name values:(NSArray<NSNumber *> *)values height:(int)height;
+- (void)setSparklineValues:(NSArray<NSNumber *> *)values forName:(NSString *)name;
+- (NSView *)makePinCodeWithName:(NSString *)name digits:(int)digits;
+- (void)setPinCodeValue:(NSString *)code forName:(NSString *)name;
+- (NSString *)pinCodeValueForName:(NSString *)name;
+- (NSView *)makeColorPaletteWithName:(NSString *)name colors:(NSArray<NSString *> *)colors selected:(NSString *)selected;
+- (void)setColorPaletteSelected:(NSString *)hex forName:(NSString *)name;
+- (NSString *)colorPaletteSelectedForName:(NSString *)name;
+
 
 
 - (void)setupToolbar;
@@ -1194,7 +1223,70 @@ static NSColor *colorFromHexString(NSString *hexString) {
 }
 @end
 
+@implementation SparklineView
+- (instancetype)initWithFrame:(NSRect)frameRect {
+  self = [super initWithFrame:frameRect];
+  if (self) {
+    _values = [[NSMutableArray alloc] init];
+    _lineColor = [NSColor colorWithRed:0.2 green:0.55 blue:0.95 alpha:1.0];
+    _fillColor = [NSColor colorWithRed:0.2 green:0.55 blue:0.95 alpha:0.15];
+  }
+  return self;
+}
+
+- (void)drawRect:(NSRect)dirtyRect {
+  [super drawRect:dirtyRect];
+  if (!_values || _values.count < 2) return;
+
+  NSRect bounds = [self bounds];
+  CGFloat w = bounds.size.width;
+  CGFloat h = bounds.size.height;
+  CGFloat padding = 4.0;
+  CGFloat drawW = w - padding * 2.0;
+  CGFloat drawH = h - padding * 2.0;
+
+  double minVal = [_values[0] doubleValue];
+  double maxVal = minVal;
+  for (NSNumber *num in _values) {
+    double v = [num doubleValue];
+    if (v < minVal) minVal = v;
+    if (v > maxVal) maxVal = v;
+  }
+  if (maxVal == minVal) { maxVal = minVal + 1.0; }
+
+  NSBezierPath *path = [NSBezierPath bezierPath];
+  NSBezierPath *areaPath = [NSBezierPath bezierPath];
+
+  for (NSUInteger i = 0; i < _values.count; i++) {
+    double v = [_values[i] doubleValue];
+    CGFloat x = padding + (drawW * i / (CGFloat)(_values.count - 1));
+    CGFloat y = padding + (drawH * (v - minVal) / (maxVal - minVal));
+
+    if (i == 0) {
+      [path moveToPoint:NSMakePoint(x, y)];
+      [areaPath moveToPoint:NSMakePoint(x, padding)];
+      [areaPath lineToPoint:NSMakePoint(x, y)];
+    } else {
+      [path lineToPoint:NSMakePoint(x, y)];
+      [areaPath lineToPoint:NSMakePoint(x, y)];
+    }
+    if (i == _values.count - 1) {
+      [areaPath lineToPoint:NSMakePoint(x, padding)];
+      [areaPath closePath];
+    }
+  }
+
+  [_fillColor setFill];
+  [areaPath fill];
+
+  [_lineColor setStroke];
+  [path setLineWidth:2.0];
+  [path stroke];
+}
+@end
+
 @interface CustomWindow : NSWindow
+
 @end
 
 @implementation CustomWindow
@@ -5865,7 +5957,515 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   }
 }
 
+- (NSView *)makeGaugeWithName:(NSString *)name title:(NSString *)title value:(int)val minVal:(int)minVal maxVal:(int)maxVal unit:(NSString *)unit {
+  if (maxVal <= minVal) maxVal = minVal + 100;
+  int currentVal = (val < minVal) ? minVal : ((val > maxVal) ? maxVal : val);
+  NSString *unitStr = (unit && unit.length > 0) ? unit : @"%";
+
+  NSBox *box = [[NSBox alloc] initWithFrame:NSZeroRect];
+  [box setBoxType:NSBoxCustom];
+  [box setBorderType:NSLineBorder];
+  [box setCornerRadius:8.0];
+  [box setBorderColor:[NSColor colorWithCalibratedWhite:0.75 alpha:0.4]];
+  [box setFillColor:[NSColor colorWithCalibratedWhite:0.96 alpha:1.0]];
+
+  NSStackView *vstack = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [vstack setOrientation:NSUserInterfaceLayoutOrientationVertical];
+  [vstack setSpacing:4.0];
+  [vstack setEdgeInsets:NSEdgeInsetsMake(8, 12, 8, 12)];
+  [vstack setAlignment:NSLayoutAttributeLeading];
+
+  NSTextField *titleLbl = [NSTextField labelWithString:title ? title : @"Gauge"];
+  [titleLbl setFont:[NSFont systemFontOfSize:12.0 weight:NSFontWeightBold]];
+  [titleLbl setTextColor:[NSColor labelColor]];
+  [vstack addArrangedSubview:titleLbl];
+
+  NSStackView *hstack = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [hstack setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+  [hstack setSpacing:10.0];
+  [hstack setAlignment:NSLayoutAttributeCenterY];
+
+  NSProgressIndicator *indicator = [[NSProgressIndicator alloc] initWithFrame:NSZeroRect];
+  [indicator setIndeterminate:NO];
+  [indicator setMinValue:(double)minVal];
+  [indicator setMaxValue:(double)maxVal];
+  [indicator setDoubleValue:(double)currentVal];
+  [indicator setStyle:NSProgressIndicatorStyleBar];
+  [indicator.widthAnchor constraintEqualToConstant:140].active = YES;
+  [hstack addArrangedSubview:indicator];
+
+  NSTextField *valLbl = [NSTextField labelWithString:[NSString stringWithFormat:@"%d %@", currentVal, unitStr]];
+  [valLbl setFont:[NSFont systemFontOfSize:12.0 weight:NSFontWeightMedium]];
+  [valLbl setTextColor:[NSColor secondaryLabelColor]];
+  [hstack addArrangedSubview:valLbl];
+
+  [vstack addArrangedSubview:hstack];
+  [box setContentView:vstack];
+
+  if (!self.controlsByName) self.controlsByName = [NSMutableDictionary dictionary];
+  self.controlsByName[[name lowercaseString]] = box;
+
+  objc_setAssociatedObject(box, "gaugeValue", @(currentVal), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(box, "gaugeMin", @(minVal), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(box, "gaugeMax", @(maxVal), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(box, "gaugeUnit", unitStr, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(box, "gaugeIndicator", indicator, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(box, "gaugeValueLabel", valLbl, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+  [self addControlToLayout:box];
+  return box;
+}
+
+- (void)setGaugeValue:(int)val forName:(NSString *)name {
+  NSView *box = self.controlsByName[[name lowercaseString]];
+  if (box) {
+    int minVal = [objc_getAssociatedObject(box, "gaugeMin") intValue];
+    int maxVal = [objc_getAssociatedObject(box, "gaugeMax") intValue];
+    NSString *unitStr = objc_getAssociatedObject(box, "gaugeUnit");
+    int currentVal = (val < minVal) ? minVal : ((val > maxVal) ? maxVal : val);
+
+    NSProgressIndicator *indicator = objc_getAssociatedObject(box, "gaugeIndicator");
+    NSTextField *valLbl = objc_getAssociatedObject(box, "gaugeValueLabel");
+
+    if (indicator) [indicator setDoubleValue:(double)currentVal];
+    if (valLbl) [valLbl setStringValue:[NSString stringWithFormat:@"%d %@", currentVal, unitStr ? unitStr : @"%"]];
+    objc_setAssociatedObject(box, "gaugeValue", @(currentVal), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  }
+}
+
+- (int)gaugeValueForName:(NSString *)name {
+  NSView *box = self.controlsByName[[name lowercaseString]];
+  if (box) {
+    return [objc_getAssociatedObject(box, "gaugeValue") intValue];
+  }
+  return 0;
+}
+
+- (NSView *)makePaginationWithName:(NSString *)name totalPages:(int)totalPages currentPage:(int)currentPage {
+  if (totalPages <= 0) totalPages = 1;
+  int page = (currentPage < 1) ? 1 : ((currentPage > totalPages) ? totalPages : currentPage);
+
+  NSStackView *hstack = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [hstack setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+  [hstack setSpacing:8.0];
+  [hstack setAlignment:NSLayoutAttributeCenterY];
+
+  NSButton *prevBtn = [NSButton buttonWithTitle:@"‹ Prev" target:self action:@selector(handlePaginationPrevClicked:)];
+  [prevBtn setBezelStyle:NSBezelStyleRounded];
+  prevBtn.identifier = [NSString stringWithFormat:@"%@_prev", name];
+  [prevBtn setEnabled:(page > 1)];
+
+  NSTextField *lbl = [NSTextField labelWithString:[NSString stringWithFormat:@"Page %d of %d", page, totalPages]];
+  [lbl setFont:[NSFont systemFontOfSize:12.0 weight:NSFontWeightMedium]];
+
+  NSButton *nextBtn = [NSButton buttonWithTitle:@"Next ›" target:self action:@selector(handlePaginationNextClicked:)];
+  [nextBtn setBezelStyle:NSBezelStyleRounded];
+  nextBtn.identifier = [NSString stringWithFormat:@"%@_next", name];
+  [nextBtn setEnabled:(page < totalPages)];
+
+  [hstack addArrangedSubview:prevBtn];
+  [hstack addArrangedSubview:lbl];
+  [hstack addArrangedSubview:nextBtn];
+
+  if (!self.controlsByName) self.controlsByName = [NSMutableDictionary dictionary];
+  self.controlsByName[[name lowercaseString]] = hstack;
+
+  objc_setAssociatedObject(hstack, "currentPage", @(page), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(hstack, "totalPages", @(totalPages), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(hstack, "prevButton", prevBtn, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(hstack, "nextButton", nextBtn, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(hstack, "pageLabel", lbl, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+  [self addControlToLayout:hstack];
+  return hstack;
+}
+
+- (void)handlePaginationPrevClicked:(id)sender {
+  NSButton *btn = (NSButton *)sender;
+  NSString *ident = btn.identifier;
+  NSRange range = [ident rangeOfString:@"_prev"];
+  if (range.location != NSNotFound) {
+    NSString *name = [ident substringToIndex:range.location];
+    NSStackView *hstack = (NSStackView *)self.controlsByName[[name lowercaseString]];
+    if (hstack) {
+      int page = [objc_getAssociatedObject(hstack, "currentPage") intValue];
+      int total = [objc_getAssociatedObject(hstack, "totalPages") intValue];
+      if (page > 1) {
+        page--;
+        [self setPaginationPage:page totalPages:total forName:name];
+        vlang_dispatch_event(self.win_ptr, [name UTF8String], "change", [[NSString stringWithFormat:@"%d", page] UTF8String]);
+      }
+    }
+  }
+}
+
+- (void)handlePaginationNextClicked:(id)sender {
+  NSButton *btn = (NSButton *)sender;
+  NSString *ident = btn.identifier;
+  NSRange range = [ident rangeOfString:@"_next"];
+  if (range.location != NSNotFound) {
+    NSString *name = [ident substringToIndex:range.location];
+    NSStackView *hstack = (NSStackView *)self.controlsByName[[name lowercaseString]];
+    if (hstack) {
+      int page = [objc_getAssociatedObject(hstack, "currentPage") intValue];
+      int total = [objc_getAssociatedObject(hstack, "totalPages") intValue];
+      if (page < total) {
+        page++;
+        [self setPaginationPage:page totalPages:total forName:name];
+        vlang_dispatch_event(self.win_ptr, [name UTF8String], "change", [[NSString stringWithFormat:@"%d", page] UTF8String]);
+      }
+    }
+  }
+}
+
+- (void)setPaginationPage:(int)page totalPages:(int)totalPages forName:(NSString *)name {
+  NSStackView *hstack = (NSStackView *)self.controlsByName[[name lowercaseString]];
+  if (hstack) {
+    if (totalPages <= 0) totalPages = [objc_getAssociatedObject(hstack, "totalPages") intValue];
+    if (totalPages <= 0) totalPages = 1;
+    int resolvedPage = (page < 1) ? 1 : ((page > totalPages) ? totalPages : page);
+
+    NSButton *prevBtn = objc_getAssociatedObject(hstack, "prevButton");
+    NSButton *nextBtn = objc_getAssociatedObject(hstack, "nextButton");
+    NSTextField *lbl = objc_getAssociatedObject(hstack, "pageLabel");
+
+    if (prevBtn) [prevBtn setEnabled:(resolvedPage > 1)];
+    if (nextBtn) [nextBtn setEnabled:(resolvedPage < totalPages)];
+    if (lbl) [lbl setStringValue:[NSString stringWithFormat:@"Page %d of %d", resolvedPage, totalPages]];
+
+    objc_setAssociatedObject(hstack, "currentPage", @(resolvedPage), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    objc_setAssociatedObject(hstack, "totalPages", @(totalPages), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  }
+}
+
+- (int)paginationPageForName:(NSString *)name {
+  NSStackView *hstack = (NSStackView *)self.controlsByName[[name lowercaseString]];
+  if (hstack) {
+    return [objc_getAssociatedObject(hstack, "currentPage") intValue];
+  }
+  return 1;
+}
+
+- (NSView *)makeActivityFeedWithName:(NSString *)name height:(int)h {
+  if (h <= 0) h = 160;
+  NSScrollView *scroll = [[NSScrollView alloc] initWithFrame:NSMakeRect(0, 0, 300, h)];
+  [scroll setHasVerticalScroller:YES];
+  [scroll setHasHorizontalScroller:NO];
+  [scroll setAutohidesScrollers:YES];
+  [scroll setBorderType:NSBezelBorder];
+
+  FlippedStackView *stack = [[FlippedStackView alloc] initWithFrame:NSMakeRect(0, 0, 300, h)];
+  [stack setOrientation:NSUserInterfaceLayoutOrientationVertical];
+  [stack setSpacing:4.0];
+  [stack setEdgeInsets:NSEdgeInsetsMake(6, 6, 6, 6)];
+  [stack setAlignment:NSLayoutAttributeWidth];
+
+  [scroll setDocumentView:stack];
+
+  if (!self.controlsByName) self.controlsByName = [NSMutableDictionary dictionary];
+  self.controlsByName[[name lowercaseString]] = scroll;
+
+  [self addControlToLayout:scroll];
+  return scroll;
+}
+
+- (void)addActivityFeedItemToName:(NSString *)name timestamp:(NSString *)timestamp message:(NSString *)message level:(NSString *)level {
+  NSScrollView *scroll = (NSScrollView *)self.controlsByName[[name lowercaseString]];
+  if (scroll && [scroll isKindOfClass:[NSScrollView class]]) {
+    FlippedStackView *stack = (FlippedStackView *)[scroll documentView];
+    if ([stack isKindOfClass:[NSStackView class]]) {
+      NSStackView *row = [[NSStackView alloc] initWithFrame:NSZeroRect];
+      [row setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+      [row setSpacing:6.0];
+      [row setAlignment:NSLayoutAttributeCenterY];
+
+      NSString *lvlStr = level ? [level lowercaseString] : @"info";
+      NSColor *badgeColor = [NSColor systemBlueColor];
+      if ([lvlStr isEqualToString:@"success"]) badgeColor = [NSColor systemGreenColor];
+      else if ([lvlStr isEqualToString:@"warning"]) badgeColor = [NSColor systemOrangeColor];
+      else if ([lvlStr isEqualToString:@"error"]) badgeColor = [NSColor systemRedColor];
+
+      NSBox *pill = [[NSBox alloc] initWithFrame:NSZeroRect];
+      [pill setBoxType:NSBoxCustom];
+      [pill setCornerRadius:4.0];
+      [pill setBorderType:NSNoBorder];
+      [pill setFillColor:badgeColor];
+      [pill.widthAnchor constraintEqualToConstant:8].active = YES;
+      [pill.heightAnchor constraintEqualToConstant:8].active = YES;
+
+      NSTextField *timeLbl = [NSTextField labelWithString:timestamp ? timestamp : @""];
+      [timeLbl setFont:[NSFont monospacedDigitSystemFontOfSize:11.0 weight:NSFontWeightRegular]];
+      [timeLbl setTextColor:[NSColor secondaryLabelColor]];
+
+      NSTextField *msgLbl = [NSTextField labelWithString:message ? message : @""];
+      [msgLbl setFont:[NSFont systemFontOfSize:12.0 weight:NSFontWeightRegular]];
+      [msgLbl setTextColor:[NSColor labelColor]];
+
+      [row addArrangedSubview:pill];
+      [row addArrangedSubview:timeLbl];
+      [row addArrangedSubview:msgLbl];
+
+      [stack addArrangedSubview:row];
+    }
+  }
+}
+
+- (void)clearActivityFeedName:(NSString *)name {
+  NSScrollView *scroll = (NSScrollView *)self.controlsByName[[name lowercaseString]];
+  if (scroll && [scroll isKindOfClass:[NSScrollView class]]) {
+    FlippedStackView *stack = (FlippedStackView *)[scroll documentView];
+    if ([stack isKindOfClass:[NSStackView class]]) {
+      for (NSView *v in [stack.arrangedSubviews copy]) {
+        [stack removeArrangedSubview:v];
+        [v removeFromSuperview];
+      }
+    }
+  }
+}
+
+- (NSView *)makeMarkdownViewWithName:(NSString *)name markdownText:(NSString *)markdownText height:(int)h {
+  if (h <= 0) h = 180;
+  NSScrollView *scroll = [[NSScrollView alloc] initWithFrame:NSMakeRect(0, 0, 300, h)];
+  [scroll setHasVerticalScroller:YES];
+  [scroll setHasHorizontalScroller:NO];
+  [scroll setAutohidesScrollers:YES];
+  [scroll setBorderType:NSBezelBorder];
+
+  NSTextView *tv = [[NSTextView alloc] initWithFrame:NSMakeRect(0, 0, 300, h)];
+  [tv setEditable:NO];
+  [tv setSelectable:YES];
+  [tv setVerticallyResizable:YES];
+  [tv setHorizontallyResizable:NO];
+  [tv setAutoresizingMask:NSViewWidthSizable];
+
+  [scroll setDocumentView:tv];
+
+  if (!self.controlsByName) self.controlsByName = [NSMutableDictionary dictionary];
+  self.controlsByName[[name lowercaseString]] = scroll;
+
+  [self setMarkdownViewText:markdownText forName:name];
+  [self addControlToLayout:scroll];
+  return scroll;
+}
+
+- (void)setMarkdownViewText:(NSString *)markdownText forName:(NSString *)name {
+  NSScrollView *scroll = (NSScrollView *)self.controlsByName[[name lowercaseString]];
+  if (scroll && [scroll isKindOfClass:[NSScrollView class]]) {
+    NSTextView *tv = (NSTextView *)[scroll documentView];
+    if ([tv isKindOfClass:[NSTextView class]]) {
+      NSMutableAttributedString *attrStr = [[NSMutableAttributedString alloc] init];
+      NSString *raw = markdownText ? markdownText : @"";
+      NSArray *lines = [raw componentsSeparatedByString:@"\n"];
+
+      for (NSUInteger i = 0; i < lines.count; i++) {
+        NSString *line = lines[i];
+        NSFont *font = [NSFont systemFontOfSize:13.0 weight:NSFontWeightRegular];
+        NSColor *color = [NSColor labelColor];
+
+        if ([line hasPrefix:@"# "]) {
+          font = [NSFont systemFontOfSize:20.0 weight:NSFontWeightBold];
+          line = [line substringFromIndex:2];
+        } else if ([line hasPrefix:@"## "]) {
+          font = [NSFont systemFontOfSize:16.0 weight:NSFontWeightBold];
+          line = [line substringFromIndex:3];
+        } else if ([line hasPrefix:@"### "]) {
+          font = [NSFont systemFontOfSize:14.0 weight:NSFontWeightBold];
+          line = [line substringFromIndex:4];
+        } else if ([line hasPrefix:@"- "]) {
+          line = [NSString stringWithFormat:@"  •  %@", [line substringFromIndex:2]];
+        }
+
+        NSDictionary *attrs = @{ NSFontAttributeName: font, NSForegroundColorAttributeName: color };
+        NSAttributedString *lineAttr = [[NSAttributedString alloc] initWithString:[NSString stringWithFormat:@"%@\n", line] attributes:attrs];
+        [attrStr appendAttributedString:lineAttr];
+      }
+
+      [[tv textStorage] setAttributedString:attrStr];
+      objc_setAssociatedObject(scroll, "markdownRawText", raw, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    }
+  }
+}
+
+- (NSString *)markdownViewTextForName:(NSString *)name {
+  NSScrollView *scroll = (NSScrollView *)self.controlsByName[[name lowercaseString]];
+  if (scroll && [scroll isKindOfClass:[NSScrollView class]]) {
+    NSString *raw = objc_getAssociatedObject(scroll, "markdownRawText");
+    if (raw) return raw;
+  }
+  return @"";
+}
+
+- (NSView *)makeSparklineWithName:(NSString *)name values:(NSArray<NSNumber *> *)values height:(int)h {
+  if (h <= 0) h = 40;
+  SparklineView *spark = [[SparklineView alloc] initWithFrame:NSMakeRect(0, 0, 200, h)];
+  if (values) spark.values = values;
+
+  [spark.heightAnchor constraintEqualToConstant:h].active = YES;
+
+  if (!self.controlsByName) self.controlsByName = [NSMutableDictionary dictionary];
+  self.controlsByName[[name lowercaseString]] = spark;
+
+  [self addControlToLayout:spark];
+  return spark;
+}
+
+- (void)setSparklineValues:(NSArray<NSNumber *> *)values forName:(NSString *)name {
+  SparklineView *spark = (SparklineView *)self.controlsByName[[name lowercaseString]];
+  if (spark && [spark isKindOfClass:[SparklineView class]]) {
+    spark.values = values;
+    [spark setNeedsDisplay:YES];
+  }
+}
+
+- (NSView *)makePinCodeWithName:(NSString *)name digits:(int)digits {
+  if (digits <= 0) digits = 4;
+  if (digits > 8) digits = 8;
+
+  NSStackView *hstack = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [hstack setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+  [hstack setSpacing:6.0];
+  [hstack setAlignment:NSLayoutAttributeCenterY];
+
+  NSMutableArray *fields = [NSMutableArray arrayWithCapacity:digits];
+  for (int i = 0; i < digits; i++) {
+    ModernTextField *tf = [[ModernTextField alloc] initWithFrame:NSZeroRect];
+    [tf setAlignment:NSTextAlignmentCenter];
+    [tf setFont:[NSFont systemFontOfSize:18.0 weight:NSFontWeightBold]];
+    [tf.widthAnchor constraintEqualToConstant:36].active = YES;
+    [tf.heightAnchor constraintEqualToConstant:40].active = YES;
+    tf.delegate = self;
+    tf.identifier = [NSString stringWithFormat:@"%@_pin_%d", name, i];
+    [hstack addArrangedSubview:tf];
+    [fields addObject:tf];
+  }
+
+  if (!self.controlsByName) self.controlsByName = [NSMutableDictionary dictionary];
+  self.controlsByName[[name lowercaseString]] = hstack;
+
+  objc_setAssociatedObject(hstack, "pinFields", fields, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(hstack, "pinName", name, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+  [self addControlToLayout:hstack];
+  return hstack;
+}
+
+- (void)setPinCodeValue:(NSString *)code forName:(NSString *)name {
+  NSStackView *hstack = (NSStackView *)self.controlsByName[[name lowercaseString]];
+  if (hstack) {
+    NSArray *fields = objc_getAssociatedObject(hstack, "pinFields");
+    if (fields) {
+      NSString *clean = code ? code : @"";
+      for (NSUInteger i = 0; i < fields.count; i++) {
+        ModernTextField *tf = fields[i];
+        if (i < clean.length) {
+          [tf setStringValue:[clean substringWithRange:NSMakeRange(i, 1)]];
+        } else {
+          [tf setStringValue:@""];
+        }
+      }
+    }
+  }
+}
+
+- (NSString *)pinCodeValueForName:(NSString *)name {
+  NSStackView *hstack = (NSStackView *)self.controlsByName[[name lowercaseString]];
+  if (hstack) {
+    NSArray *fields = objc_getAssociatedObject(hstack, "pinFields");
+    if (fields) {
+      NSMutableString *res = [NSMutableString string];
+      for (ModernTextField *tf in fields) {
+        [res appendString:[tf stringValue]];
+      }
+      return res;
+    }
+  }
+  return @"";
+}
+
+- (NSView *)makeColorPaletteWithName:(NSString *)name colors:(NSArray<NSString *> *)colors selected:(NSString *)selected {
+  NSStackView *hstack = [[NSStackView alloc] initWithFrame:NSZeroRect];
+  [hstack setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+  [hstack setSpacing:6.0];
+  [hstack setAlignment:NSLayoutAttributeCenterY];
+
+  if (!self.controlsByName) self.controlsByName = [NSMutableDictionary dictionary];
+  self.controlsByName[[name lowercaseString]] = hstack;
+
+  objc_setAssociatedObject(hstack, "paletteColors", colors, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  objc_setAssociatedObject(hstack, "paletteSelected", selected ? selected : (colors.count > 0 ? colors[0] : @"#000000"), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+  [self rebuildColorPaletteStack:hstack name:name];
+  [self addControlToLayout:hstack];
+  return hstack;
+}
+
+- (void)rebuildColorPaletteStack:(NSStackView *)stack name:(NSString *)name {
+  for (NSView *v in [stack.arrangedSubviews copy]) {
+    [stack removeArrangedSubview:v];
+    [v removeFromSuperview];
+  }
+  NSArray *colors = objc_getAssociatedObject(stack, "paletteColors");
+  NSString *selHex = objc_getAssociatedObject(stack, "paletteSelected");
+
+  for (NSUInteger i = 0; i < colors.count; i++) {
+    NSString *hex = colors[i];
+    NSColor *c = colorFromHexString(hex);
+    BOOL isSel = [hex caseInsensitiveCompare:selHex] == NSOrderedSame;
+
+
+    NSBox *swatch = [[NSBox alloc] initWithFrame:NSZeroRect];
+    [swatch setBoxType:NSBoxCustom];
+    [swatch setCornerRadius:12.0];
+    [swatch setBorderType:isSel ? NSLineBorder : NSNoBorder];
+    [swatch setBorderColor:[NSColor labelColor]];
+    [swatch setFillColor:c];
+    [swatch.widthAnchor constraintEqualToConstant:24].active = YES;
+    [swatch.heightAnchor constraintEqualToConstant:24].active = YES;
+
+    NSButton *btn = [NSButton buttonWithTitle:@"" target:self action:@selector(handleColorPaletteClicked:)];
+    [btn setTransparent:YES];
+    btn.identifier = [NSString stringWithFormat:@"%@_pal_%@", name, hex];
+    [swatch addSubview:btn];
+    btn.frame = NSMakeRect(0, 0, 24, 24);
+
+    [stack addArrangedSubview:swatch];
+  }
+}
+
+- (void)handleColorPaletteClicked:(id)sender {
+  NSButton *btn = (NSButton *)sender;
+  NSString *ident = btn.identifier;
+  NSRange range = [ident rangeOfString:@"_pal_"];
+  if (range.location != NSNotFound) {
+    NSString *name = [ident substringToIndex:range.location];
+    NSString *hex = [ident substringFromIndex:range.location + 5];
+    NSStackView *stack = (NSStackView *)self.controlsByName[[name lowercaseString]];
+    if (stack) {
+      objc_setAssociatedObject(stack, "paletteSelected", hex, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+      [self rebuildColorPaletteStack:stack name:name];
+      vlang_dispatch_event(self.win_ptr, [name UTF8String], "change", [hex UTF8String]);
+    }
+  }
+}
+
+- (void)setColorPaletteSelected:(NSString *)hex forName:(NSString *)name {
+  NSStackView *stack = (NSStackView *)self.controlsByName[[name lowercaseString]];
+  if (stack) {
+    objc_setAssociatedObject(stack, "paletteSelected", hex ? hex : @"", OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    [self rebuildColorPaletteStack:stack name:name];
+  }
+}
+
+- (NSString *)colorPaletteSelectedForName:(NSString *)name {
+  NSStackView *stack = (NSStackView *)self.controlsByName[[name lowercaseString]];
+  if (stack) {
+    return objc_getAssociatedObject(stack, "paletteSelected");
+  }
+  return @"";
+}
+
 @end
+
 
 
 
@@ -11810,6 +12410,207 @@ void window_set_control_expand_fill_by_name(main__WindowInfo *info, const char *
     [delegate setControlExpandFill:(expand != 0) forName:nsstring(name)];
   });
 }
+
+void *window_add_gauge_control(main__WindowInfo *info, const char *name, const char *title, int value, int min_val, int max_val, const char *unit) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeGaugeWithName:nsstring(name) title:nsstring(title) value:value minVal:min_val maxVal:max_val unit:nsstring(unit)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)control;
+}
+
+void window_set_gauge_value(main__WindowInfo *info, const char *name, int value) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate setGaugeValue:value forName:nsstring(name)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+int window_get_gauge_value(main__WindowInfo *info, const char *name) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block int res = 0;
+  void (^runBlock)(void) = ^{
+    res = [delegate gaugeValueForName:nsstring(name)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return res;
+}
+
+void *window_add_pagination_control(main__WindowInfo *info, const char *name, int total_pages, int current_page) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makePaginationWithName:nsstring(name) totalPages:total_pages currentPage:current_page];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)control;
+}
+
+void window_set_pagination_page(main__WindowInfo *info, const char *name, int page, int total_pages) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate setPaginationPage:page totalPages:total_pages forName:nsstring(name)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+int window_get_pagination_page(main__WindowInfo *info, const char *name) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block int res = 1;
+  void (^runBlock)(void) = ^{
+    res = [delegate paginationPageForName:nsstring(name)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return res;
+}
+
+void *window_add_activity_feed_control(main__WindowInfo *info, const char *name, int height) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeActivityFeedWithName:nsstring(name) height:height];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)control;
+}
+
+void window_add_activity_feed_item(main__WindowInfo *info, const char *name, const char *timestamp, const char *message, const char *level) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate addActivityFeedItemToName:nsstring(name) timestamp:nsstring(timestamp) message:nsstring(message) level:nsstring(level)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+void window_clear_activity_feed(main__WindowInfo *info, const char *name) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate clearActivityFeedName:nsstring(name)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+void *window_add_markdown_view_control(main__WindowInfo *info, const char *name, const char *markdown_text, int height) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeMarkdownViewWithName:nsstring(name) markdownText:nsstring(markdown_text) height:height];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)control;
+}
+
+void window_set_markdown_view_text(main__WindowInfo *info, const char *name, const char *markdown_text) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate setMarkdownViewText:nsstring(markdown_text) forName:nsstring(name)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+const char *window_get_markdown_view_text(main__WindowInfo *info, const char *name) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block const char *res = "";
+  void (^runBlock)(void) = ^{
+    NSString *str = [delegate markdownViewTextForName:nsstring(name)];
+    if (str) res = strdup([str UTF8String]);
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return res;
+}
+
+void *window_add_sparkline_control(main__WindowInfo *info, const char *name, const double *values, int count, int height) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSMutableArray *arr = [NSMutableArray arrayWithCapacity:count];
+  for (int i = 0; i < count; i++) {
+    [arr addObject:@(values[i])];
+  }
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeSparklineWithName:nsstring(name) values:arr height:height];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)control;
+}
+
+void window_set_sparkline_data(main__WindowInfo *info, const char *name, const double *values, int count) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSMutableArray *arr = [NSMutableArray arrayWithCapacity:count];
+  for (int i = 0; i < count; i++) {
+    [arr addObject:@(values[i])];
+  }
+  void (^runBlock)(void) = ^{
+    [delegate setSparklineValues:arr forName:nsstring(name)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+void *window_add_pin_code_control(main__WindowInfo *info, const char *name, int digits) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makePinCodeWithName:nsstring(name) digits:digits];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)control;
+}
+
+void window_set_pin_code_value(main__WindowInfo *info, const char *name, const char *code) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate setPinCodeValue:nsstring(code) forName:nsstring(name)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+const char *window_get_pin_code_value(main__WindowInfo *info, const char *name) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block const char *res = "";
+  void (^runBlock)(void) = ^{
+    NSString *str = [delegate pinCodeValueForName:nsstring(name)];
+    if (str) res = strdup([str UTF8String]);
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return res;
+}
+
+void *window_add_color_palette_control(main__WindowInfo *info, const char *name, const char **hex_colors, int count, const char *selected) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSMutableArray *arr = [NSMutableArray arrayWithCapacity:count];
+  for (int i = 0; i < count; i++) {
+    [arr addObject:nsstring(hex_colors[i])];
+  }
+  __block NSView *control = nil;
+  void (^runBlock)(void) = ^{
+    control = [delegate makeColorPaletteWithName:nsstring(name) colors:arr selected:nsstring(selected)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)control;
+}
+
+void window_set_color_palette_selected(main__WindowInfo *info, const char *name, const char *hex_color) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate setColorPaletteSelected:nsstring(hex_color) forName:nsstring(name)];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+const char *window_get_color_palette_selected(main__WindowInfo *info, const char *name) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block const char *res = "";
+  void (^runBlock)(void) = ^{
+    NSString *str = [delegate colorPaletteSelectedForName:nsstring(name)];
+    if (str) res = strdup([str UTF8String]);
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return res;
+}
+
+
 
 
 

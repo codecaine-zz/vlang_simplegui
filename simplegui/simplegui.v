@@ -364,6 +364,34 @@ fn C.window_set_tag_cloud_tags(&WindowInfo, &u8, &&u8, int)
 fn C.window_add_wizard_stepper_control(&WindowInfo, &u8, &&u8, int, int) voidptr
 fn C.window_set_wizard_stepper_step(&WindowInfo, &u8, int)
 
+fn C.window_add_gauge_control(&WindowInfo, &u8, &u8, int, int, int, &u8) voidptr
+fn C.window_set_gauge_value(&WindowInfo, &u8, int)
+fn C.window_get_gauge_value(&WindowInfo, &u8) int
+
+fn C.window_add_pagination_control(&WindowInfo, &u8, int, int) voidptr
+fn C.window_set_pagination_page(&WindowInfo, &u8, int, int)
+fn C.window_get_pagination_page(&WindowInfo, &u8) int
+
+fn C.window_add_activity_feed_control(&WindowInfo, &u8, int) voidptr
+fn C.window_add_activity_feed_item(&WindowInfo, &u8, &u8, &u8, &u8)
+fn C.window_clear_activity_feed(&WindowInfo, &u8)
+
+fn C.window_add_markdown_view_control(&WindowInfo, &u8, &u8, int) voidptr
+fn C.window_set_markdown_view_text(&WindowInfo, &u8, &u8)
+fn C.window_get_markdown_view_text(&WindowInfo, &u8) &u8
+
+fn C.window_add_sparkline_control(&WindowInfo, &u8, &f64, int, int) voidptr
+fn C.window_set_sparkline_data(&WindowInfo, &u8, &f64, int)
+
+fn C.window_add_pin_code_control(&WindowInfo, &u8, int) voidptr
+fn C.window_set_pin_code_value(&WindowInfo, &u8, &u8)
+fn C.window_get_pin_code_value(&WindowInfo, &u8) &u8
+
+fn C.window_add_color_palette_control(&WindowInfo, &u8, &&u8, int, &u8) voidptr
+fn C.window_set_color_palette_selected(&WindowInfo, &u8, &u8)
+fn C.window_get_color_palette_selected(&WindowInfo, &u8) &u8
+
+
 
 
 pub type StringEventCallback = fn (mut win SimpleWindow, value string)
@@ -6567,6 +6595,359 @@ pub fn (win &SimpleWindow) set_wizard_stepper_step(name string, step int) &Simpl
 	}
 	return win
 }
+
+// add_gauge adds a progress/level gauge indicator widget.
+pub fn (win &SimpleWindow) add_gauge(name string, title string, value int, min_val int, max_val int, unit string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('gauge')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name: real_name
+			kind: 'gauge'
+			value: value.str()
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_gauge_control(win.window_info, real_name.str, title.str, value, min_val, max_val, unit.str)
+	}
+	return win
+}
+
+// gauge inserts an auto-named gauge widget.
+pub fn (win &SimpleWindow) gauge(title string, value int, min_val int, max_val int, unit string) &SimpleWindow {
+	return win.add_gauge('', title, value, min_val, max_val, unit)
+}
+
+// set_gauge_value updates gauge numeric value.
+pub fn (win &SimpleWindow) set_gauge_value(name string, value int) &SimpleWindow {
+	idx := win.find_control(name)
+	if idx >= 0 {
+		unsafe {
+			mut w := &SimpleWindow(win)
+			w.controls[idx].value = value.str()
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_set_gauge_value(win.window_info, name.str, value)
+	}
+	return win
+}
+
+// get_gauge_value retrieves current gauge numeric value.
+pub fn (win &SimpleWindow) get_gauge_value(name string) int {
+	if win.window_info != unsafe { nil } {
+		return C.window_get_gauge_value(win.window_info, name.str)
+	}
+	idx := win.find_control(name)
+	if idx >= 0 {
+		return win.controls[idx].value.int()
+	}
+	return 0
+}
+
+// add_pagination adds a page navigation bar widget.
+pub fn (win &SimpleWindow) add_pagination(name string, total_pages int, current_page int) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('pagination')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name: real_name
+			kind: 'pagination'
+			value: current_page.str()
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_pagination_control(win.window_info, real_name.str, total_pages, current_page)
+	}
+	return win
+}
+
+// pagination inserts an auto-named pagination bar widget.
+pub fn (win &SimpleWindow) pagination(total_pages int, current_page int) &SimpleWindow {
+	return win.add_pagination('', total_pages, current_page)
+}
+
+// set_pagination_page updates active page and total pages in pagination widget.
+pub fn (win &SimpleWindow) set_pagination_page(name string, page int, total_pages int) &SimpleWindow {
+	idx := win.find_control(name)
+	if idx >= 0 {
+		unsafe {
+			mut w := &SimpleWindow(win)
+			w.controls[idx].value = page.str()
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_set_pagination_page(win.window_info, name.str, page, total_pages)
+	}
+	return win
+}
+
+// get_pagination_page gets current active page index.
+pub fn (win &SimpleWindow) get_pagination_page(name string) int {
+	if win.window_info != unsafe { nil } {
+		return C.window_get_pagination_page(win.window_info, name.str)
+	}
+	idx := win.find_control(name)
+	if idx >= 0 {
+		return win.controls[idx].value.int()
+	}
+	return 1
+}
+
+// add_activity_feed adds a scrollable activity/event log feed widget.
+pub fn (win &SimpleWindow) add_activity_feed(name string, height int) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('activity_feed')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name: real_name
+			kind: 'activity_feed'
+			value: ''
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_activity_feed_control(win.window_info, real_name.str, height)
+	}
+	return win
+}
+
+// activity_feed inserts an auto-named activity feed widget.
+pub fn (win &SimpleWindow) activity_feed(height int) &SimpleWindow {
+	return win.add_activity_feed('', height)
+}
+
+// add_activity_feed_item appends a log entry item to an activity feed.
+pub fn (win &SimpleWindow) add_activity_feed_item(name string, timestamp string, message string, level string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_add_activity_feed_item(win.window_info, name.str, timestamp.str, message.str, level.str)
+	}
+	return win
+}
+
+// clear_activity_feed clears all entries from an activity feed widget.
+pub fn (win &SimpleWindow) clear_activity_feed(name string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_clear_activity_feed(win.window_info, name.str)
+	}
+	return win
+}
+
+// add_markdown_view adds a formatted Markdown text viewer widget.
+pub fn (win &SimpleWindow) add_markdown_view(name string, markdown_text string, height int) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('markdown_view')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name: real_name
+			kind: 'markdown_view'
+			value: markdown_text
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_markdown_view_control(win.window_info, real_name.str, markdown_text.str, height)
+	}
+	return win
+}
+
+// markdown_view inserts an auto-named markdown view widget.
+pub fn (win &SimpleWindow) markdown_view(markdown_text string, height int) &SimpleWindow {
+	return win.add_markdown_view('', markdown_text, height)
+}
+
+// set_markdown_view_text updates content of a markdown viewer widget.
+pub fn (win &SimpleWindow) set_markdown_view_text(name string, markdown_text string) &SimpleWindow {
+	idx := win.find_control(name)
+	if idx >= 0 {
+		unsafe {
+			mut w := &SimpleWindow(win)
+			w.controls[idx].value = markdown_text
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_set_markdown_view_text(win.window_info, name.str, markdown_text.str)
+	}
+	return win
+}
+
+// get_markdown_view_text retrieves raw text from markdown view.
+pub fn (win &SimpleWindow) get_markdown_view_text(name string) string {
+	if win.window_info != unsafe { nil } {
+		unsafe {
+			res := C.window_get_markdown_view_text(win.window_info, name.str)
+			if res != nil {
+				return tos3(res)
+			}
+		}
+	}
+	idx := win.find_control(name)
+	if idx >= 0 {
+		return win.controls[idx].value
+	}
+	return ''
+}
+
+// add_sparkline adds a mini inline sparkline trend chart widget.
+pub fn (win &SimpleWindow) add_sparkline(name string, values []f64, height int) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('sparkline')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name: real_name
+			kind: 'sparkline'
+			value: ''
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_sparkline_control(win.window_info, real_name.str, values.data, values.len, height)
+	}
+	return win
+}
+
+// sparkline inserts an auto-named sparkline chart.
+pub fn (win &SimpleWindow) sparkline(values []f64, height int) &SimpleWindow {
+	return win.add_sparkline('', values, height)
+}
+
+// set_sparkline_data updates data points for sparkline chart.
+pub fn (win &SimpleWindow) set_sparkline_data(name string, values []f64) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_sparkline_data(win.window_info, name.str, values.data, values.len)
+	}
+	return win
+}
+
+// add_pin_code adds a digit verification PIN/OTP code input widget.
+pub fn (win &SimpleWindow) add_pin_code(name string, digits int) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('pin_code')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name: real_name
+			kind: 'pin_code'
+			value: ''
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_pin_code_control(win.window_info, real_name.str, digits)
+	}
+	return win
+}
+
+// pin_code inserts an auto-named PIN code input widget.
+pub fn (win &SimpleWindow) pin_code(digits int) &SimpleWindow {
+	return win.add_pin_code('', digits)
+}
+
+// set_pin_code_value updates PIN code value.
+pub fn (win &SimpleWindow) set_pin_code_value(name string, code string) &SimpleWindow {
+	idx := win.find_control(name)
+	if idx >= 0 {
+		unsafe {
+			mut w := &SimpleWindow(win)
+			w.controls[idx].value = code
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_set_pin_code_value(win.window_info, name.str, code.str)
+	}
+	return win
+}
+
+// get_pin_code_value retrieves entered PIN code.
+pub fn (win &SimpleWindow) get_pin_code_value(name string) string {
+	if win.window_info != unsafe { nil } {
+		unsafe {
+			res := C.window_get_pin_code_value(win.window_info, name.str)
+			if res != nil {
+				return tos3(res)
+			}
+		}
+	}
+	idx := win.find_control(name)
+	if idx >= 0 {
+		return win.controls[idx].value
+	}
+	return ''
+}
+
+// add_color_palette adds a swatch color palette picker widget.
+pub fn (win &SimpleWindow) add_color_palette(name string, hex_colors []string, selected string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('color_palette')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name: real_name
+			kind: 'color_palette'
+			value: selected
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		c_colors := hex_colors.map(it.str)
+		C.window_add_color_palette_control(win.window_info, real_name.str, c_colors.data, c_colors.len, selected.str)
+	}
+	return win
+}
+
+// color_palette inserts an auto-named color palette widget.
+pub fn (win &SimpleWindow) color_palette(hex_colors []string, selected string) &SimpleWindow {
+	return win.add_color_palette('', hex_colors, selected)
+}
+
+// set_color_palette_selected updates selected color hex in palette.
+pub fn (win &SimpleWindow) set_color_palette_selected(name string, hex_color string) &SimpleWindow {
+	idx := win.find_control(name)
+	if idx >= 0 {
+		unsafe {
+			mut w := &SimpleWindow(win)
+			w.controls[idx].value = hex_color
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_set_color_palette_selected(win.window_info, name.str, hex_color.str)
+	}
+	return win
+}
+
+
+// get_color_palette_selected gets currently selected hex color string.
+pub fn (win &SimpleWindow) get_color_palette_selected(name string) string {
+	if win.window_info != unsafe { nil } {
+		unsafe {
+			res := C.window_get_color_palette_selected(win.window_info, name.str)
+			if res != nil {
+				return tos3(res)
+			}
+		}
+	}
+	idx := win.find_control(name)
+	if idx >= 0 {
+		return win.controls[idx].value
+	}
+	return ''
+}
+
+
 
 
 
