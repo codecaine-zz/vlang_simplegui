@@ -1199,6 +1199,90 @@ To simplify system integrations and mirror key features from NeutralinoJS, `simp
   - `rb.is_empty() bool`: Reports whether the buffer has no items.
   - `rb.is_full() bool`: Reports whether the buffer is fully occupied.
 
+### Math & Trigonometry (`math`)
+
+- `win.math_sin(x f64) f64`: Returns the sine of a radian value.
+- `win.math_cos(x f64) f64`: Returns the cosine of a radian value.
+- `win.math_tan(x f64) f64`: Returns the tangent of a radian value.
+- `win.math_sqrt(x f64) f64`: Returns the square root of a non-negative floating-point number.
+- `win.math_pow(base f64, exp f64) f64`: Returns `base` raised to the power `exp`.
+- `win.math_abs(x f64) f64`: Returns the absolute value of a floating-point number.
+- `win.math_clamp(val f64, min f64, max f64) f64`: Constrains a value within a specified `min` and `max` range.
+- `win.math_round(x f64) f64`: Rounds a floating-point number to the nearest integer.
+- `win.math_floor(x f64) f64`: Returns the greatest integer less than or equal to `x`.
+- `win.math_ceil(x f64) f64`: Returns the least integer greater than or equal to `x`.
+
+### Statistical Analysis (`math.stats`)
+
+- `win.stats_mean(data []f64) f64`: Computes the arithmetic mean of a floating-point dataset.
+- `win.stats_median(data []f64) f64`: Computes the median value of a floating-point dataset.
+- `win.stats_sample_variance(data []f64) f64`: Computes the sample variance of a dataset.
+- `win.stats_sample_std_dev(data []f64) f64`: Computes the sample standard deviation of a dataset.
+- `win.stats_population_variance(data []f64) f64`: Computes the population variance of a dataset.
+- `win.stats_population_std_dev(data []f64) f64`: Computes the population standard deviation of a dataset.
+
+### Arbitrary-Precision BigInteger Math (`math.big`)
+
+- `win.big_int_from_int(v int) SimpleBigInt`: Constructs a `SimpleBigInt` from an integer value.
+- `win.big_int_from_str(s string) SimpleBigInt`: Constructs a `SimpleBigInt` from a decimal string.
+- **Returned Type**: `SimpleBigInt` supports:
+  - `b.add(other SimpleBigInt) SimpleBigInt`: Returns the sum of two BigInts.
+  - `b.sub(other SimpleBigInt) SimpleBigInt`: Returns the difference of two BigInts.
+  - `b.mul(other SimpleBigInt) SimpleBigInt`: Returns the product of two BigInts.
+  - `b.div(other SimpleBigInt) SimpleBigInt`: Returns the quotient of two BigInts.
+  - `b.mod(other SimpleBigInt) SimpleBigInt`: Returns the remainder of two BigInts.
+  - `b.str() string`: Formats the BigInt as a decimal string representation.
+
+### Array Processing Utilities (`arrays`)
+
+- `win.array_min(arr []int) int`: Returns the minimum value in an integer array (or `0` if empty).
+- `win.array_max(arr []int) int`: Returns the maximum value in an integer array (or `0` if empty).
+- `win.array_min_f64(arr []f64) f64`: Returns the minimum value in a float array (or `0.0` if empty).
+- `win.array_max_f64(arr []f64) f64`: Returns the maximum value in a float array (or `0.0` if empty).
+- `win.array_sum(arr []int) int`: Computes the sum of all elements in an integer array.
+- `win.array_sum_f64(arr []f64) f64`: Computes the sum of all elements in a float array.
+- `win.array_unique_strings(arr []string) []string`: Deduplicates string array values while preserving original insertion order.
+
+### UTF-8 String Utilities (`encoding.utf8`)
+
+- `win.utf8_len(text string) int`: Returns the total number of UTF-8 code points/characters in a string.
+- `win.utf8_is_valid(text string) bool`: Validates whether a string contains valid UTF-8 character encoding.
+
+### String Distance & String Builder (`strings`)
+
+- `win.string_levenshtein(s1 string, s2 string) int`: Computes the Levenshtein edit distance between two strings.
+- `win.new_string_builder() SimpleStringBuilder`: Constructs an efficient, growable string buffer builder.
+- **Returned Type**: `SimpleStringBuilder` supports:
+  - `sb.write(text string)`: Appends text to the string builder.
+  - `sb.write_line(text string)`: Appends text followed by a newline.
+  - `sb.str() string`: Returns the complete accumulated string content.
+  - `sb.len() int`: Returns the byte length of accumulated content.
+
+### CSV Parsing & Encoding (`encoding.csv`)
+
+- `win.csv_parse(content string) [][]string`: Parses a CSV formatted string into a 2D matrix of row/column strings.
+- `win.csv_encode(rows [][]string) string`: Serializes a 2D matrix of strings into RFC-4180 compliant CSV text with automatic quote escaping.
+
+### Ed25519 Digital Signatures (`crypto.ed25519`)
+
+- `win.crypto_ed25519_generate_key() !SimpleEd25519KeyPair`: Generates a new Ed25519 public/private key pair.
+- `win.crypto_ed25519_sign(priv_key []u8, msg string) ![]u8`: Signs a string payload using an Ed25519 private key.
+- `win.crypto_ed25519_verify(pub_key []u8, msg string, sig []u8) bool`: Verifies an Ed25519 signature against a public key and message.
+
+### Password-Based Key Derivation (`crypto.pbkdf2`)
+
+- `win.crypto_pbkdf2(password string, salt string, iterations int, key_len int) []u8`: Derives cryptographic keys from a password and salt using PBKDF2 with HMAC-SHA256.
+
+### Thread Synchronization Primitives (`sync`)
+
+- `win.new_mutex() SimpleMutex`: Constructs a thread-safe mutex lock wrapper.
+  - `m.lock()`: Acquires the lock (blocking).
+  - `m.unlock()`: Releases the lock.
+- `win.new_wait_group() SimpleWaitGroup`: Constructs a thread synchronization counter.
+  - `wg.add(delta int)`: Increments counter by `delta`.
+  - `wg.done()`: Decrements counter by 1.
+  - `wg.wait()`: Blocks until counter reaches zero.
+
 ---
 
 ## 7. List Box & Image View Operations

@@ -2030,6 +2030,85 @@ fn test_new_window_commands_and_controls() {
 	assert win.get_control_kind('checkout_flow') == 'wizard_stepper'
 }
 
+fn test_extended_stdlib_apis() {
+	win := simplegui.SimpleWindow{}
+
+	// 1. Math
+	assert win.math_sin(0.0) == 0.0
+	assert win.math_cos(0.0) == 1.0
+	assert win.math_sqrt(16.0) == 4.0
+	assert win.math_pow(2.0, 3.0) == 8.0
+	assert win.math_abs(-5.5) == 5.5
+	assert win.math_clamp(15.0, 0.0, 10.0) == 10.0
+	assert win.math_round(2.6) == 3.0
+	assert win.math_floor(2.9) == 2.0
+	assert win.math_ceil(2.1) == 3.0
+
+	// 2. Stats
+	data := [2.0, 4.0, 6.0, 8.0, 10.0]
+	assert win.stats_mean(data) == 6.0
+	assert win.stats_median(data) == 6.0
+	assert win.stats_sample_variance(data) == 10.0
+	assert win.stats_sample_std_dev(data) > 3.16 && win.stats_sample_std_dev(data) < 3.17
+
+	// 3. BigInt
+	b1 := win.big_int_from_str('100000000000000000000')
+	b2 := win.big_int_from_int(5)
+	assert b1.mul(b2).str() == '500000000000000000000'
+	assert b1.div(b2).str() == '20000000000000000000'
+
+	// 4. Arrays
+	ints := [10, 50, 5, 20]
+	assert win.array_min(ints) == 5
+	assert win.array_max(ints) == 50
+	assert win.array_sum(ints) == 85
+	unique := win.array_unique_strings(['a', 'b', 'a', 'c', 'b'])
+	assert unique == ['a', 'b', 'c']
+
+	// 5. UTF-8
+	assert win.utf8_len('vlang 🚀') == 7
+	assert win.utf8_is_valid('hello') == true
+
+	// 6. String Distance & Builder
+	assert win.string_levenshtein('cat', 'cut') == 1
+	mut sb := win.new_string_builder()
+	sb.write('abc')
+	sb.write_line('def')
+	assert sb.len() == 7
+	assert sb.str() == 'abcdef\n'
+
+	// 7. CSV
+	csv_raw := 'a,b\n1,2'
+	rows := win.csv_parse(csv_raw)
+	assert rows.len == 2
+	assert rows[0] == ['a', 'b']
+	encoded := win.csv_encode(rows)
+	assert encoded.trim_space() == 'a,b\n1,2'
+
+	// 8. Ed25519
+	kp := win.crypto_ed25519_generate_key() or { panic(err) }
+	msg := 'test ed25519 payload'
+	sig := win.crypto_ed25519_sign(kp.priv_key, msg) or { panic(err) }
+	assert win.crypto_ed25519_verify(kp.pub_key, msg, sig) == true
+	assert win.crypto_ed25519_verify(kp.pub_key, 'tampered msg', sig) == false
+
+	// 9. PBKDF2
+	dk := win.crypto_pbkdf2('password', 'salt', 100, 16)
+	assert dk.len == 16
+
+	// 10. Concurrency (Mutex & WaitGroup)
+	mut m := win.new_mutex()
+	m.lock()
+	m.unlock()
+
+	mut wg := win.new_wait_group()
+	wg.add(2)
+	wg.done()
+	wg.done()
+	wg.wait()
+}
+
+
 
 
 

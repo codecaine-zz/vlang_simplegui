@@ -31,6 +31,16 @@ import compress.deflate
 import compress.zstd
 import net.html
 import strings.lorem
+import math
+import math.big
+import math.stats
+import arrays
+import strings
+import encoding.utf8
+import encoding.csv
+import crypto.ed25519
+import crypto.pbkdf2
+import sync
 
 // stdlib.v - Extended High-Level Standard Library Wrappers for SimpleGUI
 // Provides extremely simple, beginner-friendly, and safe wrappers around V's Core Standard Library.
@@ -1202,3 +1212,588 @@ pub fn base64_decode(b64_str string) string {
 pub fn (win &SimpleWindow) base64_decode(b64_str string) string {
 	return base64_decode(b64_str)
 }
+
+// ==========================================
+// 28. Math & Trigonometry Helpers (Chapter 13: math)
+// ==========================================
+
+// math_sin returns the sine of a radian value.
+pub fn math_sin(x f64) f64 {
+	return math.sin(x)
+}
+
+// math_sin delegates to standalone math_sin.
+pub fn (win &SimpleWindow) math_sin(x f64) f64 {
+	return math_sin(x)
+}
+
+// math_cos returns the cosine of a radian value.
+pub fn math_cos(x f64) f64 {
+	return math.cos(x)
+}
+
+// math_cos delegates to standalone math_cos.
+pub fn (win &SimpleWindow) math_cos(x f64) f64 {
+	return math_cos(x)
+}
+
+// math_tan returns the tangent of a radian value.
+pub fn math_tan(x f64) f64 {
+	return math.tan(x)
+}
+
+// math_tan delegates to standalone math_tan.
+pub fn (win &SimpleWindow) math_tan(x f64) f64 {
+	return math_tan(x)
+}
+
+// math_sqrt returns the square root of a non-negative number.
+pub fn math_sqrt(x f64) f64 {
+	return math.sqrt(x)
+}
+
+// math_sqrt delegates to standalone math_sqrt.
+pub fn (win &SimpleWindow) math_sqrt(x f64) f64 {
+	return math_sqrt(x)
+}
+
+// math_pow returns base raised to the power exp.
+pub fn math_pow(base f64, exp f64) f64 {
+	return math.pow(base, exp)
+}
+
+// math_pow delegates to standalone math_pow.
+pub fn (win &SimpleWindow) math_pow(base f64, exp f64) f64 {
+	return math_pow(base, exp)
+}
+
+// math_abs returns the absolute value of a floating point number.
+pub fn math_abs(x f64) f64 {
+	return math.abs(x)
+}
+
+// math_abs delegates to standalone math_abs.
+pub fn (win &SimpleWindow) math_abs(x f64) f64 {
+	return math_abs(x)
+}
+
+// math_clamp constrains a value within a min and max range.
+pub fn math_clamp(val f64, min f64, max f64) f64 {
+	return math.clamp(val, min, max)
+}
+
+// math_clamp delegates to standalone math_clamp.
+pub fn (win &SimpleWindow) math_clamp(val f64, min f64, max f64) f64 {
+	return math_clamp(val, min, max)
+}
+
+// math_round rounds a number to the nearest integer.
+pub fn math_round(x f64) f64 {
+	return math.round(x)
+}
+
+// math_round delegates to standalone math_round.
+pub fn (win &SimpleWindow) math_round(x f64) f64 {
+	return math_round(x)
+}
+
+// math_floor returns the greatest integer less than or equal to x.
+pub fn math_floor(x f64) f64 {
+	return math.floor(x)
+}
+
+// math_floor delegates to standalone math_floor.
+pub fn (win &SimpleWindow) math_floor(x f64) f64 {
+	return math_floor(x)
+}
+
+// math_ceil returns the least integer greater than or equal to x.
+pub fn math_ceil(x f64) f64 {
+	return math.ceil(x)
+}
+
+// math_ceil delegates to standalone math_ceil.
+pub fn (win &SimpleWindow) math_ceil(x f64) f64 {
+	return math_ceil(x)
+}
+
+// ==========================================
+// 29. Statistical Analysis Utilities (Chapter 13: math.stats)
+// ==========================================
+
+// stats_mean computes the arithmetic mean of a floating-point dataset.
+pub fn stats_mean(data []f64) f64 {
+	if data.len == 0 {
+		return 0.0
+	}
+	return stats.mean(data)
+}
+
+// stats_mean delegates to standalone stats_mean.
+pub fn (win &SimpleWindow) stats_mean(data []f64) f64 {
+	return stats_mean(data)
+}
+
+// stats_median computes the median value of a dataset.
+pub fn stats_median(data []f64) f64 {
+	if data.len == 0 {
+		return 0.0
+	}
+	mut sorted := data.clone()
+	sorted.sort()
+	return stats.median(sorted)
+}
+
+// stats_median delegates to standalone stats_median.
+pub fn (win &SimpleWindow) stats_median(data []f64) f64 {
+	return stats_median(data)
+}
+
+// stats_sample_variance computes the sample variance of a dataset.
+pub fn stats_sample_variance(data []f64) f64 {
+	if data.len == 0 {
+		return 0.0
+	}
+	return stats.sample_variance(data)
+}
+
+// stats_sample_variance delegates to standalone stats_sample_variance.
+pub fn (win &SimpleWindow) stats_sample_variance(data []f64) f64 {
+	return stats_sample_variance(data)
+}
+
+// stats_sample_std_dev computes the sample standard deviation of a dataset.
+pub fn stats_sample_std_dev(data []f64) f64 {
+	if data.len == 0 {
+		return 0.0
+	}
+	return stats.sample_stddev(data)
+}
+
+// stats_sample_std_dev delegates to standalone stats_sample_std_dev.
+pub fn (win &SimpleWindow) stats_sample_std_dev(data []f64) f64 {
+	return stats_sample_std_dev(data)
+}
+
+// stats_population_variance computes the population variance of a dataset.
+pub fn stats_population_variance(data []f64) f64 {
+	if data.len == 0 {
+		return 0.0
+	}
+	return stats.population_variance(data)
+}
+
+// stats_population_variance delegates to standalone stats_population_variance.
+pub fn (win &SimpleWindow) stats_population_variance(data []f64) f64 {
+	return stats_population_variance(data)
+}
+
+// stats_population_std_dev computes the population standard deviation of a dataset.
+pub fn stats_population_std_dev(data []f64) f64 {
+	if data.len == 0 {
+		return 0.0
+	}
+	return stats.population_stddev(data)
+}
+
+// stats_population_std_dev delegates to standalone stats_population_std_dev.
+pub fn (win &SimpleWindow) stats_population_std_dev(data []f64) f64 {
+	return stats_population_std_dev(data)
+}
+
+// ==========================================
+// 30. Arbitrary-Precision BigInteger Math (Chapter 13: math.big)
+// ==========================================
+
+// SimpleBigInt provides a high-level wrapper around V's arbitrary-precision integer.
+pub struct SimpleBigInt {
+pub mut:
+	val big.Integer
+}
+
+// add adds another SimpleBigInt and returns the result.
+pub fn (b SimpleBigInt) add(other SimpleBigInt) SimpleBigInt {
+	return SimpleBigInt{
+		val: b.val + other.val
+	}
+}
+
+// sub subtracts another SimpleBigInt and returns the result.
+pub fn (b SimpleBigInt) sub(other SimpleBigInt) SimpleBigInt {
+	return SimpleBigInt{
+		val: b.val - other.val
+	}
+}
+
+// mul multiplies by another SimpleBigInt and returns the result.
+pub fn (b SimpleBigInt) mul(other SimpleBigInt) SimpleBigInt {
+	return SimpleBigInt{
+		val: b.val * other.val
+	}
+}
+
+// div divides by another SimpleBigInt and returns the result.
+pub fn (b SimpleBigInt) div(other SimpleBigInt) SimpleBigInt {
+	return SimpleBigInt{
+		val: b.val / other.val
+	}
+}
+
+// mod computes the modulus by another SimpleBigInt and returns the result.
+pub fn (b SimpleBigInt) mod(other SimpleBigInt) SimpleBigInt {
+	return SimpleBigInt{
+		val: b.val % other.val
+	}
+}
+
+// str converts the BigInt to a decimal string representation.
+pub fn (b SimpleBigInt) str() string {
+	return b.val.str()
+}
+
+// big_int_from_int creates a SimpleBigInt from an integer value.
+pub fn big_int_from_int(v int) SimpleBigInt {
+	return SimpleBigInt{
+		val: big.integer_from_int(v)
+	}
+}
+
+// big_int_from_int delegates to standalone big_int_from_int.
+pub fn (win &SimpleWindow) big_int_from_int(v int) SimpleBigInt {
+	return big_int_from_int(v)
+}
+
+// big_int_from_str creates a SimpleBigInt from a decimal string.
+pub fn big_int_from_str(s string) SimpleBigInt {
+	res := big.integer_from_string(s) or { big.integer_from_int(0) }
+	return SimpleBigInt{
+		val: res
+	}
+}
+
+// big_int_from_str delegates to standalone big_int_from_str.
+pub fn (win &SimpleWindow) big_int_from_str(s string) SimpleBigInt {
+	return big_int_from_str(s)
+}
+
+// ==========================================
+// 31. Array Processing Utilities (Chapter 13: arrays)
+// ==========================================
+
+// array_min returns the minimum value in an integer array, or 0 if empty.
+pub fn array_min(arr []int) int {
+	return arrays.min(arr) or { 0 }
+}
+
+// array_min delegates to standalone array_min.
+pub fn (win &SimpleWindow) array_min(arr []int) int {
+	return array_min(arr)
+}
+
+// array_max returns the maximum value in an integer array, or 0 if empty.
+pub fn array_max(arr []int) int {
+	return arrays.max(arr) or { 0 }
+}
+
+// array_max delegates to standalone array_max.
+pub fn (win &SimpleWindow) array_max(arr []int) int {
+	return array_max(arr)
+}
+
+// array_min_f64 returns the minimum value in a float array, or 0.0 if empty.
+pub fn array_min_f64(arr []f64) f64 {
+	return arrays.min(arr) or { 0.0 }
+}
+
+// array_min_f64 delegates to standalone array_min_f64.
+pub fn (win &SimpleWindow) array_min_f64(arr []f64) f64 {
+	return array_min_f64(arr)
+}
+
+// array_max_f64 returns the maximum value in a float array, or 0.0 if empty.
+pub fn array_max_f64(arr []f64) f64 {
+	return arrays.max(arr) or { 0.0 }
+}
+
+// array_max_f64 delegates to standalone array_max_f64.
+pub fn (win &SimpleWindow) array_max_f64(arr []f64) f64 {
+	return array_max_f64(arr)
+}
+
+// array_sum returns the sum of all elements in an integer array.
+pub fn array_sum(arr []int) int {
+	return arrays.sum(arr) or { 0 }
+}
+
+// array_sum delegates to standalone array_sum.
+pub fn (win &SimpleWindow) array_sum(arr []int) int {
+	return array_sum(arr)
+}
+
+// array_sum_f64 returns the sum of all elements in a float array.
+pub fn array_sum_f64(arr []f64) f64 {
+	return arrays.sum(arr) or { 0.0 }
+}
+
+// array_sum_f64 delegates to standalone array_sum_f64.
+pub fn (win &SimpleWindow) array_sum_f64(arr []f64) f64 {
+	return array_sum_f64(arr)
+}
+
+// array_unique_strings removes duplicate string values from an array while preserving insertion order.
+pub fn array_unique_strings(arr []string) []string {
+	mut seen := map[string]bool{}
+	mut res := []string{}
+	for item in arr {
+		if item !in seen {
+			seen[item] = true
+			res << item
+		}
+	}
+	return res
+}
+
+// array_unique_strings delegates to standalone array_unique_strings.
+pub fn (win &SimpleWindow) array_unique_strings(arr []string) []string {
+	return array_unique_strings(arr)
+}
+
+// ==========================================
+// 32. UTF-8 String Utilities (Chapter 13: encoding.utf8)
+// ==========================================
+
+// utf8_len returns the number of UTF-8 characters (code points) in a string.
+pub fn utf8_len(text string) int {
+	return utf8.len(text)
+}
+
+// utf8_len delegates to standalone utf8_len.
+pub fn (win &SimpleWindow) utf8_len(text string) int {
+	return utf8_len(text)
+}
+
+// utf8_is_valid checks if a string contains valid UTF-8 encoding.
+pub fn utf8_is_valid(text string) bool {
+	return utf8.validate_str(text)
+}
+
+// utf8_is_valid delegates to standalone utf8_is_valid.
+pub fn (win &SimpleWindow) utf8_is_valid(text string) bool {
+	return utf8_is_valid(text)
+}
+
+// ==========================================
+// 33. String Distance & String Builder (Chapter 13: strings)
+// ==========================================
+
+// string_levenshtein computes the Levenshtein edit distance between two strings.
+pub fn string_levenshtein(s1 string, s2 string) int {
+	return strings.levenshtein_distance(s1, s2)
+}
+
+// string_levenshtein delegates to standalone string_levenshtein.
+pub fn (win &SimpleWindow) string_levenshtein(s1 string, s2 string) int {
+	return string_levenshtein(s1, s2)
+}
+
+// SimpleStringBuilder provides an efficient, growable string builder buffer.
+pub struct SimpleStringBuilder {
+mut:
+	sb strings.Builder = strings.new_builder(256)
+}
+
+// write appends text to the string builder.
+pub fn (mut ssb SimpleStringBuilder) write(text string) {
+	ssb.sb.write_string(text)
+}
+
+// write_line appends text followed by a newline to the string builder.
+pub fn (mut ssb SimpleStringBuilder) write_line(text string) {
+	ssb.sb.writeln(text)
+}
+
+// str returns the complete accumulated string content.
+pub fn (mut ssb SimpleStringBuilder) str() string {
+	return ssb.sb.str()
+}
+
+// len returns the byte length of the accumulated string content.
+pub fn (ssb &SimpleStringBuilder) len() int {
+	return ssb.sb.len
+}
+
+// new_string_builder creates a new SimpleStringBuilder.
+pub fn new_string_builder() SimpleStringBuilder {
+	return SimpleStringBuilder{}
+}
+
+// new_string_builder delegates to standalone new_string_builder.
+pub fn (win &SimpleWindow) new_string_builder() SimpleStringBuilder {
+	return new_string_builder()
+}
+
+// ==========================================
+// 34. CSV Reader & Writer Utilities (Chapter 13: encoding.csv)
+// ==========================================
+
+// csv_parse parses a CSV formatted string into a 2D matrix of row strings.
+pub fn csv_parse(content string) [][]string {
+	mut r := csv.new_reader(content)
+	mut rows := [][]string{}
+	for {
+		row := r.read() or { break }
+		rows << row
+	}
+	return rows
+}
+
+// csv_parse delegates to standalone csv_parse.
+pub fn (win &SimpleWindow) csv_parse(content string) [][]string {
+	return csv_parse(content)
+}
+
+// csv_encode serializes a 2D matrix of row strings into a CSV formatted string.
+pub fn csv_encode(rows [][]string) string {
+	mut sb := strings.new_builder(256)
+	for row in rows {
+		mut line := []string{}
+		for col in row {
+			if col.contains(',') || col.contains('"') || col.contains('\n') {
+				escaped := col.replace('"', '""')
+				line << '"${escaped}"'
+			} else {
+				line << col
+			}
+		}
+		sb.writeln(line.join(','))
+	}
+	return sb.str()
+}
+
+// csv_encode delegates to standalone csv_encode.
+pub fn (win &SimpleWindow) csv_encode(rows [][]string) string {
+	return csv_encode(rows)
+}
+
+// ==========================================
+// 35. Ed25519 Digital Signatures (Chapter 13: crypto.ed25519)
+// ==========================================
+
+// SimpleEd25519KeyPair contains a public and private Ed25519 key pair.
+pub struct SimpleEd25519KeyPair {
+pub:
+	pub_key  []u8
+	priv_key []u8
+}
+
+// crypto_ed25519_generate_key generates a new Ed25519 public/private key pair.
+pub fn crypto_ed25519_generate_key() !SimpleEd25519KeyPair {
+	pub_k, priv_k := ed25519.generate_key()!
+	return SimpleEd25519KeyPair{
+		pub_key:  pub_k
+		priv_key: priv_k
+	}
+}
+
+// crypto_ed25519_generate_key delegates to standalone crypto_ed25519_generate_key.
+pub fn (win &SimpleWindow) crypto_ed25519_generate_key() !SimpleEd25519KeyPair {
+	return crypto_ed25519_generate_key()!
+}
+
+// crypto_ed25519_sign signs a text message using an Ed25519 private key.
+pub fn crypto_ed25519_sign(priv_key []u8, msg string) ![]u8 {
+	return ed25519.sign(priv_key, msg.bytes())!
+}
+
+// crypto_ed25519_sign delegates to standalone crypto_ed25519_sign.
+pub fn (win &SimpleWindow) crypto_ed25519_sign(priv_key []u8, msg string) ![]u8 {
+	return crypto_ed25519_sign(priv_key, msg)!
+}
+
+// crypto_ed25519_verify verifies an Ed25519 signature against a public key and message.
+pub fn crypto_ed25519_verify(pub_key []u8, msg string, sig []u8) bool {
+	return ed25519.verify(pub_key, msg.bytes(), sig) or { false }
+}
+
+// crypto_ed25519_verify delegates to standalone crypto_ed25519_verify.
+pub fn (win &SimpleWindow) crypto_ed25519_verify(pub_key []u8, msg string, sig []u8) bool {
+	return crypto_ed25519_verify(pub_key, msg, sig)
+}
+
+// ==========================================
+// 36. Password-Based Key Derivation (Chapter 13: crypto.pbkdf2)
+// ==========================================
+
+// crypto_pbkdf2 derives a key using PBKDF2 with HMAC-SHA256.
+pub fn crypto_pbkdf2(password string, salt string, iterations int, key_len int) []u8 {
+	h := sha256.new()
+	derived := pbkdf2.key(password.bytes(), salt.bytes(), iterations, key_len, h) or { []u8{} }
+	return derived
+}
+
+// crypto_pbkdf2 delegates to standalone crypto_pbkdf2.
+pub fn (win &SimpleWindow) crypto_pbkdf2(password string, salt string, iterations int, key_len int) []u8 {
+	return crypto_pbkdf2(password, salt, iterations, key_len)
+}
+
+// ==========================================
+// 37. Thread Synchronization Primitives (Chapter 13: sync)
+// ==========================================
+
+// SimpleMutex wraps a thread-safe mutex lock.
+pub struct SimpleMutex {
+mut:
+	m sync.Mutex
+}
+
+// lock acquires the mutex lock, blocking until available.
+pub fn (mut sm SimpleMutex) lock() {
+	sm.m.lock()
+}
+
+// unlock releases the mutex lock.
+pub fn (mut sm SimpleMutex) unlock() {
+	sm.m.unlock()
+}
+
+// new_mutex creates a new SimpleMutex lock.
+pub fn new_mutex() SimpleMutex {
+	return SimpleMutex{}
+}
+
+// new_mutex delegates to standalone new_mutex.
+pub fn (win &SimpleWindow) new_mutex() SimpleMutex {
+	return new_mutex()
+}
+
+// SimpleWaitGroup coordinates completion of multiple concurrent tasks.
+pub struct SimpleWaitGroup {
+mut:
+	wg sync.WaitGroup
+}
+
+// add increments the WaitGroup counter.
+pub fn (mut swg SimpleWaitGroup) add(delta int) {
+	swg.wg.add(delta)
+}
+
+// done decrements the WaitGroup counter by 1.
+pub fn (mut swg SimpleWaitGroup) done() {
+	swg.wg.done()
+}
+
+// wait blocks until the WaitGroup counter reaches zero.
+pub fn (mut swg SimpleWaitGroup) wait() {
+	swg.wg.wait()
+}
+
+// new_wait_group creates a new SimpleWaitGroup.
+pub fn new_wait_group() SimpleWaitGroup {
+	return SimpleWaitGroup{}
+}
+
+// new_wait_group delegates to standalone new_wait_group.
+pub fn (win &SimpleWindow) new_wait_group() SimpleWaitGroup {
+	return new_wait_group()
+}
+
