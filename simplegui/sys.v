@@ -4,6 +4,8 @@ import os
 import time
 import net
 import net.http
+import crypto.sha256
+import crypto.md5
 
 #include <sys/types.h>
 #include <sys/sysctl.h>
@@ -1198,3 +1200,355 @@ pub fn (win &SimpleWindow) set_dock_badge(count int) &SimpleWindow {
 	}
 	return win
 }
+
+// ==========================================
+// 13. System Utilities, Theme, Audio & Helpers
+// ==========================================
+
+// is_dark_mode returns true if macOS global appearance is set to Dark Mode.
+pub fn (win &SimpleWindow) is_dark_mode() bool {
+	style := win.exec_or("defaults read -g AppleInterfaceStyle 2>/dev/null", '').trim_space()
+	return style.to_lower() == 'dark'
+}
+
+// get_system_theme returns "dark" if macOS is in Dark Mode, otherwise "light".
+pub fn (win &SimpleWindow) get_system_theme() string {
+	if win.is_dark_mode() {
+		return 'dark'
+	}
+	return 'light'
+}
+
+// get_volume returns the system output volume level (0 to 100).
+pub fn (win &SimpleWindow) get_volume() int {
+	vol_str := win.exec_or("osascript -e 'output volume of (get volume settings)' 2>/dev/null",
+		'0').trim_space()
+	return vol_str.int()
+}
+
+// set_volume sets the system output volume level (0 to 100).
+pub fn (win &SimpleWindow) set_volume(level int) &SimpleWindow {
+	clamped := if level < 0 { 0 } else if level > 100 { 100 } else { level }
+	win.exec_bg("osascript -e 'set volume output volume ${clamped}'")
+	return win
+}
+
+// is_muted returns true if the system output volume is muted.
+pub fn (win &SimpleWindow) is_muted() bool {
+	muted_str := win.exec_or("osascript -e 'output muted of (get volume settings)' 2>/dev/null",
+		'false').trim_space()
+	return muted_str.to_lower() == 'true'
+}
+
+// set_muted mutes or unmutes system output audio.
+pub fn (win &SimpleWindow) set_muted(mute bool) &SimpleWindow {
+	val := if mute { 'true' } else { 'false' }
+	win.exec_bg("osascript -e 'set volume output muted ${val}'")
+	return win
+}
+
+// trash_file safely moves a file or directory to the macOS Trash bin instead of permanently deleting it.
+pub fn (win &SimpleWindow) trash_file(path string) !&SimpleWindow {
+	abs_path := os.real_path(path)
+	if !os.exists(abs_path) {
+		return error('File does not exist: ${path}')
+	}
+	escaped := abs_path.replace('"', '\\"')
+	script := "osascript -e 'tell application \"Finder\" to delete POSIX file \"${escaped}\"'"
+	output, code := win.exec(script)
+	if code != 0 {
+		return error('Failed to move to Trash: ${output}')
+	}
+	return win
+}
+
+// zip_directory compresses a directory into a .zip archive file.
+pub fn (win &SimpleWindow) zip_directory(dir_path string, zip_path string) !&SimpleWindow {
+	abs_dir := os.real_path(dir_path)
+	if !os.exists(abs_dir) {
+		return error('Source directory does not exist: ${dir_path}')
+	}
+	parent := os.dir(abs_dir)
+	base := os.base(abs_dir)
+	target_zip := os.real_path(zip_path)
+	output, code := win.exec('cd "${parent}" && zip -r "${target_zip}" "${base}"')
+	if code != 0 {
+		return error('Failed to create zip archive: ${output}')
+	}
+	return win
+}
+
+// unzip_archive extracts a .zip archive file into a target destination directory.
+pub fn (win &SimpleWindow) unzip_archive(zip_path string, dest_dir string) !&SimpleWindow {
+	abs_zip := os.real_path(zip_path)
+	if !os.exists(abs_zip) {
+		return error('Zip archive does not exist: ${zip_path}')
+	}
+	os.mkdir_all(dest_dir)!
+	abs_dest := os.real_path(dest_dir)
+	output, code := win.exec('unzip -o "${abs_zip}" -d "${abs_dest}"')
+	if code != 0 {
+		return error('Failed to extract zip archive: ${output}')
+	}
+	return win
+}
+
+// create_temp_file generates and creates a unique temporary file with given prefix and suffix.
+pub fn (win &SimpleWindow) create_temp_file(prefix string, suffix string) !string {
+	rand_num := time.now().unix_milli()
+	file_name := '${prefix}_${rand_num}${suffix}'
+	temp_path := os.join_path(os.temp_dir(), file_name)
+	os.write_file(temp_path, '')!
+	return temp_path
+}
+
+// create_temp_dir generates and creates a unique temporary directory with given prefix.
+pub fn (win &SimpleWindow) create_temp_dir(prefix string) !string {
+	rand_num := time.now().unix_milli()
+	dir_name := '${prefix}_${rand_num}'
+	temp_path := os.join_path(os.temp_dir(), dir_name)
+	os.mkdir_all(temp_path)!
+	return temp_path
+}
+
+// sha256_file calculates the SHA256 hexadecimal hash digest of a file.
+pub fn (win &SimpleWindow) sha256_file(path string) !string {
+	bytes := os.read_bytes(path)!
+	return sha256.hexhash(bytes.bytestr())
+}
+
+// md5_file calculates the MD5 hexadecimal hash digest of a file.
+pub fn (win &SimpleWindow) md5_file(path string) !string {
+	bytes := os.read_bytes(path)!
+	return md5.hexhash(bytes.bytestr())
+}
+
+// get_screen_count returns the number of active displays connected to the machine.
+pub fn (win &SimpleWindow) get_screen_count() int {
+	raw := win.exec_or("system_profiler SPDisplaysDataType 2>/dev/null | grep -c 'Resolution:'",
+		'1')
+	cnt := raw.trim_space().int()
+	return if cnt > 0 { cnt } else { 1 }
+}
+
+// is_retina_display checks if the primary display is a high-DPI (Retina) display.
+pub fn (win &SimpleWindow) is_retina_display() bool {
+	raw := win.exec_or("system_profiler SPDisplaysDataType 2>/dev/null | grep -i 'retina'",
+		'')
+	if raw.trim_space().len > 0 {
+		return true
+	}
+	res := win.get_screen_resolution()
+	parts := res.split('x').map(it.trim_space().int())
+	if parts.len >= 2 && parts[0] >= 2560 {
+		return true
+	}
+	return false
+}
+
+// is_port_open checks if a TCP port on a given host is accepting connections.
+pub fn (win &SimpleWindow) is_port_open(host string, port int) bool {
+	_, code := win.exec('nc -z -G 1 "${host}" ${port} 2>/dev/null')
+	return code == 0
+}
+
+// find_available_port scans ports starting from start_port up to start_port + 100 to find an unused local TCP port.
+pub fn (win &SimpleWindow) find_available_port(start_port int) int {
+	mut port := start_port
+	for port < start_port + 100 {
+		if !win.is_port_open('127.0.0.1', port) {
+			return port
+		}
+		port++
+	}
+	return start_port
+}
+
+// prevent_sleep_bg prevents macOS display and system sleep for a given duration in seconds.
+pub fn (win &SimpleWindow) prevent_sleep_bg(duration_sec int) &SimpleWindow {
+	dur := if duration_sec <= 0 { 60 } else { duration_sec }
+	win.exec_bg('caffeinate -t ${dur}')
+	return win
+}
+
+// ==========================================
+// 14. Developer Productivity Extensions
+// ==========================================
+
+// download_file downloads a remote file from a URL and saves it to a target local file path.
+pub fn (win &SimpleWindow) download_file(url string, dest_path string) !&SimpleWindow {
+	if win.debug_mode {
+		println('[simplegui SYSTEM] Downloading file from "${url}" to "${dest_path}"')
+	}
+	resp := http.get(url)!
+	os.write_file(dest_path, resp.body)!
+	return win
+}
+
+// append_file appends content text to a file (creates file if it does not exist).
+pub fn (win &SimpleWindow) append_file(path string, content string) !&SimpleWindow {
+	mut f := os.open_append(path)!
+	defer { f.close() }
+	f.write_string(content)!
+	return win
+}
+
+// touch_file creates an empty file if it does not exist, or updates its modification time.
+pub fn (win &SimpleWindow) touch_file(path string) !&SimpleWindow {
+	if !os.exists(path) {
+		os.write_file(path, '')!
+	} else {
+		win.exec('touch "${path}"')
+	}
+	return win
+}
+
+// get_directory_size calculates the total cumulative size of a directory and all contained files in bytes.
+pub fn (win &SimpleWindow) get_directory_size(path string) u64 {
+	if !os.exists(path) || !os.is_dir(path) {
+		return 0
+	}
+	mut total_bytes := u64(0)
+	files := os.walk_ext(path, '')
+	for f in files {
+		if os.is_file(f) {
+			st := os.stat(f) or { continue }
+			total_bytes += u64(st.size)
+		}
+	}
+	return total_bytes
+}
+
+// exec_in_dir executes a command synchronously inside a specific working directory.
+pub fn (win &SimpleWindow) exec_in_dir(dir_path string, command string) (string, int) {
+	abs_dir := os.real_path(dir_path)
+	return win.exec('cd "${abs_dir}" && ${command}')
+}
+
+// is_process_running checks if a process matching the given name is currently active.
+pub fn (win &SimpleWindow) is_process_running(proc_name string) bool {
+	_, code := win.exec('pgrep -f "${proc_name}" 2>/dev/null')
+	return code == 0
+}
+
+// kill_process terminates processes matching the given name (`pkill -f`).
+pub fn (win &SimpleWindow) kill_process(proc_name string) bool {
+	_, code := win.exec('pkill -f "${proc_name}" 2>/dev/null')
+	return code == 0
+}
+
+// get_machine_id returns the unique hardware UUID of the macOS machine (`IOPlatformUUID`).
+pub fn (win &SimpleWindow) get_machine_id() string {
+	return win.exec_or("ioreg -rd1 -c IOPlatformExpertDevice 2>/dev/null | awk -F '\"' '/IOPlatformUUID/{print $4}'",
+		'unknown').trim_space()
+}
+
+// ==========================================
+// 15. Advanced macOS System Extensions
+// ==========================================
+
+// get_active_app_name returns the name of the active frontmost macOS application.
+pub fn (win &SimpleWindow) get_active_app_name() string {
+	return win.exec_or("osascript -e 'tell application \"System Events\" to get name of first application process whose frontmost is true' 2>/dev/null",
+		'unknown').trim_space()
+}
+
+// get_active_window_title returns the title of the frontmost focused window.
+pub fn (win &SimpleWindow) get_active_window_title() string {
+	return win.exec_or("osascript -e 'tell application \"System Events\" to tell (first application process whose frontmost is true) to get name of window 1' 2>/dev/null",
+		'unknown').trim_space()
+}
+
+// get_running_app_names returns a list of names of all active GUI applications running on macOS.
+pub fn (win &SimpleWindow) get_running_app_names() []string {
+	raw := win.exec_or("osascript -e 'tell application \"System Events\" to get name of every application process whose background only is false' 2>/dev/null",
+		'')
+	if raw.len == 0 {
+		return []string{}
+	}
+	return raw.split(',').map(it.trim_space())
+}
+
+// is_apple_silicon returns true if the machine CPU architecture is Apple Silicon (ARM64).
+pub fn (win &SimpleWindow) is_apple_silicon() bool {
+	arch := win.exec_or('uname -m', '').trim_space()
+	return arch == 'arm64'
+}
+
+// is_rosetta_emulation returns true if the process is executing under Rosetta 2 binary translation.
+pub fn (win &SimpleWindow) is_rosetta_emulation() bool {
+	val := win.exec_or('sysctl -n sysctl.proc_translated 2>/dev/null', '0').trim_space()
+	return val == '1'
+}
+
+// is_sip_enabled returns true if macOS System Integrity Protection (SIP) is active.
+pub fn (win &SimpleWindow) is_sip_enabled() bool {
+	status := win.exec_or('csrutil status 2>/dev/null', '').to_lower()
+	return status.contains('enabled')
+}
+
+// get_battery_time_remaining returns estimated remaining battery operating time (e.g. "2:30").
+pub fn (win &SimpleWindow) get_battery_time_remaining() string {
+	raw := win.exec_or("pmset -g batt 2>/dev/null | grep -oE '[0-9]+:[0-9]+' | head -1",
+		'N/A')
+	return raw.trim_space()
+}
+
+// is_low_power_mode returns true if macOS Low Power Mode is currently enabled.
+pub fn (win &SimpleWindow) is_low_power_mode() bool {
+	raw := win.exec_or('pmset -g 2>/dev/null', '')
+	return raw.contains('lowpowermode 1') || raw.contains('lowpowermode\t1')
+}
+
+// take_screenshot captures a screenshot of the entire primary display and saves it to a file.
+pub fn (win &SimpleWindow) take_screenshot(target_path string) !&SimpleWindow {
+	abs_path := os.real_path(target_path)
+	output, code := win.exec('screencapture -x "${abs_path}"')
+	if code != 0 {
+		return error('screencapture failed: ${output}')
+	}
+	return win
+}
+
+// take_screenshot_window captures a screenshot of the active window and saves it to a file.
+pub fn (win &SimpleWindow) take_screenshot_window(target_path string) !&SimpleWindow {
+	abs_path := os.real_path(target_path)
+	output, code := win.exec('screencapture -cw "${abs_path}"')
+	if code != 0 {
+		return error('screencapture window failed: ${output}')
+	}
+	return win
+}
+
+// defaults_read reads a preference value from a macOS defaults domain.
+pub fn (win &SimpleWindow) defaults_read(domain string, key string) string {
+	return win.exec_or('defaults read "${domain}" "${key}" 2>/dev/null', '').trim_space()
+}
+
+// defaults_write writes a preference key/value pair into a macOS defaults domain.
+pub fn (win &SimpleWindow) defaults_write(domain string, key string, val string) &SimpleWindow {
+	win.exec('defaults write "${domain}" "${key}" "${val}"')
+	return win
+}
+
+// defaults_delete deletes a preference key from a macOS defaults domain.
+pub fn (win &SimpleWindow) defaults_delete(domain string, key string) &SimpleWindow {
+	win.exec('defaults delete "${domain}" "${key}"')
+	return win
+}
+
+// open_in_finder opens a folder directly in macOS Finder.
+pub fn (win &SimpleWindow) open_in_finder(folder_path string) &SimpleWindow {
+	abs_path := os.real_path(folder_path)
+	win.exec_bg('open "${abs_path}"')
+	return win
+}
+
+// empty_trash empties the macOS Trash bin.
+pub fn (win &SimpleWindow) empty_trash() &SimpleWindow {
+	win.exec_bg("osascript -e 'tell application \"Finder\" to empty trash'")
+	return win
+}
+
+
+

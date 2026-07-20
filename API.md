@@ -1066,14 +1066,55 @@ To simplify system integrations and mirror key features from NeutralinoJS, `simp
 - `win.get_macos_product_name() string`: Returns product name (e.g. `"macOS"`).
 - `win.get_device_model() string`: Returns hardware model identifier (e.g. `"MacBookPro18,3"`).
 - `win.get_serial_number() string`: Returns device serial number via fast targeted `ioreg`.
+- `win.get_machine_id() string`: Returns the unique hardware UUID of the macOS machine (`IOPlatformUUID`).
+- `win.is_apple_silicon() bool`: Returns `true` if machine CPU architecture is Apple Silicon (ARM64).
+- `win.is_rosetta_emulation() bool`: Returns `true` if process is executing under Rosetta 2 translation.
+- `win.is_sip_enabled() bool`: Returns `true` if macOS System Integrity Protection (SIP) is active.
 - `win.get_screen_resolution() string`: Returns primary display resolution (e.g. `"2560 x 1600"`).
+- `win.get_screen_count() int`: Returns the total number of connected monitors.
+- `win.is_retina_display() bool`: Returns `true` if primary display is a high-DPI (Retina) screen.
 - `win.get_gpu_info() string`: Returns GPU model string of primary graphics adapter.
 - `win.get_battery_percent() int`: Returns battery charge percentage (or `-1` for desktop/no battery).
+- `win.get_battery_time_remaining() string`: Returns estimated remaining battery operating time (e.g. `"2:30"`).
 - `win.is_on_ac_power() bool`: Returns true if machine is plugged into AC power.
+- `win.is_low_power_mode() bool`: Returns true if macOS Low Power Mode is currently enabled.
+- `win.is_dark_mode() bool`: Returns true if macOS global appearance is set to Dark Mode.
+- `win.get_system_theme() string`: Returns `"dark"` if macOS is in Dark Mode, otherwise `"light"`.
+- `win.get_volume() int`: Returns system output volume level percentage (0–100).
+- `win.set_volume(level int) &SimpleWindow`: Sets system output volume level (0–100).
+- `win.is_muted() bool`: Returns true if system output volume is muted.
+- `win.set_muted(mute bool) &SimpleWindow`: Mutes or unmutes system output audio.
+- `win.get_active_app_name() string`: Returns the name of the active frontmost macOS application.
+- `win.get_active_window_title() string`: Returns the title of the frontmost focused window.
+- `win.get_running_app_names() []string`: Returns a string array of names of all active GUI applications running on macOS.
+- `win.is_process_running(proc_name string) bool`: Checks if a process matching the given name pattern is active (`pgrep`).
+- `win.kill_process(proc_name string) bool`: Terminates matching processes by name (`pkill`).
+- `win.exec_in_dir(dir_path string, command string) (string, int)`: Executes shell command synchronously inside a specified directory (`cd <dir> && <cmd>`).
+- `win.download_file(url string, dest_path string) !&SimpleWindow`: Downloads a remote HTTP/HTTPS file directly to disk.
+- `win.trash_file(path string) !&SimpleWindow`: Safely moves a file or directory to macOS Trash bin via Finder AppleScript.
+- `win.empty_trash() &SimpleWindow`: Empties the macOS Trash bin.
+- `win.zip_directory(dir_path string, zip_path string) !&SimpleWindow`: Compresses a directory tree into a `.zip` archive.
+- `win.unzip_archive(zip_path string, dest_dir string) !&SimpleWindow`: Extracts a `.zip` archive file into a target destination directory.
+- `win.create_temp_file(prefix string, suffix string) !string`: Generates and creates a unique temporary file path and returns it.
+- `win.create_temp_dir(prefix string) !string`: Generates and creates a unique temporary directory path and returns it.
+- `win.append_file(path string, content string) !&SimpleWindow`: Appends text content to a file (creates if missing).
+- `win.touch_file(path string) !&SimpleWindow`: Creates an empty file if missing or updates its modification timestamp.
+- `win.get_directory_size(path string) u64`: Recursively calculates total cumulative size of a directory tree in bytes.
+- `win.sha256_file(path string) !string`: Calculates the SHA256 hexadecimal hash digest of a file.
+- `win.md5_file(path string) !string`: Calculates the MD5 hexadecimal hash digest of a file.
+- `win.is_port_open(host string, port int) bool`: Checks if a TCP port on a given host is accepting connections.
+- `win.find_available_port(start_port int) int`: Scans ports starting from `start_port` to find the first open/unbound TCP port.
+- `win.prevent_sleep_bg(duration_sec int) &SimpleWindow`: Spawns macOS `caffeinate -t <seconds>` in background to prevent system sleep.
+- `win.take_screenshot(target_path string) !&SimpleWindow`: Captures a screenshot of the primary display to a file.
+- `win.take_screenshot_window(target_path string) !&SimpleWindow`: Captures a screenshot of the active window to a file.
+- `win.defaults_read(domain string, key string) string`: Reads a preference value from a macOS defaults domain.
+- `win.defaults_write(domain string, key string, val string) &SimpleWindow`: Writes a preference key/value pair into a macOS defaults domain.
+- `win.defaults_delete(domain string, key string) &SimpleWindow`: Deletes a preference key from a macOS defaults domain.
 - `win.get_app_bundle_id() string`: Reads bundle identifier from running app's `Info.plist`.
 - `win.get_system_locale() string`: Returns primary system locale code (e.g. `"en_US"`).
 - `win.get_timezone() string`: Returns active timezone identifier (e.g. `"America/Chicago"`).
 - `win.set_dock_badge(count int) &SimpleWindow`: Sets or clears current application's macOS Dock badge count.
+- `win.open_in_finder(folder_path string) &SimpleWindow`: Opens a folder directly in macOS Finder.
 - `win.reveal_in_finder(path string) &SimpleWindow`: Highlights target file/folder in macOS Finder.
 - `win.open_in_default_app(path string) &SimpleWindow`: Opens file using associated default application.
 - `win.open_with_app(path string, app_id string) &SimpleWindow`: Opens file with specified app by bundle ID or name.

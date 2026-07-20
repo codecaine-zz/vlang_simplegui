@@ -24,6 +24,7 @@ fn main() {
 		'§10 Shell',
 		'§11 macOS',
 		'§12 Process',
+		'§13 Extra Sys',
 	], '§1 Exec')
 
 	win.add_console('output', 560)
@@ -60,6 +61,7 @@ fn main() {
 				'§10 Shell' { demo_shell(mut window) }
 				'§11 macOS' { demo_macos_info(mut window) }
 				'§12 Process' { demo_process(mut window) }
+				'§13 Extra Sys' { demo_extra_sys(mut window) }
 				else { window.append_console('output', 'Unknown section: ${selected_tab}', 1) }
 			}
 		}(mut w, tab)
@@ -102,6 +104,7 @@ fn run_all(mut w simplegui.SimpleWindow) {
 	demo_shell_non_interactive(mut w)
 	demo_macos_info(mut w)
 	demo_process(mut w)
+	demo_extra_sys(mut w)
 	w.append_console('output', '', 0)
 	w.append_console('output', '✅  All sections complete. (Interactive popups & launchers are safely isolated to §7 Open and §10 Shell tabs).', 0)
 }
@@ -401,9 +404,16 @@ fn demo_macos_info(mut w simplegui.SimpleWindow) {
 	log(mut w, 'get_screen_resolution', w.get_screen_resolution())
 	log(mut w, 'get_gpu_info', w.get_gpu_info())
 
+	log(mut w, 'get_active_app_name', w.get_active_app_name())
+	log(mut w, 'is_apple_silicon', '${w.is_apple_silicon()}')
+	log(mut w, 'is_rosetta_emulation', '${w.is_rosetta_emulation()}')
+	log(mut w, 'is_sip_enabled', '${w.is_sip_enabled()}')
+
 	pct := w.get_battery_percent()
 	log(mut w, 'get_battery_percent', if pct < 0 { 'No battery (desktop)' } else { '${pct}%' })
+	log(mut w, 'get_battery_time_remaining', w.get_battery_time_remaining())
 	log(mut w, 'is_on_ac_power', '${w.is_on_ac_power()}')
+	log(mut w, 'is_low_power_mode', '${w.is_low_power_mode()}')
 
 	log(mut w, 'get_app_bundle_id', w.get_app_bundle_id())
 	log(mut w, 'get_system_locale', w.get_system_locale())
@@ -446,3 +456,55 @@ fn demo_process(mut w simplegui.SimpleWindow) {
 	proc2.close()
 	log_ok(mut w, 'proc2.close() — done')
 }
+
+// ─── §13 Extra Utility Extensions ─────────────────────────────────────────
+fn demo_extra_sys(mut w simplegui.SimpleWindow) {
+	log_header(mut w, '§13  Extra Utility Extensions — Theme / Audio / Zip / Trash / Hash / Ports')
+
+	log(mut w, 'is_dark_mode', '${w.is_dark_mode()}')
+	log(mut w, 'get_system_theme', w.get_system_theme())
+	log(mut w, 'get_volume', '${w.get_volume()}%')
+	log(mut w, 'is_muted', '${w.is_muted()}')
+	log(mut w, 'get_screen_count', '${w.get_screen_count()}')
+	log(mut w, 'is_retina_display', '${w.is_retina_display()}')
+
+	tmp_f := w.create_temp_file('sg_sys_demo_extra', '.txt') or { '' }
+	if tmp_f.len > 0 {
+		log_ok(mut w, 'create_temp_file: ${tmp_f}')
+		w.write_file(tmp_f, 'Testing hash functionality\n')
+		log(mut w, 'sha256_file', w.sha256_file(tmp_f) or { 'err' })
+		log(mut w, 'md5_file', w.md5_file(tmp_f) or { 'err' })
+		w.trash_file(tmp_f) or {}
+		log_ok(mut w, 'trash_file moved temp file to macOS Trash safely')
+	}
+
+	tmp_d := w.create_temp_dir('sg_zip_demo_extra') or { '' }
+	if tmp_d.len > 0 {
+		log_ok(mut w, 'create_temp_dir: ${tmp_d}')
+		w.write_file(os.join_path(tmp_d, 'data.txt'), 'Archive test content')
+		zpath := os.join_path(os.temp_dir(), 'sg_demo_extra.zip')
+		w.zip_directory(tmp_d, zpath) or {}
+		log_ok(mut w, 'zip_directory → ${zpath}')
+		out_d := os.join_path(os.temp_dir(), 'sg_demo_extra_out')
+		w.unzip_archive(zpath, out_d) or {}
+		log_ok(mut w, 'unzip_archive → ${out_d}')
+		w.delete_file(zpath)
+		w.delete_directory(tmp_d) or {}
+		w.delete_directory(out_d) or {}
+	}
+
+	log(mut w, 'is_port_open("google.com", 443)', '${w.is_port_open('google.com', 443)}')
+	log(mut w, 'find_available_port(8000)', '${w.find_available_port(8000)}')
+
+	log(mut w, 'base64_encode', w.base64_encode('Hello SimpleGUI'))
+	log(mut w, 'base64_decode', w.base64_decode(w.base64_encode('Hello SimpleGUI')))
+	log(mut w, 'url_encode', w.url_encode('key=val & 100%'))
+	log(mut w, 'url_decode', w.url_decode(w.url_encode('key=val & 100%')))
+	log(mut w, 'get_machine_id', w.get_machine_id())
+	log(mut w, 'is_process_running("Finder")', '${w.is_process_running('Finder')}')
+
+	w.prevent_sleep_bg(10)
+	log_ok(mut w, 'prevent_sleep_bg(10) fired')
+}
+
+
