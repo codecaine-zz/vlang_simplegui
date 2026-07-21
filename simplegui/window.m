@@ -43,6 +43,8 @@ static NSString *nsstring(const char *s) {
   return [[NSString alloc] initWithBytes:s length:strlen(s) encoding:NSUTF8StringEncoding];
 }
 
+static const void *SGNumberFieldStepperAssocKey = &SGNumberFieldStepperAssocKey;
+
 static NSLayoutConstraint *findWidthConstraint(NSView *view) {
   if (!view) return nil;
   for (NSLayoutConstraint *constraint in view.constraints) {
@@ -3055,6 +3057,7 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   ModernTextField *numField = [[ModernTextField alloc] initWithFrame:NSZeroRect];
   [numField setStringValue:[NSString stringWithFormat:@"%d", value]];
   [self makeStretchableView:numField minimumWidth:70];
+  [numField setDelegate:self];
   [numField setTarget:self];
   [numField setAction:@selector(handleNumberChanged:)];
   [numField.heightAnchor constraintEqualToConstant:34.0].active = YES;
@@ -3062,11 +3065,15 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   NSStepper *stepper = [[NSStepper alloc] initWithFrame:NSZeroRect];
   [stepper setMinValue:0];
   [stepper setMaxValue:1000];
+  [stepper setIncrement:1.0];
   [stepper setDoubleValue:(double)value];
   [stepper setTarget:self];
   [stepper setAction:@selector(handleNumberChanged:)];
   [stepper setWantsLayer:YES];
   applyStyleToView(stepper, self.currentBackgroundColor, self.currentFontColor);
+
+  // Link text field to its paired stepper so arrow keys can adjust by default.
+  objc_setAssociatedObject(numField, SGNumberFieldStepperAssocKey, stepper, OBJC_ASSOCIATION_ASSIGN);
   
   [row addArrangedSubview:numField];
   [row addArrangedSubview:stepper];
@@ -3678,6 +3685,24 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
     if (name && self.win_ptr) {
       NSString *value = [control respondsToSelector:@selector(stringValue)] ? [(NSTextField *)control stringValue] : @"";
       vlang_dispatch_event(self.win_ptr, [name UTF8String], "enter", [value UTF8String]);
+    }
+    return NO;
+  }
+
+  if (commandSelector == @selector(moveUp:) || commandSelector == @selector(moveDown:)) {
+    NSStepper *stepper = (NSStepper *)objc_getAssociatedObject(control, SGNumberFieldStepperAssocKey);
+    if ([stepper isKindOfClass:[NSStepper class]]) {
+      double delta = stepper.increment > 0.0 ? stepper.increment : 1.0;
+      double nextValue = stepper.doubleValue + (commandSelector == @selector(moveUp:) ? delta : -delta);
+      if (nextValue < stepper.minValue) {
+        nextValue = stepper.minValue;
+      }
+      if (nextValue > stepper.maxValue) {
+        nextValue = stepper.maxValue;
+      }
+      [stepper setDoubleValue:nextValue];
+      [self handleNumberChanged:stepper];
+      return YES;
     }
   }
   return NO;
