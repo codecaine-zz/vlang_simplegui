@@ -647,7 +647,7 @@ extern BOOL vlang_dispatch_event(void *win_ptr, const char *name, const char *ev
 
 
 
-@interface AppDelegate : NSObject <NSApplicationDelegate, NSWindowDelegate, NSTextFieldDelegate, NSTextViewDelegate, NSTableViewDataSource, NSTableViewDelegate, NSOutlineViewDataSource, NSOutlineViewDelegate, NSTabViewDelegate, NSToolbarDelegate, NSCollectionViewDataSource, NSCollectionViewDelegate>
+@interface AppDelegate : NSObject <NSApplicationDelegate, NSWindowDelegate, NSTextFieldDelegate, NSTextViewDelegate, NSTableViewDataSource, NSTableViewDelegate, NSOutlineViewDataSource, NSOutlineViewDelegate, NSTabViewDelegate, NSToolbarDelegate, NSCollectionViewDataSource, NSCollectionViewDelegate, WKScriptMessageHandler, WKNavigationDelegate>
 
 
 @property (nonatomic, assign) main__WindowParams params;
@@ -2898,7 +2898,12 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
 }
 
 - (NSView *)makeHtmlViewWithName:(NSString *)name html:(NSString *)html {
-  WKWebView *webView = [[WKWebView alloc] initWithFrame:NSZeroRect configuration:[[WKWebViewConfiguration alloc] init]];
+  WKUserContentController *controller = [[WKUserContentController alloc] init];
+  [controller addScriptMessageHandler:self name:@"simplegui"];
+  WKWebViewConfiguration *config = [[WKWebViewConfiguration alloc] init];
+  config.userContentController = controller;
+  WKWebView *webView = [[WKWebView alloc] initWithFrame:NSZeroRect configuration:config];
+  [webView setNavigationDelegate:self];
   [self makeStretchableView:webView minimumWidth:320];
   [webView.heightAnchor constraintEqualToConstant:180].active = YES;
   [webView setWantsLayer:YES];
@@ -2916,6 +2921,29 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [self addControlToLayout:webView];
   self.controlsByName[[name lowercaseString]] = webView;
   return webView;
+}
+
+- (void)userContentController:(WKUserContentController *)userContentController didReceiveScriptMessage:(WKScriptMessage *)message {
+  (void)userContentController;
+  NSString *val = @"";
+  if ([message.body isKindOfClass:[NSDictionary class]]) {
+    NSDictionary *dict = (NSDictionary *)message.body;
+    val = dict[@"value"] ?: @"";
+  } else if ([message.body isKindOfClass:[NSString class]]) {
+    val = (NSString *)message.body;
+  }
+  vlang_dispatch_event(self.win_ptr, "designer_canvas", "change", [val UTF8String]);
+}
+
+- (void)webView:(WKWebView *)webView decidePolicyForNavigationAction:(WKNavigationAction *)navigationAction decisionHandler:(void (^)(WKNavigationActionPolicy))decisionHandler {
+  NSURL *url = navigationAction.request.URL;
+  if ([url.scheme isEqualToString:@"simplegui"]) {
+    NSString *path = [url.path stringByTrimmingCharactersInSet:[NSCharacterSet characterSetWithCharactersInString:@"/"]];
+    vlang_dispatch_event(self.win_ptr, "designer_canvas", "change", [path UTF8String]);
+    decisionHandler(WKNavigationActionPolicyCancel);
+    return;
+  }
+  decisionHandler(WKNavigationActionPolicyAllow);
 }
 
 - (NSView *)makeDropZoneWithName:(NSString *)name label:(NSString *)label {
@@ -4775,7 +4803,15 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
 
 - (BOOL)windowShouldClose:(id)sender {
   (void)sender;
-  [NSApp terminate:self];
+  int visibleCount = 0;
+  for (NSWindow *w in [NSApp windows]) {
+    if ([w isVisible] && [w canBecomeKeyWindow]) {
+      visibleCount++;
+    }
+  }
+  if (visibleCount <= 1) {
+    [NSApp terminate:self];
+  }
   return YES;
 }
 
@@ -10696,7 +10732,9 @@ main__WindowInfo *window_app_init(void *params) {
   NSApplication *app = [NSApplication sharedApplication];
   AppDelegate *delegate = [[AppDelegate alloc] initWithParams:window_params];
   [app setActivationPolicy:NSApplicationActivationPolicyRegular];
-  [app setDelegate:delegate];
+  if (!app.delegate) {
+    [app setDelegate:delegate];
+  }
 
   main__WindowInfo *info = malloc(sizeof(main__WindowInfo));
   info->app = app;
@@ -10706,7 +10744,22 @@ main__WindowInfo *window_app_init(void *params) {
 
 void window_app_run(main__WindowInfo *info) {
   NSApplication *app = (NSApplication *)info->app;
-  [app run];
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  if ([app isRunning]) {
+    void (^showBlock)(void) = ^{
+      if (![NSApp mainMenu]) {
+        [delegate setupMenuBar];
+      }
+      [delegate applicationDidFinishLaunching:nil];
+    };
+    if ([NSThread isMainThread]) {
+      showBlock();
+    } else {
+      dispatch_sync(dispatch_get_main_queue(), showBlock);
+    }
+  } else {
+    [app run];
+  }
 }
 
 void window_app_exit(main__WindowInfo *info) {
