@@ -128,6 +128,10 @@ fn C.window_add_separator(&WindowInfo)
 // Multi-Column Table Controls
 fn C.window_add_table_control(&WindowInfo, &u8, &&u8, int) voidptr
 fn C.window_set_table_rows(&WindowInfo, &u8, &&u8, int, int)
+fn C.window_table_set_column_selection(&WindowInfo, &u8, int)
+fn C.window_table_get_selected_column(&WindowInfo, &u8) int
+fn C.window_table_set_selected_column(&WindowInfo, &u8, int)
+fn C.window_table_delete_column(&WindowInfo, &u8, int)
 
 // Tree View Controls
 fn C.window_add_tree_view_control(&WindowInfo, &u8, int) voidptr
@@ -683,6 +687,9 @@ mut:
 	list_items                   map[string][]string
 	tree_nodes                   map[string][]TreeNode
 	table_rows                   map[string][][]string
+	table_columns                map[string][]string
+	table_selected_columns       map[string]int
+	table_column_selection       map[string]bool
 	grid_rows                    map[string][][]string
 	grid_headers                 map[string][]string
 pub mut:
@@ -741,6 +748,10 @@ pub fn new_simple_window(title string, width int, height int) &SimpleWindow {
 	win.tooltips = map[string]string{}
 	win.errors = map[string]string{}
 	win.tree_nodes = map[string][]TreeNode{}
+	win.table_rows = map[string][][]string{}
+	win.table_columns = map[string][]string{}
+	win.table_selected_columns = map[string]int{}
+	win.table_column_selection = map[string]bool{}
 	win.grid_rows = map[string][][]string{}
 	win.grid_headers = map[string][]string{}
 	win.ensure_window()
@@ -1822,6 +1833,9 @@ pub fn (mut win SimpleWindow) grid_add_column(name string, header string) &Simpl
 		rows[i] << ''
 	}
 	win.grid_rows[name] = rows
+	mut headers := win.grid_headers[name]
+	headers << header
+	win.grid_headers[name] = headers
 	if win.window_info != unsafe { nil } {
 		C.window_grid_add_column(win.window_info, name.str, header.str)
 	}
@@ -1837,6 +1851,11 @@ pub fn (mut win SimpleWindow) grid_delete_column(name string, col_idx int) &Simp
 		}
 	}
 	win.grid_rows[name] = rows
+	mut headers := win.grid_headers[name]
+	if col_idx >= 0 && col_idx < headers.len {
+		headers.delete(col_idx)
+		win.grid_headers[name] = headers
+	}
 	if win.window_info != unsafe { nil } {
 		C.window_grid_delete_column(win.window_info, name.str, col_idx)
 	}
@@ -2181,7 +2200,7 @@ pub fn (win &SimpleWindow) grid_get_row_count(name string) int {
 	if win.window_info != unsafe { nil } {
 		return C.window_grid_get_row_count(win.window_info, name.str)
 	}
-	return 0
+	return (win.grid_rows[name] or { [][]string{} }).len
 }
 
 // grid_get_column_count returns the current number of columns in a grid.
@@ -2189,7 +2208,18 @@ pub fn (win &SimpleWindow) grid_get_column_count(name string) int {
 	if win.window_info != unsafe { nil } {
 		return C.window_grid_get_column_count(win.window_info, name.str)
 	}
-	return 0
+	if headers := win.grid_headers[name] {
+		if headers.len > 0 {
+			return headers.len
+		}
+	}
+	mut max_len := 0
+	for row in win.grid_rows[name] or { [][]string{} } {
+		if row.len > max_len {
+			max_len = row.len
+		}
+	}
+	return max_len
 }
 
 // grid_get_row_values returns the current values for a row as a []string.
@@ -2262,6 +2292,24 @@ pub fn (win &SimpleWindow) grid_set_row_height(name string, height int) &SimpleW
 
 // grid_sort_by_column sorts the grid rows by the given column using the current sort direction.
 pub fn (win &SimpleWindow) grid_sort_by_column(name string, col_idx int, ascending bool) &SimpleWindow {
+	mut rows := win.grid_rows[name]
+	if col_idx >= 0 && rows.len > 1 {
+		for i in 0 .. rows.len {
+			for j in i + 1 .. rows.len {
+				left := if col_idx < rows[i].len { rows[i][col_idx].to_lower() } else { '' }
+				right := if col_idx < rows[j].len { rows[j][col_idx].to_lower() } else { '' }
+				if (ascending && left > right) || (!ascending && left < right) {
+					tmp := rows[i]
+					rows[i] = rows[j]
+					rows[j] = tmp
+				}
+			}
+		}
+		unsafe {
+			mut w := &SimpleWindow(win)
+			w.grid_rows[name] = rows
+		}
+	}
 	if win.window_info != unsafe { nil } {
 		C.window_grid_sort_by_column(win.window_info, name.str, col_idx, if ascending {
 			1
@@ -2306,6 +2354,10 @@ pub fn (win &SimpleWindow) grid_set_selected_row(name string, row_idx int) &Simp
 
 // grid_clear removes all rows from the grid.
 pub fn (win &SimpleWindow) grid_clear(name string) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.grid_rows[name] = [][]string{}
+	}
 	if win.window_info != unsafe { nil } {
 		C.window_grid_clear(win.window_info, name.str)
 	}
@@ -4984,6 +5036,8 @@ fn vlang_dispatch_event(win_ptr voidptr, name_str &u8, event_str &u8, value_str 
 			}
 			win.controls[idx].value = value
 		}
+	} else if event == 'column_change' {
+		win.table_selected_columns[name] = value.int()
 	}
 
 	win.dispatch_event(name, event, value)
@@ -5909,6 +5963,7 @@ pub fn (win &SimpleWindow) add_table(name string, columns []string) &SimpleWindo
 			kind:  'table'
 			value: ''
 		}
+		w.table_columns[real_name] = columns.clone()
 	}
 	if win.window_info != unsafe { nil } {
 		mut c_cols := []&u8{}
@@ -5922,25 +5977,133 @@ pub fn (win &SimpleWindow) add_table(name string, columns []string) &SimpleWindo
 
 // set_table_rows sets the table rows of the window or target control.
 pub fn (win &SimpleWindow) set_table_rows(name string, rows [][]string) &SimpleWindow {
-	unsafe {
-		mut w := &SimpleWindow(win)
-		w.table_rows[name] = rows.map(it.clone())
-	}
-	if win.window_info != unsafe { nil } {
-		if rows.len == 0 {
-			C.window_set_table_rows(win.window_info, name.str, unsafe { nil }, 0, 0)
-			return win
-		}
-		cols_count := rows[0].len
-		mut flat := []&u8{}
-		for row in rows {
-			for val in row {
-				flat << val.str
-			}
-		}
-		C.window_set_table_rows(win.window_info, name.str, flat.data, flat.len, cols_count)
+	win.set_table_rows_strict(name, rows) or {
+		// Backward-compatible no-op on invalid targets in non-strict API.
 	}
 	return win
+}
+
+// set_table_column_selection enables/disables whole-column selection for a table.
+pub fn (win &SimpleWindow) set_table_column_selection(name string, enabled bool) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.table_column_selection[name] = enabled
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_table_set_column_selection(win.window_info, name.str, if enabled { 1 } else { 0 })
+	}
+	return win
+}
+
+// get_table_column_selection returns whether whole-column selection is enabled.
+pub fn (win &SimpleWindow) get_table_column_selection(name string) bool {
+	return win.table_column_selection[name] or { false }
+}
+
+// set_table_selected_column selects an entire table column (0-based).
+// Pass -1 to clear selection.
+pub fn (win &SimpleWindow) set_table_selected_column(name string, column int) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.table_selected_columns[name] = column
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_table_set_selected_column(win.window_info, name.str, column)
+	}
+	return win
+}
+
+// get_table_selected_column returns the 0-based selected column index, or -1.
+pub fn (win &SimpleWindow) get_table_selected_column(name string) int {
+	if win.window_info != unsafe { nil } {
+		native := C.window_table_get_selected_column(win.window_info, name.str)
+		if native >= 0 {
+			return native
+		}
+	}
+	return win.table_selected_columns[name] or { -1 }
+}
+
+// get_table_selected_column_values returns values from the selected column.
+pub fn (win &SimpleWindow) get_table_selected_column_values(name string) []string {
+	selected := win.get_table_selected_column(name)
+	if selected < 0 {
+		return []string{}
+	}
+	rows := win.table_rows[name] or { [][]string{} }
+	mut values := []string{cap: rows.len}
+	for row in rows {
+		if selected < row.len {
+			values << row[selected]
+		} else {
+			values << ''
+		}
+	}
+	return values
+}
+
+// remove_table_column_strict removes a table column at a 0-based index.
+// Returns all removed cell values in row order.
+pub fn (win &SimpleWindow) remove_table_column_strict(name string, column int) ![]string {
+	if !win.has_control(name) {
+		return error('remove_table_column_strict: control "${name}" was not found')
+	}
+	if win.get_control_kind(name) != 'table' {
+		return error('remove_table_column_strict: control "${name}" is not a table')
+	}
+	cols_count := win.get_table_column_count(name)
+	if cols_count <= 0 {
+		return error('remove_table_column_strict: table "${name}" has no columns')
+	}
+	if column < 0 || column >= cols_count {
+		return error('remove_table_column_strict: column ${column} out of range 0..${cols_count - 1}')
+	}
+
+	rows := win.table_rows[name] or { [][]string{} }
+	mut removed_values := []string{cap: rows.len}
+	mut next_rows := [][]string{cap: rows.len}
+	for row in rows {
+		mut next := row.clone()
+		if column < next.len {
+			removed_values << next[column]
+			next.delete(column)
+		} else {
+			removed_values << ''
+		}
+		next_rows << next
+	}
+
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.table_rows[name] = next_rows
+		if mut cols := w.table_columns[name] {
+			if column < cols.len {
+				cols.delete(column)
+			}
+			w.table_columns[name] = cols
+		}
+		sel := w.table_selected_columns[name] or { -1 }
+		if sel == column {
+			w.table_selected_columns[name] = -1
+		} else if sel > column {
+			w.table_selected_columns[name] = sel - 1
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_table_delete_column(win.window_info, name.str, column)
+	}
+	return removed_values
+}
+
+// remove_selected_table_column_strict removes the currently selected table column.
+// Returns removed values and the removed column index.
+pub fn (win &SimpleWindow) remove_selected_table_column_strict(name string) !(int, []string) {
+	selected := win.get_table_selected_column(name)
+	if selected < 0 {
+		return error('remove_selected_table_column_strict: no column selected')
+	}
+	removed := win.remove_table_column_strict(name, selected)!
+	return selected, removed
 }
 
 // load_table_from_structs loads an array of structs into a table control by mapping fields to columns.
@@ -6101,6 +6264,159 @@ pub fn (win &SimpleWindow) validate_struct[T]() bool {
 		}
 	}
 	return all_valid
+}
+
+fn normalize_table_rows(rows [][]string, cols_count int) [][]string {
+	if cols_count < 0 {
+		return rows.map(it.clone())
+	}
+	mut normalized := [][]string{cap: rows.len}
+	for row in rows {
+		mut next := row.clone()
+		if cols_count == 0 {
+			normalized << []string{}
+			continue
+		}
+		if next.len > cols_count {
+			next = next[..cols_count].clone()
+		} else if next.len < cols_count {
+			next << []string{len: cols_count - next.len, init: ''}
+		}
+		normalized << next
+	}
+	return normalized
+}
+
+fn table_infer_column_count(rows [][]string) int {
+	mut cols_count := 0
+	for row in rows {
+		if row.len > cols_count {
+			cols_count = row.len
+		}
+	}
+	return cols_count
+}
+
+fn (win &SimpleWindow) table_column_count_for(name string, rows [][]string) int {
+	if cols := win.table_columns[name] {
+		if cols.len > 0 {
+			return cols.len
+		}
+	}
+	return table_infer_column_count(rows)
+}
+
+// get_table_column_count returns the configured table column count.
+// If no explicit columns were registered, count is inferred from the widest row.
+pub fn (win &SimpleWindow) get_table_column_count(name string) int {
+	if cols := win.table_columns[name] {
+		if cols.len > 0 {
+			return cols.len
+		}
+	}
+	return table_infer_column_count(win.table_rows[name] or { [][]string{} })
+}
+
+// set_table_rows_strict validates the target control and normalizes row width.
+pub fn (win &SimpleWindow) set_table_rows_strict(name string, rows [][]string) ! {
+	if !win.has_control(name) {
+		return error('set_table_rows_strict: control "${name}" was not found')
+	}
+	if win.get_control_kind(name) != 'table' {
+		return error('set_table_rows_strict: control "${name}" is not a table')
+	}
+	cols_count := win.table_column_count_for(name, rows)
+	normalized := normalize_table_rows(rows, cols_count)
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.table_rows[name] = normalized
+		sel := w.table_selected_columns[name] or { -1 }
+		if sel >= cols_count {
+			w.table_selected_columns[name] = -1
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		if normalized.len == 0 {
+			C.window_set_table_rows(win.window_info, name.str, unsafe { nil }, 0, cols_count)
+			return
+		}
+		mut flat := []&u8{}
+		for row in normalized {
+			for val in row {
+				flat << val.str
+			}
+		}
+		C.window_set_table_rows(win.window_info, name.str, flat.data, flat.len, cols_count)
+	}
+}
+
+// Layout Rows and Form Generation Helpers
+fn (win &SimpleWindow) add_action_row_placeholder() {}
+
+// add_table_row_strict appends a row and reports errors for invalid tables.
+pub fn (win &SimpleWindow) add_table_row_strict(name string, row []string) ! {
+	mut rows := win.table_rows[name] or { [][]string{} }
+	rows << row.clone()
+	win.set_table_rows_strict(name, rows)!
+}
+
+// insert_table_row_strict inserts a row at a 0-based index.
+pub fn (win &SimpleWindow) insert_table_row_strict(name string, index int, row []string) ! {
+	mut rows := win.table_rows[name] or { [][]string{} }
+	if index < 0 || index > rows.len {
+		return error('insert_table_row_strict: index ${index} out of range 0..${rows.len}')
+	}
+	rows.insert(index, row.clone())
+	win.set_table_rows_strict(name, rows)!
+}
+
+// update_table_row_strict replaces a row at a 0-based index.
+pub fn (win &SimpleWindow) update_table_row_strict(name string, index int, row []string) ! {
+	mut rows := win.table_rows[name] or { [][]string{} }
+	if index < 0 || index >= rows.len {
+		return error('update_table_row_strict: index ${index} out of range 0..${rows.len - 1}')
+	}
+	rows[index] = row.clone()
+	win.set_table_rows_strict(name, rows)!
+}
+
+// remove_table_row_strict removes a row at a 0-based index.
+pub fn (win &SimpleWindow) remove_table_row_strict(name string, index int) ! {
+	mut rows := win.table_rows[name] or { [][]string{} }
+	if index < 0 || index >= rows.len {
+		return error('remove_table_row_strict: index ${index} out of range 0..${rows.len - 1}')
+	}
+	rows.delete(index)
+	win.set_table_rows_strict(name, rows)!
+}
+
+// set_table_cell_strict updates a single table cell with bounds checks.
+pub fn (win &SimpleWindow) set_table_cell_strict(name string, row int, col int, value string) ! {
+	rows := win.table_rows[name] or { [][]string{} }
+	if row < 0 || row >= rows.len {
+		return error('set_table_cell_strict: row ${row} out of range 0..${rows.len - 1}')
+	}
+	if col < 0 || col >= rows[row].len {
+		return error('set_table_cell_strict: column ${col} out of range 0..${rows[row].len - 1}')
+	}
+	mut next := rows.map(it.clone())
+	next[row][col] = value
+	win.set_table_rows_strict(name, next)!
+}
+
+// find_table_row_strict returns the first row index whose column value matches.
+pub fn (win &SimpleWindow) find_table_row_strict(name string, column int, value string) !int {
+	rows := win.table_rows[name] or { [][]string{} }
+	cols_count := win.get_table_column_count(name)
+	if column < 0 || column >= cols_count {
+		return error('find_table_row_strict: column ${column} out of range 0..${cols_count - 1}')
+	}
+	for i, row in rows {
+		if column < row.len && row[column] == value {
+			return i
+		}
+	}
+	return error('find_table_row_strict: value not found')
 }
 
 // Layout Rows and Form Generation Helpers

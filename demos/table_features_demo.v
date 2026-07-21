@@ -19,11 +19,13 @@ fn main() {
 	})
 
 	win.add_action_row({
-		'Add Row':         add_or_update_row
-		'Update Selected': update_selected_row
-		'Delete Selected': delete_selected_rows
-		'Clear Editor':    clear_editor
-		'Show Summary':    show_summary
+		'Add Row':          add_or_update_row
+		'Add Row (Strict)': add_row_strict
+		'Update Selected':  update_selected_row
+		'Update (Strict)':  update_selected_row_strict
+		'Delete Selected':  delete_selected_rows
+		'Clear Editor':     clear_editor
+		'Show Summary':     show_summary
 	})
 
 	win.add_table('data_table', ['ID', 'Name', 'Score'])
@@ -33,6 +35,7 @@ fn main() {
 		['102', 'Bob', '72.0'],
 		['104', 'Diana', '90.5'],
 	])
+	win.set_table_column_selection('data_table', true)
 	win.set_table_multi_select('data_table', true)
 
 	win.add_action_row({
@@ -57,17 +60,32 @@ fn main() {
 	})
 
 	win.add_action_row({
-		'Move Up':     move_selected_up
-		'Move Down':   move_selected_down
-		'Export CSV':  export_csv
-		'Import CSV':  import_csv
-		'Export JSON': export_json
-		'Import JSON': import_json
+		'Move Up':          move_selected_up
+		'Move Down':        move_selected_down
+		'Select Score Col': select_score_column
+		'Clear Col Sel':    clear_column_selection
+		'Delete Sel Col':   delete_selected_column
+		'Copy Sel Column':  copy_selected_column
+		'Strict Normalize': strict_normalize_demo
+		'Find ID (Strict)': find_id_strict
+		'Export CSV':       export_csv
+		'Import CSV':       import_csv
+		'Export JSON':      export_json
+		'Import JSON':      import_json
 	})
 
 	win.on_table_select('data_table', fn (mut w simplegui.SimpleWindow, _ string) {
 		fill_editor_from_selected(mut w)
 		set_selection_status(mut w)
+	})
+
+	win.on_table_column_select('data_table', fn (mut w simplegui.SimpleWindow, value string) {
+		idx := value.int()
+		if idx < 0 {
+			w.status('Column selection cleared.')
+			return
+		}
+		w.status('Column selected: ${column_label(idx)}')
 	})
 
 	win.on_table_double_click('data_table', fn (mut w simplegui.SimpleWindow, row string) {
@@ -91,6 +109,46 @@ fn main() {
 	win.run()
 }
 
+fn select_score_column(mut win simplegui.SimpleWindow) {
+	win.set_table_selected_column('data_table', 2)
+	idx := win.get_table_selected_column('data_table')
+	if idx < 0 {
+		win.status('Column selection is unavailable.')
+		return
+	}
+	win.status('Selected entire column ${idx + 1} (${column_label(idx)}).')
+}
+
+fn clear_column_selection(mut win simplegui.SimpleWindow) {
+	win.set_table_selected_column('data_table', -1)
+	win.status('Cleared table column selection.')
+}
+
+fn delete_selected_column(mut win simplegui.SimpleWindow) {
+	col, removed := win.remove_selected_table_column_strict('data_table') or {
+		win.warn('No Column Selected', 'Select a column first (or use Select Score Col).')
+		win.status('Delete skipped: no selected column.')
+		return
+	}
+	win.status('Deleted column ${col + 1} (${column_label(col)}), removed ${removed.len} value(s).')
+}
+
+fn copy_selected_column(mut win simplegui.SimpleWindow) {
+	idx := win.get_table_selected_column('data_table')
+	if idx < 0 {
+		win.warn('No Column Selected', 'Select a column first.')
+		win.status('Copy skipped: no selected column.')
+		return
+	}
+	values := win.get_table_selected_column_values('data_table')
+	if values.len == 0 {
+		win.status('Copy skipped: selected column has no rows.')
+		return
+	}
+	win.copy_to_clipboard(values.join('\n'))
+	win.status('Copied ${values.len} value(s) from ${column_label(idx)} column to clipboard.')
+}
+
 fn add_or_update_row(mut win simplegui.SimpleWindow) {
 	row := gather_editor_row(mut win) or {
 		win.status(err.msg())
@@ -105,6 +163,26 @@ fn add_or_update_row(mut win simplegui.SimpleWindow) {
 	win.clear_table_selection('data_table')
 	clear_editor(mut win)
 	win.status('Added row ${row[0]}: ${row[1]} (${row[2]}). Total rows: ${win.get_table_row_count('data_table')}')
+}
+
+fn add_row_strict(mut win simplegui.SimpleWindow) {
+	row := gather_editor_row(mut win) or {
+		win.status(err.msg())
+		return
+	}
+	if win.find_table_row('data_table', 0, row[0]) >= 0 {
+		win.warn('Duplicate ID', 'A row with ID ${row[0]} already exists.')
+		win.status('Strict add cancelled due to duplicate ID ${row[0]}.')
+		return
+	}
+	win.add_table_row_strict('data_table', row) or {
+		win.error_dialog('Strict Add Failed', err.msg())
+		win.status('Strict add failed: ${err.msg()}')
+		return
+	}
+	win.clear_table_selection('data_table')
+	clear_editor(mut win)
+	win.status('Strict add OK. Columns: ${win.get_table_column_count('data_table')}, rows: ${win.get_table_row_count('data_table')}.')
 }
 
 fn update_selected_row(mut win simplegui.SimpleWindow) {
@@ -128,6 +206,33 @@ fn update_selected_row(mut win simplegui.SimpleWindow) {
 	win.update_table_row('data_table', idx, row)
 	win.set_table_selected('data_table', idx)
 	win.status('Updated row ${idx + 1} to ${row[1]} (${row[2]}).')
+}
+
+fn update_selected_row_strict(mut win simplegui.SimpleWindow) {
+	idx := win.get_table_selected('data_table')
+	if idx < 0 {
+		win.warn('No Selection', 'Select a table row to update.')
+		win.status('Strict update skipped: no row selected.')
+		return
+	}
+	row := gather_editor_row(mut win) or {
+		win.status(err.msg())
+		return
+	}
+	for i, existing in win.get_table_rows('data_table') {
+		if i != idx && existing.len > 0 && existing[0] == row[0] {
+			win.warn('Duplicate ID', 'Another row already uses ID ${row[0]}.')
+			win.status('Strict update cancelled due to duplicate ID ${row[0]}.')
+			return
+		}
+	}
+	win.update_table_row_strict('data_table', idx, row) or {
+		win.error_dialog('Strict Update Failed', err.msg())
+		win.status('Strict update failed: ${err.msg()}')
+		return
+	}
+	win.set_table_selected('data_table', idx)
+	win.status('Strict update OK at row ${idx + 1}.')
 }
 
 fn delete_selected_rows(mut win simplegui.SimpleWindow) {
@@ -160,8 +265,55 @@ fn show_summary(mut win simplegui.SimpleWindow) {
 	}
 	total := win.get_table_column_sum('data_table', 2)
 	avg := win.get_table_column_average('data_table', 2)
-	win.info('Table Summary', 'Rows: ${rows.len}\nTotal score: ${format_score(total)}\nAverage score: ${format_score(avg)}')
+	avg_numeric := win.get_table_column_average_numeric('data_table', 2)
+	win.info('Table Summary', 'Rows: ${rows.len}\nColumns: ${win.get_table_column_count('data_table')}\nTotal score: ${format_score(total)}\nAverage score (legacy): ${format_score(avg)}\nAverage score (numeric-only): ${format_score(avg_numeric)}')
 	win.status('Summary calculated for ${rows.len} row(s).')
+}
+
+fn column_label(index int) string {
+	if index == 0 {
+		return 'ID'
+	}
+	if index == 1 {
+		return 'Name'
+	}
+	if index == 2 {
+		return 'Score'
+	}
+	return 'Column ${index + 1}'
+}
+
+fn strict_normalize_demo(mut win simplegui.SimpleWindow) {
+	rows := win.get_table_rows('data_table')
+	if rows.len == 0 {
+		win.status('Strict normalize skipped: table is empty.')
+		return
+	}
+	mut ragged := rows.map(it.clone())
+	ragged << ['999', 'Ragged only ID']
+	ragged << ['1000', 'Extra', '42.0', 'ignored-col']
+	win.set_table_rows_strict('data_table', ragged) or {
+		win.error_dialog('Strict Normalize Failed', err.msg())
+		win.status('Strict normalize failed: ${err.msg()}')
+		return
+	}
+	win.status('Strict normalize applied. Rows: ${win.get_table_row_count('data_table')}, columns: ${win.get_table_column_count('data_table')}.')
+}
+
+fn find_id_strict(mut win simplegui.SimpleWindow) {
+	id := win.prompt('Find ID (Strict)', 'Enter an ID from column 0:', '').trim_space()
+	if id == '' {
+		win.status('Strict find cancelled.')
+		return
+	}
+	idx := win.find_table_row_strict('data_table', 0, id) or {
+		win.warn('Not Found', err.msg())
+		win.status('Strict find failed: ${err.msg()}')
+		return
+	}
+	win.set_table_selected('data_table', idx)
+	fill_editor_from_selected(mut win)
+	win.status('Strict find OK: ID ${id} at row ${idx + 1}.')
 }
 
 fn sort_table(mut win simplegui.SimpleWindow, column int, ascending bool, label string) {

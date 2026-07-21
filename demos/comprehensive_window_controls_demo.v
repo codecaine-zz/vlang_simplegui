@@ -167,7 +167,8 @@ fn main() {
 	win.end_row()
 
 	// ── Section 13: Global macOS Theme & Power Controls ──────────────────────
-	win.add_section_header('sec_sys_power', '13. Global macOS Theme & Power Controls', 'System-wide appearance and power/session commands. Use with caution.')
+	win.add_section_header('sec_sys_power', '13. Global macOS Theme & Power Controls',
+		'System-wide appearance and power/session commands. Use with caution.')
 	win.begin_row('row_sys_theme')
 	win.add_button('btn_sys_theme_dark', 'System Theme: Dark')
 	win.add_button('btn_sys_theme_light', 'System Theme: Light')

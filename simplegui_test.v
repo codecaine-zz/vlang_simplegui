@@ -1297,6 +1297,91 @@ fn test_table_row_management_helpers() {
 	assert win.get_table_row_count('inventory') == 0
 }
 
+fn test_table_strict_apis_and_row_normalization() {
+	mut win := simplegui.SimpleWindow{}
+	win.add_table('inventory', ['ID', 'Name', 'Qty'])
+
+	win.set_table_rows_strict('inventory', [
+		['1', 'Bolt'],
+		['2', 'Nut', '75', 'ignored'],
+	]) or { assert false, err.msg() }
+
+	assert win.get_table_column_count('inventory') == 3
+	assert win.get_table_rows('inventory') == [
+		['1', 'Bolt', ''],
+		['2', 'Nut', '75'],
+	]
+
+	win.add_table_row_strict('inventory', ['3', 'Washer', '10']) or { assert false, err.msg() }
+	win.insert_table_row_strict('inventory', 1, ['1.5', 'Spacer', '5']) or {
+		assert false, err.msg()
+	}
+	win.update_table_row_strict('inventory', 1, ['1.5', 'Spacer', '6']) or {
+		assert false, err.msg()
+	}
+	win.set_table_cell_strict('inventory', 1, 2, '7') or { assert false, err.msg() }
+	assert win.get_table_cell('inventory', 1, 2) == '7'
+
+	idx := win.find_table_row_strict('inventory', 1, 'Spacer') or { panic(err) }
+	assert idx == 1
+
+	mut row_error := ''
+	win.set_table_cell_strict('inventory', 99, 0, 'x') or { row_error = err.msg() }
+	assert row_error.contains('row 99 out of range')
+
+	mut missing_error := ''
+	_ := win.find_table_row_strict('inventory', 1, 'Missing') or {
+		missing_error = err.msg()
+		-1
+	}
+	assert missing_error.contains('value not found')
+
+	win.remove_table_row_strict('inventory', 0) or { assert false, err.msg() }
+	assert win.get_table_row_count('inventory') == 3
+
+	win.set_table_rows('inventory', [
+		['1', 'Bolt', '10'],
+		['2', 'Nut', 'n/a'],
+		['3', 'Washer', '20'],
+	])
+	assert win.get_table_column_average('inventory', 2) == 10.0
+	assert win.get_table_column_average_numeric('inventory', 2) == 15.0
+}
+
+fn test_table_column_selection_helpers() {
+	mut win := simplegui.SimpleWindow{}
+	win.add_table('scores', ['ID', 'Name', 'Score'])
+	win.set_table_rows('scores', [
+		['1', 'Ada', '10'],
+		['2', 'Grace', '25'],
+		['3', 'Linus', '15'],
+	])
+
+	assert win.get_table_column_selection('scores') == false
+	win.set_table_column_selection('scores', true)
+	assert win.get_table_column_selection('scores') == true
+
+	assert win.get_table_selected_column('scores') == -1
+	win.set_table_selected_column('scores', 2)
+	assert win.get_table_selected_column('scores') == 2
+	assert win.get_table_selected_column_values('scores') == ['10', '25', '15']
+
+	win.set_table_selected_column('scores', -1)
+	assert win.get_table_selected_column('scores') == -1
+	assert win.get_table_selected_column_values('scores') == []string{}
+
+	win.set_table_selected_column('scores', 1)
+	removed_values := win.remove_selected_table_column('scores')
+	assert removed_values == ['Ada', 'Grace', 'Linus']
+	assert win.get_table_column_count('scores') == 2
+	assert win.get_table_rows('scores') == [
+		['1', '10'],
+		['2', '25'],
+		['3', '15'],
+	]
+	assert win.get_table_selected_column('scores') == -1
+}
+
 fn test_table_event_helpers_are_available() {
 	mut win := simplegui.SimpleWindow{}
 	win.add_table('inventory', ['ID', 'Name'])
@@ -1304,9 +1389,35 @@ fn test_table_event_helpers_are_available() {
 
 	win.on_table_select('inventory', fn (mut w simplegui.SimpleWindow, value string) {})
 	win.on_table_double_click('inventory', fn (mut w simplegui.SimpleWindow, value string) {})
+	win.on_table_column_select('inventory', fn (mut w simplegui.SimpleWindow, value string) {})
 
 	assert win.dispatch_event('inventory', 'change', '0') == true
 	assert win.dispatch_event('inventory', 'dblclick', '0') == true
+	assert win.dispatch_event('inventory', 'column_change', '1') == true
+}
+
+fn test_grid_cache_count_sort_and_clear_helpers() {
+	mut win := simplegui.SimpleWindow{}
+	win.add_grid('g', ['A', 'B'], [
+		['2', 'Ship'],
+		['1', 'Build'],
+	])
+
+	assert win.grid_get_row_count('g') == 2
+	assert win.grid_get_column_count('g') == 2
+
+	win.grid_add_column('g', 'C')
+	assert win.grid_get_column_count('g') == 3
+
+	win.grid_delete_column('g', 2)
+	assert win.grid_get_column_count('g') == 2
+
+	win.grid_sort_by_column('g', 0, true)
+	assert win.grid_get_row('g', 0) == ['1', 'Build']
+
+	win.grid_clear('g')
+	assert win.grid_get_row_count('g') == 0
+	assert win.grid_get_rows('g') == [][]string{}
 }
 
 fn test_list_sort_move_and_search_binding() {

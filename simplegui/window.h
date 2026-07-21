@@ -130,6 +130,10 @@ void window_add_separator(main__WindowInfo *info);
 // Multi-Column Table Controls
 void *window_add_table_control(main__WindowInfo *info, const char *name, const char **columns, int columns_count);
 void window_set_table_rows(main__WindowInfo *info, const char *name, const char **flat_items, int total_count, int columns_count);
+void window_table_set_column_selection(main__WindowInfo *info, const char *name, int enabled);
+int window_table_get_selected_column(main__WindowInfo *info, const char *name);
+void window_table_set_selected_column(main__WindowInfo *info, const char *name, int col_idx);
+void window_table_delete_column(main__WindowInfo *info, const char *name, int col_idx);
 
 // Tree View Controls
 void *window_add_tree_view_control(main__WindowInfo *info, const char *name, int height);

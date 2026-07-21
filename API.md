@@ -2433,6 +2433,7 @@ Rows are tracked automatically for every table, so you can manage them increment
 - `win.get_table_rows(name) [][]string` returns every row.
 - `win.get_table_row(name, index) []string` returns one row (empty array when out of range).
 - `win.get_table_row_count(name) int` returns the row count.
+- `win.get_table_column_count(name) int` returns the configured column count (or inferred widest row when no explicit columns were registered).
 - `win.get_table_cell(name, row, col) string` / `win.set_table_cell(name, row, col, value)` read/write a single cell.
 - `win.add_table_row(name, row []string)` appends a row.
 - `win.add_table_rows(name, rows [][]string)` appends multiple rows.
@@ -2440,18 +2441,40 @@ Rows are tracked automatically for every table, so you can manage them increment
 - `win.insert_table_row(name, index, row)` inserts a row at a 0-based index.
 - `win.update_table_row(name, index, row)` replaces a row.
 - `win.remove_table_row(name, index)` removes a row.
+- `win.remove_table_column(name, column int) []string` removes a 0-based column and returns removed cell values.
 - `win.clear_table(name)` removes every row.
 - `win.find_table_row(name, column, value) int` returns the first row index whose cell matches, or `-1`.
 - `win.get_table_row_where(name, column, value) []string` returns the first row matching the filter value in the specified column.
 - `win.get_table_rows_where(name, column, value) [][]string` returns all rows matching the filter value in the specified column.
 - `win.get_table_column_sum(name, column) f64` computes the numeric sum of a column's values.
 - `win.get_table_column_average(name, column) f64` computes the numeric average of a column's values.
+- `win.get_table_column_average_numeric(name, column) f64` computes the average using only parseable numeric cells (skips blanks/non-numeric cells).
+
+Strict production variants (`!` return type) are also available:
+
+- `win.set_table_rows_strict(name, rows) !`
+- `win.add_table_row_strict(name, row) !`
+- `win.insert_table_row_strict(name, index, row) !`
+- `win.update_table_row_strict(name, index, row) !`
+- `win.remove_table_row_strict(name, index) !`
+- `win.remove_table_column_strict(name, column) ![]string`
+- `win.remove_selected_table_column_strict(name) !(int, []string)`
+- `win.set_table_cell_strict(name, row, col, value) !`
+- `win.find_table_row_strict(name, column, value) !int`
+
+`set_table_rows` and `set_table_rows_strict` normalize row width to the table's column count (truncate extra cells, pad missing cells with empty strings) so table data remains schema-safe.
 
 ### Table Selection & Events
 
 - `win.get_table_selected(name) int` returns the selected row index (`-1` when none).
 - `win.set_table_selected(name, index)` selects a row programmatically (`-1` clears).
 - `win.get_table_selected_row(name) []string` returns the selected row's cells.
+- `win.set_table_column_selection(name, enabled bool)` enables whole-column selection.
+- `win.get_table_column_selection(name) bool` returns whether whole-column selection is enabled.
+- `win.set_table_selected_column(name, column int)` selects a full table column (`-1` clears).
+- `win.get_table_selected_column(name) int` returns the selected column index (`-1` when none).
+- `win.get_table_selected_column_values(name) []string` returns all values from the selected column.
+- `win.remove_selected_table_column(name) []string` removes the selected column and returns removed values.
 - `win.set_table_multi_select(name, enabled bool)` enables Cmd/Shift-click multiple row selection.
 - `win.get_table_selected_indexes(name) []int` returns every selected row index (ascending).
 - `win.get_table_selected_rows(name) [][]string` returns the cells of every selected row.
@@ -2459,6 +2482,7 @@ Rows are tracked automatically for every table, so you can manage them increment
 - `win.remove_selected_table_rows(name) [][]string` removes all selected rows and returns them (works in both single and multi mode).
 - `win.on_table_select(name, callback StringEventCallback)` fires on selection change; the callback receives the selected row index as a string (`-1` when cleared).
 - `win.on_table_double_click(name, callback StringEventCallback)` fires when a row is double-clicked; the callback receives the 0-based row index as a string.
+- `win.on_table_column_select(name, callback StringEventCallback)` fires when a column is selected (with column selection mode enabled); callback receives the 0-based column index as a string.
 
 ### Table Querying, Mapping & Filtering
 

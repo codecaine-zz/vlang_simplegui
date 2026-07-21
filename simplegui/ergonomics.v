@@ -687,6 +687,18 @@ pub fn (win &SimpleWindow) remove_table_row(name string, index int) &SimpleWindo
 	return win
 }
 
+// remove_table_column removes the column at a 0-based index and returns removed values.
+pub fn (win &SimpleWindow) remove_table_column(name string, column int) []string {
+	removed := win.remove_table_column_strict(name, column) or { return []string{} }
+	return removed
+}
+
+// remove_selected_table_column removes the currently selected column and returns removed values.
+pub fn (win &SimpleWindow) remove_selected_table_column(name string) []string {
+	_, removed := win.remove_selected_table_column_strict(name) or { return []string{} }
+	return removed
+}
+
 // clear_table removes every row from a table.
 pub fn (win &SimpleWindow) clear_table(name string) &SimpleWindow {
 	return win.set_table_rows(name, [][]string{})
@@ -778,6 +790,21 @@ pub fn (win &SimpleWindow) on_table_select(name string, callback StringEventCall
 // double-clicked. The callback value is the 0-based row index as a string.
 pub fn (win &SimpleWindow) on_table_double_click(name string, callback StringEventCallback) &SimpleWindow {
 	return win.on_list_double_click(name, callback)
+}
+
+// on_table_column_select registers a callback fired when a table column is
+// selected while column selection mode is enabled. The callback value is the
+// 0-based selected column index as a string.
+pub fn (win &SimpleWindow) on_table_column_select(name string, callback StringEventCallback) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.handlers << ControlEventHandler{
+			control_name: name
+			event_name:   'column_change'
+			string_cb:    callback
+		}
+	}
+	return win
 }
 
 // ==========================================
@@ -1289,6 +1316,26 @@ pub fn (win &SimpleWindow) get_table_column_average(name string, column int) f64
 	}
 	sum := win.get_table_column_sum(name, column)
 	return sum / f64(rows.len)
+}
+
+// get_table_column_average_numeric returns the average of parseable numeric
+// values only (non-numeric and missing cells are skipped).
+pub fn (win &SimpleWindow) get_table_column_average_numeric(name string, column int) f64 {
+	rows := win.get_table_rows(name)
+	mut sum := 0.0
+	mut numeric_count := 0
+	for row in rows {
+		if column < 0 || column >= row.len {
+			continue
+		}
+		value := strconv.atof64(row[column].trim_space()) or { continue }
+		sum += value
+		numeric_count++
+	}
+	if numeric_count == 0 {
+		return 0.0
+	}
+	return sum / f64(numeric_count)
 }
 
 // ==========================================

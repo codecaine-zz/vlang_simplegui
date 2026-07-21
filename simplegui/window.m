@@ -659,6 +659,8 @@ extern BOOL vlang_dispatch_event(void *win_ptr, const char *name, const char *ev
 @property (nonatomic, strong) NSMutableDictionary *controlsByName;
 @property (nonatomic, strong) NSMutableDictionary *listItemsByName;
 @property (nonatomic, strong) NSMutableDictionary *tableItemsByName;
+@property (nonatomic, strong) NSMutableDictionary *tableColumnSelectionByName;
+@property (nonatomic, strong) NSMutableDictionary *tableSelectedColumnByName;
 @property (nonatomic, strong) NSMutableDictionary *gridItemsByName;
 @property (nonatomic, strong) NSMutableDictionary *gridHeadersByName;
 @property (nonatomic, strong) NSMutableDictionary *gridColumnTypesByName;
@@ -2602,6 +2604,8 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
 - (void)buildUI {
   NSLog(@"buildUI called");
   self.controlsByName = [NSMutableDictionary dictionary];
+  self.tableColumnSelectionByName = [NSMutableDictionary dictionary];
+  self.tableSelectedColumnByName = [NSMutableDictionary dictionary];
   self.treeItemsByName = [NSMutableDictionary dictionary];
   self.linkUrls = [NSMutableDictionary dictionary];
 
@@ -4061,6 +4065,25 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
       ]];
     }
     [cell.textField setStringValue:cols[colIdx]];
+
+    NSInteger selectedCol = -1;
+    NSNumber *selectedObj = self.tableSelectedColumnByName[key];
+    if (selectedObj) {
+      selectedCol = [selectedObj integerValue];
+    }
+    BOOL isSelectedColumn = (selectedCol == colIdx);
+    [cell.textField setWantsLayer:YES];
+    if (isSelectedColumn) {
+      [cell.textField setDrawsBackground:YES];
+      [cell.textField setBackgroundColor:[[NSColor controlAccentColor] colorWithAlphaComponent:0.14]];
+      [cell.textField.layer setBorderWidth:0.8];
+      [cell.textField.layer setBorderColor:[[NSColor controlAccentColor] colorWithAlphaComponent:0.5].CGColor];
+    } else {
+      [cell.textField setDrawsBackground:NO];
+      [cell.textField setBackgroundColor:[NSColor clearColor]];
+      [cell.textField.layer setBorderWidth:0.0];
+    }
+
     if (self.currentFontColor) {
       [cell.textField setTextColor:self.currentFontColor];
     }
@@ -4213,7 +4236,7 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
     }
     NSString *key = [[name lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
     NSInteger selectedRow = [tableView selectedRow];
-    
+
     if (self.gridItemsByName && self.gridItemsByName[key]) {
       NSInteger selectedCol = [tableView selectedColumn];
       if (selectedRow >= 0 && selectedCol >= 0) {
@@ -5436,6 +5459,25 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   NSString *name = tableView.identifier;
   if (!name) return YES;
   NSString *key = [[name lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+
+  if (!(self.gridItemsByName && self.gridItemsByName[key])) {
+    NSNumber *enabledObj = self.tableColumnSelectionByName[key];
+    if (enabledObj && [enabledObj boolValue]) {
+      NSInteger clickedCol = [tableView clickedColumn];
+      if (clickedCol >= 0) {
+        if (!self.tableSelectedColumnByName) {
+          self.tableSelectedColumnByName = [NSMutableDictionary dictionary];
+        }
+        self.tableSelectedColumnByName[key] = @(clickedCol);
+        [tableView reloadData];
+        if (self.win_ptr) {
+          NSString *eventVal = [NSString stringWithFormat:@"%ld", (long)clickedCol];
+          vlang_dispatch_event(self.win_ptr, [name UTF8String], "column_change", [eventVal UTF8String]);
+        }
+      }
+    }
+  }
+
   if (self.gridItemsByName && self.gridItemsByName[key]) {
     NSArray *rows = [self visibleRowsForGridName:name];
     if (row >= 0 && row < rows.count) {
@@ -5453,6 +5495,26 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   NSString *name = tableView.identifier;
   if (!name) return;
   NSString *key = [[name lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+
+  if (!(self.gridItemsByName && self.gridItemsByName[key])) {
+    NSNumber *enabledObj = self.tableColumnSelectionByName[key];
+    if (enabledObj && [enabledObj boolValue]) {
+      NSArray *cols = tableView.tableColumns;
+      NSInteger colIdx = [cols indexOfObject:tableColumn];
+      if (colIdx != NSNotFound) {
+        if (!self.tableSelectedColumnByName) {
+          self.tableSelectedColumnByName = [NSMutableDictionary dictionary];
+        }
+        self.tableSelectedColumnByName[key] = @(colIdx);
+        [tableView reloadData];
+        if (self.win_ptr) {
+          NSString *eventVal = [NSString stringWithFormat:@"%ld", (long)colIdx];
+          vlang_dispatch_event(self.win_ptr, [name UTF8String], "column_change", [eventVal UTF8String]);
+        }
+      }
+    }
+    return;
+  }
   
   if (self.gridItemsByName && self.gridItemsByName[key]) {
     NSArray *cols = tableView.tableColumns;
@@ -12644,6 +12706,152 @@ void window_set_table_rows(main__WindowInfo *info, const char *name, const char 
     }
   };
   
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+void window_table_set_column_selection(main__WindowInfo *info, const char *name, int enabled) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+
+  void (^runBlock)(void) = ^{
+    if (!delegate.tableColumnSelectionByName) {
+      delegate.tableColumnSelectionByName = [NSMutableDictionary dictionary];
+    }
+    delegate.tableColumnSelectionByName[key] = @((enabled != 0));
+    if (!(enabled != 0) && delegate.tableSelectedColumnByName) {
+      [delegate.tableSelectedColumnByName removeObjectForKey:key];
+    }
+
+    NSView *view = delegate.controlsByName[key];
+    if ([view isKindOfClass:[NSScrollView class]]) {
+      NSScrollView *scroll = (NSScrollView *)view;
+      if ([scroll.documentView isKindOfClass:[NSTableView class]]) {
+        NSTableView *tableView = (NSTableView *)scroll.documentView;
+        [tableView reloadData];
+      }
+    }
+  };
+
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+int window_table_get_selected_column(main__WindowInfo *info, const char *name) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  __block int selected = -1;
+
+  void (^runBlock)(void) = ^{
+    NSNumber *selectedObj = delegate.tableSelectedColumnByName[key];
+    if (selectedObj) {
+      selected = [selectedObj intValue];
+    }
+  };
+
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return selected;
+}
+
+void window_table_set_selected_column(main__WindowInfo *info, const char *name, int col_idx) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+
+  void (^runBlock)(void) = ^{
+    if (!delegate.tableSelectedColumnByName) {
+      delegate.tableSelectedColumnByName = [NSMutableDictionary dictionary];
+    }
+
+    NSView *view = delegate.controlsByName[key];
+    if ([view isKindOfClass:[NSScrollView class]]) {
+      NSScrollView *scroll = (NSScrollView *)view;
+      if ([scroll.documentView isKindOfClass:[NSTableView class]]) {
+        NSTableView *tableView = (NSTableView *)scroll.documentView;
+        if (col_idx < 0) {
+          [delegate.tableSelectedColumnByName removeObjectForKey:key];
+          [tableView reloadData];
+          return;
+        }
+        NSInteger max = [tableView numberOfColumns];
+        if (col_idx >= 0 && col_idx < max) {
+          delegate.tableSelectedColumnByName[key] = @(col_idx);
+          [tableView scrollColumnToVisible:col_idx];
+          [tableView reloadData];
+        }
+      }
+    }
+  };
+
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+void window_table_delete_column(main__WindowInfo *info, const char *name, int col_idx) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+
+  void (^runBlock)(void) = ^{
+    NSView *view = delegate.controlsByName[key];
+    if (![view isKindOfClass:[NSScrollView class]]) {
+      return;
+    }
+    NSScrollView *scroll = (NSScrollView *)view;
+    if (![scroll.documentView isKindOfClass:[NSTableView class]]) {
+      return;
+    }
+    NSTableView *tableView = (NSTableView *)scroll.documentView;
+
+    NSArray *cols = [tableView.tableColumns copy];
+    if (col_idx < 0 || col_idx >= (int)cols.count) {
+      [cols release];
+      return;
+    }
+    [tableView removeTableColumn:cols[col_idx]];
+    [cols release];
+
+    NSArray *updatedCols = tableView.tableColumns;
+    for (NSUInteger i = 0; i < updatedCols.count; i++) {
+      [(NSTableColumn *)updatedCols[i] setIdentifier:[NSString stringWithFormat:@"Col_%lu", (unsigned long)i]];
+    }
+
+    NSMutableArray *rows = delegate.tableItemsByName[key];
+    if (rows) {
+      for (NSUInteger i = 0; i < rows.count; i++) {
+        NSMutableArray *colsArray = [rows[i] mutableCopy];
+        if (col_idx < colsArray.count) {
+          [colsArray removeObjectAtIndex:col_idx];
+        }
+        rows[i] = colsArray;
+        [colsArray release];
+      }
+    }
+
+    NSNumber *selectedObj = delegate.tableSelectedColumnByName[key];
+    if (selectedObj) {
+      NSInteger selected = [selectedObj integerValue];
+      if (selected == col_idx) {
+        [delegate.tableSelectedColumnByName removeObjectForKey:key];
+      } else if (selected > col_idx) {
+        delegate.tableSelectedColumnByName[key] = @(selected - 1);
+      }
+    }
+
+    [tableView reloadData];
+  };
+
   if ([NSThread isMainThread]) {
     runBlock();
   } else {
