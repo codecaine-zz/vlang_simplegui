@@ -9500,6 +9500,18 @@ static NSAttributedString *formatJsonText(NSString *jsonStr) {
 }
 
 - (void)flashWindowFrame:(BOOL)critical {
+  if (self.window) {
+    CGFloat origAlpha = self.window.alphaValue;
+    [NSAnimationContext runAnimationGroup:^(NSAnimationContext *context) {
+      context.duration = 0.12;
+      self.window.animator.alphaValue = 0.35;
+    } completionHandler:^{
+      [NSAnimationContext runAnimationGroup:^(NSAnimationContext *ctx) {
+        ctx.duration = 0.15;
+        self.window.animator.alphaValue = origAlpha;
+      } completionHandler:nil];
+    }];
+  }
   [NSApp requestUserAttention:critical ? NSCriticalRequest : NSInformationalRequest];
 }
 
@@ -15386,11 +15398,12 @@ void window_set_toolbar_visible(main__WindowInfo *info, int visible) {
 
 void window_set_subtitle(main__WindowInfo *info, const char *subtitle) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
-  dispatch_async(dispatch_get_main_queue(), ^{
+  void (^runBlock)(void) = ^{
     if (delegate.window && [delegate.window respondsToSelector:@selector(setSubtitle:)]) {
       [delegate.window setSubtitle:nsstring(subtitle)];
     }
-  });
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
 }
 
 const char *window_get_subtitle(main__WindowInfo *info) {
@@ -15407,11 +15420,18 @@ const char *window_get_subtitle(main__WindowInfo *info) {
 
 void window_set_titlebar_appears_transparent(main__WindowInfo *info, int transparent) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
-  dispatch_async(dispatch_get_main_queue(), ^{
+  void (^runBlock)(void) = ^{
     if (delegate.window) {
       delegate.window.titlebarAppearsTransparent = (transparent != 0);
+      if (transparent != 0) {
+        delegate.window.styleMask |= NSWindowStyleMaskFullSizeContentView;
+      } else {
+        delegate.window.styleMask &= ~NSWindowStyleMaskFullSizeContentView;
+      }
+      [delegate.window.contentView setNeedsDisplay:YES];
     }
-  });
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
 }
 
 int window_get_titlebar_appears_transparent(main__WindowInfo *info) {
@@ -15426,7 +15446,7 @@ int window_get_titlebar_appears_transparent(main__WindowInfo *info) {
 
 void window_set_full_size_content_view(main__WindowInfo *info, int enabled) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
-  dispatch_async(dispatch_get_main_queue(), ^{
+  void (^runBlock)(void) = ^{
     if (delegate.window) {
       if (enabled) {
         delegate.window.styleMask |= NSWindowStyleMaskFullSizeContentView;
@@ -15434,7 +15454,8 @@ void window_set_full_size_content_view(main__WindowInfo *info, int enabled) {
         delegate.window.styleMask &= ~NSWindowStyleMaskFullSizeContentView;
       }
     }
-  });
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
 }
 
 int window_get_full_size_content_view(main__WindowInfo *info) {
@@ -15449,11 +15470,12 @@ int window_get_full_size_content_view(main__WindowInfo *info) {
 
 void window_set_movable(main__WindowInfo *info, int enabled) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
-  dispatch_async(dispatch_get_main_queue(), ^{
+  void (^runBlock)(void) = ^{
     if (delegate.window) {
       [delegate.window setMovable:(enabled != 0)];
     }
-  });
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
 }
 
 int window_get_movable(main__WindowInfo *info) {
@@ -15468,7 +15490,7 @@ int window_get_movable(main__WindowInfo *info) {
 
 void window_set_window_level(main__WindowInfo *info, const char *level) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
-  dispatch_async(dispatch_get_main_queue(), ^{
+  void (^runBlock)(void) = ^{
     if (!delegate.window) return;
     NSString *lvlStr = nsstring(level);
     if ([lvlStr isEqualToString:@"floating"]) {
@@ -15484,7 +15506,8 @@ void window_set_window_level(main__WindowInfo *info, const char *level) {
     } else {
       [delegate.window setLevel:NSNormalWindowLevel];
     }
-  });
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
 }
 
 void window_set_aspect_ratio(main__WindowInfo *info, double width_ratio, double height_ratio) {
@@ -16456,6 +16479,282 @@ void window_set_hotkey_badge_shortcut(main__WindowInfo *info, const char *name, 
   };
   if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
 }
+
+double window_get_corner_radius(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block double res = 0.0;
+  void (^runBlock)(void) = ^{
+    if (delegate.window && delegate.window.contentView && delegate.window.contentView.layer) {
+      res = (double)delegate.window.contentView.layer.cornerRadius;
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return res;
+}
+
+const char *window_get_window_level(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block const char *res = "";
+  void (^runBlock)(void) = ^{
+    if (delegate.window) {
+      NSInteger lvl = delegate.window.level;
+      if (lvl == NSFloatingWindowLevel) res = "floating";
+      else if (lvl == NSModalPanelWindowLevel) res = "modal";
+      else if (lvl == NSMainMenuWindowLevel) res = "mainMenu";
+      else if (lvl == NSSubmenuWindowLevel) res = "statusBar";
+      else if (lvl == NSScreenSaverWindowLevel) res = "screenSaver";
+      else res = "normal";
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return res;
+}
+
+void window_set_fullscreen(main__WindowInfo *info, int enabled) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    if (!delegate.window) return;
+    BOOL isFS = (delegate.window.styleMask & NSWindowStyleMaskFullScreen) != 0;
+    if ((enabled && !isFS) || (!enabled && isFS)) {
+      [delegate.window toggleFullScreen:nil];
+    }
+  });
+}
+
+void window_snap_to_edge(main__WindowInfo *info, const char *edge) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    if (!delegate.window) return;
+    NSScreen *screen = delegate.window.screen ?: [NSScreen mainScreen];
+    NSRect visibleFrame = screen.visibleFrame;
+    NSRect winFrame = delegate.window.frame;
+    CGFloat x = winFrame.origin.x;
+    CGFloat y = winFrame.origin.y;
+    NSString *e = [nsstring(edge) lowercaseString];
+
+    if ([e containsString:@"left"]) {
+      x = visibleFrame.origin.x;
+    } else if ([e containsString:@"right"]) {
+      x = NSMaxX(visibleFrame) - winFrame.size.width;
+    } else if ([e isEqualToString:@"center"] || [e isEqualToString:@"middle"]) {
+      x = visibleFrame.origin.x + (visibleFrame.size.width - winFrame.size.width) / 2.0;
+    }
+
+    if ([e containsString:@"top"]) {
+      y = NSMaxY(visibleFrame) - winFrame.size.height;
+    } else if ([e containsString:@"bottom"]) {
+      y = visibleFrame.origin.y;
+    } else if ([e isEqualToString:@"center"] || [e isEqualToString:@"middle"]) {
+      y = visibleFrame.origin.y + (visibleFrame.size.height - winFrame.size.height) / 2.0;
+    }
+
+    [delegate.window setFrameOrigin:NSMakePoint(x, y)];
+  });
+}
+
+void window_set_bounds(main__WindowInfo *info, int x, int y, int width, int height) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    if (delegate.window) {
+      NSScreen *screen = delegate.window.screen ?: [NSScreen mainScreen];
+      CGFloat screenH = screen.frame.size.height;
+      NSRect frame = NSMakeRect((CGFloat)x, screenH - (CGFloat)y - (CGFloat)height, (CGFloat)width, (CGFloat)height);
+      [delegate.window setFrame:frame display:YES animate:NO];
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+void window_get_bounds(main__WindowInfo *info, int *out_x, int *out_y, int *out_w, int *out_h) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    if (delegate.window) {
+      NSScreen *screen = delegate.window.screen ?: [NSScreen mainScreen];
+      CGFloat screenH = screen.frame.size.height;
+      NSRect frame = delegate.window.frame;
+      if (out_x) *out_x = (int)frame.origin.x;
+      if (out_y) *out_y = (int)(screenH - frame.origin.y - frame.size.height);
+      if (out_w) *out_w = (int)frame.size.width;
+      if (out_h) *out_h = (int)frame.size.height;
+    } else {
+      if (out_x) *out_x = 0;
+      if (out_y) *out_y = 0;
+      if (out_w) *out_w = 0;
+      if (out_h) *out_h = 0;
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+int window_has_aspect_ratio(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block BOOL res = NO;
+  void (^runBlock)(void) = ^{
+    if (delegate.window) {
+      NSSize ar = delegate.window.aspectRatio;
+      res = (ar.width > 0.0 && ar.height > 0.0);
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return res ? 1 : 0;
+}
+
+void window_set_ignores_mouse_events(main__WindowInfo *info, int enabled) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    if (delegate.window) {
+      [delegate.window setIgnoresMouseEvents:(enabled != 0)];
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+int window_get_ignores_mouse_events(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block BOOL res = NO;
+  void (^runBlock)(void) = ^{
+    if (delegate.window) {
+      res = [delegate.window ignoresMouseEvents];
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return res ? 1 : 0;
+}
+
+void window_set_hides_on_deactivate(main__WindowInfo *info, int enabled) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    if (delegate.window) {
+      [delegate.window setHidesOnDeactivate:(enabled != 0)];
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+int window_get_hides_on_deactivate(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block BOOL res = NO;
+  void (^runBlock)(void) = ^{
+    if (delegate.window) {
+      res = [delegate.window hidesOnDeactivate];
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return res ? 1 : 0;
+}
+
+void window_set_prevents_app_termination(main__WindowInfo *info, int enabled) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    if ([NSApp respondsToSelector:@selector(setPreventsApplicationTerminationWhenUnenrolled:)]) {
+      [NSApp setPreventsApplicationTerminationWhenUnenrolled:(enabled != 0)];
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+int window_get_prevents_app_termination(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block BOOL res = YES;
+  void (^runBlock)(void) = ^{
+    if ([NSApp respondsToSelector:@selector(preventsApplicationTerminationWhenUnenrolled)]) {
+      res = [NSApp preventsApplicationTerminationWhenUnenrolled];
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return res ? 1 : 0;
+}
+
+void window_set_represented_filename(main__WindowInfo *info, const char *filepath) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    if (delegate.window) {
+      NSString *path = nsstring(filepath);
+      [delegate.window setRepresentedFilename:path];
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+const char *window_get_represented_filename(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSString *res = @"";
+  void (^runBlock)(void) = ^{
+    if (delegate.window) {
+      res = [delegate.window representedFilename] ?: @"";
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return [res UTF8String];
+}
+
+void window_set_document_edited(main__WindowInfo *info, int edited) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    if (delegate.window) {
+      [delegate.window setDocumentEdited:(edited != 0)];
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+int window_is_document_edited(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block BOOL res = NO;
+  void (^runBlock)(void) = ^{
+    if (delegate.window) {
+      res = [delegate.window isDocumentEdited];
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return res ? 1 : 0;
+}
+
+void window_fade_in(main__WindowInfo *info, int duration_ms) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    if (!delegate.window) return;
+    double sec = (double)duration_ms / 1000.0;
+    if (sec <= 0.0) sec = 0.25;
+    [NSAnimationContext runAnimationGroup:^(NSAnimationContext *context) {
+      context.duration = sec;
+      delegate.window.animator.alphaValue = 1.0;
+    } completionHandler:nil];
+  });
+}
+
+void window_fade_out(main__WindowInfo *info, int duration_ms) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    if (!delegate.window) return;
+    double sec = (double)duration_ms / 1000.0;
+    if (sec <= 0.0) sec = 0.25;
+    [NSAnimationContext runAnimationGroup:^(NSAnimationContext *context) {
+      context.duration = sec;
+      delegate.window.animator.alphaValue = 0.0;
+    } completionHandler:nil];
+  });
+}
+
+void window_order_front(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    if (delegate.window) {
+      [delegate.window orderFront:nil];
+      [NSApp activateIgnoringOtherApps:YES];
+    }
+  });
+}
+
+void window_order_back(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    if (delegate.window) {
+      [delegate.window orderBack:nil];
+    }
+  });
+}
+
 
 
 

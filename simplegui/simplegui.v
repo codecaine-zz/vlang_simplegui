@@ -349,6 +349,34 @@ fn C.window_set_aspect_ratio(&WindowInfo, f64, f64)
 fn C.window_reset_aspect_ratio(&WindowInfo)
 fn C.window_bounce_dock_icon(int)
 
+fn C.window_set_vibrancy(&WindowInfo, &u8)
+fn C.window_set_corner_radius(&WindowInfo, f64)
+fn C.window_get_corner_radius(&WindowInfo) f64
+fn C.window_set_background_blur(&WindowInfo, int)
+fn C.window_flash_frame(&WindowInfo, int)
+fn C.window_center_on_active_screen(&WindowInfo)
+fn C.window_set_level_type(&WindowInfo, &u8)
+fn C.window_get_window_level(&WindowInfo) &u8
+fn C.window_set_fullscreen(&WindowInfo, int)
+fn C.window_snap_to_edge(&WindowInfo, &u8)
+fn C.window_set_bounds(&WindowInfo, int, int, int, int)
+fn C.window_get_bounds(&WindowInfo, &int, &int, &int, &int)
+fn C.window_has_aspect_ratio(&WindowInfo) int
+fn C.window_set_ignores_mouse_events(&WindowInfo, int)
+fn C.window_get_ignores_mouse_events(&WindowInfo) int
+fn C.window_set_hides_on_deactivate(&WindowInfo, int)
+fn C.window_get_hides_on_deactivate(&WindowInfo) int
+fn C.window_set_prevents_app_termination(&WindowInfo, int)
+fn C.window_get_prevents_app_termination(&WindowInfo) int
+fn C.window_set_represented_filename(&WindowInfo, &u8)
+fn C.window_get_represented_filename(&WindowInfo) &u8
+fn C.window_set_document_edited(&WindowInfo, int)
+fn C.window_is_document_edited(&WindowInfo) int
+fn C.window_fade_in(&WindowInfo, int)
+fn C.window_fade_out(&WindowInfo, int)
+fn C.window_order_front(&WindowInfo)
+fn C.window_order_back(&WindowInfo)
+
 fn C.window_add_rating_control(&WindowInfo, &u8, int, int) voidptr
 fn C.window_set_rating_value(&WindowInfo, &u8, int)
 fn C.window_get_rating_value(&WindowInfo, &u8) int
@@ -479,14 +507,6 @@ fn C.window_set_status_dock_info(&WindowInfo, &u8, &u8, &u8, &u8)
 fn C.window_add_info_callout_control(&WindowInfo, &u8, &u8, &u8, &u8, &u8) voidptr
 fn C.window_set_info_callout_text(&WindowInfo, &u8, &u8, &u8)
 
-// 6 New Window Commands C declarations
-fn C.window_set_vibrancy(&WindowInfo, &u8)
-fn C.window_set_corner_radius(&WindowInfo, f64)
-fn C.window_set_background_blur(&WindowInfo, int)
-fn C.window_flash_frame(&WindowInfo, int)
-fn C.window_center_on_active_screen(&WindowInfo)
-fn C.window_set_level_type(&WindowInfo, &u8)
-
 
 
 
@@ -587,6 +607,19 @@ mut:
 	movable_by_window_background bool
 	titlebar_visible             bool = true
 	title_visible                bool = true
+	subtitle                     string
+	corner_radius                f64
+	vibrancy_material            string
+	window_level                 string = "normal"
+	movable                      bool = true
+	ignores_mouse_events         bool
+	hides_on_deactivate          bool
+	prevents_app_termination     bool = true
+	represented_filename         string
+	document_edited              bool
+	titlebar_appears_transparent bool
+	full_size_content_view       bool
+	background_blur              bool
 	list_items                   map[string][]string
 	table_rows                   map[string][][]string
 	grid_rows                    map[string][][]string
@@ -3816,6 +3849,412 @@ pub fn (win &SimpleWindow) is_titlebar_visible() bool {
 	return win.get_titlebar_visible()
 }
 
+// set_subtitle sets the subtitle text displayed in the window titlebar.
+pub fn (win &SimpleWindow) set_subtitle(text string) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.subtitle = text
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_set_subtitle(win.window_info, text.str)
+	}
+	return win
+}
+
+// get_subtitle retrieves the subtitle text of the window.
+pub fn (win &SimpleWindow) get_subtitle() string {
+	if win.window_info != unsafe { nil } {
+		res := C.window_get_subtitle(win.window_info)
+		if res != unsafe { nil } {
+			s := unsafe { tos3(res) }
+			if s.len > 0 {
+				return s
+			}
+		}
+	}
+	return win.subtitle
+}
+
+// set_titlebar_appears_transparent sets whether the titlebar appears transparent.
+pub fn (win &SimpleWindow) set_titlebar_appears_transparent(transparent bool) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.titlebar_appears_transparent = transparent
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_set_titlebar_appears_transparent(win.window_info, if transparent { 1 } else { 0 })
+	}
+	return win
+}
+
+// get_titlebar_appears_transparent retrieves whether the titlebar is transparent.
+pub fn (win &SimpleWindow) get_titlebar_appears_transparent() bool {
+	if win.window_info != unsafe { nil } {
+		return C.window_get_titlebar_appears_transparent(win.window_info) == 1
+	}
+	return win.titlebar_appears_transparent
+}
+
+// set_full_size_content_view sets whether content extends under the titlebar.
+pub fn (win &SimpleWindow) set_full_size_content_view(enabled bool) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.full_size_content_view = enabled
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_set_full_size_content_view(win.window_info, if enabled { 1 } else { 0 })
+	}
+	return win
+}
+
+// get_full_size_content_view retrieves whether content extends under the titlebar.
+pub fn (win &SimpleWindow) get_full_size_content_view() bool {
+	if win.window_info != unsafe { nil } {
+		return C.window_get_full_size_content_view(win.window_info) == 1
+	}
+	return win.full_size_content_view
+}
+
+// set_vibrancy sets the NSVisualEffectView material (e.g. "hud", "popover", "sidebar", "header", "titlebar", "menu").
+pub fn (win &SimpleWindow) set_vibrancy(material string) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.vibrancy_material = material
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_set_vibrancy(win.window_info, material.str)
+	}
+	return win
+}
+
+// set_corner_radius sets the window corner rounding radius.
+pub fn (win &SimpleWindow) set_corner_radius(radius f64) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.corner_radius = radius
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_set_corner_radius(win.window_info, radius)
+	}
+	return win
+}
+
+// get_corner_radius retrieves the window corner rounding radius.
+pub fn (win &SimpleWindow) get_corner_radius() f64 {
+	if win.window_info != unsafe { nil } {
+		return C.window_get_corner_radius(win.window_info)
+	}
+	return win.corner_radius
+}
+
+// set_background_blur enables or disables window background blur.
+pub fn (win &SimpleWindow) set_background_blur(enabled bool) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.background_blur = enabled
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_set_background_blur(win.window_info, if enabled { 1 } else { 0 })
+	}
+	return win
+}
+
+// set_window_level sets the window z-level ("normal", "floating", "modal", "mainMenu", "statusBar", "screenSaver").
+pub fn (win &SimpleWindow) set_window_level(level string) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.window_level = level
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_set_window_level(win.window_info, level.str)
+	}
+	return win
+}
+
+// set_level_type sets the window level type ("normal", "floating", "modal", etc.).
+pub fn (win &SimpleWindow) set_level_type(level_type string) &SimpleWindow {
+	return win.set_window_level(level_type)
+}
+
+// get_window_level retrieves the current window level.
+pub fn (win &SimpleWindow) get_window_level() string {
+	if win.window_info != unsafe { nil } {
+		res := C.window_get_window_level(win.window_info)
+		if res != unsafe { nil } {
+			s := unsafe { tos3(res) }
+			if s.len > 0 {
+				return s
+			}
+		}
+	}
+	return win.window_level
+}
+
+// set_fullscreen toggles full screen mode on or off.
+pub fn (win &SimpleWindow) set_fullscreen(enabled bool) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_fullscreen(win.window_info, if enabled { 1 } else { 0 })
+	}
+	return win
+}
+
+// center_on_active_screen centers the window on the active display containing the mouse cursor.
+pub fn (win &SimpleWindow) center_on_active_screen() &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_center_on_active_screen(win.window_info)
+	}
+	return win
+}
+
+// snap_to_edge snaps the window to screen edges ("top_left", "top_right", "bottom_left", "bottom_right", "top", "bottom", "left", "right", "center").
+pub fn (win &SimpleWindow) snap_to_edge(edge string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_snap_to_edge(win.window_info, edge.str)
+	}
+	return win
+}
+
+// set_bounds sets the window x, y position and width, height bounds in screen coordinates.
+pub fn (win &SimpleWindow) set_bounds(x int, y int, width int, height int) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.width = width
+		w.height = height
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_set_bounds(win.window_info, x, y, width, height)
+	}
+	return win
+}
+
+// get_bounds retrieves the window x, y position and width, height bounds as a tuple (x, y, w, h).
+pub fn (win &SimpleWindow) get_bounds() (int, int, int, int) {
+	if win.window_info != unsafe { nil } {
+		x := 0
+		y := 0
+		w := 0
+		h := 0
+		C.window_get_bounds(win.window_info, &x, &y, &w, &h)
+		if w > 0 && h > 0 {
+			return x, y, w, h
+		}
+	}
+	return 0, 0, win.width, win.height
+}
+
+// set_aspect_ratio constrains the window resizing aspect ratio.
+pub fn (win &SimpleWindow) set_aspect_ratio(width_ratio f64, height_ratio f64) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_aspect_ratio(win.window_info, width_ratio, height_ratio)
+	}
+	return win
+}
+
+// reset_aspect_ratio clears any enforced window aspect ratio.
+pub fn (win &SimpleWindow) reset_aspect_ratio() &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_reset_aspect_ratio(win.window_info)
+	}
+	return win
+}
+
+// has_aspect_ratio checks if an aspect ratio constraint is active.
+pub fn (win &SimpleWindow) has_aspect_ratio() bool {
+	if win.window_info != unsafe { nil } {
+		return C.window_has_aspect_ratio(win.window_info) == 1
+	}
+	return false
+}
+
+// set_movable enables or disables whether the window can be moved by dragging.
+pub fn (win &SimpleWindow) set_movable(enabled bool) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.movable = enabled
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_set_movable(win.window_info, if enabled { 1 } else { 0 })
+	}
+	return win
+}
+
+// get_movable retrieves whether the window can be moved by dragging.
+pub fn (win &SimpleWindow) get_movable() bool {
+	if win.window_info != unsafe { nil } {
+		return C.window_get_movable(win.window_info) == 1
+	}
+	return win.movable
+}
+
+// set_ignores_mouse_events sets whether mouse clicks pass through the window (click-through overlay).
+pub fn (win &SimpleWindow) set_ignores_mouse_events(enabled bool) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.ignores_mouse_events = enabled
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_set_ignores_mouse_events(win.window_info, if enabled { 1 } else { 0 })
+	}
+	return win
+}
+
+// get_ignores_mouse_events checks if mouse events pass through the window.
+pub fn (win &SimpleWindow) get_ignores_mouse_events() bool {
+	if win.window_info != unsafe { nil } {
+		return C.window_get_ignores_mouse_events(win.window_info) == 1
+	}
+	return win.ignores_mouse_events
+}
+
+// set_hides_on_deactivate sets whether the window automatically hides when the app loses focus.
+pub fn (win &SimpleWindow) set_hides_on_deactivate(enabled bool) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.hides_on_deactivate = enabled
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_set_hides_on_deactivate(win.window_info, if enabled { 1 } else { 0 })
+	}
+	return win
+}
+
+// get_hides_on_deactivate checks if the window hides when app loses focus.
+pub fn (win &SimpleWindow) get_hides_on_deactivate() bool {
+	if win.window_info != unsafe { nil } {
+		return C.window_get_hides_on_deactivate(win.window_info) == 1
+	}
+	return win.hides_on_deactivate
+}
+
+// set_prevents_app_termination sets whether closing this window prevents app termination.
+pub fn (win &SimpleWindow) set_prevents_app_termination(enabled bool) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.prevents_app_termination = enabled
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_set_prevents_app_termination(win.window_info, if enabled { 1 } else { 0 })
+	}
+	return win
+}
+
+// get_prevents_app_termination checks if closing this window prevents app termination.
+pub fn (win &SimpleWindow) get_prevents_app_termination() bool {
+	return win.prevents_app_termination
+}
+
+// set_represented_filename sets a file path to show document icon in window titlebar.
+pub fn (win &SimpleWindow) set_represented_filename(filepath string) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.represented_filename = filepath
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_set_represented_filename(win.window_info, filepath.str)
+	}
+	return win
+}
+
+// get_represented_filename retrieves the represented file path.
+pub fn (win &SimpleWindow) get_represented_filename() string {
+	if win.window_info != unsafe { nil } {
+		res := C.window_get_represented_filename(win.window_info)
+		if res != unsafe { nil } {
+			s := unsafe { tos3(res) }
+			if s.len > 0 {
+				return s
+			}
+		}
+	}
+	return win.represented_filename
+}
+
+// set_document_edited sets the unsaved changes dirty indicator in window titlebar close button.
+pub fn (win &SimpleWindow) set_document_edited(edited bool) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.document_edited = edited
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_set_document_edited(win.window_info, if edited { 1 } else { 0 })
+	}
+	return win
+}
+
+// is_document_edited checks if window has unsaved changes dirty indicator.
+pub fn (win &SimpleWindow) is_document_edited() bool {
+	if win.window_info != unsafe { nil } {
+		return C.window_is_document_edited(win.window_info) == 1
+	}
+	return win.document_edited
+}
+
+// flash_frame flashes the window frame to request user attention.
+pub fn (win &SimpleWindow) flash_frame(critical bool) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_flash_frame(win.window_info, if critical { 1 } else { 0 })
+	}
+	return win
+}
+
+// bounce_dock_icon bounces the application dock icon to request attention.
+pub fn (win &SimpleWindow) bounce_dock_icon(critical bool) &SimpleWindow {
+	C.window_bounce_dock_icon(if critical { 1 } else { 0 })
+	return win
+}
+
+// order_front brings the window to the front of the window stack.
+pub fn (win &SimpleWindow) order_front() &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_order_front(win.window_info)
+	}
+	return win
+}
+
+// bring_to_front is an alias for order_front.
+pub fn (win &SimpleWindow) bring_to_front() &SimpleWindow {
+	return win.order_front()
+}
+
+// order_back sends the window behind all other windows.
+pub fn (win &SimpleWindow) order_back() &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_order_back(win.window_info)
+	}
+	return win
+}
+
+// send_to_back is an alias for order_back.
+pub fn (win &SimpleWindow) send_to_back() &SimpleWindow {
+	return win.order_back()
+}
+
+// toggle_minimize toggles the window minimized state.
+pub fn (win &SimpleWindow) toggle_minimize() &SimpleWindow {
+	if win.is_minimized() {
+		return win.deminimize()
+	} else {
+		return win.minimize()
+	}
+}
+
+// toggle_maximize toggles the window maximized state.
+pub fn (win &SimpleWindow) toggle_maximize() &SimpleWindow {
+	return win.maximize()
+}
+
+// toggle_visibility toggles window visibility between shown and hidden.
+pub fn (win &SimpleWindow) toggle_visibility() &SimpleWindow {
+	if win.is_visible() {
+		return win.hide()
+	} else {
+		if win.window_info != unsafe { nil } {
+			C.window_show(win.window_info)
+		}
+		return win
+	}
+}
+
 // set_background_color sets the background color of the window or target control.
 pub fn (win &SimpleWindow) set_background_color(color string) &SimpleWindow {
 	unsafe {
@@ -6510,103 +6949,6 @@ pub fn (win &SimpleWindow) timeline_view(height int) &SimpleWindow {
 	return win.add_timeline_view('', height)
 }
 
-// set_subtitle sets the window subtitle (macOS 11.0+).
-pub fn (win &SimpleWindow) set_subtitle(subtitle string) &SimpleWindow {
-	if win.window_info != unsafe { nil } {
-		C.window_set_subtitle(win.window_info, subtitle.str)
-	}
-	return win
-}
-
-// get_subtitle returns the window subtitle string.
-pub fn (win &SimpleWindow) get_subtitle() string {
-	if win.window_info != unsafe { nil } {
-		res := C.window_get_subtitle(win.window_info)
-		if res != unsafe { nil } {
-			return unsafe { tos3(res) }
-		}
-	}
-	return ''
-}
-
-// set_titlebar_appears_transparent enables or disables translucent/transparent titlebar.
-pub fn (win &SimpleWindow) set_titlebar_appears_transparent(transparent bool) &SimpleWindow {
-	if win.window_info != unsafe { nil } {
-		C.window_set_titlebar_appears_transparent(win.window_info, if transparent { 1 } else { 0 })
-	}
-	return win
-}
-
-// get_titlebar_appears_transparent returns whether titlebar is set to transparent.
-pub fn (win &SimpleWindow) get_titlebar_appears_transparent() bool {
-	if win.window_info != unsafe { nil } {
-		return C.window_get_titlebar_appears_transparent(win.window_info) != 0
-	}
-	return false
-}
-
-// set_full_size_content_view enables or disables full size content view (extending under titlebar).
-pub fn (win &SimpleWindow) set_full_size_content_view(enabled bool) &SimpleWindow {
-	if win.window_info != unsafe { nil } {
-		C.window_set_full_size_content_view(win.window_info, if enabled { 1 } else { 0 })
-	}
-	return win
-}
-
-// get_full_size_content_view returns whether full size content view is enabled.
-pub fn (win &SimpleWindow) get_full_size_content_view() bool {
-	if win.window_info != unsafe { nil } {
-		return C.window_get_full_size_content_view(win.window_info) != 0
-	}
-	return false
-}
-
-// set_movable enables or disables user window dragging.
-pub fn (win &SimpleWindow) set_movable(enabled bool) &SimpleWindow {
-	if win.window_info != unsafe { nil } {
-		C.window_set_movable(win.window_info, if enabled { 1 } else { 0 })
-	}
-	return win
-}
-
-// get_movable returns whether the window is movable by the user.
-pub fn (win &SimpleWindow) get_movable() bool {
-	if win.window_info != unsafe { nil } {
-		return C.window_get_movable(win.window_info) != 0
-	}
-	return true
-}
-
-// set_window_level sets window layer level ('normal', 'floating', 'modal', 'mainMenu', 'statusBar', 'screenSaver').
-pub fn (win &SimpleWindow) set_window_level(level string) &SimpleWindow {
-	if win.window_info != unsafe { nil } {
-		C.window_set_window_level(win.window_info, level.str)
-	}
-	return win
-}
-
-// set_aspect_ratio locks the window resize aspect ratio.
-pub fn (win &SimpleWindow) set_aspect_ratio(width_ratio f64, height_ratio f64) &SimpleWindow {
-	if win.window_info != unsafe { nil } {
-		C.window_set_aspect_ratio(win.window_info, width_ratio, height_ratio)
-	}
-	return win
-}
-
-// reset_aspect_ratio removes aspect ratio locking on resize.
-pub fn (win &SimpleWindow) reset_aspect_ratio() &SimpleWindow {
-	if win.window_info != unsafe { nil } {
-		C.window_reset_aspect_ratio(win.window_info)
-	}
-	return win
-}
-
-// bounce_dock_icon requests user attention by bouncing the dock icon.
-pub fn (win &SimpleWindow) bounce_dock_icon(critical bool) &SimpleWindow {
-	C.window_bounce_dock_icon(if critical { 1 } else { 0 })
-	return win
-}
-
 // add_star_rating adds an interactive star rating control.
 pub fn (win &SimpleWindow) add_star_rating(name string, value int, max_stars int) &SimpleWindow {
 	mut real_name := name
@@ -8411,56 +8753,6 @@ pub fn (win &SimpleWindow) info_callout(title string, message string, style_type
 pub fn (win &SimpleWindow) set_info_callout_text(name string, title string, message string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_set_info_callout_text(win.window_info, name.str, title.str, message.str)
-	}
-	return win
-}
-
-// Window management commands V methods
-
-// set_vibrancy configures window visual effect backdrop material ('hud', 'sidebar', 'popover', 'header', 'menu').
-pub fn (win &SimpleWindow) set_vibrancy(material string) &SimpleWindow {
-	if win.window_info != unsafe { nil } {
-		C.window_set_vibrancy(win.window_info, material.str)
-	}
-	return win
-}
-
-// set_corner_radius configures native window corner rounding radius.
-pub fn (win &SimpleWindow) set_corner_radius(radius f64) &SimpleWindow {
-	if win.window_info != unsafe { nil } {
-		C.window_set_corner_radius(win.window_info, radius)
-	}
-	return win
-}
-
-// set_background_blur enables or disables window background blur.
-pub fn (win &SimpleWindow) set_background_blur(enabled bool) &SimpleWindow {
-	if win.window_info != unsafe { nil } {
-		C.window_set_background_blur(win.window_info, if enabled { 1 } else { 0 })
-	}
-	return win
-}
-
-// flash_frame requests user attention by bouncing dock icon / flashing window frame.
-pub fn (win &SimpleWindow) flash_frame(critical bool) &SimpleWindow {
-	if win.window_info != unsafe { nil } {
-		C.window_flash_frame(win.window_info, if critical { 1 } else { 0 })
-	}
-	return win
-}
-
-// center_on_active_screen repositions window to center of active monitor screen.
-pub fn (win &SimpleWindow) center_on_active_screen() &SimpleWindow {
-	if win.window_info != unsafe { nil } {
-		C.window_center_on_active_screen(win.window_info)
-	}
-	return win
-}
-
-// set_level_type configures window depth level ('desktop', 'normal', 'floating', 'modal', 'status').
-pub fn (win &SimpleWindow) set_level_type(level_type string) &SimpleWindow {
-	if win.window_info != unsafe { nil } {
-		C.window_set_level_type(win.window_info, level_type.str)
 	}
 	return win
 }

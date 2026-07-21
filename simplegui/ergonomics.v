@@ -1354,11 +1354,19 @@ pub fn (win &SimpleWindow) fade_out(name string, duration_ms int) &SimpleWindow 
 
 // fade_in_window is a helper to fade the window to 1.0 opacity.
 pub fn (win &SimpleWindow) fade_in_window(duration_ms int) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_fade_in(win.window_info, duration_ms)
+		return win
+	}
 	return win.animate_opacity(1.0, duration_ms)
 }
 
 // fade_out_window is a helper to fade the window to 0.0 opacity.
 pub fn (win &SimpleWindow) fade_out_window(duration_ms int) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_fade_out(win.window_info, duration_ms)
+		return win
+	}
 	return win.animate_opacity(0.0, duration_ms)
 }
 
@@ -1892,6 +1900,46 @@ pub fn (win &SimpleWindow) add_labeled_file_picker(label string, name string, in
 	win.add_label('${name}_label', label)
 	return win.add_file_picker_field(name, initial_path, button_title, folder_only)
 }
+
+// ==========================================
+// Window Management Ergonomic Shortcuts
+// ==========================================
+
+// make_frameless turns the window into a clean borderless window with optional shadow.
+pub fn (win &SimpleWindow) make_frameless() &SimpleWindow {
+	return win.set_titlebar_visible(false).set_has_shadow(true)
+}
+
+// make_vibrant configures window background vibrancy material and background blur.
+pub fn (win &SimpleWindow) make_vibrant(material string) &SimpleWindow {
+	return win.set_vibrancy(material).set_background_blur(true)
+}
+
+// make_click_through toggles mouse click-through behavior for overlay windows.
+pub fn (win &SimpleWindow) make_click_through(enabled bool) &SimpleWindow {
+	return win.set_ignores_mouse_events(enabled)
+}
+
+// make_always_on_top configures window stay-on-top behavior.
+pub fn (win &SimpleWindow) make_always_on_top(enabled bool) &SimpleWindow {
+	return win.set_always_on_top(enabled)
+}
+
+// make_modal sets the window z-level to modal window tier.
+pub fn (win &SimpleWindow) make_modal() &SimpleWindow {
+	return win.set_window_level('modal')
+}
+
+// make_panel configures the window as a floating tool panel that hides when app deactivates.
+pub fn (win &SimpleWindow) make_panel() &SimpleWindow {
+	return win.set_window_level('floating').set_hides_on_deactivate(true)
+}
+
+// center_and_focus centers the window on active display and brings it to front.
+pub fn (win &SimpleWindow) center_and_focus() &SimpleWindow {
+	return win.center_on_active_screen().order_front()
+}
+
 
 
 

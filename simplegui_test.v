@@ -2455,6 +2455,89 @@ fn test_new_window_management_commands() {
 	win.set_level_type('normal')
 }
 
+fn test_comprehensive_window_control_apis() {
+	mut win := simplegui.new_simple_window('Comprehensive Window Control Test', 800, 500)
+
+	// State & Subtitle & Transparency
+	win.set_subtitle('v1.0.0 Release')
+	assert win.get_subtitle() == 'v1.0.0 Release'
+
+	win.set_titlebar_appears_transparent(true)
+	assert win.get_titlebar_appears_transparent() == true
+
+	win.set_full_size_content_view(true)
+	assert win.get_full_size_content_view() == true
+
+	// Vibrancy, Corner Radius & Blur
+	win.set_vibrancy('hud')
+	win.set_corner_radius(16.0)
+	assert win.get_corner_radius() == 16.0
+	win.set_background_blur(true)
+
+	// Window Level
+	win.set_window_level('floating')
+	assert win.get_window_level() == 'floating'
+	win.set_level_type('normal')
+
+	// Screen Bounds & Alignment & Edge Snapping
+	win.center_on_active_screen()
+	win.snap_to_edge('top_left')
+	win.set_bounds(100, 100, 900, 600)
+	x, y, w, h := win.get_bounds()
+	assert w == 900
+	assert h == 600
+
+	// Aspect Ratio
+	win.set_aspect_ratio(16.0, 9.0)
+	win.reset_aspect_ratio()
+	assert win.has_aspect_ratio() == false
+
+	// Behavior Flags
+	win.set_movable(false)
+	assert win.get_movable() == false
+	win.set_movable(true)
+	assert win.get_movable() == true
+
+	win.set_ignores_mouse_events(true)
+	assert win.get_ignores_mouse_events() == true
+	win.set_ignores_mouse_events(false)
+
+	win.set_hides_on_deactivate(true)
+	assert win.get_hides_on_deactivate() == true
+
+	win.set_prevents_app_termination(false)
+	assert win.get_prevents_app_termination() == false
+
+	// Document Integration
+	win.set_represented_filename('/tmp/doc.txt')
+	assert win.get_represented_filename() == '/tmp/doc.txt'
+
+	win.set_document_edited(true)
+	assert win.is_document_edited() == true
+	win.set_document_edited(false)
+	assert win.is_document_edited() == false
+
+	// Animation & Attention
+	win.flash_frame(true)
+	win.bounce_dock_icon(false)
+	win.fade_in_window(200)
+	win.fade_out_window(200)
+	win.order_front()
+	win.bring_to_front()
+	win.order_back()
+	win.send_to_back()
+
+	// Ergonomic Helpers
+	win.make_frameless()
+	win.make_vibrant('sidebar')
+	win.make_click_through(false)
+	win.make_always_on_top(true)
+	win.make_modal()
+	win.make_panel()
+	win.center_and_focus()
+}
+
+
 
 
 

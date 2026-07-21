@@ -319,6 +319,92 @@ Locks or resets window resizing constraints to a fixed aspect ratio.
 
 Triggers an attention bounce request on the application Dock icon (`critical` bounces continuously until activated).
 
+### `win.set_fullscreen(enabled bool)` &SimpleWindow
+
+Programmatically enables or disables full screen mode.
+
+### `win.center_on_active_screen()` &SimpleWindow
+
+Centers the window on the active display currently containing the mouse cursor.
+
+### `win.snap_to_edge(edge string)` &SimpleWindow
+
+Snaps the window frame to screen boundary positions (`'top_left'`, `'top_right'`, `'bottom_left'`, `'bottom_right'`, `'top'`, `'bottom'`, `'left'`, `'right'`, `'center'`).
+
+### `win.set_bounds(x int, y int, width int, height int)` &SimpleWindow / `win.get_bounds() (int, int, int, int)`
+
+Sets or retrieves the window x, y position and width, height bounds as a 4-tuple `(x, y, w, h)`.
+
+### `win.has_aspect_ratio() bool`
+
+Queries whether a fixed aspect ratio constraint is currently enforced on window resizing.
+
+### `win.set_vibrancy(material string)` &SimpleWindow
+
+Applies macOS translucent background vibrancy material (`'sidebar'`, `'header'`, `'titlebar'`, `'menu'`, `'hud'`, `'window'`).
+
+### `win.set_corner_radius(radius f64)` &SimpleWindow / `win.get_corner_radius() f64`
+
+Sets or retrieves the window corner rounding radius.
+
+### `win.set_background_blur(enabled bool)` &SimpleWindow
+
+Enables or disables desktop background blur effect behind the window.
+
+### `win.get_window_level() string` / `win.set_level_type(level_type string)` &SimpleWindow
+
+Queries or sets the window z-level layer tier (`'normal'`, `'floating'`, `'modal'`, `'mainMenu'`, `'statusBar'`, `'screenSaver'`).
+
+### `win.set_ignores_mouse_events(enabled bool)` &SimpleWindow / `win.get_ignores_mouse_events() bool`
+
+Toggles or queries click-through mode where mouse clicks pass through the window to underlying desktop applications.
+
+### `win.set_hides_on_deactivate(enabled bool)` &SimpleWindow / `win.get_hides_on_deactivate() bool`
+
+Toggles or queries whether the window automatically hides when the application loses focus.
+
+### `win.set_prevents_app_termination(enabled bool)` &SimpleWindow / `win.get_prevents_app_termination() bool`
+
+Controls whether closing this window prevents application process termination.
+
+### `win.set_represented_filename(filepath string)` &SimpleWindow / `win.get_represented_filename() string`
+
+Associates a file path with the window, displaying the native document proxy icon in the titlebar.
+
+### `win.set_document_edited(edited bool)` &SimpleWindow / `win.is_document_edited() bool`
+
+Displays or queries the unsaved changes dirty dot indicator inside the window close button.
+
+### `win.flash_frame(critical bool)` &SimpleWindow
+
+Flashes the window frame/titlebar to catch user attention.
+
+### `win.fade_in(duration_ms int)` &SimpleWindow / `win.fade_out(duration_ms int)` &SimpleWindow
+
+Animates window opacity smoothly in or out over the specified duration in milliseconds.
+
+### `win.order_front()` / `win.bring_to_front()` &SimpleWindow
+
+Brings the window to the top of the desktop window stack and activates the app.
+
+### `win.order_back()` / `win.send_to_back()` &SimpleWindow
+
+Sends the window behind all other open application windows.
+
+### `win.toggle_minimize()` / `win.toggle_maximize()` / `win.toggle_visibility()` &SimpleWindow
+
+Convenience toggles for window minimized, maximized, and visibility states.
+
+### Ergonomic Window Shortcuts
+
+- **`win.make_frameless()`**: Creates a clean borderless window with shadow (`set_titlebar_visible(false)` + `set_has_shadow(true)`).
+- **`win.make_vibrant(material)`**: Configures window background vibrancy material and background blur filter.
+- **`win.make_click_through(enabled)`**: Enables click-through overlay window behavior.
+- **`win.make_always_on_top(enabled)`**: Configures stay-on-top window layering.
+- **`win.make_modal()`**: Configures window z-level as modal window tier.
+- **`win.make_panel()`**: Configures floating tool panel that hides on app deactivation.
+- **`win.center_and_focus()`**: Centers window on active display and brings to front.
+
 ### `win.run()`
 
 Launches the native NSApplication event loop and displays the centered window.

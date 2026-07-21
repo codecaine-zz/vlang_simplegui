@@ -519,13 +519,34 @@ void window_set_status_dock_info(main__WindowInfo *info, const char *name, const
 void *window_add_info_callout_control(main__WindowInfo *info, const char *name, const char *title, const char *message, const char *style_type, const char *button_text);
 void window_set_info_callout_text(main__WindowInfo *info, const char *name, const char *title, const char *message);
 
-// 6 New Window Commands
+// Comprehensive Window Control APIs
 void window_set_vibrancy(main__WindowInfo *info, const char *material);
 void window_set_corner_radius(main__WindowInfo *info, double radius);
+double window_get_corner_radius(main__WindowInfo *info);
 void window_set_background_blur(main__WindowInfo *info, int enabled);
 void window_flash_frame(main__WindowInfo *info, int critical);
 void window_center_on_active_screen(main__WindowInfo *info);
 void window_set_level_type(main__WindowInfo *info, const char *level_type);
+const char *window_get_window_level(main__WindowInfo *info);
+void window_set_fullscreen(main__WindowInfo *info, int enabled);
+void window_snap_to_edge(main__WindowInfo *info, const char *edge);
+void window_set_bounds(main__WindowInfo *info, int x, int y, int width, int height);
+void window_get_bounds(main__WindowInfo *info, int *out_x, int *out_y, int *out_w, int *out_h);
+int window_has_aspect_ratio(main__WindowInfo *info);
+void window_set_ignores_mouse_events(main__WindowInfo *info, int enabled);
+int window_get_ignores_mouse_events(main__WindowInfo *info);
+void window_set_hides_on_deactivate(main__WindowInfo *info, int enabled);
+int window_get_hides_on_deactivate(main__WindowInfo *info);
+void window_set_prevents_app_termination(main__WindowInfo *info, int enabled);
+int window_get_prevents_app_termination(main__WindowInfo *info);
+void window_set_represented_filename(main__WindowInfo *info, const char *filepath);
+const char *window_get_represented_filename(main__WindowInfo *info);
+void window_set_document_edited(main__WindowInfo *info, int edited);
+int window_is_document_edited(main__WindowInfo *info);
+void window_fade_in(main__WindowInfo *info, int duration_ms);
+void window_fade_out(main__WindowInfo *info, int duration_ms);
+void window_order_front(main__WindowInfo *info);
+void window_order_back(main__WindowInfo *info);
 
 #endif
 
