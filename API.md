@@ -1202,6 +1202,25 @@ To simplify system integrations and mirror key features from NeutralinoJS, `simp
 
 - `win.show_system_notification(title string, message string) &SimpleWindow`: Dispatches a native, standard, system-wide macOS notification banner using lightweight Applescript.
 
+### macOS Appearance & Power Controls
+
+- `win.is_dark_mode() bool`: Returns `true` when macOS global Dark Mode is active.
+- `win.get_system_theme() string`: Returns `'dark'` or `'light'` based on current system appearance.
+- `win.set_system_dark_mode(enabled bool) &SimpleWindow`: Enables/disables global Dark Mode (`true` for dark, `false` for light).
+- `win.set_system_theme(theme string) !&SimpleWindow`: Sets the global system theme. Accepted values: `'dark'`, `'light'`.
+- `win.sleep_display() &SimpleWindow`: Immediately puts attached displays to sleep (`pmset displaysleepnow`).
+- `win.sleep_computer() &SimpleWindow`: Puts the Mac to sleep.
+- `win.lock_screen() &SimpleWindow`: Locks the current user session.
+- `win.start_screen_saver() &SimpleWindow`: Starts the macOS screen saver engine.
+- `win.log_out_user() &SimpleWindow`: Logs out the current user.
+- `win.restart_computer() &SimpleWindow`: Restarts the Mac.
+- `win.shut_down_computer() &SimpleWindow`: Shuts down the Mac.
+
+Notes:
+
+- Appearance and power calls are best-effort wrappers around macOS tools like `osascript`, `pmset`, and `CGSession`.
+- Depending on macOS privacy/security settings, your app may need Automation permissions (for `System Events`) to perform some actions.
+
 ### Hardware & Computer Diagnostics (`NL_COMPUTER`)
 
 - `win.get_cpu_info() string`: Returns the local processor model string (e.g., `Apple M2 Max` or `Intel Core i7`).

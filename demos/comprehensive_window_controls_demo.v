@@ -166,6 +166,25 @@ fn main() {
 	win.add_button('btn_cursor_hide', 'Hide Cursor (1 sec)')
 	win.end_row()
 
+	// ── Section 13: Global macOS Theme & Power Controls ──────────────────────
+	win.add_section_header('sec_sys_power', '13. Global macOS Theme & Power Controls', 'System-wide appearance and power/session commands. Use with caution.')
+	win.begin_row('row_sys_theme')
+	win.add_button('btn_sys_theme_dark', 'System Theme: Dark')
+	win.add_button('btn_sys_theme_light', 'System Theme: Light')
+	win.add_button('btn_sys_theme_query', 'Query System Theme')
+	win.end_row()
+	win.begin_row('row_sys_safe')
+	win.add_button('btn_sys_display_off', 'Turn Display Off')
+	win.add_button('btn_sys_saver', 'Start Screen Saver')
+	win.add_button('btn_sys_lock', 'Lock Screen')
+	win.end_row()
+	win.begin_row('row_sys_power')
+	win.add_button('btn_sys_sleep', 'Sleep Computer')
+	win.add_button('btn_sys_logout', 'Log Out User')
+	win.add_button('btn_sys_restart', 'Restart Computer')
+	win.add_button('btn_sys_shutdown', 'Shut Down Computer')
+	win.end_row()
+
 	// ═══════════════════════════════════════════════════════════════════════
 	// Event Handlers
 	// ═══════════════════════════════════════════════════════════════════════
@@ -568,6 +587,82 @@ fn main() {
 			w2.set_status('Cursor restored after 1 second.')
 			w2.toast('Cursor visible again!')
 		})
+	})
+
+	// Section 13 — Global Theme & Power Controls
+	win.on_click('btn_sys_theme_dark', fn (mut w simplegui.SimpleWindow) {
+		w.set_system_theme('dark') or {
+			w.alert('Theme Error', err.msg())
+			return
+		}
+		w.set_status('Requested global macOS appearance: DARK')
+		w.toast('System theme: Dark')
+	})
+	win.on_click('btn_sys_theme_light', fn (mut w simplegui.SimpleWindow) {
+		w.set_system_theme('light') or {
+			w.alert('Theme Error', err.msg())
+			return
+		}
+		w.set_status('Requested global macOS appearance: LIGHT')
+		w.toast('System theme: Light')
+	})
+	win.on_click('btn_sys_theme_query', fn (mut w simplegui.SimpleWindow) {
+		theme := w.get_system_theme()
+		w.set_status('Current global macOS theme: ${theme}')
+		w.toast('System theme: ${theme}')
+	})
+	win.on_click('btn_sys_display_off', fn (mut w simplegui.SimpleWindow) {
+		if !w.confirm('Turn Display Off', 'Turn off all connected displays now?') {
+			w.set_status('Canceled: display sleep')
+			return
+		}
+		w.sleep_display()
+		w.set_status('Requested display sleep (pmset displaysleepnow).')
+	})
+	win.on_click('btn_sys_saver', fn (mut w simplegui.SimpleWindow) {
+		w.start_screen_saver()
+		w.set_status('Requested ScreenSaverEngine launch.')
+		w.toast('Screen saver started')
+	})
+	win.on_click('btn_sys_lock', fn (mut w simplegui.SimpleWindow) {
+		if !w.confirm('Lock Screen', 'Lock the current user session now?') {
+			w.set_status('Canceled: lock screen')
+			return
+		}
+		w.lock_screen()
+		w.set_status('Requested lock screen.')
+	})
+	win.on_click('btn_sys_sleep', fn (mut w simplegui.SimpleWindow) {
+		if !w.confirm('Sleep Computer', 'Put this Mac to sleep now?') {
+			w.set_status('Canceled: computer sleep')
+			return
+		}
+		w.sleep_computer()
+		w.set_status('Requested system sleep.')
+	})
+	win.on_click('btn_sys_logout', fn (mut w simplegui.SimpleWindow) {
+		if !w.confirm('Log Out User', 'Log out current user now? Unsaved work may be lost.') {
+			w.set_status('Canceled: user logout')
+			return
+		}
+		w.log_out_user()
+		w.set_status('Requested user logout.')
+	})
+	win.on_click('btn_sys_restart', fn (mut w simplegui.SimpleWindow) {
+		if !w.confirm('Restart Computer', 'Restart this Mac now? Unsaved work may be lost.') {
+			w.set_status('Canceled: restart')
+			return
+		}
+		w.restart_computer()
+		w.set_status('Requested system restart.')
+	})
+	win.on_click('btn_sys_shutdown', fn (mut w simplegui.SimpleWindow) {
+		if !w.confirm('Shut Down Computer', 'Shut down this Mac now? Unsaved work may be lost.') {
+			w.set_status('Canceled: shutdown')
+			return
+		}
+		w.shut_down_computer()
+		w.set_status('Requested system shutdown.')
 	})
 
 	win.on_close(fn (mut w simplegui.SimpleWindow) {

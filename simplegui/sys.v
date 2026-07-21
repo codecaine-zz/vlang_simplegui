@@ -1243,6 +1243,69 @@ pub fn (win &SimpleWindow) get_system_theme() string {
 	return 'light'
 }
 
+// set_system_dark_mode toggles macOS global Dark Mode on/off.
+// Note: this is best-effort and may require Automation permissions for System Events.
+pub fn (win &SimpleWindow) set_system_dark_mode(enabled bool) &SimpleWindow {
+	value := if enabled { 'true' } else { 'false' }
+	win.exec_bg("osascript -e 'tell application \"System Events\" to tell appearance preferences to set dark mode to ${value}'")
+	return win
+}
+
+// set_system_theme sets the macOS global appearance theme to "dark" or "light".
+// Returns an error for unsupported values.
+pub fn (win &SimpleWindow) set_system_theme(theme string) !&SimpleWindow {
+	mode := theme.trim_space().to_lower()
+	if mode == 'dark' {
+		return win.set_system_dark_mode(true)
+	}
+	if mode == 'light' {
+		return win.set_system_dark_mode(false)
+	}
+	return error('Invalid theme "${theme}". Use "dark" or "light".')
+}
+
+// sleep_display turns off/puts displays to sleep immediately.
+pub fn (win &SimpleWindow) sleep_display() &SimpleWindow {
+	win.exec_bg('pmset displaysleepnow')
+	return win
+}
+
+// sleep_computer puts the Mac to sleep.
+pub fn (win &SimpleWindow) sleep_computer() &SimpleWindow {
+	win.exec_bg('osascript -e \'tell application "System Events" to sleep\'')
+	return win
+}
+
+// lock_screen locks the current user session.
+pub fn (win &SimpleWindow) lock_screen() &SimpleWindow {
+	win.exec_bg('/System/Library/CoreServices/Menu\\ Extras/User.menu/Contents/Resources/CGSession -suspend')
+	return win
+}
+
+// start_screen_saver launches the built-in macOS screen saver engine.
+pub fn (win &SimpleWindow) start_screen_saver() &SimpleWindow {
+	win.exec_bg('open -a ScreenSaverEngine')
+	return win
+}
+
+// log_out_user logs out the current macOS user session.
+pub fn (win &SimpleWindow) log_out_user() &SimpleWindow {
+	win.exec_bg('osascript -e \'tell application "System Events" to log out\'')
+	return win
+}
+
+// restart_computer restarts the Mac.
+pub fn (win &SimpleWindow) restart_computer() &SimpleWindow {
+	win.exec_bg('osascript -e \'tell application "System Events" to restart\'')
+	return win
+}
+
+// shut_down_computer powers off the Mac.
+pub fn (win &SimpleWindow) shut_down_computer() &SimpleWindow {
+	win.exec_bg('osascript -e \'tell application "System Events" to shut down\'')
+	return win
+}
+
 // get_volume returns the system output volume level (0 to 100).
 pub fn (win &SimpleWindow) get_volume() int {
 	vol_str := win.exec_or("osascript -e 'output volume of (get volume settings)' 2>/dev/null",

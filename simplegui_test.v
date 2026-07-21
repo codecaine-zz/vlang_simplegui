@@ -1108,6 +1108,25 @@ fn test_sys_apis() {
 	assert out.trim_space() == 'hello_process'
 	p.close()
 
+	// Appearance and power helpers
+	assert win.get_system_theme() in ['dark', 'light']
+	win.set_system_theme('sepia') or { assert err.msg().contains('Invalid theme') }
+
+	// Compile-time/runtime API availability checks without invoking disruptive system actions.
+	if false {
+		win.set_system_dark_mode(true)
+		win.set_system_dark_mode(false)
+		win.set_system_theme('dark') or {}
+		win.set_system_theme('light') or {}
+		win.sleep_display()
+		win.sleep_computer()
+		win.lock_screen()
+		win.start_screen_saver()
+		win.log_out_user()
+		win.restart_computer()
+		win.shut_down_computer()
+	}
+
 	// Clean up
 	win.delete_directory(test_dir) or { panic(err) }
 	assert win.file_exists(test_dir) == false
