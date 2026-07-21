@@ -2574,6 +2574,98 @@ fn test_comprehensive_window_control_apis() {
 	win.center_and_focus()
 }
 
+fn test_new_window_control_apis() {
+	mut win := simplegui.new_simple_window('New APIs Test', 600, 400)
+
+	// ── Appearance Override ────────────────────────────────────────────
+	win.set_window_appearance('dark')
+	assert win.get_window_appearance() == 'dark'
+	win.set_window_appearance('light')
+	assert win.get_window_appearance() == 'light'
+	win.set_window_appearance('auto')
+	assert win.get_window_appearance() == 'auto'
+
+	// is_system_dark_mode can be true or false, just ensure no panic
+	_ := win.is_system_dark_mode()
+
+	// ── Screen Info ───────────────────────────────────────────────────
+	sx, sy, sw, sh := win.get_screen_frame()
+	// Screen frame should be at least 100x100 on any real display
+	assert sw >= 100 || (sx == 0 && sy == 0 && sw == 0 && sh == 0) // 0,0 before window is created
+
+	fx, fy, fw, fh := win.get_screen_full_frame()
+	// Accept zero (before window shown) or reasonable values
+	assert fw >= 0
+	_ = fx
+	_ = fy
+	_ = fh
+
+	scale := win.get_screen_scale_factor()
+	assert scale >= 1.0
+
+	// ── Cursor Control ────────────────────────────────────────────────
+	// Just ensure calls don't panic; cursor will be restored
+	win.set_cursor_hidden(true)
+	win.set_cursor_hidden(false)
+
+	// ── Resize Indicator ─────────────────────────────────────────────
+	// Note: showsResizeIndicator is deprecated in macOS; just verify calls don't panic
+	win.set_shows_resize_indicator(false)
+	_ := win.get_shows_resize_indicator() // value may be unreliable (deprecated API)
+	win.set_shows_resize_indicator(true)
+	_ = win.get_shows_resize_indicator()
+
+	// ── Content Size Constraints ──────────────────────────────────────
+	win.set_content_min_size(300, 200)
+	cmin_w, cmin_h := win.get_content_min_size()
+	assert cmin_w == 300
+	assert cmin_h == 200
+
+	win.set_content_max_size(1200, 900)
+	cmax_w, cmax_h := win.get_content_max_size()
+	assert cmax_w == 1200
+	assert cmax_h == 900
+
+	// 0 means unconstrained
+	win.set_content_max_size(0, 0)
+	ux, uy := win.get_content_max_size()
+	assert ux == 0
+	assert uy == 0
+
+	// ── Tabbing APIs ──────────────────────────────────────────────────
+	win.set_tabbing_mode('preferred')
+	assert win.get_tabbing_mode() == 'preferred'
+	win.set_tabbing_mode('disallowed')
+	assert win.get_tabbing_mode() == 'disallowed'
+	win.set_tabbing_mode('automatic')
+	assert win.get_tabbing_mode() == 'automatic'
+
+	win.set_tabbing_identifier('com.test.tabgroup')
+	assert win.get_tabbing_identifier() == 'com.test.tabgroup'
+
+	win.toggle_tab_bar()
+	win.select_next_tab()
+	win.select_previous_tab()
+
+	// ── Sharing Type ─────────────────────────────────────────────────
+	win.set_sharing_type('none')
+	win.set_sharing_type('read_only')
+	win.set_sharing_type('read_write')
+
+	// ── Tab Count ────────────────────────────────────────────────────
+	count := win.get_tab_count()
+	assert count >= 1
+
+	// ── Window Movability ─────────────────────────────────────────────
+	win.set_movable(false)
+	assert win.get_movable() == false
+	assert win.is_movable() == false
+	win.set_movable(true)
+	assert win.get_movable() == true
+	assert win.is_movable() == true
+}
+
+
 
 
 

@@ -512,24 +512,52 @@ fn C.window_get_alpha(&WindowInfo) f64
 fn C.window_get_min_size(&WindowInfo, &int, &int)
 fn C.window_get_max_size(&WindowInfo, &int, &int)
 fn C.window_set_collection_behavior(&WindowInfo, &u8)
-fn C.window_set_has_shadow(&WindowInfo, int)
-fn C.window_has_shadow(&WindowInfo) int
 fn C.window_set_close_button_enabled(&WindowInfo, int)
 fn C.window_set_minimize_button_enabled(&WindowInfo, int)
 fn C.window_set_zoom_button_enabled(&WindowInfo, int)
-fn C.window_set_title_visible(&WindowInfo, int)
-fn C.window_get_title_visible(&WindowInfo) int
 fn C.window_set_content_insets(&WindowInfo, int, int, int, int)
+fn C.window_set_tabbing_mode(&WindowInfo, &u8)
+fn C.window_get_tabbing_mode(&WindowInfo) &char
+fn C.window_set_tabbing_identifier(&WindowInfo, &u8)
+fn C.window_get_tabbing_identifier(&WindowInfo) &char
+fn C.window_toggle_tab_bar(&WindowInfo)
+fn C.window_select_next_tab(&WindowInfo)
+fn C.window_select_previous_tab(&WindowInfo)
+fn C.window_set_sharing_type(&WindowInfo, &u8)
+
+// Appearance Override
+fn C.window_set_window_appearance(&WindowInfo, &u8)
+fn C.window_get_window_appearance(&WindowInfo) &char
+fn C.window_is_system_dark_mode(&WindowInfo) int
+
+// Screen Info
+fn C.window_get_screen_frame(&WindowInfo, &int, &int, &int, &int)
+fn C.window_get_screen_full_frame(&WindowInfo, &int, &int, &int, &int)
+fn C.window_get_screen_scale_factor(&WindowInfo) f64
+
+// Cursor Control
+fn C.window_set_cursor_hidden(&WindowInfo, int)
+
+// Resize Indicator
+fn C.window_set_shows_resize_indicator(&WindowInfo, int)
+fn C.window_get_shows_resize_indicator(&WindowInfo) int
+
+// Content Size Constraints
+fn C.window_set_content_min_size(&WindowInfo, int, int)
+fn C.window_set_content_max_size(&WindowInfo, int, int)
+fn C.window_get_content_min_size(&WindowInfo, &int, &int)
+fn C.window_get_content_max_size(&WindowInfo, &int, &int)
 
 
 
-
-
+// Tab Count
+fn C.window_get_tab_count(&WindowInfo) int
 
 
 pub type StringEventCallback = fn (mut win SimpleWindow, value string)
 
 pub type VoidEventCallback = fn (mut win SimpleWindow)
+
 
 pub type FileDropCallback = fn (mut win SimpleWindow, files []string)
 
@@ -4124,6 +4152,11 @@ pub fn (win &SimpleWindow) get_movable() bool {
 		return C.window_get_movable(win.window_info) == 1
 	}
 	return win.movable
+}
+
+// is_movable returns true if the window can be dragged by the user. Alias for get_movable.
+pub fn (win &SimpleWindow) is_movable() bool {
+	return win.get_movable()
 }
 
 // set_ignores_mouse_events sets whether mouse clicks pass through the window (click-through overlay).
@@ -8852,6 +8885,221 @@ pub fn (win &SimpleWindow) set_content_insets(top int, left int, bottom int, rig
 	}
 	return win
 }
+
+// set_tabbing_mode configures macOS native window tabbing mode ("automatic", "preferred", "disallowed").
+pub fn (win &SimpleWindow) set_tabbing_mode(mode string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_tabbing_mode(win.window_info, mode.str)
+	}
+	return win
+}
+
+// get_tabbing_mode retrieves current macOS native tabbing mode.
+pub fn (win &SimpleWindow) get_tabbing_mode() string {
+	if win.window_info != unsafe { nil } {
+		res := C.window_get_tabbing_mode(win.window_info)
+		if res != unsafe { nil } {
+			return unsafe { tos3(res) }
+		}
+	}
+	return 'automatic'
+}
+
+// set_tabbing_identifier groups windows together under the same macOS tab bar identifier.
+pub fn (win &SimpleWindow) set_tabbing_identifier(identifier string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_tabbing_identifier(win.window_info, identifier.str)
+	}
+	return win
+}
+
+// get_tabbing_identifier retrieves the macOS tabbing group identifier.
+pub fn (win &SimpleWindow) get_tabbing_identifier() string {
+	if win.window_info != unsafe { nil } {
+		res := C.window_get_tabbing_identifier(win.window_info)
+		if res != unsafe { nil } {
+			return unsafe { tos3(res) }
+		}
+	}
+	return ''
+}
+
+// toggle_tab_bar toggles the native macOS window tab bar.
+pub fn (win &SimpleWindow) toggle_tab_bar() &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_toggle_tab_bar(win.window_info)
+	}
+	return win
+}
+
+// select_next_tab switches focus to the next window tab.
+pub fn (win &SimpleWindow) select_next_tab() &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_select_next_tab(win.window_info)
+	}
+	return win
+}
+
+// select_previous_tab switches focus to the previous window tab.
+pub fn (win &SimpleWindow) select_previous_tab() &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_select_previous_tab(win.window_info)
+	}
+	return win
+}
+
+// set_sharing_type configures window screen capture sharing access ("none", "read_only", "read_write").
+pub fn (win &SimpleWindow) set_sharing_type(sharing string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_sharing_type(win.window_info, sharing.str)
+	}
+	return win
+}
+
+// ── Appearance Override ──────────────────────────────────────────────────────
+
+// set_window_appearance overrides the window appearance to "dark", "light", or "auto" (system default).
+// This lets you force dark/light mode on a per-window basis regardless of system preference.
+pub fn (win &SimpleWindow) set_window_appearance(appearance string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_window_appearance(win.window_info, appearance.str)
+	}
+	return win
+}
+
+// get_window_appearance returns the current window appearance override: "dark", "light", or "auto".
+pub fn (win &SimpleWindow) get_window_appearance() string {
+	if win.window_info != unsafe { nil } {
+		res := C.window_get_window_appearance(win.window_info)
+		if res != unsafe { nil } {
+			return unsafe { tos3(res) }
+		}
+	}
+	return 'auto'
+}
+
+// is_system_dark_mode returns true if the macOS system is currently in dark mode.
+pub fn (win &SimpleWindow) is_system_dark_mode() bool {
+	if win.window_info != unsafe { nil } {
+		return C.window_is_system_dark_mode(win.window_info) == 1
+	}
+	return false
+}
+
+// ── Screen Info ──────────────────────────────────────────────────────────────
+
+// get_screen_frame returns the usable (visible) frame of the screen containing this window,
+// excluding the Dock and menu bar. Returns (x, y, width, height).
+pub fn (win &SimpleWindow) get_screen_frame() (int, int, int, int) {
+	if win.window_info != unsafe { nil } {
+		mut x, mut y, mut w, mut h := 0, 0, 0, 0
+		C.window_get_screen_frame(win.window_info, &x, &y, &w, &h)
+		return x, y, w, h
+	}
+	return 0, 0, 0, 0
+}
+
+// get_screen_full_frame returns the full physical frame of the screen containing this window.
+// Returns (x, y, width, height).
+pub fn (win &SimpleWindow) get_screen_full_frame() (int, int, int, int) {
+	if win.window_info != unsafe { nil } {
+		mut x, mut y, mut w, mut h := 0, 0, 0, 0
+		C.window_get_screen_full_frame(win.window_info, &x, &y, &w, &h)
+		return x, y, w, h
+	}
+	return 0, 0, 0, 0
+}
+
+// get_screen_scale_factor returns the Retina display scale factor (1.0 for standard, 2.0+ for Retina).
+pub fn (win &SimpleWindow) get_screen_scale_factor() f64 {
+	if win.window_info != unsafe { nil } {
+		return C.window_get_screen_scale_factor(win.window_info)
+	}
+	return 1.0
+}
+
+// ── Cursor Control ────────────────────────────────────────────────────────────
+
+// set_cursor_hidden hides or shows the macOS system cursor.
+// Note: This is application-wide — be sure to restore visibility when done.
+pub fn (win &SimpleWindow) set_cursor_hidden(hidden bool) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_cursor_hidden(win.window_info, if hidden { 1 } else { 0 })
+	}
+	return win
+}
+
+// ── Resize Indicator ──────────────────────────────────────────────────────────
+
+// set_shows_resize_indicator shows or hides the bottom-right resize grip on the window.
+pub fn (win &SimpleWindow) set_shows_resize_indicator(show bool) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_shows_resize_indicator(win.window_info, if show { 1 } else { 0 })
+	}
+	return win
+}
+
+// get_shows_resize_indicator returns true if the resize indicator (grip) is visible.
+pub fn (win &SimpleWindow) get_shows_resize_indicator() bool {
+	if win.window_info != unsafe { nil } {
+		return C.window_get_shows_resize_indicator(win.window_info) == 1
+	}
+	return true
+}
+
+// ── Content Size Constraints ──────────────────────────────────────────────────
+
+// set_content_min_size sets the minimum content area size (excluding titlebar height).
+// This is more precise than set_min_size which includes the full window frame.
+pub fn (win &SimpleWindow) set_content_min_size(width int, height int) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_content_min_size(win.window_info, width, height)
+	}
+	return win
+}
+
+// set_content_max_size sets the maximum content area size. Use 0 for unconstrained.
+pub fn (win &SimpleWindow) set_content_max_size(width int, height int) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_content_max_size(win.window_info, width, height)
+	}
+	return win
+}
+
+// get_content_min_size returns the current content area minimum size as (width, height).
+pub fn (win &SimpleWindow) get_content_min_size() (int, int) {
+	if win.window_info != unsafe { nil } {
+		mut w, mut h := 0, 0
+		C.window_get_content_min_size(win.window_info, &w, &h)
+		return w, h
+	}
+	return 0, 0
+}
+
+// get_content_max_size returns the current content area maximum size as (width, height).
+// Returns (0, 0) if unconstrained.
+pub fn (win &SimpleWindow) get_content_max_size() (int, int) {
+	if win.window_info != unsafe { nil } {
+		mut w, mut h := 0, 0
+		C.window_get_content_max_size(win.window_info, &w, &h)
+		return w, h
+	}
+	return 0, 0
+}
+
+
+// ── Tab Count ─────────────────────────────────────────────────────────────────
+
+
+// get_tab_count returns the number of tabs in the current window tab group.
+// Returns 1 if the window has no tab group or tabbing is not available.
+pub fn (win &SimpleWindow) get_tab_count() int {
+	if win.window_info != unsafe { nil } {
+		return C.window_get_tab_count(win.window_info)
+	}
+	return 1
+}
+
 
 
 

@@ -16872,9 +16872,305 @@ void window_set_content_insets(main__WindowInfo *info, int top, int left, int bo
   if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
 }
 
+void window_set_tabbing_mode(main__WindowInfo *info, const char *mode) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    if (!delegate.window) return;
+    if (@available(macOS 10.12, *)) {
+      NSString *m = [nsstring(mode) lowercaseString];
+      if ([m isEqualToString:@"disallowed"]) {
+        delegate.window.tabbingMode = NSWindowTabbingModeDisallowed;
+      } else if ([m isEqualToString:@"preferred"]) {
+        delegate.window.tabbingMode = NSWindowTabbingModePreferred;
+      } else {
+        delegate.window.tabbingMode = NSWindowTabbingModeAutomatic;
+      }
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+const char *window_get_tabbing_mode(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block const char *res = "automatic";
+  void (^runBlock)(void) = ^{
+    if (delegate.window) {
+      if (@available(macOS 10.12, *)) {
+        NSWindowTabbingMode mode = delegate.window.tabbingMode;
+        if (mode == NSWindowTabbingModeDisallowed) res = "disallowed";
+        else if (mode == NSWindowTabbingModePreferred) res = "preferred";
+        else res = "automatic";
+      }
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return res;
+}
+
+void window_set_tabbing_identifier(main__WindowInfo *info, const char *identifier) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    if (!delegate.window) return;
+    if (@available(macOS 10.12, *)) {
+      delegate.window.tabbingIdentifier = nsstring(identifier);
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+const char *window_get_tabbing_identifier(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block const char *res = "";
+  void (^runBlock)(void) = ^{
+    if (delegate.window) {
+      if (@available(macOS 10.12, *)) {
+        NSString *tid = delegate.window.tabbingIdentifier;
+        if (tid) res = [tid UTF8String];
+      }
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return res;
+}
+
+void window_toggle_tab_bar(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    if (delegate.window) {
+      if (@available(macOS 10.12, *)) {
+        [delegate.window toggleTabBar:nil];
+      }
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+void window_select_next_tab(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    if (delegate.window) {
+      if (@available(macOS 10.12, *)) {
+        [delegate.window selectNextTab:nil];
+      }
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+void window_select_previous_tab(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    if (delegate.window) {
+      if (@available(macOS 10.12, *)) {
+        [delegate.window selectPreviousTab:nil];
+      }
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+void window_set_sharing_type(main__WindowInfo *info, const char *sharing) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    if (!delegate.window) return;
+    NSString *s = [nsstring(sharing) lowercaseString];
+    if ([s isEqualToString:@"none"]) {
+      delegate.window.sharingType = NSWindowSharingNone;
+    } else if ([s isEqualToString:@"read_only"]) {
+      delegate.window.sharingType = NSWindowSharingReadOnly;
+    } else {
+      delegate.window.sharingType = NSWindowSharingReadWrite;
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+// ── Appearance Override ────────────────────────────────────────────────────
+void window_set_window_appearance(main__WindowInfo *info, const char *appearance_name) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    if (!delegate.window) return;
+    NSString *name = [nsstring(appearance_name) lowercaseString];
+    if ([name isEqualToString:@"dark"]) {
+      if (@available(macOS 10.14, *)) {
+        delegate.window.appearance = [NSAppearance appearanceNamed:NSAppearanceNameDarkAqua];
+      }
+    } else if ([name isEqualToString:@"light"]) {
+      delegate.window.appearance = [NSAppearance appearanceNamed:NSAppearanceNameAqua];
+    } else {
+      delegate.window.appearance = nil;
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+const char *window_get_window_appearance(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block const char *result = "auto";
+  void (^runBlock)(void) = ^{
+    if (!delegate.window) { result = "auto"; return; }
+    NSAppearance *app = delegate.window.appearance;
+    if (!app) { result = "auto"; return; }
+    if (@available(macOS 10.14, *)) {
+      NSAppearanceName best = [app bestMatchFromAppearancesWithNames:
+        @[NSAppearanceNameDarkAqua, NSAppearanceNameAqua]];
+      result = [best isEqualToString:NSAppearanceNameDarkAqua] ? "dark" : "light";
+    } else {
+      result = "light";
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return result;
+}
+
+int window_is_system_dark_mode(main__WindowInfo *info) {
+  __block int result = 0;
+  void (^runBlock)(void) = ^{
+    NSAppearance *appearance = [NSApp effectiveAppearance];
+    if (@available(macOS 10.14, *)) {
+      result = ([appearance bestMatchFromAppearancesWithNames:
+        @[NSAppearanceNameDarkAqua, NSAppearanceNameAqua]] == NSAppearanceNameDarkAqua) ? 1 : 0;
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return result;
+}
+
+// ── Screen Info ────────────────────────────────────────────────────────────
+void window_get_screen_frame(main__WindowInfo *info, int *out_x, int *out_y, int *out_w, int *out_h) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    NSScreen *screen = delegate.window ? [delegate.window screen] : [NSScreen mainScreen];
+    if (!screen) screen = [NSScreen mainScreen];
+    NSRect frame = [screen visibleFrame];
+    if (out_x) *out_x = (int)NSMinX(frame);
+    if (out_y) *out_y = (int)NSMinY(frame);
+    if (out_w) *out_w = (int)NSWidth(frame);
+    if (out_h) *out_h = (int)NSHeight(frame);
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+void window_get_screen_full_frame(main__WindowInfo *info, int *out_x, int *out_y, int *out_w, int *out_h) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    NSScreen *screen = delegate.window ? [delegate.window screen] : [NSScreen mainScreen];
+    if (!screen) screen = [NSScreen mainScreen];
+    NSRect frame = [screen frame];
+    if (out_x) *out_x = (int)NSMinX(frame);
+    if (out_y) *out_y = (int)NSMinY(frame);
+    if (out_w) *out_w = (int)NSWidth(frame);
+    if (out_h) *out_h = (int)NSHeight(frame);
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+double window_get_screen_scale_factor(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block double result = 1.0;
+  void (^runBlock)(void) = ^{
+    NSScreen *screen = delegate.window ? [delegate.window screen] : [NSScreen mainScreen];
+    result = screen ? [screen backingScaleFactor] : 1.0;
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return result;
+}
+
+// ── Cursor Control ─────────────────────────────────────────────────────────
+void window_set_cursor_hidden(main__WindowInfo *info, int hidden) {
+  void (^runBlock)(void) = ^{
+    if (hidden) { [NSCursor hide]; } else { [NSCursor unhide]; }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+// ── Resize Indicator ───────────────────────────────────────────────────────
+void window_set_shows_resize_indicator(main__WindowInfo *info, int show) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    if (!delegate.window) return;
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+    [delegate.window setShowsResizeIndicator:(show != 0)];
+#pragma clang diagnostic pop
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+int window_get_shows_resize_indicator(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block int result = 1;
+  void (^runBlock)(void) = ^{
+    if (!delegate.window) return;
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+    result = [delegate.window showsResizeIndicator] ? 1 : 0;
+#pragma clang diagnostic pop
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return result;
+
+}
+
+// ── Content Size Constraints ───────────────────────────────────────────────
+void window_set_content_min_size(main__WindowInfo *info, int width, int height) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    if (!delegate.window) return;
+    delegate.window.contentMinSize = NSMakeSize((CGFloat)width, (CGFloat)height);
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+void window_set_content_max_size(main__WindowInfo *info, int width, int height) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    if (!delegate.window) return;
+    delegate.window.contentMaxSize = NSMakeSize(
+      width <= 0 ? FLT_MAX : (CGFloat)width,
+      height <= 0 ? FLT_MAX : (CGFloat)height);
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+void window_get_content_min_size(main__WindowInfo *info, int *out_w, int *out_h) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    if (!delegate.window) { if(out_w)*out_w=0; if(out_h)*out_h=0; return; }
+    NSSize s = delegate.window.contentMinSize;
+    if (out_w) *out_w = (int)s.width;
+    if (out_h) *out_h = (int)s.height;
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+void window_get_content_max_size(main__WindowInfo *info, int *out_w, int *out_h) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    if (!delegate.window) { if(out_w)*out_w=0; if(out_h)*out_h=0; return; }
+    NSSize s = delegate.window.contentMaxSize;
+    if (out_w) *out_w = (int)(s.width >= FLT_MAX ? 0 : s.width);
+    if (out_h) *out_h = (int)(s.height >= FLT_MAX ? 0 : s.height);
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
 
 
+// ── Tab Count ──────────────────────────────────────────────────────────────
 
+int window_get_tab_count(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block int result = 1;
+  void (^runBlock)(void) = ^{
+    if (!delegate.window) return;
+    if (@available(macOS 10.12, *)) {
+      NSWindowTabGroup *group = [delegate.window tabGroup];
+      result = group ? (int)[[group windows] count] : 1;
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return result;
+}
 
 
 

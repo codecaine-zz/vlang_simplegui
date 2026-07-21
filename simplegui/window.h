@@ -557,7 +557,7 @@ void window_set_max_size(main__WindowInfo *info, int width, int height);
 void window_get_max_size(main__WindowInfo *info, int *out_w, int *out_h);
 void window_set_collection_behavior(main__WindowInfo *info, const char *behavior);
 void window_set_has_shadow(main__WindowInfo *info, int shadow);
-int window_has_shadow(main__WindowInfo *info);
+int window_get_has_shadow(main__WindowInfo *info);
 void window_set_close_button_enabled(main__WindowInfo *info, int enabled);
 void window_set_minimize_button_enabled(main__WindowInfo *info, int enabled);
 void window_set_zoom_button_enabled(main__WindowInfo *info, int enabled);
@@ -565,13 +565,43 @@ void window_set_title_visible(main__WindowInfo *info, int visible);
 int window_get_title_visible(main__WindowInfo *info);
 void window_shake(main__WindowInfo *info);
 void window_set_content_insets(main__WindowInfo *info, int top, int left, int bottom, int right);
+void window_set_tabbing_mode(main__WindowInfo *info, const char *mode);
+const char *window_get_tabbing_mode(main__WindowInfo *info);
+void window_set_tabbing_identifier(main__WindowInfo *info, const char *identifier);
+const char *window_get_tabbing_identifier(main__WindowInfo *info);
+void window_toggle_tab_bar(main__WindowInfo *info);
+void window_select_next_tab(main__WindowInfo *info);
+void window_select_previous_tab(main__WindowInfo *info);
+void window_set_sharing_type(main__WindowInfo *info, const char *sharing);
+
+// Appearance Override
+void window_set_window_appearance(main__WindowInfo *info, const char *appearance_name);
+const char *window_get_window_appearance(main__WindowInfo *info);
+int window_is_system_dark_mode(main__WindowInfo *info);
+
+// Screen Info
+void window_get_screen_frame(main__WindowInfo *info, int *out_x, int *out_y, int *out_w, int *out_h);
+void window_get_screen_full_frame(main__WindowInfo *info, int *out_x, int *out_y, int *out_w, int *out_h);
+double window_get_screen_scale_factor(main__WindowInfo *info);
+
+// Cursor Control
+void window_set_cursor_hidden(main__WindowInfo *info, int hidden);
+
+// Resize Indicator
+void window_set_shows_resize_indicator(main__WindowInfo *info, int show);
+int window_get_shows_resize_indicator(main__WindowInfo *info);
+
+// Content Size Constraints
+void window_set_content_min_size(main__WindowInfo *info, int width, int height);
+void window_set_content_max_size(main__WindowInfo *info, int width, int height);
+void window_get_content_min_size(main__WindowInfo *info, int *out_w, int *out_h);
+void window_get_content_max_size(main__WindowInfo *info, int *out_w, int *out_h);
+
+// Window Movability
+void window_set_movable(main__WindowInfo *info, int movable);
+int window_get_movable(main__WindowInfo *info);
+
+// Tab Count
+int window_get_tab_count(main__WindowInfo *info);
 
 #endif
-
-
-
-
-
-
-
-
