@@ -8,6 +8,7 @@ fn main() {
 	mut win := simplegui.new_simple_window('Apple Theme & Color Suite', 620, 680)
 
 	// 1. Heading & Description
+
 	win.add_heading('Apple & Production Theme Engine')
 		.bold(true)
 
@@ -16,6 +17,7 @@ fn main() {
 	win.add_separator()
 
 	// 2. Quick Theme Selector Buttons
+
 	win.add_label('lbl_quick', 'Apple Quick Presets:')
 		.bold(true)
 
@@ -52,13 +54,16 @@ fn main() {
 	win.add_form_textarea('Bio', 'user_bio', 'Software engineer testing Apple production-ready theme presets.')
 	win.add_form_password('Password', 'user_pass', 'secret123')
 	win.add_form_number('Age', 'user_age', 28)
-	win.add_form_dropdown('Country', 'country_select', ['United States', 'Canada', 'United Kingdom', 'Germany', 'Japan'], 'United States')
+	win.add_form_dropdown('Country', 'country_select', ['United States', 'Canada', 'United Kingdom',
+		'Germany', 'Japan'], 'United States')
 	win.add_form_date_picker('Birth Date', 'dob_picker', '1996-05-15')
-	win.add_form_switch('Notifications', 'notif_switch', 'Enable System Notifications', true)
+	win.add_form_switch('Notifications', 'notif_switch', 'Enable System Notifications',
+		true)
 
 	win.add_separator()
 
 	// 6. Form Buttons
+
 	win.begin_row('btn_row')
 		.add_button('btn_submit', 'Submit')
 		.add_button('btn_reset', 'Reset Form')

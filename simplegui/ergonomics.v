@@ -1722,7 +1722,8 @@ pub fn (win &SimpleWindow) increment_progress(name string, delta int) int {
 // set_stat_card updates the metric value, trend string, and trend style for a stat card.
 pub fn (win &SimpleWindow) set_stat_card(name string, value string, trend string, trend_style string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
-		C.window_set_stat_card_value(win.window_info, name.str, value.str, trend.str, trend_style.str)
+		C.window_set_stat_card_value(win.window_info, name.str, value.str, trend.str,
+			trend_style.str)
 	}
 	return win
 }
@@ -1777,7 +1778,8 @@ pub fn (win &SimpleWindow) get_metric_meter(name string) int {
 // set_avatar_card updates title, subtitle, and status pill of an avatar card.
 pub fn (win &SimpleWindow) set_avatar_card(name string, title string, subtitle string, status string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
-		C.window_set_avatar_card_value(win.window_info, name.str, title.str, subtitle.str, status.str)
+		C.window_set_avatar_card_value(win.window_info, name.str, title.str, subtitle.str,
+			status.str)
 	}
 	return win
 }
@@ -1831,7 +1833,6 @@ pub fn (win &SimpleWindow) get_time_picker(name string) string {
 	return win.get_text(name)
 }
 
-
 // set_tray_icon updates the symbol and title of a system menu bar tray icon.
 pub fn (win &SimpleWindow) set_tray_icon(name string, symbol string, title string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
@@ -1843,7 +1844,11 @@ pub fn (win &SimpleWindow) set_tray_icon(name string, symbol string, title strin
 // set_collapsible_section_expanded updates the disclosure expand state of a collapsible section.
 pub fn (win &SimpleWindow) set_collapsible_section_expanded(name string, expanded bool) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
-		C.window_set_collapsible_section_expanded(win.window_info, name.str, if expanded { 1 } else { 0 })
+		C.window_set_collapsible_section_expanded(win.window_info, name.str, if expanded {
+			1
+		} else {
+			0
+		})
 	}
 	return win
 }
@@ -1874,7 +1879,8 @@ pub fn (win &SimpleWindow) get_code_editor(name string) string {
 // add_timeline_entry appends an event item with timestamp, title, detail, and status color to a timeline stream.
 pub fn (win &SimpleWindow) add_timeline_entry(name string, time_str string, title string, detail string, style string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
-		C.window_add_timeline_entry(win.window_info, name.str, time_str.str, title.str, detail.str, style.str)
+		C.window_add_timeline_entry(win.window_info, name.str, time_str.str, title.str,
+			detail.str, style.str)
 	}
 	return win
 }
@@ -1954,8 +1960,3 @@ pub fn (win &SimpleWindow) make_sticky_space() &SimpleWindow {
 pub fn (win &SimpleWindow) shake_on_error() &SimpleWindow {
 	return win.shake_window().flash_frame(true)
 }
-
-
-
-
-

@@ -3,7 +3,8 @@ module main
 import simplegui
 
 fn main() {
-	mut win := simplegui.new_simple_window('Comprehensive Window Control APIs Showcase', 920, 900)
+	mut win := simplegui.new_simple_window('Comprehensive Window Control APIs Showcase',
+		920, 900)
 	win.configure(fn (mut cfg simplegui.WindowConfig) {
 		cfg.padding = 20
 		cfg.spacing = 14
@@ -21,143 +22,136 @@ fn main() {
 		'info')
 
 	// ── Section 1: Titlebar & Subtitle Controls ──────────────────────────────
-	win.add_section_header('sec_titlebar', '1. Titlebar & Subtitle Controls',
-		'Manage window titlebar, subtitle, and translucent full-size content view')
+	win.add_section_header('sec_titlebar', '1. Titlebar & Subtitle Controls', 'Manage window titlebar, subtitle, and translucent full-size content view')
 	win.begin_row('row_titlebar')
-		win.add_button('btn_set_subtitle', 'Set Subtitle "v2.0 Beta"')
-		win.add_button('btn_toggle_transparent', 'Toggle Transparent Titlebar')
-		win.add_button('btn_toggle_fullsize', 'Toggle Full-Size Content View')
+	win.add_button('btn_set_subtitle', 'Set Subtitle "v2.0 Beta"')
+	win.add_button('btn_toggle_transparent', 'Toggle Transparent Titlebar')
+	win.add_button('btn_toggle_fullsize', 'Toggle Full-Size Content View')
 	win.end_row()
 
 	// ── Section 2: Positioning & Edge Snapping ───────────────────────────────
 	win.add_section_header('sec_positioning', '2. Positioning, Geometry & Edge Snapping',
 		'Snap to screen bounds, center on active display, and constrain aspect ratio')
 	win.begin_row('row_snap1')
-		win.add_button('btn_center', 'Center on Screen')
-		win.add_button('btn_snap_tl', 'Snap Top-Left')
-		win.add_button('btn_snap_tr', 'Snap Top-Right')
-		win.add_button('btn_snap_bl', 'Snap Bottom-Left')
-		win.add_button('btn_snap_br', 'Snap Bottom-Right')
+	win.add_button('btn_center', 'Center on Screen')
+	win.add_button('btn_snap_tl', 'Snap Top-Left')
+	win.add_button('btn_snap_tr', 'Snap Top-Right')
+	win.add_button('btn_snap_bl', 'Snap Bottom-Left')
+	win.add_button('btn_snap_br', 'Snap Bottom-Right')
 	win.end_row()
 	win.begin_row('row_snap2')
-		win.add_button('btn_resize_900', 'Set Bounds (100, 100, 950, 680)')
-		win.add_button('btn_get_bounds', 'Inspect Bounds')
-		win.add_button('btn_aspect_16_9', 'Enforce 16:9 Aspect')
-		win.add_button('btn_reset_aspect', 'Clear Aspect Ratio')
+	win.add_button('btn_resize_900', 'Set Bounds (100, 100, 950, 680)')
+	win.add_button('btn_get_bounds', 'Inspect Bounds')
+	win.add_button('btn_aspect_16_9', 'Enforce 16:9 Aspect')
+	win.add_button('btn_reset_aspect', 'Clear Aspect Ratio')
 	win.end_row()
 
 	// ── Section 3: Visual Effects & Window Layering ──────────────────────────
-	win.add_section_header('sec_vibrancy', '3. Visual Effects & Window Layering',
-		'Apple vibrancy materials, rounded corners, and window z-level levels')
+	win.add_section_header('sec_vibrancy', '3. Visual Effects & Window Layering', 'Apple vibrancy materials, rounded corners, and window z-level levels')
 	win.begin_row('row_vibrancy')
-		win.add_button('btn_vibrancy_hud', 'Vibrancy: HUD')
-		win.add_button('btn_vibrancy_sidebar', 'Vibrancy: Sidebar')
-		win.add_button('btn_vibrancy_window', 'Vibrancy: Window')
-		win.add_button('btn_corner_radius', 'Corner Radius: 20px')
-		win.add_button('btn_level_floating', 'Level: Floating')
-		win.add_button('btn_level_normal', 'Level: Normal')
+	win.add_button('btn_vibrancy_hud', 'Vibrancy: HUD')
+	win.add_button('btn_vibrancy_sidebar', 'Vibrancy: Sidebar')
+	win.add_button('btn_vibrancy_window', 'Vibrancy: Window')
+	win.add_button('btn_corner_radius', 'Corner Radius: 20px')
+	win.add_button('btn_level_floating', 'Level: Floating')
+	win.add_button('btn_level_normal', 'Level: Normal')
 	win.end_row()
 
 	// ── Section 4: Behavior & Mouse Event Flags ──────────────────────────────
-	win.add_section_header('sec_interactivity', '4. Behavior & Mouse Event Flags',
-		'Lock window movement, click-through overlay mode, and focus auto-hiding')
+	win.add_section_header('sec_interactivity', '4. Behavior & Mouse Event Flags', 'Lock window movement, click-through overlay mode, and focus auto-hiding')
 	win.begin_row('row_interactivity')
-		win.add_button('btn_toggle_movable', 'Toggle Movable')
-		win.add_button('btn_click_through', 'Toggle Click-Through Overlay')
-		win.add_button('btn_toggle_autohide', 'Toggle Hide on Focus Loss')
+	win.add_button('btn_toggle_movable', 'Toggle Movable')
+	win.add_button('btn_click_through', 'Toggle Click-Through Overlay')
+	win.add_button('btn_toggle_autohide', 'Toggle Hide on Focus Loss')
 	win.end_row()
 
 	// ── Section 5: Document Integration & Dirty Indicator ───────────────────
 	win.add_section_header('sec_document', '5. Document Integration & Dirty Indicator',
 		'Represented file path proxy icon in titlebar and dirty indicator dot')
 	win.begin_row('row_document')
-		win.add_button('btn_set_doc', 'Set Document Icon (/tmp/project.v)')
-		win.add_button('btn_toggle_edited', 'Toggle Unsaved Changes Dot')
-		win.add_button('btn_inspect_doc', 'Inspect Document Path')
+	win.add_button('btn_set_doc', 'Set Document Icon (/tmp/project.v)')
+	win.add_button('btn_toggle_edited', 'Toggle Unsaved Changes Dot')
+	win.add_button('btn_inspect_doc', 'Inspect Document Path')
 	win.end_row()
 
 	// ── Section 6: Animations & Window Stacking ──────────────────────────────
-	win.add_section_header('sec_animations', '6. Animations & Window Stacking',
-		'User feedback animations, dock icon bounce, fade transitions, and Z-ordering')
+	win.add_section_header('sec_animations', '6. Animations & Window Stacking', 'User feedback animations, dock icon bounce, fade transitions, and Z-ordering')
 	win.begin_row('row_animations')
-		win.add_button('btn_flash_frame', 'Flash Window Frame')
-		win.add_button('btn_bounce_dock', 'Bounce Dock Icon')
-		win.add_button('btn_fade_transition', 'Fade Transition (500ms)')
-		win.add_button('btn_order_front', 'Bring to Front')
-		win.add_button('btn_order_back', 'Send to Back')
+	win.add_button('btn_flash_frame', 'Flash Window Frame')
+	win.add_button('btn_bounce_dock', 'Bounce Dock Icon')
+	win.add_button('btn_fade_transition', 'Fade Transition (500ms)')
+	win.add_button('btn_order_front', 'Bring to Front')
+	win.add_button('btn_order_back', 'Send to Back')
 	win.end_row()
 
 	// ── Section 7: Opacity, Constraints, Shadow & Title Controls ─────────────
 	win.add_section_header('sec_advanced_ctrl', '7. Opacity, Constraints, Shadow & Title Controls',
 		'Window alpha transparency, min/max resize bounds, shadow toggle, titlebar buttons, and error shake')
 	win.begin_row('row_adv_1')
-		win.add_button('btn_alpha_50', 'Opacity: 50%')
-		win.add_button('btn_alpha_80', 'Opacity: 80%')
-		win.add_button('btn_alpha_100', 'Opacity: 100%')
-		win.add_button('btn_shake', 'Shake Window')
-		win.add_button('btn_toggle_shadow', 'Toggle Window Shadow')
+	win.add_button('btn_alpha_50', 'Opacity: 50%')
+	win.add_button('btn_alpha_80', 'Opacity: 80%')
+	win.add_button('btn_alpha_100', 'Opacity: 100%')
+	win.add_button('btn_shake', 'Shake Window')
+	win.add_button('btn_toggle_shadow', 'Toggle Window Shadow')
 	win.end_row()
 	win.begin_row('row_adv_2')
-		win.add_button('btn_set_min_size', 'Set Min Size (600x400)')
-		win.add_button('btn_toggle_title', 'Toggle Title Visibility')
-		win.add_button('btn_disable_close_btn', 'Disable Close Button')
-		win.add_button('btn_enable_close_btn', 'Enable Close Button')
+	win.add_button('btn_set_min_size', 'Set Min Size (600x400)')
+	win.add_button('btn_toggle_title', 'Toggle Title Visibility')
+	win.add_button('btn_disable_close_btn', 'Disable Close Button')
+	win.add_button('btn_enable_close_btn', 'Enable Close Button')
 	win.end_row()
 
 	// ── Section 8: Production Toolbar Style & Insets ─────────────────────────
 	win.add_section_header('sec_prod_ctrl', '8. Production Toolbar Styles & Content Margins',
 		'macOS 11+ titlebar toolbar layout styles and content safe area insets')
 	win.begin_row('row_prod_1')
-		win.add_button('btn_tb_unified', 'Toolbar: Unified')
-		win.add_button('btn_tb_compact', 'Toolbar: Compact')
-		win.add_button('btn_tb_expanded', 'Toolbar: Expanded')
-		win.add_button('btn_insets_20', 'Content Insets: 20px')
+	win.add_button('btn_tb_unified', 'Toolbar: Unified')
+	win.add_button('btn_tb_compact', 'Toolbar: Compact')
+	win.add_button('btn_tb_expanded', 'Toolbar: Expanded')
+	win.add_button('btn_insets_20', 'Content Insets: 20px')
 	win.end_row()
 
 	// ── Section 9: Native Window Tabbing & Screen Sharing ────────────────────
 	win.add_section_header('sec_tabbing_ctrl', '9. Native Window Tabbing & Screen Sharing',
 		'macOS 10.12+ window tabbing modes, tab bar toggle, and window screen capture protection')
 	win.begin_row('row_tabbing_1')
-		win.add_button('btn_tab_preferred', 'Tabbing: Preferred')
-		win.add_button('btn_tab_disallowed', 'Tabbing: Disallowed')
-		win.add_button('btn_toggle_tabbar', 'Toggle Tab Bar')
-		win.add_button('btn_sharing_none', 'Share Protection: Private')
-		win.add_button('btn_sharing_rw', 'Share Protection: Standard')
+	win.add_button('btn_tab_preferred', 'Tabbing: Preferred')
+	win.add_button('btn_tab_disallowed', 'Tabbing: Disallowed')
+	win.add_button('btn_toggle_tabbar', 'Toggle Tab Bar')
+	win.add_button('btn_sharing_none', 'Share Protection: Private')
+	win.add_button('btn_sharing_rw', 'Share Protection: Standard')
 	win.end_row()
 
 	// ── Section 10: Per-Window Appearance Override ───────────────────────────
-	win.add_section_header('sec_appearance', '10. Per-Window Appearance Override',
-		'Force a single window into dark, light, or system-auto appearance — independent of macOS preference')
+	win.add_section_header('sec_appearance', '10. Per-Window Appearance Override', 'Force a single window into dark, light, or system-auto appearance — independent of macOS preference')
 	win.begin_row('row_appearance')
-		win.add_button('btn_appear_dark', 'Force: Dark Mode')
-		win.add_button('btn_appear_light', 'Force: Light Mode')
-		win.add_button('btn_appear_auto', 'Reset: System Default')
-		win.add_button('btn_dark_mode_query', 'Query: System Dark Mode?')
+	win.add_button('btn_appear_dark', 'Force: Dark Mode')
+	win.add_button('btn_appear_light', 'Force: Light Mode')
+	win.add_button('btn_appear_auto', 'Reset: System Default')
+	win.add_button('btn_dark_mode_query', 'Query: System Dark Mode?')
 	win.end_row()
 
 	// ── Section 11: Screen & Display Information ─────────────────────────────
-	win.add_section_header('sec_screen_info', '11. Screen & Display Information',
-		'Query the current screen frame, usable area, Retina scale factor, and tab group count')
+	win.add_section_header('sec_screen_info', '11. Screen & Display Information', 'Query the current screen frame, usable area, Retina scale factor, and tab group count')
 	win.begin_row('row_screen')
-		win.add_button('btn_screen_frame', 'Get Visible Screen Frame')
-		win.add_button('btn_screen_full', 'Get Full Screen Frame')
-		win.add_button('btn_screen_scale', 'Get Retina Scale Factor')
-		win.add_button('btn_tab_count', 'Get Tab Count')
+	win.add_button('btn_screen_frame', 'Get Visible Screen Frame')
+	win.add_button('btn_screen_full', 'Get Full Screen Frame')
+	win.add_button('btn_screen_scale', 'Get Retina Scale Factor')
+	win.add_button('btn_tab_count', 'Get Tab Count')
 	win.end_row()
 
 	// ── Section 12: Advanced Window Behaviour ────────────────────────────────
-	win.add_section_header('sec_misc', '12. Advanced Window Behaviour',
-		'Resize indicator toggle, content size constraints, window movability lock, and cursor control')
+	win.add_section_header('sec_misc', '12. Advanced Window Behaviour', 'Resize indicator toggle, content size constraints, window movability lock, and cursor control')
 	win.begin_row('row_misc_1')
-		win.add_button('btn_resize_indicator_off', 'Hide Resize Grip')
-		win.add_button('btn_resize_indicator_on', 'Show Resize Grip')
-		win.add_button('btn_content_min', 'Content Min: 400×300')
-		win.add_button('btn_content_max', 'Content Max: 1000×700')
+	win.add_button('btn_resize_indicator_off', 'Hide Resize Grip')
+	win.add_button('btn_resize_indicator_on', 'Show Resize Grip')
+	win.add_button('btn_content_min', 'Content Min: 400×300')
+	win.add_button('btn_content_max', 'Content Max: 1000×700')
 	win.end_row()
 	win.begin_row('row_misc_2')
-		win.add_button('btn_lock_move', 'Lock Window Position')
-		win.add_button('btn_unlock_move', 'Unlock Window Position')
-		win.add_button('btn_cursor_hide', 'Hide Cursor (1 sec)')
+	win.add_button('btn_lock_move', 'Lock Window Position')
+	win.add_button('btn_unlock_move', 'Unlock Window Position')
+	win.add_button('btn_cursor_hide', 'Hide Cursor (1 sec)')
 	win.end_row()
 
 	// ═══════════════════════════════════════════════════════════════════════

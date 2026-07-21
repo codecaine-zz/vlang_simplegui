@@ -12,9 +12,9 @@ fn main() {
 	win.add_tag_cloud('tags_cloud', ['vlang', 'gui', 'desktop', 'events'])
 	win.add_wizard_stepper('stepper', ['Step 1', 'Step 2', 'Step 3'], 0)
 	win.add_split_button('split_btn', 'Primary Action', ['Option A', 'Option B', 'Option C'])
-	
+
 	win.add_separator()
-	win.add_textarea('event_log', "=== Event Log ===\n")
+	win.add_textarea('event_log', '=== Event Log ===\n')
 
 	// -------------------------------------------------------------
 	// Control-Specific Event Handlers

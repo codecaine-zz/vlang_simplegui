@@ -205,6 +205,7 @@ fn main() {
 	win.add_dropdown('demo_dropdown', ['Low', 'Medium', 'High'], 'Medium').width(140)
 	win.add_button('demo_actions', 'Show selection snapshot')
 	win.end_row()
+
 	win.add_textarea('demo_notes', 'Rich text area with placeholder text')
 		.placeholder('Type something here')
 	win.add_html_view('demo_html', '<html><body style="font-family:-apple-system,sans-serif;font-size:13px;color:#f8fafc;background:transparent;margin:0;"><b>HTML view</b><div>Lightweight content preview</div></body></html>')
@@ -236,15 +237,31 @@ fn main() {
 	win.add_button('demo_actions', 'Show selection snapshot')
 	win.add_tree_view('demo_tree', 140)
 	win.set_tree_nodes('demo_tree', [
-		simplegui.TreeNode{id: 'root', parent_id: '', text: 'Workspace'},
-		simplegui.TreeNode{id: 'docs', parent_id: 'root', text: 'Docs'},
-		simplegui.TreeNode{id: 'api', parent_id: 'docs', text: 'API'},
-		simplegui.TreeNode{id: 'guide', parent_id: 'docs', text: 'Guide'},
-		simplegui.TreeNode{id: 'tests', parent_id: 'root', text: 'Tests'},
+		simplegui.TreeNode{ id: 'root', parent_id: '', text: 'Workspace' },
+		simplegui.TreeNode{
+			id:        'docs'
+			parent_id: 'root'
+			text:      'Docs'
+		},
+		simplegui.TreeNode{
+			id:        'api'
+			parent_id: 'docs'
+			text:      'API'
+		},
+		simplegui.TreeNode{
+			id:        'guide'
+			parent_id: 'docs'
+			text:      'Guide'
+		},
+		simplegui.TreeNode{
+			id:        'tests'
+			parent_id: 'root'
+			text:      'Tests'
+		},
 	])
 	win.set_tree_selected('demo_tree', 'api')
 
-	mut table_rows := [] []string{}
+	mut table_rows := [][]string{}
 	table_rows << ['Alpha', 'Ready', '10']
 	table_rows << ['Beta', 'Queued', '21']
 	table_rows << ['Gamma', 'Running', '33']

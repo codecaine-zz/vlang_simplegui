@@ -45,7 +45,6 @@ import math.complex
 import crypto.rand as crand
 import hash as vhash
 
-
 // stdlib.v - Extended High-Level Standard Library Wrappers for SimpleGUI
 // Provides extremely simple, beginner-friendly, and safe wrappers around V's Core Standard Library.
 // This wraps complex, low-level functionalities (like Gzip, AES block padding, Net, Regex, Websockets, Semver, and TOML)
@@ -2420,9 +2419,7 @@ pub fn (u SimpleURL) build_url() string {
 
 // url_parse parses a raw URL string into a SimpleURL structure.
 pub fn url_parse(raw_url string) SimpleURL {
-	u := urllib.parse(raw_url) or {
-		return SimpleURL{}
-	}
+	u := urllib.parse(raw_url) or { return SimpleURL{} }
 	mut query_map := map[string]string{}
 	q_vals := u.query()
 	for k in q_vals.data {
@@ -2659,5 +2656,3 @@ pub fn json_pretty_print(json_str string) string {
 pub fn (win &SimpleWindow) json_pretty_print(json_str string) string {
 	return json_pretty_print(json_str)
 }
-
-

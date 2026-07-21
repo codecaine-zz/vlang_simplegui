@@ -30,7 +30,7 @@ fn main() {
 	// Creates a full dropdown menu hierarchy with a slice of simplegui.MenuItem structs.
 	win.add_menu('Demo', [
 		simplegui.MenuItem{
-			title: 'Show Snapshot'
+			title:    'Show Snapshot'
 			shortcut: 'cmd+shift+s'
 			callback: fn (mut w simplegui.SimpleWindow) {
 				w.set_status('Snapshot triggered from Demo menu!')
@@ -40,7 +40,7 @@ fn main() {
 			title: '-' // separator
 		},
 		simplegui.MenuItem{
-			title: 'Reset Status'
+			title:    'Reset Status'
 			callback: fn (mut w simplegui.SimpleWindow) {
 				w.set_status('Ready.')
 			}
@@ -61,7 +61,7 @@ fn main() {
 	// Binds a full right-click context menu structure to a control or the general background ("window").
 	win.add_context_menu('window', [
 		simplegui.MenuItem{
-			title: 'Inspect Window'
+			title:    'Inspect Window'
 			callback: fn (mut w simplegui.SimpleWindow) {
 				w.set_status('Inspecting main window...')
 			}
@@ -70,7 +70,7 @@ fn main() {
 			title: '-' // separator
 		},
 		simplegui.MenuItem{
-			title: 'Refresh View'
+			title:    'Refresh View'
 			shortcut: 'cmd+r'
 			callback: fn (mut w simplegui.SimpleWindow) {
 				w.set_status('Window refreshed.')

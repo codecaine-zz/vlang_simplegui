@@ -67,7 +67,8 @@ fn main() {
 
 	win.on_click('btn_run_all', fn (mut w simplegui.SimpleWindow) {
 		w.clear_console('output')
-		w.append_console('output', '⏳ Running all useful system call demonstrations…', 0)
+		w.append_console('output', '⏳ Running all useful system call demonstrations…',
+			0)
 		spawn fn (mut window simplegui.SimpleWindow) {
 			demo_process_metrics(mut window)
 			demo_hardware_specs(mut window)
@@ -75,7 +76,8 @@ fn main() {
 			demo_network_connectivity(mut window)
 			demo_filesystem_paths(mut window)
 			window.append_console('output', '', 0)
-			window.append_console('output', '✅ All useful system calls tested successfully!', 0)
+			window.append_console('output', '✅ All useful system calls tested successfully!',
+				0)
 		}(mut w)
 	})
 
@@ -88,9 +90,11 @@ fn log(mut w simplegui.SimpleWindow, label string, value string) {
 
 fn log_header(mut w simplegui.SimpleWindow, title string) {
 	w.append_console('output', '', 0)
-	w.append_console('output', '════════════════════════════════════════════════════', 0)
+	w.append_console('output', '════════════════════════════════════════════════════',
+		0)
 	w.append_console('output', '  ${title}', 0)
-	w.append_console('output', '════════════════════════════════════════════════════', 0)
+	w.append_console('output', '════════════════════════════════════════════════════',
+		0)
 }
 
 fn log_ok(mut w simplegui.SimpleWindow, msg string) {
@@ -125,13 +129,14 @@ fn demo_process_metrics(mut w simplegui.SimpleWindow) {
 	log(mut w, 'get_env_or("USER")', user_env)
 	log(mut w, 'get_env_or("SG_CUSTOM_VAR_XYZ")', custom_env)
 
-	out, code, timed_out := w.exec_timeout('sleep 0.1 && echo "quick command completed"', 1000)
+	out, code, timed_out := w.exec_timeout('sleep 0.1 && echo "quick command completed"',
+		1000)
 	log(mut w, 'exec_timeout (1000ms limit)', '${out} [code: ${code}, timed_out: ${timed_out}]')
 
 	// Demonstrate process control by name and PID
 	log_ok(mut w, 'Testing kill_process_by_name / kill_process_by_pid...')
 	w.exec_bg('sleep 60')
-	log(mut w, 'is_process_running("sleep 60")', '${w.is_process_running("sleep 60")}')
+	log(mut w, 'is_process_running("sleep 60")', '${w.is_process_running('sleep 60')}')
 	killed := w.kill_process_by_name('sleep 60')
 	log(mut w, 'kill_process_by_name("sleep 60")', '${killed}')
 }

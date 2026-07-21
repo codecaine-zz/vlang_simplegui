@@ -22,30 +22,30 @@ fn main() {
 	win.add_label('intro', 'This demo exercises the editable grid with text cells, checkbox cells, button cells, row/column actions, event callbacks, column sorting, and visible cell selection.')
 
 	win.begin_row('toolbar')
-		win.add_button('btn_add_row', 'Add Row')
-		win.add_button('btn_delete_row', 'Delete Selected Row')
-		win.add_button('btn_add_col', 'Add Column')
-		win.add_button('btn_delete_col', 'Delete Last Column')
-		win.add_button('btn_autosize', 'Auto-size')
-		win.add_button('btn_clear', 'Clear Grid')
-		win.add_button('btn_sort_grid', 'Sort ID')
-		win.add_button('btn_toggle_actions', 'Toggle Action Column')
+	win.add_button('btn_add_row', 'Add Row')
+	win.add_button('btn_delete_row', 'Delete Selected Row')
+	win.add_button('btn_add_col', 'Add Column')
+	win.add_button('btn_delete_col', 'Delete Last Column')
+	win.add_button('btn_autosize', 'Auto-size')
+	win.add_button('btn_clear', 'Clear Grid')
+	win.add_button('btn_sort_grid', 'Sort ID')
+	win.add_button('btn_toggle_actions', 'Toggle Action Column')
 	win.end_row()
 
 	win.begin_row('filters')
-		win.add_input('filter_input', '')
-		win.add_button('btn_apply_filter', 'Filter')
-		win.add_button('btn_clear_filter', 'Clear Filter')
-		win.add_number_field('row_height', 26)
-		win.add_button('btn_apply_row_height', 'Apply Row Height')
-		win.add_number_field('col_width', 140)
-		win.add_button('btn_apply_col_width', 'Apply Col Width')
+	win.add_input('filter_input', '')
+	win.add_button('btn_apply_filter', 'Filter')
+	win.add_button('btn_clear_filter', 'Clear Filter')
+	win.add_number_field('row_height', 26)
+	win.add_button('btn_apply_row_height', 'Apply Row Height')
+	win.add_number_field('col_width', 140)
+	win.add_button('btn_apply_col_width', 'Apply Col Width')
 	win.end_row()
 
 	win.add_grid('demo_grid', ['ID', 'Task', 'Done', 'Action'], [
 		['1', 'Draft spec', 'true', 'Run'],
 		['2', 'Wire events', 'false', 'View'],
-		['3', 'Ship demo', 'true', 'Open']
+		['3', 'Ship demo', 'true', 'Open'],
 	])
 
 	win.grid_set_column_type('demo_grid', 2, 'checkbox')

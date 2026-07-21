@@ -131,11 +131,11 @@ fn main() {
 			}
 		})
 		w.add_action_row({
-			'Insert at Index 1': fn (mut w simplegui.SimpleWindow) {
+			'Insert at Index 1':        fn (mut w simplegui.SimpleWindow) {
 				w.insert_list_item('fruits', 1, 'Pineapple (Inserted)')
 				w.set_status('Inserted Pineapple at index 1.')
 			}
-			'Update Index 0': fn (mut w simplegui.SimpleWindow) {
+			'Update Index 0':           fn (mut w simplegui.SimpleWindow) {
 				w.update_list_item('fruits', 0, 'Apple (Updated)')
 				w.set_status('Updated index 0 item.')
 			}
@@ -211,8 +211,9 @@ fn main() {
 				})
 				w.info('Recruits', 'Found ${filtered.len} recruit(s).')
 			}
-			'Has Admiral?': fn (mut w simplegui.SimpleWindow) {
-				has := w.has_table_row('crew', 1, 'ADMIRAL') || w.has_table_row('crew', 1, 'Admiral')
+			'Has Admiral?':    fn (mut w simplegui.SimpleWindow) {
+				has := w.has_table_row('crew', 1, 'ADMIRAL')
+					|| w.has_table_row('crew', 1, 'Admiral')
 				w.toast('Has Admiral: ${has}')
 			}
 		})
@@ -313,9 +314,9 @@ fn main() {
 		w.add_form_field('Notes:', 'task_notes', '')
 		w.add_button('task_run', 'Run Task')
 		w.add_action_row({
-			'Prepare Form': fn (mut w simplegui.SimpleWindow) {
+			'Prepare Form':  fn (mut w simplegui.SimpleWindow) {
 				w.set_many_placeholders({
-					'task_name': 'e.g. Sync reports'
+					'task_name':  'e.g. Sync reports'
 					'task_notes': 'Add context for the next person'
 				})
 				w.set_many_tooltips({
@@ -324,7 +325,8 @@ fn main() {
 				w.set_status('Prepared the form with helpful hints.')
 			}
 			'Run Busy Task': fn (mut w simplegui.SimpleWindow) {
-				w.with_busy_state(['task_name', 'task_notes', 'task_run'], 'Working...', fn (mut w simplegui.SimpleWindow) {
+				w.with_busy_state(['task_name', 'task_notes', 'task_run'], 'Working...',
+					fn (mut w simplegui.SimpleWindow) {
 					w.set_status('Task completed from the busy-state wrapper.')
 				})
 			}
@@ -353,18 +355,18 @@ fn main() {
 					w.set_status('Fix the highlighted fields.')
 				}
 			}
-			'Clear':    fn (mut w simplegui.SimpleWindow) {
+			'Clear':        fn (mut w simplegui.SimpleWindow) {
 				w.clear_fields(['username', 'email', 'ip_addr', 'phone_num', 'port_num'])
 				w.set_status('Fields cleared.')
 			}
-			'Save':     fn (mut w simplegui.SimpleWindow) {
+			'Save':         fn (mut w simplegui.SimpleWindow) {
 				w.save_values_to_file(settings_path) or {
 					w.error_dialog('Save Failed', err.msg())
 					return
 				}
 				w.toast('Values saved to ${settings_path}')
 			}
-			'Load':     fn (mut w simplegui.SimpleWindow) {
+			'Load':         fn (mut w simplegui.SimpleWindow) {
 				w.load_values_from_file(settings_path) or {
 					w.warn('Load Failed', 'Save some values first.\n${err.msg()}')
 					return
@@ -384,15 +386,15 @@ fn main() {
 				w.add_token('demo_tags', 'macOS')
 				w.set_status('Tokens: ${w.get_tokens('demo_tags').join(', ')}')
 			}
-			'Remove "vlang"': fn (mut w simplegui.SimpleWindow) {
+			'Remove "vlang"':    fn (mut w simplegui.SimpleWindow) {
 				w.remove_token('demo_tags', 'vlang')
 				w.set_status('Tokens: ${w.get_tokens('demo_tags').join(', ')}')
 			}
-			'Toggle Spinner': fn (mut w simplegui.SimpleWindow) {
+			'Toggle Spinner':    fn (mut w simplegui.SimpleWindow) {
 				active := w.toggle_spinner('demo_spinner')
 				w.set_status('Spinner active: ${active}')
 			}
-			'Progress +15': fn (mut w simplegui.SimpleWindow) {
+			'Progress +15':      fn (mut w simplegui.SimpleWindow) {
 				val := w.increment_progress('demo_progress', 15)
 				w.set_status('Progress incremented to ${val}')
 			}
@@ -412,4 +414,3 @@ fn main() {
 	win.set_status('Ready.')
 	win.run()
 }
-

@@ -82,7 +82,8 @@ fn main() {
 	win.add_heading('Modern High-Utility Controls')
 
 	// Dismissible Alert Banner
-	win.add_alert_banner('demo_banner', 'System Status Normal', 'All services and bridge components are running smoothly.', 'success')
+	win.add_alert_banner('demo_banner', 'System Status Normal', 'All services and bridge components are running smoothly.',
+		'success')
 	win.on_change('demo_banner', fn (mut w simplegui.SimpleWindow, val string) {
 		w.set_status('Alert Banner closed')
 	})
@@ -96,14 +97,18 @@ fn main() {
 
 	// Native File Picker Field with NSOpenPanel
 	win.add_label('lbl_file', 'Export Destination:')
-	win.add_file_picker_field('export_path', '/Users/codecaine/Documents', 'Choose Folder...', true)
+	win.add_file_picker_field('export_path', '/Users/codecaine/Documents', 'Choose Folder...',
+		true)
 	win.on_change('export_path', fn (mut w simplegui.SimpleWindow, path string) {
 		w.set_status('Export path: ${path}')
 	})
 
 	// Interactive Filter Chips
 	win.add_label('lbl_tags', 'Filter Tags:')
-	win.add_filter_chips('tag_chips', ['vlang', 'macOS', 'cocoa', 'gui', 'native'], ['vlang', 'native'], true)
+	win.add_filter_chips('tag_chips', ['vlang', 'macOS', 'cocoa', 'gui', 'native'], [
+		'vlang',
+		'native',
+	], true)
 	win.on_change('tag_chips', fn (mut w simplegui.SimpleWindow, tags string) {
 		w.set_status('Active tags: ${tags}')
 	})

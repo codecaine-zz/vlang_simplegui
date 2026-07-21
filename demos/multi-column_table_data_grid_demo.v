@@ -10,7 +10,8 @@ struct Employee {
 }
 
 fn main() {
-	mut win := simplegui.new_simple_window('Multi-Column Table & Data Grid Demo', 700, 750)
+	mut win := simplegui.new_simple_window('Multi-Column Table & Data Grid Demo', 700,
+		750)
 
 	// SECTION 1: Multi-Column Table
 	win.add_heading('1. Multi-Column Table')
@@ -54,9 +55,19 @@ fn main() {
 
 	win.on_click('btn_load_structs', fn (mut win simplegui.SimpleWindow) {
 		staff := [
-			Employee{id: 101, name: 'Alice Smith', role: 'Developer', active: true},
-			Employee{id: 102, name: 'Bob Jones', role: 'Designer', active: false},
-			Employee{id: 103, name: 'Charlie Day', role: 'Manager', active: true},
+			Employee{ id: 101, name: 'Alice Smith', role: 'Developer', active: true },
+			Employee{
+				id:     102
+				name:   'Bob Jones'
+				role:   'Designer'
+				active: false
+			},
+			Employee{
+				id:     103
+				name:   'Charlie Day'
+				role:   'Manager'
+				active: true
+			},
 		]
 		win.load_table_from_structs('emp_table', staff)
 		win.set_status('Loaded ${staff.len} employee structs into table.')

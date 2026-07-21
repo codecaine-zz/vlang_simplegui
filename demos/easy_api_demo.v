@@ -11,8 +11,8 @@ import simplegui
 import time
 
 struct UserProfile {
-	name  string @[required; min_len: '3']
-	email string @[required; email]
+	name  string @[min_len: '3'; required]
+	email string @[email; required]
 }
 
 fn main() {
@@ -24,7 +24,7 @@ fn main() {
 	// --- Structured Menu Bar Builder
 	win.add_menu('File', [
 		simplegui.MenuItem{
-			title: 'Save Session'
+			title:    'Save Session'
 			shortcut: 'cmd+s'
 			callback: fn (mut w simplegui.SimpleWindow) {
 				w.status_temp('Session saved successfully!', 2000)
@@ -37,17 +37,17 @@ fn main() {
 			title: '-'
 		},
 		simplegui.MenuItem{
-			title: 'Exit'
+			title:    'Exit'
 			shortcut: 'cmd+q'
 			callback: fn (mut w simplegui.SimpleWindow) {
 				w.quit()
 			}
-		}
+		},
 	])
 
 	win.add_menu('Edit', [
 		simplegui.MenuItem{
-			title: 'Clear Log'
+			title:    'Clear Log'
 			shortcut: 'cmd+k'
 			callback: fn (mut w simplegui.SimpleWindow) {
 				w.set('log', '')
@@ -55,7 +55,7 @@ fn main() {
 				w.badge('') // Clear badge
 				simplegui.play_sound('Tink')
 			}
-		}
+		},
 	])
 
 	// --- Global window keyboard hotkey shortcut
@@ -123,20 +123,17 @@ fn main() {
 		'Async Task':  fn (mut w simplegui.SimpleWindow) {
 			w.disable_all_controls()
 			w.status('Running background computation...')
-			w.run_async(
-				fn () {
-					// Simulate background work for 2 seconds
-					time.sleep(2000 * time.millisecond)
-				},
-				fn (mut win simplegui.SimpleWindow) {
-					win.enable_all_controls()
-					win.set('progress', 100)
-					win.status('Computation finished!')
-					win.notify('Task Complete', 'Background computation finished successfully!')
-					win.info('Finished', 'Background task completed successfully!')
-					simplegui.play_sound('Purr')
-				}
-			)
+			w.run_async(fn () {
+				// Simulate background work for 2 seconds
+				time.sleep(2000 * time.millisecond)
+			}, fn (mut win simplegui.SimpleWindow) {
+				win.enable_all_controls()
+				win.set('progress', 100)
+				win.status('Computation finished!')
+				win.notify('Task Complete', 'Background computation finished successfully!')
+				win.info('Finished', 'Background task completed successfully!')
+				simplegui.play_sound('Purr')
+			})
 		}
 		'Danger':      fn (mut w simplegui.SimpleWindow) {
 			if w.ask('Are you sure?', 'This shows an error-styled dialog.') {
@@ -215,17 +212,20 @@ fn main() {
 	win.set_toolbar_style('unified')
 
 	win.on_toolbar_click('nav_settings', fn (mut w simplegui.SimpleWindow) {
-		w.show_sheet_alert('Preferences', 'You clicked the native preferences toolbar icon!', 'info')
+		w.show_sheet_alert('Preferences', 'You clicked the native preferences toolbar icon!',
+			'info')
 	})
 	win.on_toolbar_click('nav_home', fn (mut w simplegui.SimpleWindow) {
 		w.status_temp('Returned to Home state', 2000)
 	})
 	win.on_toolbar_click('nav_help', fn (mut w simplegui.SimpleWindow) {
-		w.show_sheet_alert('Help Center', 'Please check the Github repository for documentation.', 'warning')
+		w.show_sheet_alert('Help Center', 'Please check the Github repository for documentation.',
+			'warning')
 	})
 
 	win.add_dock_menu_item('Trigger Alert', fn (mut w simplegui.SimpleWindow) {
-		w.show_sheet_alert('Dock Menu Trigger', 'This was triggered from the macOS Dock icon context menu!', 'critical')
+		w.show_sheet_alert('Dock Menu Trigger', 'This was triggered from the macOS Dock icon context menu!',
+			'critical')
 	})
 
 	win.set_status('Ready. Try the buttons above!')

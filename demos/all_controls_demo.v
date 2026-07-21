@@ -43,28 +43,34 @@ fn main() {
 	win.end_row()
 
 	win.add_label('lbl_notes', 'Notes (textarea)')
+
 	win.add_textarea('notes', 'This demo exercises every built-in control documented in API.md.')
 		.height(80)
 		.width(860)
 
 	win.add_label('lbl_search', 'Search field')
+
 	win.add_search_field('search', 'Search the demo…')
 		.width(860)
 
 	win.add_label('lbl_tokens', 'Token / tag field (comma-separated)')
+
 	win.add_token_field('tags', 'swift,vlang,cocoa,native')
 		.width(860)
 
 	win.add_label('lbl_path', 'Path control (native macOS breadcrumb)')
+
 	win.add_path_control('file_path', '/Users/developer/Projects/vlang_simplegui')
 		.width(860)
 
 	win.add_label('lbl_html', 'HTML preview (WebKit)')
+
 	win.add_html_view('html_view', '<html><body style="font-family:-apple-system,sans-serif;font-size:13px;color:#f8fafc;background:transparent;margin:0;"><h3 style="color:#bd93f9;margin:0 0 4px">Native HTML Preview</h3><p style="margin:0">Lightweight rich content using WebKit.</p></body></html>')
 		.width(860)
 		.height(90)
 
 	win.add_label('lbl_drop', 'Drop zone (drag files here)')
+
 	win.add_drop_zone('drop_zone', 'Drop a file here')
 		.width(860)
 		.height(60)
@@ -106,6 +112,7 @@ fn main() {
 	win.end_row()
 
 	win.add_label('lbl_range', 'Range slider (dual thumb, 0–100)')
+
 	win.add_range_slider('range_sel', 0, 100, 20, 80)
 		.width(860)
 
@@ -146,7 +153,8 @@ fn main() {
 	win.end_row()
 
 	win.begin_row('row_icon_seg')
-	win.add_icon_segments('icon_seg', ['house', 'gear', 'person', 'envelope', 'trash'], 'house')
+	win.add_icon_segments('icon_seg', ['house', 'gear', 'person', 'envelope', 'trash'],
+		'house')
 	win.add_chip_group('chip_cat', ['Design', 'Dev', 'QA', 'Docs', 'Ops'], 'Dev')
 	win.end_row()
 
@@ -218,8 +226,10 @@ fn main() {
 	// ========================================================================
 	win.add_heading('Tag Cloud & Wizard Stepper')
 
-	win.add_tag_cloud('tag_cloud', ['V', 'macOS', 'Cocoa', 'Swift', 'Objective-C', 'GUI', 'Native', 'OpenGL'])
-	win.add_wizard_stepper('wizard', ['Account', 'Profile', 'Preferences', 'Review', 'Done'], 1)
+	win.add_tag_cloud('tag_cloud', ['V', 'macOS', 'Cocoa', 'Swift', 'Objective-C', 'GUI', 'Native',
+		'OpenGL'])
+	win.add_wizard_stepper('wizard', ['Account', 'Profile', 'Preferences', 'Review', 'Done'],
+		1)
 
 	// ========================================================================
 	// SECTION 11 · Section headers & separators
@@ -267,17 +277,22 @@ fn main() {
 	win.begin_row('row_prop_color')
 	win.group('grp_props', 'Property Inspector', fn (mut w simplegui.SimpleWindow) {
 		w.add_property_grid('prop_grid', {
-			'Theme':      'dracula'
-			'Version':    '1.0.0'
-			'Build':      '20260720'
-			'Status':     '200 OK'
+			'Theme':   'dracula'
+			'Version': '1.0.0'
+			'Build':   '20260720'
+			'Status':  '200 OK'
 		})
 	})
 	win.group('grp_colors', 'Color Palette Grid', fn (mut w simplegui.SimpleWindow) {
 		w.add_color_grid('color_grid', [
-			'#bd93f9', '#ff79c6', '#50fa7b',
-			'#ffb86c', '#8be9fd', '#f1fa8c',
-			'#ff5555', '#6272a4',
+			'#bd93f9',
+			'#ff79c6',
+			'#50fa7b',
+			'#ffb86c',
+			'#8be9fd',
+			'#f1fa8c',
+			'#ff5555',
+			'#6272a4',
 		])
 	})
 	win.end_row()
@@ -324,7 +339,8 @@ fn main() {
 	// ========================================================================
 	win.add_heading('Code Editor')
 
-	win.add_code_editor('code_ed', 'fn greet(name string) string {\n\treturn "Hello, " + name + "!"\n}\n\nfn main() {\n\tprintln(greet("World"))\n}', 180)
+	win.add_code_editor('code_ed', 'fn greet(name string) string {\n\treturn "Hello, " + name + "!"\n}\n\nfn main() {\n\tprintln(greet("World"))\n}',
+		180)
 		.width(860)
 
 	// ========================================================================
@@ -334,10 +350,14 @@ fn main() {
 
 	win.add_timeline_view('timeline', 200)
 	win.set_control_width('timeline', 860)
-	win.add_timeline_entry('timeline', '09:00', 'Build started', 'Running V compiler…', 'info')
-	win.add_timeline_entry('timeline', '09:02', 'Tests passed', 'All 42 unit tests OK', 'success')
-	win.add_timeline_entry('timeline', '09:04', 'Deploy warning', 'Staging server at 92% CPU', 'warning')
-	win.add_timeline_entry('timeline', '09:07', 'Deploy failed', 'Port 443 connection refused', 'error')
+	win.add_timeline_entry('timeline', '09:00', 'Build started', 'Running V compiler…',
+		'info')
+	win.add_timeline_entry('timeline', '09:02', 'Tests passed', 'All 42 unit tests OK',
+		'success')
+	win.add_timeline_entry('timeline', '09:04', 'Deploy warning', 'Staging server at 92% CPU',
+		'warning')
+	win.add_timeline_entry('timeline', '09:07', 'Deploy failed', 'Port 443 connection refused',
+		'error')
 
 	win.begin_row('row_timeline_ops')
 	win.add_button('btn_tl_add', 'Add entry')
@@ -371,7 +391,8 @@ fn main() {
 	// ========================================================================
 	win.add_heading('Containers')
 
-	win.add_collapsible_section('collap', 'Collapsible Section (click to expand/collapse)', true)
+	win.add_collapsible_section('collap', 'Collapsible Section (click to expand/collapse)',
+		true)
 	win.add_label('collap_content', 'This content lives inside the collapsible section.')
 	win.add_input('collap_input', 'Nested input inside collapsible')
 
@@ -401,17 +422,57 @@ fn main() {
 	win.add_tree_view('tree_view', 200)
 	win.set_control_width('tree_view', 860)
 	win.set_tree_nodes('tree_view', [
-		simplegui.TreeNode{ id: 'root1',  parent_id: '',      text: 'simplegui' }
-		simplegui.TreeNode{ id: 'src',    parent_id: 'root1', text: 'simplegui/' }
-		simplegui.TreeNode{ id: 'dem',    parent_id: 'root1', text: 'demos/' }
-		simplegui.TreeNode{ id: 'api',    parent_id: 'root1', text: 'API.md' }
-		simplegui.TreeNode{ id: 'sg_v',   parent_id: 'src',   text: 'simplegui.v' }
-		simplegui.TreeNode{ id: 'ergo_v', parent_id: 'src',   text: 'ergonomics.v' }
-		simplegui.TreeNode{ id: 'sys_v',  parent_id: 'src',   text: 'sys.v' }
-		simplegui.TreeNode{ id: 'all_d',  parent_id: 'dem',   text: 'all_controls_demo.v' }
-		simplegui.TreeNode{ id: 'easy_d', parent_id: 'dem',   text: 'easy_api_demo.v' }
-		simplegui.TreeNode{ id: 'root2',  parent_id: '',      text: 'tests/' }
-		simplegui.TreeNode{ id: 'test1',  parent_id: 'root2', text: 'simplegui_test.v' }
+		simplegui.TreeNode{ id: 'root1', parent_id: '', text: 'simplegui' },
+		simplegui.TreeNode{
+			id:        'src'
+			parent_id: 'root1'
+			text:      'simplegui/'
+		},
+		simplegui.TreeNode{
+			id:        'dem'
+			parent_id: 'root1'
+			text:      'demos/'
+		},
+		simplegui.TreeNode{
+			id:        'api'
+			parent_id: 'root1'
+			text:      'API.md'
+		},
+		simplegui.TreeNode{
+			id:        'sg_v'
+			parent_id: 'src'
+			text:      'simplegui.v'
+		},
+		simplegui.TreeNode{
+			id:        'ergo_v'
+			parent_id: 'src'
+			text:      'ergonomics.v'
+		},
+		simplegui.TreeNode{
+			id:        'sys_v'
+			parent_id: 'src'
+			text:      'sys.v'
+		},
+		simplegui.TreeNode{
+			id:        'all_d'
+			parent_id: 'dem'
+			text:      'all_controls_demo.v'
+		},
+		simplegui.TreeNode{
+			id:        'easy_d'
+			parent_id: 'dem'
+			text:      'easy_api_demo.v'
+		},
+		simplegui.TreeNode{
+			id:        'root2'
+			parent_id: ''
+			text:      'tests/'
+		},
+		simplegui.TreeNode{
+			id:        'test1'
+			parent_id: 'root2'
+			text:      'simplegui_test.v'
+		},
 	])
 
 	win.begin_row('row_tree_ops')
@@ -426,7 +487,7 @@ fn main() {
 
 	win.add_label('lbl_links', 'Hyperlink buttons (add_link)')
 	win.begin_row('row_links')
-	win.add_link('link_vlang',  'V Language website',  'https://vlang.io')
+	win.add_link('link_vlang', 'V Language website', 'https://vlang.io')
 	win.add_link('link_github', 'simplegui on GitHub', 'https://github.com/codecaine-zz/vlang_simplegui')
 	win.end_row()
 
@@ -453,12 +514,13 @@ fn main() {
 	win.add_heading('Form Helpers (add_form_*)')
 
 	win.add_form_field('First Name', 'form_fname', 'Grace')
-	win.add_form_field('Last Name',  'form_lname', 'Hopper')
+	win.add_form_field('Last Name', 'form_lname', 'Hopper')
 	win.add_form_password('Password', 'form_pass', '')
 	win.add_form_textarea('Bio', 'form_bio', 'Compiler pioneer & rear admiral.')
 	win.add_form_slider('Experience (yrs)', 'form_exp', 20)
 	win.add_form_number('Team size', 'form_team', 5)
-	win.add_form_dropdown('Department', 'form_dept', ['Engineering', 'Research', 'Operations', 'Design'], 'Engineering')
+	win.add_form_dropdown('Department', 'form_dept', ['Engineering', 'Research', 'Operations',
+		'Design'], 'Engineering')
 	win.add_form_date_picker('Start date', 'form_start', '1944-01-01')
 	win.add_form_progress('Onboarding', 'form_prog', 60)
 	win.add_form_switch('Label', 'form_sw', 'Receive newsletters', true)
@@ -466,7 +528,7 @@ fn main() {
 
 	win.begin_row('row_form_ops')
 	win.add_button('btn_form_snapshot', 'Form snapshot')
-	win.add_button('btn_form_reset',    'Reset form')
+	win.add_button('btn_form_reset', 'Reset form')
 	win.end_row()
 
 	// ========================================================================
@@ -514,16 +576,20 @@ fn main() {
 				w.set_status('Menu: Show Snapshot triggered.')
 				w.toast('Snapshot from menu!')
 			}
-		}
-		simplegui.MenuItem{ title: '-' }
+		},
+		simplegui.MenuItem{
+			title: '-'
+		},
 		simplegui.MenuItem{
 			title:    'Reset Status'
 			shortcut: 'cmd+shift+r'
 			callback: fn (mut w simplegui.SimpleWindow) {
 				w.set_status('Ready.')
 			}
-		}
-		simplegui.MenuItem{ title: '-' }
+		},
+		simplegui.MenuItem{
+			title: '-'
+		},
 		simplegui.MenuItem{
 			title:    'Log Info'
 			shortcut: 'cmd+shift+l'
@@ -531,7 +597,7 @@ fn main() {
 				w.append_console('log_console', '[INFO] Triggered from menu bar.\n', 1)
 				w.set_status('Menu: Log info triggered.')
 			}
-		}
+		},
 	])
 
 	// --- Right-click context menus on specific controls ---
@@ -542,15 +608,17 @@ fn main() {
 				w.copy_to_clipboard(w.get_text('name'))
 				w.set_status('Name copied to clipboard.')
 			}
-		}
-		simplegui.MenuItem{ title: '-' }
+		},
+		simplegui.MenuItem{
+			title: '-'
+		},
 		simplegui.MenuItem{
 			title:    'Clear field'
 			callback: fn (mut w simplegui.SimpleWindow) {
 				w.set_text('name', '')
 				w.set_status('Name field cleared via context menu.')
 			}
-		}
+		},
 	])
 
 	win.add_context_menu('log_console', [
@@ -560,13 +628,14 @@ fn main() {
 				w.clear_console('log_console')
 				w.set_status('Console cleared via context menu.')
 			}
-		}
+		},
 		simplegui.MenuItem{
 			title:    'Log timestamp'
 			callback: fn (mut w simplegui.SimpleWindow) {
-				w.append_console('log_console', '[INFO] Timestamp: ${w.time_now()}\n', 1)
+				w.append_console('log_console', '[INFO] Timestamp: ${w.time_now()}\n',
+					1)
 			}
-		}
+		},
 	])
 
 	win.add_context_menu('window', [
@@ -576,13 +645,13 @@ fn main() {
 				w.copy_to_clipboard(w.get_status())
 				w.toast('Status text copied!')
 			}
-		}
+		},
 		simplegui.MenuItem{
 			title:    'Reset status'
 			callback: fn (mut w simplegui.SimpleWindow) {
 				w.set_status('Ready.')
 			}
-		}
+		},
 	])
 
 	// ========================================================================
@@ -764,7 +833,8 @@ fn main() {
 	win.on_change('prop_grid', fn (mut w simplegui.SimpleWindow, v string) {
 		parts := v.split(':')
 		if parts.len == 2 {
-			w.append_console('log_console', '[INFO] Property updated — key: "${parts[0]}", value: "${parts[1]}"\n', 1)
+			w.append_console('log_console', '[INFO] Property updated — key: "${parts[0]}", value: "${parts[1]}"\n',
+				1)
 		}
 		w.set_status('Property grid → ${v}')
 	})
@@ -805,7 +875,8 @@ fn main() {
 
 	// --- Log console ---
 	win.on_click('btn_log_info', fn (mut w simplegui.SimpleWindow) {
-		w.append_console('log_console', '[INFO] This is an informational message.\n', 1)
+		w.append_console('log_console', '[INFO] This is an informational message.\n',
+			1)
 	})
 	win.on_click('btn_log_warn', fn (mut w simplegui.SimpleWindow) {
 		w.append_console('log_console', '[WARNING] CPU usage exceeded 80%!\n', 2)
@@ -888,15 +959,14 @@ fn main() {
 		w.set_status('Form newsletter switch → ${v}')
 	})
 	win.on_click('btn_form_snapshot', fn (mut w simplegui.SimpleWindow) {
-		summary := 'Form snapshot:\n' +
-			'  First Name : ${w.get_text("form_fname")}\n' +
-			'  Last Name  : ${w.get_text("form_lname")}\n' +
-			'  Bio        : ${w.get_text("form_bio")}\n' +
-			'  Experience : ${w.get_value_int("form_exp")} yrs\n' +
-			'  Team size  : ${w.get_value_int("form_team")}\n' +
-			'  Department : ${w.get_text("form_dept")}\n' +
-			'  Start date : ${w.get_text("form_start")}\n' +
-			'  Newsletter : ${w.get_checked("form_sw")}'
+		summary := 'Form snapshot:\n' + '  First Name : ${w.get_text('form_fname')}\n' +
+			'  Last Name  : ${w.get_text('form_lname')}\n' +
+			'  Bio        : ${w.get_text('form_bio')}\n' +
+			'  Experience : ${w.get_value_int('form_exp')} yrs\n' +
+			'  Team size  : ${w.get_value_int('form_team')}\n' +
+			'  Department : ${w.get_text('form_dept')}\n' +
+			'  Start date : ${w.get_text('form_start')}\n' +
+			'  Newsletter : ${w.get_checked('form_sw')}'
 		w.alert('Form Snapshot', summary)
 		w.set_status('Form snapshot captured.')
 	})
@@ -916,16 +986,15 @@ fn main() {
 
 	// --- Fields row ---
 	win.on_click('btn_fr_snapshot', fn (mut w simplegui.SimpleWindow) {
-		summary := 'Fields row:\n' +
-			'  City    : ${w.get_text("fr_city")}\n' +
-			'  Country : ${w.get_text("fr_country")}\n' +
-			'  Zip     : ${w.get_text("fr_zip")}'
+		summary := 'Fields row:\n' + '  City    : ${w.get_text('fr_city')}\n' +
+			'  Country : ${w.get_text('fr_country')}\n' + '  Zip     : ${w.get_text('fr_zip')}'
 		w.alert('Fields Row Snapshot', summary)
 		w.set_status('Fields row snapshot captured.')
 	})
 
 	// --- Initial console message ---
-	win.append_console('log_console', 'All Controls Demo initialized. Interact with any control above.\n', 0)
+	win.append_console('log_console', 'All Controls Demo initialized. Interact with any control above.\n',
+		0)
 
 	// --- Live chart & gauge timer (500 ms) ---
 	mut tick := 0

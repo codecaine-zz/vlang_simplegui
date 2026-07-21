@@ -85,7 +85,6 @@ The goal is a simple, high-abstraction GUI layer that feels familiar to anyone u
 
 The developer controls demo in [demos/developer_controls_demo.v](demos/developer_controls_demo.v) showcases these richer UI helpers in one place, while [demos/editable_grid_showcase_demo.v](demos/editable_grid_showcase_demo.v) demonstrates the editable-grid workflow with selection, filtering, sorting, and programmatic cell access.
 
-
 For app code, the grid helpers are intentionally ergonomic:
 
 - `grid_get_rows()` / `grid_set_rows()` replace the full data set in one step.
@@ -550,39 +549,40 @@ v run .
 
 ### Layout system
 
-| Demo                                                                     | Description                                                           |
-| ------------------------------------------------------------------------ | --------------------------------------------------------------------- |
-| [layout_vertical_stack.v](demos/layout_vertical_stack.v)                 | Linear vertical stacking, padding, spacing, dividers, and spacers     |
-| [layout_horizontal_rows.v](demos/layout_horizontal_rows.v)               | Side-by-side rows, spacers, action rows, and field rows               |
-| [layout_form_sections.v](demos/layout_form_sections.v)                   | Semantic forms, section blocks, and form control validation           |
-| [layout_group_boxes.v](demos/layout_group_boxes.v)                       | Visual panel containment boxes                                        |
-| [layout_tabs.v](demos/layout_tabs.v)                                     | Interactive native tabs switching between multi-view panels           |
-| [layout_scroll_view.v](demos/layout_scroll_view.v)                       | Scrollable panel constraints                                          |
-| [layout_struct_reflection.v](demos/layout_struct_reflection.v)           | Auto-generating forms from structs using compile-time reflection      |
-| [layout_responsive_constraints.v](demos/layout_responsive_constraints.v) | Responsive auto-layout scaling vs fixed constraints                   |
-| [layout_events_mini_demo.v](demos/layout_events_mini_demo.v)             | Compact showcase combining sections, rows, groups, and event bindings |
+| Demo                                                                       | Description                                                                                  |
+| -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| [layout_vertical_stack.v](demos/layout_vertical_stack.v)                   | Linear vertical stacking, padding, spacing, dividers, and spacers                            |
+| [layout_horizontal_rows.v](demos/layout_horizontal_rows.v)                 | Side-by-side rows, spacers, action rows, and field rows                                      |
+| [layout_form_sections.v](demos/layout_form_sections.v)                     | Semantic forms, section blocks, and form control validation                                  |
+| [layout_group_boxes.v](demos/layout_group_boxes.v)                         | Visual panel containment boxes                                                               |
+| [layout_tabs.v](demos/layout_tabs.v)                                       | Interactive native tabs switching between multi-view panels                                  |
+| [layout_scroll_view.v](demos/layout_scroll_view.v)                         | Scrollable panel constraints                                                                 |
+| [layout_struct_reflection.v](demos/layout_struct_reflection.v)             | Auto-generating forms from structs using compile-time reflection                             |
+| [layout_responsive_constraints.v](demos/layout_responsive_constraints.v)   | Responsive auto-layout scaling vs fixed constraints                                          |
+| [layout_events_mini_demo.v](demos/layout_events_mini_demo.v)               | Compact showcase combining sections, rows, groups, and event bindings                        |
 | [layout_advanced_grid_flex_demo.v](demos/layout_advanced_grid_flex_demo.v) | Multi-column grid forms, flexbox directions & distribution, alignment, and nested containers |
 
 ### Controls & widgets
 
-| Demo                                                                 | Description                                                                         |
-| -------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| Demo                                                                 | Description                                                                                                                                                                    |
+| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | [all_controls_demo.v](demos/all_controls_demo.v)                     | Comprehensive 20-section showcase of every `win.add_*` control in API.md — text, buttons, sliders, pickers, charts, grids, badges, stat cards, code editor, timeline, and more |
-| [new_controls_demo.v](demos/new_controls_demo.v)                     | Segmented menus, popup selections, and search fields                                |
-| [new_controls_showcase.v](demos/new_controls_showcase.v)             | Showcase of the newest control additions                                            |
-| [more_controls_demo.v](demos/more_controls_demo.v)                   | Interactive showcase of Stat Cards, Banners, Section Headers, Vertical Sliders & Chip Groups |
-| [modern_widgets_demo.v](demos/modern_widgets_demo.v)                 | Level indicators, star ratings, and editable combo boxes                            |
-| [rich_widgets_demo.v](demos/rich_widgets_demo.v)                     | Advanced rich macOS controls suite                                                  |
-| [developer_controls_demo.v](demos/developer_controls_demo.v)         | Breadcrumbs, shortcut recorders, charts, gauges, property grids, and log consoles   |
-| [editable_grid_showcase_demo.v](demos/editable_grid_showcase_demo.v) | Editable grid workflow: selection, filtering, sorting, and programmatic cell access |
-| [tree_view_demo.v](demos/tree_view_demo.v)                           | Hierarchical tree view                                                              |
-| [advanced_features_demo.v](demos/advanced_features_demo.v)           | Advanced typography and macOS APIs                                                  |
-| [menu_demo.v](demos/menu_demo.v)                                     | Standard macOS application menus and text editing shortcuts                         |
-| [colors_demo.v](demos/colors_demo.v)                                 | Live custom colors styling sandbox for typography and backgrounds                   |
-| [animation_demo.v](demos/animation_demo.v)                           | Animated control and window effects                                                 |
-| [api_control_showcase_demo.v](demos/api_control_showcase_demo.v)     | End-to-end tour of the control APIs                                                 |
-| [api_coverage_demo.v](demos/api_coverage_demo.v)                     | Broad coverage exercise of the wrapper API surface                                  |
-| [lorem_and_html_demo.v](demos/lorem_and_html_demo.v)                 | Placeholder text generation and HTML rendering                                      |
+| [new_controls_demo.v](demos/new_controls_demo.v)                     | Segmented menus, popup selections, and search fields                                                                                                                           |
+| [cursor_demo.v](demos/cursor_demo.v)                                 | Window-wide and per-control cursor icon/size customization, mouse warping, and live mouse tracking                                                                             |
+| [new_controls_showcase.v](demos/new_controls_showcase.v)             | Showcase of the newest control additions                                                                                                                                       |
+| [more_controls_demo.v](demos/more_controls_demo.v)                   | Interactive showcase of Stat Cards, Banners, Section Headers, Vertical Sliders & Chip Groups                                                                                   |
+| [modern_widgets_demo.v](demos/modern_widgets_demo.v)                 | Level indicators, star ratings, and editable combo boxes                                                                                                                       |
+| [rich_widgets_demo.v](demos/rich_widgets_demo.v)                     | Advanced rich macOS controls suite                                                                                                                                             |
+| [developer_controls_demo.v](demos/developer_controls_demo.v)         | Breadcrumbs, shortcut recorders, charts, gauges, property grids, and log consoles                                                                                              |
+| [editable_grid_showcase_demo.v](demos/editable_grid_showcase_demo.v) | Editable grid workflow: selection, filtering, sorting, and programmatic cell access                                                                                            |
+| [tree_view_demo.v](demos/tree_view_demo.v)                           | Hierarchical tree view                                                                                                                                                         |
+| [advanced_features_demo.v](demos/advanced_features_demo.v)           | Advanced typography and macOS APIs                                                                                                                                             |
+| [menu_demo.v](demos/menu_demo.v)                                     | Standard macOS application menus and text editing shortcuts                                                                                                                    |
+| [colors_demo.v](demos/colors_demo.v)                                 | Live custom colors styling sandbox for typography and backgrounds                                                                                                              |
+| [animation_demo.v](demos/animation_demo.v)                           | Animated control and window effects                                                                                                                                            |
+| [api_control_showcase_demo.v](demos/api_control_showcase_demo.v)     | End-to-end tour of the control APIs                                                                                                                                            |
+| [api_coverage_demo.v](demos/api_coverage_demo.v)                     | Broad coverage exercise of the wrapper API surface                                                                                                                             |
+| [lorem_and_html_demo.v](demos/lorem_and_html_demo.v)                 | Placeholder text generation and HTML rendering                                                                                                                                 |
 
 ### Complete example apps
 
@@ -642,15 +642,15 @@ v run .
 
 ### System, data & performance
 
-| Demo                                                                         | Description                                                     |
-| ---------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| [deflate_demo.v](demos/deflate_demo.v)                                       | Compress and decompress strings using zlib deflate              |
-| [zstd_demo.v](demos/zstd_demo.v)                                             | Zstandard compression and decompression                         |
-| [encoding_and_system_info_demo.v](demos/encoding_and_system_info_demo.v)     | Hex/Base64 encoder-decoder with environment details viewer      |
+| Demo                                                                         | Description                                                                                                    |
+| ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| [deflate_demo.v](demos/deflate_demo.v)                                       | Compress and decompress strings using zlib deflate                                                             |
+| [zstd_demo.v](demos/zstd_demo.v)                                             | Zstandard compression and decompression                                                                        |
+| [encoding_and_system_info_demo.v](demos/encoding_and_system_info_demo.v)     | Hex/Base64 encoder-decoder with environment details viewer                                                     |
 | [sys_demo.v](demos/sys_demo.v)                                               | Neutralino-inspired system call extensions, OS diagnostics, hardware specs, network tools, and shell utilities |
-| [system_calls_demo.v](demos/system_calls_demo.v)                             | Shell process invocation, stdout routing, and folder monitoring |
-| [system_and_stdlib_features_demo.v](demos/system_and_stdlib_features_demo.v) | Exhaustive showcase of V core system operations                 |
-| [benchmark_demo.v](demos/benchmark_demo.v)                                   | Wrapper operation latency benchmarks                            |
+| [system_calls_demo.v](demos/system_calls_demo.v)                             | Shell process invocation, stdout routing, and folder monitoring                                                |
+| [system_and_stdlib_features_demo.v](demos/system_and_stdlib_features_demo.v) | Exhaustive showcase of V core system operations                                                                |
+| [benchmark_demo.v](demos/benchmark_demo.v)                                   | Wrapper operation latency benchmarks                                                                           |
 
 ### Run the Stack Style demo
 
@@ -1073,6 +1073,7 @@ v test .
 Full API documentation and detailed signature references are maintained in [API.md](API.md). Below is an architectural overview of SimpleGUI's API surface:
 
 ### 1. Window Operations & Themes
+
 - **Lifecycle**: `new_simple_window(title, w, h)`, `win.run()`, `win.close()`, `win.hide()`, `win.show_window()`
 - **Geometry & Alignment**: `win.center()`, `win.align(pos)`, `win.set_size(w, h)`, `win.set_position(x, y)`, `win.set_min_size()`, `win.set_max_size()`, `win.set_resizable()`, `win.set_aspect_ratio()`
 - **Appearance & Opacity**: `win.set_title(t)`, `win.set_subtitle(s)`, `win.set_opacity(alpha)`, `win.set_background_color(hex)`, `win.set_font_color(color)`, `win.set_titlebar_visible()`, `win.set_titlebar_appears_transparent()`, `win.set_full_size_content_view()`
@@ -1080,6 +1081,7 @@ Full API documentation and detailed signature references are maintained in [API.
 - **Window Stacking & Dock**: `win.set_always_on_top(bool)`, `win.set_window_level(level)`, `win.toggle_fullscreen()`, `win.bounce_dock(critical)`, `win.set_dock_badge(count)`, `win.set_movable_by_window_background()`
 
 ### 2. Control Layout & Containers
+
 - **Horizontal Stacking**: `win.begin_row(name)`, `win.end_row()`, `win.row(name, callback)`
 - **Multi-Column Grid Containers**: `win.begin_grid(name, columns, spacing)`, `win.end_grid()`, `win.grid(name, columns, spacing, callback)`
 - **Flexbox Containers**: `win.begin_flex_box(name, direction, justify, align)`, `win.end_flex_box()`, `win.flex_box(name, direction, justify, align, callback)`
@@ -1088,21 +1090,25 @@ Full API documentation and detailed signature references are maintained in [API.
 - **Layout Spacers**: `win.add_vertical_spacer(h)`, `win.add_horizontal_spacer(w)`, `win.add_separator()`
 
 ### 3. Controls & Widgets (40+ Native Controls)
+
 - **Standard Controls**: `add_input`, `add_password`, `add_textarea`, `add_checkbox`, `add_button`, `add_number`, `add_slider`, `add_dropdown`, `add_segmented_control`, `add_radio_group`, `add_switch`, `add_search_field`
 - **Rich Cocoa Controls**: `add_combo_box`, `add_level_indicator`, `add_rating`, `add_spinner`, `add_path_control`, `add_token_field`, `add_stepper`, `add_knob`, `add_pull_down`, `add_image_button`
 - **Dashboard & Developer Widgets**: `add_breadcrumbs`, `add_shortcut_recorder`, `add_chart`, `add_circular_progress`, `add_property_grid`, `add_color_grid`, `add_console`, `add_code_editor`, `add_timeline_view`, `add_stat_card`, `add_banner`, `add_star_rating`, `add_range_slider`, `add_split_button`, `add_tag_cloud`, `add_wizard_stepper`, `add_section_header`, `add_vertical_slider`, `add_chip_group`, `add_badge`, `add_icon_segments`, `add_status_indicator`, `add_metric_meter`, `add_avatar_card`, `add_time_picker`, `add_tray_icon`, `add_collapsible_section`, `add_toolbar_item`, `add_html_view`, `add_drop_zone`
 - **Reflection & Struct Validation**: `win.add_form_from_struct[T](default_data)` auto-builds forms from V structs; `win.validate_struct[T]()` validates struct field attributes (`@[required]`, `@[min_len]`, `@[max_len]`, `@[email]`, `@[url]`, `@[alphanumeric]`, `@[min]`, `@[max]`).
 
 ### 4. Sizing, Styling, Alignment & Fluent Chaining
+
 - `set_control_width`, `set_control_height`, `set_control_font_size`, `set_control_font_bold`, `set_control_font_name`, `set_control_background_color`, `set_control_font_color`, `set_control_visible`, `set_control_enabled`, `set_control_alignment`, `set_control_expand_fill`, `set_placeholder`, `set_error`, `set_tooltip`
 - **Fluent Modifiers**: Chain directly on creation: `.width(w)`, `.height(h)`, `.font_size(s)`, `.bold(b)`, `.font_name(f)`, `.color(hex)`, `.font_color(hex)`, `.align_left()`, `.align_center()`, `.align_right()`, `.align_top()`, `.align_bottom()`, `.expand_fill()`, `.placeholder(t)`, `.error(err)`, `.tooltip(t)`, `.visible(b)`, `.enabled(b)`, `.onclick(cb)`, `.onchange(cb)`, `.onenter(cb)`, `.onfocus(cb)`, `.onblur(cb)`, `.onhover(cb)`
 
 ### 5. Dialogs, Popups & File Pickers
+
 - `win.alert(title, msg)`, `win.alert_with_style(title, msg, style)`, `win.confirm(title, msg)`, `win.prompt(title, msg, default)`, `win.choice_dialog(title, msg, choices)`
 - `win.info()`, `win.warn()`, `win.error_dialog()`, `win.ask()`, `win.choose()`, `win.ask_text()`
 - `win.select_file()`, `win.select_file_with_extensions(exts)`, `win.select_folder()`, `win.save_file_picker()`, `win.choose_file()`, `win.choose_folder()`, `win.choose_save_file()`
 
 ### 6. System & Platform APIs (`NL_OS`, `NL_COMPUTER`, `NL_FILESYSTEM`)
+
 - **Process Execution**: `win.exec(cmd)`, `win.exec_bg(cmd)`, `win.exec_timeout(cmd, ms)`, `win.spawn_process(path, args, env)`
 - **Environment & System Paths**: `win.get_env(key)`, `win.set_env(key, val)`, `win.get_system_path(name)` (`home`, `temp`, `desktop`, `documents`, `downloads`, `cache`, `app_data`)
 - **Hardware & Computer Specs**: `win.get_hostname()`, `win.get_username()`, `win.get_pid()`, `win.get_cpu_info()`, `win.get_cpu_cores()`, `win.get_memory_info()`, `win.get_disk_usage(path)`, `win.get_file_metadata(path)`
@@ -1111,6 +1117,7 @@ Full API documentation and detailed signature references are maintained in [API.
 - **macOS System Actions**: `win.show_system_notification()`, `win.say()`, `win.speak_with_voice()`, `win.toggle_dark_mode()`, `win.get_battery_percent()`, `win.get_volume()`, `win.take_screenshot()`, `win.trash_file()`, `win.defaults_read/write`
 
 ### 7. V Standard Library High-Level Wrappers
+
 - **HTTP & WebSockets**: `win.http_get(url)`, `win.http_post(url, data)`, `win.websocket_client(url, callback)`
 - **Crypto & Hashing**: `win.crypto_sha256()`, `win.crypto_sha512()`, `win.crypto_md5()`, `win.crypto_bcrypt_hash()`, `win.crypto_bcrypt_verify()`, `win.crypto_hmac_sha256()`, `win.crypto_wyhash()`, `win.crypto_encrypt_aes()`, `win.crypto_decrypt_aes()`
 - **Encodings & Compression**: `win.hex_encode()`, `win.hex_decode()`, `win.base64_encode()`, `win.base64_decode()`, `win.compress_gzip()`, `win.decompress_gzip()`, `win.compress_zlib()`, `win.compress_deflate()`, `win.compress_zstd()`
@@ -1119,17 +1126,20 @@ Full API documentation and detailed signature references are maintained in [API.
 - **Math & Stats**: `win.complex_new(re, im)` ($e^z$, conjugate, phase), `win.math_sin()`, `win.math_cos()`, `win.math_sqrt()`, `win.math_clamp()`, `win.math_remap()`, `win.math_smoothstep()`, `win.stats_mean()`, `win.stats_median()`, `win.stats_rms()`
 
 ### 8. Event Handling & Custom Menus
+
 - **Control Events**: `win.on_click(name, cb)`, `win.on_change(name, cb)`, `win.on_hover(name, cb)`, `win.on_focus(name, cb)`, `win.on_blur(name, cb)`, `win.on_enter(name, cb)`, `win.on_key(key, cb)`
 - **Window Events**: `win.on_resize(cb)`, `win.on_window_focus(cb)`, `win.on_window_blur(cb)`, `win.on_window_minimize(cb)`, `win.on_window_restore(cb)`, `win.on_close(cb)`, `win.on_file_drop(cb)`
 - **Application Menus**: `win.add_menu_item(menu, title, shortcut, cb)`, `win.add_menu(menu, items)`
 - **Context Menus**: `win.add_context_menu_item(control, title, cb)`, `win.add_context_menu(control, items)`
 
 ### 9. Multi-Column Tables, Data Grids & Tree Views
+
 - **Tables**: `win.add_table(name, columns)`, `win.set_table_rows(name, rows)`, `win.load_table_from_structs[T](name, items)`, `win.add_table_row()`, `win.get_table_selected()`, `win.on_table_select()`, `win.on_table_double_click()`, `win.save_table_to_csv()`, `win.load_table_from_csv()`
 - **Editable Data Grids**: `win.add_grid(name, headers, initial_rows)`, `win.grid_add_row()`, `win.grid_delete_row()`, `win.grid_get_cell()`, `win.grid_set_cell()`, `win.grid_get_selected_cell()`, `win.grid_set_filter()`, `win.grid_sort_by_column()`, `win.grid_set_column_type()`
 - **Tree Views**: `TreeNode` struct (`id`, `parent_id`, `text`), `win.add_tree_view(name, height)`, `win.set_tree_nodes(name, nodes)`, `win.get_tree_selected()`, `win.set_tree_selected()`
 
 ### 10. Ergonomics, Settings Persistence & Async Execution
+
 - **Settings Persistence**: `win.save_values_to_file("settings.json")!`, `win.load_values_from_file("settings.json")!`
 - **Form Dirty Tracking**: `win.is_dirty()`, `win.is_control_dirty(name)`, `win.commit_changes()`, `win.confirm_discard_changes()`
 - **Live Search Filtering**: `win.bind_search_to_list(search_name, list_name)`
@@ -1289,4 +1299,3 @@ Contributions are welcome! If you find a bug, have a feature request, or want to
 ## License
 
 This project is licensed under the MIT License.
-

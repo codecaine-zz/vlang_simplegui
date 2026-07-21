@@ -3,7 +3,8 @@ module main
 import simplegui
 
 fn main() {
-	mut win := simplegui.new_simple_window('Advanced Layout, Grid & Flexbox Studio', 640, 620)
+	mut win := simplegui.new_simple_window('Advanced Layout, Grid & Flexbox Studio', 640,
+		620)
 		.configure(fn (mut cfg simplegui.WindowConfig) {
 			cfg.padding = 20
 			cfg.spacing = 10
@@ -18,7 +19,8 @@ fn main() {
 	win.add_vertical_spacer(8)
 
 	// 1. Native Tab Navigation for full capability exploration
-	win.add_tabs('layout_tabs', ['Form Grid (2 & 3 Col)', 'Flexbox Distributions', 'Alignment & Anchoring', 'Nested Layout Containers'])
+	win.add_tabs('layout_tabs', ['Form Grid (2 & 3 Col)', 'Flexbox Distributions',
+		'Alignment & Anchoring', 'Nested Layout Containers'])
 
 	win.add_vertical_spacer(8)
 
@@ -32,32 +34,39 @@ fn main() {
 		w.add_vertical_spacer(6)
 
 		// 2-Column Responsive Form Grid
-		w.add_section_header('sec_2col', '2-Column Personal Profile Grid (spacing: 12px)', '')
+		w.add_section_header('sec_2col', '2-Column Personal Profile Grid (spacing: 12px)',
+			'')
 		w.grid('form_grid_2col', 2, 12, fn (mut g simplegui.SimpleWindow) {
 			g.add_label('lbl_fname', 'First Name:')
+
 			g.add_input('first_name', 'Ada')
 				.align_left()
 				.expand_fill()
 
 			g.add_label('lbl_lname', 'Last Name:')
+
 			g.add_input('last_name', 'Lovelace')
 				.align_left()
 				.expand_fill()
 
 			g.add_label('lbl_email', 'Email Address:')
+
 			g.add_input('email', 'ada.lovelace@example.com')
 				.align_left()
 				.expand_fill()
 
 			g.add_label('lbl_role', 'Security Role:')
-			g.add_dropdown('user_role', ['System Administrator', 'Lead Engineer', 'Security Auditor'], 'Lead Engineer')
+
+			g.add_dropdown('user_role', ['System Administrator', 'Lead Engineer', 'Security Auditor'],
+				'Lead Engineer')
 				.expand_fill()
 		})
 
 		w.add_vertical_spacer(10)
 
 		// 3-Column Metrics Dashboard Grid
-		w.add_section_header('sec_3col', '3-Column System Health Grid (spacing: 10px)', '')
+		w.add_section_header('sec_3col', '3-Column System Health Grid (spacing: 10px)',
+			'')
 		w.grid('metrics_grid_3col', 3, 10, fn (mut g simplegui.SimpleWindow) {
 			g.add_stat_card('stat_cpu', 'CPU Load', '24%', '+2% nominal', 'positive')
 			g.add_stat_card('stat_mem', 'RAM Usage', '14.2 GB', 'Stable', 'neutral')
@@ -69,6 +78,7 @@ fn main() {
 		w.row('grid_actions', fn (mut r simplegui.SimpleWindow) {
 			r.add_button('btn_clear_grid', 'Clear Grid Inputs')
 				.onclick(on_clear_grid)
+
 			r.add_button('btn_grid_info', 'Inspect Grid Fields')
 				.onclick(on_inspect_grid)
 		})
@@ -84,7 +94,8 @@ fn main() {
 		w.add_vertical_spacer(6)
 
 		// Flex Row: Space-Between Action Bar
-		w.add_section_header('sec_flex_sb', 'Flex Row: justify="space_between" align="center"', '')
+		w.add_section_header('sec_flex_sb', 'Flex Row: justify="space_between" align="center"',
+			'')
 		w.flex_box('flex_sb', 'row', 'space_between', 'center', fn (mut f simplegui.SimpleWindow) {
 			f.add_button('btn_flex_left', '← Back')
 				.align_left()
@@ -102,7 +113,8 @@ fn main() {
 		w.add_vertical_spacer(10)
 
 		// Flex Row: Center Distribution with Badges & Chip Group
-		w.add_section_header('sec_flex_center', 'Flex Row: justify="center" align="center"', '')
+		w.add_section_header('sec_flex_center', 'Flex Row: justify="center" align="center"',
+			'')
 		w.flex_box('flex_center', 'row', 'center', 'center', fn (mut f simplegui.SimpleWindow) {
 			f.add_badge('badge_status', 'STATUS: ACTIVE', 'success')
 			f.add_badge('badge_env', 'ENV: PRODUCTION', 'warning')
@@ -112,9 +124,12 @@ fn main() {
 		w.add_vertical_spacer(10)
 
 		// Flex Column: Vertical Stack Container
-		w.add_section_header('sec_flex_col', 'Flex Column: direction="column" align="stretch"', '')
+		w.add_section_header('sec_flex_col', 'Flex Column: direction="column" align="stretch"',
+			'')
 		w.flex_box('flex_col', 'column', 'start', 'stretch', fn (mut f simplegui.SimpleWindow) {
-			f.add_banner('banner_flex_info', 'Flexbox column arranges elements vertically with stretch cross-axis alignment.', 'info')
+			f.add_banner('banner_flex_info', 'Flexbox column arranges elements vertically with stretch cross-axis alignment.',
+				'info')
+
 			f.add_search_field('search_flex', '')
 				.placeholder('Search flex components...')
 		})
@@ -130,6 +145,7 @@ fn main() {
 		w.add_vertical_spacer(6)
 
 		// Targeted Control Demonstration
+
 		w.add_input('target_input', 'Sample Aligned Text Field')
 			.align_center()
 			.expand_fill()
@@ -168,16 +184,19 @@ fn main() {
 
 		// Outer Flexbox Container
 		w.flex_box('outer_flex', 'column', 'start', 'stretch', fn (mut flex_outer simplegui.SimpleWindow) {
-			flex_outer.add_banner('banner_nest', 'Outer Flex Container -> Inner Grid Container', 'success')
+			flex_outer.add_banner('banner_nest', 'Outer Flex Container -> Inner Grid Container',
+				'success')
 			flex_outer.add_vertical_spacer(6)
 
 			// Inner Grid Container inside Outer Flexbox
 			flex_outer.grid('inner_grid', 2, 10, fn (mut grid_inner simplegui.SimpleWindow) {
 				grid_inner.add_label('lbl_n1', 'Server Node:')
+
 				grid_inner.add_input('node_name', 'us-east-cluster-01')
 					.expand_fill()
 
 				grid_inner.add_label('lbl_n2', 'IP Address:')
+
 				grid_inner.add_input('node_ip', '192.168.1.100')
 					.expand_fill()
 			})
@@ -185,8 +204,10 @@ fn main() {
 			flex_outer.add_vertical_spacer(8)
 
 			// Imperative nesting demonstration (begin_flex_box / begin_grid)
-			flex_outer.begin_flex_box('nested_imperative_flex', 'row', 'space_between', 'center')
+			flex_outer.begin_flex_box('nested_imperative_flex', 'row', 'space_between',
+				'center')
 			flex_outer.add_label('lbl_imp_nest', 'Imperative Grid & Flex Containers:')
+
 			flex_outer.add_button('btn_nest_save', 'Commit Nested Config')
 				.onclick(on_save_nested)
 			flex_outer.end_flex_box()
@@ -256,15 +277,9 @@ fn on_inspect_grid(mut win simplegui.SimpleWindow) {
 	fname_align := win.get_control_alignment('first_name')
 	fname_fill := win.get_control_expand_fill('first_name')
 
-	win.alert('Grid Control Inspection',
-		'Current Values:\n' +
-		'Name: ${fname} ${lname}\n' +
-		'Email: ${email}\n' +
-		'Role: ${role}\n\n' +
-		'Layout Attributes:\n' +
-		'First Name Alignment: ${fname_align}\n' +
-		'First Name Expand Fill: ${fname_fill}'
-	)
+	win.alert('Grid Control Inspection', 'Current Values:\n' + 'Name: ${fname} ${lname}\n' +
+		'Email: ${email}\n' + 'Role: ${role}\n\n' + 'Layout Attributes:\n' +
+		'First Name Alignment: ${fname_align}\n' + 'First Name Expand Fill: ${fname_fill}')
 }
 
 // Flexbox tab action

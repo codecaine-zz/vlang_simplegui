@@ -432,7 +432,6 @@ fn C.window_get_tab_pills_active(&WindowInfo, &u8) &u8
 
 fn C.window_add_transfer_list_control(&WindowInfo, &u8, &&u8, int, &&u8, int, bool) voidptr
 
-
 fn C.window_add_audio_waveform_control(&WindowInfo, &u8, &f64, int, int) voidptr
 fn C.window_set_audio_waveform_data(&WindowInfo, &u8, &f64, int)
 
@@ -537,6 +536,16 @@ fn C.window_get_screen_scale_factor(&WindowInfo) f64
 
 // Cursor Control
 fn C.window_set_cursor_hidden(&WindowInfo, int)
+fn C.window_set_cursor(&WindowInfo, &u8)
+fn C.window_get_cursor(&WindowInfo) &u8
+fn C.window_set_cursor_scale(&WindowInfo, f64)
+fn C.window_get_cursor_scale(&WindowInfo) f64
+fn C.window_reset_cursor(&WindowInfo)
+fn C.window_push_cursor(&WindowInfo, &u8)
+fn C.window_pop_cursor(&WindowInfo)
+fn C.window_set_control_cursor_by_name(&WindowInfo, &u8, &u8)
+fn C.window_get_mouse_location(&WindowInfo, &int, &int)
+fn C.window_move_cursor_to(&WindowInfo, int, int)
 
 // Resize Indicator
 fn C.window_set_shows_resize_indicator(&WindowInfo, int)
@@ -548,16 +557,12 @@ fn C.window_set_content_max_size(&WindowInfo, int, int)
 fn C.window_get_content_min_size(&WindowInfo, &int, &int)
 fn C.window_get_content_max_size(&WindowInfo, &int, &int)
 
-
-
 // Tab Count
 fn C.window_get_tab_count(&WindowInfo) int
-
 
 pub type StringEventCallback = fn (mut win SimpleWindow, value string)
 
 pub type VoidEventCallback = fn (mut win SimpleWindow)
-
 
 pub type FileDropCallback = fn (mut win SimpleWindow, files []string)
 
@@ -652,8 +657,8 @@ mut:
 	subtitle                     string
 	corner_radius                f64
 	vibrancy_material            string
-	window_level                 string = "normal"
-	movable                      bool = true
+	window_level                 string = 'normal'
+	movable                      bool   = true
 	ignores_mouse_events         bool
 	hides_on_deactivate          bool
 	prevents_app_termination     bool = true
@@ -842,10 +847,18 @@ pub fn normalize_key_shortcut(input string) string {
 	}
 
 	mut res := []string{}
-	if has_cmd { res << 'cmd' }
-	if has_ctrl { res << 'ctrl' }
-	if has_opt { res << 'opt' }
-	if has_shift { res << 'shift' }
+	if has_cmd {
+		res << 'cmd'
+	}
+	if has_ctrl {
+		res << 'ctrl'
+	}
+	if has_opt {
+		res << 'opt'
+	}
+	if has_shift {
+		res << 'shift'
+	}
 	if key_parts.len > 0 {
 		res << key_parts.join('+')
 	}
@@ -855,11 +868,19 @@ pub fn normalize_key_shortcut(input string) string {
 
 // find_handler_by_filter performs find handler by filter.
 fn (win &SimpleWindow) find_handler_by_filter(control_name string, event_name string, filter_value string) int {
-	norm_filter := if event_name == 'key' { normalize_key_shortcut(filter_value) } else { filter_value }
+	norm_filter := if event_name == 'key' {
+		normalize_key_shortcut(filter_value)
+	} else {
+		filter_value
+	}
 	// First pass: exact filter match
 	for i, handler in win.handlers {
 		if handler.control_name == control_name && handler.event_name == event_name {
-			h_filter := if event_name == 'key' { normalize_key_shortcut(handler.filter_value) } else { handler.filter_value }
+			h_filter := if event_name == 'key' {
+				normalize_key_shortcut(handler.filter_value)
+			} else {
+				handler.filter_value
+			}
 			if h_filter != '' && h_filter == norm_filter {
 				return i
 			}
@@ -868,7 +889,11 @@ fn (win &SimpleWindow) find_handler_by_filter(control_name string, event_name st
 	// Second pass: wildcard match
 	for i, handler in win.handlers {
 		if handler.control_name == control_name && handler.event_name == event_name {
-			h_filter := if event_name == 'key' { normalize_key_shortcut(handler.filter_value) } else { handler.filter_value }
+			h_filter := if event_name == 'key' {
+				normalize_key_shortcut(handler.filter_value)
+			} else {
+				handler.filter_value
+			}
 			if h_filter == '' {
 				return i
 			}
@@ -876,7 +901,6 @@ fn (win &SimpleWindow) find_handler_by_filter(control_name string, event_name st
 	}
 	return -1
 }
-
 
 // auto_name performs auto name.
 fn (win &SimpleWindow) auto_name(kind string) string {
@@ -2763,7 +2787,8 @@ pub fn (win &SimpleWindow) get_value(name string) string {
 		}
 		if kind in ['checkbox', 'switch', 'spinner'] {
 			return if win.controls[idx].checked { 'true' } else { 'false' }
-		} else if kind in ['number', 'slider', 'vertical_slider', 'progress', 'levelindicator', 'stepper', 'knob'] {
+		} else if kind in ['number', 'slider', 'vertical_slider', 'progress', 'levelindicator',
+			'stepper', 'knob'] {
 			return win.controls[idx].number.str()
 		}
 	}
@@ -3225,7 +3250,8 @@ pub fn (win &SimpleWindow) clear(name string) &SimpleWindow {
 	entry := win.controls[idx]
 	if entry.kind in ['checkbox', 'switch', 'spinner'] {
 		win.set_checked(name, false)
-	} else if entry.kind in ['number', 'slider', 'vertical_slider', 'progress', 'levelindicator', 'stepper', 'knob'] {
+	} else if entry.kind in ['number', 'slider', 'vertical_slider', 'progress', 'levelindicator',
+		'stepper', 'knob'] {
 		win.set_value_int(name, 0)
 	} else if entry.kind in ['input', 'password', 'textarea', 'date', 'datetime', 'mode', 'theme',
 		'listbox', 'color', 'search', 'dropdown', 'segmented', 'radiogroup', 'combobox',
@@ -3249,7 +3275,8 @@ pub fn (win &SimpleWindow) reset_form() &SimpleWindow {
 		entry := win.controls[i]
 		if entry.kind in ['checkbox', 'switch', 'spinner'] {
 			win.set_checked(entry.name, entry.initial_checked)
-		} else if entry.kind in ['number', 'slider', 'vertical_slider', 'progress', 'levelindicator', 'stepper', 'knob'] {
+		} else if entry.kind in ['number', 'slider', 'vertical_slider', 'progress', 'levelindicator',
+			'stepper', 'knob'] {
 			win.set_value_int(entry.name, entry.initial_number)
 		} else if entry.kind in ['input', 'password', 'textarea', 'date', 'datetime', 'mode', 'theme',
 			'listbox', 'color', 'search', 'dropdown', 'segmented', 'radiogroup', 'combobox',
@@ -3374,7 +3401,6 @@ pub fn (win &SimpleWindow) on_shortcut(shortcut string, callback VoidEventCallba
 	}
 	return win
 }
-
 
 // on_close registers an event handler for on close events.
 pub fn (win &SimpleWindow) on_close(callback VoidEventCallback) &SimpleWindow {
@@ -4689,7 +4715,6 @@ pub fn (win &SimpleWindow) on_select(name string, callback StringEventCallback) 
 	return win
 }
 
-
 // dispatch_event performs dispatch event.
 pub fn (win &SimpleWindow) dispatch_event(name string, event_name string, value string) bool {
 	if win.debug_mode {
@@ -4765,7 +4790,8 @@ fn vlang_dispatch_event(win_ptr voidptr, name_str &u8, event_str &u8, value_str 
 			kind := win.controls[idx].kind
 			if kind == 'checkbox' || kind == 'toggle' {
 				win.controls[idx].checked = (value == 'true')
-			} else if kind in ['number', 'slider', 'vertical_slider', 'progress', 'stepper', 'knob', 'levelindicator'] {
+			} else if kind in ['number', 'slider', 'vertical_slider', 'progress', 'stepper', 'knob',
+				'levelindicator'] {
 				win.controls[idx].number = value.int()
 			}
 			win.controls[idx].value = value
@@ -4810,7 +4836,8 @@ pub fn (win &SimpleWindow) end_grid() &SimpleWindow {
 // begin_flex_box begins a flexbox container with direction ('row'|'column'), main-axis justification ('start'|'center'|'end'|'space_between'|'space_around'|'fill'), and cross-axis alignment ('start'|'center'|'end'|'stretch').
 pub fn (win &SimpleWindow) begin_flex_box(name string, direction string, justify string, align string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
-		C.window_begin_flex_box(win.window_info, name.str, direction.str, justify.str, align.str)
+		C.window_begin_flex_box(win.window_info, name.str, direction.str, justify.str,
+			align.str)
 	}
 	return win
 }
@@ -5794,182 +5821,182 @@ pub fn get_theme(theme_name string) Theme {
 	match normalized {
 		'apple_light', 'light' {
 			return Theme{
-				name: 'Apple Light'
+				name:             'Apple Light'
 				background_color: '#ffffff'
-				font_color: '#1c1c1e'
-				accent_color: '#007aff'
-				description: 'Clean macOS Aqua system light interface'
-				is_dark: false
+				font_color:       '#1c1c1e'
+				accent_color:     '#007aff'
+				description:      'Clean macOS Aqua system light interface'
+				is_dark:          false
 			}
 		}
 		'apple_dark', 'dark' {
 			return Theme{
-				name: 'Apple Dark'
+				name:             'Apple Dark'
 				background_color: '#1c1c1e'
-				font_color: '#f2f2f7'
-				accent_color: '#0a84ff'
-				description: 'Vibrant macOS Dark Mode surface'
-				is_dark: true
+				font_color:       '#f2f2f7'
+				accent_color:     '#0a84ff'
+				description:      'Vibrant macOS Dark Mode surface'
+				is_dark:          true
 			}
 		}
 		'midnight_space_gray', 'midnight', 'space_gray' {
 			return Theme{
-				name: 'Midnight Space Gray'
+				name:             'Midnight Space Gray'
 				background_color: '#161618'
-				font_color: '#ebebf5'
-				accent_color: '#0a84ff'
-				description: 'Pro dark titanium space gray theme'
-				is_dark: true
+				font_color:       '#ebebf5'
+				accent_color:     '#0a84ff'
+				description:      'Pro dark titanium space gray theme'
+				is_dark:          true
 			}
 		}
 		'apple_sunset', 'sunset', 'mojave' {
 			return Theme{
-				name: 'Apple Sunset'
+				name:             'Apple Sunset'
 				background_color: '#281a24'
-				font_color: '#fdf7f4'
-				accent_color: '#ff6b00'
-				description: 'Warm macOS twilight sunset aesthetics'
-				is_dark: true
+				font_color:       '#fdf7f4'
+				accent_color:     '#ff6b00'
+				description:      'Warm macOS twilight sunset aesthetics'
+				is_dark:          true
 			}
 		}
 		'sonoma_emerald', 'sonoma', 'emerald' {
 			return Theme{
-				name: 'Sonoma Emerald'
+				name:             'Sonoma Emerald'
 				background_color: '#0d1f18'
-				font_color: '#f0fdf4'
-				accent_color: '#30d158'
-				description: 'macOS Sonoma dark forest glass palette'
-				is_dark: true
+				font_color:       '#f0fdf4'
+				accent_color:     '#30d158'
+				description:      'macOS Sonoma dark forest glass palette'
+				is_dark:          true
 			}
 		}
 		'ventura_amber', 'ventura', 'amber' {
 			return Theme{
-				name: 'Ventura Amber'
+				name:             'Ventura Amber'
 				background_color: '#211815'
-				font_color: '#fff8f0'
-				accent_color: '#ff9500'
-				description: 'macOS Ventura golden sunset dark hues'
-				is_dark: true
+				font_color:       '#fff8f0'
+				accent_color:     '#ff9500'
+				description:      'macOS Ventura golden sunset dark hues'
+				is_dark:          true
 			}
 		}
 		'soft_pastel', 'pastel', 'cupcake' {
 			return Theme{
-				name: 'Soft Pastel'
+				name:             'Soft Pastel'
 				background_color: '#faf6f0'
-				font_color: '#2d2b2a'
-				accent_color: '#e07a5f'
-				description: 'Apple Studio warm soft pastel light palette'
-				is_dark: false
+				font_color:       '#2d2b2a'
+				accent_color:     '#e07a5f'
+				description:      'Apple Studio warm soft pastel light palette'
+				is_dark:          false
 			}
 		}
 		'catppuccin_mocha', 'catppuccin', 'mocha' {
 			return Theme{
-				name: 'Catppuccin Mocha'
+				name:             'Catppuccin Mocha'
 				background_color: '#1e1e2e'
-				font_color: '#cdd6f4'
-				accent_color: '#cba6f7'
-				description: 'Soothing lavender catppuccin dark mode'
-				is_dark: true
+				font_color:       '#cdd6f4'
+				accent_color:     '#cba6f7'
+				description:      'Soothing lavender catppuccin dark mode'
+				is_dark:          true
 			}
 		}
 		'nord' {
 			return Theme{
-				name: 'Nord'
+				name:             'Nord'
 				background_color: '#2e3440'
-				font_color: '#eceff4'
-				accent_color: '#88c0d0'
-				description: 'Arctic frost nord developer theme'
-				is_dark: true
+				font_color:       '#eceff4'
+				accent_color:     '#88c0d0'
+				description:      'Arctic frost nord developer theme'
+				is_dark:          true
 			}
 		}
 		'dracula' {
 			return Theme{
-				name: 'Dracula'
+				name:             'Dracula'
 				background_color: '#282a36'
-				font_color: '#f8f8f2'
-				accent_color: '#bd93f9'
-				description: 'High-contrast vampire purple theme'
-				is_dark: true
+				font_color:       '#f8f8f2'
+				accent_color:     '#bd93f9'
+				description:      'High-contrast vampire purple theme'
+				is_dark:          true
 			}
 		}
 		'cyberpunk', 'neon' {
 			return Theme{
-				name: 'Cyberpunk'
+				name:             'Cyberpunk'
 				background_color: '#0d0d15'
-				font_color: '#00f5d4'
-				accent_color: '#ff007f'
-				description: 'Neon glow dark contrast palette'
-				is_dark: true
+				font_color:       '#00f5d4'
+				accent_color:     '#ff007f'
+				description:      'Neon glow dark contrast palette'
+				is_dark:          true
 			}
 		}
 		'solarized_light' {
 			return Theme{
-				name: 'Solarized Light'
+				name:             'Solarized Light'
 				background_color: '#fdf6e3'
-				font_color: '#657b83'
-				accent_color: '#268bd2'
-				description: 'Precision engineered light theme'
-				is_dark: false
+				font_color:       '#657b83'
+				accent_color:     '#268bd2'
+				description:      'Precision engineered light theme'
+				is_dark:          false
 			}
 		}
 		'solarized_dark' {
 			return Theme{
-				name: 'Solarized Dark'
+				name:             'Solarized Dark'
 				background_color: '#002b36'
-				font_color: '#839496'
-				accent_color: '#2aa198'
-				description: 'Precision engineered dark theme'
-				is_dark: true
+				font_color:       '#839496'
+				accent_color:     '#2aa198'
+				description:      'Precision engineered dark theme'
+				is_dark:          true
 			}
 		}
 		'github_dark' {
 			return Theme{
-				name: 'GitHub Dark'
+				name:             'GitHub Dark'
 				background_color: '#0d1117'
-				font_color: '#c9d1d9'
-				accent_color: '#58a6ff'
-				description: 'Official GitHub dark interface palette'
-				is_dark: true
+				font_color:       '#c9d1d9'
+				accent_color:     '#58a6ff'
+				description:      'Official GitHub dark interface palette'
+				is_dark:          true
 			}
 		}
 		'github_light' {
 			return Theme{
-				name: 'GitHub Light'
+				name:             'GitHub Light'
 				background_color: '#ffffff'
-				font_color: '#24292f'
-				accent_color: '#0969da'
-				description: 'Clean GitHub light canvas palette'
-				is_dark: false
+				font_color:       '#24292f'
+				accent_color:     '#0969da'
+				description:      'Clean GitHub light canvas palette'
+				is_dark:          false
 			}
 		}
 		'navy_blue', 'navy' {
 			return Theme{
-				name: 'Navy Blue'
+				name:             'Navy Blue'
 				background_color: '#0f172a'
-				font_color: '#f8fafc'
-				accent_color: '#38bdf8'
-				description: 'Deep navy slate interface'
-				is_dark: true
+				font_color:       '#f8fafc'
+				accent_color:     '#38bdf8'
+				description:      'Deep navy slate interface'
+				is_dark:          true
 			}
 		}
 		'forest_green', 'forest' {
 			return Theme{
-				name: 'Forest Green'
+				name:             'Forest Green'
 				background_color: '#14532d'
-				font_color: '#f0fdf4'
-				accent_color: '#4ade80'
-				description: 'Rich emerald green dark theme'
-				is_dark: true
+				font_color:       '#f0fdf4'
+				accent_color:     '#4ade80'
+				description:      'Rich emerald green dark theme'
+				is_dark:          true
 			}
 		}
 		else {
 			return Theme{
-				name: 'Apple Light'
+				name:             'Apple Light'
 				background_color: '#f6f6f7'
-				font_color: '#1c1c1e'
-				accent_color: '#007aff'
-				description: 'Clean macOS Aqua system light interface'
-				is_dark: false
+				font_color:       '#1c1c1e'
+				accent_color:     '#007aff'
+				description:      'Clean macOS Aqua system light interface'
+				is_dark:          false
 			}
 		}
 	}
@@ -5987,7 +6014,6 @@ pub fn (win &SimpleWindow) set_theme(theme_name string) &SimpleWindow {
 	t := get_theme(theme_name)
 	return win.apply_theme(t)
 }
-
 
 // last-control chaining modifiers
 pub fn (win &SimpleWindow) width(w int) &SimpleWindow {
@@ -6114,7 +6140,11 @@ pub fn (win &SimpleWindow) get_control_alignment(name string) string {
 // set_control_expand_fill enables or disables fill expansion for a named control in its container.
 pub fn (win &SimpleWindow) set_control_expand_fill(name string, expand bool) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
-		C.window_set_control_expand_fill_by_name(win.window_info, name.str, if expand { 1 } else { 0 })
+		C.window_set_control_expand_fill_by_name(win.window_info, name.str, if expand {
+			1
+		} else {
+			0
+		})
 	}
 	for i in 0 .. win.controls.len {
 		if win.controls[i].name == name {
@@ -6373,7 +6403,8 @@ pub fn (win &SimpleWindow) get_dirty_values() map[string]string {
 		if win.is_control_dirty(entry.name) {
 			if entry.kind in ['checkbox', 'toggle', 'spinner'] {
 				values[entry.name] = win.get_checked(entry.name).str()
-			} else if entry.kind in ['number', 'slider', 'vertical_slider', 'levelindicator', 'stepper', 'knob'] {
+			} else if entry.kind in ['number', 'slider', 'vertical_slider', 'levelindicator',
+				'stepper', 'knob'] {
 				values[entry.name] = win.get_value_int(entry.name).str()
 			} else {
 				values[entry.name] = win.get_text(entry.name)
@@ -6700,7 +6731,8 @@ pub fn (win &SimpleWindow) add_stat_card(name string, title string, value string
 		}
 	}
 	if win.window_info != unsafe { nil } {
-		C.window_add_stat_card_control(win.window_info, real_name.str, title.str, value.str, trend.str, trend_style.str)
+		C.window_add_stat_card_control(win.window_info, real_name.str, title.str, value.str,
+			trend.str, trend_style.str)
 	}
 	return win
 }
@@ -6750,7 +6782,8 @@ pub fn (win &SimpleWindow) add_section_header(name string, title string, subtitl
 		}
 	}
 	if win.window_info != unsafe { nil } {
-		C.window_add_section_header_control(win.window_info, real_name.str, title.str, subtitle.str)
+		C.window_add_section_header_control(win.window_info, real_name.str, title.str,
+			subtitle.str)
 	}
 	return win
 }
@@ -6776,7 +6809,8 @@ pub fn (win &SimpleWindow) add_vertical_slider(name string, value int, min_val i
 		}
 	}
 	if win.window_info != unsafe { nil } {
-		C.window_add_vertical_slider_control(win.window_info, real_name.str, value, min_val, max_val, height)
+		C.window_add_vertical_slider_control(win.window_info, real_name.str, value, min_val,
+			max_val, height)
 	}
 	return win
 }
@@ -6805,7 +6839,8 @@ pub fn (win &SimpleWindow) add_chip_group(name string, chips []string, selected 
 		for chip in chips {
 			c_chips << chip.str
 		}
-		C.window_add_chip_group_control(win.window_info, real_name.str, c_chips.data, chips.len, selected.str)
+		C.window_add_chip_group_control(win.window_info, real_name.str, c_chips.data,
+			chips.len, selected.str)
 	}
 	return win
 }
@@ -6819,7 +6854,6 @@ pub fn (win &SimpleWindow) chip_group(chips []string, selected string) &SimpleWi
 pub fn (win &SimpleWindow) icon_segments(symbols []string, selected string) &SimpleWindow {
 	return win.add_icon_segments('', symbols, selected)
 }
-
 
 // add_status_indicator adds a LED-styled status indicator light with text label.
 pub fn (win &SimpleWindow) add_status_indicator(name string, label string, status string) &SimpleWindow {
@@ -6836,7 +6870,8 @@ pub fn (win &SimpleWindow) add_status_indicator(name string, label string, statu
 		}
 	}
 	if win.window_info != unsafe { nil } {
-		C.window_add_status_indicator_control(win.window_info, real_name.str, label.str, status.str)
+		C.window_add_status_indicator_control(win.window_info, real_name.str, label.str,
+			status.str)
 	}
 	return win
 }
@@ -6862,7 +6897,8 @@ pub fn (win &SimpleWindow) add_metric_meter(name string, title string, value int
 		}
 	}
 	if win.window_info != unsafe { nil } {
-		C.window_add_metric_meter_control(win.window_info, real_name.str, title.str, value, min_val, max_val, unit.str)
+		C.window_add_metric_meter_control(win.window_info, real_name.str, title.str, value,
+			min_val, max_val, unit.str)
 	}
 	return win
 }
@@ -6887,7 +6923,8 @@ pub fn (win &SimpleWindow) add_avatar_card(name string, title string, subtitle s
 		}
 	}
 	if win.window_info != unsafe { nil } {
-		C.window_add_avatar_card_control(win.window_info, real_name.str, title.str, subtitle.str, status.str)
+		C.window_add_avatar_card_control(win.window_info, real_name.str, title.str, subtitle.str,
+			status.str)
 	}
 	return win
 }
@@ -6963,7 +7000,8 @@ pub fn (win &SimpleWindow) add_collapsible_section(name string, title string, ex
 		}
 	}
 	if win.window_info != unsafe { nil } {
-		C.window_add_collapsible_section_control(win.window_info, real_name.str, title.str, if expanded { 1 } else { 0 })
+		C.window_add_collapsible_section_control(win.window_info, real_name.str, title.str,
+			if expanded { 1 } else { 0 })
 	}
 	return win
 }
@@ -7031,8 +7069,8 @@ pub fn (win &SimpleWindow) add_star_rating(name string, value int, max_stars int
 	unsafe {
 		mut w := &SimpleWindow(win)
 		w.controls << ControlEntry{
-			name: real_name
-			kind: 'rating'
+			name:  real_name
+			kind:  'rating'
 			value: value.str()
 		}
 	}
@@ -7072,13 +7110,14 @@ pub fn (win &SimpleWindow) add_range_slider(name string, min_val int, max_val in
 	unsafe {
 		mut w := &SimpleWindow(win)
 		w.controls << ControlEntry{
-			name: real_name
-			kind: 'range_slider'
+			name:  real_name
+			kind:  'range_slider'
 			value: '${low_val}:${high_val}'
 		}
 	}
 	if win.window_info != unsafe { nil } {
-		C.window_add_range_slider_control(win.window_info, real_name.str, min_val, max_val, low_val, high_val)
+		C.window_add_range_slider_control(win.window_info, real_name.str, min_val, max_val,
+			low_val, high_val)
 	}
 	return win
 }
@@ -7121,14 +7160,15 @@ pub fn (win &SimpleWindow) add_split_button(name string, title string, menu_item
 	unsafe {
 		mut w := &SimpleWindow(win)
 		w.controls << ControlEntry{
-			name: real_name
-			kind: 'split_button'
+			name:  real_name
+			kind:  'split_button'
 			value: title
 		}
 	}
 	if win.window_info != unsafe { nil } {
 		c_items := menu_items.map(it.str)
-		C.window_add_split_button_control(win.window_info, real_name.str, title.str, c_items.data, c_items.len)
+		C.window_add_split_button_control(win.window_info, real_name.str, title.str, c_items.data,
+			c_items.len)
 	}
 	return win
 }
@@ -7147,8 +7187,8 @@ pub fn (win &SimpleWindow) add_tag_cloud(name string, tags []string) &SimpleWind
 	unsafe {
 		mut w := &SimpleWindow(win)
 		w.controls << ControlEntry{
-			name: real_name
-			kind: 'tag_cloud'
+			name:  real_name
+			kind:  'tag_cloud'
 			value: tags.join(',')
 		}
 	}
@@ -7182,14 +7222,15 @@ pub fn (win &SimpleWindow) add_wizard_stepper(name string, steps []string, curre
 	unsafe {
 		mut w := &SimpleWindow(win)
 		w.controls << ControlEntry{
-			name: real_name
-			kind: 'wizard_stepper'
+			name:  real_name
+			kind:  'wizard_stepper'
 			value: current_step.str()
 		}
 	}
 	if win.window_info != unsafe { nil } {
 		c_steps := steps.map(it.str)
-		C.window_add_wizard_stepper_control(win.window_info, real_name.str, c_steps.data, c_steps.len, current_step)
+		C.window_add_wizard_stepper_control(win.window_info, real_name.str, c_steps.data,
+			c_steps.len, current_step)
 	}
 	return win
 }
@@ -7216,13 +7257,14 @@ pub fn (win &SimpleWindow) add_gauge(name string, title string, value int, min_v
 	unsafe {
 		mut w := &SimpleWindow(win)
 		w.controls << ControlEntry{
-			name: real_name
-			kind: 'gauge'
+			name:  real_name
+			kind:  'gauge'
 			value: value.str()
 		}
 	}
 	if win.window_info != unsafe { nil } {
-		C.window_add_gauge_control(win.window_info, real_name.str, title.str, value, min_val, max_val, unit.str)
+		C.window_add_gauge_control(win.window_info, real_name.str, title.str, value, min_val,
+			max_val, unit.str)
 	}
 	return win
 }
@@ -7268,8 +7310,8 @@ pub fn (win &SimpleWindow) add_pagination(name string, total_pages int, current_
 	unsafe {
 		mut w := &SimpleWindow(win)
 		w.controls << ControlEntry{
-			name: real_name
-			kind: 'pagination'
+			name:  real_name
+			kind:  'pagination'
 			value: current_page.str()
 		}
 	}
@@ -7320,8 +7362,8 @@ pub fn (win &SimpleWindow) add_activity_feed(name string, height int) &SimpleWin
 	unsafe {
 		mut w := &SimpleWindow(win)
 		w.controls << ControlEntry{
-			name: real_name
-			kind: 'activity_feed'
+			name:  real_name
+			kind:  'activity_feed'
 			value: ''
 		}
 	}
@@ -7339,7 +7381,8 @@ pub fn (win &SimpleWindow) activity_feed(height int) &SimpleWindow {
 // add_activity_feed_item appends a log entry item to an activity feed.
 pub fn (win &SimpleWindow) add_activity_feed_item(name string, timestamp string, message string, level string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
-		C.window_add_activity_feed_item(win.window_info, name.str, timestamp.str, message.str, level.str)
+		C.window_add_activity_feed_item(win.window_info, name.str, timestamp.str, message.str,
+			level.str)
 	}
 	return win
 }
@@ -7361,13 +7404,14 @@ pub fn (win &SimpleWindow) add_markdown_view(name string, markdown_text string, 
 	unsafe {
 		mut w := &SimpleWindow(win)
 		w.controls << ControlEntry{
-			name: real_name
-			kind: 'markdown_view'
+			name:  real_name
+			kind:  'markdown_view'
 			value: markdown_text
 		}
 	}
 	if win.window_info != unsafe { nil } {
-		C.window_add_markdown_view_control(win.window_info, real_name.str, markdown_text.str, height)
+		C.window_add_markdown_view_control(win.window_info, real_name.str, markdown_text.str,
+			height)
 	}
 	return win
 }
@@ -7418,13 +7462,14 @@ pub fn (win &SimpleWindow) add_sparkline(name string, values []f64, height int) 
 	unsafe {
 		mut w := &SimpleWindow(win)
 		w.controls << ControlEntry{
-			name: real_name
-			kind: 'sparkline'
+			name:  real_name
+			kind:  'sparkline'
 			value: ''
 		}
 	}
 	if win.window_info != unsafe { nil } {
-		C.window_add_sparkline_control(win.window_info, real_name.str, values.data, values.len, height)
+		C.window_add_sparkline_control(win.window_info, real_name.str, values.data, values.len,
+			height)
 	}
 	return win
 }
@@ -7451,8 +7496,8 @@ pub fn (win &SimpleWindow) add_pin_code(name string, digits int) &SimpleWindow {
 	unsafe {
 		mut w := &SimpleWindow(win)
 		w.controls << ControlEntry{
-			name: real_name
-			kind: 'pin_code'
+			name:  real_name
+			kind:  'pin_code'
 			value: ''
 		}
 	}
@@ -7508,14 +7553,15 @@ pub fn (win &SimpleWindow) add_color_palette(name string, hex_colors []string, s
 	unsafe {
 		mut w := &SimpleWindow(win)
 		w.controls << ControlEntry{
-			name: real_name
-			kind: 'color_palette'
+			name:  real_name
+			kind:  'color_palette'
 			value: selected
 		}
 	}
 	if win.window_info != unsafe { nil } {
 		c_colors := hex_colors.map(it.str)
-		C.window_add_color_palette_control(win.window_info, real_name.str, c_colors.data, c_colors.len, selected.str)
+		C.window_add_color_palette_control(win.window_info, real_name.str, c_colors.data,
+			c_colors.len, selected.str)
 	}
 	return win
 }
@@ -7539,7 +7585,6 @@ pub fn (win &SimpleWindow) set_color_palette_selected(name string, hex_color str
 	}
 	return win
 }
-
 
 // get_color_palette_selected gets currently selected hex color string.
 pub fn (win &SimpleWindow) get_color_palette_selected(name string) string {
@@ -7567,8 +7612,8 @@ pub fn (win &SimpleWindow) add_timeline(name string, height int) &SimpleWindow {
 	unsafe {
 		mut w := &SimpleWindow(win)
 		w.controls << ControlEntry{
-			name: real_name
-			kind: 'timeline'
+			name:  real_name
+			kind:  'timeline'
 			value: ''
 		}
 	}
@@ -7586,7 +7631,8 @@ pub fn (win &SimpleWindow) timeline(height int) &SimpleWindow {
 // add_timeline_item appends a milestone item to a timeline widget.
 pub fn (win &SimpleWindow) add_timeline_item(name string, title string, subtitle string, time_str string, status string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
-		C.window_add_timeline_item(win.window_info, name.str, title.str, subtitle.str, time_str.str, status.str)
+		C.window_add_timeline_item(win.window_info, name.str, title.str, subtitle.str,
+			time_str.str, status.str)
 	}
 	return win
 }
@@ -7601,13 +7647,14 @@ pub fn (win &SimpleWindow) add_metric_card(name string, title string, value stri
 	unsafe {
 		mut w := &SimpleWindow(win)
 		w.controls << ControlEntry{
-			name: real_name
-			kind: 'metric_card'
+			name:  real_name
+			kind:  'metric_card'
 			value: value
 		}
 	}
 	if win.window_info != unsafe { nil } {
-		C.window_add_metric_card_control(win.window_info, real_name.str, title.str, value.str, change_badge.str, subtitle.str)
+		C.window_add_metric_card_control(win.window_info, real_name.str, title.str, value.str,
+			change_badge.str, subtitle.str)
 	}
 	return win
 }
@@ -7641,14 +7688,15 @@ pub fn (win &SimpleWindow) add_tab_pills(name string, items []string, selected s
 	unsafe {
 		mut w := &SimpleWindow(win)
 		w.controls << ControlEntry{
-			name: real_name
-			kind: 'tab_pills'
+			name:  real_name
+			kind:  'tab_pills'
 			value: selected
 		}
 	}
 	if win.window_info != unsafe { nil } {
 		c_items := items.map(it.str)
-		C.window_add_tab_pills_control(win.window_info, real_name.str, c_items.data, c_items.len, selected.str)
+		C.window_add_tab_pills_control(win.window_info, real_name.str, c_items.data, c_items.len,
+			selected.str)
 	}
 	return win
 }
@@ -7704,15 +7752,16 @@ pub fn (win &SimpleWindow) add_transfer_list_opts(name string, available []strin
 	unsafe {
 		mut w := &SimpleWindow(win)
 		w.controls << ControlEntry{
-			name: real_name
-			kind: 'transfer_list'
+			name:  real_name
+			kind:  'transfer_list'
 			value: ''
 		}
 	}
 	if win.window_info != unsafe { nil } {
 		c_avail := available.map(it.str)
 		c_sel := selected.map(it.str)
-		C.window_add_transfer_list_control(win.window_info, real_name.str, c_avail.data, c_avail.len, c_sel.data, c_sel.len, multi_select)
+		C.window_add_transfer_list_control(win.window_info, real_name.str, c_avail.data,
+			c_avail.len, c_sel.data, c_sel.len, multi_select)
 	}
 	return win
 }
@@ -7727,7 +7776,6 @@ pub fn (win &SimpleWindow) transfer_list_opts(available []string, selected []str
 	return win.add_transfer_list_opts('', available, selected, multi_select)
 }
 
-
 // add_audio_waveform adds an audio sound level amplitude waveform visualizer widget.
 pub fn (win &SimpleWindow) add_audio_waveform(name string, amplitudes []f64, height int) &SimpleWindow {
 	mut real_name := name
@@ -7737,13 +7785,14 @@ pub fn (win &SimpleWindow) add_audio_waveform(name string, amplitudes []f64, hei
 	unsafe {
 		mut w := &SimpleWindow(win)
 		w.controls << ControlEntry{
-			name: real_name
-			kind: 'audio_waveform'
+			name:  real_name
+			kind:  'audio_waveform'
 			value: ''
 		}
 	}
 	if win.window_info != unsafe { nil } {
-		C.window_add_audio_waveform_control(win.window_info, real_name.str, amplitudes.data, amplitudes.len, height)
+		C.window_add_audio_waveform_control(win.window_info, real_name.str, amplitudes.data,
+			amplitudes.len, height)
 	}
 	return win
 }
@@ -7756,7 +7805,8 @@ pub fn (win &SimpleWindow) audio_waveform(amplitudes []f64, height int) &SimpleW
 // set_audio_waveform_data updates amplitude data points in audio waveform visualizer.
 pub fn (win &SimpleWindow) set_audio_waveform_data(name string, amplitudes []f64) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
-		C.window_add_audio_waveform_control(win.window_info, name.str, amplitudes.data, amplitudes.len, 60)
+		C.window_add_audio_waveform_control(win.window_info, name.str, amplitudes.data,
+			amplitudes.len, 60)
 	}
 	return win
 }
@@ -7770,13 +7820,14 @@ pub fn (win &SimpleWindow) add_rating_breakdown(name string, avg_score f64, tota
 	unsafe {
 		mut w := &SimpleWindow(win)
 		w.controls << ControlEntry{
-			name: real_name
-			kind: 'rating_breakdown'
+			name:  real_name
+			kind:  'rating_breakdown'
 			value: avg_score.str()
 		}
 	}
 	if win.window_info != unsafe { nil } {
-		C.window_add_rating_breakdown_control(win.window_info, real_name.str, avg_score, total_reviews, star_percentages.data, star_percentages.len)
+		C.window_add_rating_breakdown_control(win.window_info, real_name.str, avg_score,
+			total_reviews, star_percentages.data, star_percentages.len)
 	}
 	return win
 }
@@ -7789,7 +7840,8 @@ pub fn (win &SimpleWindow) rating_breakdown(avg_score f64, total_reviews int, st
 // set_rating_breakdown_data updates rating score and percentage data.
 pub fn (win &SimpleWindow) set_rating_breakdown_data(name string, avg_score f64, total_reviews int, star_percentages []f64) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
-		C.window_set_rating_breakdown_data(win.window_info, name.str, avg_score, total_reviews, star_percentages.data, star_percentages.len)
+		C.window_set_rating_breakdown_data(win.window_info, name.str, avg_score, total_reviews,
+			star_percentages.data, star_percentages.len)
 	}
 	return win
 }
@@ -7803,13 +7855,14 @@ pub fn (win &SimpleWindow) add_code_view(name string, lang string, code_text str
 	unsafe {
 		mut w := &SimpleWindow(win)
 		w.controls << ControlEntry{
-			name: real_name
-			kind: 'code_view'
+			name:  real_name
+			kind:  'code_view'
 			value: code_text
 		}
 	}
 	if win.window_info != unsafe { nil } {
-		C.window_add_code_view_control(win.window_info, real_name.str, lang.str, code_text.str, height)
+		C.window_add_code_view_control(win.window_info, real_name.str, lang.str, code_text.str,
+			height)
 	}
 	return win
 }
@@ -7860,13 +7913,14 @@ pub fn (win &SimpleWindow) add_alert_banner(name string, title string, message s
 	unsafe {
 		mut w := &SimpleWindow(win)
 		w.controls << ControlEntry{
-			name: real_name
-			kind: 'alert_banner'
+			name:  real_name
+			kind:  'alert_banner'
 			value: title
 		}
 	}
 	if win.window_info != unsafe { nil } {
-		C.window_add_alert_banner_control(win.window_info, real_name.str, title.str, message.str, style.str)
+		C.window_add_alert_banner_control(win.window_info, real_name.str, title.str, message.str,
+			style.str)
 	}
 	return win
 }
@@ -7879,7 +7933,8 @@ pub fn (win &SimpleWindow) alert_banner(title string, message string, style stri
 // set_alert_banner_value updates alert banner content and makes it visible.
 pub fn (win &SimpleWindow) set_alert_banner_value(name string, title string, message string, style string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
-		C.window_set_alert_banner_value(win.window_info, name.str, title.str, message.str, style.str)
+		C.window_set_alert_banner_value(win.window_info, name.str, title.str, message.str,
+			style.str)
 	}
 	return win
 }
@@ -7893,8 +7948,8 @@ pub fn (win &SimpleWindow) add_step_tracker(name string, steps []string, current
 	unsafe {
 		mut w := &SimpleWindow(win)
 		w.controls << ControlEntry{
-			name: real_name
-			kind: 'step_tracker'
+			name:  real_name
+			kind:  'step_tracker'
 			value: '${current_step}'
 		}
 	}
@@ -7903,7 +7958,8 @@ pub fn (win &SimpleWindow) add_step_tracker(name string, steps []string, current
 		for s in steps {
 			c_steps << s.str
 		}
-		C.window_add_step_tracker_control(win.window_info, real_name.str, c_steps.data, steps.len, current_step)
+		C.window_add_step_tracker_control(win.window_info, real_name.str, c_steps.data,
+			steps.len, current_step)
 	}
 	return win
 }
@@ -7949,8 +8005,8 @@ pub fn (win &SimpleWindow) add_filter_chips(name string, chips []string, selecte
 	unsafe {
 		mut w := &SimpleWindow(win)
 		w.controls << ControlEntry{
-			name: real_name
-			kind: 'filter_chips'
+			name:  real_name
+			kind:  'filter_chips'
 			value: selected.join(',')
 		}
 	}
@@ -7963,7 +8019,8 @@ pub fn (win &SimpleWindow) add_filter_chips(name string, chips []string, selecte
 		for s in selected {
 			c_sel << s.str
 		}
-		C.window_add_filter_chips_control(win.window_info, real_name.str, c_chips.data, chips.len, c_sel.data, selected.len, multi_select)
+		C.window_add_filter_chips_control(win.window_info, real_name.str, c_chips.data,
+			chips.len, c_sel.data, selected.len, multi_select)
 	}
 	return win
 }
@@ -8018,13 +8075,14 @@ pub fn (win &SimpleWindow) add_file_picker_field(name string, initial_path strin
 	unsafe {
 		mut w := &SimpleWindow(win)
 		w.controls << ControlEntry{
-			name: real_name
-			kind: 'file_picker'
+			name:  real_name
+			kind:  'file_picker'
 			value: initial_path
 		}
 	}
 	if win.window_info != unsafe { nil } {
-		C.window_add_file_picker_field_control(win.window_info, real_name.str, initial_path.str, button_title.str, folder_only)
+		C.window_add_file_picker_field_control(win.window_info, real_name.str, initial_path.str,
+			button_title.str, folder_only)
 	}
 	return win
 }
@@ -8075,13 +8133,14 @@ pub fn (win &SimpleWindow) add_radial_gauge(name string, title string, value f64
 	unsafe {
 		mut w := &SimpleWindow(win)
 		w.controls << ControlEntry{
-			name: real_name
-			kind: 'radial_gauge'
+			name:  real_name
+			kind:  'radial_gauge'
 			value: '${value}'
 		}
 	}
 	if win.window_info != unsafe { nil } {
-		C.window_add_radial_gauge_control(win.window_info, real_name.str, title.str, value, min_val, max_val, unit.str)
+		C.window_add_radial_gauge_control(win.window_info, real_name.str, title.str, value,
+			min_val, max_val, unit.str)
 	}
 	return win
 }
@@ -8127,8 +8186,8 @@ pub fn (win &SimpleWindow) add_key_value_card(name string, title string, keys []
 	unsafe {
 		mut w := &SimpleWindow(win)
 		w.controls << ControlEntry{
-			name: real_name
-			kind: 'key_value_card'
+			name:  real_name
+			kind:  'key_value_card'
 			value: title
 		}
 	}
@@ -8142,7 +8201,8 @@ pub fn (win &SimpleWindow) add_key_value_card(name string, title string, keys []
 			c_vals << v.str
 		}
 		count := if keys.len < values.len { keys.len } else { values.len }
-		C.window_add_key_value_card_control(win.window_info, real_name.str, title.str, c_keys.data, c_vals.data, count)
+		C.window_add_key_value_card_control(win.window_info, real_name.str, title.str,
+			c_keys.data, c_vals.data, count)
 	}
 	return win
 }
@@ -8164,7 +8224,8 @@ pub fn (win &SimpleWindow) set_key_value_card_data(name string, keys []string, v
 			c_vals << v.str
 		}
 		count := if keys.len < values.len { keys.len } else { values.len }
-		C.window_set_key_value_card_data(win.window_info, name.str, c_keys.data, c_vals.data, count)
+		C.window_set_key_value_card_data(win.window_info, name.str, c_keys.data, c_vals.data,
+			count)
 	}
 	return win
 }
@@ -8178,13 +8239,14 @@ pub fn (win &SimpleWindow) add_diff_view(name string, old_text string, new_text 
 	unsafe {
 		mut w := &SimpleWindow(win)
 		w.controls << ControlEntry{
-			name: real_name
-			kind: 'diff_view'
+			name:  real_name
+			kind:  'diff_view'
 			value: old_text
 		}
 	}
 	if win.window_info != unsafe { nil } {
-		C.window_add_diff_view_control(win.window_info, real_name.str, old_text.str, new_text.str, height)
+		C.window_add_diff_view_control(win.window_info, real_name.str, old_text.str, new_text.str,
+			height)
 	}
 	return win
 }
@@ -8211,8 +8273,8 @@ pub fn (win &SimpleWindow) add_json_tree(name string, json_str string, height in
 	unsafe {
 		mut w := &SimpleWindow(win)
 		w.controls << ControlEntry{
-			name: real_name
-			kind: 'json_tree'
+			name:  real_name
+			kind:  'json_tree'
 			value: json_str
 		}
 	}
@@ -8244,13 +8306,14 @@ pub fn (win &SimpleWindow) add_http_request_card(name string, method string, url
 	unsafe {
 		mut w := &SimpleWindow(win)
 		w.controls << ControlEntry{
-			name: real_name
-			kind: 'http_request_card'
+			name:  real_name
+			kind:  'http_request_card'
 			value: '${method} ${url}'
 		}
 	}
 	if win.window_info != unsafe { nil } {
-		C.window_add_http_request_card_control(win.window_info, real_name.str, method.str, url.str, status_code, response_time_ms)
+		C.window_add_http_request_card_control(win.window_info, real_name.str, method.str,
+			url.str, status_code, response_time_ms)
 	}
 	return win
 }
@@ -8263,7 +8326,8 @@ pub fn (win &SimpleWindow) http_request_card(method string, url string, status_c
 // set_http_request_card updates metrics and status of HTTP request inspector card.
 pub fn (win &SimpleWindow) set_http_request_card(name string, method string, url string, status_code int, response_time_ms int) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
-		C.window_set_http_request_card_data(win.window_info, name.str, method.str, url.str, status_code, response_time_ms)
+		C.window_set_http_request_card_data(win.window_info, name.str, method.str, url.str,
+			status_code, response_time_ms)
 	}
 	return win
 }
@@ -8277,13 +8341,14 @@ pub fn (win &SimpleWindow) add_terminal_view(name string, prompt_text string, he
 	unsafe {
 		mut w := &SimpleWindow(win)
 		w.controls << ControlEntry{
-			name: real_name
-			kind: 'terminal_view'
+			name:  real_name
+			kind:  'terminal_view'
 			value: prompt_text
 		}
 	}
 	if win.window_info != unsafe { nil } {
-		C.window_add_terminal_view_control(win.window_info, real_name.str, prompt_text.str, height)
+		C.window_add_terminal_view_control(win.window_info, real_name.str, prompt_text.str,
+			height)
 	}
 	return win
 }
@@ -8323,7 +8388,8 @@ pub fn (win &SimpleWindow) add_resource_monitor(name string, cpu_pct int, mem_pc
 		}
 	}
 	if win.window_info != unsafe { nil } {
-		C.window_add_resource_monitor_control(win.window_info, real_name.str, cpu_pct, mem_pct, disk_pct, net_kbps)
+		C.window_add_resource_monitor_control(win.window_info, real_name.str, cpu_pct,
+			mem_pct, disk_pct, net_kbps)
 	}
 	return win
 }
@@ -8336,7 +8402,8 @@ pub fn (win &SimpleWindow) resource_monitor(cpu_pct int, mem_pct int, disk_pct i
 // set_resource_monitor updates live percentage metrics on resource monitor widget.
 pub fn (win &SimpleWindow) set_resource_monitor(name string, cpu_pct int, mem_pct int, disk_pct int, net_kbps int) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
-		C.window_set_resource_monitor_metrics(win.window_info, name.str, cpu_pct, mem_pct, disk_pct, net_kbps)
+		C.window_set_resource_monitor_metrics(win.window_info, name.str, cpu_pct, mem_pct,
+			disk_pct, net_kbps)
 	}
 	return win
 }
@@ -8350,8 +8417,8 @@ pub fn (win &SimpleWindow) add_env_vars(name string, title string, keys []string
 	unsafe {
 		mut w := &SimpleWindow(win)
 		w.controls << ControlEntry{
-			name: real_name
-			kind: 'env_vars'
+			name:  real_name
+			kind:  'env_vars'
 			value: title
 		}
 	}
@@ -8365,7 +8432,8 @@ pub fn (win &SimpleWindow) add_env_vars(name string, title string, keys []string
 			c_vals << v.str
 		}
 		count := if keys.len < values.len { keys.len } else { values.len }
-		C.window_add_env_vars_control(win.window_info, real_name.str, title.str, c_keys.data, c_vals.data, count)
+		C.window_add_env_vars_control(win.window_info, real_name.str, title.str, c_keys.data,
+			c_vals.data, count)
 	}
 	return win
 }
@@ -8387,7 +8455,8 @@ pub fn (win &SimpleWindow) set_env_vars(name string, keys []string, values []str
 			c_vals << v.str
 		}
 		count := if keys.len < values.len { keys.len } else { values.len }
-		C.window_set_env_vars_data(win.window_info, name.str, c_keys.data, c_vals.data, count)
+		C.window_set_env_vars_data(win.window_info, name.str, c_keys.data, c_vals.data,
+			count)
 	}
 	return win
 }
@@ -8401,13 +8470,14 @@ pub fn (win &SimpleWindow) add_badge_button(name string, title string, count int
 	unsafe {
 		mut w := &SimpleWindow(win)
 		w.controls << ControlEntry{
-			name: real_name
-			kind: 'badge_button'
+			name:  real_name
+			kind:  'badge_button'
 			value: title
 		}
 	}
 	if win.window_info != unsafe { nil } {
-		C.window_add_badge_button_control(win.window_info, real_name.str, title.str, count, badge_color.str)
+		C.window_add_badge_button_control(win.window_info, real_name.str, title.str, count,
+			badge_color.str)
 	}
 	return win
 }
@@ -8434,13 +8504,14 @@ pub fn (win &SimpleWindow) add_command_palette(name string, placeholder string, 
 	unsafe {
 		mut w := &SimpleWindow(win)
 		w.controls << ControlEntry{
-			name: real_name
-			kind: 'command_palette'
+			name:  real_name
+			kind:  'command_palette'
 			value: placeholder
 		}
 	}
 	if win.window_info != unsafe { nil } {
-		C.window_add_command_palette_control(win.window_info, real_name.str, placeholder.str, shortcut_hint.str)
+		C.window_add_command_palette_control(win.window_info, real_name.str, placeholder.str,
+			shortcut_hint.str)
 	}
 	return win
 }
@@ -8467,13 +8538,14 @@ pub fn (win &SimpleWindow) add_status_banner(name string, title string, message 
 	unsafe {
 		mut w := &SimpleWindow(win)
 		w.controls << ControlEntry{
-			name: real_name
-			kind: 'status_banner'
+			name:  real_name
+			kind:  'status_banner'
 			value: title
 		}
 	}
 	if win.window_info != unsafe { nil } {
-		C.window_add_status_banner_control(win.window_info, real_name.str, title.str, message.str, style_type.str)
+		C.window_add_status_banner_control(win.window_info, real_name.str, title.str,
+			message.str, style_type.str)
 	}
 	return win
 }
@@ -8486,7 +8558,8 @@ pub fn (win &SimpleWindow) status_banner(title string, message string, style_typ
 // set_status_banner updates title and message in status banner alert strip.
 pub fn (win &SimpleWindow) set_status_banner(name string, title string, message string, style_type string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
-		C.window_set_status_banner_text(win.window_info, name.str, title.str, message.str, style_type.str)
+		C.window_set_status_banner_text(win.window_info, name.str, title.str, message.str,
+			style_type.str)
 	}
 	return win
 }
@@ -8509,7 +8582,8 @@ pub fn (win &SimpleWindow) add_pill_toggle(name string, options []string, select
 		for o in options {
 			c_opts << o.str
 		}
-		C.window_add_pill_toggle_control(win.window_info, real_name.str, c_opts.data, options.len, selected_index)
+		C.window_add_pill_toggle_control(win.window_info, real_name.str, c_opts.data,
+			options.len, selected_index)
 	}
 	return win
 }
@@ -8536,8 +8610,8 @@ pub fn (win &SimpleWindow) add_color_swatch_panel(name string, hex_colors []stri
 	unsafe {
 		mut w := &SimpleWindow(win)
 		w.controls << ControlEntry{
-			name: real_name
-			kind: 'color_swatch_panel'
+			name:  real_name
+			kind:  'color_swatch_panel'
 			value: selected_color
 		}
 	}
@@ -8546,7 +8620,8 @@ pub fn (win &SimpleWindow) add_color_swatch_panel(name string, hex_colors []stri
 		for h in hex_colors {
 			c_hex << h.str
 		}
-		C.window_add_color_swatch_panel_control(win.window_info, real_name.str, c_hex.data, hex_colors.len, selected_color.str)
+		C.window_add_color_swatch_panel_control(win.window_info, real_name.str, c_hex.data,
+			hex_colors.len, selected_color.str)
 	}
 	return win
 }
@@ -8573,13 +8648,14 @@ pub fn (win &SimpleWindow) add_hotkey_badge(name string, shortcut_str string, de
 	unsafe {
 		mut w := &SimpleWindow(win)
 		w.controls << ControlEntry{
-			name: real_name
-			kind: 'hotkey_badge'
+			name:  real_name
+			kind:  'hotkey_badge'
 			value: shortcut_str
 		}
 	}
 	if win.window_info != unsafe { nil } {
-		C.window_add_hotkey_badge_control(win.window_info, real_name.str, shortcut_str.str, description.str)
+		C.window_add_hotkey_badge_control(win.window_info, real_name.str, shortcut_str.str,
+			description.str)
 	}
 	return win
 }
@@ -8592,7 +8668,8 @@ pub fn (win &SimpleWindow) hotkey_badge(shortcut_str string, description string)
 // set_hotkey_badge_shortcut updates keyboard shortcut string and description in hotkey badge.
 pub fn (win &SimpleWindow) set_hotkey_badge_shortcut(name string, shortcut_str string, description string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
-		C.window_set_hotkey_badge_shortcut(win.window_info, name.str, shortcut_str.str, description.str)
+		C.window_set_hotkey_badge_shortcut(win.window_info, name.str, shortcut_str.str,
+			description.str)
 	}
 	return win
 }
@@ -8619,7 +8696,8 @@ pub fn (win &SimpleWindow) add_quick_action_bar(name string, labels []string, sy
 		for s in symbols {
 			c_symbols << s.str
 		}
-		C.window_add_quick_action_bar_control(win.window_info, real_name.str, c_labels.data, c_symbols.data, labels.len)
+		C.window_add_quick_action_bar_control(win.window_info, real_name.str, c_labels.data,
+			c_symbols.data, labels.len)
 	}
 	return win
 }
@@ -8632,7 +8710,11 @@ pub fn (win &SimpleWindow) quick_action_bar(labels []string, symbols []string) &
 // set_quick_action_enabled sets enabled state for a specific action button inside a quick action bar.
 pub fn (win &SimpleWindow) set_quick_action_enabled(name string, index int, enabled bool) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
-		C.window_set_quick_action_enabled(win.window_info, name.str, index, if enabled { 1 } else { 0 })
+		C.window_set_quick_action_enabled(win.window_info, name.str, index, if enabled {
+			1
+		} else {
+			0
+		})
 	}
 	return win
 }
@@ -8655,7 +8737,8 @@ pub fn (win &SimpleWindow) add_accordion_group(name string, section_titles []str
 		for t in section_titles {
 			c_titles << t.str
 		}
-		C.window_add_accordion_group_control(win.window_info, real_name.str, c_titles.data, section_titles.len, expanded_index)
+		C.window_add_accordion_group_control(win.window_info, real_name.str, c_titles.data,
+			section_titles.len, expanded_index)
 	}
 	return win
 }
@@ -8668,7 +8751,11 @@ pub fn (win &SimpleWindow) accordion_group(section_titles []string, expanded_ind
 // set_accordion_expanded updates expanded/collapsed state for an accordion section by index.
 pub fn (win &SimpleWindow) set_accordion_expanded(name string, index int, expanded bool) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
-		C.window_set_accordion_expanded(win.window_info, name.str, index, if expanded { 1 } else { 0 })
+		C.window_set_accordion_expanded(win.window_info, name.str, index, if expanded {
+			1
+		} else {
+			0
+		})
 	}
 	return win
 }
@@ -8695,7 +8782,8 @@ pub fn (win &SimpleWindow) add_segment_distribution_bar(name string, labels []st
 		for c in hex_colors {
 			c_colors << c.str
 		}
-		C.window_add_segment_distribution_bar_control(win.window_info, real_name.str, c_labels.data, values.data, c_colors.data, values.len, height)
+		C.window_add_segment_distribution_bar_control(win.window_info, real_name.str,
+			c_labels.data, values.data, c_colors.data, values.len, height)
 	}
 	return win
 }
@@ -8708,7 +8796,8 @@ pub fn (win &SimpleWindow) segment_distribution_bar(labels []string, values []f6
 // set_segment_distribution_values updates values of a segment distribution bar.
 pub fn (win &SimpleWindow) set_segment_distribution_values(name string, values []f64) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
-		C.window_set_segment_distribution_values(win.window_info, name.str, values.data, values.len)
+		C.window_set_segment_distribution_values(win.window_info, name.str, values.data,
+			values.len)
 	}
 	return win
 }
@@ -8731,7 +8820,8 @@ pub fn (win &SimpleWindow) add_tag_input_field(name string, tags []string) &Simp
 		for t in tags {
 			c_tags << t.str
 		}
-		C.window_add_tag_input_field_control(win.window_info, real_name.str, c_tags.data, tags.len)
+		C.window_add_tag_input_field_control(win.window_info, real_name.str, c_tags.data,
+			tags.len)
 	}
 	return win
 }
@@ -8773,13 +8863,14 @@ pub fn (win &SimpleWindow) add_status_dock(name string, status_text string, dot_
 	unsafe {
 		mut w := &SimpleWindow(win)
 		w.controls << ControlEntry{
-			name: real_name
-			kind: 'status_dock'
+			name:  real_name
+			kind:  'status_dock'
 			value: status_text
 		}
 	}
 	if win.window_info != unsafe { nil } {
-		C.window_add_status_dock_control(win.window_info, real_name.str, status_text.str, dot_color.str, count_text.str)
+		C.window_add_status_dock_control(win.window_info, real_name.str, status_text.str,
+			dot_color.str, count_text.str)
 	}
 	return win
 }
@@ -8792,7 +8883,8 @@ pub fn (win &SimpleWindow) status_dock(status_text string, dot_color string, cou
 // set_status_dock_info updates status text, indicator dot color, and count text in status dock.
 pub fn (win &SimpleWindow) set_status_dock_info(name string, status_text string, dot_color string, count_text string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
-		C.window_set_status_dock_info(win.window_info, name.str, status_text.str, dot_color.str, count_text.str)
+		C.window_set_status_dock_info(win.window_info, name.str, status_text.str, dot_color.str,
+			count_text.str)
 	}
 	return win
 }
@@ -8806,13 +8898,14 @@ pub fn (win &SimpleWindow) add_info_callout(name string, title string, message s
 	unsafe {
 		mut w := &SimpleWindow(win)
 		w.controls << ControlEntry{
-			name: real_name
-			kind: 'info_callout'
+			name:  real_name
+			kind:  'info_callout'
 			value: title
 		}
 	}
 	if win.window_info != unsafe { nil } {
-		C.window_add_info_callout_control(win.window_info, real_name.str, title.str, message.str, style_type.str, button_text.str)
+		C.window_add_info_callout_control(win.window_info, real_name.str, title.str, message.str,
+			style_type.str, button_text.str)
 	}
 	return win
 }
@@ -9029,6 +9122,104 @@ pub fn (win &SimpleWindow) set_cursor_hidden(hidden bool) &SimpleWindow {
 	return win
 }
 
+// set_cursor changes the cursor icon shown over the window content.
+// Supported names: 'arrow', 'ibeam'/'text', 'crosshair', 'pointing_hand'/'hand',
+// 'open_hand', 'closed_hand', 'resize_left', 'resize_right', 'resize_left_right',
+// 'resize_up', 'resize_down', 'resize_up_down', 'drag_copy', 'drag_link',
+// 'operation_not_allowed'/'not_allowed', 'context_menu', 'disappearing_item'/'poof',
+// 'ibeam_vertical'. The cursor persists while the mouse is over the window.
+pub fn (win &SimpleWindow) set_cursor(cursor_name string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_cursor(win.window_info, cursor_name.str)
+	}
+	return win
+}
+
+// get_cursor returns the name of the currently active cursor set via set_cursor,
+// or 'arrow' if no custom cursor is active.
+pub fn (win &SimpleWindow) get_cursor() string {
+	if win.window_info != unsafe { nil } {
+		res := C.window_get_cursor(win.window_info)
+		if res != unsafe { nil } {
+			return unsafe { tos3(res) }
+		}
+	}
+	return 'arrow'
+}
+
+// set_cursor_size scales the cursor icon (1.0 = system size, 2.0 = double, etc.).
+// The scale is clamped to 0.25–8.0 and applies to cursors set via set_cursor,
+// push_cursor, and set_control_cursor.
+pub fn (win &SimpleWindow) set_cursor_size(scale f64) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_cursor_scale(win.window_info, scale)
+	}
+	return win
+}
+
+// get_cursor_size returns the current cursor scale factor (1.0 = system size).
+pub fn (win &SimpleWindow) get_cursor_size() f64 {
+	if win.window_info != unsafe { nil } {
+		return C.window_get_cursor_scale(win.window_info)
+	}
+	return 1.0
+}
+
+// reset_cursor restores the default arrow cursor at system size and clears
+// any cursor icon and scale set via set_cursor / set_cursor_size.
+pub fn (win &SimpleWindow) reset_cursor() &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_reset_cursor(win.window_info)
+	}
+	return win
+}
+
+// push_cursor temporarily pushes a cursor onto the system cursor stack.
+// Use pop_cursor to restore the previous cursor.
+pub fn (win &SimpleWindow) push_cursor(cursor_name string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_push_cursor(win.window_info, cursor_name.str)
+	}
+	return win
+}
+
+// pop_cursor restores the cursor that was active before the last push_cursor.
+pub fn (win &SimpleWindow) pop_cursor() &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_pop_cursor(win.window_info)
+	}
+	return win
+}
+
+// set_control_cursor assigns a cursor icon shown while hovering a specific control.
+// Pass '' or 'default' as cursor_name to remove the assignment.
+pub fn (win &SimpleWindow) set_control_cursor(name string, cursor_name string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_control_cursor_by_name(win.window_info, name.str, cursor_name.str)
+	}
+	return win
+}
+
+// get_mouse_location returns the current mouse position in global screen
+// coordinates (bottom-left origin, matching window position APIs).
+pub fn (win &SimpleWindow) get_mouse_location() (int, int) {
+	if win.window_info != unsafe { nil } {
+		mut x, mut y := 0, 0
+		C.window_get_mouse_location(win.window_info, &x, &y)
+		return x, y
+	}
+	return 0, 0
+}
+
+// move_cursor_to warps the mouse cursor to the given global screen coordinates
+// (bottom-left origin, same coordinate space as get_mouse_location).
+pub fn (win &SimpleWindow) move_cursor_to(x int, y int) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_move_cursor_to(win.window_info, x, y)
+	}
+	return win
+}
+
 // ── Resize Indicator ──────────────────────────────────────────────────────────
 
 // set_shows_resize_indicator shows or hides the bottom-right resize grip on the window.
@@ -9087,9 +9278,7 @@ pub fn (win &SimpleWindow) get_content_max_size() (int, int) {
 	return 0, 0
 }
 
-
 // ── Tab Count ─────────────────────────────────────────────────────────────────
-
 
 // get_tab_count returns the number of tabs in the current window tab group.
 // Returns 1 if the window has no tab group or tabbing is not available.
@@ -9099,16 +9288,3 @@ pub fn (win &SimpleWindow) get_tab_count() int {
 	}
 	return 1
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

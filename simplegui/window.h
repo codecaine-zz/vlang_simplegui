@@ -586,6 +586,16 @@ double window_get_screen_scale_factor(main__WindowInfo *info);
 
 // Cursor Control
 void window_set_cursor_hidden(main__WindowInfo *info, int hidden);
+void window_set_cursor(main__WindowInfo *info, const char *cursor_name);
+const char *window_get_cursor(main__WindowInfo *info);
+void window_set_cursor_scale(main__WindowInfo *info, double scale);
+double window_get_cursor_scale(main__WindowInfo *info);
+void window_reset_cursor(main__WindowInfo *info);
+void window_push_cursor(main__WindowInfo *info, const char *cursor_name);
+void window_pop_cursor(main__WindowInfo *info);
+void window_set_control_cursor_by_name(main__WindowInfo *info, const char *name, const char *cursor_name);
+void window_get_mouse_location(main__WindowInfo *info, int *out_x, int *out_y);
+void window_move_cursor_to(main__WindowInfo *info, int x, int y);
 
 // Resize Indicator
 void window_set_shows_resize_indicator(main__WindowInfo *info, int show);

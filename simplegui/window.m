@@ -17172,6 +17172,236 @@ int window_get_tab_count(main__WindowInfo *info) {
   return result;
 }
 
+// ── Cursor Icon & Size ─────────────────────────────────────────────────────
+
+static char kCursorCurrentKey;
+static char kCursorNameKey;
+static char kCursorScaleKey;
+static char kCursorTrackingKey;
+static char kControlCursorOwnerKey;
+static char kControlCursorAreaKey;
+
+// Maps a friendly cursor name to the matching system NSCursor.
+static NSCursor *namedBaseCursor(NSString *name) {
+  NSString *n = [[[name lowercaseString]
+      stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]]
+      stringByReplacingOccurrencesOfString:@"-" withString:@"_"];
+  if ([n isEqualToString:@"ibeam"] || [n isEqualToString:@"text"]) return [NSCursor IBeamCursor];
+  if ([n isEqualToString:@"crosshair"] || [n isEqualToString:@"cross"]) return [NSCursor crosshairCursor];
+  if ([n isEqualToString:@"pointing_hand"] || [n isEqualToString:@"hand"] || [n isEqualToString:@"link"]) return [NSCursor pointingHandCursor];
+  if ([n isEqualToString:@"open_hand"] || [n isEqualToString:@"grab"]) return [NSCursor openHandCursor];
+  if ([n isEqualToString:@"closed_hand"] || [n isEqualToString:@"grabbing"]) return [NSCursor closedHandCursor];
+  if ([n isEqualToString:@"resize_left"]) return [NSCursor resizeLeftCursor];
+  if ([n isEqualToString:@"resize_right"]) return [NSCursor resizeRightCursor];
+  if ([n isEqualToString:@"resize_left_right"] || [n isEqualToString:@"resize_horizontal"] || [n isEqualToString:@"col_resize"]) return [NSCursor resizeLeftRightCursor];
+  if ([n isEqualToString:@"resize_up"]) return [NSCursor resizeUpCursor];
+  if ([n isEqualToString:@"resize_down"]) return [NSCursor resizeDownCursor];
+  if ([n isEqualToString:@"resize_up_down"] || [n isEqualToString:@"resize_vertical"] || [n isEqualToString:@"row_resize"]) return [NSCursor resizeUpDownCursor];
+  if ([n isEqualToString:@"drag_copy"] || [n isEqualToString:@"copy"]) return [NSCursor dragCopyCursor];
+  if ([n isEqualToString:@"drag_link"] || [n isEqualToString:@"alias"]) return [NSCursor dragLinkCursor];
+  if ([n isEqualToString:@"operation_not_allowed"] || [n isEqualToString:@"not_allowed"] || [n isEqualToString:@"forbidden"] || [n isEqualToString:@"no_drop"]) return [NSCursor operationNotAllowedCursor];
+  if ([n isEqualToString:@"context_menu"] || [n isEqualToString:@"contextual_menu"]) return [NSCursor contextualMenuCursor];
+  if ([n isEqualToString:@"disappearing_item"] || [n isEqualToString:@"poof"]) return [NSCursor disappearingItemCursor];
+  if ([n isEqualToString:@"ibeam_vertical"] || [n isEqualToString:@"vertical_text"]) return [NSCursor IBeamCursorForVerticalLayout];
+  return [NSCursor arrowCursor];
+}
+
+// Returns a copy of the given cursor scaled by the given factor (1.0 = system size).
+static NSCursor *scaledCursorFrom(NSCursor *base, double scale) {
+  if (scale <= 0.0 || fabs(scale - 1.0) < 0.001) return base;
+  NSImage *img = [base image];
+  NSSize sz = [img size];
+  if (sz.width <= 0 || sz.height <= 0) return base;
+  NSSize newSize = NSMakeSize(sz.width * scale, sz.height * scale);
+  NSPoint hot = [base hotSpot];
+  NSImage *scaled = [[NSImage alloc] initWithSize:newSize];
+  [scaled lockFocus];
+  [[NSGraphicsContext currentContext] setImageInterpolation:NSImageInterpolationHigh];
+  [img drawInRect:NSMakeRect(0, 0, newSize.width, newSize.height)
+         fromRect:NSZeroRect
+        operation:NSCompositingOperationSourceOver
+         fraction:1.0];
+  [scaled unlockFocus];
+  return [[NSCursor alloc] initWithImage:scaled
+                                 hotSpot:NSMakePoint(hot.x * scale, hot.y * scale)];
+}
+
+static double delegateCursorScale(AppDelegate *delegate) {
+  NSNumber *num = objc_getAssociatedObject(delegate, &kCursorScaleKey);
+  return num ? [num doubleValue] : 1.0;
+}
+
+// Small owner object that keeps a per-control cursor alive and applies it
+// whenever AppKit asks for a cursor update inside the control's bounds.
+@interface ControlCursorOwner : NSObject
+@property (nonatomic, strong) NSCursor *cursor;
+@end
+
+@implementation ControlCursorOwner
+- (void)cursorUpdate:(NSEvent *)event {
+  if (self.cursor) [self.cursor set];
+}
+@end
+
+// Window-wide cursor support: the delegate owns a tracking area over the whole
+// content view and re-applies the chosen cursor whenever AppKit resets it.
+@interface AppDelegate (SimpleGUICursor)
+- (void)cursorUpdate:(NSEvent *)event;
+@end
+
+@implementation AppDelegate (SimpleGUICursor)
+- (void)cursorUpdate:(NSEvent *)event {
+  NSCursor *cursor = objc_getAssociatedObject(self, &kCursorCurrentKey);
+  if (cursor) {
+    [cursor set];
+  } else {
+    [[NSCursor arrowCursor] set];
+  }
+}
+@end
+
+static void installWindowCursorTracking(AppDelegate *delegate) {
+  if (!delegate.window || !delegate.window.contentView) return;
+  if (objc_getAssociatedObject(delegate, &kCursorTrackingKey)) return;
+  NSView *content = delegate.window.contentView;
+  NSTrackingArea *area = [[NSTrackingArea alloc]
+      initWithRect:NSZeroRect
+           options:(NSTrackingCursorUpdate | NSTrackingActiveInActiveApp | NSTrackingInVisibleRect)
+             owner:delegate
+          userInfo:nil];
+  [content addTrackingArea:area];
+  objc_setAssociatedObject(delegate, &kCursorTrackingKey, area, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
+
+void window_set_cursor(main__WindowInfo *info, const char *cursor_name) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *name = nsstring(cursor_name);
+  void (^runBlock)(void) = ^{
+    NSCursor *cursor = scaledCursorFrom(namedBaseCursor(name), delegateCursorScale(delegate));
+    objc_setAssociatedObject(delegate, &kCursorCurrentKey, cursor, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    objc_setAssociatedObject(delegate, &kCursorNameKey, [name lowercaseString], OBJC_ASSOCIATION_COPY_NONATOMIC);
+    installWindowCursorTracking(delegate);
+    [cursor set];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+const char *window_get_cursor(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block const char *result = NULL;
+  void (^runBlock)(void) = ^{
+    NSString *name = objc_getAssociatedObject(delegate, &kCursorNameKey);
+    result = strdup(name ? [name UTF8String] : "arrow");
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return result;
+}
+
+void window_set_cursor_scale(main__WindowInfo *info, double scale) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    double clamped = scale < 0.25 ? 0.25 : (scale > 8.0 ? 8.0 : scale);
+    objc_setAssociatedObject(delegate, &kCursorScaleKey, @(clamped), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    // Re-apply the active cursor (if any) at the new scale.
+    NSString *name = objc_getAssociatedObject(delegate, &kCursorNameKey);
+    if (name) {
+      NSCursor *cursor = scaledCursorFrom(namedBaseCursor(name), clamped);
+      objc_setAssociatedObject(delegate, &kCursorCurrentKey, cursor, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+      installWindowCursorTracking(delegate);
+      [cursor set];
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+double window_get_cursor_scale(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block double result = 1.0;
+  void (^runBlock)(void) = ^{
+    result = delegateCursorScale(delegate);
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return result;
+}
+
+void window_reset_cursor(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    objc_setAssociatedObject(delegate, &kCursorCurrentKey, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    objc_setAssociatedObject(delegate, &kCursorNameKey, nil, OBJC_ASSOCIATION_COPY_NONATOMIC);
+    objc_setAssociatedObject(delegate, &kCursorScaleKey, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    [[NSCursor arrowCursor] set];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+void window_push_cursor(main__WindowInfo *info, const char *cursor_name) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *name = nsstring(cursor_name);
+  void (^runBlock)(void) = ^{
+    [scaledCursorFrom(namedBaseCursor(name), delegateCursorScale(delegate)) push];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+void window_pop_cursor(main__WindowInfo *info) {
+  void (^runBlock)(void) = ^{
+    [NSCursor pop];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+void window_set_control_cursor_by_name(main__WindowInfo *info, const char *name, const char *cursor_name) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *controlName = nsstring(name);
+  NSString *cursorStr = nsstring(cursor_name);
+  dispatch_async(dispatch_get_main_queue(), ^{
+    NSView *view = [delegate viewForControlName:controlName];
+    if (!view) return;
+    // Remove any previously assigned cursor tracking area.
+    NSTrackingArea *oldArea = objc_getAssociatedObject(view, &kControlCursorAreaKey);
+    if (oldArea) {
+      [view removeTrackingArea:oldArea];
+      objc_setAssociatedObject(view, &kControlCursorAreaKey, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+      objc_setAssociatedObject(view, &kControlCursorOwnerKey, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    }
+    NSString *trimmed = [[cursorStr lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    if ([trimmed length] == 0 || [trimmed isEqualToString:@"default"]) {
+      [[NSCursor arrowCursor] set];
+      return;
+    }
+    ControlCursorOwner *owner = [[ControlCursorOwner alloc] init];
+    owner.cursor = scaledCursorFrom(namedBaseCursor(trimmed), delegateCursorScale(delegate));
+    NSTrackingArea *area = [[NSTrackingArea alloc]
+        initWithRect:NSZeroRect
+             options:(NSTrackingCursorUpdate | NSTrackingActiveInActiveApp | NSTrackingInVisibleRect)
+               owner:owner
+            userInfo:nil];
+    [view addTrackingArea:area];
+    objc_setAssociatedObject(view, &kControlCursorOwnerKey, owner, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    objc_setAssociatedObject(view, &kControlCursorAreaKey, area, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  });
+}
+
+void window_get_mouse_location(main__WindowInfo *info, int *out_x, int *out_y) {
+  void (^runBlock)(void) = ^{
+    NSPoint p = [NSEvent mouseLocation];
+    if (out_x) *out_x = (int)p.x;
+    if (out_y) *out_y = (int)p.y;
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+void window_move_cursor_to(main__WindowInfo *info, int x, int y) {
+  void (^runBlock)(void) = ^{
+    // Convert from Cocoa (bottom-left origin) to CG global (top-left origin) coordinates.
+    CGFloat screenTop = NSMaxY([[[NSScreen screens] firstObject] frame]);
+    CGWarpMouseCursorPosition(CGPointMake((CGFloat)x, screenTop - (CGFloat)y));
+    CGAssociateMouseAndMouseCursorPosition(true);
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
 
 
 

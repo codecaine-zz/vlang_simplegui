@@ -38,7 +38,8 @@ fn main() {
 
 	win.on_click('btn_run_all', fn (mut w simplegui.SimpleWindow) {
 		w.clear_console('output')
-		w.append_console('output', '⏳ Running all 12 system sections in background thread…', 0)
+		w.append_console('output', '⏳ Running all 12 system sections in background thread…',
+			0)
 		spawn fn (mut window simplegui.SimpleWindow) {
 			run_all(mut window)
 		}(mut w)
@@ -62,7 +63,8 @@ fn main() {
 				'§11 macOS' { demo_macos_info(mut window) }
 				'§12 Process' { demo_process(mut window) }
 				'§13 Extra Sys' { demo_extra_sys(mut window) }
-				else { window.append_console('output', 'Unknown section: ${selected_tab}', 1) }
+				else { window.append_console('output', 'Unknown section: ${selected_tab}',
+						1) }
 			}
 		}(mut w, tab)
 	})
@@ -106,7 +108,8 @@ fn run_all(mut w simplegui.SimpleWindow) {
 	demo_process(mut w)
 	demo_extra_sys(mut w)
 	w.append_console('output', '', 0)
-	w.append_console('output', '✅  All sections complete. (Interactive popups & launchers are safely isolated to §7 Open and §10 Shell tabs).', 0)
+	w.append_console('output', '✅  All sections complete. (Interactive popups & launchers are safely isolated to §7 Open and §10 Shell tabs).',
+		0)
 }
 
 // ─── §1 OS & Execution ────────────────────────────────────────────────────
@@ -506,5 +509,3 @@ fn demo_extra_sys(mut w simplegui.SimpleWindow) {
 	w.prevent_sleep_bg(10)
 	log_ok(mut w, 'prevent_sleep_bg(10) fired')
 }
-
-

@@ -57,7 +57,8 @@ fn main() {
 
 	win.on_click('btn_run', fn (mut w simplegui.SimpleWindow) {
 		w.clear_console('output')
-		w.append_console('output', '⏳ Running all new system command demonstrations…', 0)
+		w.append_console('output', '⏳ Running all new system command demonstrations…',
+			0)
 		spawn fn (mut window simplegui.SimpleWindow) {
 			demo_theme(mut window)
 			demo_audio(mut window)
@@ -67,7 +68,8 @@ fn main() {
 			demo_macos_adv(mut window)
 			demo_caffeinate(mut window)
 			window.append_console('output', '', 0)
-			window.append_console('output', '✅ All new sys.v commands tested successfully!', 0)
+			window.append_console('output', '✅ All new sys.v commands tested successfully!',
+				0)
 		}(mut w)
 	})
 
@@ -80,9 +82,11 @@ fn log(mut w simplegui.SimpleWindow, label string, value string) {
 
 fn log_header(mut w simplegui.SimpleWindow, title string) {
 	w.append_console('output', '', 0)
-	w.append_console('output', '════════════════════════════════════════════════════', 0)
+	w.append_console('output', '════════════════════════════════════════════════════',
+		0)
 	w.append_console('output', '  ${title}', 0)
-	w.append_console('output', '════════════════════════════════════════════════════', 0)
+	w.append_console('output', '════════════════════════════════════════════════════',
+		0)
 }
 
 fn log_ok(mut w simplegui.SimpleWindow, msg string) {
@@ -173,8 +177,8 @@ fn demo_files_and_hash(mut w simplegui.SimpleWindow) {
 fn demo_network_ports(mut w simplegui.SimpleWindow) {
 	log_header(mut w, '🌐 Network & TCP Port Scanner')
 	log(mut w, 'is_port_open("google.com", 443)', '${w.is_port_open('google.com', 443)}')
-	log(mut w, 'is_port_open("127.0.0.1", 59999) (closed port test)',
-		'${w.is_port_open('127.0.0.1', 59999)}')
+	log(mut w, 'is_port_open("127.0.0.1", 59999) (closed port test)', '${w.is_port_open('127.0.0.1',
+		59999)}')
 
 	avail_port := w.find_available_port(8080)
 	log(mut w, 'find_available_port(8080)', '${avail_port}')
@@ -225,7 +229,7 @@ fn demo_macos_adv(mut w simplegui.SimpleWindow) {
 	log(mut w, 'get_active_app_name', w.get_active_app_name())
 	log(mut w, 'get_active_window_title', w.get_active_window_title())
 	running_apps := w.get_running_app_names()
-	log(mut w, 'get_running_app_names count', '${running_apps.len} active apps (${running_apps.join(", ")})')
+	log(mut w, 'get_running_app_names count', '${running_apps.len} active apps (${running_apps.join(', ')})')
 
 	log(mut w, 'is_apple_silicon', '${w.is_apple_silicon()}')
 	log(mut w, 'is_rosetta_emulation', '${w.is_rosetta_emulation()}')
@@ -247,5 +251,3 @@ fn demo_macos_adv(mut w simplegui.SimpleWindow) {
 		w.delete_file(ss_path)
 	}
 }
-
-

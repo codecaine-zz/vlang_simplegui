@@ -1,0 +1,1 @@
+find . -type f \( -name "*.v" -o -name "*.vsh" \) -exec v fmt -w {} +

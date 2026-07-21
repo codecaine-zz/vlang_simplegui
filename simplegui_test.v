@@ -767,7 +767,6 @@ fn test_theme_presets() {
 	assert win.get_font_color() == '#f0fdf4'
 }
 
-
 fn test_validation_clear_errors() {
 	mut win := simplegui.new_simple_window('Test Window', 100, 100)
 	win.add_input('username', 'Ada')
@@ -2011,7 +2010,8 @@ fn test_new_extended_controls_api() {
 	win.add_timeline_view('act_feed', 180)
 	assert win.has_control('act_feed') == true
 	assert win.get_control_kind('act_feed') == 'timeline_view'
-	win.add_timeline_entry('act_feed', '14:32:01', 'Build Completed', 'Artifact simplegui v2.4 compiled', 'success')
+	win.add_timeline_entry('act_feed', '14:32:01', 'Build Completed', 'Artifact simplegui v2.4 compiled',
+		'success')
 
 	// Toolbar Item
 	win.add_toolbar_item('tb_refresh', 'Refresh Data', 'Refresh active dataset', 'arrow.clockwise')
@@ -2052,7 +2052,8 @@ fn test_new_window_commands_and_controls() {
 	assert win.get_control_kind('user_tags') == 'tag_cloud'
 
 	// Wizard Stepper Control
-	win.add_wizard_stepper('checkout_flow', ['Cart', 'Shipping', 'Payment', 'Review'], 1)
+	win.add_wizard_stepper('checkout_flow', ['Cart', 'Shipping', 'Payment', 'Review'],
+		1)
 	assert win.has_control('checkout_flow') == true
 	assert win.get_control_kind('checkout_flow') == 'wizard_stepper'
 }
@@ -2160,6 +2161,7 @@ fn test_advanced_layout_grid_flex_and_alignment() {
 		w.add_input('first_name', 'Grace')
 			.align_left()
 			.expand_fill()
+
 		w.add_input('last_name', 'Hopper')
 			.align_right()
 	})
@@ -2261,7 +2263,6 @@ fn test_even_more_new_controls() {
 	win.add_transfer_list_opts('multi_picker', ['Dev', 'QA', 'Ops'], ['Manager'], true)
 	assert win.has_control('multi_picker') == true
 
-
 	// 5. Audio Waveform Visualizer
 	win.add_audio_waveform('voice_wave', [0.2, 0.5, 0.8, 0.4, 0.9, 0.3], 50)
 	assert win.has_control('voice_wave') == true
@@ -2319,7 +2320,8 @@ fn test_high_utility_controls() {
 }
 
 fn test_developer_inspection_controls() {
-	mut win := simplegui.new_simple_window('Developer Inspection Controls Test', 800, 600)
+	mut win := simplegui.new_simple_window('Developer Inspection Controls Test', 800,
+		600)
 
 	// 1. Diff View
 	win.add_diff_view('diff_1', 'line 1\nline 2', 'line 1\nline 2 updated', 120)
@@ -2414,17 +2416,20 @@ fn test_new_useful_window_controls() {
 	mut win := simplegui.new_simple_window('New Useful Controls Test', 800, 600)
 
 	// 1. Quick Action Bar
-	win.add_quick_action_bar('quick_bar', ['Refresh', 'Export', 'Settings'], ['🔄', '📤', '⚙️'])
+	win.add_quick_action_bar('quick_bar', ['Refresh', 'Export', 'Settings'], ['🔄', '📤',
+		'⚙️'])
 	assert win.has_control('quick_bar') == true
 	win.set_quick_action_enabled('quick_bar', 0, false)
 
 	// 2. Accordion Group
-	win.add_accordion_group('accordion_1', ['General Settings', 'Security & Privacy', 'Notifications'], 0)
+	win.add_accordion_group('accordion_1', ['General Settings', 'Security & Privacy', 'Notifications'],
+		0)
 	assert win.has_control('accordion_1') == true
 	win.set_accordion_expanded('accordion_1', 1, true)
 
 	// 3. Segment Distribution Bar
-	win.add_segment_distribution_bar('storage_bar', ['System', 'Apps', 'Documents', 'Free'], [40.0, 30.0, 15.0, 15.0], ['#007aff', '#34c759', '#ff9500', '#8e8e93'], 16)
+	win.add_segment_distribution_bar('storage_bar', ['System', 'Apps', 'Documents', 'Free'],
+		[40.0, 30.0, 15.0, 15.0], ['#007aff', '#34c759', '#ff9500', '#8e8e93'], 16)
 	assert win.has_control('storage_bar') == true
 	win.set_segment_distribution_values('storage_bar', [50.0, 25.0, 15.0, 10.0])
 
@@ -2440,7 +2445,8 @@ fn test_new_useful_window_controls() {
 	win.set_status_dock_info('dock_footer', 'Syncing Data...', '#ff9500', '145 Records')
 
 	// 6. Info Callout Card
-	win.add_info_callout('callout_card', 'Update Available', 'SimpleGUI v1.5 is ready to install.', 'info', 'Install Now')
+	win.add_info_callout('callout_card', 'Update Available', 'SimpleGUI v1.5 is ready to install.',
+		'info', 'Install Now')
 	assert win.has_control('callout_card') == true
 	win.set_info_callout_text('callout_card', 'Critical Update', 'Version v1.5 includes security improvements.')
 }
@@ -2608,6 +2614,23 @@ fn test_new_window_control_apis() {
 	win.set_cursor_hidden(true)
 	win.set_cursor_hidden(false)
 
+	// Cursor icon & size
+	win.set_cursor('crosshair')
+	assert win.get_cursor() == 'crosshair'
+	win.set_cursor_size(2.0)
+	assert win.get_cursor_size() == 2.0
+	win.reset_cursor()
+	assert win.get_cursor() == 'arrow'
+	assert win.get_cursor_size() == 1.0
+	win.push_cursor('closed_hand')
+	win.pop_cursor()
+	win.add_label('cursor_lbl', 'hover target')
+	win.set_control_cursor('cursor_lbl', 'pointing_hand')
+	win.set_control_cursor('cursor_lbl', 'default')
+	mx, my := win.get_mouse_location()
+	_ = mx
+	_ = my
+
 	// ── Resize Indicator ─────────────────────────────────────────────
 	// Note: showsResizeIndicator is deprecated in macOS; just verify calls don't panic
 	win.set_shows_resize_indicator(false)
@@ -2664,13 +2687,3 @@ fn test_new_window_control_apis() {
 	assert win.get_movable() == true
 	assert win.is_movable() == true
 }
-
-
-
-
-
-
-
-
-
-

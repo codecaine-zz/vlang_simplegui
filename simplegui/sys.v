@@ -653,20 +653,19 @@ pub fn (win &SimpleWindow) get_uname() Uname {
 // 6. System Clock & Time
 // ==========================================
 
-
 // SystemTime holds a structured representation of the current local time.
 pub struct SystemTime {
 pub:
-	year        int
-	month       int
-	day         int
-	hour        int
-	minute      int
-	second      int
-	unix_epoch  i64
-	unix_milli  i64
-	rfc3339     string
-	weekday     string
+	year       int
+	month      int
+	day        int
+	hour       int
+	minute     int
+	second     int
+	unix_epoch i64
+	unix_milli i64
+	rfc3339    string
+	weekday    string
 }
 
 // get_time returns the current local date and time packed into a SystemTime struct.
@@ -853,12 +852,12 @@ pub fn (win &SimpleWindow) dns_lookup(hostname string) string {
 // get_wifi_ssid returns the SSID of the currently connected Wi-Fi network (macOS).
 // Uses fast ipconfig getsummary, falling back to the airport tool.
 pub fn (win &SimpleWindow) get_wifi_ssid() string {
-	ssid_ip := win.exec_or("ipconfig getsummary en0 2>/dev/null | awk -F ' : ' '/ SSID /{print $2}'", '').trim_space()
+	ssid_ip := win.exec_or("ipconfig getsummary en0 2>/dev/null | awk -F ' : ' '/ SSID /{print $2}'",
+		'').trim_space()
 	if ssid_ip.len > 0 {
 		return ssid_ip
 	}
-	return win.exec_or(
-		'/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport -I 2>/dev/null | awk \'/ SSID:/{print $2}\'',
+	return win.exec_or("/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport -I 2>/dev/null | awk '/ SSID:/{print $2}'",
 		'').trim_space()
 }
 
@@ -902,7 +901,8 @@ pub fn (win &SimpleWindow) get_load_average() (f64, f64, f64) {
 // get_memory_pressure returns a macOS memory pressure string: "normal", "warn", or "critical".
 // Uses sysctl for sub-millisecond kernel lookup.
 pub fn (win &SimpleWindow) get_memory_pressure() string {
-	level := win.exec_or('sysctl -n kern.memorystatus_vm_pressure_level 2>/dev/null', '').trim_space().int()
+	level := win.exec_or('sysctl -n kern.memorystatus_vm_pressure_level 2>/dev/null',
+		'').trim_space().int()
 	if level >= 4 {
 		return 'critical'
 	} else if level >= 2 {
@@ -1057,16 +1057,14 @@ pub fn (win &SimpleWindow) get_device_model() string {
 // get_serial_number returns the device serial number.
 // Uses targeted ioreg query for sub-millisecond resolution.
 pub fn (win &SimpleWindow) get_serial_number() string {
-	return win.exec_or(
-		"ioreg -c IOPlatformExpertDevice 2>/dev/null | awk -F '\"' '/IOPlatformSerialNumber/{print $4}'",
+	return win.exec_or('ioreg -c IOPlatformExpertDevice 2>/dev/null | awk -F \'"\' \'/IOPlatformSerialNumber/{print $4}\'',
 		'unavailable').trim_space()
 }
 
 // get_screen_resolution returns the primary display resolution (e.g. "2560 x 1600").
 // Uses fast AppleScript desktop query with fallback.
 pub fn (win &SimpleWindow) get_screen_resolution() string {
-	raw := win.exec_or(
-		"osascript -e 'tell application \"Finder\" to get bounds of window of desktop' 2>/dev/null",
+	raw := win.exec_or('osascript -e \'tell application "Finder" to get bounds of window of desktop\' 2>/dev/null',
 		'')
 	if raw.len > 0 {
 		parts := raw.split(',').map(it.trim_space())
@@ -1074,29 +1072,25 @@ pub fn (win &SimpleWindow) get_screen_resolution() string {
 			return '${parts[2]} x ${parts[3]}'
 		}
 	}
-	return win.exec_or(
-		"system_profiler SPDisplaysDataType 2>/dev/null | awk '/Resolution:/{print $2\" x \"$4; exit}'",
+	return win.exec_or('system_profiler SPDisplaysDataType 2>/dev/null | awk \'/Resolution:/{print $2" x "$4; exit}\'',
 		'unknown').trim_space()
 }
 
 // get_gpu_info returns the GPU model string of the primary graphics adapter.
 // Uses fast IOPCIDevice ioreg lookup with fallback.
 pub fn (win &SimpleWindow) get_gpu_info() string {
-	ioreg_gpu := win.exec_or(
-		"ioreg -rc IOPCIDevice 2>/dev/null | awk -F '\"' '/\"model\" = /{print $4}' | head -1",
+	ioreg_gpu := win.exec_or('ioreg -rc IOPCIDevice 2>/dev/null | awk -F \'"\' \'/"model" = /{print $4}\' | head -1',
 		'').trim_space()
 	if ioreg_gpu.len > 0 {
 		return ioreg_gpu
 	}
-	return win.exec_or(
-		"system_profiler SPDisplaysDataType 2>/dev/null | awk '/Chipset Model:/{sub(/.*Chipset Model: /,\"\"); print; exit}'",
+	return win.exec_or('system_profiler SPDisplaysDataType 2>/dev/null | awk \'/Chipset Model:/{sub(/.*Chipset Model: /,""); print; exit}\'',
 		'unknown').trim_space()
 }
 
 // get_battery_percent returns the battery charge percentage, or -1 if no battery is present.
 pub fn (win &SimpleWindow) get_battery_percent() int {
-	raw := win.exec_or(
-		"pmset -g batt 2>/dev/null | grep -oE '[0-9]+%' | head -1 | tr -d '%'",
+	raw := win.exec_or("pmset -g batt 2>/dev/null | grep -oE '[0-9]+%' | head -1 | tr -d '%'",
 		'')
 	pct := raw.trim_space()
 	if pct.len == 0 {
@@ -1107,8 +1101,8 @@ pub fn (win &SimpleWindow) get_battery_percent() int {
 
 // is_on_ac_power returns true if the machine is currently plugged into AC power.
 pub fn (win &SimpleWindow) is_on_ac_power() bool {
-	raw := win.exec_or("pmset -g batt 2>/dev/null | head -1", '')
-	return raw.contains("AC Power")
+	raw := win.exec_or('pmset -g batt 2>/dev/null | head -1', '')
+	return raw.contains('AC Power')
 }
 
 // get_app_bundle_id returns the bundle identifier of the running app (macOS bundles only).
@@ -1146,7 +1140,7 @@ pub fn (win &SimpleWindow) get_system_locale() string {
 	// macOS fallback: read AppleLocale from the user defaults plist directly
 	plist := os.join_path(os.home_dir(), 'Library', 'Preferences', '.GlobalPreferences.plist')
 	if os.exists(plist) {
-		raw := win.exec_or("defaults read NSGlobalDomain AppleLocale 2>/dev/null", '')
+		raw := win.exec_or('defaults read NSGlobalDomain AppleLocale 2>/dev/null', '')
 		if raw.len > 0 {
 			return raw.trim_space()
 		}
@@ -1194,7 +1188,7 @@ pub fn (win &SimpleWindow) launch_at_login_remove(app_name string) &SimpleWindow
 // Pass 0 to clear the badge.
 pub fn (win &SimpleWindow) set_dock_badge(count int) &SimpleWindow {
 	if count <= 0 {
-		win.exec_bg("osascript -e 'tell application \"System Events\" to set the dock badge of the front application to 0'")
+		win.exec_bg('osascript -e \'tell application "System Events" to set the dock badge of the front application to 0\'')
 	} else {
 		win.exec_bg("osascript -e 'tell application \"System Events\" to set the dock badge of the front application to ${count}'")
 	}
@@ -1207,7 +1201,7 @@ pub fn (win &SimpleWindow) set_dock_badge(count int) &SimpleWindow {
 
 // is_dark_mode returns true if macOS global appearance is set to Dark Mode.
 pub fn (win &SimpleWindow) is_dark_mode() bool {
-	style := win.exec_or("defaults read -g AppleInterfaceStyle 2>/dev/null", '').trim_space()
+	style := win.exec_or('defaults read -g AppleInterfaceStyle 2>/dev/null', '').trim_space()
 	return style.to_lower() == 'dark'
 }
 
@@ -1228,7 +1222,13 @@ pub fn (win &SimpleWindow) get_volume() int {
 
 // set_volume sets the system output volume level (0 to 100).
 pub fn (win &SimpleWindow) set_volume(level int) &SimpleWindow {
-	clamped := if level < 0 { 0 } else if level > 100 { 100 } else { level }
+	clamped := if level < 0 {
+		0
+	} else if level > 100 {
+		100
+	} else {
+		level
+	}
 	win.exec_bg("osascript -e 'set volume output volume ${clamped}'")
 	return win
 }
@@ -1439,7 +1439,7 @@ pub fn (win &SimpleWindow) kill_process(proc_name string) bool {
 
 // get_machine_id returns the unique hardware UUID of the macOS machine (`IOPlatformUUID`).
 pub fn (win &SimpleWindow) get_machine_id() string {
-	return win.exec_or("ioreg -rd1 -c IOPlatformExpertDevice 2>/dev/null | awk -F '\"' '/IOPlatformUUID/{print $4}'",
+	return win.exec_or('ioreg -rd1 -c IOPlatformExpertDevice 2>/dev/null | awk -F \'"\' \'/IOPlatformUUID/{print $4}\'',
 		'unknown').trim_space()
 }
 
@@ -1449,19 +1449,19 @@ pub fn (win &SimpleWindow) get_machine_id() string {
 
 // get_active_app_name returns the name of the active frontmost macOS application.
 pub fn (win &SimpleWindow) get_active_app_name() string {
-	return win.exec_or("osascript -e 'tell application \"System Events\" to get name of first application process whose frontmost is true' 2>/dev/null",
+	return win.exec_or('osascript -e \'tell application "System Events" to get name of first application process whose frontmost is true\' 2>/dev/null',
 		'unknown').trim_space()
 }
 
 // get_active_window_title returns the title of the frontmost focused window.
 pub fn (win &SimpleWindow) get_active_window_title() string {
-	return win.exec_or("osascript -e 'tell application \"System Events\" to tell (first application process whose frontmost is true) to get name of window 1' 2>/dev/null",
+	return win.exec_or('osascript -e \'tell application "System Events" to tell (first application process whose frontmost is true) to get name of window 1\' 2>/dev/null',
 		'unknown').trim_space()
 }
 
 // get_running_app_names returns a list of names of all active GUI applications running on macOS.
 pub fn (win &SimpleWindow) get_running_app_names() []string {
-	raw := win.exec_or("osascript -e 'tell application \"System Events\" to get name of every application process whose background only is false' 2>/dev/null",
+	raw := win.exec_or('osascript -e \'tell application "System Events" to get name of every application process whose background only is false\' 2>/dev/null',
 		'')
 	if raw.len == 0 {
 		return []string{}
@@ -1546,7 +1546,7 @@ pub fn (win &SimpleWindow) open_in_finder(folder_path string) &SimpleWindow {
 
 // empty_trash empties the macOS Trash bin.
 pub fn (win &SimpleWindow) empty_trash() &SimpleWindow {
-	win.exec_bg("osascript -e 'tell application \"Finder\" to empty trash'")
+	win.exec_bg('osascript -e \'tell application "Finder" to empty trash\'')
 	return win
 }
 
@@ -1558,7 +1558,7 @@ pub fn (win &SimpleWindow) empty_trash() &SimpleWindow {
 // If pid is 0, retrieves memory for the current process.
 pub fn (win &SimpleWindow) get_process_memory_mb(pid int) f64 {
 	target_pid := if pid <= 0 { os.getpid() } else { pid }
-	raw := win.exec_or("ps -p ${target_pid} -o rss= 2>/dev/null", '0').trim_space()
+	raw := win.exec_or('ps -p ${target_pid} -o rss= 2>/dev/null', '0').trim_space()
 	kb := raw.f64()
 	return kb / 1024.0
 }
@@ -1566,7 +1566,7 @@ pub fn (win &SimpleWindow) get_process_memory_mb(pid int) f64 {
 // get_process_cpu_percent returns CPU usage percentage for a process (or current process if pid is 0).
 pub fn (win &SimpleWindow) get_process_cpu_percent(pid int) f64 {
 	target_pid := if pid <= 0 { os.getpid() } else { pid }
-	raw := win.exec_or("ps -p ${target_pid} -o %cpu= 2>/dev/null", '0').trim_space()
+	raw := win.exec_or('ps -p ${target_pid} -o %cpu= 2>/dev/null', '0').trim_space()
 	return raw.f64()
 }
 
@@ -1578,7 +1578,7 @@ pub fn (win &SimpleWindow) get_parent_pid() int {
 // get_parent_process_name returns the executable name of the parent process.
 pub fn (win &SimpleWindow) get_parent_process_name() string {
 	ppid := os.getppid()
-	return win.exec_or("ps -p ${ppid} -o comm= 2>/dev/null", 'unknown').trim_space()
+	return win.exec_or('ps -p ${ppid} -o comm= 2>/dev/null', 'unknown').trim_space()
 }
 
 // get_env_or retrieves an environment variable or returns the default fallback if unset or empty.
@@ -1662,7 +1662,8 @@ pub fn (win &SimpleWindow) get_cpu_architecture() string {
 
 // get_main_display_bounds returns (x, y, width, height) of the primary display.
 pub fn (win &SimpleWindow) get_main_display_bounds() (int, int, int, int) {
-	raw := win.exec_or("osascript -e 'tell application \"Finder\" to get bounds of window of desktop' 2>/dev/null", '')
+	raw := win.exec_or('osascript -e \'tell application "Finder" to get bounds of window of desktop\' 2>/dev/null',
+		'')
 	if raw.len > 0 {
 		parts := raw.split(',').map(it.trim_space().int())
 		if parts.len >= 4 {
@@ -1682,7 +1683,7 @@ pub fn (win &SimpleWindow) get_display_scale_factor() f64 {
 
 // get_system_accent_color returns the current macOS accent color name.
 pub fn (win &SimpleWindow) get_system_accent_color() string {
-	raw := win.exec_or("defaults read -g AppleAccentColor 2>/dev/null", '-1').trim_space()
+	raw := win.exec_or('defaults read -g AppleAccentColor 2>/dev/null', '-1').trim_space()
 	return match raw {
 		'-1' { 'Multicolor / Default' }
 		'0' { 'Red' }
@@ -1698,11 +1699,12 @@ pub fn (win &SimpleWindow) get_system_accent_color() string {
 
 // is_do_not_disturb_enabled returns true if macOS Do Not Disturb / Focus Mode is active.
 pub fn (win &SimpleWindow) is_do_not_disturb_enabled() bool {
-	raw := win.exec_or("defaults read com.apple.controlcenter 'NSStatusItem Visible FocusModes' 2>/dev/null", '0').trim_space()
+	raw := win.exec_or("defaults read com.apple.controlcenter 'NSStatusItem Visible FocusModes' 2>/dev/null",
+		'0').trim_space()
 	if raw == '1' {
 		return true
 	}
-	dnd := win.exec_or("defaults read com.apple.ncprefs dnd_enabled 2>/dev/null", '0').trim_space()
+	dnd := win.exec_or('defaults read com.apple.ncprefs dnd_enabled 2>/dev/null', '0').trim_space()
 	return dnd == '1'
 }
 
@@ -1713,7 +1715,8 @@ pub fn (win &SimpleWindow) get_mac_address() string {
 
 // get_dns_servers returns a list of configured DNS server IP addresses.
 pub fn (win &SimpleWindow) get_dns_servers() []string {
-	raw := win.exec_or("scutil --dns 2>/dev/null | awk '/nameserver\\[[0-9]+\\]/{print $3}' | sort -u", '')
+	raw := win.exec_or("scutil --dns 2>/dev/null | awk '/nameserver\\[[0-9]+\\]/{print $3}' | sort -u",
+		'')
 	if raw.len == 0 {
 		return []string{}
 	}
@@ -1722,7 +1725,8 @@ pub fn (win &SimpleWindow) get_dns_servers() []string {
 
 // get_default_gateway returns the IP address of the default network gateway.
 pub fn (win &SimpleWindow) get_default_gateway() string {
-	return win.exec_or("route -n get default 2>/dev/null | awk '/gateway:/{print $2}'", 'unknown').trim_space()
+	return win.exec_or("route -n get default 2>/dev/null | awk '/gateway:/{print $2}'",
+		'unknown').trim_space()
 }
 
 // is_internet_connected tests if the machine currently has active internet connectivity.
@@ -1732,7 +1736,8 @@ pub fn (win &SimpleWindow) is_internet_connected() bool {
 
 // get_listening_ports returns a list of TCP ports currently listening for connections on the machine.
 pub fn (win &SimpleWindow) get_listening_ports() []int {
-	raw := win.exec_or("lsof -iTCP -sTCP:LISTEN -P -n 2>/dev/null | awk 'NR>1 {print \$9}' | awk -F: '{print \$NF}' | sort -n -u", '')
+	raw := win.exec_or("lsof -iTCP -sTCP:LISTEN -P -n 2>/dev/null | awk 'NR>1 {print \$9}' | awk -F: '{print \$NF}' | sort -n -u",
+		'')
 	if raw.len == 0 {
 		return []int{}
 	}
@@ -1813,7 +1818,7 @@ pub fn (win &SimpleWindow) speak_with_voice(text string, voice string) &SimpleWi
 
 // toggle_dark_mode toggles macOS appearance between Light Mode and Dark Mode.
 pub fn (win &SimpleWindow) toggle_dark_mode() &SimpleWindow {
-	win.exec_bg("osascript -e 'tell application \"System Events\" to tell appearance preferences to set dark mode to not dark mode'")
+	win.exec_bg('osascript -e \'tell application "System Events" to tell appearance preferences to set dark mode to not dark mode\'')
 	return win
 }
 
@@ -1863,9 +1868,5 @@ pub fn speak_with_voice(text string, voice string) {
 
 // toggle_dark_mode toggles macOS system appearance mode between Light Mode and Dark Mode.
 pub fn toggle_dark_mode() {
-	os.execute_opt("osascript -e 'tell application \"System Events\" to tell appearance preferences to set dark mode to not dark mode' &") or {}
+	os.execute_opt('osascript -e \'tell application "System Events" to tell appearance preferences to set dark mode to not dark mode\' &') or {}
 }
-
-
-
-

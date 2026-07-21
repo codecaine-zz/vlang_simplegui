@@ -9,7 +9,6 @@ fn main() {
 
 	mut win := simplegui.new_simple_window('SimpleGUI Extended STDLIB', 800, 600)
 
-
 	// -------------------------------------------------
 	// 1. Complex Number Arithmetic (math.complex)
 	// -------------------------------------------------

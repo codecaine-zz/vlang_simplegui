@@ -33,12 +33,12 @@ fn get_window_rect_for_pid(target_pid int, binary_name string) string {
 
 			if pid_val == target_pid {
 				candidates << Candidate{
-					rect: rect_str
+					rect:  rect_str
 					title: window_part
 				}
 			} else if owner_val.to_lower().contains(binary_name.to_lower()) {
 				candidates << Candidate{
-					rect: rect_str
+					rect:  rect_str
 					title: window_part
 				}
 			}
@@ -162,9 +162,7 @@ fn main() {
 
 		// Clean up binary
 		if os.exists(basename) {
-			os.rm(basename) or {
-				eprintln('⚠️ Failed to remove binary ${basename}: ${err}')
-			}
+			os.rm(basename) or { eprintln('⚠️ Failed to remove binary ${basename}: ${err}') }
 		}
 	}
 }

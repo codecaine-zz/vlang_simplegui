@@ -23,16 +23,16 @@ fn main() {
 
 	// Set initial placeholders, tooltips, and default values via batch methods
 	win.set_many_placeholders({
-		'first_name': 'e.g., Ada',
+		'first_name': 'e.g., Ada'
 		'last_name':  'e.g., Lovelace'
 	})
 
 	win.set_many_tooltips({
-		'first_name':     'Enter your given name',
-		'last_name':      'Enter your family name',
-		'agree_terms':    'Required for registration',
-		'subscribe_news': 'Optional updates',
-		'age':            'Age in years',
+		'first_name':     'Enter your given name'
+		'last_name':      'Enter your family name'
+		'agree_terms':    'Required for registration'
+		'subscribe_news': 'Optional updates'
+		'age':            'Age in years'
 		'score':          'Initial score value'
 	})
 
@@ -40,31 +40,31 @@ fn main() {
 	win.on_click('apply_setters', fn (mut w simplegui.SimpleWindow) {
 		// Populate text fields
 		w.set_many_texts({
-			'first_name': 'Ada',
+			'first_name': 'Ada'
 			'last_name':  'Lovelace'
 		})
 
 		// Update checkboxes/switches
 		w.set_many_checked({
-			'agree_terms':    true,
+			'agree_terms':    true
 			'subscribe_news': false
 		})
 
 		// Update numeric controls
 		w.set_many_numbers({
-			'age':   36,
+			'age':   36
 			'score': 100
 		})
 
 		// Enable or disable controls in bulk
 		w.set_many_enabled({
-			'subscribe_news': true,
+			'subscribe_news': true
 			'score':          false
 		})
 
 		// Adjust visibility in bulk
 		w.set_many_visibility({
-			'first_name': true,
+			'first_name': true
 			'last_name':  true
 		})
 

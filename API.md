@@ -117,6 +117,7 @@ Sets the default font text color for labels and form controls.
 ### `simplegui.list_themes() []string`
 
 Returns all 17 built-in production theme preset names:
+
 - **Apple Light**: Clean macOS Aqua system light canvas (`#ffffff` bg, `#1c1c1e` fg, `#007aff` accent).
 - **Apple Dark**: Vibrant macOS Dark Mode surface (`#1c1c1e` bg, `#f2f2f7` fg, `#0a84ff` accent).
 - **Midnight Space Gray**: Pro dark titanium space gray theme (`#161618` bg, `#ebebf5` fg, `#0a84ff` accent).
@@ -148,7 +149,6 @@ Applies a `Theme` struct configuration directly to the window and controls.
 Looks up a built-in production theme by name (or alias) and applies its background and font styling to the window and controls.
 
 - **Values**: Accepts any built-in theme name (e.g. `'Apple Light'`, `'Apple Dark'`, `'Midnight Space Gray'`, `'Apple Sunset'`, `'Sonoma Emerald'`, `'Ventura Amber'`, `'Soft Pastel'`, `'Catppuccin'`, `'Nord'`, `'Dracula'`, `'Cyberpunk'`, `'Solarized Light'`, `'Solarized Dark'`, `'GitHub Dark'`, `'GitHub Light'`, `'Navy Blue'`, `'Forest Green'`).
-
 
 ### `win.set_padding(padding int) &SimpleWindow`
 
@@ -238,6 +238,34 @@ Gets the current window translucency.
 ### `win.set_titlebar_visible(visible bool)` &SimpleWindow
 
 Toggles titlebar visibility for custom clean-bordered or borderless overlay look.
+
+### `win.set_cursor(cursor_name string)` &SimpleWindow / `win.get_cursor() string`
+
+Changes the window-wide mouse cursor icon for the app window. Common names include `'arrow'`, `'ibeam'`, `'crosshair'`, `'pointing_hand'`, `'open_hand'`, `'closed_hand'`, and the resize variants such as `'resize_left'`, `'resize_right'`, `'resize_left_right'`, `'resize_up'`, `'resize_down'`, and `'resize_up_down'`.
+
+### `win.set_cursor_size(scale f64)` &SimpleWindow / `win.get_cursor_size() f64`
+
+Scales the active cursor image. Use `1.0` for the system size, `2.0` for double-size, and so on. Values are clamped to the safe range `0.25`–`8.0`.
+
+### `win.reset_cursor()` &SimpleWindow
+
+Restores the default arrow cursor and clears any custom cursor size or window-wide cursor override.
+
+### `win.push_cursor(cursor_name string)` &SimpleWindow / `win.pop_cursor()` &SimpleWindow
+
+Temporarily pushes a cursor onto the cursor stack and later restores the previous cursor with `pop_cursor()`.
+
+### `win.set_control_cursor(control_name string, cursor_name string)` &SimpleWindow
+
+Assigns a cursor that is used while the mouse hovers over a specific named control. Pass `'default'` or an empty string to remove the override.
+
+### `win.get_mouse_location() (int, int)`
+
+Returns the current global mouse location in screen coordinates.
+
+### `win.move_cursor_to(x int, y int)` &SimpleWindow
+
+Warps the mouse cursor to a new global screen position.
 
 ### `win.toggle_fullscreen()` &SimpleWindow
 
@@ -584,8 +612,6 @@ For common forms, these helpers reduce boilerplate and keep the API friendly for
 - `win.add_key_value_card(name string, title string, keys []string, values []string) &SimpleWindow` and `win.set_key_value_card_data(...)` render key-value summary cards.
 - `win.add_form_from_struct[T](default_data T) &SimpleWindow` automatically generates input/checkbox/numeric fields side-by-side and vertically from a V struct using compile-time reflection.
 
-
-
 - `win.configure(callback fn (mut cfg WindowConfig)) &SimpleWindow` applies a small fluent configuration block for window title, dimensions, spacing, colors, and resize behavior.
 - `win.form(title string, callback VoidEventCallback) &SimpleWindow` and `win.section(title string, callback VoidEventCallback) &SimpleWindow` create grouped form containers with a lightweight builder feel.
 - `win.validate_controls(validators map[string]ControlValidator) map[string]string` validates named controls and stores inline errors, while `simplegui.validate_not_empty(value string) string` provides a ready-made required-field validator.
@@ -914,9 +940,6 @@ Adds an activity feed timeline stream widget for displaying real-time event logs
 Adds a native macOS titlebar `NSToolbar` button with an SF Symbol icon and label, and wires click event handling.
 
 ---
-
-
-
 
 ## 4. Control Sizing & Styling
 
@@ -1698,7 +1721,6 @@ To simplify system integrations and mirror key features from NeutralinoJS, `simp
   - `wg.done()`: Decrements counter by 1.
   - `wg.wait()`: Blocks until counter reaches zero.
 
-
 ---
 
 ## 7. List Box & Image View Operations
@@ -2374,6 +2396,3 @@ Rows are tracked automatically for every table, so you can manage them increment
 - `win.add_hotkey_badge(name, shortcut_str, description)` / `win.set_hotkey_badge_shortcut(name, shortcut_str, description)`: macOS metallic keycap hotkey display badge paired with description text.
 - `win.on_shortcut(shortcut_str, callback)`: Registers a global keyboard shortcut handler using flexible formats (e.g. `'cmd+shift+p'`, `'Cmd+Shift+P'`, `'⌘+⇧+P'`, `'⌘K'`). Automatically normalizes modifier tokens and suppresses standard unhandled alert beeps when triggered.
 - `simplegui.normalize_key_shortcut(input)`: Utility function converting shortcut notation variants into canonical format (`cmd+shift+p`).
-
-
-

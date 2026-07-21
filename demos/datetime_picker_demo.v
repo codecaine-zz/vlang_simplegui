@@ -15,7 +15,7 @@ fn main() {
 	// 1. Standalone Date & Time Picker
 	win.add_label('lbl_standalone', 'Standalone DateTime Picker:')
 	win.add_date_time_picker('dt_standalone', '2026-07-19 15:30')
-	
+
 	win.on_change('dt_standalone', fn (mut w simplegui.SimpleWindow, value string) {
 		w.set_status('Standalone changed: ${value}')
 	})
@@ -25,7 +25,7 @@ fn main() {
 
 	// 2. Form Date & Time Picker (labeled row)
 	win.add_form_date_time_picker('Appointment Date & Time:', 'dt_form', '2026-12-25 09:00')
-	
+
 	win.on_change('dt_form', fn (mut w simplegui.SimpleWindow, value string) {
 		w.set_status('Form appointment changed: ${value}')
 	})
@@ -40,7 +40,7 @@ fn main() {
 			form_val := w.get('dt_form')
 			w.info('Current Values', 'Standalone: ${standalone_val}\nForm/Appointment: ${form_val}')
 		})
-		
+
 		w.add_button('btn_set_now', 'Set Standalone to Now').onclick(fn (mut w simplegui.SimpleWindow) {
 			now := time.now()
 			formatted := '${now.year:04d}-${now.month:02d}-${now.day:02d} ${now.hour:02d}:${now.minute:02d}'
