@@ -6,6 +6,7 @@ module main
 // selection (get_table_selected_row, set_table_multi_select,
 // remove_selected_table_rows) plus on_table_select / on_table_double_click.
 import simplegui
+import strconv
 
 fn main() {
 	mut win := simplegui.new_simple_window('Inventory Manager', 560, 560)
@@ -41,18 +42,39 @@ fn main() {
 			w.status('${selected.len} rows selected (Cmd/Shift-click works!)')
 		} else if selected.len == 1 {
 			w.status('Selected: ${selected[0][1]} (qty ${selected[0][2]})')
+		} else {
+			w.status('Selection cleared.')
 		}
 	})
 
 	// Double-click a row to bump its quantity by one
 	win.on_table_double_click('inventory', fn (mut w simplegui.SimpleWindow, row string) {
 		idx := row.int()
-		qty := w.get_table_cell('inventory', idx, 2).int() + 1
+		if idx < 0 {
+			return
+		}
+		cell_qty := w.get_table_cell('inventory', idx, 2)
+		mut qty := strconv.atoi(cell_qty) or { 0 }
+		qty += 1
 		w.set_table_cell('inventory', idx, 2, qty.str())
 		w.status('Double-click: ${w.get_table_cell('inventory', idx, 1)} is now ${qty}')
 	})
 
 	win.add_action_row({
+		'+1 Qty':          fn (mut w simplegui.SimpleWindow) {
+			adjust_selected_qty(mut w, 1)
+		}
+		'-1 Qty':          fn (mut w simplegui.SimpleWindow) {
+			adjust_selected_qty(mut w, -1)
+		}
+		'Sort Name':       fn (mut w simplegui.SimpleWindow) {
+			w.sort_table_by_column('inventory', 1, true)
+			w.status('Sorted inventory by Name.')
+		}
+		'Sort Qty':        fn (mut w simplegui.SimpleWindow) {
+			w.sort_table_by_column('inventory', 2, false)
+			w.status('Sorted inventory by Qty (high to low).')
+		}
 		'Remove Selected': fn (mut w simplegui.SimpleWindow) {
 			removed := w.remove_selected_table_rows('inventory')
 			if removed.len == 0 {
@@ -104,14 +126,58 @@ fn add_item(mut win simplegui.SimpleWindow) {
 	}
 	name := win.get_value('item_name').trim_space()
 	qty := win.get_value('item_qty').trim_space()
-	if win.find_table_row('inventory', 1, name) >= 0 {
-		win.warn('Duplicate', '"${name}" is already in the inventory.')
+	qty_num := strconv.atoi(qty) or {
+		win.set_error('item_qty', 'Use a whole number')
+		win.status('Quantity must be a whole number.')
 		return
 	}
-	next_id := win.get_table_row_count('inventory') + 1
-	win.add_table_row('inventory', [next_id.str(), name, qty])
+	if qty_num <= 0 {
+		win.set_error('item_qty', 'Must be greater than zero')
+		win.status('Quantity must be greater than zero.')
+		return
+	}
+	for row in win.get_table_rows('inventory') {
+		if row.len >= 2 && row[1].to_lower() == name.to_lower() {
+			win.warn('Duplicate', '"${name}" is already in the inventory.')
+			return
+		}
+	}
+	next_id := next_inventory_id(win.get_table_rows('inventory'))
+	win.add_table_row('inventory', [next_id.str(), name, qty_num.str()])
 	win.clear('item_name')
 	win.clear('item_qty')
+	win.clear_error('item_qty')
 	win.focus('item_name')
 	win.status('Added ${name} - ${win.get_table_row_count('inventory')} items total.')
+}
+
+fn next_inventory_id(rows [][]string) int {
+	mut highest := 0
+	for row in rows {
+		if row.len == 0 {
+			continue
+		}
+		id := strconv.atoi(row[0]) or { continue }
+		if id > highest {
+			highest = id
+		}
+	}
+	return highest + 1
+}
+
+fn adjust_selected_qty(mut win simplegui.SimpleWindow, delta int) {
+	idx := win.get_table_selected('inventory')
+	if idx < 0 {
+		win.warn('No Selection', 'Select an item row first.')
+		win.status('Quantity change skipped: no selected row.')
+		return
+	}
+	current := strconv.atoi(win.get_table_cell('inventory', idx, 2)) or { 0 }
+	mut next := current + delta
+	if next < 0 {
+		next = 0
+	}
+	win.set_table_cell('inventory', idx, 2, next.str())
+	name := win.get_table_cell('inventory', idx, 1)
+	win.status('${name} quantity is now ${next}.')
 }
