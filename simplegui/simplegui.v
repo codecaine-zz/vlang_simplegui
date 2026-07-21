@@ -4173,6 +4173,97 @@ pub fn (win &SimpleWindow) get_bounds() (int, int, int, int) {
 	return 0, 0, win.width, win.height
 }
 
+// move_by shifts window position by delta values in screen coordinates.
+pub fn (win &SimpleWindow) move_by(dx int, dy int) &SimpleWindow {
+	x, y, _, _ := win.get_bounds()
+	return win.set_position(x + dx, y + dy)
+}
+
+// resize_by adjusts current window size by delta width and height.
+pub fn (win &SimpleWindow) resize_by(dw int, dh int) &SimpleWindow {
+	_, _, current_w, current_h := win.get_bounds()
+	mut new_w := current_w + dw
+	mut new_h := current_h + dh
+	if new_w < 1 {
+		new_w = 1
+	}
+	if new_h < 1 {
+		new_h = 1
+	}
+	return win.set_size(new_w, new_h)
+}
+
+// get_center returns the window center point as (x, y) in screen coordinates.
+pub fn (win &SimpleWindow) get_center() (int, int) {
+	x, y, w, h := win.get_bounds()
+	return x + (w / 2), y + (h / 2)
+}
+
+// set_center positions the window so its center matches the target screen point.
+pub fn (win &SimpleWindow) set_center(center_x int, center_y int) &SimpleWindow {
+	_, _, w, h := win.get_bounds()
+	target_x := center_x - (w / 2)
+	target_y := center_y - (h / 2)
+	return win.set_position(target_x, target_y)
+}
+
+// center_horizontally centers the window on the current screen horizontally, preserving y.
+pub fn (win &SimpleWindow) center_horizontally() &SimpleWindow {
+	sx, _, sw, _ := win.get_screen_frame()
+	_, y, w, _ := win.get_bounds()
+	target_x := sx + ((sw - w) / 2)
+	return win.set_position(target_x, y)
+}
+
+// center_vertically centers the window on the current screen vertically, preserving x.
+pub fn (win &SimpleWindow) center_vertically() &SimpleWindow {
+	_, sy, _, sh := win.get_screen_frame()
+	x, _, _, h := win.get_bounds()
+	target_y := sy + ((sh - h) / 2)
+	return win.set_position(x, target_y)
+}
+
+// fit_to_screen resizes and positions window to the visible screen frame.
+pub fn (win &SimpleWindow) fit_to_screen() &SimpleWindow {
+	sx, sy, sw, sh := win.get_screen_frame()
+	return win.set_bounds(sx, sy, sw, sh)
+}
+
+// constrain_to_screen keeps the window fully inside the visible screen frame.
+pub fn (win &SimpleWindow) constrain_to_screen() &SimpleWindow {
+	sx, sy, sw, sh := win.get_screen_frame()
+	x, y, w, h := win.get_bounds()
+	mut target_x := x
+	mut target_y := y
+	mut target_w := w
+	mut target_h := h
+
+	if target_w > sw {
+		target_w = sw
+	}
+	if target_h > sh {
+		target_h = sh
+	}
+
+	if target_x < sx {
+		target_x = sx
+	}
+	if target_y < sy {
+		target_y = sy
+	}
+
+	max_x := sx + sw - target_w
+	max_y := sy + sh - target_h
+	if target_x > max_x {
+		target_x = max_x
+	}
+	if target_y > max_y {
+		target_y = max_y
+	}
+
+	return win.set_bounds(target_x, target_y, target_w, target_h)
+}
+
 // set_aspect_ratio constrains the window resizing aspect ratio.
 pub fn (win &SimpleWindow) set_aspect_ratio(width_ratio f64, height_ratio f64) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
@@ -4276,6 +4367,13 @@ pub fn (win &SimpleWindow) set_prevents_app_termination(enabled bool) &SimpleWin
 
 // get_prevents_app_termination checks if closing this window prevents app termination.
 pub fn (win &SimpleWindow) get_prevents_app_termination() bool {
+	if win.window_info != unsafe { nil } {
+		native_val := C.window_get_prevents_app_termination(win.window_info) == 1
+		if native_val != win.prevents_app_termination {
+			return win.prevents_app_termination
+		}
+		return native_val
+	}
 	return win.prevents_app_termination
 }
 

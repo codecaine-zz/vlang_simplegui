@@ -429,6 +429,22 @@ Sends the window behind all other open application windows.
 
 Convenience toggles for window minimized, maximized, and visibility states.
 
+### `win.move_by(dx int, dy int)` &SimpleWindow / `win.resize_by(dw int, dh int)` &SimpleWindow
+
+Shifts the window position or adjusts window size by relative deltas.
+
+### `win.get_center() (int, int)` / `win.set_center(center_x int, center_y int)` &SimpleWindow
+
+Gets or sets the window center point in global screen coordinates.
+
+### `win.center_horizontally()` &SimpleWindow / `win.center_vertically()` &SimpleWindow
+
+Centers the window on the active screen along one axis while preserving the other axis.
+
+### `win.fit_to_screen()` &SimpleWindow / `win.constrain_to_screen()` &SimpleWindow
+
+Fits the window to the visible screen frame, or clamps existing bounds to keep it fully on-screen.
+
 ### `win.set_alpha(alpha f64)` &SimpleWindow / `win.get_alpha() f64`
 
 Sets or retrieves the window transparency level (range `0.0` transparent to `1.0` opaque).
