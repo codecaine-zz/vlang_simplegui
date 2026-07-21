@@ -2757,3 +2757,69 @@ fn test_reactive_bindings_and_data_qol() {
 	win.bind_char_counter('bio', 'bio_count', 20)
 	assert win.get_text('bio_count') == '5/20'
 }
+
+fn test_workflow_text_and_data_extras() {
+	mut win := simplegui.SimpleWindow{}
+
+	// swap_list_items + select_list_item_by_text
+	win.add_list_box('lst2', ['a', 'b', 'c'])
+	win.swap_list_items('lst2', 0, 2)
+	assert win.get_list_items('lst2') == ['c', 'b', 'a']
+	win.swap_list_items('lst2', 0, 9) // out of range: no-op
+	assert win.get_list_items('lst2') == ['c', 'b', 'a']
+	assert win.select_list_item_by_text('lst2', 'b') == true
+	assert win.get_list_selected('lst2') == 1
+	assert win.select_list_item_by_text('lst2', 'zzz') == false
+
+	// swap_table_rows + add_table_row_unique
+	win.add_table('tbl2', ['Name', 'Role'])
+	win.set_table_rows('tbl2', [
+		['Ada', 'Engineer'],
+		['Grace', 'Admiral'],
+	])
+	win.swap_table_rows('tbl2', 0, 1)
+	assert win.get_table_row('tbl2', 0) == ['Grace', 'Admiral']
+	assert win.add_table_row_unique('tbl2', ['Ada', 'Engineer']) == false
+	assert win.get_table_row_count('tbl2') == 2
+	assert win.add_table_row_unique('tbl2', ['Zoe', 'Pilot']) == true
+	assert win.get_table_row_count('tbl2') == 3
+
+	// word/line counts
+	win.add_textarea('notes', 'hello world\nsecond line here')
+	assert win.get_word_count('notes') == 5
+	assert win.get_line_count('notes') == 2
+	win.add_input('empty_txt', '')
+	assert win.get_word_count('empty_txt') == 0
+	assert win.get_line_count('empty_txt') == 0
+
+	// append_timestamped_line prefixes [HH:MM:SS]
+	win.add_textarea('log2', '')
+	win.append_timestamped_line('log2', 'started')
+	logged := win.get_text('log2')
+	assert logged.starts_with('[')
+	assert logged.ends_with('] started')
+	assert logged.len == '[00:00:00] started'.len
+
+	// ask_int falls back to the default headless (prompt returns '')
+	assert win.ask_int('Title', 'Message', 42) == 42
+
+	// load_values_if_exists returns false for a missing file
+	assert win.load_values_if_exists('/tmp/simplegui_missing_autosave.json') == false
+
+	// on_change_debounced registers without firing synchronously
+	win.add_input('search2', '')
+	win.on_change_debounced('search2', 100, fn (mut w simplegui.SimpleWindow, value string) {
+		w.set_text('search2', 'fired')
+	})
+	win.set_text('search2', 'abc')
+	assert win.get_text('search2') == 'abc' // no synchronous fire
+
+	// submit_on_enter registers an enter handler on every field
+	win.add_input('se_a', '')
+	win.add_input('se_b', '')
+	win.submit_on_enter(['se_a', 'se_b'], fn (mut w simplegui.SimpleWindow) {
+		w.set_text('se_a', 'submitted')
+	})
+	win.dispatch_event('se_b', 'enter', '')
+	assert win.get_text('se_a') == 'submitted'
+}

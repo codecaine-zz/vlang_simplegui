@@ -4,8 +4,8 @@ module main
 // Tour of the high-level helpers in simplegui/ergonomics.v:
 // dialog shortcuts, batch control operations, value accessors,
 // list & table row management, reactive bindings (value mirroring,
-// checkbox gating, char counters, countdowns), timer sugar,
-// quick validation, and settings persistence.
+// checkbox gating, char counters, debounced changes, countdowns),
+// timer sugar, quick validation, autosave, and settings persistence.
 import simplegui
 import os
 
@@ -87,18 +87,29 @@ fn main() {
 		w.add_labeled_number('Counter:', 'counter', 5)
 		w.add_labeled_progress('Progress:', 'load_bar', 25)
 		w.add_action_row({
-			'+10':      fn (mut w simplegui.SimpleWindow) {
+			'+10':       fn (mut w simplegui.SimpleWindow) {
 				new_value := w.increment('counter', 10)
 				w.set_progress('load_bar', new_value)
 				w.append_line('log_area', 'counter incremented to ${new_value}')
 			}
-			'-10':      fn (mut w simplegui.SimpleWindow) {
+			'-10':       fn (mut w simplegui.SimpleWindow) {
 				new_value := w.increment('counter', -10)
 				w.set_progress('load_bar', new_value)
 				w.append_line('log_area', 'counter decremented to ${new_value}')
 			}
-			'Read Int': fn (mut w simplegui.SimpleWindow) {
+			'Read Int':  fn (mut w simplegui.SimpleWindow) {
 				w.info('get_int', 'counter = ${w.get_int('counter')}')
+			}
+			'Ask Int':   fn (mut w simplegui.SimpleWindow) {
+				value := w.ask_int('Set Counter', 'Enter a new counter value:', w.get_int('counter'))
+				w.set_int('counter', value)
+				w.append_timestamped_line('log_area', 'counter set to ${value} via ask_int')
+			}
+			'Stamp Log': fn (mut w simplegui.SimpleWindow) {
+				w.append_timestamped_line('log_area', 'manual log entry')
+			}
+			'Counts':    fn (mut w simplegui.SimpleWindow) {
+				w.info('Log Stats', '${w.get_line_count('log_area')} line(s), ${w.get_word_count('log_area')} word(s)')
 			}
 		})
 		w.add_textarea('log_area', 'activity log:').height(90)
@@ -170,6 +181,17 @@ fn main() {
 			'Copy to Clip': fn (mut w simplegui.SimpleWindow) {
 				w.copy_list_to_clipboard('fruits')
 				w.toast('List copied to clipboard (one item per line).')
+			}
+			'Swap 0<->1':   fn (mut w simplegui.SimpleWindow) {
+				w.swap_list_items('fruits', 0, 1)
+				w.set_status('Swapped the first two list items.')
+			}
+			'Find Cherry':  fn (mut w simplegui.SimpleWindow) {
+				if w.select_list_item_by_text('fruits', 'Cherry') {
+					w.set_status('Selected "Cherry" by text.')
+				} else {
+					w.set_status('No "Cherry" in the list right now.')
+				}
 			}
 		})
 	})
@@ -257,6 +279,14 @@ fn main() {
 			'Copy as TSV':     fn (mut w simplegui.SimpleWindow) {
 				w.copy_table_to_clipboard('crew')
 				w.toast('Table copied as tab-separated rows.')
+			}
+			'Swap Rows 0<->1': fn (mut w simplegui.SimpleWindow) {
+				w.swap_table_rows('crew', 0, 1)
+				w.set_status('Swapped the first two table rows.')
+			}
+			'Add Zoe Once':    fn (mut w simplegui.SimpleWindow) {
+				added := w.add_table_row_unique('crew', ['Zoe', 'Pilot'])
+				w.set_status(if added { 'Added Zoe.' } else { 'Zoe is already aboard.' })
 			}
 		})
 	})
@@ -383,40 +413,38 @@ fn main() {
 		w.add_form_field('Phone Number:', 'phone_num', '+1 (555) 019-2834')
 		w.add_form_field('Port (10-100):', 'port_num', '80')
 		w.add_form_field('Role (dev/admin/guest):', 'role_field', 'dev')
+		// Press Enter in any of these fields to validate the whole form.
+		w.submit_on_enter(['username', 'email', 'role_field'], validate_persist_form)
 		w.add_action_row({
-			'Validate All': fn (mut w simplegui.SimpleWindow) {
-				errors := w.validate_controls({
-					'username':   simplegui.min_len_validator(3)
-					'email':      simplegui.validate_email
-					'ip_addr':    simplegui.validate_ip
-					'phone_num':  simplegui.validate_phone
-					'port_num':   simplegui.range_validator(10.0, 100.0)
-					'role_field': simplegui.chain_validators(simplegui.required_validator(),
-						simplegui.one_of_validator(['dev', 'admin', 'guest']))
-				})
-				if errors.len == 0 {
-					w.toast('All fields valid!')
-				} else {
-					w.set_status('Fix the highlighted fields.')
-				}
-			}
-			'Clear':        fn (mut w simplegui.SimpleWindow) {
+			'Validate All':  validate_persist_form
+			'Clear':         fn (mut w simplegui.SimpleWindow) {
 				w.clear_fields(['username', 'email', 'ip_addr', 'phone_num', 'port_num', 'role_field'])
 				w.set_status('Fields cleared.')
 			}
-			'Save':         fn (mut w simplegui.SimpleWindow) {
+			'Save':          fn (mut w simplegui.SimpleWindow) {
 				w.save_values_to_file(settings_path) or {
 					w.error_dialog('Save Failed', err.msg())
 					return
 				}
 				w.toast('Values saved to ${settings_path}')
 			}
-			'Load':         fn (mut w simplegui.SimpleWindow) {
+			'Load':          fn (mut w simplegui.SimpleWindow) {
 				w.load_values_from_file(settings_path) or {
 					w.warn('Load Failed', 'Save some values first.\n${err.msg()}')
 					return
 				}
 				w.toast('Values restored.')
+			}
+			'Autosave 10s':  fn (mut w simplegui.SimpleWindow) {
+				w.enable_autosave(settings_path, 10000)
+				w.set_status('Autosaving all values to ${settings_path} every 10s.')
+			}
+			'Load If Saved': fn (mut w simplegui.SimpleWindow) {
+				if w.load_values_if_exists(settings_path) {
+					w.toast('Values restored from disk.')
+				} else {
+					w.set_status('No saved values found yet.')
+				}
 			}
 		})
 	})
@@ -447,13 +475,20 @@ fn main() {
 	})
 
 	// 11. Reactive bindings: value mirroring, checkbox gating, char counters,
-	// confirm-then callbacks, and countdown timers
+	// debounced change events, confirm-then callbacks, and countdown timers
 	win.group('grp_bindings', 'Reactive Bindings', fn (mut w simplegui.SimpleWindow) {
 		w.row('bind_volume_row', fn (mut w simplegui.SimpleWindow) {
 			w.add_slider('volume', 40)
 			w.add_label('volume_label', '')
 		})
 		w.bind_value_to_label('volume', 'volume_label', 'Volume: ', '%')
+		w.row('bind_debounce_row', fn (mut w simplegui.SimpleWindow) {
+			w.add_input('debounce_query', '').width(240).placeholder('Debounced search (400ms)...')
+			w.add_label('debounce_result', 'Waiting for input...')
+		})
+		w.on_change_debounced('debounce_query', 400, fn (mut w simplegui.SimpleWindow, value string) {
+			w.set_text('debounce_result', 'Searched: "${value}"')
+		})
 		w.row('bind_gate_row', fn (mut w simplegui.SimpleWindow) {
 			w.add_checkbox('extras_on', 'Enable extras', false)
 			w.add_input('extra_notes', '').width(180).placeholder('Extra notes...')
@@ -500,4 +535,26 @@ fn main() {
 
 	win.set_status('Ready.')
 	win.run()
+}
+
+// validate_persist_form runs the shared validation set — wired to both the
+// "Validate All" button and submit_on_enter on the form fields.
+fn validate_persist_form(mut w simplegui.SimpleWindow) {
+	errors := w.validate_controls({
+		'username':   simplegui.min_len_validator(3)
+		'email':      simplegui.validate_email
+		'ip_addr':    simplegui.validate_ip
+		'phone_num':  simplegui.validate_phone
+		'port_num':   simplegui.range_validator(10.0, 100.0)
+		'role_field': simplegui.chain_validators(simplegui.required_validator(), simplegui.one_of_validator([
+			'dev',
+			'admin',
+			'guest',
+		]))
+	})
+	if errors.len == 0 {
+		w.toast('All fields valid!')
+	} else {
+		w.set_status('Fix the highlighted fields.')
+	}
 }

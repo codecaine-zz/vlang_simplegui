@@ -3,6 +3,7 @@ module simplegui
 import os
 import json
 import strconv
+import time
 import encoding.csv
 
 // ergonomics.v - High-level ergonomic helpers for SimpleGUI
@@ -1811,11 +1812,11 @@ pub fn (win &SimpleWindow) set_chip_selected(name string, chip string) &SimpleWi
 }
 
 // set_time_picker updates the time value of a standalone time picker control.
-pub fn (win &SimpleWindow) set_time_picker(name string, time string) &SimpleWindow {
+pub fn (win &SimpleWindow) set_time_picker(name string, time_value string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
-		C.window_set_time_picker_value(win.window_info, name.str, time.str)
+		C.window_set_time_picker_value(win.window_info, name.str, time_value.str)
 	}
-	return win.set_text(name, time)
+	return win.set_text(name, time_value)
 }
 
 // get_time_picker retrieves the selected time string from a time picker control.
@@ -2154,4 +2155,155 @@ pub fn chain_validators(validators ...ControlValidator) ControlValidator {
 		}
 		return ''
 	}
+}
+
+// ==========================================
+// 22. Workflow, Text & Data Extras
+// ==========================================
+
+struct DebounceState {
+mut:
+	value string
+}
+
+// on_change_debounced fires the callback only after the user stops changing
+// the control for `ms` milliseconds — perfect for search-as-you-type without
+// hammering expensive work on every keystroke. The callback receives the most
+// recent value.
+pub fn (win &SimpleWindow) on_change_debounced(name string, ms int, callback StringEventCallback) &SimpleWindow {
+	timer_name := 'debounce_${name}'
+	mut state := &DebounceState{}
+	// Register the one-shot timer handler once; it always reads the latest value.
+	idx := win.find_handler(timer_name, 'timer')
+	handler := ControlEventHandler{
+		control_name: timer_name
+		event_name:   'timer'
+		void_cb:      fn [timer_name, state, callback] (mut w SimpleWindow) {
+			w.stop_interval(timer_name)
+			callback(mut w, state.value)
+		}
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		if idx >= 0 {
+			w.handlers[idx] = handler
+		} else {
+			w.handlers << handler
+		}
+	}
+	win.on_change(name, fn [timer_name, ms, mut state] (mut w SimpleWindow, value string) {
+		state.value = value
+		w.stop_interval(timer_name)
+		if w.window_info != unsafe { nil } {
+			C.window_set_interval(w.window_info, ms, timer_name.str)
+		}
+	})
+	return win
+}
+
+// submit_on_enter registers the same Enter-key callback on several text
+// controls at once — handy for "press Enter anywhere in the form to submit".
+pub fn (win &SimpleWindow) submit_on_enter(names []string, callback VoidEventCallback) &SimpleWindow {
+	for name in names {
+		win.on_enter(name, callback)
+	}
+	return win
+}
+
+// ask_int prompts the user for a number and returns it, falling back to
+// `default_val` when the response is empty, cancelled, or not numeric.
+pub fn (win &SimpleWindow) ask_int(title string, message string, default_val int) int {
+	resp := win.prompt(title, message, default_val.str()).trim_space()
+	if resp == '' || !is_numeric_text(resp) {
+		return default_val
+	}
+	return resp.int()
+}
+
+// append_timestamped_line appends a line prefixed with the current [HH:MM:SS]
+// time — ideal for activity logs in a textarea.
+pub fn (win &SimpleWindow) append_timestamped_line(name string, line string) &SimpleWindow {
+	return win.append_line(name, '[${time.now().hhmmss()}] ${line}')
+}
+
+// get_word_count returns the number of whitespace-separated words in a
+// text control's value.
+pub fn (win &SimpleWindow) get_word_count(name string) int {
+	return win.get_text(name).fields().len
+}
+
+// get_line_count returns the number of lines in a text control's value
+// (0 for an empty control).
+pub fn (win &SimpleWindow) get_line_count(name string) int {
+	text := win.get_text(name)
+	if text == '' {
+		return 0
+	}
+	return text.split('\n').len
+}
+
+// swap_list_items swaps the items at two indexes in a list box.
+pub fn (win &SimpleWindow) swap_list_items(name string, i int, j int) &SimpleWindow {
+	mut items := win.get_list_items(name)
+	if i < 0 || j < 0 || i >= items.len || j >= items.len || i == j {
+		return win
+	}
+	tmp := items[i]
+	items[i] = items[j]
+	items[j] = tmp
+	return win.update_list_items(name, items)
+}
+
+// swap_table_rows swaps the rows at two indexes in a table.
+pub fn (win &SimpleWindow) swap_table_rows(name string, i int, j int) &SimpleWindow {
+	mut rows := win.get_table_rows(name)
+	if i < 0 || j < 0 || i >= rows.len || j >= rows.len || i == j {
+		return win
+	}
+	tmp := rows[i]
+	rows[i] = rows[j]
+	rows[j] = tmp
+	return win.set_table_rows(name, rows)
+}
+
+// add_table_row_unique appends a row only when an identical row (all cells
+// equal) is not already present. Returns true when the row was added.
+pub fn (win &SimpleWindow) add_table_row_unique(name string, row []string) bool {
+	for existing in win.get_table_rows(name) {
+		if existing == row {
+			return false
+		}
+	}
+	win.add_table_row(name, row)
+	return true
+}
+
+// select_list_item_by_text selects the first list row whose text matches
+// exactly. Returns true when a match was found and selected.
+pub fn (win &SimpleWindow) select_list_item_by_text(name string, text string) bool {
+	idx := win.find_list_item(name, text)
+	if idx < 0 {
+		return false
+	}
+	win.set_list_selected(name, idx)
+	return true
+}
+
+// enable_autosave saves every control value to a JSON file at a fixed
+// interval (silently skipping failed writes). Pair with load_values_if_exists
+// at startup for crash-safe forms.
+pub fn (win &SimpleWindow) enable_autosave(path string, interval_ms int) &SimpleWindow {
+	return win.set_interval('autosave_values', interval_ms, fn [path] (mut w SimpleWindow) {
+		w.save_values_to_file(path) or {}
+	})
+}
+
+// load_values_if_exists restores control values from a JSON file when it
+// exists, returning true when values were loaded.
+pub fn (win &SimpleWindow) load_values_if_exists(path string) bool {
+	if !os.exists(path) {
+		return false
+	}
+	win.load_values_from_file(path) or { return false }
+	return true
 }

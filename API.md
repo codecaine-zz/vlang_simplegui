@@ -2376,6 +2376,21 @@ Rows are tracked automatically for every table, so you can manage them increment
 - `win.dedupe_table_rows(name)` removes duplicate table rows (all cells equal), keeping the first occurrence.
 - `win.count_table_rows_where(name, predicate fn (row []string) bool) int` returns how many table rows match the predicate.
 
+### Workflow, Text & Data Extras
+
+- `win.on_change_debounced(name, ms, callback StringEventCallback)` fires the callback only after the user stops changing the control for `ms` milliseconds — ideal for search-as-you-type. The callback receives the most recent value.
+- `win.submit_on_enter(names []string, callback VoidEventCallback)` registers the same Enter-key callback on several text controls at once ("press Enter anywhere in the form to submit").
+- `win.ask_int(title, message, default_val int) int` prompts the user for a number, falling back to `default_val` when the response is empty, cancelled, or not numeric.
+- `win.append_timestamped_line(name, line)` appends a line prefixed with the current `[HH:MM:SS]` time — ideal for activity logs in a textarea.
+- `win.get_word_count(name) int` returns the number of whitespace-separated words in a text control's value.
+- `win.get_line_count(name) int` returns the number of lines in a text control's value (0 for an empty control).
+- `win.swap_list_items(name, i, j)` swaps the items at two indexes in a list box (out-of-range indexes are a no-op).
+- `win.swap_table_rows(name, i, j)` swaps the rows at two indexes in a table (out-of-range indexes are a no-op).
+- `win.add_table_row_unique(name, row []string) bool` appends a row only when an identical row is not already present; returns `true` when added.
+- `win.select_list_item_by_text(name, text) bool` selects the first list row whose text matches exactly; returns `true` when found.
+- `win.enable_autosave(path, interval_ms)` saves every control value to a JSON file at a fixed interval (failed writes are silently skipped). Pair with `load_values_if_exists` at startup for crash-safe forms.
+- `win.load_values_if_exists(path) bool` restores control values from a JSON file when it exists, returning `true` when values were loaded.
+
 ### RAD / DX Ergonomics
 
 - `win.set_status_temp(message string, ms int) &SimpleWindow` / `win.status_temp(message string, ms int) &SimpleWindow` displays a temporary message on the window's status bar that automatically reverts to the previous status message after `ms` milliseconds.
