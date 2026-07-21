@@ -2517,29 +2517,57 @@ fn test_comprehensive_window_control_apis() {
 	win.set_document_edited(false)
 	assert win.is_document_edited() == false
 
+	// Opacity, Min/Max Size, Shadow & Title Visibility
+	win.set_alpha(0.85)
+	assert win.get_alpha() == 0.85
+	win.set_alpha(1.0)
+
+	win.set_min_size(500, 300)
+	mw, mh := win.get_min_size()
+	assert mw == 500
+	assert mh == 300
+
+	win.set_max_size(1200, 800)
+	max_w, max_h := win.get_max_size()
+	assert max_w == 1200
+	assert max_h == 800
+
+	win.set_has_shadow(false)
+	assert win.get_has_shadow() == false
+	win.set_has_shadow(true)
+	assert win.get_has_shadow() == true
+
+	win.set_title_visible(false)
+	assert win.get_title_visible() == false
+	win.set_title_visible(true)
+	assert win.get_title_visible() == true
+
+	win.set_collection_behavior('can_join_all_spaces')
+	win.set_close_button_enabled(true)
+	win.set_minimize_button_enabled(true)
+	win.set_zoom_button_enabled(true)
+	win.shake_window()
+
 	// Animation & Attention
 	win.flash_frame(true)
-	win.bounce_dock_icon(false)
-	win.fade_in_window(200)
-	win.fade_out_window(200)
-	win.order_front()
+	win.bounce_dock_icon(true)
+	win.fade_out_window(10)
+	win.fade_in_window(10)
 	win.bring_to_front()
-	win.order_back()
 	win.send_to_back()
 
-	// Ergonomic Helpers
+	// Ergonomic Shortcuts
 	win.make_frameless()
-	win.make_vibrant('sidebar')
+	win.make_vibrant('hud')
 	win.make_click_through(false)
 	win.make_always_on_top(true)
 	win.make_modal()
 	win.make_panel()
+	win.make_translucent(0.9)
+	win.make_sticky_space()
+	win.shake_on_error()
 	win.center_and_focus()
 }
-
-
-
-
 
 
 

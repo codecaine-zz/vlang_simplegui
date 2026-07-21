@@ -16755,6 +16755,111 @@ void window_order_back(main__WindowInfo *info) {
   });
 }
 
+void window_set_alpha(main__WindowInfo *info, double alpha) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    if (delegate.window) {
+      delegate.window.alphaValue = (CGFloat)alpha;
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+double window_get_alpha(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block double res = 1.0;
+  void (^runBlock)(void) = ^{
+    if (delegate.window) { res = (double)delegate.window.alphaValue; }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return res;
+}
+
+void window_get_min_size(main__WindowInfo *info, int *out_w, int *out_h) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    if (delegate.window) {
+      NSSize sz = delegate.window.minSize;
+      if (out_w) *out_w = (int)sz.width;
+      if (out_h) *out_h = (int)sz.height;
+    } else {
+      if (out_w) *out_w = 0;
+      if (out_h) *out_h = 0;
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+void window_get_max_size(main__WindowInfo *info, int *out_w, int *out_h) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    if (delegate.window) {
+      NSSize sz = delegate.window.maxSize;
+      if (out_w) *out_w = (int)sz.width;
+      if (out_h) *out_h = (int)sz.height;
+    } else {
+      if (out_w) *out_w = 0;
+      if (out_h) *out_h = 0;
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+void window_set_collection_behavior(main__WindowInfo *info, const char *behavior) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    if (!delegate.window) return;
+    NSString *b = [nsstring(behavior) lowercaseString];
+    NSWindowCollectionBehavior cb = delegate.window.collectionBehavior;
+    if ([b isEqualToString:@"can_join_all_spaces"]) {
+      cb |= NSWindowCollectionBehaviorCanJoinAllSpaces;
+    } else if ([b isEqualToString:@"move_to_active_space"]) {
+      cb |= NSWindowCollectionBehaviorMoveToActiveSpace;
+    } else if ([b isEqualToString:@"transient"]) {
+      cb |= NSWindowCollectionBehaviorTransient;
+    } else if ([b isEqualToString:@"full_screen_primary"]) {
+      cb |= NSWindowCollectionBehaviorFullScreenPrimary;
+    } else if ([b isEqualToString:@"full_screen_auxiliary"]) {
+      cb |= NSWindowCollectionBehaviorFullScreenAuxiliary;
+    }
+    delegate.window.collectionBehavior = cb;
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+void window_set_close_button_enabled(main__WindowInfo *info, int enabled) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    if (delegate.window) {
+      NSButton *btn = [delegate.window standardWindowButton:NSWindowCloseButton];
+      if (btn) [btn setEnabled:(enabled != 0)];
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+void window_set_minimize_button_enabled(main__WindowInfo *info, int enabled) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    if (delegate.window) {
+      NSButton *btn = [delegate.window standardWindowButton:NSWindowMiniaturizeButton];
+      if (btn) [btn setEnabled:(enabled != 0)];
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+void window_set_zoom_button_enabled(main__WindowInfo *info, int enabled) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    if (delegate.window) {
+      NSButton *btn = [delegate.window standardWindowButton:NSWindowZoomButton];
+      if (btn) [btn setEnabled:(enabled != 0)];
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
 
 
 

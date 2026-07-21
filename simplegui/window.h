@@ -548,6 +548,23 @@ void window_fade_out(main__WindowInfo *info, int duration_ms);
 void window_order_front(main__WindowInfo *info);
 void window_order_back(main__WindowInfo *info);
 
+// Additional Window Control APIs
+void window_set_alpha(main__WindowInfo *info, double alpha);
+double window_get_alpha(main__WindowInfo *info);
+void window_set_min_size(main__WindowInfo *info, int width, int height);
+void window_get_min_size(main__WindowInfo *info, int *out_w, int *out_h);
+void window_set_max_size(main__WindowInfo *info, int width, int height);
+void window_get_max_size(main__WindowInfo *info, int *out_w, int *out_h);
+void window_set_collection_behavior(main__WindowInfo *info, const char *behavior);
+void window_set_has_shadow(main__WindowInfo *info, int shadow);
+int window_has_shadow(main__WindowInfo *info);
+void window_set_close_button_enabled(main__WindowInfo *info, int enabled);
+void window_set_minimize_button_enabled(main__WindowInfo *info, int enabled);
+void window_set_zoom_button_enabled(main__WindowInfo *info, int enabled);
+void window_set_title_visible(main__WindowInfo *info, int visible);
+int window_get_title_visible(main__WindowInfo *info);
+void window_shake(main__WindowInfo *info);
+
 #endif
 
 

@@ -3,7 +3,7 @@ module main
 import simplegui
 
 fn main() {
-	mut win := simplegui.new_simple_window('Comprehensive Window Control APIs Showcase', 880, 720)
+	mut win := simplegui.new_simple_window('Comprehensive Window Control APIs Showcase', 880, 780)
 	win.configure(fn (mut cfg simplegui.WindowConfig) {
 		cfg.padding = 20
 		cfg.spacing = 14
@@ -14,7 +14,7 @@ fn main() {
 	win.add_heading('Native macOS Window Control APIs')
 	win.set_subtitle('v1.0.0 Release')
 
-	win.add_banner('banner_info', 'Interactive control dashboard for all added SimpleWindow methods: titlebar subtitle, transparency, edge snapping, vibrancy, mouse click-through, represented documents, animations, and z-level stacking.', 'info')
+	win.add_banner('banner_info', 'Interactive control dashboard for all SimpleWindow methods: titlebar subtitle, opacity, transparency, edge snapping, vibrancy, mouse click-through, represented documents, animations, traffic lights, and window shake.', 'info')
 
 	// Section 1: Subtitle & Titlebar Styling
 	win.add_section_header('sec_titlebar', '1. Titlebar & Subtitle Controls', 'Manage window titlebar, subtitle, and translucent full-size content view')
@@ -75,6 +75,22 @@ fn main() {
 		win.add_button('btn_fade_transition', 'Fade Transition (500ms)')
 		win.add_button('btn_order_front', 'Bring to Front')
 		win.add_button('btn_order_back', 'Send to Back')
+	win.end_row()
+
+	// Section 7: Advanced Opacity, Constraints & Shake Controls
+	win.add_section_header('sec_advanced_ctrl', '7. Opacity, Constraints, Shadow & Title Controls', 'Window alpha transparency, min/max resize bounds, shadow toggle, titlebar buttons, and error shake')
+	win.begin_row('row_adv_1')
+		win.add_button('btn_alpha_50', 'Opacity: 50%')
+		win.add_button('btn_alpha_80', 'Opacity: 80%')
+		win.add_button('btn_alpha_100', 'Opacity: 100%')
+		win.add_button('btn_shake', 'Shake Window')
+		win.add_button('btn_toggle_shadow', 'Toggle Window Shadow')
+	win.end_row()
+	win.begin_row('row_adv_2')
+		win.add_button('btn_set_min_size', 'Set Min Size (600x400)')
+		win.add_button('btn_toggle_title', 'Toggle Title Visibility')
+		win.add_button('btn_disable_close_btn', 'Disable Close Button')
+		win.add_button('btn_enable_close_btn', 'Enable Close Button')
 	win.end_row()
 
 	// Event Handlers for All Controls
@@ -249,6 +265,63 @@ fn main() {
 	win.on_click('btn_order_back', fn (mut w simplegui.SimpleWindow) {
 		w.send_to_back()
 		w.set_status('Window ordered back (sent behind other windows).')
+	})
+
+	win.on_click('btn_alpha_50', fn (mut w simplegui.SimpleWindow) {
+		w.set_alpha(0.5)
+		w.set_status('Window opacity set to 50% (Alpha: ${w.get_alpha()})')
+		w.toast('Alpha 50%')
+	})
+
+	win.on_click('btn_alpha_80', fn (mut w simplegui.SimpleWindow) {
+		w.set_alpha(0.8)
+		w.set_status('Window opacity set to 80% (Alpha: ${w.get_alpha()})')
+		w.toast('Alpha 80%')
+	})
+
+	win.on_click('btn_alpha_100', fn (mut w simplegui.SimpleWindow) {
+		w.set_alpha(1.0)
+		w.set_status('Window opacity set to 100% (Opaque)')
+		w.toast('Alpha 100%')
+	})
+
+	win.on_click('btn_shake', fn (mut w simplegui.SimpleWindow) {
+		w.shake_on_error()
+		w.set_status('Triggered horizontal window shake animation!')
+		w.toast('Window Shake!')
+	})
+
+	win.on_click('btn_toggle_shadow', fn (mut w simplegui.SimpleWindow) {
+		sh := w.get_has_shadow()
+		w.set_has_shadow(!sh)
+		w.set_status('Window drop shadow: ${!sh}')
+		w.toast('Window shadow: ${!sh}')
+	})
+
+	win.on_click('btn_set_min_size', fn (mut w simplegui.SimpleWindow) {
+		w.set_min_size(600, 400)
+		mw, mh := w.get_min_size()
+		w.set_status('Minimum window resize constraints set to ${mw}x${mh}')
+		w.toast('Min size: ${mw}x${mh}')
+	})
+
+	win.on_click('btn_toggle_title', fn (mut w simplegui.SimpleWindow) {
+		vis := w.get_title_visible()
+		w.set_title_visible(!vis)
+		w.set_status('Title text visibility: ${!vis}')
+		w.toast('Title text: ${!vis}')
+	})
+
+	win.on_click('btn_disable_close_btn', fn (mut w simplegui.SimpleWindow) {
+		w.set_close_button_enabled(false)
+		w.set_status('Titlebar Close button disabled.')
+		w.toast('Close button disabled')
+	})
+
+	win.on_click('btn_enable_close_btn', fn (mut w simplegui.SimpleWindow) {
+		w.set_close_button_enabled(true)
+		w.set_status('Titlebar Close button enabled.')
+		w.toast('Close button enabled')
 	})
 
 	win.run()

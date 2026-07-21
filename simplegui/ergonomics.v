@@ -1940,6 +1940,21 @@ pub fn (win &SimpleWindow) center_and_focus() &SimpleWindow {
 	return win.center_on_active_screen().order_front()
 }
 
+// make_translucent sets window transparency level (0.0 to 1.0).
+pub fn (win &SimpleWindow) make_translucent(alpha f64) &SimpleWindow {
+	return win.set_alpha(alpha)
+}
+
+// make_sticky_space makes the window stick across all Virtual Desktops / Spaces.
+pub fn (win &SimpleWindow) make_sticky_space() &SimpleWindow {
+	return win.set_collection_behavior('can_join_all_spaces')
+}
+
+// shake_on_error triggers window error shake animation and flashes window frame.
+pub fn (win &SimpleWindow) shake_on_error() &SimpleWindow {
+	return win.shake_window().flash_frame(true)
+}
+
 
 
 

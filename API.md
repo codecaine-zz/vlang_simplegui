@@ -395,6 +395,30 @@ Sends the window behind all other open application windows.
 
 Convenience toggles for window minimized, maximized, and visibility states.
 
+### `win.set_alpha(alpha f64)` &SimpleWindow / `win.get_alpha() f64`
+
+Sets or retrieves the window transparency level (range `0.0` transparent to `1.0` opaque).
+
+### `win.set_min_size(width int, height int)` &SimpleWindow / `win.get_min_size() (int, int)`
+
+Enforces or queries minimum allowed window width and height resize constraints.
+
+### `win.set_max_size(width int, height int)` &SimpleWindow / `win.get_max_size() (int, int)`
+
+Enforces or queries maximum allowed window width and height resize constraints.
+
+### `win.set_collection_behavior(behavior string)` &SimpleWindow
+
+Configures macOS virtual desktop / Spaces behavior (`'can_join_all_spaces'`, `'move_to_active_space'`, `'transient'`, `'full_screen_primary'`, `'full_screen_auxiliary'`).
+
+### `win.set_close_button_enabled(enabled bool)` &SimpleWindow / `win.set_minimize_button_enabled(enabled bool)` &SimpleWindow / `win.set_zoom_button_enabled(enabled bool)` &SimpleWindow
+
+Enables or disables standard macOS titlebar traffic light control buttons (Close, Minimize, Zoom).
+
+### `win.shake_window()` &SimpleWindow
+
+Triggers an animated horizontal window shake feedback effect (ideal for error or validation failure indication).
+
 ### Ergonomic Window Shortcuts
 
 - **`win.make_frameless()`**: Creates a clean borderless window with shadow (`set_titlebar_visible(false)` + `set_has_shadow(true)`).
@@ -403,6 +427,9 @@ Convenience toggles for window minimized, maximized, and visibility states.
 - **`win.make_always_on_top(enabled)`**: Configures stay-on-top window layering.
 - **`win.make_modal()`**: Configures window z-level as modal window tier.
 - **`win.make_panel()`**: Configures floating tool panel that hides on app deactivation.
+- **`win.make_translucent(alpha)`**: Sets window opacity level (`set_alpha(alpha)`).
+- **`win.make_sticky_space()`**: Configures window to stick across all virtual desktop Spaces (`set_collection_behavior('can_join_all_spaces')`).
+- **`win.shake_on_error()`**: Triggers window error shake animation and flashes window frame.
 - **`win.center_and_focus()`**: Centers window on active display and brings to front.
 
 ### `win.run()`

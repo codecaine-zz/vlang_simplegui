@@ -507,6 +507,20 @@ fn C.window_set_status_dock_info(&WindowInfo, &u8, &u8, &u8, &u8)
 fn C.window_add_info_callout_control(&WindowInfo, &u8, &u8, &u8, &u8, &u8) voidptr
 fn C.window_set_info_callout_text(&WindowInfo, &u8, &u8, &u8)
 
+fn C.window_set_alpha(&WindowInfo, f64)
+fn C.window_get_alpha(&WindowInfo) f64
+fn C.window_get_min_size(&WindowInfo, &int, &int)
+fn C.window_get_max_size(&WindowInfo, &int, &int)
+fn C.window_set_collection_behavior(&WindowInfo, &u8)
+fn C.window_set_has_shadow(&WindowInfo, int)
+fn C.window_has_shadow(&WindowInfo) int
+fn C.window_set_close_button_enabled(&WindowInfo, int)
+fn C.window_set_minimize_button_enabled(&WindowInfo, int)
+fn C.window_set_zoom_button_enabled(&WindowInfo, int)
+fn C.window_set_title_visible(&WindowInfo, int)
+fn C.window_get_title_visible(&WindowInfo) int
+fn C.window_shake(&WindowInfo)
+
 
 
 
@@ -3470,6 +3484,32 @@ pub fn (win &SimpleWindow) set_max_size(width int, height int) &SimpleWindow {
 		C.window_set_max_size(win.window_info, width, height)
 	}
 	return win
+}
+
+// get_min_size retrieves the minimum allowed window dimensions (w, h).
+pub fn (win &SimpleWindow) get_min_size() (int, int) {
+	if win.window_info != unsafe { nil } {
+		w := 0
+		h := 0
+		C.window_get_min_size(win.window_info, &w, &h)
+		if w > 0 && h > 0 {
+			return w, h
+		}
+	}
+	return win.min_width, win.min_height
+}
+
+// get_max_size retrieves the maximum allowed window dimensions (w, h).
+pub fn (win &SimpleWindow) get_max_size() (int, int) {
+	if win.window_info != unsafe { nil } {
+		w := 0
+		h := 0
+		C.window_get_max_size(win.window_info, &w, &h)
+		if w > 0 && h > 0 {
+			return w, h
+		}
+	}
+	return win.max_width, win.max_height
 }
 
 // set_resizable sets the resizable of the window or target control.
@@ -8756,6 +8796,56 @@ pub fn (win &SimpleWindow) set_info_callout_text(name string, title string, mess
 	}
 	return win
 }
+
+// set_alpha sets the window transparency level (0.0 transparent to 1.0 opaque).
+pub fn (win &SimpleWindow) set_alpha(alpha f64) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_alpha(win.window_info, alpha)
+	}
+	return win
+}
+
+// get_alpha retrieves the current window transparency level.
+pub fn (win &SimpleWindow) get_alpha() f64 {
+	if win.window_info != unsafe { nil } {
+		return C.window_get_alpha(win.window_info)
+	}
+	return 1.0
+}
+
+// set_collection_behavior configures macOS virtual desktop / Spaces behavior ("can_join_all_spaces", "move_to_active_space", "transient", "full_screen_primary", "full_screen_auxiliary").
+pub fn (win &SimpleWindow) set_collection_behavior(behavior string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_collection_behavior(win.window_info, behavior.str)
+	}
+	return win
+}
+
+// set_close_button_enabled enables or disables the titlebar close button.
+pub fn (win &SimpleWindow) set_close_button_enabled(enabled bool) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_close_button_enabled(win.window_info, if enabled { 1 } else { 0 })
+	}
+	return win
+}
+
+// set_minimize_button_enabled enables or disables the titlebar minimize button.
+pub fn (win &SimpleWindow) set_minimize_button_enabled(enabled bool) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_minimize_button_enabled(win.window_info, if enabled { 1 } else { 0 })
+	}
+	return win
+}
+
+// set_zoom_button_enabled enables or disables the titlebar zoom / maximize button.
+pub fn (win &SimpleWindow) set_zoom_button_enabled(enabled bool) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_zoom_button_enabled(win.window_info, if enabled { 1 } else { 0 })
+	}
+	return win
+}
+
+
 
 
 
