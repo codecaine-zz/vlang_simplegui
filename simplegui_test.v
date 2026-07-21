@@ -43,6 +43,67 @@ fn test_control_discovery_helpers_are_available() {
 	assert win.get_control_kind('missing') == ''
 }
 
+fn test_tree_view_helpers_support_crud_and_paths() {
+	mut win := simplegui.SimpleWindow{}
+	win.add_tree_view('org', 180)
+
+	win.set_tree('org', [
+		simplegui.tree_root('root', 'Company'),
+		simplegui.tree_child('eng', 'root', 'Engineering'),
+		simplegui.tree_child('frontend', 'eng', 'Frontend'),
+		simplegui.tree_child('backend', 'eng', 'Backend'),
+		simplegui.tree_child('design', 'root', 'Design'),
+	])
+
+	assert win.get_tree_nodes('org').len == 5
+	assert win.has_tree_node('org', 'backend') == true
+
+	backend := win.get_tree_node('org', 'backend') or {
+		panic('expected backend node')
+	}
+	assert backend.text == 'Backend'
+
+	win.set_tree_node_text('org', 'backend', 'Backend Platform')
+	backend_updated := win.get_tree_node('org', 'backend') or {
+		panic('expected backend node after update')
+	}
+	assert backend_updated.text == 'Backend Platform'
+
+	win.add_tree_node('org', simplegui.tree_child('qa', 'eng', 'QA'))
+	assert win.has_tree_node('org', 'qa') == true
+
+	win.set_tree_selected('org', 'frontend')
+	assert win.get_tree_selected('org') == 'frontend'
+
+	win.expand_tree('org')
+	win.open_tree('org')
+	win.expand_tree_node('org', 'eng', true)
+	win.collapse_tree_node('org', 'eng', false)
+	win.collapse_tree('org')
+	win.close_tree('org')
+
+	win.remove_tree_node('org', 'eng', false)
+	frontend := win.get_tree_node('org', 'frontend') or {
+		panic('expected frontend node after reparent')
+	}
+	assert frontend.parent_id == 'root'
+
+	win.remove_tree_node('org', 'design', true)
+	assert win.has_tree_node('org', 'design') == false
+
+	win.clear_tree_selection('org')
+	assert win.get_tree_selected('org') == ''
+
+	win.set_tree_paths_with_separator('org', [
+		'Company > Ops > Platform',
+		'Company > Ops > Security',
+	], ' > ')
+	assert win.has_tree_node('org', 'Company/Ops/Platform') == true
+
+	win.clear_tree('org')
+	assert win.get_tree_nodes('org').len == 0
+}
+
 fn test_event_callbacks_can_be_registered_and_dispatched() {
 	mut win := simplegui.SimpleWindow{}
 	win.add_input('default_input', 'Ada')

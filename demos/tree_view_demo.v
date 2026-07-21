@@ -15,51 +15,15 @@ fn (mut state AppState) refresh(mut win simplegui.SimpleWindow) {
 fn main() {
 	mut state := &AppState{
 		nodes: [
-			simplegui.TreeNode{
-				id:        'root'
-				parent_id: ''
-				text:      'Enterprise Services'
-			},
-			simplegui.TreeNode{
-				id:        'dept_engineering'
-				parent_id: 'root'
-				text:      'Engineering Division'
-			},
-			simplegui.TreeNode{
-				id:        'team_frontend'
-				parent_id: 'dept_engineering'
-				text:      'Frontend Team'
-			},
-			simplegui.TreeNode{
-				id:        'team_backend'
-				parent_id: 'dept_engineering'
-				text:      'Backend Systems Team'
-			},
-			simplegui.TreeNode{
-				id:        'team_devops'
-				parent_id: 'dept_engineering'
-				text:      'DevOps & Infra'
-			},
-			simplegui.TreeNode{
-				id:        'dept_design'
-				parent_id: 'root'
-				text:      'Product Design Division'
-			},
-			simplegui.TreeNode{
-				id:        'team_ux'
-				parent_id: 'dept_design'
-				text:      'UX Research'
-			},
-			simplegui.TreeNode{
-				id:        'team_ui'
-				parent_id: 'dept_design'
-				text:      'UI / Design Systems'
-			},
-			simplegui.TreeNode{
-				id:        'dept_hr'
-				parent_id: 'root'
-				text:      'Human Resources'
-			},
+			simplegui.tree_root('root', 'Enterprise Services'),
+			simplegui.tree_child('dept_engineering', 'root', 'Engineering Division'),
+			simplegui.tree_child('team_frontend', 'dept_engineering', 'Frontend Team'),
+			simplegui.tree_child('team_backend', 'dept_engineering', 'Backend Systems Team'),
+			simplegui.tree_child('team_devops', 'dept_engineering', 'DevOps & Infra'),
+			simplegui.tree_child('dept_design', 'root', 'Product Design Division'),
+			simplegui.tree_child('team_ux', 'dept_design', 'UX Research'),
+			simplegui.tree_child('team_ui', 'dept_design', 'UI / Design Systems'),
+			simplegui.tree_child('dept_hr', 'root', 'Human Resources'),
 		]
 	}
 
@@ -108,12 +72,8 @@ fn main() {
 					}
 				}
 
-				state.nodes << simplegui.TreeNode{
-					id:        id
-					parent_id: parent
-					text:      text
-				}
-				state.refresh(mut w)
+				w.add_tree_node('my_tree', simplegui.tree_child(id, parent, text))
+				state.nodes = w.get_tree_nodes('my_tree')
 				w.toast('Node Added Successfully')
 			})
 	})
@@ -138,9 +98,32 @@ fn main() {
 
 	win.add_button('btn_clear', 'Clear Selection')
 		.onclick(fn (mut w simplegui.SimpleWindow) {
-			w.set_tree_selected('my_tree', '')
+			w.clear_tree_selection('my_tree')
 			w.set_text('selection_lbl', 'Selected Node ID: None')
 			w.set_text('new_node_parent', '')
+		})
+	win.end_row()
+
+	win.begin_row('expand_collapse_row')
+
+	win.add_button('btn_open_all', 'Open All')
+		.onclick(fn (mut w simplegui.SimpleWindow) {
+			w.open_tree('my_tree')
+		})
+
+	win.add_button('btn_collapse_all', 'Collapse All')
+		.onclick(fn (mut w simplegui.SimpleWindow) {
+			w.collapse_tree('my_tree')
+		})
+
+	win.add_button('btn_expand_engineering', 'Expand Engineering')
+		.onclick(fn (mut w simplegui.SimpleWindow) {
+			w.expand_tree_node('my_tree', 'dept_engineering', true)
+		})
+
+	win.add_button('btn_collapse_engineering', 'Collapse Engineering')
+		.onclick(fn (mut w simplegui.SimpleWindow) {
+			w.collapse_tree_node('my_tree', 'dept_engineering', true)
 		})
 	win.end_row()
 

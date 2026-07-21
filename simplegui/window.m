@@ -12800,6 +12800,101 @@ void window_set_tree_selected(main__WindowInfo *info, const char *name, const ch
   });
 }
 
+void window_tree_expand_all(main__WindowInfo *info, const char *name) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+
+  dispatch_async(dispatch_get_main_queue(), ^{
+    NSView *view = delegate.controlsByName[key];
+    if ([view isKindOfClass:[NSScrollView class]]) {
+      NSScrollView *scroll = (NSScrollView *)view;
+      if ([scroll.documentView isKindOfClass:[NSOutlineView class]]) {
+        NSOutlineView *outlineView = (NSOutlineView *)scroll.documentView;
+        [outlineView expandItem:nil expandChildren:YES];
+      }
+    }
+  });
+}
+
+void window_tree_collapse_all(main__WindowInfo *info, const char *name) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+
+  dispatch_async(dispatch_get_main_queue(), ^{
+    NSView *view = delegate.controlsByName[key];
+    if ([view isKindOfClass:[NSScrollView class]]) {
+      NSScrollView *scroll = (NSScrollView *)view;
+      if ([scroll.documentView isKindOfClass:[NSOutlineView class]]) {
+        NSOutlineView *outlineView = (NSOutlineView *)scroll.documentView;
+        [outlineView collapseItem:nil collapseChildren:YES];
+      }
+    }
+  });
+}
+
+void window_tree_expand_node(main__WindowInfo *info, const char *name, const char *node_id, int expand_children) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  NSString *targetId = nsstring(node_id);
+
+  dispatch_async(dispatch_get_main_queue(), ^{
+    if (targetId.length == 0) {
+      return;
+    }
+
+    NSView *view = delegate.controlsByName[key];
+    if ([view isKindOfClass:[NSScrollView class]]) {
+      NSScrollView *scroll = (NSScrollView *)view;
+      if ([scroll.documentView isKindOfClass:[NSOutlineView class]]) {
+        NSOutlineView *outlineView = (NSOutlineView *)scroll.documentView;
+        NSArray<TreeItem *> *roots = delegate.treeItemsByName[key];
+        TreeItem *item = [delegate findTreeItemWithId:targetId inItems:roots];
+        if (!item) {
+          return;
+        }
+
+        TreeItem *parent = item.parent;
+        NSMutableArray<TreeItem *> *parentsToExpand = [NSMutableArray array];
+        while (parent) {
+          [parentsToExpand insertObject:parent atIndex:0];
+          parent = parent.parent;
+        }
+        for (TreeItem *p in parentsToExpand) {
+          [outlineView expandItem:p];
+        }
+
+        [outlineView expandItem:item expandChildren:(expand_children != 0)];
+      }
+    }
+  });
+}
+
+void window_tree_collapse_node(main__WindowInfo *info, const char *name, const char *node_id, int collapse_children) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  NSString *targetId = nsstring(node_id);
+
+  dispatch_async(dispatch_get_main_queue(), ^{
+    if (targetId.length == 0) {
+      return;
+    }
+
+    NSView *view = delegate.controlsByName[key];
+    if ([view isKindOfClass:[NSScrollView class]]) {
+      NSScrollView *scroll = (NSScrollView *)view;
+      if ([scroll.documentView isKindOfClass:[NSOutlineView class]]) {
+        NSOutlineView *outlineView = (NSOutlineView *)scroll.documentView;
+        NSArray<TreeItem *> *roots = delegate.treeItemsByName[key];
+        TreeItem *item = [delegate findTreeItemWithId:targetId inItems:roots];
+        if (!item) {
+          return;
+        }
+        [outlineView collapseItem:item collapseChildren:(collapse_children != 0)];
+      }
+    }
+  });
+}
+
 void window_enable_status_bar(main__WindowInfo *info, const char *icon_path) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
   dispatch_async(dispatch_get_main_queue(), ^{

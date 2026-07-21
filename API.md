@@ -2087,6 +2087,23 @@ pub mut:
 }
 ```
 
+### Tree node constructors
+
+- `simplegui.tree_node(id, parent_id, text)` creates a node with explicit fields.
+- `simplegui.tree_root(id, text)` creates a root node (`parent_id == ""`).
+- `simplegui.tree_child(id, parent_id, text)` creates a child node.
+- `simplegui.tree_nodes_from_paths(paths, separator)` converts path strings into nodes.
+
+Example:
+
+```v
+nodes := simplegui.tree_nodes_from_paths([
+  'Company/Engineering/Frontend',
+  'Company/Engineering/Backend',
+  'Company/Design/UX',
+], '/')
+```
+
 ### `win.add_tree_view(name string, height int) &SimpleWindow`
 
 Adds a scrollable, native hierarchal tree view control with a defined vertical height.
@@ -2102,6 +2119,69 @@ Returns the `id` of the currently selected tree view node, or `""` if no cell is
 ### `win.set_tree_selected(name string, node_id string) &SimpleWindow`
 
 Programmatically expands parent items as needed, selects the specified node by its `node_id`, and scrolls it into view.
+
+### `win.expand_tree(name string) &SimpleWindow` / `win.open_tree(name string) &SimpleWindow`
+
+Expands all nodes in the target tree.
+
+### `win.collapse_tree(name string) &SimpleWindow` / `win.close_tree(name string) &SimpleWindow`
+
+Collapses all nodes in the target tree.
+
+### `win.expand_tree_node(name string, node_id string, expand_children bool) &SimpleWindow`
+
+Expands a specific node by id. If `expand_children` is `true`, expands the full subtree under that node.
+
+### `win.collapse_tree_node(name string, node_id string, collapse_children bool) &SimpleWindow`
+
+Collapses a specific node by id. If `collapse_children` is `true`, collapses all descendants too.
+
+### `win.set_tree(name string, nodes []TreeNode) &SimpleWindow`
+
+Alias for `set_tree_nodes(...)`.
+
+### `win.clear_tree(name string) &SimpleWindow`
+
+Clears all nodes and current selection in a single call.
+
+### `win.clear_tree_selection(name string) &SimpleWindow`
+
+Clears only the current selected node.
+
+### `win.get_tree_nodes(name string) []TreeNode`
+
+Returns a copy of nodes currently registered for that tree in V-side state.
+
+### `win.has_tree_node(name string, node_id string) bool`
+
+Returns true if `node_id` exists in the tree.
+
+### `win.get_tree_node(name string, node_id string) ?TreeNode`
+
+Returns the matching node when found, otherwise `none`.
+
+### `win.add_tree_node(name string, node TreeNode) &SimpleWindow`
+
+Adds a new node or updates an existing one with the same `id`.
+
+### `win.remove_tree_node(name string, node_id string, remove_children bool) &SimpleWindow`
+
+Removes a node.
+
+- If `remove_children` is `true`, removes the full subtree.
+- If `false`, reparents direct children to the removed node's parent.
+
+### `win.set_tree_node_text(name string, node_id string, text string) &SimpleWindow`
+
+Updates the visible label text of one node.
+
+### `win.set_tree_paths(name string, paths []string) &SimpleWindow`
+
+Builds/replaces a tree from slash-separated path values.
+
+### `win.set_tree_paths_with_separator(name string, paths []string, separator string) &SimpleWindow`
+
+Same as `set_tree_paths`, but with a custom path separator.
 
 ---
 

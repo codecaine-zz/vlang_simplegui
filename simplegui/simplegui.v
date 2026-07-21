@@ -134,6 +134,10 @@ fn C.window_add_tree_view_control(&WindowInfo, &u8, int) voidptr
 fn C.window_set_tree_nodes(&WindowInfo, &u8, &&u8, int)
 fn C.window_get_tree_selected(&WindowInfo, &u8) &u8
 fn C.window_set_tree_selected(&WindowInfo, &u8, &u8)
+fn C.window_tree_expand_all(&WindowInfo, &u8)
+fn C.window_tree_collapse_all(&WindowInfo, &u8)
+fn C.window_tree_expand_node(&WindowInfo, &u8, &u8, int)
+fn C.window_tree_collapse_node(&WindowInfo, &u8, &u8, int)
 
 // System Menu Bar/Tray App Mode
 fn C.window_enable_status_bar(&WindowInfo, &u8)
@@ -677,6 +681,7 @@ mut:
 	full_size_content_view       bool
 	background_blur              bool
 	list_items                   map[string][]string
+	tree_nodes                   map[string][]TreeNode
 	table_rows                   map[string][][]string
 	grid_rows                    map[string][][]string
 	grid_headers                 map[string][]string
@@ -735,6 +740,7 @@ pub fn new_simple_window(title string, width int, height int) &SimpleWindow {
 	win.placeholders = map[string]string{}
 	win.tooltips = map[string]string{}
 	win.errors = map[string]string{}
+	win.tree_nodes = map[string][]TreeNode{}
 	win.grid_rows = map[string][][]string{}
 	win.grid_headers = map[string][]string{}
 	win.ensure_window()
@@ -5412,6 +5418,82 @@ pub mut:
 	text      string
 }
 
+// tree_node creates a TreeNode with explicit id, parent id, and display text.
+pub fn tree_node(id string, parent_id string, text string) TreeNode {
+	return TreeNode{
+		id:        id
+		parent_id: parent_id
+		text:      text
+	}
+}
+
+// tree_root creates a root-level TreeNode (without a parent).
+pub fn tree_root(id string, text string) TreeNode {
+	return tree_node(id, '', text)
+}
+
+// tree_child creates a child TreeNode under the provided parent id.
+pub fn tree_child(id string, parent_id string, text string) TreeNode {
+	return tree_node(id, parent_id, text)
+}
+
+// tree_nodes_from_paths builds flat TreeNode entries from hierarchical path strings.
+// Example path: "Company/Engineering/Backend".
+pub fn tree_nodes_from_paths(paths []string, separator string) []TreeNode {
+	sep := if separator == '' { '/' } else { separator }
+	mut nodes := []TreeNode{}
+	mut seen := map[string]bool{}
+
+	for raw_path in paths {
+		trimmed_path := raw_path.trim_space()
+		if trimmed_path == '' {
+			continue
+		}
+
+		mut parts := []string{}
+		for part in trimmed_path.split(sep) {
+			trimmed_part := part.trim_space()
+			if trimmed_part != '' {
+				parts << trimmed_part
+			}
+		}
+
+		if parts.len == 0 {
+			continue
+		}
+
+		mut parent_id := ''
+		mut path_parts := []string{}
+		for part in parts {
+			path_parts << part
+			node_id := path_parts.join('/')
+			if node_id !in seen {
+				nodes << TreeNode{
+					id:        node_id
+					parent_id: parent_id
+					text:      part
+				}
+				seen[node_id] = true
+			}
+			parent_id = node_id
+		}
+	}
+
+	return nodes
+}
+
+fn clone_tree_nodes(nodes []TreeNode) []TreeNode {
+	mut copied := []TreeNode{cap: nodes.len}
+	for node in nodes {
+		copied << TreeNode{
+			id:        node.id
+			parent_id: node.parent_id
+			text:      node.text
+		}
+	}
+	return copied
+}
+
 // add_tree_view adds a tree view control to the window layout.
 pub fn (win &SimpleWindow) add_tree_view(name string, height int) &SimpleWindow {
 	mut real_name := name
@@ -5425,6 +5507,7 @@ pub fn (win &SimpleWindow) add_tree_view(name string, height int) &SimpleWindow 
 			kind:  'treeview'
 			value: ''
 		}
+		w.tree_nodes[real_name] = []TreeNode{}
 	}
 	if win.window_info != unsafe { nil } {
 		C.window_add_tree_view_control(win.window_info, real_name.str, height)
@@ -5434,6 +5517,10 @@ pub fn (win &SimpleWindow) add_tree_view(name string, height int) &SimpleWindow 
 
 // set_tree_nodes sets the tree nodes of the window or target control.
 pub fn (win &SimpleWindow) set_tree_nodes(name string, nodes []TreeNode) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.tree_nodes[name] = clone_tree_nodes(nodes)
+	}
 	if win.window_info != unsafe { nil } {
 		if nodes.len == 0 {
 			C.window_set_tree_nodes(win.window_info, name.str, unsafe { nil }, 0)
@@ -5454,17 +5541,261 @@ pub fn (win &SimpleWindow) set_tree_nodes(name string, nodes []TreeNode) &Simple
 pub fn (win &SimpleWindow) get_tree_selected(name string) string {
 	if win.window_info != unsafe { nil } {
 		res := C.window_get_tree_selected(win.window_info, name.str)
-		return unsafe { res.vstring() }
+		selected := unsafe { res.vstring() }
+		idx := win.find_control(name)
+		if idx >= 0 {
+			unsafe {
+				mut w := &SimpleWindow(win)
+				mut entry := w.controls[idx]
+				entry.value = selected
+				w.controls[idx] = entry
+			}
+		}
+		return selected
+	}
+	idx := win.find_control(name)
+	if idx >= 0 {
+		return win.controls[idx].value
 	}
 	return ''
 }
 
 // set_tree_selected sets the tree selected of the window or target control.
 pub fn (win &SimpleWindow) set_tree_selected(name string, node_id string) &SimpleWindow {
+	idx := win.find_control(name)
+	if idx >= 0 {
+		unsafe {
+			mut w := &SimpleWindow(win)
+			mut entry := w.controls[idx]
+			entry.value = node_id
+			w.controls[idx] = entry
+		}
+	}
 	if win.window_info != unsafe { nil } {
 		C.window_set_tree_selected(win.window_info, name.str, node_id.str)
 	}
 	return win
+}
+
+// expand_tree opens all nodes in the target tree view.
+pub fn (win &SimpleWindow) expand_tree(name string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_tree_expand_all(win.window_info, name.str)
+	}
+	return win
+}
+
+// open_tree is an alias for expand_tree.
+pub fn (win &SimpleWindow) open_tree(name string) &SimpleWindow {
+	return win.expand_tree(name)
+}
+
+// collapse_tree collapses all nodes in the target tree view.
+pub fn (win &SimpleWindow) collapse_tree(name string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_tree_collapse_all(win.window_info, name.str)
+	}
+	return win
+}
+
+// close_tree is an alias for collapse_tree.
+pub fn (win &SimpleWindow) close_tree(name string) &SimpleWindow {
+	return win.collapse_tree(name)
+}
+
+// expand_tree_node expands a single node; optionally expands its descendants.
+pub fn (win &SimpleWindow) expand_tree_node(name string, node_id string, expand_children bool) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		expand_val := if expand_children { 1 } else { 0 }
+		C.window_tree_expand_node(win.window_info, name.str, node_id.str, expand_val)
+	}
+	return win
+}
+
+// collapse_tree_node collapses a single node; optionally collapses descendants.
+pub fn (win &SimpleWindow) collapse_tree_node(name string, node_id string, collapse_children bool) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		collapse_val := if collapse_children { 1 } else { 0 }
+		C.window_tree_collapse_node(win.window_info, name.str, node_id.str, collapse_val)
+	}
+	return win
+}
+
+// set_tree is an alias for set_tree_nodes.
+pub fn (win &SimpleWindow) set_tree(name string, nodes []TreeNode) &SimpleWindow {
+	return win.set_tree_nodes(name, nodes)
+}
+
+// clear_tree removes all tree nodes and clears the current selection.
+pub fn (win &SimpleWindow) clear_tree(name string) &SimpleWindow {
+	win.set_tree_selected(name, '')
+	return win.set_tree_nodes(name, []TreeNode{})
+}
+
+// clear_tree_selection clears selection for the target tree control.
+pub fn (win &SimpleWindow) clear_tree_selection(name string) &SimpleWindow {
+	return win.set_tree_selected(name, '')
+}
+
+// get_tree_nodes returns a copy of all tree nodes registered for a tree control.
+pub fn (win &SimpleWindow) get_tree_nodes(name string) []TreeNode {
+	if name in win.tree_nodes {
+		return clone_tree_nodes(win.tree_nodes[name])
+	}
+	return []TreeNode{}
+}
+
+// has_tree_node checks whether a node id exists in the target tree.
+pub fn (win &SimpleWindow) has_tree_node(name string, node_id string) bool {
+	for node in win.get_tree_nodes(name) {
+		if node.id == node_id {
+			return true
+		}
+	}
+	return false
+}
+
+// get_tree_node returns a node by id when present.
+pub fn (win &SimpleWindow) get_tree_node(name string, node_id string) ?TreeNode {
+	for node in win.get_tree_nodes(name) {
+		if node.id == node_id {
+			return node
+		}
+	}
+	return none
+}
+
+// add_tree_node inserts or updates one node and refreshes the control.
+pub fn (win &SimpleWindow) add_tree_node(name string, node TreeNode) &SimpleWindow {
+	if node.id.trim_space() == '' {
+		return win
+	}
+	mut nodes := win.get_tree_nodes(name)
+	mut replaced := false
+	for i, existing in nodes {
+		if existing.id == node.id {
+			nodes[i] = TreeNode{
+				id:        node.id
+				parent_id: node.parent_id
+				text:      node.text
+			}
+			replaced = true
+			break
+		}
+	}
+	if !replaced {
+		nodes << node
+	}
+	return win.set_tree_nodes(name, nodes)
+}
+
+// remove_tree_node deletes one node; children can be removed or reparented.
+pub fn (win &SimpleWindow) remove_tree_node(name string, node_id string, remove_children bool) &SimpleWindow {
+	if node_id == '' {
+		return win
+	}
+	mut nodes := win.get_tree_nodes(name)
+	if nodes.len == 0 {
+		return win
+	}
+
+	mut target_parent := ''
+	mut found := false
+	for node in nodes {
+		if node.id == node_id {
+			target_parent = node.parent_id
+			found = true
+			break
+		}
+	}
+	if !found {
+		return win
+	}
+
+	mut filtered := []TreeNode{}
+	if remove_children {
+		mut children_by_parent := map[string][]string{}
+		for node in nodes {
+			if node.parent_id == '' {
+				continue
+			}
+			if node.parent_id !in children_by_parent {
+				children_by_parent[node.parent_id] = []string{}
+			}
+			mut existing := children_by_parent[node.parent_id]
+			existing << node.id
+			children_by_parent[node.parent_id] = existing
+		}
+
+		mut to_remove := map[string]bool{}
+		mut queue := [node_id]
+		to_remove[node_id] = true
+		for queue.len > 0 {
+			current := queue[0]
+			queue.delete(0)
+			for child_id in children_by_parent[current] or { []string{} } {
+				if child_id in to_remove {
+					continue
+				}
+				to_remove[child_id] = true
+				queue << child_id
+			}
+		}
+
+		for node in nodes {
+			if node.id in to_remove {
+				continue
+			}
+			filtered << node
+		}
+	} else {
+		for mut node in nodes {
+			if node.id == node_id {
+				continue
+			}
+			if node.parent_id == node_id {
+				node.parent_id = target_parent
+			}
+			filtered << node
+		}
+	}
+
+	if win.get_tree_selected(name) == node_id {
+		win.set_tree_selected(name, '')
+	}
+	return win.set_tree_nodes(name, filtered)
+}
+
+// set_tree_node_text updates the display text of a single tree node.
+pub fn (win &SimpleWindow) set_tree_node_text(name string, node_id string, text string) &SimpleWindow {
+	mut nodes := win.get_tree_nodes(name)
+	mut changed := false
+	for i, node in nodes {
+		if node.id == node_id {
+			nodes[i] = TreeNode{
+				id:        node.id
+				parent_id: node.parent_id
+				text:      text
+			}
+			changed = true
+			break
+		}
+	}
+	if !changed {
+		return win
+	}
+	return win.set_tree_nodes(name, nodes)
+}
+
+// set_tree_paths builds a tree from slash-delimited path strings.
+pub fn (win &SimpleWindow) set_tree_paths(name string, paths []string) &SimpleWindow {
+	return win.set_tree_paths_with_separator(name, paths, '/')
+}
+
+// set_tree_paths_with_separator builds a tree from path strings using a custom separator.
+pub fn (win &SimpleWindow) set_tree_paths_with_separator(name string, paths []string, separator string) &SimpleWindow {
+	nodes := tree_nodes_from_paths(paths, separator)
+	return win.set_tree_nodes(name, nodes)
 }
 
 // add_table adds a table control to the window layout.
