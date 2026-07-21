@@ -1228,6 +1228,83 @@ Notes:
 - Appearance and power calls are best-effort wrappers around macOS tools like `osascript`, `pmset`, and `CGSession`.
 - Depending on macOS privacy/security settings, your app may need Automation permissions (for `System Events`) to perform some actions.
 
+### Cross-Window Registry & External App Automation (`simplegui.sys_*`)
+
+These are package-level helpers (not `win.*` instance methods) for Spy++-style inspection and automation across windows.
+
+#### Registered SimpleGUI window registry
+
+- `simplegui.sys_register_window(win &SimpleWindow)`: Registers a window for cross-window access.
+- `simplegui.sys_unregister_window(title string)`: Unregisters a window by title.
+- `simplegui.sys_list_app_windows() []string`: Returns titles of all registered windows.
+- `simplegui.sys_get_window(title string) ?&SimpleWindow`: Returns a registered window by title.
+
+#### Internal window ordering, visibility, and control operations
+
+- `simplegui.sys_order_app_window_front(title string) bool`: Brings a registered window to front.
+- `simplegui.sys_order_app_window_back(title string) bool`: Sends a registered window to back.
+- `simplegui.sys_set_app_window_visible(title string, visible bool) bool`: Shows/hides a registered window.
+- `simplegui.sys_spy_window(title string) ?[]simplegui.ControlInfo`: Returns control metadata snapshot for a registered window.
+- `simplegui.sys_set_control_enabled(win_title string, control_name string, enabled bool) bool`: Enables/disables a named control.
+- `simplegui.sys_set_control_visible(win_title string, control_name string, visible bool) bool`: Shows/hides a named control.
+- `simplegui.sys_set_control_text(win_title string, control_name string, text string) bool`: Sets control text/value.
+- `simplegui.sys_get_control_text(win_title string, control_name string) string`: Reads control text/value.
+- `simplegui.sys_flash_control(win_title string, control_name string) bool`: Flashes/highlights a control.
+
+#### External macOS app enumeration and AXUIElement control automation
+
+- `simplegui.sys_list_external_apps() []simplegui.ExternalAppInfo`: Lists running GUI apps (`pid`, `name`, `bundle_id`).
+- `simplegui.sys_spy_external_app(pid int) []simplegui.ExternalControlInfo`: Returns external app control metadata (`role`, `title`, `value`, `enabled`).
+- `simplegui.sys_set_external_control_value(pid int, control_title string, value string) bool`: Sets value/text on matching external control.
+- `simplegui.sys_press_external_control(pid int, control_title string) bool`: Presses/clicks matching external control.
+- `simplegui.sys_set_external_control_enabled(pid int, control_title string, enabled bool) bool`: Enables/disables matching external control.
+- `simplegui.sys_set_external_control_visible(pid int, control_title string, visible bool) bool`: Shows/hides matching external control.
+- `simplegui.sys_flash_external_control(pid int, control_title string) bool`: Draws a temporary visual highlight overlay over matching control.
+- `simplegui.sys_set_external_app_frontmost(pid int) bool`: Requests the external app process to become frontmost.
+- `simplegui.sys_set_external_app_visible(pid int, visible bool) bool`: Shows/hides external app process windows.
+
+Notes:
+
+- External app helpers rely on macOS Accessibility (`System Events`) permissions.
+- Match selectors should typically use a control title first, then role as fallback.
+- See `demos/spy_plus_plus_demo.v` for a production-ready target-table + control-tree workflow.
+
+#### Quick start example
+
+```v
+module main
+
+import simplegui
+
+fn main() {
+  mut win := simplegui.new_simple_window('Sys Automation API', 620, 360)
+  win.add_console('log', 220)
+  win.add_button('run_demo', 'Run Automation Checks')
+
+  win.on_click('run_demo', fn (mut w simplegui.SimpleWindow) {
+    // 1) Internal registered windows
+    titles := simplegui.sys_list_app_windows()
+    w.append_console('log', 'Registered windows: ${titles.len}', 0)
+    if titles.len > 0 {
+      simplegui.sys_order_app_window_front(titles[0])
+      w.append_console('log', 'Brought to front: ${titles[0]}', 0)
+    }
+
+    // 2) External applications by PID
+    apps := simplegui.sys_list_external_apps()
+    w.append_console('log', 'External apps: ${apps.len}', 0)
+    if apps.len > 0 {
+      pid := apps[0].pid
+      simplegui.sys_set_external_app_frontmost(pid)
+      controls := simplegui.sys_spy_external_app(pid)
+      w.append_console('log', 'PID ${pid} controls: ${controls.len}', 0)
+    }
+  })
+
+  win.run()
+}
+```
+
 ### Hardware & Computer Diagnostics (`NL_COMPUTER`)
 
 - `win.get_cpu_info() string`: Returns the local processor model string (e.g., `Apple M2 Max` or `Intel Core i7`).

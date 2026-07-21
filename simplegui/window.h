@@ -93,11 +93,22 @@ char *window_select_file_with_extensions(main__WindowInfo *info, const char *ext
 char *window_select_folder(main__WindowInfo *info);
 char *window_save_file_picker(main__WindowInfo *info);
 
-// Visibility and Enabled states
+// Visibility, Enabled, and Visual Highlight states
 void window_set_control_visible_by_name(main__WindowInfo *info, const char *name, int visible);
 int window_get_control_visible_by_name(main__WindowInfo *info, const char *name);
 void window_set_control_enabled_by_name(main__WindowInfo *info, const char *name, int enabled);
 int window_get_control_enabled_by_name(main__WindowInfo *info, const char *name);
+void window_highlight_control_by_name(main__WindowInfo *info, const char *name, int duration_ms);
+void window_flash_control_by_name(main__WindowInfo *info, const char *name);
+
+// External Applications Accessibility Inspection (macOS AXUIElement)
+char *window_list_external_apps(void);
+char *window_spy_external_app(int pid);
+int window_set_external_control_value(int pid, const char *title_or_role, const char *value);
+int window_press_external_control(int pid, const char *title_or_role);
+int window_set_external_control_enabled(int pid, const char *title_or_role, int enabled);
+int window_set_external_control_visible(int pid, const char *title_or_role, int visible);
+int window_flash_external_control(int pid, const char *title_or_role);
 
 // Timers
 void window_set_interval(main__WindowInfo *info, int ms, const char *timer_name);

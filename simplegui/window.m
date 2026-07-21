@@ -1,6 +1,7 @@
 #import <Cocoa/Cocoa.h>
 #import <WebKit/WebKit.h>
 #import <QuartzCore/QuartzCore.h>
+#import <ApplicationServices/ApplicationServices.h>
 #import <objc/runtime.h>
 #import <string.h>
 #import <stdlib.h>
@@ -12186,6 +12187,411 @@ int window_get_control_enabled_by_name(main__WindowInfo *info, const char *name)
     return [(id)view isEnabled] ? 1 : 0;
   }
   return 1;
+}
+
+void window_highlight_control_by_name(main__WindowInfo *info, const char *name, int duration_ms) {
+  if (!info || !name) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSView *view = [delegate viewForControlName:nsstring(name)];
+  if (!view) return;
+  
+  dispatch_async(dispatch_get_main_queue(), ^{
+    view.wantsLayer = YES;
+    CGColorRef oldColor = view.layer.borderColor;
+    CGFloat oldWidth = view.layer.borderWidth;
+    
+    view.layer.borderColor = [NSColor systemRedColor].CGColor;
+    view.layer.borderWidth = 3.0;
+    
+    double seconds = (duration_ms > 0 ? (double)duration_ms / 1000.0 : 1.5);
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(seconds * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+      view.layer.borderColor = oldColor;
+      view.layer.borderWidth = oldWidth;
+    });
+  });
+}
+
+void window_flash_control_by_name(main__WindowInfo *info, const char *name) {
+  if (!info || !name) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSView *view = [delegate viewForControlName:nsstring(name)];
+  if (!view) return;
+  
+  dispatch_async(dispatch_get_main_queue(), ^{
+    view.wantsLayer = YES;
+    CGColorRef oldColor = view.layer.borderColor;
+    CGFloat oldWidth = view.layer.borderWidth;
+    
+    for (int i = 0; i < 3; i++) {
+      dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)((i * 0.4) * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        view.layer.borderColor = [NSColor systemRedColor].CGColor;
+        view.layer.borderWidth = 3.0;
+      });
+      dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)((i * 0.4 + 0.2) * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        view.layer.borderColor = oldColor;
+        view.layer.borderWidth = oldWidth;
+      });
+    }
+  });
+}
+
+char *window_list_external_apps(void) {
+  @autoreleasepool {
+    NSMutableArray *arr = [NSMutableArray array];
+    NSArray<NSRunningApplication *> *apps = [[NSWorkspace sharedWorkspace] runningApplications];
+    for (NSRunningApplication *app in apps) {
+      if (app.activationPolicy == NSApplicationActivationPolicyRegular) {
+        NSString *name = app.localizedName ?: @"Unknown";
+        NSString *bundleId = app.bundleIdentifier ?: @"";
+        pid_t pid = app.processIdentifier;
+        
+        NSDictionary *dict = @{
+          @"pid": @(pid),
+          @"name": name,
+          @"bundle_id": bundleId
+        };
+        [arr addObject:dict];
+      }
+    }
+    NSError *error = nil;
+    NSData *data = [NSJSONSerialization dataWithJSONObject:arr options:0 error:&error];
+    if (!data) return strdup("[]");
+    NSString *jsonStr = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+    return strdup([jsonStr UTF8String]);
+  }
+}
+
+static NSString *helper_cf_to_string(CFTypeRef ref) {
+  if (!ref) return @"";
+  if (CFGetTypeID(ref) == CFStringGetTypeID()) {
+    return [NSString stringWithString:(__bridge NSString *)ref];
+  } else if (CFGetTypeID(ref) == CFBooleanGetTypeID()) {
+    return CFBooleanGetValue((CFBooleanRef)ref) ? @"true" : @"false";
+  } else if (CFGetTypeID(ref) == CFNumberGetTypeID()) {
+    return [NSString stringWithFormat:@"%@", (__bridge id)ref];
+  }
+  return @"[AXValue]";
+}
+
+static void helper_collect_ax_elements(AXUIElementRef element, NSMutableArray *results, int depth) {
+  if (!element || depth > 3) return;
+  
+  CFStringRef roleRef = NULL;
+  CFStringRef titleRef = NULL;
+  CFTypeRef valRef = NULL;
+  
+  if (AXUIElementCopyAttributeValue(element, kAXRoleAttribute, (CFTypeRef *)&roleRef) == kAXErrorSuccess && roleRef) {
+    NSString *role = helper_cf_to_string(roleRef);
+    CFRelease(roleRef);
+    
+    NSString *title = @"";
+    if (AXUIElementCopyAttributeValue(element, kAXTitleAttribute, (CFTypeRef *)&titleRef) == kAXErrorSuccess && titleRef) {
+      title = helper_cf_to_string(titleRef);
+      CFRelease(titleRef);
+    }
+    
+    NSString *valStr = @"";
+    if (AXUIElementCopyAttributeValue(element, kAXValueAttribute, &valRef) == kAXErrorSuccess && valRef) {
+      valStr = helper_cf_to_string(valRef);
+      CFRelease(valRef);
+    }
+    
+    if (role.length > 0) {
+      [results addObject:@{
+        @"role": role ?: @"",
+        @"title": title ?: @"",
+        @"value": valStr ?: @"",
+        @"enabled": @YES
+      }];
+    }
+  }
+  
+  CFArrayRef childrenRef = NULL;
+  if (AXUIElementCopyAttributeValue(element, kAXChildrenAttribute, (CFTypeRef *)&childrenRef) == kAXErrorSuccess && childrenRef) {
+    CFIndex count = CFArrayGetCount(childrenRef);
+    for (CFIndex i = 0; i < count && i < 30; i++) {
+      AXUIElementRef child = (AXUIElementRef)CFArrayGetValueAtIndex(childrenRef, i);
+      if (child) {
+        helper_collect_ax_elements(child, results, depth + 1);
+      }
+    }
+    CFRelease(childrenRef);
+  }
+}
+
+char *window_spy_external_app(int pid) {
+  @autoreleasepool {
+    if (pid <= 0) return strdup("[]");
+    AXUIElementRef appRef = AXUIElementCreateApplication((pid_t)pid);
+    if (!appRef) return strdup("[]");
+    
+    NSMutableArray *results = [NSMutableArray array];
+    helper_collect_ax_elements(appRef, results, 0);
+    CFRelease(appRef);
+    
+    if (results.count == 0) return strdup("[]");
+    
+    NSError *err = nil;
+    NSData *data = [NSJSONSerialization dataWithJSONObject:results options:0 error:&err];
+    if (!data || err) return strdup("[]");
+    NSString *jsonStr = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+    return strdup([jsonStr UTF8String] ?: "[]");
+  }
+}
+
+static BOOL helper_ax_matches_target(AXUIElementRef element, NSString *target) {
+  if (!element || !target || target.length == 0) return NO;
+
+  NSString *targetLower = [target lowercaseString];
+
+  CFStringRef titleRef = NULL;
+  if (AXUIElementCopyAttributeValue(element, kAXTitleAttribute, (CFTypeRef *)&titleRef) == kAXErrorSuccess && titleRef) {
+    NSString *title = helper_cf_to_string(titleRef);
+    CFRelease(titleRef);
+    if (title && [title.lowercaseString containsString:targetLower]) {
+      return YES;
+    }
+  }
+
+  CFStringRef roleRef = NULL;
+  if (AXUIElementCopyAttributeValue(element, kAXRoleAttribute, (CFTypeRef *)&roleRef) == kAXErrorSuccess && roleRef) {
+    NSString *role = helper_cf_to_string(roleRef);
+    CFRelease(roleRef);
+    if (role && [role.lowercaseString containsString:targetLower]) {
+      return YES;
+    }
+  }
+
+  CFStringRef roleDescRef = NULL;
+  if (AXUIElementCopyAttributeValue(element, kAXRoleDescriptionAttribute, (CFTypeRef *)&roleDescRef) == kAXErrorSuccess && roleDescRef) {
+    NSString *roleDesc = helper_cf_to_string(roleDescRef);
+    CFRelease(roleDescRef);
+    if (roleDesc && [roleDesc.lowercaseString containsString:targetLower]) {
+      return YES;
+    }
+  }
+
+  return NO;
+}
+
+static BOOL helper_find_and_set_ax_val(AXUIElementRef element, NSString *target, NSString *newVal, int depth) {
+  if (!element || depth > 12) return NO;
+
+  if (helper_ax_matches_target(element, target)) {
+    AXError err = AXUIElementSetAttributeValue(element, kAXValueAttribute, (__bridge CFStringRef)newVal);
+    if (err == kAXErrorSuccess) return YES;
+  }
+
+  CFArrayRef childrenRef = NULL;
+  BOOL found = NO;
+  if (AXUIElementCopyAttributeValue(element, kAXChildrenAttribute, (CFTypeRef *)&childrenRef) == kAXErrorSuccess && childrenRef) {
+    CFIndex count = CFArrayGetCount(childrenRef);
+    for (CFIndex i = 0; i < count; i++) {
+      AXUIElementRef child = (AXUIElementRef)CFArrayGetValueAtIndex(childrenRef, i);
+      if (child && helper_find_and_set_ax_val(child, target, newVal, depth + 1)) {
+        found = YES;
+        break;
+      }
+    }
+    CFRelease(childrenRef);
+  }
+  return found;
+}
+
+int window_set_external_control_value(int pid, const char *title_or_role, const char *value) {
+  @autoreleasepool {
+    if (pid <= 0 || !title_or_role || !value) return 0;
+    AXUIElementRef appRef = AXUIElementCreateApplication((pid_t)pid);
+    if (!appRef) return 0;
+    
+    NSString *target = nsstring(title_or_role);
+    NSString *newVal = nsstring(value);
+    BOOL res = helper_find_and_set_ax_val(appRef, target, newVal, 0);
+    CFRelease(appRef);
+    return res ? 1 : 0;
+  }
+}
+
+static BOOL helper_find_and_press_ax(AXUIElementRef element, NSString *target, int depth) {
+  if (!element || depth > 12) return NO;
+
+  if (helper_ax_matches_target(element, target)) {
+    AXError err = AXUIElementPerformAction(element, kAXPressAction);
+    if (err == kAXErrorSuccess) return YES;
+  }
+
+  CFArrayRef childrenRef = NULL;
+  BOOL found = NO;
+  if (AXUIElementCopyAttributeValue(element, kAXChildrenAttribute, (CFTypeRef *)&childrenRef) == kAXErrorSuccess && childrenRef) {
+    CFIndex count = CFArrayGetCount(childrenRef);
+    for (CFIndex i = 0; i < count; i++) {
+      AXUIElementRef child = (AXUIElementRef)CFArrayGetValueAtIndex(childrenRef, i);
+      if (child && helper_find_and_press_ax(child, target, depth + 1)) {
+        found = YES;
+        break;
+      }
+    }
+    CFRelease(childrenRef);
+  }
+  return found;
+}
+
+int window_press_external_control(int pid, const char *title_or_role) {
+  @autoreleasepool {
+    if (pid <= 0 || !title_or_role) return 0;
+    AXUIElementRef appRef = AXUIElementCreateApplication((pid_t)pid);
+    if (!appRef) return 0;
+    
+    NSString *target = nsstring(title_or_role);
+    BOOL res = helper_find_and_press_ax(appRef, target, 0);
+    CFRelease(appRef);
+    return res ? 1 : 0;
+  }
+}
+
+static BOOL helper_find_and_set_ax_enabled(AXUIElementRef element, NSString *target, BOOL enabled, int depth) {
+  if (!element || depth > 12) return NO;
+
+  if (helper_ax_matches_target(element, target)) {
+    AXError err = AXUIElementSetAttributeValue(element, kAXEnabledAttribute, enabled ? kCFBooleanTrue : kCFBooleanFalse);
+    if (err == kAXErrorSuccess) return YES;
+  }
+
+  CFArrayRef childrenRef = NULL;
+  BOOL found = NO;
+  if (AXUIElementCopyAttributeValue(element, kAXChildrenAttribute, (CFTypeRef *)&childrenRef) == kAXErrorSuccess && childrenRef) {
+    CFIndex count = CFArrayGetCount(childrenRef);
+    for (CFIndex i = 0; i < count; i++) {
+      AXUIElementRef child = (AXUIElementRef)CFArrayGetValueAtIndex(childrenRef, i);
+      if (child && helper_find_and_set_ax_enabled(child, target, enabled, depth + 1)) {
+        found = YES;
+        break;
+      }
+    }
+    CFRelease(childrenRef);
+  }
+  return found;
+}
+
+int window_set_external_control_enabled(int pid, const char *title_or_role, int enabled) {
+  @autoreleasepool {
+    if (pid <= 0 || !title_or_role) return 0;
+    AXUIElementRef appRef = AXUIElementCreateApplication((pid_t)pid);
+    if (!appRef) return 0;
+    
+    NSString *target = nsstring(title_or_role);
+    BOOL res = helper_find_and_set_ax_enabled(appRef, target, enabled != 0, 0);
+    CFRelease(appRef);
+    return res ? 1 : 0;
+  }
+}
+
+static BOOL helper_find_and_set_ax_visible(AXUIElementRef element, NSString *target, BOOL visible, int depth) {
+  if (!element || depth > 12) return NO;
+
+  if (helper_ax_matches_target(element, target)) {
+    AXError err = AXUIElementSetAttributeValue(element, kAXHiddenAttribute, visible ? kCFBooleanFalse : kCFBooleanTrue);
+    if (err == kAXErrorSuccess) return YES;
+  }
+
+  CFArrayRef childrenRef = NULL;
+  BOOL found = NO;
+  if (AXUIElementCopyAttributeValue(element, kAXChildrenAttribute, (CFTypeRef *)&childrenRef) == kAXErrorSuccess && childrenRef) {
+    CFIndex count = CFArrayGetCount(childrenRef);
+    for (CFIndex i = 0; i < count; i++) {
+      AXUIElementRef child = (AXUIElementRef)CFArrayGetValueAtIndex(childrenRef, i);
+      if (child && helper_find_and_set_ax_visible(child, target, visible, depth + 1)) {
+        found = YES;
+        break;
+      }
+    }
+    CFRelease(childrenRef);
+  }
+  return found;
+}
+
+int window_set_external_control_visible(int pid, const char *title_or_role, int visible) {
+  @autoreleasepool {
+    if (pid <= 0 || !title_or_role) return 0;
+    AXUIElementRef appRef = AXUIElementCreateApplication((pid_t)pid);
+    if (!appRef) return 0;
+    
+    NSString *target = nsstring(title_or_role);
+    BOOL res = helper_find_and_set_ax_visible(appRef, target, visible != 0, 0);
+    CFRelease(appRef);
+    return res ? 1 : 0;
+  }
+}
+
+static BOOL helper_find_and_flash_ax(AXUIElementRef element, NSString *target, int depth) {
+  if (!element || depth > 12) return NO;
+
+  if (helper_ax_matches_target(element, target)) {
+    AXValueRef posVal = NULL;
+    AXValueRef sizeVal = NULL;
+    CGPoint pos = CGPointZero;
+    CGSize size = CGSizeZero;
+
+    if (AXUIElementCopyAttributeValue(element, kAXPositionAttribute, (CFTypeRef *)&posVal) == kAXErrorSuccess && posVal) {
+      AXValueGetValue(posVal, kAXValueTypeCGPoint, &pos);
+      CFRelease(posVal);
+    }
+    if (AXUIElementCopyAttributeValue(element, kAXSizeAttribute, (CFTypeRef *)&sizeVal) == kAXErrorSuccess && sizeVal) {
+      AXValueGetValue(sizeVal, kAXValueTypeCGSize, &size);
+      CFRelease(sizeVal);
+    }
+
+    if (size.width > 0 && size.height > 0) {
+      dispatch_async(dispatch_get_main_queue(), ^{
+        NSScreen *screen = [NSScreen mainScreen];
+        CGFloat screenH = screen.frame.size.height;
+        NSRect frame = NSMakeRect(pos.x, screenH - (pos.y + size.height), size.width, size.height);
+
+        NSWindow *flashWin = [[NSWindow alloc] initWithContentRect:frame
+                                                         styleMask:NSWindowStyleMaskBorderless
+                                                           backing:NSBackingStoreBuffered
+                                                             defer:NO];
+        flashWin.backgroundColor = [NSColor systemRedColor];
+        flashWin.alphaValue = 0.6;
+        flashWin.level = NSStatusWindowLevel;
+        flashWin.ignoresMouseEvents = YES;
+        [flashWin makeKeyAndOrderFront:nil];
+
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+          [flashWin close];
+        });
+      });
+      return YES;
+    }
+  }
+
+  CFArrayRef childrenRef = NULL;
+  BOOL found = NO;
+  if (AXUIElementCopyAttributeValue(element, kAXChildrenAttribute, (CFTypeRef *)&childrenRef) == kAXErrorSuccess && childrenRef) {
+    CFIndex count = CFArrayGetCount(childrenRef);
+    for (CFIndex i = 0; i < count; i++) {
+      AXUIElementRef child = (AXUIElementRef)CFArrayGetValueAtIndex(childrenRef, i);
+      if (child && helper_find_and_flash_ax(child, target, depth + 1)) {
+        found = YES;
+        break;
+      }
+    }
+    CFRelease(childrenRef);
+  }
+  return found;
+}
+
+int window_flash_external_control(int pid, const char *title_or_role) {
+  @autoreleasepool {
+    if (pid <= 0 || !title_or_role) return 0;
+    AXUIElementRef appRef = AXUIElementCreateApplication((pid_t)pid);
+    if (!appRef) return 0;
+    
+    NSString *target = nsstring(title_or_role);
+    BOOL res = helper_find_and_flash_ax(appRef, target, 0);
+    CFRelease(appRef);
+    return res ? 1 : 0;
+  }
 }
 
 void window_set_interval(main__WindowInfo *info, int ms, const char *timer_name) {

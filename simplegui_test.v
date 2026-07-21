@@ -3051,4 +3051,108 @@ fn test_workflow_text_and_data_extras() {
 	})
 	win.dispatch_event('se_b', 'enter', '')
 	assert win.get_text('se_a') == 'submitted'
+
+	// ==========================================
+	// Spy++ Window & Control Inspection & Manipulation Tests
+	// ==========================================
+	win.add_input('spy_in1', 'Hello Spy++')
+	win.add_checkbox('spy_chk1', 'Check Me', true)
+	win.add_button('spy_btn1', 'Click Me')
+
+	// Inspection APIs
+	info1 := win.spy_control('spy_in1') or { panic('spy_control failed') }
+	assert info1.name == 'spy_in1'
+	assert info1.kind == 'input'
+	assert info1.value == 'Hello Spy++'
+	assert info1.enabled == true
+	assert info1.visible == true
+
+	all_info := win.spy_controls()
+	assert all_info.len >= 3
+
+	tree_str := win.spy_tree()
+	assert tree_str.contains('spy_in1')
+	assert tree_str.contains('spy_chk1')
+
+	json_str := win.spy_json()
+	assert json_str.contains('spy_in1')
+
+	dump_map := win.spy_dump()
+	assert 'spy_in1' in dump_map
+
+	found_ctrls := win.find_controls('spy_')
+	assert found_ctrls.len >= 3
+
+	// Enable / Disable & Show / Hide
+	win.disable_control('spy_btn1')
+	assert win.is_control_enabled('spy_btn1') == false
+	win.enable_control('spy_btn1')
+	assert win.is_control_enabled('spy_btn1') == true
+
+	win.hide_control('spy_chk1')
+	assert win.is_control_visible('spy_chk1') == false
+	win.show_control('spy_chk1')
+	assert win.is_control_visible('spy_chk1') == true
+
+	// Toggle
+	new_en := win.toggle_control_enabled('spy_btn1')
+	assert new_en == false
+	assert win.is_control_enabled('spy_btn1') == false
+
+	new_vis := win.toggle_control_visible('spy_chk1')
+	assert new_vis == false
+	assert win.is_control_visible('spy_chk1') == false
+
+	// Get & Set text / value
+	win.set_control_text('spy_in1', 'Updated Spy Value')
+	assert win.get_control_text('spy_in1') == 'Updated Spy Value'
+	assert win.get_control_value('spy_in1') == 'Updated Spy Value'
+
+	// Batch & Highlight methods
+	win.batch_disable_controls(['spy_in1', 'spy_chk1'])
+	assert win.is_control_enabled('spy_in1') == false
+	assert win.is_control_enabled('spy_chk1') == false
+
+	win.batch_enable_controls(['spy_in1', 'spy_chk1'])
+	assert win.is_control_enabled('spy_in1') == true
+	assert win.is_control_enabled('spy_chk1') == true
+
+	win.batch_hide_controls(['spy_in1', 'spy_chk1'])
+	assert win.is_control_visible('spy_in1') == false
+	assert win.is_control_visible('spy_chk1') == false
+
+	win.batch_show_controls(['spy_in1', 'spy_chk1'])
+	assert win.is_control_visible('spy_in1') == true
+	assert win.is_control_visible('spy_chk1') == true
+
+	win.highlight_control('spy_in1', 100)
+	win.flash_control('spy_in1')
+	win.flash_controls(['spy_in1', 'spy_chk1'])
+	win.highlight_controls(['spy_in1', 'spy_chk1'], 100)
+
+	// Cross-window sys Spy++ APIs
+	simplegui.sys_register_window(win)
+	app_wins := simplegui.sys_list_app_windows()
+	assert app_wins.len > 0
+
+	sys_spied := simplegui.sys_spy_window(win.get_title()) or { panic('sys_spy_window failed') }
+	assert sys_spied.len >= 3
+
+	simplegui.sys_set_control_text(win.get_title(), 'spy_in1', 'Sys Set Text')
+	assert simplegui.sys_get_control_text(win.get_title(), 'spy_in1') == 'Sys Set Text'
+
+	simplegui.sys_set_control_enabled(win.get_title(), 'spy_in1', false)
+	assert win.is_control_enabled('spy_in1') == false
+
+	simplegui.sys_set_control_visible(win.get_title(), 'spy_in1', false)
+	assert win.is_control_visible('spy_in1') == false
+
+	simplegui.sys_flash_control(win.get_title(), 'spy_in1')
+
+	// Live Event Stream & External App Inspection tests
+	win.on_any_event(fn (mut w simplegui.SimpleWindow, control_name string, event_name string, value string) {})
+	win.dispatch_event('spy_in1', 'change', 'Testing Event Stream')
+
+	ext_apps := simplegui.sys_list_external_apps()
+	assert ext_apps.len > 0
 }

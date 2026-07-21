@@ -66,6 +66,7 @@ The goal is a simple, high-abstraction GUI layer that feels familiar to anyone u
   - Network tools: Local IP, public external IP, TCP ping reachability, DNS lookup, Wi-Fi SSID, network interface listing, MAC address, DNS servers, default gateway, and listening ports detection.
   - Resource monitoring: CPU utilization %, RSS memory usage per process, load average (1m/5m/15m), and kernel memory pressure.
   - macOS App & Dock Integration: Bouncing dock icon for alerts, dock badges, native system notifications via AppleScript, volume/mute control, system accent color, dark mode toggle, and launch-at-login management.
+  - Cross-window and external-app automation helpers: inspect/drive registered SimpleGUI windows and external macOS apps via Accessibility (AXUIElement) by PID, including enable/disable/show/hide, set text/value, flash highlights, and app frontmost/visibility controls.
 - **V Standard Library High-Level Wrappers**:
   - **HTTP & WebSockets**: Synchronous HTTP GET/POST and background WebSocket client thread wrappers.
   - **Cryptography & Hashing**: SHA-256, SHA-512, SHA-1, MD5, bcrypt password hashing/verification, HMAC (SHA256/SHA512/SHA1), Wyhash, and AES CBC 128-bit block encryption/decryption.
@@ -578,6 +579,7 @@ v run .
 | [rich_widgets_demo.v](demos/rich_widgets_demo.v)                     | Advanced rich macOS controls suite                                                                                                                                             |
 | [developer_controls_demo.v](demos/developer_controls_demo.v)         | Breadcrumbs, shortcut recorders, charts, gauges, property grids, and log consoles                                                                                              |
 | [editable_grid_showcase_demo.v](demos/editable_grid_showcase_demo.v) | Editable grid workflow: selection, filtering, sorting, and programmatic cell access                                                                                            |
+| [spy_plus_plus_demo.v](demos/spy_plus_plus_demo.v)                   | Production Spy++-style inspector: target table + control tree, external PID automation, filtering, and JSON snapshot export                                                    |
 | [tree_view_demo.v](demos/tree_view_demo.v)                           | Hierarchical tree view                                                                                                                                                         |
 | [advanced_features_demo.v](demos/advanced_features_demo.v)           | Advanced typography and macOS APIs                                                                                                                                             |
 | [menu_demo.v](demos/menu_demo.v)                                     | Standard macOS application menus and text editing shortcuts                                                                                                                    |
@@ -652,6 +654,7 @@ v run .
 | [encoding_and_system_info_demo.v](demos/encoding_and_system_info_demo.v)     | Hex/Base64 encoder-decoder with environment details viewer                                                     |
 | [sys_demo.v](demos/sys_demo.v)                                               | Neutralino-inspired system call extensions, OS diagnostics, hardware specs, network tools, and shell utilities |
 | [sys_new_commands_demo.v](demos/sys_new_commands_demo.v)                     | Production reliability helpers: retries, timeout metadata, atomic writes, file tails, and wait-for checks      |
+| [macos_power_controls_demo.v](demos/macos_power_controls_demo.v)             | Global macOS theme/power/session controls with keep-awake guard status and safe confirmations                  |
 | [system_calls_demo.v](demos/system_calls_demo.v)                             | Shell process invocation, stdout routing, and folder monitoring                                                |
 | [system_and_stdlib_features_demo.v](demos/system_and_stdlib_features_demo.v) | Exhaustive showcase of V core system operations                                                                |
 | [benchmark_demo.v](demos/benchmark_demo.v)                                   | Wrapper operation latency benchmarks                                                                           |
@@ -1120,7 +1123,54 @@ Full API documentation and detailed signature references are maintained in [API.
 - **Network Tools**: `win.get_local_ip()`, `win.get_external_ip()`, `win.ping(host, count)`, `win.dns_lookup(host)`, `win.get_wifi_ssid()`, `win.get_listening_ports()`, `win.is_internet_connected()`
 - **Resource Monitoring**: `win.get_cpu_usage_percent()`, `win.get_process_memory_mb(pid)`, `win.get_load_average()`, `win.get_memory_pressure()`
 - **macOS System Actions**: `win.show_system_notification()`, `win.say()`, `win.speak_with_voice()`, `win.toggle_dark_mode()`, `win.get_battery_percent()`, `win.get_volume()`, `win.take_screenshot()`, `win.trash_file()`, `win.defaults_read/write`
+- **Cross-Window & External App Control (`simplegui.sys_*`)**: `sys_list_app_windows()`, `sys_get_window(title)`, `sys_order_app_window_front/back(...)`, `sys_set_app_window_visible(...)`, `sys_list_external_apps()`, `sys_spy_external_app(pid)`, `sys_set_external_control_*`, `sys_set_external_app_frontmost(pid)`, `sys_set_external_app_visible(pid, ...)`
 - **Clipboard & Finder**: `win.copy_to_clipboard(text)`, `win.get_clipboard_text()`, `simplegui.clipboard_text()`, `simplegui.reveal_in_finder(path)`
+
+#### Production Automation Quick Start
+
+```v
+module main
+
+import simplegui
+
+fn main() {
+  mut win := simplegui.new_simple_window('Automation Starter', 560, 320)
+
+  win.add_button('btn_refresh', 'List Targets')
+  win.add_button('btn_focus', 'Bring First Target Front')
+  win.add_button('btn_list_controls', 'List External Controls')
+  win.add_console('log', 180)
+
+  win.on_click('btn_refresh', fn (mut w simplegui.SimpleWindow) {
+    titles := simplegui.sys_list_app_windows()
+    apps := simplegui.sys_list_external_apps()
+    w.append_console('log', 'Internal windows: ${titles.len} | External apps: ${apps.len}', 0)
+  })
+
+  win.on_click('btn_focus', fn (mut w simplegui.SimpleWindow) {
+    titles := simplegui.sys_list_app_windows()
+    if titles.len == 0 {
+      w.append_console('log', 'No registered internal windows found.', 0)
+      return
+    }
+    ok := simplegui.sys_order_app_window_front(titles[0])
+    w.append_console('log', 'Bring front "${titles[0]}" => ${ok}', 0)
+  })
+
+  win.on_click('btn_list_controls', fn (mut w simplegui.SimpleWindow) {
+    apps := simplegui.sys_list_external_apps()
+    if apps.len == 0 {
+      w.append_console('log', 'No external desktop apps found.', 0)
+      return
+    }
+    pid := apps[0].pid
+    controls := simplegui.sys_spy_external_app(pid)
+    w.append_console('log', 'PID ${pid} controls discovered: ${controls.len}', 0)
+  })
+
+  win.run()
+}
+```
 
 ### 7. V Standard Library High-Level Wrappers
 

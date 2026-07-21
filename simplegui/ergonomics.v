@@ -93,6 +93,58 @@ pub fn (win &SimpleWindow) disable_all_controls() &SimpleWindow {
 	return win
 }
 
+// batch_enable_controls is an alias for enable_controls.
+pub fn (win &SimpleWindow) batch_enable_controls(names []string) &SimpleWindow {
+	return win.enable_controls(names)
+}
+
+// batch_disable_controls is an alias for disable_controls.
+pub fn (win &SimpleWindow) batch_disable_controls(names []string) &SimpleWindow {
+	return win.disable_controls(names)
+}
+
+// batch_show_controls is an alias for show_controls.
+pub fn (win &SimpleWindow) batch_show_controls(names []string) &SimpleWindow {
+	return win.show_controls(names)
+}
+
+// batch_hide_controls is an alias for hide_controls.
+pub fn (win &SimpleWindow) batch_hide_controls(names []string) &SimpleWindow {
+	return win.hide_controls(names)
+}
+
+// toggle_controls_enabled toggles enabled state for multiple named controls.
+pub fn (win &SimpleWindow) toggle_controls_enabled(names []string) &SimpleWindow {
+	for name in names {
+		win.toggle_control_enabled(name)
+	}
+	return win
+}
+
+// toggle_controls_visible toggles visible state for multiple named controls.
+pub fn (win &SimpleWindow) toggle_controls_visible(names []string) &SimpleWindow {
+	for name in names {
+		win.toggle_control_visible(name)
+	}
+	return win
+}
+
+// flash_controls flashes outlines for multiple named controls.
+pub fn (win &SimpleWindow) flash_controls(names []string) &SimpleWindow {
+	for name in names {
+		win.flash_control(name)
+	}
+	return win
+}
+
+// highlight_controls highlights outlines for multiple named controls for duration_ms.
+pub fn (win &SimpleWindow) highlight_controls(names []string, duration_ms int) &SimpleWindow {
+	for name in names {
+		win.highlight_control(name, duration_ms)
+	}
+	return win
+}
+
 // toggle_visible flips the visibility of a control and returns the new visibility state.
 pub fn (win &SimpleWindow) toggle_visible(name string) bool {
 	new_state := !win.get_control_visible(name)

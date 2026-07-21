@@ -1,6 +1,7 @@
 module simplegui
 
 import os
+import json
 import time
 import net
 import net.http
@@ -2184,4 +2185,262 @@ pub fn speak_with_voice(text string, voice string) {
 // toggle_dark_mode toggles macOS system appearance mode between Light Mode and Dark Mode.
 pub fn toggle_dark_mode() {
 	os.execute_opt('osascript -e \'tell application "System Events" to tell appearance preferences to set dark mode to not dark mode\' &') or {}
+}
+
+// ==========================================
+// Cross-Window Spy++ Application Registry & Remote Control
+// ==========================================
+
+struct WindowRegistry {
+mut:
+	windows map[string]&SimpleWindow
+}
+
+fn get_window_registry() &WindowRegistry {
+	unsafe {
+		mut static reg := &WindowRegistry(nil)
+		if reg == nil {
+			reg = &WindowRegistry{
+				windows: map[string]&SimpleWindow{}
+			}
+		}
+		return reg
+	}
+}
+
+// sys_register_window registers a window in the global application registry for cross-window Spy++ control.
+pub fn sys_register_window(win &SimpleWindow) {
+	mut reg := get_window_registry()
+	reg.windows[win.title] = win
+}
+
+// sys_unregister_window unregisters a window from the global application registry.
+pub fn sys_unregister_window(title string) {
+	mut reg := get_window_registry()
+	reg.windows.delete(title)
+}
+
+// sys_list_app_windows returns titles of all registered application windows.
+pub fn sys_list_app_windows() []string {
+	reg := get_window_registry()
+	mut titles := []string{cap: reg.windows.len}
+	for title, _ in reg.windows {
+		titles << title
+	}
+	return titles
+}
+
+// sys_get_window returns a registered window instance by its title.
+pub fn sys_get_window(title string) ?&SimpleWindow {
+	reg := get_window_registry()
+	win := reg.windows[title] or { return none }
+	return win
+}
+
+// sys_order_app_window_front brings a registered internal window to the front by title.
+pub fn sys_order_app_window_front(title string) bool {
+	win := sys_get_window(title) or { return false }
+	win.order_front()
+	return true
+}
+
+// sys_order_app_window_back sends a registered internal window behind others by title.
+pub fn sys_order_app_window_back(title string) bool {
+	win := sys_get_window(title) or { return false }
+	win.order_back()
+	return true
+}
+
+// sys_set_app_window_visible shows or hides a registered internal window by title.
+pub fn sys_set_app_window_visible(title string, visible bool) bool {
+	win := sys_get_window(title) or { return false }
+	if visible {
+		win.show_window()
+	} else {
+		win.hide()
+	}
+	return true
+}
+
+// sys_spy_window inspects all controls of a registered application window by title.
+pub fn sys_spy_window(title string) ?[]ControlInfo {
+	win := sys_get_window(title) or { return none }
+	return win.spy_controls()
+}
+
+// sys_set_control_enabled sets the enabled state of a control in a target window by window title.
+pub fn sys_set_control_enabled(win_title string, control_name string, enabled bool) bool {
+	win := sys_get_window(win_title) or { return false }
+	win.set_control_enabled(control_name, enabled)
+	return true
+}
+
+// sys_set_control_visible sets the visible state of a control in a target window by window title.
+pub fn sys_set_control_visible(win_title string, control_name string, visible bool) bool {
+	win := sys_get_window(win_title) or { return false }
+	win.set_control_visible(control_name, visible)
+	return true
+}
+
+// sys_set_control_text sets the text/value of a control in a target window by window title.
+pub fn sys_set_control_text(win_title string, control_name string, text string) bool {
+	win := sys_get_window(win_title) or { return false }
+	win.set_control_text(control_name, text)
+	return true
+}
+
+// sys_get_control_text gets the text/value of a control in a target window by window title.
+pub fn sys_get_control_text(win_title string, control_name string) string {
+	win := sys_get_window(win_title) or { return '' }
+	return win.get_control_text(control_name)
+}
+
+// sys_flash_control visually flashes a control outline in a target window by window title.
+pub fn sys_flash_control(win_title string, control_name string) bool {
+	win := sys_get_window(win_title) or { return false }
+	win.flash_control(control_name)
+	return true
+}
+
+// ==========================================
+// Live Cross-Window Event Streaming Bus
+// ==========================================
+
+// SystemEventCallback is the function signature for cross-window event stream observers.
+pub type SystemEventCallback = fn (win_title string, control_name string, event_name string, value string)
+
+struct EventStreamBus {
+mut:
+	subscribers []SystemEventCallback
+}
+
+fn get_event_bus() &EventStreamBus {
+	unsafe {
+		mut static bus := &EventStreamBus(nil)
+		if bus == nil {
+			bus = &EventStreamBus{
+				subscribers: []SystemEventCallback{}
+			}
+		}
+		return bus
+	}
+}
+
+// sys_subscribe_events registers a global callback to receive all live UI events triggered across all simplegui windows.
+pub fn sys_subscribe_events(callback SystemEventCallback) {
+	mut bus := get_event_bus()
+	bus.subscribers << callback
+}
+
+// sys_broadcast_event dispatches an event to all global event stream subscribers.
+pub fn sys_broadcast_event(win_title string, control_name string, event_name string, value string) {
+	bus := get_event_bus()
+	for cb in bus.subscribers {
+		cb(win_title, control_name, event_name, value)
+	}
+}
+
+// ==========================================
+// External macOS Applications Accessibility Inspection (AXUIElement)
+// ==========================================
+
+// ExternalAppInfo represents metadata for a running GUI desktop application on macOS.
+pub struct ExternalAppInfo {
+pub mut:
+	pid       int
+	name      string
+	bundle_id string
+}
+
+// ExternalControlInfo represents metadata for a control inside an external application window.
+pub struct ExternalControlInfo {
+pub mut:
+	role    string
+	title   string
+	value   string
+	enabled bool
+}
+
+// sys_list_external_apps lists all running GUI applications on macOS.
+pub fn sys_list_external_apps() []ExternalAppInfo {
+	unsafe {
+		json_ptr := C.window_list_external_apps()
+		json_str := json_ptr.vstring()
+		if json_str.len == 0 || json_str == '[]' {
+			return []ExternalAppInfo{}
+		}
+		res := json.decode([]ExternalAppInfo, json_str) or { return []ExternalAppInfo{} }
+		return res
+	}
+}
+
+// sys_spy_external_app inspects windows and controls of an external application by PID using macOS AXUIElement.
+pub fn sys_spy_external_app(pid int) []ExternalControlInfo {
+	unsafe {
+		json_ptr := C.window_spy_external_app(pid)
+		json_str := json_ptr.vstring()
+		if json_str.len == 0 || json_str == '[]' {
+			return []ExternalControlInfo{}
+		}
+		res := json.decode([]ExternalControlInfo, json_str) or { return []ExternalControlInfo{} }
+		return res
+	}
+}
+
+// sys_set_external_control_value sets text or value on a control of an external application by PID.
+pub fn sys_set_external_control_value(pid int, control_title string, value string) bool {
+	unsafe {
+		return C.window_set_external_control_value(pid, control_title.str, value.str) == 1
+	}
+}
+
+// sys_press_external_control triggers action/click on a control of an external application by PID.
+pub fn sys_press_external_control(pid int, control_title string) bool {
+	unsafe {
+		return C.window_press_external_control(pid, control_title.str) == 1
+	}
+}
+
+// sys_set_external_control_enabled enables or disables a control in an external application by PID.
+pub fn sys_set_external_control_enabled(pid int, control_title string, enabled bool) bool {
+	unsafe {
+		en_val := if enabled { 1 } else { 0 }
+		return C.window_set_external_control_enabled(pid, control_title.str, en_val) == 1
+	}
+}
+
+// sys_set_external_control_visible shows or hides a control in an external application by PID.
+pub fn sys_set_external_control_visible(pid int, control_title string, visible bool) bool {
+	unsafe {
+		vis_val := if visible { 1 } else { 0 }
+		return C.window_set_external_control_visible(pid, control_title.str, vis_val) == 1
+	}
+}
+
+// sys_flash_external_control draws a temporary visual highlight overlay on screen over an external app control by PID.
+pub fn sys_flash_external_control(pid int, control_title string) bool {
+	unsafe {
+		return C.window_flash_external_control(pid, control_title.str) == 1
+	}
+}
+
+// sys_set_external_app_frontmost requests that an external application process becomes frontmost.
+pub fn sys_set_external_app_frontmost(pid int) bool {
+	if pid <= 0 {
+		return false
+	}
+	cmd := 'osascript -e \'tell application "System Events" to set frontmost of (first process whose unix id is ${pid}) to true\''
+	res := os.execute(cmd)
+	return res.exit_code == 0
+}
+
+// sys_set_external_app_visible shows or hides an external application process.
+pub fn sys_set_external_app_visible(pid int, visible bool) bool {
+	if pid <= 0 {
+		return false
+	}
+	vis := if visible { 'true' } else { 'false' }
+	cmd := 'osascript -e \'tell application "System Events" to set visible of (first process whose unix id is ${pid}) to ${vis}\''
+	res := os.execute(cmd)
+	return res.exit_code == 0
 }

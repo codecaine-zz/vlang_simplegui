@@ -1,10 +1,14 @@
 module simplegui
 
+import strings
+import json
+
 #include <Cocoa/Cocoa.h>
 #include "@VMODROOT/simplegui/window.h"
 #flag -framework Cocoa
 #flag -framework WebKit
 #flag -framework QuartzCore
+#flag -framework ApplicationServices
 #flag @VMODROOT/simplegui/window.m
 
 fn C.window_app_init(&WindowParams) &WindowInfo
@@ -60,6 +64,15 @@ fn C.window_set_control_visible_by_name(&WindowInfo, &u8, int)
 fn C.window_get_control_visible_by_name(&WindowInfo, &u8) int
 fn C.window_set_control_enabled_by_name(&WindowInfo, &u8, int)
 fn C.window_get_control_enabled_by_name(&WindowInfo, &u8) int
+fn C.window_highlight_control_by_name(&WindowInfo, &u8, int)
+fn C.window_flash_control_by_name(&WindowInfo, &u8)
+fn C.window_list_external_apps() &u8
+fn C.window_spy_external_app(int) &u8
+fn C.window_set_external_control_value(int, &u8, &u8) int
+fn C.window_press_external_control(int, &u8) int
+fn C.window_set_external_control_enabled(int, &u8, int) int
+fn C.window_set_external_control_visible(int, &u8, int) int
+fn C.window_flash_external_control(int, &u8) int
 
 // Timers
 fn C.window_set_interval(&WindowInfo, int, &u8)
@@ -646,6 +659,7 @@ mut:
 	controls                     []ControlEntry
 	status_text                  string
 	handlers                     []ControlEventHandler
+	any_event_handlers           []AnyEventCallback
 	background_color             string
 	font_color                   string
 	padding                      int
@@ -720,6 +734,8 @@ mut:
 	expand_fill      bool
 }
 
+pub type AnyEventCallback = fn (mut win SimpleWindow, control_name string, event_name string, value string)
+
 struct ControlEventHandler {
 mut:
 	control_name string
@@ -755,6 +771,7 @@ pub fn new_simple_window(title string, width int, height int) &SimpleWindow {
 	win.grid_rows = map[string][][]string{}
 	win.grid_headers = map[string][]string{}
 	win.ensure_window()
+	sys_register_window(win)
 	return win
 }
 
@@ -4955,12 +4972,30 @@ pub fn (win &SimpleWindow) on_select(name string, callback StringEventCallback) 
 	return win
 }
 
+// on_any_event registers an observer callback that is invoked whenever ANY UI event fires on the window layout.
+pub fn (win &SimpleWindow) on_any_event(callback AnyEventCallback) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.any_event_handlers << callback
+	}
+	return win
+}
+
 // dispatch_event performs dispatch event.
 pub fn (win &SimpleWindow) dispatch_event(name string, event_name string, value string) bool {
 	if win.debug_mode {
 		println('[simplegui DEBUG] Dispatching Event: "${event_name}" on Control: "${name}" (Value: "${value}")')
 		win.set_status('[DEBUG] ${event_name} on "${name}" -> "${value}"')
 	}
+
+	// Broadcast live event to window observers & system subscribers
+	for cb in win.any_event_handlers {
+		unsafe {
+			mut w := &SimpleWindow(win)
+			cb(mut w, name, event_name, value)
+		}
+	}
+	sys_broadcast_event(win.title, name, event_name, value)
 	mut handler_idx := -1
 	if event_name == 'file_drop' {
 		handler_idx = win.find_handler_by_filter(name, event_name, value)
@@ -5232,6 +5267,212 @@ pub fn (win &SimpleWindow) get_control_enabled(name string) bool {
 		return C.window_get_control_enabled_by_name(win.window_info, name.str) == 1
 	}
 	return true
+}
+
+// ==========================================
+// Spy++ Inspection & Control Manipulation APIs
+// ==========================================
+
+// ControlInfo represents detailed inspection metadata for a window control (Spy++ API).
+pub struct ControlInfo {
+pub mut:
+	name             string
+	kind             string
+	label            string
+	value            string
+	checked          bool
+	number           int
+	enabled          bool
+	visible          bool
+	width            int
+	height           int
+	placeholder      string
+	error_text       string
+	tooltip          string
+	background_color string
+	font_color       string
+	font_size        int
+}
+
+// spy_control inspects and returns detailed information about a single control by name.
+pub fn (win &SimpleWindow) spy_control(name string) ?ControlInfo {
+	idx := win.find_control(name)
+	if idx < 0 {
+		return none
+	}
+	ctrl := win.controls[idx]
+	return ControlInfo{
+		name:             ctrl.name
+		kind:             ctrl.kind
+		label:            ctrl.label
+		value:            ctrl.value
+		checked:          ctrl.checked
+		number:           ctrl.number
+		enabled:          ctrl.enabled
+		visible:          ctrl.visible
+		width:            ctrl.width
+		height:           ctrl.height
+		placeholder:      ctrl.placeholder
+		error_text:       ctrl.error_text
+		tooltip:          win.tooltips[name] or { '' }
+		background_color: ctrl.background_color
+		font_color:       ctrl.font_color
+		font_size:        ctrl.font_size
+	}
+}
+
+// spy_controls inspects and returns detailed information about all registered controls in the window.
+pub fn (win &SimpleWindow) spy_controls() []ControlInfo {
+	mut res := []ControlInfo{cap: win.controls.len}
+	for ctrl in win.controls {
+		res << ControlInfo{
+			name:             ctrl.name
+			kind:             ctrl.kind
+			label:            ctrl.label
+			value:            ctrl.value
+			checked:          ctrl.checked
+			number:           ctrl.number
+			enabled:          ctrl.enabled
+			visible:          ctrl.visible
+			width:            ctrl.width
+			height:           ctrl.height
+			placeholder:      ctrl.placeholder
+			error_text:       ctrl.error_text
+			tooltip:          win.tooltips[ctrl.name] or { '' }
+			background_color: ctrl.background_color
+			font_color:       ctrl.font_color
+			font_size:        ctrl.font_size
+		}
+	}
+	return res
+}
+
+// spy_tree returns a formatted visual hierarchy tree of all controls in the window.
+pub fn (win &SimpleWindow) spy_tree() string {
+	mut sb := strings.new_builder(512)
+	sb.write_string('Window: "${win.title}" (${win.width}x${win.height})\n')
+	sb.write_string('├── Controls (${win.controls.len} total):\n')
+	for i, ctrl in win.controls {
+		is_last := i == win.controls.len - 1
+		prefix := if is_last { '└── ' } else { '├── ' }
+		status := if !ctrl.enabled {
+			'[DISABLED]'
+		} else if !ctrl.visible {
+			'[HIDDEN]'
+		} else {
+			'[ACTIVE]'
+		}
+		val := if ctrl.value.len > 0 { ' value="${ctrl.value}"' } else { '' }
+		sb.write_string('│   ${prefix}${ctrl.name} (${ctrl.kind}) ${status}${val}\n')
+	}
+	return sb.str()
+}
+
+// spy_json returns a structured JSON string snapshot of the window and all its controls.
+pub fn (win &SimpleWindow) spy_json() string {
+	ctrls := win.spy_controls()
+	return json.encode(ctrls)
+}
+
+// spy_dump returns a key-value summary map of all control states.
+pub fn (win &SimpleWindow) spy_dump() map[string]string {
+	mut m := map[string]string{}
+	for ctrl in win.controls {
+		state := if ctrl.enabled { 'enabled' } else { 'disabled' }
+		vis := if ctrl.visible { 'visible' } else { 'hidden' }
+		m[ctrl.name] = '${ctrl.kind} | ${state} | ${vis} | val="${ctrl.value}"'
+	}
+	return m
+}
+
+// find_controls returns all controls whose name, kind, or label matches the query string.
+pub fn (win &SimpleWindow) find_controls(query string) []ControlInfo {
+	q := query.to_lower()
+	mut res := []ControlInfo{}
+	all := win.spy_controls()
+	for info in all {
+		if info.name.to_lower().contains(q) || info.kind.to_lower().contains(q)
+			|| info.label.to_lower().contains(q) {
+			res << info
+		}
+	}
+	return res
+}
+
+// enable_control enables the named control (fluent builder).
+pub fn (win &SimpleWindow) enable_control(name string) &SimpleWindow {
+	return win.set_control_enabled(name, true)
+}
+
+// disable_control disables the named control (fluent builder).
+pub fn (win &SimpleWindow) disable_control(name string) &SimpleWindow {
+	return win.set_control_enabled(name, false)
+}
+
+// show_control shows the named control (fluent builder).
+pub fn (win &SimpleWindow) show_control(name string) &SimpleWindow {
+	return win.set_control_visible(name, true)
+}
+
+// hide_control hides the named control (fluent builder).
+pub fn (win &SimpleWindow) hide_control(name string) &SimpleWindow {
+	return win.set_control_visible(name, false)
+}
+
+// toggle_control_enabled toggles the enabled state of the control and returns the new state.
+pub fn (win &SimpleWindow) toggle_control_enabled(name string) bool {
+	curr := win.get_control_enabled(name)
+	win.set_control_enabled(name, !curr)
+	return !curr
+}
+
+// toggle_control_visible toggles the visible state of the control and returns the new state.
+pub fn (win &SimpleWindow) toggle_control_visible(name string) bool {
+	curr := win.get_control_visible(name)
+	win.set_control_visible(name, !curr)
+	return !curr
+}
+
+// is_control_enabled checks if the control is enabled.
+pub fn (win &SimpleWindow) is_control_enabled(name string) bool {
+	return win.get_control_enabled(name)
+}
+
+// is_control_visible checks if the control is visible.
+pub fn (win &SimpleWindow) is_control_visible(name string) bool {
+	return win.get_control_visible(name)
+}
+
+// get_control_text gets the text content/value of a named control.
+pub fn (win &SimpleWindow) get_control_text(name string) string {
+	return win.get(name)
+}
+
+// set_control_text sets the text content/value of a named control.
+pub fn (win &SimpleWindow) set_control_text(name string, text string) &SimpleWindow {
+	win.set(name, text)
+	return win
+}
+
+// get_control_value gets the text value of a named control.
+pub fn (win &SimpleWindow) get_control_value(name string) string {
+	return win.get(name)
+}
+
+// highlight_control highlights the control on screen with a red outline for duration_ms.
+pub fn (win &SimpleWindow) highlight_control(name string, duration_ms int) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_highlight_control_by_name(win.window_info, name.str, duration_ms)
+	}
+	return win
+}
+
+// flash_control flashes the control outline 3 times on screen.
+pub fn (win &SimpleWindow) flash_control(name string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_flash_control_by_name(win.window_info, name.str)
+	}
+	return win
 }
 
 // Timers
