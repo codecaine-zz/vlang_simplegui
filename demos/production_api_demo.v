@@ -14,7 +14,7 @@ fn main() {
 	mut win := simplegui.new_simple_window('SimpleGUI Production API Demo', 960, 700)
 	win.set_padding(14)
 	win.set_spacing(8)
-	win.set_theme('Midnight Space Gray')
+	win.set_theme('Solarized Light')
 
 	win.add_heading('Production Window APIs')
 	win.add_label('intro', 'Showcases clipboard read/write, Finder reveal, frame autosave, screenshot export, and sync main-thread dispatch.')

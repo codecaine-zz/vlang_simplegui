@@ -90,6 +90,6 @@ fn main() {
 		win.set_status('HTML parsing completed.')
 	})
 
-	gui.set_theme('dark')
+	gui.set_theme('GitHub Light')
 	gui.run()
 }

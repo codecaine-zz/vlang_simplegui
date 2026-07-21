@@ -4,7 +4,7 @@ import simplegui
 
 fn main() {
 	mut win := simplegui.new_simple_window('Change Tracking & Validation Demo', 550, 480)
-		.set_theme('dracula')
+		.set_theme('GitHub Dark')
 		.set_padding(20)
 		.set_spacing(12)
 

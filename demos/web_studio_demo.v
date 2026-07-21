@@ -46,10 +46,7 @@ fn main() {
 
 	win.add_separator()
 
-	// Side-by-side pane split: V controls on the left, WebKit Preview on the right
-	win.begin_row('studio_pane')
-	// LEFT COLUMN: Controls Pane
-	win.begin_row('controls_column')
+	// Vertical split: controls first, preview second (improves control visibility)
 	win.group('studio_styles', 'Financial KPI Configurations', fn (mut w simplegui.SimpleWindow) {
 		w.row('comp_row', fn (mut w2 simplegui.SimpleWindow) {
 			w2.add_label('', 'Entity name:').width(90)
@@ -98,23 +95,17 @@ fn main() {
 		w.add_action('btn_report', 'Submit Report', on_report_clicked).width(160)
 		w.end_row()
 	})
-	win.end_row()
 
-	// RIGHT COLUMN: Live WebKit HTML Preview Pane
-	win.begin_row('preview_column')
+	win.add_separator()
 	win.add_html_view('web_preview', compile_html(spec))
-	win.end_row()
-	win.end_row()
 
-	// Explicit layout width/height configurations
-	win.set_control_width('controls_column', 410)
-	win.set_control_height('controls_column', 500)
-	win.set_control_width('preview_column', 410)
-	win.set_control_height('preview_column', 500)
+	// Explicit control sizing for a top-to-bottom layout
+	win.set_control_width('studio_styles', 840)
+	win.set_control_height('studio_styles', 420)
 
 	// Keep handles sized nicely
-	win.set_control_height('web_preview', 480)
-	win.set_control_width('web_preview', 390)
+	win.set_control_height('web_preview', 170)
+	win.set_control_width('web_preview', 840)
 
 	// Connect interactive change event callbacks
 	win.on_change('company_name', on_style_changed)

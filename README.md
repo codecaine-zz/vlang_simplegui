@@ -1176,6 +1176,25 @@ Screenshots are auto-generated using `v run capture_demos.vsh`.
 - **SQLite CRUD Showcase**: `v run demos/sqlite_crud_demo.v`
   ![SQLite CRUD Showcase](screenshots/sqlite_crud_demo.png)
 
+### Additional Major App Demos
+
+- **REST Client API Studio**: `v run demos/rest_client_demo.v`
+  ![REST Client API Studio](screenshots/rest_client_demo.png)
+- **Password Security Dashboard**: `v run demos/password_dashboard.v`
+  ![Password Security Dashboard](screenshots/password_dashboard.png)
+- **Pomodoro Focus Clock**: `v run demos/pomodoro_timer_demo.v`
+  ![Pomodoro Focus Clock](screenshots/pomodoro_timer_demo.png)
+- **Concurrent Worker Pool Visualizer**: `v run demos/worker_pool_visualizer.v`
+  ![Concurrent Worker Pool Visualizer](screenshots/worker_pool_visualizer.png)
+- **Developer Controls Console**: `v run demos/developer_controls_demo.v`
+  ![Developer Controls Console](screenshots/developer_controls_demo.png)
+- **List/Table Toolkit Operations**: `v run demos/list_table_toolkit_demo.v`
+  ![List/Table Toolkit Operations](screenshots/list_table_toolkit_demo.png)
+- **Settings Save/Restore Workflow**: `v run demos/save_restore_demo.v`
+  ![Settings Save/Restore Workflow](screenshots/save_restore_demo.png)
+- **API Coverage Dashboard**: `v run demos/api_coverage_demo.v`
+  ![API Coverage Dashboard](screenshots/api_coverage_demo.png)
+
 ### Layout & Component Showcases
 
 - **Vertical Stack Style (Default Layout)**: `v run demos/stack_style.v`

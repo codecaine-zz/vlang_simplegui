@@ -5,7 +5,7 @@ import time
 
 fn main() {
 	mut win := simplegui.new_simple_window('Date and Time Picker Demo', 500, 450)
-	win.set_theme('nord')
+	win.set_theme('Sonoma Emerald')
 	win.set_padding(20)
 	win.set_spacing(12)
 

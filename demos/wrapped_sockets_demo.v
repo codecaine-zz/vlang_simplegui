@@ -174,6 +174,6 @@ fn main() {
 		win.set_status('Unix socket handshake complete.')
 	})
 
-	gui.set_theme('dark')
+	gui.set_theme('Cyberpunk')
 	gui.run()
 }
