@@ -2032,23 +2032,53 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
     [textView setBackgroundColor:effectiveBackground];
     [textView setTextColor:effectiveFont];
     [textView setWantsLayer:YES];
-  } else if ([view isKindOfClass:[NSButton class]]) {
+  } else if ([view isKindOfClass:[NSButton class]] && ![view isKindOfClass:[NSPopUpButton class]]) {
     NSButton *button = (NSButton *)view;
     NSFont *currFont = button.font;
     CGFloat fSize = currFont ? currFont.pointSize : 13.0;
     [button setFont:[NSFont systemFontOfSize:fSize weight:NSFontWeightMedium]];
     [button setControlSize:NSControlSizeRegular];
 
-    BOOL isCheckboxOrRadio = ![button isBordered] && button.bezelStyle != NSBezelStyleInline;
+    // Classify by the first styling pass and remember it: styling a push
+    // button sets bordered=NO, which previously made every subsequent pass
+    // misclassify it as a checkbox and skip its background entirely
+    // (buttons then kept stale creation-time colors).
+    BOOL isCheckboxOrRadio;
+    NSNumber *storedKind = objc_getAssociatedObject(button, "sg_is_checkbox_like");
+    if (storedKind) {
+      isCheckboxOrRadio = [storedKind boolValue];
+    } else {
+      isCheckboxOrRadio = ![button isBordered] && button.bezelStyle != NSBezelStyleInline;
+      objc_setAssociatedObject(button, "sg_is_checkbox_like", @(isCheckboxOrRadio), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    }
     BOOL isLinkButton = button.bezelStyle == NSBezelStyleInline;
     BOOL isDefaultButton = [button.keyEquivalent isEqualToString:@"\r"];
     
     NSColor *winBg = button.window ? button.window.backgroundColor : nil;
     BOOL isDark = YES;
-    if (winBg && ![winBg isEqual:[NSColor clearColor]]) {
+    // Prefer the actual window background (set by themes) so that control
+    // styling follows the applied theme even when the system appearance
+    // differs (e.g. light theme on a Dark Mode Mac).
+    if (winBg && ![winBg isEqual:[NSColor clearColor]] && winBg.alphaComponent > 0.01) {
       isDark = isDarkColor(winBg);
     } else {
-      isDark = isSystemDark();
+      BOOL resolvedFromAppearance = NO;
+      if (@available(macOS 10.14, *)) {
+        NSAppearance *appearance = button.effectiveAppearance ?: (button.window ? button.window.appearance : nil);
+        if (appearance) {
+          NSAppearanceName best = [appearance bestMatchFromAppearancesWithNames:@[NSAppearanceNameDarkAqua, NSAppearanceNameAqua]];
+          if ([best isEqualToString:NSAppearanceNameDarkAqua]) {
+            isDark = YES;
+            resolvedFromAppearance = YES;
+          } else if ([best isEqualToString:NSAppearanceNameAqua]) {
+            isDark = NO;
+            resolvedFromAppearance = YES;
+          }
+        }
+      }
+      if (!resolvedFromAppearance) {
+        isDark = isSystemDark();
+      }
     }
 
     if (isCheckboxOrRadio && !isLinkButton) {
@@ -2074,7 +2104,12 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
           modButton.baseTextColor = getContrastColor(primaryButtonColor());
           modButton.layer.borderWidth = 0.0;
         } else {
-          if (isDark) {
+          if (backgroundColor) {
+            modButton.baseBackgroundColor = backgroundColor;
+            modButton.baseTextColor = fontColor ?: getContrastColor(backgroundColor);
+            modButton.layer.borderWidth = 1.0;
+            modButton.layer.borderColor = [NSColor separatorColor].CGColor;
+          } else if (isDark) {
             modButton.baseBackgroundColor = [NSColor colorWithSRGBRed:0.22 green:0.22 blue:0.25 alpha:1.0];
             modButton.baseTextColor = fontColor ?: [NSColor colorWithSRGBRed:0.95 green:0.95 blue:0.97 alpha:1.0];
             modButton.layer.borderWidth = 1.0;
@@ -2096,7 +2131,12 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
           button.layer.borderWidth = 0.0;
           setButtonTitleColor(button, getContrastColor(primaryButtonColor()));
         } else {
-          if (isDark) {
+          if (backgroundColor) {
+            button.layer.backgroundColor = backgroundColor.CGColor;
+            button.layer.borderWidth = 1.0;
+            button.layer.borderColor = [NSColor separatorColor].CGColor;
+            setButtonTitleColor(button, fontColor ?: getContrastColor(backgroundColor));
+          } else if (isDark) {
             button.layer.backgroundColor = [NSColor colorWithSRGBRed:0.22 green:0.22 blue:0.25 alpha:1.0].CGColor;
             button.layer.borderWidth = 1.0;
             button.layer.borderColor = [NSColor colorWithSRGBRed:0.35 green:0.35 blue:0.38 alpha:1.0].CGColor;
@@ -2114,18 +2154,41 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
     NSPopUpButton *popup = (NSPopUpButton *)view;
     NSColor *winBg = popup.window ? popup.window.backgroundColor : nil;
     BOOL isDark = YES;
-    if (winBg && ![winBg isEqual:[NSColor clearColor]]) {
+    if (winBg && ![winBg isEqual:[NSColor clearColor]] && winBg.alphaComponent > 0.01) {
       isDark = isDarkColor(winBg);
     } else {
-      isDark = isSystemDark();
+      BOOL resolvedFromAppearance = NO;
+      if (@available(macOS 10.14, *)) {
+        NSAppearance *appearance = popup.effectiveAppearance ?: (popup.window ? popup.window.appearance : nil);
+        if (appearance) {
+          NSAppearanceName best = [appearance bestMatchFromAppearancesWithNames:@[NSAppearanceNameDarkAqua, NSAppearanceNameAqua]];
+          if ([best isEqualToString:NSAppearanceNameDarkAqua]) {
+            isDark = YES;
+            resolvedFromAppearance = YES;
+          } else if ([best isEqualToString:NSAppearanceNameAqua]) {
+            isDark = NO;
+            resolvedFromAppearance = YES;
+          }
+        }
+      }
+      if (!resolvedFromAppearance) {
+        isDark = isSystemDark();
+      }
     }
+    [popup setBordered:NO];
     [popup setFont:[NSFont systemFontOfSize:12 weight:NSFontWeightMedium]];
     [popup setControlSize:NSControlSizeRegular];
     [popup setBezelStyle:NSBezelStyleRounded];
     [popup setWantsLayer:YES];
     popup.layer.cornerRadius = 8.0;
     popup.layer.borderWidth = 1.0;
-    if (isDark) {
+    if (backgroundColor) {
+      popup.layer.backgroundColor = backgroundColor.CGColor;
+      popup.layer.borderColor = [NSColor separatorColor].CGColor;
+      if ([popup respondsToSelector:@selector(setContentTintColor:)]) {
+        [popup setContentTintColor:fontColor ?: getContrastColor(backgroundColor)];
+      }
+    } else if (isDark) {
       popup.layer.backgroundColor = [NSColor colorWithSRGBRed:0.22 green:0.22 blue:0.25 alpha:1.0].CGColor;
       popup.layer.borderColor = [NSColor colorWithSRGBRed:0.35 green:0.35 blue:0.38 alpha:1.0].CGColor;
       if ([popup respondsToSelector:@selector(setContentTintColor:)]) {
@@ -2365,8 +2428,17 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   if (!view) {
     return;
   }
-  NSColor *effectiveBackgroundColor = backgroundColor ?: currentBackgroundColorForView(view) ?: [NSColor clearColor];
-  NSColor *effectiveFontColor = fontColor ?: currentFontColorForView(view) ?: [NSColor labelColor];
+  // Remember explicitly requested colors so that setting only one of
+  // background/font later does not wipe out the other (e.g. a font-color-only
+  // call must not reset an explicitly set button background to clear).
+  if (backgroundColor) {
+    objc_setAssociatedObject(view, "sg_explicit_bg", backgroundColor, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  }
+  if (fontColor) {
+    objc_setAssociatedObject(view, "sg_explicit_font", fontColor, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  }
+  NSColor *effectiveBackgroundColor = backgroundColor ?: objc_getAssociatedObject(view, "sg_explicit_bg") ?: currentBackgroundColorForView(view);
+  NSColor *effectiveFontColor = fontColor ?: objc_getAssociatedObject(view, "sg_explicit_font") ?: currentFontColorForView(view) ?: [NSColor labelColor];
   applyStyleToView(view, effectiveBackgroundColor, effectiveFontColor);
 }
 

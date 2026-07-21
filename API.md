@@ -138,17 +138,23 @@ Returns all 17 built-in production theme preset names:
 
 ### `simplegui.get_theme(theme_name string) Theme`
 
-Retrieves a `Theme` struct configuration matching `theme_name`. Normalization allows flexible lookup (case-insensitive, space/hyphen/underscore tolerant).
+Retrieves a `Theme` struct configuration matching `theme_name`. Normalization allows flexible lookup (case-insensitive, space/hyphen/underscore tolerant). Unknown names fall back to `Apple Light`.
+
+- **`Theme` fields**: `name string`, `background_color string`, `font_color string`, `accent_color string`, `description string`, `is_dark bool`.
+- **Aliases**: short forms work too, e.g. `'light'` → Apple Light, `'dark'` → Apple Dark, `'nord'`, `'dracula'`, `'catppuccin'`.
 
 ### `win.apply_theme(t Theme) &SimpleWindow`
 
-Applies a `Theme` struct configuration directly to the window and controls.
+Applies a `Theme` struct configuration directly to the window and controls. Accepts custom `Theme` values, so you can define your own palettes.
 
 ### `win.set_theme(theme_name string) &SimpleWindow`
 
 Looks up a built-in production theme by name (or alias) and applies its background and font styling to the window and controls.
 
 - **Values**: Accepts any built-in theme name (e.g. `'Apple Light'`, `'Apple Dark'`, `'Midnight Space Gray'`, `'Apple Sunset'`, `'Sonoma Emerald'`, `'Ventura Amber'`, `'Soft Pastel'`, `'Catppuccin'`, `'Nord'`, `'Dracula'`, `'Cyberpunk'`, `'Solarized Light'`, `'Solarized Dark'`, `'GitHub Dark'`, `'GitHub Light'`, `'Navy Blue'`, `'Forest Green'`).
+- **Control styling**: applying a theme restyles every control — buttons, dropdowns, text inputs, textareas, and date pickers derive their light/dark surface colors from the theme's background luminance, not from the macOS system appearance. A light theme therefore renders light controls even on a Mac running system Dark Mode (and vice versa).
+- **Window appearance**: the window's `NSAppearance` (Aqua / Dark Aqua) is switched automatically to match the theme background, so native bezels, menus, and scrollers stay consistent.
+- **Explicit overrides**: per-control colors set with `win.set_control_background_color()` / `win.set_control_font_color()` complement the theme — setting one property never resets the other. Applying a new theme restyles all controls, so re-apply per-control overrides after `set_theme()` when switching palettes at runtime (see [demos/form_color_theme_demo.v](demos/form_color_theme_demo.v)).
 
 ### `win.set_padding(padding int) &SimpleWindow`
 
@@ -969,9 +975,13 @@ Sets a custom font family/name (e.g. `"Courier"`, `"Helvetica"`, or `"Arial"`) f
 
 Sets a custom background color for the individual control.
 
+- **Notes**: The explicit color is remembered — a later `set_control_font_color()` call will not reset it. Applying a theme afterwards restyles the control with theme colors, so re-apply overrides after `set_theme()` if needed.
+
 ### `win.set_control_font_color(name string, hex_color string) &SimpleWindow`
 
 Sets a custom text font color for the individual control.
+
+- **Notes**: Setting only the font color preserves any explicitly set background color (and vice versa).
 
 ### `win.set_control_visible(name string, visible bool) &SimpleWindow`
 
