@@ -3592,12 +3592,18 @@ pub fn (win &SimpleWindow) get_title() string {
 
 // set_title sets the title of the window or target control.
 pub fn (win &SimpleWindow) set_title(text string) &SimpleWindow {
+	old_title := win.title
 	unsafe {
 		mut w := &SimpleWindow(win)
 		w.title = text
 	}
 	if win.window_info != unsafe { nil } {
 		C.window_set_title_text(win.window_info, text.str)
+	}
+	// Keep cross-window registry keys in sync when title changes.
+	if old_title != text {
+		sys_unregister_window(old_title)
+		sys_register_window(win)
 	}
 	return win
 }

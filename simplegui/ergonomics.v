@@ -93,6 +93,33 @@ pub fn (win &SimpleWindow) disable_all_controls() &SimpleWindow {
 	return win
 }
 
+// enable_all is a concise alias for enable_all_controls.
+pub fn (win &SimpleWindow) enable_all() &SimpleWindow {
+	return win.enable_all_controls()
+}
+
+// disable_all is a concise alias for disable_all_controls.
+pub fn (win &SimpleWindow) disable_all() &SimpleWindow {
+	return win.disable_all_controls()
+}
+
+// set_all sets multiple controls from a name->value map.
+pub fn (win &SimpleWindow) set_all(values map[string]string) &SimpleWindow {
+	for name, value in values {
+		win.set_control_text(name, value)
+	}
+	return win
+}
+
+// get_all reads text values for multiple controls into a name->value map.
+pub fn (win &SimpleWindow) get_all(names []string) map[string]string {
+	mut values := map[string]string{}
+	for name in names {
+		values[name] = win.get_control_text(name)
+	}
+	return values
+}
+
 // batch_enable_controls is an alias for enable_controls.
 pub fn (win &SimpleWindow) batch_enable_controls(names []string) &SimpleWindow {
 	return win.enable_controls(names)

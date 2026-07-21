@@ -12166,15 +12166,38 @@ int window_get_control_visible_by_name(main__WindowInfo *info, const char *name)
   return [targetView isHidden] ? 0 : 1;
 }
 
+static void set_control_enabled_recursively(NSView *current, BOOL isEnabled) {
+  if (!current) return;
+
+  if ([current respondsToSelector:@selector(setEnabled:)]) {
+    [(id)current setEnabled:isEnabled];
+  }
+
+  if ([current isKindOfClass:[NSScrollView class]]) {
+    NSView *doc = [(NSScrollView *)current documentView];
+    if (doc) {
+      set_control_enabled_recursively(doc, isEnabled);
+    }
+  }
+
+  if ([current isKindOfClass:[NSStackView class]]) {
+    for (NSView *arranged in [(NSStackView *)current arrangedSubviews]) {
+      set_control_enabled_recursively(arranged, isEnabled);
+    }
+  }
+
+  for (NSView *subview in current.subviews) {
+    set_control_enabled_recursively(subview, isEnabled);
+  }
+}
+
 void window_set_control_enabled_by_name(main__WindowInfo *info, const char *name, int enabled) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
   NSView *view = [delegate viewForControlName:nsstring(name)];
   if (!view) return;
   
   dispatch_async(dispatch_get_main_queue(), ^{
-    if ([view respondsToSelector:@selector(setEnabled:)]) {
-      [(id)view setEnabled:enabled];
-    }
+    set_control_enabled_recursively(view, enabled ? YES : NO);
   });
 }
 
@@ -12410,14 +12433,73 @@ static BOOL helper_ax_matches_target(AXUIElementRef element, NSString *target) {
   return NO;
 }
 
-static BOOL helper_find_and_set_ax_val(AXUIElementRef element, NSString *target, NSString *newVal, int depth) {
+static BOOL helper_ax_matches_target_exact(AXUIElementRef element, NSString *target) {
+  if (!element || !target || target.length == 0) return NO;
+
+  NSString *targetLower = [target lowercaseString];
+
+  CFStringRef titleRef = NULL;
+  if (AXUIElementCopyAttributeValue(element, kAXTitleAttribute, (CFTypeRef *)&titleRef) == kAXErrorSuccess && titleRef) {
+    NSString *title = helper_cf_to_string(titleRef);
+    CFRelease(titleRef);
+    if (title && [title.lowercaseString isEqualToString:targetLower]) {
+      return YES;
+    }
+  }
+
+  CFStringRef roleRef = NULL;
+  if (AXUIElementCopyAttributeValue(element, kAXRoleAttribute, (CFTypeRef *)&roleRef) == kAXErrorSuccess && roleRef) {
+    NSString *role = helper_cf_to_string(roleRef);
+    CFRelease(roleRef);
+    if (role && [role.lowercaseString isEqualToString:targetLower]) {
+      return YES;
+    }
+  }
+
+  CFStringRef descRef = NULL;
+  if (AXUIElementCopyAttributeValue(element, kAXDescriptionAttribute, (CFTypeRef *)&descRef) == kAXErrorSuccess && descRef) {
+    NSString *desc = helper_cf_to_string(descRef);
+    CFRelease(descRef);
+    if (desc && [desc.lowercaseString isEqualToString:targetLower]) {
+      return YES;
+    }
+  }
+
+  CFTypeRef valRef = NULL;
+  if (AXUIElementCopyAttributeValue(element, kAXValueAttribute, &valRef) == kAXErrorSuccess && valRef) {
+    NSString *val = helper_cf_to_string(valRef);
+    CFRelease(valRef);
+    if (val && [val.lowercaseString isEqualToString:targetLower]) {
+      return YES;
+    }
+  }
+
+  return NO;
+}
+
+static BOOL helper_set_ax_text_like_attributes(AXUIElementRef element, NSString *newVal) {
+  if (!element) return NO;
+
+  AXError err = AXUIElementSetAttributeValue(element, kAXValueAttribute, (__bridge CFStringRef)newVal);
+  if (err == kAXErrorSuccess) return YES;
+
+  err = AXUIElementSetAttributeValue(element, kAXTitleAttribute, (__bridge CFStringRef)newVal);
+  if (err == kAXErrorSuccess) return YES;
+
+  err = AXUIElementSetAttributeValue(element, kAXDescriptionAttribute, (__bridge CFStringRef)newVal);
+  if (err == kAXErrorSuccess) return YES;
+
+  return NO;
+}
+
+static BOOL helper_find_and_set_ax_val(AXUIElementRef element, NSString *target, NSString *newVal, int depth, BOOL exactOnly) {
   if (!element || depth > 12) return NO;
 
-  if (helper_ax_matches_target(element, target)) {
-    AXError err = AXUIElementSetAttributeValue(element, kAXValueAttribute, (__bridge CFStringRef)newVal);
-    if (err == kAXErrorSuccess) return YES;
-    err = AXUIElementSetAttributeValue(element, kAXTitleAttribute, (__bridge CFStringRef)newVal);
-    if (err == kAXErrorSuccess) return YES;
+  BOOL matches = exactOnly ? helper_ax_matches_target_exact(element, target) : helper_ax_matches_target(element, target);
+  if (matches) {
+    if (helper_set_ax_text_like_attributes(element, newVal)) {
+      return YES;
+    }
   }
 
   CFArrayRef childrenRef = NULL;
@@ -12426,7 +12508,7 @@ static BOOL helper_find_and_set_ax_val(AXUIElementRef element, NSString *target,
     CFIndex count = CFArrayGetCount(childrenRef);
     for (CFIndex i = 0; i < count; i++) {
       AXUIElementRef child = (AXUIElementRef)CFArrayGetValueAtIndex(childrenRef, i);
-      if (child && helper_find_and_set_ax_val(child, target, newVal, depth + 1)) {
+      if (child && helper_find_and_set_ax_val(child, target, newVal, depth + 1, exactOnly)) {
         found = YES;
         break;
       }
@@ -12444,7 +12526,11 @@ int window_set_external_control_value(int pid, const char *title_or_role, const 
     
     NSString *target = nsstring(title_or_role);
     NSString *newVal = nsstring(value);
-    BOOL res = helper_find_and_set_ax_val(appRef, target, newVal, 0);
+    // Prefer exact target matches first, then fall back to fuzzy matching.
+    BOOL res = helper_find_and_set_ax_val(appRef, target, newVal, 0, YES);
+    if (!res) {
+      res = helper_find_and_set_ax_val(appRef, target, newVal, 0, NO);
+    }
     CFRelease(appRef);
     return res ? 1 : 0;
   }
@@ -12490,20 +12576,22 @@ int window_press_external_control(int pid, const char *title_or_role) {
 static BOOL helper_find_and_set_ax_enabled(AXUIElementRef element, NSString *target, BOOL enabled, int depth) {
   if (!element || depth > 12) return NO;
 
+  BOOL found = NO;
+
   if (helper_ax_matches_target(element, target)) {
     AXError err = AXUIElementSetAttributeValue(element, kAXEnabledAttribute, enabled ? kCFBooleanTrue : kCFBooleanFalse);
-    if (err == kAXErrorSuccess) return YES;
+    if (err == kAXErrorSuccess) {
+      found = YES;
+    }
   }
 
   CFArrayRef childrenRef = NULL;
-  BOOL found = NO;
   if (AXUIElementCopyAttributeValue(element, kAXChildrenAttribute, (CFTypeRef *)&childrenRef) == kAXErrorSuccess && childrenRef) {
     CFIndex count = CFArrayGetCount(childrenRef);
     for (CFIndex i = 0; i < count; i++) {
       AXUIElementRef child = (AXUIElementRef)CFArrayGetValueAtIndex(childrenRef, i);
       if (child && helper_find_and_set_ax_enabled(child, target, enabled, depth + 1)) {
         found = YES;
-        break;
       }
     }
     CFRelease(childrenRef);
@@ -12527,20 +12615,22 @@ int window_set_external_control_enabled(int pid, const char *title_or_role, int 
 static BOOL helper_find_and_set_ax_visible(AXUIElementRef element, NSString *target, BOOL visible, int depth) {
   if (!element || depth > 12) return NO;
 
+  BOOL found = NO;
+
   if (helper_ax_matches_target(element, target)) {
     AXError err = AXUIElementSetAttributeValue(element, kAXHiddenAttribute, visible ? kCFBooleanFalse : kCFBooleanTrue);
-    if (err == kAXErrorSuccess) return YES;
+    if (err == kAXErrorSuccess) {
+      found = YES;
+    }
   }
 
   CFArrayRef childrenRef = NULL;
-  BOOL found = NO;
   if (AXUIElementCopyAttributeValue(element, kAXChildrenAttribute, (CFTypeRef *)&childrenRef) == kAXErrorSuccess && childrenRef) {
     CFIndex count = CFArrayGetCount(childrenRef);
     for (CFIndex i = 0; i < count; i++) {
       AXUIElementRef child = (AXUIElementRef)CFArrayGetValueAtIndex(childrenRef, i);
       if (child && helper_find_and_set_ax_visible(child, target, visible, depth + 1)) {
         found = YES;
-        break;
       }
     }
     CFRelease(childrenRef);
