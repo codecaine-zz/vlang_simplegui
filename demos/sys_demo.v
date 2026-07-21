@@ -50,21 +50,49 @@ fn main() {
 		tab := w.get('section_tabs')
 		spawn fn (mut window simplegui.SimpleWindow, selected_tab string) {
 			match selected_tab {
-				'§1 Exec' { demo_exec(mut window) }
-				'§2 Hardware' { demo_hardware(mut window) }
-				'§3 Paths' { demo_paths(mut window) }
-				'§4 Files' { demo_files(mut window) }
-				'§5 OS API' { demo_os_api(mut window) }
-				'§6 Time' { demo_time(mut window) }
-				'§7 Open' { demo_open(mut window) }
-				'§8 Network' { demo_network(mut window) }
-				'§9 Monitor' { demo_monitor(mut window) }
-				'§10 Shell' { demo_shell(mut window) }
-				'§11 macOS' { demo_macos_info(mut window) }
-				'§12 Process' { demo_process(mut window) }
-				'§13 Extra Sys' { demo_extra_sys(mut window) }
-				else { window.append_console('output', 'Unknown section: ${selected_tab}',
-						1) }
+				'§1 Exec' {
+					demo_exec(mut window)
+				}
+				'§2 Hardware' {
+					demo_hardware(mut window)
+				}
+				'§3 Paths' {
+					demo_paths(mut window)
+				}
+				'§4 Files' {
+					demo_files(mut window)
+				}
+				'§5 OS API' {
+					demo_os_api(mut window)
+				}
+				'§6 Time' {
+					demo_time(mut window)
+				}
+				'§7 Open' {
+					demo_open(mut window)
+				}
+				'§8 Network' {
+					demo_network(mut window)
+				}
+				'§9 Monitor' {
+					demo_monitor(mut window)
+				}
+				'§10 Shell' {
+					demo_shell(mut window)
+				}
+				'§11 macOS' {
+					demo_macos_info(mut window)
+				}
+				'§12 Process' {
+					demo_process(mut window)
+				}
+				'§13 Extra Sys' {
+					demo_extra_sys(mut window)
+				}
+				else {
+					window.append_console('output', 'Unknown section: ${selected_tab}',
+						1)
+				}
 			}
 		}(mut w, tab)
 	})
