@@ -46,6 +46,12 @@ const tab2_controls = [
 	'control_filter_input',
 	'btn_apply_control_filter',
 	'btn_reset_control_filter',
+	'filter_presets_row',
+	'btn_preset_all',
+	'btn_preset_inputs',
+	'btn_preset_buttons',
+	'btn_preset_checks',
+	'btn_preset_lists',
 	'control_tree',
 	'lbl_props_header',
 	'ctrl_detail_text',
@@ -69,6 +75,11 @@ const tab2_controls = [
 
 const tab3_controls = [
 	'pane_automation',
+	'lbl_macro_header',
+	'macro_buttons_row',
+	'btn_macro_autofill',
+	'btn_macro_clear',
+	'btn_macro_toggle_checks',
 	'lbl_watcher_header',
 	'watcher_options_row',
 	'strict_selector_mode',
@@ -101,6 +112,7 @@ const tab4_controls = [
 	'btn_health_check',
 	'btn_self_check',
 	'btn_clear_log',
+	'btn_export_history_csv',
 	'lbl_console_title',
 	'spy_output',
 	'lbl_history_title',
@@ -795,10 +807,27 @@ fn load_controls_for_selected_target(mut win simplegui.SimpleWindow) {
 	}
 	nodes << simplegui.tree_root('root', root_title)
 
+	mut inputs_cnt := 0
+	mut buttons_cnt := 0
+	mut checks_cnt := 0
+	mut lists_cnt := 0
+
 	for i, ctrl in ctrls {
 		node_id := 'sel::${ctrl.name}'
 		node_text := '${ctrl.kind} - ${ctrl.name}'
 		nodes << simplegui.tree_child(node_id, 'root', node_text)
+		
+		kind_lower := ctrl.kind.to_lower()
+		if kind_lower.contains('input') || kind_lower.contains('text') || kind_lower.contains('field') {
+			inputs_cnt++
+		} else if kind_lower.contains('button') {
+			buttons_cnt++
+		} else if kind_lower.contains('check') {
+			checks_cnt++
+		} else if kind_lower.contains('list') || kind_lower.contains('combo') || kind_lower.contains('drop') {
+			lists_cnt++
+		}
+
 		if i == 0 {
 			win.set_control_text('ctrl_name_input', ctrl.name)
 			update_control_details_card(mut win, ctrl)
@@ -808,7 +837,8 @@ fn load_controls_for_selected_target(mut win simplegui.SimpleWindow) {
 	win.set_tree_nodes('control_tree', nodes)
 	win.open_tree('control_tree')
 
-	win.set_text('dashboard_metrics', 'Metrics: Target=${target.name} (${target.scope}) | Discovered Controls=${ctrls.len}')
+	summary_metrics := 'Metrics: Target=${target.name} | Total=${ctrls.len} [Inputs:${inputs_cnt} Buttons:${buttons_cnt} Checks:${checks_cnt} Lists:${lists_cnt}]'
+	win.set_text('dashboard_metrics', summary_metrics)
 	win.append_console('spy_output', '🧩 Loaded ${ctrls.len} controls for ${target.label()}.',
 		0)
 
@@ -1019,7 +1049,7 @@ fn main() {
 	// 2. Create Spy++ Control Center Window (Inspector / Automation Studio)
 	// =========================================================================
 	mut spy_win := simplegui.new_simple_window('SimpleGUI Spy++ Control Center & Automation Studio',
-		1040, 800)
+		1040, 820)
 		.configure(fn (mut cfg simplegui.WindowConfig) {
 			cfg.padding = 18
 			cfg.spacing = 8
@@ -1120,6 +1150,14 @@ fn main() {
 		w.end_row()
 		w.set_control_width('control_filter_input', 420)
 
+		w.begin_row('filter_presets_row')
+		w.add_button('btn_preset_all', 'Filter: All')
+		w.add_button('btn_preset_inputs', 'Filter: Text Fields')
+		w.add_button('btn_preset_buttons', 'Filter: Buttons')
+		w.add_button('btn_preset_checks', 'Filter: Checkboxes')
+		w.add_button('btn_preset_lists', 'Filter: Listboxes')
+		w.end_row()
+
 		w.add_tree_view('control_tree', 210)
 
 		w.add_vertical_spacer(6)
@@ -1157,6 +1195,14 @@ fn main() {
 	// TAB 3: Automation Studio & Code Generator
 	// =========================================================================
 	spy_win.group('pane_automation', 'Automation Studio, Live Watcher & Code Generator', fn (mut w simplegui.SimpleWindow) {
+		w.add_label('lbl_macro_header', '🤖 One-Click Form Macro Automation Workflows:')
+		w.begin_row('macro_buttons_row')
+		w.add_button('btn_macro_autofill', '⚡ Auto-Fill Sample Ticket')
+		w.add_button('btn_macro_clear', '🧹 Reset Form Inputs')
+		w.add_button('btn_macro_toggle_checks', '🔁 Toggle Checkboxes')
+		w.end_row()
+
+		w.add_vertical_spacer(8)
 		w.add_label('lbl_watcher_header', '👀 Control Watcher & Matching Options:')
 		w.begin_row('watcher_options_row')
 		w.add_checkbox('strict_selector_mode', 'Strict selector mode', false)
@@ -1202,6 +1248,7 @@ fn main() {
 		w.add_button('btn_health_check', '🩺 Run Health Check')
 		w.add_button('btn_self_check', '🧪 Run Self-Check Test')
 		w.add_button('btn_clear_log', '🧹 Clear Console Log')
+		w.add_button('btn_export_history_csv', '📊 Export Audit CSV')
 		w.end_row()
 
 		w.add_label('lbl_console_title', 'Live Event & Diagnostic Stream:')
@@ -1244,6 +1291,73 @@ fn main() {
 		w.clear_console('spy_output')
 		w.append_console('spy_output', '🧹 Console log cleared.', 0)
 		w.toast('Logs cleared')
+	})
+
+	// Preset Filter Handlers in Control Inspector
+	spy_win.on_click('btn_preset_all', fn (mut w simplegui.SimpleWindow) {
+		w.set_control_text('control_filter_input', '')
+		load_controls_for_selected_target(mut w)
+		w.toast('Filter reset to All')
+	})
+
+	spy_win.on_click('btn_preset_inputs', fn (mut w simplegui.SimpleWindow) {
+		w.set_control_text('control_filter_input', 'input')
+		load_controls_for_selected_target(mut w)
+		w.toast('Filtered: Text Fields')
+	})
+
+	spy_win.on_click('btn_preset_buttons', fn (mut w simplegui.SimpleWindow) {
+		w.set_control_text('control_filter_input', 'button')
+		load_controls_for_selected_target(mut w)
+		w.toast('Filtered: Buttons')
+	})
+
+	spy_win.on_click('btn_preset_checks', fn (mut w simplegui.SimpleWindow) {
+		w.set_control_text('control_filter_input', 'checkbox')
+		load_controls_for_selected_target(mut w)
+		w.toast('Filtered: Checkboxes')
+	})
+
+	spy_win.on_click('btn_preset_lists', fn (mut w simplegui.SimpleWindow) {
+		w.set_control_text('control_filter_input', 'listbox')
+		load_controls_for_selected_target(mut w)
+		w.toast('Filtered: Listboxes')
+	})
+
+	// Macro Automation Handlers
+	spy_win.on_click('btn_macro_autofill', fn (mut w simplegui.SimpleWindow) {
+		target := selected_target(mut w)
+		w.append_console('spy_output', '🤖 Executing Auto-Fill Macro Workflow on ${target.label()}...', 0)
+		
+		target.set_control_text('customer_name', 'Alice Smith')
+		target.set_control_text('email_address', 'alice.smith@enterprise-corp.com')
+		target.set_control_text('phone_number', '+1 (800) 555-0199')
+		target.set_control_text('support_queue', 'Priority Escalations')
+		target.set_control_text('ticket_notes', 'Urgent priority escalation ticket auto-generated by Spy++ Macro Runner.')
+		target.press_control('btn_submit')
+		
+		log_action(mut w, 'macro_autofill', target.name, '*', 'ok')
+		w.toast('Auto-fill macro completed!')
+		w.append_console('spy_output', '✅ Form filled and support ticket submitted.', 0)
+	})
+
+	spy_win.on_click('btn_macro_clear', fn (mut w simplegui.SimpleWindow) {
+		target := selected_target(mut w)
+		w.append_console('spy_output', '🤖 Executing Reset Form Macro Workflow on ${target.label()}...', 0)
+		target.press_control('btn_reset')
+		log_action(mut w, 'macro_reset', target.name, '*', 'ok')
+		w.toast('Reset form macro completed!')
+		w.append_console('spy_output', '✅ Target form reset.', 0)
+	})
+
+	spy_win.on_click('btn_macro_toggle_checks', fn (mut w simplegui.SimpleWindow) {
+		target := selected_target(mut w)
+		w.append_console('spy_output', '🤖 Toggling form checkboxes on ${target.label()}...', 0)
+		target.press_control('chk_vip')
+		target.press_control('chk_newsletter')
+		log_action(mut w, 'macro_toggle_checkboxes', target.name, '*', 'ok')
+		w.toast('Checkboxes toggled!')
+		w.append_console('spy_output', '✅ Toggled chk_vip and chk_newsletter.', 0)
 	})
 
 	// Target Catalog Event Handlers
@@ -1850,6 +1964,30 @@ fn main() {
 			w.append_console('spy_output', '❌ Failed to save CSV snapshot to ${path}',
 				0)
 			log_action(mut w, 'export_csv', target.name, '-', 'failed')
+		}
+	})
+
+	spy_win.on_click('btn_export_history_csv', fn (mut w simplegui.SimpleWindow) {
+		path := w.save_file_picker()
+		if path.trim_space() == '' {
+			w.append_console('spy_output', 'ℹ️ Export canceled.', 0)
+			return
+		}
+		rows := w.get_table_rows('action_history')
+		mut lines := []string{}
+		lines << 'Time,Action,Target,Control,Result'
+		for r in rows {
+			if r.len >= 5 {
+				lines << '"${r[0]}","${r[1]}","${r[2]}","${r[3]}","${r[4]}"'
+			}
+		}
+		payload := lines.join('\n')
+		w.write_file(path, payload)
+		if w.file_exists(path) {
+			w.append_console('spy_output', '📊 Exported action audit history (${rows.len} entries) to ${path}', 0)
+			w.toast('Exported audit history CSV!')
+		} else {
+			w.append_console('spy_output', '❌ Failed to export audit history to ${path}', 0)
 		}
 	})
 
