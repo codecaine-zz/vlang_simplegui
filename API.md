@@ -2315,6 +2315,9 @@ Rows are tracked automatically for every table, so you can manage them increment
 - `simplegui.min_len_validator(min int) ControlValidator` builds a validator requiring at least `min` characters (whitespace trimmed).
 - `simplegui.max_len_validator(max int) ControlValidator` builds a validator requiring at most `max` characters.
 - `simplegui.range_validator(min f64, max f64) ControlValidator` builds a validator requiring the numeric value of a control to be within `[min, max]`.
+- `simplegui.required_validator() ControlValidator` builds a validator rejecting empty or whitespace-only values.
+- `simplegui.one_of_validator(options []string) ControlValidator` builds a validator requiring the value to be one of the given options (case-insensitive, whitespace trimmed).
+- `simplegui.chain_validators(validators ...ControlValidator) ControlValidator` combines several validators into one; the first non-empty error message wins.
 
 ### Batch Value Access & Reset Helpers
 
@@ -2355,7 +2358,23 @@ Rows are tracked automatically for every table, so you can manage them increment
 
 - `win.copy_control_to_clipboard(name)` copies the text value of a named control to the system clipboard.
 - `win.paste_from_clipboard_to_control(name)` replaces the named control's text with the system clipboard content.
+- `win.copy_list_to_clipboard(name)` copies all list box items to the clipboard, one item per line.
+- `win.copy_table_to_clipboard(name)` copies all table rows to the clipboard as tab-separated lines (paste-ready for spreadsheets).
 - `win.confirm_discard_changes(title, message) bool` prompts the user with a confirmation dialog if the window has unsaved dirty changes, returning `true` if it's safe to proceed.
+
+### Reactive Bindings & Data QoL
+
+- `win.confirm_then(title, question, callback VoidEventCallback) bool` shows a Yes/No dialog and runs the callback only when confirmed; returns `true` when the callback was executed.
+- `win.bind_value_to_label(source, label, prefix, suffix)` mirrors a control's value into a label whenever it changes, rendered as `prefix + value + suffix` (the current value is applied immediately).
+- `win.bind_checkbox_enables(checkbox, names []string)` keeps a group of controls enabled while the checkbox/switch is checked and disabled while unchecked (the current state is applied immediately).
+- `win.bind_char_counter(input, counter_label, max int)` keeps a label updated with `used/max` as the user types and flags the input with an inline error while over the limit.
+- `win.countdown(label, seconds, callback VoidEventCallback)` counts a numeric label down to zero once per second, then stops its timer and invokes the callback.
+- `win.dedupe_list_items(name)` removes duplicate list items, keeping the first occurrence.
+- `win.reverse_list_items(name)` reverses the order of a list box's items.
+- `win.keep_list_items(name, predicate fn (item string) bool)` keeps only the list items matching the predicate (destructive filter).
+- `win.map_list_items(name, f fn (item string) string)` rewrites every list item through the transform function.
+- `win.dedupe_table_rows(name)` removes duplicate table rows (all cells equal), keeping the first occurrence.
+- `win.count_table_rows_where(name, predicate fn (row []string) bool) int` returns how many table rows match the predicate.
 
 ### RAD / DX Ergonomics
 

@@ -1960,3 +1960,198 @@ pub fn (win &SimpleWindow) make_sticky_space() &SimpleWindow {
 pub fn (win &SimpleWindow) shake_on_error() &SimpleWindow {
 	return win.shake_window().flash_frame(true)
 }
+
+// ==========================================
+// 21. Reactive Bindings & Data QoL
+// ==========================================
+
+// confirm_then shows a Yes/No dialog and runs the callback only when the user
+// confirms. Returns true when the callback was executed.
+pub fn (win &SimpleWindow) confirm_then(title string, question string, callback VoidEventCallback) bool {
+	if !win.confirm(title, question) {
+		return false
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		callback(mut w)
+	}
+	return true
+}
+
+// bind_value_to_label mirrors a control's value into a label whenever it
+// changes, rendered as prefix + value + suffix. The current value is applied
+// immediately. Works with any control that fires on_change (sliders, steppers,
+// inputs, dropdowns, checkboxes, ...).
+pub fn (win &SimpleWindow) bind_value_to_label(source string, label string, prefix string, suffix string) &SimpleWindow {
+	win.set_text(label, prefix + win.get_value(source) + suffix)
+	win.on_change(source, fn [label, prefix, suffix] (mut w SimpleWindow, value string) {
+		w.set_text(label, prefix + value + suffix)
+	})
+	return win
+}
+
+// bind_checkbox_enables keeps a group of controls enabled while the checkbox
+// (or switch) is checked and disabled while it is unchecked. The current
+// checkbox state is applied immediately.
+pub fn (win &SimpleWindow) bind_checkbox_enables(checkbox string, names []string) &SimpleWindow {
+	checked := win.get_checked(checkbox)
+	for name in names {
+		win.set_control_enabled(name, checked)
+	}
+	win.on_change(checkbox, fn [checkbox, names] (mut w SimpleWindow, value string) {
+		state := w.get_checked(checkbox)
+		for name in names {
+			w.set_control_enabled(name, state)
+		}
+	})
+	return win
+}
+
+// bind_char_counter keeps a label updated with "used/max" as the user types
+// and flags the input with an inline error while the limit is exceeded.
+pub fn (win &SimpleWindow) bind_char_counter(input string, counter_label string, max int) &SimpleWindow {
+	win.set_text(counter_label, '${win.get_text(input).runes().len}/${max}')
+	win.on_change(input, fn [input, counter_label, max] (mut w SimpleWindow, value string) {
+		used := value.runes().len
+		w.set_text(counter_label, '${used}/${max}')
+		if used > max {
+			w.set_error(input, 'Maximum ${max} characters')
+		} else {
+			w.clear_error(input)
+		}
+	})
+	return win
+}
+
+// countdown counts a numeric label down to zero once per second, then stops
+// its timer and invokes the callback. The label text must hold just the number
+// of remaining seconds (e.g. set it to '10' before calling).
+pub fn (win &SimpleWindow) countdown(label string, seconds int, callback VoidEventCallback) &SimpleWindow {
+	timer_name := 'countdown_${label}'
+	win.set_text(label, '${seconds}')
+	win.set_interval(timer_name, 1000, fn [label, timer_name, callback] (mut w SimpleWindow) {
+		remaining := w.get_text(label).int() - 1
+		w.set_text(label, '${if remaining > 0 { remaining } else { 0 }}')
+		if remaining <= 0 {
+			w.stop_interval(timer_name)
+			callback(mut w)
+		}
+	})
+	return win
+}
+
+// dedupe_list_items removes duplicate list items, keeping the first occurrence.
+pub fn (win &SimpleWindow) dedupe_list_items(name string) &SimpleWindow {
+	items := win.get_list_items(name)
+	mut seen := map[string]bool{}
+	mut unique := []string{cap: items.len}
+	for item in items {
+		if item !in seen {
+			seen[item] = true
+			unique << item
+		}
+	}
+	if unique.len != items.len {
+		win.update_list_items(name, unique)
+	}
+	return win
+}
+
+// reverse_list_items reverses the order of a list box's items.
+pub fn (win &SimpleWindow) reverse_list_items(name string) &SimpleWindow {
+	mut items := win.get_list_items(name)
+	items.reverse_in_place()
+	return win.update_list_items(name, items)
+}
+
+// keep_list_items keeps only the list items matching the predicate
+// (a destructive filter).
+pub fn (win &SimpleWindow) keep_list_items(name string, predicate fn (item string) bool) &SimpleWindow {
+	return win.update_list_items(name, win.get_list_items(name).filter(predicate(it)))
+}
+
+// map_list_items rewrites every list item through the transform function.
+pub fn (win &SimpleWindow) map_list_items(name string, f fn (item string) string) &SimpleWindow {
+	return win.update_list_items(name, win.get_list_items(name).map(f(it)))
+}
+
+// dedupe_table_rows removes duplicate table rows (all cells equal), keeping
+// the first occurrence.
+pub fn (win &SimpleWindow) dedupe_table_rows(name string) &SimpleWindow {
+	rows := win.get_table_rows(name)
+	mut seen := map[string]bool{}
+	mut unique := [][]string{cap: rows.len}
+	for row in rows {
+		key := row.join('\x00')
+		if key !in seen {
+			seen[key] = true
+			unique << row
+		}
+	}
+	if unique.len != rows.len {
+		win.set_table_rows(name, unique)
+	}
+	return win
+}
+
+// count_table_rows_where returns how many table rows match the predicate.
+pub fn (win &SimpleWindow) count_table_rows_where(name string, predicate fn (row []string) bool) int {
+	mut count := 0
+	for row in win.get_table_rows(name) {
+		if predicate(row) {
+			count++
+		}
+	}
+	return count
+}
+
+// copy_list_to_clipboard copies all list box items to the clipboard,
+// one item per line.
+pub fn (win &SimpleWindow) copy_list_to_clipboard(name string) &SimpleWindow {
+	return win.copy_to_clipboard(win.get_list_items(name).join('\n'))
+}
+
+// copy_table_to_clipboard copies all table rows to the clipboard as
+// tab-separated lines — ready to paste into Numbers, Excel, or a spreadsheet.
+pub fn (win &SimpleWindow) copy_table_to_clipboard(name string) &SimpleWindow {
+	return win.copy_to_clipboard(win.get_table_rows(name).map(it.join('\t')).join('\n'))
+}
+
+// required_validator builds a validator that rejects empty or
+// whitespace-only values.
+pub fn required_validator() ControlValidator {
+	return fn (value string) string {
+		if value.trim_space() == '' {
+			return 'This field is required'
+		}
+		return ''
+	}
+}
+
+// one_of_validator builds a validator requiring the value to be one of the
+// given options (case-insensitive, whitespace trimmed).
+pub fn one_of_validator(options []string) ControlValidator {
+	return fn [options] (value string) string {
+		low := value.trim_space().to_lower()
+		for opt in options {
+			if opt.to_lower() == low {
+				return ''
+			}
+		}
+		return 'Must be one of: ${options.join(', ')}'
+	}
+}
+
+// chain_validators combines several validators into a single one; the first
+// non-empty error message wins.
+pub fn chain_validators(validators ...ControlValidator) ControlValidator {
+	return fn [validators] (value string) string {
+		for validator in validators {
+			msg := validator(value)
+			if msg != '' {
+				return msg
+			}
+		}
+		return ''
+	}
+}

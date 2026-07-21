@@ -2687,3 +2687,73 @@ fn test_new_window_control_apis() {
 	assert win.get_movable() == true
 	assert win.is_movable() == true
 }
+
+fn test_reactive_bindings_and_data_qol() {
+	mut win := simplegui.SimpleWindow{}
+
+	// List QoL: dedupe / reverse / keep / map
+	win.add_list_box('lst', ['b', 'a', 'b', 'c', 'a'])
+	win.dedupe_list_items('lst')
+	assert win.get_list_items('lst') == ['b', 'a', 'c']
+	win.reverse_list_items('lst')
+	assert win.get_list_items('lst') == ['c', 'a', 'b']
+	win.keep_list_items('lst', fn (item string) bool {
+		return item != 'a'
+	})
+	assert win.get_list_items('lst') == ['c', 'b']
+	win.map_list_items('lst', fn (item string) string {
+		return item.to_upper()
+	})
+	assert win.get_list_items('lst') == ['C', 'B']
+
+	// Table QoL: dedupe / count_where
+	win.add_table('tbl', ['Name', 'Role'])
+	win.set_table_rows('tbl', [
+		['Ada', 'Engineer'],
+		['Ada', 'Engineer'],
+		['Grace', 'Admiral'],
+		['Alan', 'Engineer'],
+	])
+	win.dedupe_table_rows('tbl')
+	assert win.get_table_row_count('tbl') == 3
+	engineers := win.count_table_rows_where('tbl', fn (row []string) bool {
+		return row[1] == 'Engineer'
+	})
+	assert engineers == 2
+
+	// Validators: required / one_of / chain
+	required := simplegui.required_validator()
+	assert required('') != ''
+	assert required('   ') != ''
+	assert required('x') == ''
+
+	role := simplegui.one_of_validator(['dev', 'admin'])
+	assert role('dev') == ''
+	assert role('ADMIN') == ''
+	assert role('guest') != ''
+
+	chained := simplegui.chain_validators(simplegui.required_validator(), simplegui.one_of_validator([
+		'dev',
+	]))
+	assert chained('') != ''
+	assert chained('ops') != ''
+	assert chained('dev') == ''
+
+	// bind_value_to_label mirrors changes (dispatch_event fires on set_bool/set_text)
+	win.add_slider('vol', 40)
+	win.add_label('vol_lbl', '')
+	win.bind_value_to_label('vol', 'vol_lbl', 'Volume: ', '%')
+	assert win.get_text('vol_lbl') == 'Volume: 40%'
+
+	// bind_checkbox_enables applies the initial checkbox state
+	win.add_checkbox('gate', 'Gate', false)
+	win.add_input('gated_input', 'x')
+	win.bind_checkbox_enables('gate', ['gated_input'])
+	assert win.get_control_enabled('gated_input') == false
+
+	// bind_char_counter seeds the counter label immediately
+	win.add_input('bio', 'hello')
+	win.add_label('bio_count', '')
+	win.bind_char_counter('bio', 'bio_count', 20)
+	assert win.get_text('bio_count') == '5/20'
+}

@@ -3,8 +3,9 @@ module main
 // Ergonomics Helpers Demo
 // Tour of the high-level helpers in simplegui/ergonomics.v:
 // dialog shortcuts, batch control operations, value accessors,
-// list & table row management, timer sugar, quick validation,
-// and settings persistence.
+// list & table row management, reactive bindings (value mirroring,
+// checkbox gating, char counters, countdowns), timer sugar,
+// quick validation, and settings persistence.
 import simplegui
 import os
 
@@ -144,6 +145,33 @@ fn main() {
 				w.info('Selection', 'Selected item: ${text}')
 			}
 		})
+		w.add_action_row({
+			'Dedupe':       fn (mut w simplegui.SimpleWindow) {
+				w.dedupe_list_items('fruits')
+				w.set_status('Removed duplicate list items.')
+			}
+			'Reverse':      fn (mut w simplegui.SimpleWindow) {
+				w.reverse_list_items('fruits')
+				w.set_status('Reversed the list order.')
+			}
+			'Keep A/B':     fn (mut w simplegui.SimpleWindow) {
+				w.keep_list_items('fruits', fn (item string) bool {
+					low := item.to_lower()
+					return low.starts_with('a') || low.starts_with('b')
+				})
+				w.set_status('Kept only items starting with A or B.')
+			}
+			'UPPERCASE':    fn (mut w simplegui.SimpleWindow) {
+				w.map_list_items('fruits', fn (item string) string {
+					return item.to_upper()
+				})
+				w.set_status('Mapped every item to uppercase.')
+			}
+			'Copy to Clip': fn (mut w simplegui.SimpleWindow) {
+				w.copy_list_to_clipboard('fruits')
+				w.toast('List copied to clipboard (one item per line).')
+			}
+		})
 	})
 
 	// 5. Table row management
@@ -215,6 +243,20 @@ fn main() {
 				has := w.has_table_row('crew', 1, 'ADMIRAL')
 					|| w.has_table_row('crew', 1, 'Admiral')
 				w.toast('Has Admiral: ${has}')
+			}
+			'Dedupe Rows':     fn (mut w simplegui.SimpleWindow) {
+				w.dedupe_table_rows('crew')
+				w.set_status('Removed duplicate table rows.')
+			}
+			'Count Recruits':  fn (mut w simplegui.SimpleWindow) {
+				count := w.count_table_rows_where('crew', fn (row []string) bool {
+					return row[1].to_lower().contains('recruit')
+				})
+				w.toast('Recruit rows: ${count}')
+			}
+			'Copy as TSV':     fn (mut w simplegui.SimpleWindow) {
+				w.copy_table_to_clipboard('crew')
+				w.toast('Table copied as tab-separated rows.')
 			}
 		})
 	})
@@ -340,14 +382,17 @@ fn main() {
 		w.add_form_field('IP Address:', 'ip_addr', '192.168.1.1')
 		w.add_form_field('Phone Number:', 'phone_num', '+1 (555) 019-2834')
 		w.add_form_field('Port (10-100):', 'port_num', '80')
+		w.add_form_field('Role (dev/admin/guest):', 'role_field', 'dev')
 		w.add_action_row({
 			'Validate All': fn (mut w simplegui.SimpleWindow) {
 				errors := w.validate_controls({
-					'username':  simplegui.min_len_validator(3)
-					'email':     simplegui.validate_email
-					'ip_addr':   simplegui.validate_ip
-					'phone_num': simplegui.validate_phone
-					'port_num':  simplegui.range_validator(10.0, 100.0)
+					'username':   simplegui.min_len_validator(3)
+					'email':      simplegui.validate_email
+					'ip_addr':    simplegui.validate_ip
+					'phone_num':  simplegui.validate_phone
+					'port_num':   simplegui.range_validator(10.0, 100.0)
+					'role_field': simplegui.chain_validators(simplegui.required_validator(),
+						simplegui.one_of_validator(['dev', 'admin', 'guest']))
 				})
 				if errors.len == 0 {
 					w.toast('All fields valid!')
@@ -356,7 +401,7 @@ fn main() {
 				}
 			}
 			'Clear':        fn (mut w simplegui.SimpleWindow) {
-				w.clear_fields(['username', 'email', 'ip_addr', 'phone_num', 'port_num'])
+				w.clear_fields(['username', 'email', 'ip_addr', 'phone_num', 'port_num', 'role_field'])
 				w.set_status('Fields cleared.')
 			}
 			'Save':         fn (mut w simplegui.SimpleWindow) {
@@ -401,7 +446,49 @@ fn main() {
 		})
 	})
 
-	// 11. Timer sugar: every() heartbeat + after() one-shot
+	// 11. Reactive bindings: value mirroring, checkbox gating, char counters,
+	// confirm-then callbacks, and countdown timers
+	win.group('grp_bindings', 'Reactive Bindings', fn (mut w simplegui.SimpleWindow) {
+		w.row('bind_volume_row', fn (mut w simplegui.SimpleWindow) {
+			w.add_slider('volume', 40)
+			w.add_label('volume_label', '')
+		})
+		w.bind_value_to_label('volume', 'volume_label', 'Volume: ', '%')
+		w.row('bind_gate_row', fn (mut w simplegui.SimpleWindow) {
+			w.add_checkbox('extras_on', 'Enable extras', false)
+			w.add_input('extra_notes', '').width(180).placeholder('Extra notes...')
+			w.add_button('extra_apply', 'Apply')
+		})
+		w.bind_checkbox_enables('extras_on', ['extra_notes', 'extra_apply'])
+		w.row('bind_bio_row', fn (mut w simplegui.SimpleWindow) {
+			w.add_input('bio', '').width(240).placeholder('Short bio (max 20 chars)...')
+			w.add_label('bio_counter', '')
+		})
+		w.bind_char_counter('bio', 'bio_counter', 20)
+		w.row('bind_countdown_row', fn (mut w simplegui.SimpleWindow) {
+			w.add_label('countdown_label', '5')
+			w.add_button('countdown_start', 'Start 5s Countdown')
+		})
+		w.on_click('countdown_start', fn (mut w simplegui.SimpleWindow) {
+			w.countdown('countdown_label', 5, fn (mut w simplegui.SimpleWindow) {
+				w.toast('Countdown finished!')
+			})
+		})
+		w.add_action_row({
+			'Confirm & Reset': fn (mut w simplegui.SimpleWindow) {
+				confirmed := w.confirm_then('Reset?', 'Reset the reactive binding fields?',
+					fn (mut w simplegui.SimpleWindow) {
+					w.clear_many(['extra_notes', 'bio'])
+					w.set_status('Binding fields reset after confirmation.')
+				})
+				if !confirmed {
+					w.set_status('Reset cancelled — nothing changed.')
+				}
+			}
+		})
+	})
+
+	// 12. Timer sugar: every() heartbeat + after() one-shot
 	win.add_label('clock_label', 'Uptime: 0s')
 	win.every(1000, fn (mut w simplegui.SimpleWindow) {
 		seconds := w.get_text('clock_label').replace('Uptime: ', '').replace('s', '').int() + 1
