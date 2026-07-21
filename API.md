@@ -12,6 +12,7 @@ This guide is organized for fast scanning on GitHub and for quick reference whil
 - [4. Control sizing and styling](#4-control-sizing--styling)
 - [5. Dialogs, popups, and file pickers](#5-dialogs-popups--file-pickers)
 - [6. Utilities and system actions](#6-utilities--system-actions)
+- [7. RAD Visual UI Designer & Code Generator API](#7-rad-visual-ui-designer--code-generator-api)
 
 ## Quick start
 
@@ -2697,3 +2698,84 @@ Strict production variants (`!` return type) are also available:
 - `win.add_hotkey_badge(name, shortcut_str, description)` / `win.set_hotkey_badge_shortcut(name, shortcut_str, description)`: macOS metallic keycap hotkey display badge paired with description text.
 - `win.on_shortcut(shortcut_str, callback)`: Registers a global keyboard shortcut handler using flexible formats (e.g. `'cmd+shift+p'`, `'Cmd+Shift+P'`, `'⌘+⇧+P'`, `'⌘K'`). Automatically normalizes modifier tokens and suppresses standard unhandled alert beeps when triggered.
 - `simplegui.normalize_key_shortcut(input)`: Utility function converting shortcut notation variants into canonical format (`cmd+shift+p`).
+
+---
+
+## 7. RAD Visual UI Designer & Code Generator API
+
+SimpleGUI includes a Delphi/VB/Lazarus-inspired **Visual UI Designer Engine** ([simplegui/designer.v](file:///Users/codecaine/vlang_simplegui/simplegui/designer.v)) and executable RAD Studio workspace ([ui_designer.v](file:///Users/codecaine/vlang_simplegui/ui_designer.v) and [demos/ui_designer.v](file:///Users/codecaine/vlang_simplegui/demos/ui_designer.v)).
+
+### Structs
+
+#### `ControlSpec`
+Represents a single GUI control component on the visual design canvas.
+
+```v
+pub struct ControlSpec {
+pub mut:
+	id               string
+	control_type     string // 'button', 'label', 'input', 'password', 'textarea', 'checkbox', 'switch', 'slider', 'mode', 'number', 'date', 'color', 'progress', 'image', 'table', 'panel', 'radio', 'divider', 'badge', 'search'
+	x                int
+	y                int
+	width            int    = 140
+	height           int    = 36
+	text             string = 'Control'
+	font_size        int    = 13
+	font_color       string = '#ffffff'
+	background_color string = '#1e293b'
+	placeholder      string
+	min_val          int
+	max_val          int  = 100
+	value            int  = 50
+	enabled          bool = true
+	visible          bool = true
+	checked          bool
+	locked           bool
+	event_handlers   map[string]string
+}
+```
+
+#### `FormSpec`
+Represents a complete window form layout specification with global dimensions, themes, and controls.
+
+```v
+pub struct FormSpec {
+pub mut:
+	title            string = 'Delphi/VB RAD Form Studio'
+	width            int    = 840
+	height           int    = 560
+	background_color string = '#0f172a'
+	font_color       string = '#f8fafc'
+	padding          int    = 20
+	spacing          int    = 12
+	controls         []ControlSpec
+}
+```
+
+### Core API Functions
+
+#### `(f FormSpec) to_json() string`
+Encodes a `FormSpec` object into a JSON string layout representation.
+
+#### `simplegui.form_spec_from_json(js string) FormSpec`
+Parses a JSON layout string into a `FormSpec` object.
+
+#### `simplegui.generate_v_code(spec FormSpec) string`
+Generates clean, idiomatic V source code targeting `simplegui` from a `FormSpec` design, including RAD event handler callback stubs.
+
+#### `simplegui.compile_designer_html(spec FormSpec) string`
+Compiles an interactive HTML5/CSS3/JavaScript visual design studio canvas containing:
+- **Undo (`Cmd+Z`) & Redo (`Cmd+Y`) Engine**: Snapshot history stack for all canvas modifications.
+- **Component Tree Inspector Tab**: Hierarchical control tree for layer z-index re-ordering (`Move Up`/`Move Down`) and locking.
+- **Marquee Selection Box**: Drag-select multiple controls on canvas; hold `Shift` for toggle selection.
+- **Alignment & Distribute Tools**: `Align Left`, `Center`, `Right`, `Top`, `Middle`, `Bottom`, `Distribute Horizontally/Vertically`, `Equal Width/Height`.
+- **Smart Snap Alignment Guides**: Red guide lines snapping control edges and centers.
+- **Arrow Key Nudge Movement**: Fine-tune position using keyboard arrow keys (`1px`, `8px` with `Shift`).
+- **Layout JSON Import / Export**: Import custom JSON layout specs or copy generated V code.
+
+#### Form Template Preset Helpers
+- `simplegui.get_default_form_spec() FormSpec`: Customer Account Registration Form layout preset.
+- `simplegui.get_login_form_spec() FormSpec`: User Authentication Sign-In Dialog layout preset.
+- `simplegui.get_dashboard_form_spec() FormSpec`: Executive KPI Performance Dashboard layout preset.
+- `simplegui.get_settings_form_spec() FormSpec`: Application Settings & Preferences Studio layout preset.
+

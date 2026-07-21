@@ -22,13 +22,15 @@ fn main() {
 		.set_spacing(6)
 
 	win.add_heading('RAD Studio Workspace')
-	win.add_label('workspace_intro', 'Design forms in a familiar RAD flow: pick a template, tune the properties, and preview the result instantly.')
+	win.add_label('workspace_intro', 'Design forms in a familiar RAD flow: pick a template, tune properties, drag components, and preview live windows.')
 	win.set_control_font_size('workspace_intro', 11)
 
 	win.add_toolbar_item('tb_login', 'Auth Login Template', 'Load Login Form layout',
 		'lock.shield')
 	win.add_toolbar_item('tb_dash', 'Dashboard Template', 'Load KPI Analytics Dashboard',
 		'chart.bar.fill')
+	win.add_toolbar_item('tb_settings', 'Settings Template', 'Load System Settings layout',
+		'gearshape.fill')
 	win.add_toolbar_item('tb_code', 'Copy V Code', 'Copy generated V code to clipboard',
 		'doc.on.doc')
 	win.add_toolbar_item('tb_run', 'Test Run Form', 'Launch live interactive window preview',
@@ -50,6 +52,15 @@ fn main() {
 		w.set_text('form_title', state.spec.title)
 		w.toast('Loaded dashboard layout')
 		w.set_status('Dashboard template loaded.')
+	})
+
+	win.on_toolbar_click('tb_settings', fn [mut state] (mut w simplegui.SimpleWindow) {
+		state.spec = simplegui.get_settings_form_spec()
+		w.set_html('designer_canvas', simplegui.compile_designer_html(state.spec))
+		w.set_text('code_preview', simplegui.generate_v_code(state.spec))
+		w.set_text('form_title', state.spec.title)
+		w.toast('Loaded settings layout')
+		w.set_status('Settings template loaded.')
 	})
 
 	win.on_toolbar_click('tb_code', fn [state] (mut w simplegui.SimpleWindow) {
@@ -82,6 +93,14 @@ fn main() {
 		w.toast('Loaded dashboard layout')
 		w.set_status('Dashboard template loaded.')
 	})
+	win.add_action('btn_settings_tpl', 'Settings Template', fn [mut state] (mut w simplegui.SimpleWindow) {
+		state.spec = simplegui.get_settings_form_spec()
+		w.set_html('designer_canvas', simplegui.compile_designer_html(state.spec))
+		w.set_text('code_preview', simplegui.generate_v_code(state.spec))
+		w.set_text('form_title', state.spec.title)
+		w.toast('Loaded settings layout')
+		w.set_status('Settings template loaded.')
+	})
 	win.add_action('btn_code_tpl', 'Export V Code', fn [state] (mut w simplegui.SimpleWindow) {
 		code := simplegui.generate_v_code(state.spec)
 		w.copy_to_clipboard(code)
@@ -99,7 +118,7 @@ fn main() {
 	win.add_vertical_spacer(6)
 
 	win.group('design_pane', 'Design Surface', fn [state] (mut w simplegui.SimpleWindow) {
-		w.add_label('design_hint', 'Use the toolbar or quick buttons to switch templates, then arrange the form in a familiar visual designer workflow.')
+		w.add_label('design_hint', 'Use the toolbar or quick buttons to switch templates, drag components, align controls, or undo/redo actions.')
 		w.set_control_font_size('design_hint', 11)
 		w.add_html_view('designer_canvas', simplegui.compile_designer_html(state.spec))
 		w.set_control_width('designer_canvas', 1200)
@@ -110,8 +129,8 @@ fn main() {
 		w.add_form_field('Form Title', 'form_title', state.spec.title)
 		w.add_form_dropdown('Layout', 'layout_mode', ['Classic', 'Modern', 'Compact'],
 			'Modern')
-		w.add_form_dropdown('Theme', 'theme_mode', ['Dark', 'Light', 'High Contrast', 'Cyberpunk', 'Midnight'],
-			'Dark')
+		w.add_form_dropdown('Theme', 'theme_mode', ['Dark', 'Light', 'High Contrast', 'Cyberpunk',
+			'Midnight'], 'Dark')
 		w.add_form_dropdown('Alignment', 'align_mode', ['Left', 'Center', 'Right'], 'Center')
 		w.add_toggle('responsive_mode', 'Responsive layout', true)
 		w.add_action('apply_properties', 'Apply Properties', fn [mut state] (mut w simplegui.SimpleWindow) {
@@ -123,7 +142,6 @@ fn main() {
 
 			state.spec.title = title
 
-			// Update Layout padding, spacing & window dimensions
 			if layout == 'Classic' {
 				state.spec.padding = 24
 				state.spec.spacing = 16
@@ -141,7 +159,6 @@ fn main() {
 				state.spec.height = 560
 			}
 
-			// Update Theme colors
 			if theme == 'Light' {
 				state.spec.background_color = '#f8fafc'
 				state.spec.font_color = '#0f172a'
@@ -159,15 +176,22 @@ fn main() {
 				state.spec.font_color = '#f8fafc'
 			}
 
-			// Update Control Alignment
 			for idx in 0 .. state.spec.controls.len {
 				mut ctrl := state.spec.controls[idx]
 				if align == 'Left' {
 					ctrl.x = 24
 				} else if align == 'Right' {
-					ctrl.x = if state.spec.width - ctrl.width - 24 > 10 { state.spec.width - ctrl.width - 24 } else { 10 }
+					ctrl.x = if state.spec.width - ctrl.width - 24 > 10 {
+						state.spec.width - ctrl.width - 24
+					} else {
+						10
+					}
 				} else if align == 'Center' {
-					ctrl.x = if (state.spec.width - ctrl.width) / 2 > 10 { (state.spec.width - ctrl.width) / 2 } else { 10 }
+					ctrl.x = if (state.spec.width - ctrl.width) / 2 > 10 {
+						(state.spec.width - ctrl.width) / 2
+					} else {
+						10
+					}
 				}
 				state.spec.controls[idx] = ctrl
 			}
@@ -235,6 +259,8 @@ fn main() {
 				state.spec = simplegui.get_login_form_spec()
 			} else if tpl == 'dash' {
 				state.spec = simplegui.get_dashboard_form_spec()
+			} else if tpl == 'settings' {
+				state.spec = simplegui.get_settings_form_spec()
 			} else {
 				state.spec = simplegui.get_default_form_spec()
 			}
@@ -251,8 +277,8 @@ fn main() {
 }
 
 fn launch_preview_window(spec simplegui.FormSpec) {
-	mut prev_win := simplegui.new_simple_window('Live Test Run: ${spec.title}',
-		spec.width, spec.height)
+	mut prev_win := simplegui.new_simple_window('Live Test Run: ${spec.title}', spec.width,
+		spec.height)
 
 	bg_col := if spec.background_color.len > 0 { spec.background_color } else { '#0f172a' }
 	font_col := if spec.font_color.len > 0 { spec.font_color } else { '#f8fafc' }
@@ -273,6 +299,9 @@ fn launch_preview_window(spec simplegui.FormSpec) {
 	})
 
 	for c in sorted_controls {
+		if !c.visible {
+			continue
+		}
 		match c.control_type {
 			'button' {
 				prev_win.add_button(c.id, c.text)
@@ -301,16 +330,43 @@ fn launch_preview_window(spec simplegui.FormSpec) {
 			'progress' {
 				prev_win.add_progress_indicator(c.id, c.value)
 			}
+			'panel' {
+				prev_win.add_heading('📦 ${c.text}')
+			}
+			'radio' {
+				prev_win.add_checkbox(c.id, '🔘 ${c.text}', c.checked)
+			}
+			'divider' {
+				prev_win.add_vertical_spacer(6)
+			}
+			'badge' {
+				prev_win.add_label(c.id, '🏷️ ${c.text}')
+			}
+			'search' {
+				prev_win.add_input(c.id, c.text)
+			}
 			else {
 				prev_win.add_button(c.id, c.text)
 			}
 		}
 
+		if c.width > 0 {
+			prev_win.set_control_width(c.id, c.width)
+		}
+		if c.height > 0 {
+			prev_win.set_control_height(c.id, c.height)
+		}
+		if c.font_size > 0 && c.font_size != 13 {
+			prev_win.set_control_font_size(c.id, c.font_size)
+		}
 		if c.font_color.len > 0 {
 			prev_win.set_control_font_color(c.id, c.font_color)
 		}
-		if c.background_color.len > 0 && c.background_color != '#1e293b' {
+		if c.background_color.len > 0 {
 			prev_win.set_control_background_color(c.id, c.background_color)
+		}
+		if !c.enabled {
+			prev_win.set_control_enabled(c.id, false)
 		}
 	}
 

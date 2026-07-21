@@ -22,13 +22,15 @@ fn main() {
 		.set_spacing(6)
 
 	win.add_heading('RAD Studio Workspace')
-	win.add_label('workspace_intro', 'Design forms in a familiar RAD flow: pick a template, tune the properties, and preview the result instantly.')
+	win.add_label('workspace_intro', 'Design forms in a familiar RAD flow: pick a template, tune properties, drag components, and preview live windows.')
 	win.set_control_font_size('workspace_intro', 11)
 
 	win.add_toolbar_item('tb_login', 'Auth Login Template', 'Load Login Form layout',
 		'lock.shield')
 	win.add_toolbar_item('tb_dash', 'Dashboard Template', 'Load KPI Analytics Dashboard',
 		'chart.bar.fill')
+	win.add_toolbar_item('tb_settings', 'Settings Template', 'Load System Settings layout',
+		'gearshape.fill')
 	win.add_toolbar_item('tb_code', 'Copy V Code', 'Copy generated V code to clipboard',
 		'doc.on.doc')
 	win.add_toolbar_item('tb_run', 'Test Run Form', 'Launch live interactive window preview',
@@ -46,6 +48,13 @@ fn main() {
 		w.set_html('designer_canvas', simplegui.compile_designer_html(state.spec))
 		w.toast('Loaded dashboard layout')
 		w.set_status('Dashboard template loaded.')
+	})
+
+	win.on_toolbar_click('tb_settings', fn [mut state] (mut w simplegui.SimpleWindow) {
+		state.spec = simplegui.get_settings_form_spec()
+		w.set_html('designer_canvas', simplegui.compile_designer_html(state.spec))
+		w.toast('Loaded settings layout')
+		w.set_status('Settings template loaded.')
 	})
 
 	win.on_toolbar_click('tb_code', fn [state] (mut w simplegui.SimpleWindow) {
@@ -87,6 +96,8 @@ fn main() {
 				state.spec = simplegui.get_login_form_spec()
 			} else if tpl == 'dash' {
 				state.spec = simplegui.get_dashboard_form_spec()
+			} else if tpl == 'settings' {
+				state.spec = simplegui.get_settings_form_spec()
 			} else {
 				state.spec = simplegui.get_default_form_spec()
 			}
@@ -99,13 +110,13 @@ fn main() {
 	win.set_control_width('designer_canvas', 1350)
 	win.set_control_height('designer_canvas', 840)
 
-	win.set_status('Delphi/VB/Lazarus RAD Studio loaded. Ready for visual layout design.')
+	win.set_status('Delphi/VB/Lazarus RAD Studio loaded. Full Undo/Redo, Marquee Selection, Component Tree, and Smart Alignment Guides ready.')
 	win.run()
 }
 
 fn launch_preview_window(spec simplegui.FormSpec) {
-	mut prev_win := simplegui.new_simple_window('Live Test Run: ${spec.title}',
-		spec.width, spec.height)
+	mut prev_win := simplegui.new_simple_window('Live Test Run: ${spec.title}', spec.width,
+		spec.height)
 
 	bg_col := if spec.background_color.len > 0 { spec.background_color } else { '#0f172a' }
 	font_col := if spec.font_color.len > 0 { spec.font_color } else { '#f8fafc' }
@@ -126,6 +137,9 @@ fn launch_preview_window(spec simplegui.FormSpec) {
 	})
 
 	for c in sorted_controls {
+		if !c.visible {
+			continue
+		}
 		match c.control_type {
 			'button' {
 				prev_win.add_button(c.id, c.text)
@@ -154,16 +168,43 @@ fn launch_preview_window(spec simplegui.FormSpec) {
 			'progress' {
 				prev_win.add_progress_indicator(c.id, c.value)
 			}
+			'panel' {
+				prev_win.add_heading('📦 ${c.text}')
+			}
+			'radio' {
+				prev_win.add_checkbox(c.id, '🔘 ${c.text}', c.checked)
+			}
+			'divider' {
+				prev_win.add_vertical_spacer(6)
+			}
+			'badge' {
+				prev_win.add_label(c.id, '🏷️ ${c.text}')
+			}
+			'search' {
+				prev_win.add_input(c.id, c.text)
+			}
 			else {
 				prev_win.add_button(c.id, c.text)
 			}
 		}
 
+		if c.width > 0 {
+			prev_win.set_control_width(c.id, c.width)
+		}
+		if c.height > 0 {
+			prev_win.set_control_height(c.id, c.height)
+		}
+		if c.font_size > 0 && c.font_size != 13 {
+			prev_win.set_control_font_size(c.id, c.font_size)
+		}
 		if c.font_color.len > 0 {
 			prev_win.set_control_font_color(c.id, c.font_color)
 		}
-		if c.background_color.len > 0 && c.background_color != '#1e293b' {
+		if c.background_color.len > 0 {
 			prev_win.set_control_background_color(c.id, c.background_color)
+		}
+		if !c.enabled {
+			prev_win.set_control_enabled(c.id, false)
 		}
 	}
 

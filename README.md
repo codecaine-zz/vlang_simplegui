@@ -86,6 +86,18 @@ The goal is a simple, high-abstraction GUI layer that feels familiar to anyone u
   - Native production utilities for app state and OS integration: window frame autosave/restore (`set_frame_autosave_name`, `save_frame`, `restore_frame`), window PNG capture (`capture_screenshot`), clipboard read/write (`copy_to_clipboard`, `get_clipboard_text`, `simplegui.clipboard_text()`), and Finder reveal (`simplegui.reveal_in_finder(path)`).
 - **Native Keyboard Shortcuts & Overlay Levels**:
   - `CMD + F` for full screen, `CMD + Q` to quit, custom shortcut recorder widget, and window always-on-top level control.
+- **RAD Visual UI Designer & Code Generator**:
+  - Delphi/VB/Lazarus-inspired drag-and-drop visual design studio (`v run ui_designer.v` or `v run demos/ui_designer.v`).
+  - Full Undo (`Cmd+Z`) and Redo (`Cmd+Y`) state history engine.
+  - Component Tree / Object Hierarchy inspector tab for z-index layer ordering (`Move Up`/`Move Down`) and locking (`Lock`/`Unlock`).
+  - Marquee drag selection box & `Shift`-click multi-selection with group movement and batch property editing.
+  - Full alignment and distribution toolbar (`Align Left`, `Center`, `Right`, `Top`, `Middle`, `Bottom`, `Distribute Horizontally/Vertically`, `Equal Width/Height`).
+  - Smart snap alignment guide lines for instant pixel-perfect layout alignment.
+  - Arrow key nudge controls (`1px`, or `8px` with `Shift`).
+  - 19+ Supported component types: buttons, labels, inputs, password fields, textareas, checkboxes, switches, sliders, progress indicators, panel boxes, radio buttons, separators, status badges, search inputs, data grids, color wells, date pickers.
+  - Pre-loaded layout presets: Customer Registration, Auth Login, KPI Dashboard, and Settings Studio.
+  - One-click V source code generator producing clean `simplegui` code with event handler callback stubs.
+  - Import / Export JSON layout specs and launch live native preview test windows (`launch_preview_window`).
 
 The developer controls demo in [demos/developer_controls_demo.v](demos/developer_controls_demo.v) showcases these richer UI helpers in one place, while [demos/editable_grid_showcase_demo.v](demos/editable_grid_showcase_demo.v) demonstrates the editable-grid workflow with selection, filtering, sorting, and programmatic cell access.
 
@@ -542,6 +554,7 @@ v run .
 
 | Demo                                                           | Description                                                                 |
 | -------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| [ui_designer.v](ui_designer.v)                                 | Delphi & VB-inspired Visual RAD Designer studio & V code generator          |
 | [starter_template.v](demos/starter_template.v)                 | Minimal starter app for new developers                                      |
 | [beginner_demo.v](demos/beginner_demo.v)                       | Beginner-friendly signup form and profile builder                           |
 | [vertical_stack_starter.v](demos/vertical_stack_starter.v)     | Best-practice template for vertical stack forms                             |
