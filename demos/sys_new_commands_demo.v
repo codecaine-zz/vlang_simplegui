@@ -262,8 +262,8 @@ fn demo_production_helpers(mut w simplegui.SimpleWindow) {
 		log_err(mut w, 'wait_for_file timed out for ${reliable_file}')
 	}
 
-	log(mut w, 'wait_for_port("google.com", 443)', '${w.wait_for_port('google.com', 443, 2000,
-		100)}')
+	log(mut w, 'wait_for_port("google.com", 443)', '${w.wait_for_port('google.com', 443,
+		2000, 100)}')
 	w.delete_file(reliable_file)
 }
 

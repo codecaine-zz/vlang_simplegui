@@ -28,17 +28,31 @@ fn parse_hex_color(hex string) Rgb {
 		c = c[1..]
 	}
 	if c.len != 6 {
-		return Rgb{r: 255, g: 255, b: 255}
+		return Rgb{
+			r: 255
+			g: 255
+			b: 255
+		}
 	}
 	r := hex_value(c[0]) * 16 + hex_value(c[1])
 	g := hex_value(c[2]) * 16 + hex_value(c[3])
 	b := hex_value(c[4]) * 16 + hex_value(c[5])
-	return Rgb{r: r, g: g, b: b}
+	return Rgb{
+		r: r
+		g: g
+		b: b
+	}
 }
 
 fn to_hex_byte(n int) string {
 	hex := '0123456789abcdef'
-	v := if n < 0 { 0 } else if n > 255 { 255 } else { n }
+	v := if n < 0 {
+		0
+	} else if n > 255 {
+		255
+	} else {
+		n
+	}
 	return '${hex[v / 16].ascii_str()}${hex[v % 16].ascii_str()}'
 }
 
@@ -88,11 +102,17 @@ fn pick_readable_text(background string, preferred string) string {
 fn blend_hex(base string, overlay string, amount f64) string {
 	b := parse_hex_color(base)
 	o := parse_hex_color(overlay)
-	a := if amount < 0.0 { 0.0 } else if amount > 1.0 { 1.0 } else { amount }
+	a := if amount < 0.0 {
+		0.0
+	} else if amount > 1.0 {
+		1.0
+	} else {
+		amount
+	}
 	r := int((f64(b.r) * (1.0 - a)) + (f64(o.r) * a))
 	g := int((f64(b.g) * (1.0 - a)) + (f64(o.g) * a))
 	bv := int((f64(b.b) * (1.0 - a)) + (f64(o.b) * a))
-	return rgb_to_hex(Rgb{r: r, g: g, b: bv})
+	return rgb_to_hex(Rgb{ r: r, g: g, b: bv })
 }
 
 fn apply_theme_presentation(mut w simplegui.SimpleWindow, theme_name string) {

@@ -571,7 +571,7 @@ For common forms, these helpers reduce boilerplate and keep the API friendly for
 - `win.add_form_textarea(label string, name string, value string) &SimpleWindow` creates a label plus textarea in a row.
 - `win.add_form_password(label string, name string, value string) &SimpleWindow` creates a label plus password field in a row.
 - `win.add_form_slider(label string, name string, value int) &SimpleWindow` creates a label plus slider in a row.
-- `win.add_form_number(label string, name string, value int) &SimpleWindow` creates a label plus stepper number field in a row.
+- `win.add_form_number(label string, name string, value int) &SimpleWindow` creates a label plus stepper number field in a row. While the field is focused, pressing Up/Down arrows increments/decrements the integer value by 1 by default.
 - `win.add_form_dropdown(label string, name string, items []string, selected string) &SimpleWindow` creates a label plus dropdown selection in a row.
 - `win.add_form_date_picker(label string, name string, date string) &SimpleWindow` creates a label plus date picker in a row.
 - `win.add_form_progress(label string, name string, value int) &SimpleWindow` creates a label plus progress indicator in a row.
@@ -683,6 +683,8 @@ Adds a clickable push button.
 ### `win.add_number(name string, value int) &SimpleWindow`
 
 Adds a numeric input field bound to an increment/decrement stepper.
+
+- **Keyboard behavior**: when focused, `Up` increases and `Down` decreases the value by the step size (default `1`).
 
 ### `win.add_slider(name string, value int) &SimpleWindow`
 

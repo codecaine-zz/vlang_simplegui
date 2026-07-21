@@ -58,9 +58,7 @@ fn test_tree_view_helpers_support_crud_and_paths() {
 	assert win.get_tree_nodes('org').len == 5
 	assert win.has_tree_node('org', 'backend') == true
 
-	backend := win.get_tree_node('org', 'backend') or {
-		panic('expected backend node')
-	}
+	backend := win.get_tree_node('org', 'backend') or { panic('expected backend node') }
 	assert backend.text == 'Backend'
 
 	win.set_tree_node_text('org', 'backend', 'Backend Platform')

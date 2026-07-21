@@ -98,7 +98,7 @@ pub:
 	headers        map[string]string
 	user_agent     string = 'SimpleGUI/1.0'
 	retries        int
-	retry_delay_ms int = 100
+	retry_delay_ms int  = 100
 	expect_success bool = true
 }
 
@@ -139,7 +139,8 @@ pub fn http_request(method http.Method, url string, data string, options SimpleH
 	attempts := if options.retries > 0 { options.retries + 1 } else { 1 }
 	mut last_err := 'request failed'
 	for attempt in 0 .. attempts {
-		res := http_request_once(method, url, data, options.headers, options.user_agent, options.expect_success) or {
+		res := http_request_once(method, url, data, options.headers, options.user_agent,
+			options.expect_success) or {
 			last_err = err.msg()
 			if attempt < attempts - 1 && options.retry_delay_ms > 0 {
 				time.sleep(options.retry_delay_ms * time.millisecond)
