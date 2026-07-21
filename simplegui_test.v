@@ -1111,6 +1111,11 @@ fn test_sys_apis() {
 	// Appearance and power helpers
 	assert win.get_system_theme() in ['dark', 'light']
 	win.set_system_theme('sepia') or { assert err.msg().contains('Invalid theme') }
+	assert win.get_power_source() in ['ac', 'battery', 'ups', 'unknown']
+	assert win.get_battery_charging_status() in ['charging', 'discharging', 'charged', 'not_charging',
+		'unknown']
+	_ = win.get_battery_charge_percent()
+	assert win.is_preventing_sleep() in [true, false]
 
 	// Compile-time/runtime API availability checks without invoking disruptive system actions.
 	if false {
@@ -1125,6 +1130,9 @@ fn test_sys_apis() {
 		win.log_out_user()
 		win.restart_computer()
 		win.shut_down_computer()
+		win.start_prevent_sleep()
+		win.stop_prevent_sleep()
+		win.prevent_sleep_while_process_running(1)
 	}
 
 	// Clean up

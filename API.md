@@ -1215,6 +1215,13 @@ To simplify system integrations and mirror key features from NeutralinoJS, `simp
 - `win.log_out_user() &SimpleWindow`: Logs out the current user.
 - `win.restart_computer() &SimpleWindow`: Restarts the Mac.
 - `win.shut_down_computer() &SimpleWindow`: Shuts down the Mac.
+- `win.get_power_source() string`: Returns active power source as `'ac'`, `'battery'`, `'ups'`, or `'unknown'`.
+- `win.get_battery_charge_percent() int`: Returns battery percentage (0-100) or `-1` if unavailable.
+- `win.get_battery_charging_status() string`: Returns battery charge state as `'charging'`, `'discharging'`, `'charged'`, `'not_charging'`, or `'unknown'`.
+- `win.start_prevent_sleep() &SimpleWindow`: Starts an indefinite tracked `caffeinate` guard to keep macOS awake.
+- `win.stop_prevent_sleep() &SimpleWindow`: Stops the tracked `caffeinate` guard started by `start_prevent_sleep()`.
+- `win.is_preventing_sleep() bool`: Reports whether the tracked sleep-prevention guard is currently active.
+- `win.prevent_sleep_while_process_running(target_pid int) &SimpleWindow`: Prevents sleep while the specified PID is alive (`caffeinate -w`).
 
 Notes:
 
@@ -1426,6 +1433,13 @@ Notes:
 - `win.is_port_open(host string, port int) bool`: Checks if a TCP port on a given host is accepting connections.
 - `win.find_available_port(start_port int) int`: Scans ports starting from `start_port` to find the first open/unbound TCP port.
 - `win.prevent_sleep_bg(duration_sec int) &SimpleWindow`: Spawns macOS `caffeinate -t <seconds>` in background to prevent system sleep.
+- `win.start_prevent_sleep() &SimpleWindow`: Starts indefinite tracked `caffeinate -dimsu` sleep-prevention guard.
+- `win.stop_prevent_sleep() &SimpleWindow`: Stops the tracked sleep-prevention guard if active.
+- `win.is_preventing_sleep() bool`: Returns true when a tracked sleep-prevention guard is active.
+- `win.prevent_sleep_while_process_running(target_pid int) &SimpleWindow`: Prevents sleep while a target process PID remains alive.
+- `win.get_power_source() string`: Returns active power source (`"ac"`, `"battery"`, `"ups"`, `"unknown"`).
+- `win.get_battery_charge_percent() int`: Returns battery charge percentage (0-100), or `-1` if unavailable.
+- `win.get_battery_charging_status() string`: Returns charging state (`"charging"`, `"discharging"`, `"charged"`, `"not_charging"`, `"unknown"`).
 - `win.take_screenshot(target_path string) !&SimpleWindow`: Captures a screenshot of the primary display to a file.
 - `win.take_screenshot_window(target_path string) !&SimpleWindow`: Captures a screenshot of the active window to a file.
 - `win.defaults_read(domain string, key string) string`: Reads a preference value from a macOS defaults domain.

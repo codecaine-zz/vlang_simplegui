@@ -9,12 +9,21 @@ fn main() {
 	win.add_alert_banner('warning', 'Use with care', 'Sleep, logout, restart, and shutdown actions affect your full system.', 'warning')
 
 	win.add_status_indicator('theme_mode', 'System Theme', 'unknown')
+	win.add_status_indicator('power_source', 'Power Source', 'unknown')
+	win.add_status_indicator('sleep_guard', 'Sleep Guard', 'idle')
 	win.add_label('status_label', 'Ready')
+	win.add_label('power_label', 'Power: unknown | Battery: -1% | Charge: unknown')
 
 	win.begin_row('theme_row')
 	win.add_button('btn_refresh_theme', 'Refresh Theme')
 	win.add_button('btn_set_dark', 'Set Dark Mode')
 	win.add_button('btn_set_light', 'Set Light Mode')
+	win.end_row()
+
+	win.begin_row('power_tools_row')
+	win.add_button('btn_refresh_power', 'Refresh Power')
+	win.add_button('btn_keep_awake_start', 'Start Keep Awake')
+	win.add_button('btn_keep_awake_stop', 'Stop Keep Awake')
 	win.end_row()
 
 	win.add_separator()
@@ -39,6 +48,7 @@ fn main() {
 	win.set_control_enabled('log', false)
 
 	refresh_theme(mut win)
+	refresh_power(mut win)
 
 	win.on_click('btn_refresh_theme', fn (mut w simplegui.SimpleWindow) {
 		refresh_theme(mut w)
@@ -69,6 +79,25 @@ fn main() {
 		w.run_after(400, fn (mut w2 simplegui.SimpleWindow) {
 			refresh_theme(mut w2)
 		})
+	})
+
+	win.on_click('btn_refresh_power', fn (mut w simplegui.SimpleWindow) {
+		refresh_power(mut w)
+		append_log(mut w, 'Power status refreshed')
+	})
+
+	win.on_click('btn_keep_awake_start', fn (mut w simplegui.SimpleWindow) {
+		w.start_prevent_sleep()
+		refresh_power(mut w)
+		w.set_status('Started keep-awake guard')
+		append_log(mut w, 'Started indefinite caffeinate sleep guard')
+	})
+
+	win.on_click('btn_keep_awake_stop', fn (mut w simplegui.SimpleWindow) {
+		w.stop_prevent_sleep()
+		refresh_power(mut w)
+		w.set_status('Stopped keep-awake guard')
+		append_log(mut w, 'Stopped tracked caffeinate sleep guard')
 	})
 
 	win.on_click('btn_sleep_display', fn (mut w simplegui.SimpleWindow) {
@@ -148,6 +177,28 @@ fn refresh_theme(mut win simplegui.SimpleWindow) {
 		win.set_status_indicator('theme_mode', 'idle')
 	}
 	win.set_value('status_label', 'System theme: ${theme}')
+}
+
+fn refresh_power(mut win simplegui.SimpleWindow) {
+	source := win.get_power_source()
+	charge_pct := win.get_battery_charge_percent()
+	charge_state := win.get_battery_charging_status()
+	guard_active := win.is_preventing_sleep()
+
+	match source {
+		'ac' { win.set_status_indicator('power_source', 'active') }
+		'battery' { win.set_status_indicator('power_source', 'warn') }
+		'ups' { win.set_status_indicator('power_source', 'idle') }
+		else { win.set_status_indicator('power_source', 'unknown') }
+	}
+
+	if guard_active {
+		win.set_status_indicator('sleep_guard', 'active')
+	} else {
+		win.set_status_indicator('sleep_guard', 'idle')
+	}
+
+	win.set_value('power_label', 'Power: ${source} | Battery: ${charge_pct}% | Charge: ${charge_state}')
 }
 
 fn append_log(mut win simplegui.SimpleWindow, line string) {

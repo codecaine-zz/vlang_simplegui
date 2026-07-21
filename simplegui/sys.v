@@ -1464,6 +1464,106 @@ pub fn (win &SimpleWindow) prevent_sleep_bg(duration_sec int) &SimpleWindow {
 	return win
 }
 
+// get_power_source returns the active macOS power source: "ac", "battery", "ups", or "unknown".
+pub fn (win &SimpleWindow) get_power_source() string {
+	raw := win.exec_or('pmset -g batt 2>/dev/null | head -n 1', '').trim_space()
+	raw_lower := raw.to_lower()
+	if raw_lower.contains('ac power') {
+		return 'ac'
+	}
+	if raw_lower.contains('battery power') {
+		return 'battery'
+	}
+	if raw_lower.contains('ups power') {
+		return 'ups'
+	}
+	return 'unknown'
+}
+
+// get_battery_charge_percent returns battery percentage (0..100), or -1 when unavailable.
+pub fn (win &SimpleWindow) get_battery_charge_percent() int {
+	raw := win.exec_or("pmset -g batt 2>/dev/null | grep -Eo '[0-9]+%' | head -n 1 | tr -d '%'",
+		'').trim_space()
+	if raw != '' {
+		return raw.int()
+	}
+	return win.get_battery_percent()
+}
+
+// get_battery_charging_status returns one of: "charging", "discharging", "charged", "not_charging", or "unknown".
+pub fn (win &SimpleWindow) get_battery_charging_status() string {
+	raw := win.exec_or('pmset -g batt 2>/dev/null | tail -n 1', '').trim_space().to_lower()
+	if raw.contains('discharging') {
+		return 'discharging'
+	}
+	if raw.contains('not charging') {
+		return 'not_charging'
+	}
+	if raw.contains('charging') {
+		return 'charging'
+	}
+	if raw.contains('charged') || raw.contains('finishing charge') {
+		return 'charged'
+	}
+	return 'unknown'
+}
+
+fn power_caffeinate_pid_file_for_process(pid int) string {
+	return os.join_path(os.temp_dir(), 'simplegui_caffeinate_${pid}.pid')
+}
+
+// start_prevent_sleep starts an indefinite caffeinate process and tracks its PID for later control.
+pub fn (win &SimpleWindow) start_prevent_sleep() &SimpleWindow {
+	win.stop_prevent_sleep()
+	pid_file := power_caffeinate_pid_file_for_process(win.get_pid())
+	win.exec_bg("sh -c 'caffeinate -dimsu >/dev/null 2>&1 & echo $! > \"${pid_file}\"'")
+	return win
+}
+
+// stop_prevent_sleep stops the tracked caffeinate process started by start_prevent_sleep().
+pub fn (win &SimpleWindow) stop_prevent_sleep() &SimpleWindow {
+	pid_file := power_caffeinate_pid_file_for_process(win.get_pid())
+	if !os.exists(pid_file) {
+		return win
+	}
+	pid_raw := os.read_file(pid_file) or { '' }
+	pid := pid_raw.trim_space()
+	if pid != '' {
+		win.exec('kill ${pid} >/dev/null 2>&1')
+	}
+	os.rm(pid_file) or {}
+	return win
+}
+
+// is_preventing_sleep reports whether a tracked caffeinate process is currently running.
+pub fn (win &SimpleWindow) is_preventing_sleep() bool {
+	pid_file := power_caffeinate_pid_file_for_process(win.get_pid())
+	if !os.exists(pid_file) {
+		return false
+	}
+	pid_raw := os.read_file(pid_file) or { '' }
+	pid := pid_raw.trim_space()
+	if pid == '' {
+		os.rm(pid_file) or {}
+		return false
+	}
+	_, code := win.exec('kill -0 ${pid} >/dev/null 2>&1')
+	if code != 0 {
+		os.rm(pid_file) or {}
+		return false
+	}
+	return true
+}
+
+// prevent_sleep_while_process_running prevents sleep while target_pid remains alive.
+pub fn (win &SimpleWindow) prevent_sleep_while_process_running(target_pid int) &SimpleWindow {
+	if target_pid <= 0 {
+		return win
+	}
+	win.exec_bg('caffeinate -dimsu -w ${target_pid}')
+	return win
+}
+
 // ==========================================
 // 14. Developer Productivity Extensions
 // ==========================================
