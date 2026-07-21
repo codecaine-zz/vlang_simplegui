@@ -83,6 +83,96 @@ pub fn (win &SimpleWindow) http_post(url string, data string) string {
 	return http_post(url, data)
 }
 
+// SimpleHttpResponse provides structured HTTP response metadata for production use.
+pub struct SimpleHttpResponse {
+pub:
+	status_code int
+	body        string
+	raw_headers string
+	url         string
+}
+
+// SimpleHttpRequestOptions controls strict request behavior for production API calls.
+pub struct SimpleHttpRequestOptions {
+pub:
+	headers        map[string]string
+	user_agent     string = 'SimpleGUI/1.0'
+	retries        int
+	retry_delay_ms int = 100
+	expect_success bool = true
+}
+
+fn build_simple_http_response(url string, res http.Response) SimpleHttpResponse {
+	return SimpleHttpResponse{
+		status_code: int(res.status_code)
+		body:        res.body
+		raw_headers: res.header.str()
+		url:         url
+	}
+}
+
+fn http_request_once(method http.Method, url string, data string, headers map[string]string, user_agent string, expect_success bool) !SimpleHttpResponse {
+	if url.trim_space().len == 0 {
+		return error('url cannot be empty')
+	}
+	mut req := http.Request{
+		url:    url
+		method: method
+		data:   data
+	}
+	if user_agent.len > 0 {
+		req.header.set(http.CommonHeader.user_agent, user_agent)
+	}
+	for k, v in headers {
+		req.header.add_custom(k, v) or {}
+	}
+	res := req.do()!
+	response := build_simple_http_response(url, res)
+	if expect_success && (response.status_code < 200 || response.status_code >= 300) {
+		return error('http status ${response.status_code}')
+	}
+	return response
+}
+
+// http_request executes a configurable HTTP request with optional retries and strict status checks.
+pub fn http_request(method http.Method, url string, data string, options SimpleHttpRequestOptions) !SimpleHttpResponse {
+	attempts := if options.retries > 0 { options.retries + 1 } else { 1 }
+	mut last_err := 'request failed'
+	for attempt in 0 .. attempts {
+		res := http_request_once(method, url, data, options.headers, options.user_agent, options.expect_success) or {
+			last_err = err.msg()
+			if attempt < attempts - 1 && options.retry_delay_ms > 0 {
+				time.sleep(options.retry_delay_ms * time.millisecond)
+			}
+			continue
+		}
+		return res
+	}
+	return error(last_err)
+}
+
+// http_get_strict sends a GET request and returns the response body or an explicit error.
+pub fn http_get_strict(url string) !string {
+	res := http_request(.get, url, '', SimpleHttpRequestOptions{})!
+	return res.body
+}
+
+// http_get_strict delegates to standalone http_get_strict.
+pub fn (win &SimpleWindow) http_get_strict(url string) !string {
+	return http_get_strict(url)!
+}
+
+// http_post_strict sends a POST request and returns the response body or an explicit error.
+pub fn http_post_strict(url string, data string) !string {
+	res := http_request(.post, url, data, SimpleHttpRequestOptions{})!
+	return res.body
+}
+
+// http_post_strict delegates to standalone http_post_strict.
+pub fn (win &SimpleWindow) http_post_strict(url string, data string) !string {
+	return http_post_strict(url, data)!
+}
+
 // ==========================================
 // 2. Regular Expressions & Patterns (Chapter 13: regex)
 // ==========================================
@@ -119,6 +209,39 @@ pub fn regex_replace(text string, pattern string, replacement string) string {
 // regex_replace delegates to standalone regex_replace.
 pub fn (win &SimpleWindow) regex_replace(text string, pattern string, replacement string) string {
 	return regex_replace(text, pattern, replacement)
+}
+
+// regex_match_strict validates the regex pattern and returns an explicit error for invalid syntax.
+pub fn regex_match_strict(text string, pattern string) !bool {
+	mut re := regex.regex_opt(pattern)!
+	return re.matches_string(text)
+}
+
+// regex_match_strict delegates to standalone regex_match_strict.
+pub fn (win &SimpleWindow) regex_match_strict(text string, pattern string) !bool {
+	return regex_match_strict(text, pattern)!
+}
+
+// regex_find_strict validates the regex pattern and returns explicit errors when invalid.
+pub fn regex_find_strict(text string, pattern string) ![]string {
+	mut re := regex.regex_opt(pattern)!
+	return re.find_all_str(text)
+}
+
+// regex_find_strict delegates to standalone regex_find_strict.
+pub fn (win &SimpleWindow) regex_find_strict(text string, pattern string) ![]string {
+	return regex_find_strict(text, pattern)!
+}
+
+// regex_replace_strict validates the regex pattern and returns explicit errors when invalid.
+pub fn regex_replace_strict(text string, pattern string, replacement string) !string {
+	mut re := regex.regex_opt(pattern)!
+	return re.replace(text, replacement)
+}
+
+// regex_replace_strict delegates to standalone regex_replace_strict.
+pub fn (win &SimpleWindow) regex_replace_strict(text string, pattern string, replacement string) !string {
+	return regex_replace_strict(text, pattern, replacement)!
 }
 
 // ==========================================
@@ -222,6 +345,81 @@ pub fn crypto_decrypt_aes(cipher_hex string, key_hex string) string {
 // crypto_decrypt_aes delegates to standalone crypto_decrypt_aes.
 pub fn (win &SimpleWindow) crypto_decrypt_aes(cipher_hex string, key_hex string) string {
 	return crypto_decrypt_aes(cipher_hex, key_hex)
+}
+
+fn aes_key_from_hex_strict(key_hex string) ![]u8 {
+	key := hex.decode(key_hex)!
+	if key.len != 16 && key.len != 24 && key.len != 32 {
+		return error('key must be 16, 24, or 32 bytes after hex decoding')
+	}
+	return key
+}
+
+fn pkcs7_pad(data []u8, block_size int) []u8 {
+	mut out := data.clone()
+	pad_len := block_size - (out.len % block_size)
+	for _ in 0 .. pad_len {
+		out << u8(pad_len)
+	}
+	return out
+}
+
+fn pkcs7_unpad(data []u8, block_size int) ![]u8 {
+	if data.len == 0 || data.len % block_size != 0 {
+		return error('invalid padded payload length')
+	}
+	pad_len := int(data[data.len - 1])
+	if pad_len <= 0 || pad_len > block_size || pad_len > data.len {
+		return error('invalid PKCS7 padding')
+	}
+	for i in data.len - pad_len .. data.len {
+		if int(data[i]) != pad_len {
+			return error('invalid PKCS7 padding bytes')
+		}
+	}
+	return data[..data.len - pad_len].clone()
+}
+
+// crypto_encrypt_aes_secure encrypts using AES-CBC with random IV and returns hex(iv+ciphertext).
+pub fn crypto_encrypt_aes_secure(plain_text string, key_hex string) !string {
+	key := aes_key_from_hex_strict(key_hex)!
+	iv := crand.bytes(16)!
+	block := aes.new_cipher(key)
+	mut enc := cipher.new_cbc(block, iv)
+	padded := pkcs7_pad(plain_text.bytes(), 16)
+	mut ciphertext := []u8{len: padded.len}
+	enc.encrypt_blocks(mut ciphertext, padded)
+	mut payload := []u8{}
+	payload << iv
+	payload << ciphertext
+	return hex.encode(payload)
+}
+
+// crypto_encrypt_aes_secure delegates to standalone crypto_encrypt_aes_secure.
+pub fn (win &SimpleWindow) crypto_encrypt_aes_secure(plain_text string, key_hex string) !string {
+	return crypto_encrypt_aes_secure(plain_text, key_hex)!
+}
+
+// crypto_decrypt_aes_secure decrypts hex(iv+ciphertext) payloads produced by crypto_encrypt_aes_secure.
+pub fn crypto_decrypt_aes_secure(payload_hex string, key_hex string) !string {
+	key := aes_key_from_hex_strict(key_hex)!
+	payload := hex.decode(payload_hex)!
+	if payload.len < 32 || payload.len % 16 != 0 {
+		return error('payload must include 16-byte IV plus aligned ciphertext')
+	}
+	iv := payload[..16].clone()
+	ciphertext := payload[16..]
+	block := aes.new_cipher(key)
+	mut dec := cipher.new_cbc(block, iv)
+	mut decrypted := []u8{len: ciphertext.len}
+	dec.decrypt_blocks(mut decrypted, ciphertext)
+	plain := pkcs7_unpad(decrypted, 16)!
+	return plain.bytestr()
+}
+
+// crypto_decrypt_aes_secure delegates to standalone crypto_decrypt_aes_secure.
+pub fn (win &SimpleWindow) crypto_decrypt_aes_secure(payload_hex string, key_hex string) !string {
+	return crypto_decrypt_aes_secure(payload_hex, key_hex)!
 }
 
 // ==========================================
@@ -527,6 +725,16 @@ pub fn json_decode_map(json_str string) map[string]string {
 // json_decode_map delegates to standalone json_decode_map.
 pub fn (win &SimpleWindow) json_decode_map(json_str string) map[string]string {
 	return json_decode_map(json_str)
+}
+
+// json_decode_map_strict decodes a JSON object and returns an explicit error for malformed payloads.
+pub fn json_decode_map_strict(json_str string) !map[string]string {
+	return json.decode(map[string]string, json_str)!
+}
+
+// json_decode_map_strict delegates to standalone json_decode_map_strict.
+pub fn (win &SimpleWindow) json_decode_map_strict(json_str string) !map[string]string {
+	return json_decode_map_strict(json_str)!
 }
 
 // ==========================================

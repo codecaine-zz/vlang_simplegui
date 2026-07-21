@@ -213,6 +213,29 @@ fn main() {
 	println('  Valid JSON syntax? ${is_valid_json}')
 	println('  Pretty Printed:\n${pretty_json}')
 
+	// -------------------------------------------------
+	// 13. Production-Safe Strict APIs
+	// -------------------------------------------------
+	println('\n[13] Production-Safe Strict APIs:')
+	strict_json := win.json_decode_map_strict('{"mode":"prod","service":"api"}') or {
+		panic(err)
+	}
+	println('  Strict JSON decode mode: ${strict_json["mode"]}')
+
+	_ = win.regex_match_strict('abc', '[a-z') or {
+		println('  Strict regex compile error captured: ${err.msg()}')
+		false
+	}
+
+	secure_key := '00112233445566778899aabbccddeeff'
+	secure_cipher := win.crypto_encrypt_aes_secure('production payload', secure_key) or {
+		panic(err)
+	}
+	secure_plain := win.crypto_decrypt_aes_secure(secure_cipher, secure_key) or {
+		panic(err)
+	}
+	println('  Secure AES round trip recovered: ${secure_plain}')
+
 	println('\n===================================================')
 	println('  All Extended SimpleGUI STDLIB Demos Completed!')
 	println('===================================================')

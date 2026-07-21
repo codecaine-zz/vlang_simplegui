@@ -1396,12 +1396,22 @@ To simplify system integrations and mirror key features from NeutralinoJS, `simp
 
 - `win.http_get(url string) string`: Sends a synchronous GET request and returns the response body (empty on failure).
 - `win.http_post(url string, data string) string`: Sends a synchronous POST request with the specified body, returning the response (empty on failure).
+- `simplegui.SimpleHttpResponse`: Structured response metadata used by strict HTTP helpers.
+  - Fields: `status_code int`, `body string`, `raw_headers string`, `url string`.
+- `simplegui.SimpleHttpRequestOptions`: Request options used by strict HTTP helpers.
+  - Fields: `headers map[string]string`, `user_agent string`, `retries int`, `retry_delay_ms int`, `expect_success bool`.
+- `simplegui.http_request(method http.Method, url string, data string, options SimpleHttpRequestOptions) !SimpleHttpResponse`: Executes an HTTP request with configurable headers, retries, retry delay, user-agent, and strict success-status enforcement.
+- `win.http_get_strict(url string) !string`: Sends a strict GET request and returns response body or explicit error.
+- `win.http_post_strict(url string, data string) !string`: Sends a strict POST request and returns response body or explicit error.
 
 ### Regular Expressions (`regex`)
 
 - `win.regex_match(text string, pattern string) bool`: Checks if a target string contains matches for a regular expression pattern.
 - `win.regex_find(text string, pattern string) []string`: Extracts all substrings matching a regular expression pattern.
 - `win.regex_replace(text string, pattern string, replacement string) string`: Replaces any pattern matches inside a string with a replacement text.
+- `win.regex_match_strict(text string, pattern string) !bool`: Same as `regex_match`, but returns an explicit error if the pattern is invalid.
+- `win.regex_find_strict(text string, pattern string) ![]string`: Same as `regex_find`, but returns an explicit error if the pattern is invalid.
+- `win.regex_replace_strict(text string, pattern string, replacement string) !string`: Same as `regex_replace`, but returns an explicit error if the pattern is invalid.
 
 ### Cryptography & Hash Functions (`crypto`, `crypto.hmac`, `hash`)
 
@@ -1417,6 +1427,8 @@ To simplify system integrations and mirror key features from NeutralinoJS, `simp
 - `win.crypto_wyhash(text string, seed u64) u64`: Computes a 64-bit Wyhash value of a string with a seed.
 - `win.crypto_encrypt_aes(plain_text string, key_hex string) string`: Encrypts text using 128-bit AES block cipher under CBC mode, returning hex-encoded ciphertext.
 - `win.crypto_decrypt_aes(cipher_hex string, key_hex string) string`: Decrypts a hex-encoded AES CBC block string, returning the unpadded plaintext string.
+- `win.crypto_encrypt_aes_secure(plain_text string, key_hex string) !string`: Production-safe AES-CBC encryption with random IV and PKCS7 padding validation, returning hex of `iv + ciphertext`.
+- `win.crypto_decrypt_aes_secure(payload_hex string, key_hex string) !string`: Decrypts payloads from `crypto_encrypt_aes_secure`, validating key length, payload framing, and PKCS7 padding.
 
 ### Encoding (`encoding.hex`, `encoding.base64`)
 
@@ -1472,6 +1484,7 @@ To simplify system integrations and mirror key features from NeutralinoJS, `simp
 - `win.toml_parse(content string) &TOMLWrapperDoc`: Parses TOML text and wraps query details inside an easy helper.
   - **Returned Type**: `TOMLWrapperDoc` supports `doc.get_string(key)`, `doc.get_string_default(key, def)`, `doc.get_int(key)`, and `doc.get_bool(key)`.
 - `win.json_decode_map(json_str string) map[string]string`: Deserializes a JSON string into a flat key-value map.
+- `win.json_decode_map_strict(json_str string) !map[string]string`: Deserializes a JSON string into a flat key-value map and returns explicit errors for malformed JSON.
 - `win.json_encode_map_list(m []map[string]string) string`: Serializes an array of maps into a JSON string.
 - `win.json_decode_map_list(json_str string) []map[string]string`: Deserializes a JSON string into an array of flat key-value maps.
 - `win.json_validate(json_str string) bool`: Checks if a string contains valid JSON syntax.

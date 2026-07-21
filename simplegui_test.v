@@ -2153,6 +2153,38 @@ fn test_extended_stdlib_apis() {
 	assert win.rand_weighted_choice_ints(weighted_ints, int_weights) == 999
 }
 
+fn test_production_ready_stdlib_apis() {
+	win := simplegui.SimpleWindow{}
+
+	// 1. Strict HTTP should reject invalid URL input before network I/O.
+	_ := win.http_get_strict('') or {
+		assert err.msg().contains('url cannot be empty')
+		''
+	}
+
+	// 2. Strict regex API should report invalid patterns.
+	_ = win.regex_match_strict('abc', '[a-z') or {
+		assert err.msg().len > 0
+		false
+	}
+
+	// 3. Secure AES round trip should preserve payload.
+	key_hex := '00112233445566778899aabbccddeeff'
+	plain := 'production secret payload'
+	cipher_hex := win.crypto_encrypt_aes_secure(plain, key_hex) or { panic(err) }
+	decrypted := win.crypto_decrypt_aes_secure(cipher_hex, key_hex) or { panic(err) }
+	assert decrypted == plain
+
+	// 4. Strict JSON decoder should decode valid payloads and fail on malformed data.
+	decoded := win.json_decode_map_strict('{"env":"prod","region":"us"}') or { panic(err) }
+	assert decoded['env'] == 'prod'
+	assert decoded['region'] == 'us'
+	_ = win.json_decode_map_strict('{not json}') or {
+		assert err.msg().len > 0
+		map[string]string{}
+	}
+}
+
 fn test_advanced_layout_grid_flex_and_alignment() {
 	mut win := simplegui.SimpleWindow{}
 
