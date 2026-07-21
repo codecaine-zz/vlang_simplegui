@@ -59,6 +59,7 @@ The goal is a simple, high-abstraction GUI layer that feels familiar to anyone u
   - Built-in ready-made validators for email, numeric input, URLs, IP addresses, phone numbers, alphanumeric string constraints, and numeric ranges.
 - **Neutralino-inspired OS & System APIs**:
   - Synchronous, asynchronous, and timeout shell process execution (`exec`, `exec_bg`, `exec_timeout`, `spawn_process`).
+  - Production reliability helpers: structured command metadata (`exec_result`, `exec_timeout_result`), retry/backoff (`exec_retry`), command dependency checks (`command_exists`, `require_command`), and readiness waits (`wait_for_file`, `wait_for_port`).
   - Environment variable accessors, system paths lookup (`home`, `temp`, `desktop`, `documents`, `downloads`, `cache`, `app_data`).
   - Hardware & system diagnostics: Processor model, CPU physical/logical cores, frequency, architecture, RAM memory, disk space, and disk usage stats (`DiskStats`).
   - Network tools: Local IP, public external IP, TCP ping reachability, DNS lookup, Wi-Fi SSID, network interface listing, MAC address, DNS servers, default gateway, and listening ports detection.
@@ -648,6 +649,7 @@ v run .
 | [zstd_demo.v](demos/zstd_demo.v)                                             | Zstandard compression and decompression                                                                        |
 | [encoding_and_system_info_demo.v](demos/encoding_and_system_info_demo.v)     | Hex/Base64 encoder-decoder with environment details viewer                                                     |
 | [sys_demo.v](demos/sys_demo.v)                                               | Neutralino-inspired system call extensions, OS diagnostics, hardware specs, network tools, and shell utilities |
+| [sys_new_commands_demo.v](demos/sys_new_commands_demo.v)                     | Production reliability helpers: retries, timeout metadata, atomic writes, file tails, and wait-for checks      |
 | [system_calls_demo.v](demos/system_calls_demo.v)                             | Shell process invocation, stdout routing, and folder monitoring                                                |
 | [system_and_stdlib_features_demo.v](demos/system_and_stdlib_features_demo.v) | Exhaustive showcase of V core system operations                                                                |
 | [benchmark_demo.v](demos/benchmark_demo.v)                                   | Wrapper operation latency benchmarks                                                                           |

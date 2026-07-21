@@ -38,7 +38,7 @@ fn main() {
 
 	win.on_click('btn_run_all', fn (mut w simplegui.SimpleWindow) {
 		w.clear_console('output')
-		w.append_console('output', '⏳ Running all 12 system sections in background thread…',
+		w.append_console('output', '⏳ Running all 13 system sections in background thread…',
 			0)
 		spawn fn (mut window simplegui.SimpleWindow) {
 			run_all(mut window)
@@ -173,6 +173,15 @@ fn demo_exec(mut w simplegui.SimpleWindow) {
 	envs := w.get_envs()
 	log(mut w, 'get_envs() count', '${envs.len} vars')
 
+	result_meta := w.exec_result('echo "structured execution"')
+	log(mut w, 'exec_result', 'ok=${result_meta.success()} exit=${result_meta.exit_code} duration=${result_meta.duration_ms}ms')
+
+	timeout_meta := w.exec_timeout_result('sleep 2', 400)
+	log(mut w, 'exec_timeout_result', 'timed_out=${timeout_meta.timed_out} exit=${timeout_meta.exit_code}')
+
+	retry_meta := w.exec_retry('this_cmd_does_not_exist_xyz', 3, 100, 2.0)
+	log(mut w, 'exec_retry (expected fail)', 'attempts=${retry_meta.attempts} exit=${retry_meta.exit_code}')
+
 	w.show_system_notification('sys.v Demo', 'Section §1 — exec/env running!')
 	log_ok(mut w, 'show_system_notification sent')
 }
@@ -210,6 +219,15 @@ fn demo_files(mut w simplegui.SimpleWindow) {
 	log_ok(mut w, 'write_file: ${file_a}')
 	log(mut w, 'read_file', w.read_file(file_a).trim_space())
 	log(mut w, 'is_file', '${w.is_file(file_a)}')
+
+	atomic_file := os.join_path(tmp_dir, 'atomic.log')
+	w.write_file_atomic(atomic_file, 'line1\nline2\nline3\n') or {
+		log_err(mut w, 'write_file_atomic failed: ${err}')
+	}
+	if w.wait_for_file(atomic_file, 1500, 50) {
+		last_lines := w.tail_file(atomic_file, 2) or { [] }
+		log(mut w, 'tail_file atomic.log', last_lines.join(' | '))
+	}
 
 	lines_file := os.join_path(tmp_dir, 'lines.txt')
 	w.write_lines(lines_file, ['alpha', 'beta', 'gamma']) or {}
@@ -307,8 +325,10 @@ fn demo_os_api(mut w simplegui.SimpleWindow) {
 	log(mut w, 'get_egid', '${w.get_egid()}')
 	log(mut w, 'get_executable_path', w.get_executable_path())
 	log(mut w, 'exists_in_path("git")', '${w.exists_in_path('git')}')
+	log(mut w, 'command_exists("bash")', '${w.command_exists('bash')}')
 	log(mut w, 'exists_in_path("v")', '${w.exists_in_path('v')}')
 	log(mut w, 'find_executable("git")', w.find_executable('git'))
+	log(mut w, 'require_command("sh")', w.require_command('sh') or { '(missing)' })
 	log(mut w, 'find_executable("bash")', w.find_executable('bash'))
 
 	u := w.get_uname()
@@ -379,6 +399,8 @@ fn demo_network(mut w simplegui.SimpleWindow) {
 
 	log(mut w, 'dns_lookup "google.com"', w.dns_lookup('google.com'))
 	log(mut w, 'dns_lookup "vlang.io"', w.dns_lookup('vlang.io'))
+	log(mut w, 'wait_for_port("google.com", 443)', '${w.wait_for_port('google.com', 443, 2000,
+		100)}')
 
 	log(mut w, 'get_wifi_ssid', w.get_wifi_ssid())
 	log(mut w, 'get_network_interfaces', w.get_network_interfaces().join(', '))

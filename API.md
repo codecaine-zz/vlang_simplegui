@@ -1135,6 +1135,10 @@ To simplify system integrations and mirror key features from NeutralinoJS, `simp
 - `win.exec_or(command string, fallback string) string`: Runs a command, returning its stdout if successful (code 0) or the `fallback` value if it failed.
 - `win.exec_bg(command string) &SimpleWindow`: Spawns a shell command in the background (asynchronous concurrent thread) so the application GUI doesn't block or freeze.
 - `win.exec_timeout(command string, timeout_ms int) (string, int, bool)`: Runs a command synchronously with a maximum timeout in milliseconds, returning `(output, exit_code, timed_out)`.
+- `win.exec_result(command string) CommandResult`: Runs a command and returns structured metadata (`output`, `exit_code`, `duration_ms`, `attempts`, timeout flag) for production diagnostics.
+- `win.exec_timeout_result(command string, timeout_ms int) CommandResult`: Timeout-aware variant of `exec_result`.
+- `win.exec_retry(command string, max_attempts int, initial_delay_ms int, backoff_factor f64) CommandResult`: Retries failed commands using exponential backoff.
+  - **Returned Type**: `CommandResult` contains `command`, `output`, `exit_code`, `timed_out`, `duration_ms`, and `attempts`.
 
 ### Environment Variables
 
@@ -1159,7 +1163,9 @@ To simplify system integrations and mirror key features from NeutralinoJS, `simp
 - `win.get_euid() int`: Returns the effective User ID (EUID).
 - `win.get_egid() int`: Returns the effective Group ID (EGID).
 - `win.exists_in_path(cmd string) bool`: Checks if a given command binary is present in the system's PATH.
+- `win.command_exists(cmd string) bool`: Alias-style command presence check used in reliability-oriented flows.
 - `win.find_executable(cmd string) string`: Returns the absolute path of the specified command binary if it exists in the system's PATH.
+- `win.require_command(cmd string) !string`: Returns the absolute command path or a clear error when the dependency is missing.
 - `win.get_executable_path() string`: Returns the absolute path of the current running executable.
 - `win.get_uname() Uname`: Retrieves system operating system and kernel architecture details.
   - **Returned Type**: `Uname` contains `sysname`, `nodename`, `release`, `version`, and `machine` string fields.
@@ -1212,6 +1218,7 @@ To simplify system integrations and mirror key features from NeutralinoJS, `simp
 - `win.read_bytes(path string) ![]u8`: Reads a file's content as a byte array.
 - `win.write_file(path string, content string) &SimpleWindow`: Writes content to a file.
 - `win.write_file_opt(path string, content string) !&SimpleWindow`: Writes content to a file with V's `!` error-handling/propagation.
+- `win.write_file_atomic(path string, content string) !&SimpleWindow`: Writes using temp-file + rename semantics (best effort atomic on same volume) for safer production persistence.
 - `win.write_lines(path string, lines []string) !&SimpleWindow`: Writes an array of strings to a file, separating them with newlines.
 - `win.write_bytes(path string, bytes []u8) !&SimpleWindow`: Writes a byte array to a file.
 - `win.create_directory(path string) &SimpleWindow`: Recursively creates/ensures all directories in the given path.
@@ -1236,6 +1243,8 @@ To simplify system integrations and mirror key features from NeutralinoJS, `simp
 - `win.is_writable(path string) bool`: Checks if a path is writable.
 - `win.is_executable(path string) bool`: Checks if a path is executable.
 - `win.read_dir(path string) []string`: Returns a string array of items within the directory.
+- `win.tail_file(path string, max_lines int) ![]string`: Returns up to the last `max_lines` lines of a file (log-style usage).
+- `win.wait_for_file(path string, timeout_ms int, poll_ms int) bool`: Waits until a file exists or timeout elapses.
 
 ### Path String Parsing
 
@@ -1286,6 +1295,7 @@ To simplify system integrations and mirror key features from NeutralinoJS, `simp
 - `win.dns_lookup(hostname string) string`: Performs forward DNS lookup returning resolved IP address via libc `getaddrinfo`.
 - `win.get_wifi_ssid() string`: Returns connected Wi-Fi network SSID on macOS.
 - `win.get_network_interfaces() []string`: Lists active network interface names (`en0`, `lo0`, etc.).
+- `win.wait_for_port(host string, port int, timeout_ms int, poll_ms int) bool`: Waits until a TCP endpoint is reachable or timeout elapses.
 - `win.get_mac_address() string`: Returns hardware MAC address of primary Wi-Fi/Ethernet interface (`en0`).
 - `win.get_dns_servers() []string`: Returns array of configured DNS server IP addresses.
 - `win.get_default_gateway() string`: Returns IP address of default network gateway.

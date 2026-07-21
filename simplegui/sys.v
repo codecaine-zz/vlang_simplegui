@@ -270,6 +270,22 @@ pub mut:
 	proc &os.Process = unsafe { nil }
 }
 
+// CommandResult provides structured command execution details for production diagnostics.
+pub struct CommandResult {
+pub:
+	command     string
+	output      string
+	exit_code   int
+	timed_out   bool
+	duration_ms i64
+	attempts    int
+}
+
+// success reports whether command execution completed with exit code 0 and no timeout.
+pub fn (r CommandResult) success() bool {
+	return !r.timed_out && r.exit_code == 0
+}
+
 // get_env_opt retrieves an environment variable value, returning none if it's not set.
 pub fn (win &SimpleWindow) get_env_opt(key string) ?string {
 	return os.getenv_opt(key)
@@ -333,6 +349,20 @@ pub fn (win &SimpleWindow) exists_in_path(cmd string) bool {
 // find_executable returns the absolute path of the specified command binary if it exists in the system's PATH.
 pub fn (win &SimpleWindow) find_executable(cmd string) string {
 	return os.find_abs_path_of_executable(cmd) or { '' }
+}
+
+// command_exists checks if an executable command exists in the current PATH.
+pub fn (win &SimpleWindow) command_exists(cmd string) bool {
+	return win.exists_in_path(cmd)
+}
+
+// require_command returns the absolute executable path or an error if the command is missing.
+pub fn (win &SimpleWindow) require_command(cmd string) !string {
+	path := win.find_executable(cmd)
+	if path.len == 0 {
+		return error('Required command not found in PATH: ${cmd}')
+	}
+	return path
 }
 
 // get_executable_path returns the absolute path of the current running executable.
@@ -1631,6 +1661,74 @@ pub fn (win &SimpleWindow) exec_timeout(command string, timeout_ms int) (string,
 	return res.output.trim_space(), res.exit_code, false
 }
 
+// exec_result executes a command and returns a structured production-friendly result.
+pub fn (win &SimpleWindow) exec_result(command string) CommandResult {
+	start := time.now().unix_milli()
+	output, code := win.exec(command)
+	return CommandResult{
+		command:     command
+		output:      output
+		exit_code:   code
+		timed_out:   false
+		duration_ms: time.now().unix_milli() - start
+		attempts:    1
+	}
+}
+
+// exec_timeout_result executes a command with timeout and returns a structured result.
+pub fn (win &SimpleWindow) exec_timeout_result(command string, timeout_ms int) CommandResult {
+	start := time.now().unix_milli()
+	output, code, timed_out := win.exec_timeout(command, timeout_ms)
+	return CommandResult{
+		command:     command
+		output:      output
+		exit_code:   code
+		timed_out:   timed_out
+		duration_ms: time.now().unix_milli() - start
+		attempts:    1
+	}
+}
+
+// exec_retry executes a command with retry + exponential backoff.
+// backoff_factor values below 1.0 are clamped to 1.0.
+pub fn (win &SimpleWindow) exec_retry(command string, max_attempts int, initial_delay_ms int, backoff_factor f64) CommandResult {
+	attempts := if max_attempts < 1 { 1 } else { max_attempts }
+	mut delay_ms := if initial_delay_ms < 1 { 100 } else { initial_delay_ms }
+	factor := if backoff_factor < 1.0 { 1.0 } else { backoff_factor }
+	start := time.now().unix_milli()
+	mut final_output := ''
+	mut final_code := -1
+
+	for attempt in 1 .. attempts + 1 {
+		output, code := win.exec(command)
+		final_output = output
+		final_code = code
+		if code == 0 {
+			return CommandResult{
+				command:     command
+				output:      final_output
+				exit_code:   final_code
+				timed_out:   false
+				duration_ms: time.now().unix_milli() - start
+				attempts:    attempt
+			}
+		}
+		if attempt < attempts {
+			time.sleep(u64(delay_ms) * time.millisecond)
+			delay_ms = int(f64(delay_ms) * factor)
+		}
+	}
+
+	return CommandResult{
+		command:     command
+		output:      final_output
+		exit_code:   final_code
+		timed_out:   false
+		duration_ms: time.now().unix_milli() - start
+		attempts:    attempts
+	}
+}
+
 // get_total_memory_bytes returns total physical RAM in bytes.
 pub fn (win &SimpleWindow) get_total_memory_bytes() u64 {
 	bytes_str := win.exec_or('sysctl -n hw.memsize 2>/dev/null', '0')
@@ -1795,6 +1893,60 @@ pub fn (win &SimpleWindow) copy_directory(src string, dest string) !&SimpleWindo
 		return error('Failed to copy directory: ${output}')
 	}
 	return win
+}
+
+// write_file_atomic writes file contents using a temp file + rename strategy.
+// This is best-effort atomic when source and destination are on the same volume.
+pub fn (win &SimpleWindow) write_file_atomic(path string, content string) !&SimpleWindow {
+	target_dir := os.dir(path)
+	if target_dir.len == 0 {
+		return error('Invalid target path: ${path}')
+	}
+	os.mkdir_all(target_dir)!
+	tmp_name := '.${os.base(path)}.tmp_${os.getpid()}_${time.now().unix_milli()}'
+	tmp_path := os.join_path(target_dir, tmp_name)
+	os.write_file(tmp_path, content)!
+	os.mv(tmp_path, path)!
+	return win
+}
+
+// tail_file returns up to the last max_lines lines from a file.
+pub fn (win &SimpleWindow) tail_file(path string, max_lines int) ![]string {
+	lines := os.read_lines(path)!
+	if max_lines <= 0 || lines.len <= max_lines {
+		return lines
+	}
+	start := lines.len - max_lines
+	return lines[start..]
+}
+
+// wait_for_file waits until a file exists or the timeout expires.
+pub fn (win &SimpleWindow) wait_for_file(path string, timeout_ms int, poll_ms int) bool {
+	deadline := time.now().unix_milli() + i64(if timeout_ms <= 0 { 1000 } else { timeout_ms })
+	interval_ms := if poll_ms <= 0 { 50 } else { poll_ms }
+	for time.now().unix_milli() <= deadline {
+		if os.exists(path) {
+			return true
+		}
+		time.sleep(u64(interval_ms) * time.millisecond)
+	}
+	return os.exists(path)
+}
+
+// wait_for_port waits until a TCP port becomes reachable or timeout expires.
+pub fn (win &SimpleWindow) wait_for_port(host string, port int, timeout_ms int, poll_ms int) bool {
+	if port <= 0 {
+		return false
+	}
+	deadline := time.now().unix_milli() + i64(if timeout_ms <= 0 { 1000 } else { timeout_ms })
+	interval_ms := if poll_ms <= 0 { 100 } else { poll_ms }
+	for time.now().unix_milli() <= deadline {
+		if win.is_port_open(host, port) {
+			return true
+		}
+		time.sleep(u64(interval_ms) * time.millisecond)
+	}
+	return win.is_port_open(host, port)
 }
 
 // play_system_sound plays a macOS system alert sound (e.g. "Glass", "Ping", "Hero", "Pop", "Tink", "Submarine").

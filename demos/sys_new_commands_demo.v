@@ -18,6 +18,7 @@ fn main() {
 	win.add_button('btn_files', '📦 Test Temp Files / Zip / Trash / Hash')
 	win.add_button('btn_net', '🌐 Test Network Port Scanner')
 	win.add_button('btn_dev', '🛠️ Test Dev Encoding & HTTP & Process')
+	win.add_button('btn_prod', '🏭 Test Production Reliability Helpers')
 	win.add_button('btn_macos_adv', ' Test macOS Active App & Security & Power')
 	win.add_button('btn_clear', '🧹 Clear Output')
 
@@ -50,6 +51,11 @@ fn main() {
 		demo_dev_tools(mut w)
 	})
 
+	win.on_click('btn_prod', fn (mut w simplegui.SimpleWindow) {
+		w.clear_console('output')
+		demo_production_helpers(mut w)
+	})
+
 	win.on_click('btn_macos_adv', fn (mut w simplegui.SimpleWindow) {
 		w.clear_console('output')
 		demo_macos_adv(mut w)
@@ -65,6 +71,7 @@ fn main() {
 			demo_files_and_hash(mut window)
 			demo_network_ports(mut window)
 			demo_dev_tools(mut window)
+			demo_production_helpers(mut window)
 			demo_macos_adv(mut window)
 			demo_caffeinate(mut window)
 			window.append_console('output', '', 0)
@@ -221,6 +228,43 @@ fn demo_dev_tools(mut w simplegui.SimpleWindow) {
 
 	log(mut w, 'is_process_running("Finder")', '${w.is_process_running('Finder')}')
 	log(mut w, 'is_process_running("non_existent_xyz")', '${w.is_process_running('non_existent_xyz')}')
+}
+
+fn demo_production_helpers(mut w simplegui.SimpleWindow) {
+	log_header(mut w, '🏭 Production Reliability Helpers')
+
+	log(mut w, 'command_exists("git")', '${w.command_exists('git')}')
+	log(mut w, 'require_command("sh")', w.require_command('sh') or { '(missing)' })
+
+	cmd_meta := w.exec_result('echo "prod-meta"')
+	log(mut w, 'exec_result', 'ok=${cmd_meta.success()} attempts=${cmd_meta.attempts} duration=${cmd_meta.duration_ms}ms')
+
+	tmo_meta := w.exec_timeout_result('sleep 2', 350)
+	log(mut w, 'exec_timeout_result', 'timed_out=${tmo_meta.timed_out} exit=${tmo_meta.exit_code}')
+
+	retry_meta := w.exec_retry('this_cmd_does_not_exist_xyz', 3, 100, 2.0)
+	log(mut w, 'exec_retry fail-case', 'attempts=${retry_meta.attempts} exit=${retry_meta.exit_code}')
+
+	retry_ok := w.exec_retry('echo retry_success', 3, 50, 2.0)
+	log(mut w, 'exec_retry success-case', 'attempts=${retry_ok.attempts} output=${retry_ok.output}')
+
+	reliable_file := os.join_path(os.temp_dir(), 'sg_production_atomic.txt')
+	w.write_file_atomic(reliable_file, 'alpha\nbeta\ngamma\n') or {
+		log_err(mut w, 'write_file_atomic failed: ${err}')
+		return
+	}
+	log_ok(mut w, 'write_file_atomic() → ${reliable_file}')
+
+	if w.wait_for_file(reliable_file, 1200, 40) {
+		last := w.tail_file(reliable_file, 2) or { [] }
+		log(mut w, 'tail_file(last 2)', last.join(' | '))
+	} else {
+		log_err(mut w, 'wait_for_file timed out for ${reliable_file}')
+	}
+
+	log(mut w, 'wait_for_port("google.com", 443)', '${w.wait_for_port('google.com', 443, 2000,
+		100)}')
+	w.delete_file(reliable_file)
 }
 
 fn demo_macos_adv(mut w simplegui.SimpleWindow) {
