@@ -93,6 +93,15 @@ fn main() {
 		win.add_button('btn_enable_close_btn', 'Enable Close Button')
 	win.end_row()
 
+	// Section 8: Production Toolbar Style & Insets
+	win.add_section_header('sec_prod_ctrl', '8. Production Toolbar Styles & Content Margins', 'macOS 11+ titlebar toolbar layout styles and content safe area insets')
+	win.begin_row('row_prod_1')
+		win.add_button('btn_tb_unified', 'Toolbar: Unified')
+		win.add_button('btn_tb_compact', 'Toolbar: Compact')
+		win.add_button('btn_tb_expanded', 'Toolbar: Expanded')
+		win.add_button('btn_insets_20', 'Content Insets: 20px')
+	win.end_row()
+
 	// Event Handlers for All Controls
 	win.on_click('btn_set_subtitle', fn (mut w simplegui.SimpleWindow) {
 		w.set_subtitle('v2.0-beta.1 (Updated)')
@@ -322,6 +331,34 @@ fn main() {
 		w.set_close_button_enabled(true)
 		w.set_status('Titlebar Close button enabled.')
 		w.toast('Close button enabled')
+	})
+
+	win.on_click('btn_tb_unified', fn (mut w simplegui.SimpleWindow) {
+		w.set_toolbar_style('unified')
+		w.set_status('Titlebar toolbar style set to "unified"')
+		w.toast('Toolbar: Unified')
+	})
+
+	win.on_click('btn_tb_compact', fn (mut w simplegui.SimpleWindow) {
+		w.set_toolbar_style('compact')
+		w.set_status('Titlebar toolbar style set to "compact"')
+		w.toast('Toolbar: Compact')
+	})
+
+	win.on_click('btn_tb_expanded', fn (mut w simplegui.SimpleWindow) {
+		w.set_toolbar_style('expanded')
+		w.set_status('Titlebar toolbar style set to "expanded"')
+		w.toast('Toolbar: Expanded')
+	})
+
+	win.on_click('btn_insets_20', fn (mut w simplegui.SimpleWindow) {
+		w.set_content_insets(20, 20, 20, 20)
+		w.set_status('Content safe area insets set to 20px (Top, Left, Bottom, Right).')
+		w.toast('Content Insets: 20px')
+	})
+
+	win.on_close(fn (mut w simplegui.SimpleWindow) {
+		println('[simplegui DEBUG] Window close event intercepted cleanly.')
 	})
 
 	win.run()

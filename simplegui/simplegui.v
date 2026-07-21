@@ -519,7 +519,7 @@ fn C.window_set_minimize_button_enabled(&WindowInfo, int)
 fn C.window_set_zoom_button_enabled(&WindowInfo, int)
 fn C.window_set_title_visible(&WindowInfo, int)
 fn C.window_get_title_visible(&WindowInfo) int
-fn C.window_shake(&WindowInfo)
+fn C.window_set_content_insets(&WindowInfo, int, int, int, int)
 
 
 
@@ -8841,6 +8841,14 @@ pub fn (win &SimpleWindow) set_minimize_button_enabled(enabled bool) &SimpleWind
 pub fn (win &SimpleWindow) set_zoom_button_enabled(enabled bool) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_set_zoom_button_enabled(win.window_info, if enabled { 1 } else { 0 })
+	}
+	return win
+}
+
+// set_content_insets sets safe area margins/padding (top, left, bottom, right) on the window content view.
+pub fn (win &SimpleWindow) set_content_insets(top int, left int, bottom int, right int) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_content_insets(win.window_info, top, left, bottom, right)
 	}
 	return win
 }

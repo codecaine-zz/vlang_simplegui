@@ -16860,6 +16860,18 @@ void window_set_zoom_button_enabled(main__WindowInfo *info, int enabled) {
   if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
 }
 
+void window_set_content_insets(main__WindowInfo *info, int top, int left, int bottom, int right) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    if (delegate.window && delegate.window.contentView) {
+      NSEdgeInsets insets = NSEdgeInsetsMake((CGFloat)top, (CGFloat)left, (CGFloat)bottom, (CGFloat)right);
+      [delegate.window.contentView setAdditionalSafeAreaInsets:insets];
+      [delegate.window.contentView setNeedsDisplay:YES];
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
 
 
 

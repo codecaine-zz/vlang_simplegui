@@ -2556,6 +2556,11 @@ fn test_comprehensive_window_control_apis() {
 	win.bring_to_front()
 	win.send_to_back()
 
+	// Toolbar Style & Insets & Close Interception
+	win.set_toolbar_style('unified')
+	win.set_content_insets(10, 10, 10, 10)
+	win.on_close(fn (mut w simplegui.SimpleWindow) {})
+
 	// Ergonomic Shortcuts
 	win.make_frameless()
 	win.make_vibrant('hud')

@@ -564,6 +564,7 @@ void window_set_zoom_button_enabled(main__WindowInfo *info, int enabled);
 void window_set_title_visible(main__WindowInfo *info, int visible);
 int window_get_title_visible(main__WindowInfo *info);
 void window_shake(main__WindowInfo *info);
+void window_set_content_insets(main__WindowInfo *info, int top, int left, int bottom, int right);
 
 #endif
 
