@@ -265,6 +265,31 @@ fn parse_tree_selector(node_id string) string {
 	return ''
 }
 
+fn find_external_control_best_match(pid int, selector string) ?simplegui.ExternalControlInfo {
+	if pid <= 0 || selector.trim_space() == '' {
+		return none
+	}
+	needle := selector.trim_space().to_lower()
+	controls := simplegui.sys_spy_external_app(pid)
+
+	for info in controls {
+		if info.title.trim_space().to_lower() == needle {
+			return info
+		}
+	}
+	for info in controls {
+		if info.role.trim_space().to_lower() == needle {
+			return info
+		}
+	}
+	for info in controls {
+		if info.title.to_lower().contains(needle) || info.role.to_lower().contains(needle) {
+			return info
+		}
+	}
+	return none
+}
+
 fn main() {
 	// =========================================================================
 	// 1. Create Target Application Window (The app being inspected & spied on)
@@ -716,20 +741,13 @@ fn main() {
 		pid := target.pid
 
 		if pid > 0 {
-			ext_ctrls := simplegui.sys_spy_external_app(pid)
-			mut found := false
-			for info in ext_ctrls {
-				if info.title.to_lower().contains(ctrl_name.to_lower())
-					|| info.role.to_lower().contains(ctrl_name.to_lower()) {
-					w.append_console('spy_output', '📖 External PID ${pid} control "${info.title}" (${info.role}) text/val: "${info.value}"',
-						0)
-					found = true
-				}
-			}
-			if !found {
+			hit := find_external_control_best_match(pid, ctrl_name) or {
 				w.append_console('spy_output', '⚠️ Control "${ctrl_name}" not found in External PID ${pid}.',
 					0)
+				return
 			}
+			w.append_console('spy_output', '📖 External PID ${pid} control "${hit.title}" (${hit.role}) text/val: "${hit.value}"',
+				0)
 		} else {
 			text := simplegui.sys_get_control_text(target.name, ctrl_name)
 			w.append_console('spy_output', '📖 Text of "${ctrl_name}": "${text}"', 0)
@@ -747,6 +765,16 @@ fn main() {
 			if simplegui.sys_set_external_control_value(pid, ctrl_name, new_text) {
 				w.append_console('spy_output', '✍️ Set value of control "${ctrl_name}" on External PID ${pid} to "${new_text}"',
 					0)
+				w.run_after(150, fn [pid, ctrl_name, new_text] (mut w2 simplegui.SimpleWindow) {
+					hit := find_external_control_best_match(pid, ctrl_name) or {
+						w2.append_console('spy_output', '⚠️ Verification: could not read back control "${ctrl_name}" on PID ${pid}.',
+							0)
+						return
+					}
+					ok := hit.value == new_text
+					w2.append_console('spy_output', '🔎 Verify external "${ctrl_name}": got "${hit.value}" (expected "${new_text}") => ${ok}',
+						0)
+				})
 			} else {
 				w.append_console('spy_output', '❌ Failed to set value on External PID ${pid} control "${ctrl_name}".',
 					0)
@@ -754,6 +782,10 @@ fn main() {
 		} else {
 			if simplegui.sys_set_control_text(target.name, ctrl_name, new_text) {
 				w.append_console('spy_output', '✍️ Set text of "${ctrl_name}" to "${new_text}"',
+					0)
+				read_back := simplegui.sys_get_control_text(target.name, ctrl_name)
+				ok := read_back == new_text
+				w.append_console('spy_output', '🔎 Verify internal "${ctrl_name}": got "${read_back}" (expected "${new_text}") => ${ok}',
 					0)
 			} else {
 				w.append_console('spy_output', '❌ Failed to set text on control "${ctrl_name}".',
