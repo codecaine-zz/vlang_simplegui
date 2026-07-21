@@ -1268,6 +1268,7 @@ Notes:
 - External app helpers rely on macOS Accessibility (`System Events`) permissions.
 - Match selectors should typically use a control title first, then role as fallback.
 - See `demos/spy_plus_plus_demo.v` for a production-ready target-table + control-tree workflow.
+- The Spy++ demo now includes a strict selector mode (exact title/role), control value watch mode, one-click health check diagnostics, selector resolve helper, and action-history audit table for production debugging workflows.
 
 #### Quick start example
 

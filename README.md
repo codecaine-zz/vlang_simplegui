@@ -579,7 +579,7 @@ v run .
 | [rich_widgets_demo.v](demos/rich_widgets_demo.v)                     | Advanced rich macOS controls suite                                                                                                                                             |
 | [developer_controls_demo.v](demos/developer_controls_demo.v)         | Breadcrumbs, shortcut recorders, charts, gauges, property grids, and log consoles                                                                                              |
 | [editable_grid_showcase_demo.v](demos/editable_grid_showcase_demo.v) | Editable grid workflow: selection, filtering, sorting, and programmatic cell access                                                                                            |
-| [spy_plus_plus_demo.v](demos/spy_plus_plus_demo.v)                   | Production Spy++-style inspector: target table + control tree, external PID automation, filtering, and JSON snapshot export                                                    |
+| [spy_plus_plus_demo.v](demos/spy_plus_plus_demo.v)                   | Production Spy++-style inspector: target table + control tree, strict selector mode, value watch mode, health checks, action history, and JSON snapshot export                 |
 | [tree_view_demo.v](demos/tree_view_demo.v)                           | Hierarchical tree view                                                                                                                                                         |
 | [advanced_features_demo.v](demos/advanced_features_demo.v)           | Advanced typography and macOS APIs                                                                                                                                             |
 | [menu_demo.v](demos/menu_demo.v)                                     | Standard macOS application menus and text editing shortcuts                                                                                                                    |
@@ -747,6 +747,12 @@ v run demos/always_on_top_demo.v
 
 ```bash
 v run demos/tree_view_demo.v
+```
+
+### Run the Spy++ External PID Inspector demo
+
+```bash
+v run demos/spy_plus_plus_demo.v
 ```
 
 ### Run the Ergonomic Helpers demo
@@ -1238,6 +1244,8 @@ Screenshots are auto-generated using `v run capture_demos.vsh`.
   ![Concurrent Worker Pool Visualizer](screenshots/worker_pool_visualizer.png)
 - **Developer Controls Console**: `v run demos/developer_controls_demo.v`
   ![Developer Controls Console](screenshots/developer_controls_demo.png)
+- **Spy++ External PID Inspector**: `v run demos/spy_plus_plus_demo.v`
+  ![Spy++ External PID Inspector](screenshots/spy_plus_plus_demo.png)
 - **List/Table Toolkit Operations**: `v run demos/list_table_toolkit_demo.v`
   ![List/Table Toolkit Operations](screenshots/list_table_toolkit_demo.png)
 - **Settings Save/Restore Workflow**: `v run demos/save_restore_demo.v`
