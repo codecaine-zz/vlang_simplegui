@@ -30,6 +30,8 @@ fn C.window_run_after(&WindowInfo, int, &u8)
 fn C.window_show_toast(&WindowInfo, &u8)
 fn C.window_open_url(&WindowInfo, &u8)
 fn C.window_copy_to_clipboard(&WindowInfo, &u8)
+fn C.window_get_clipboard_text() &u8
+fn C.window_reveal_in_finder(&u8) int
 fn C.window_set_font_color(&WindowInfo, &u8)
 fn C.window_set_control_background_color_by_name(&WindowInfo, &u8, &u8)
 fn C.window_set_control_font_color_by_name(&WindowInfo, &u8, &u8)
@@ -139,6 +141,7 @@ fn C.window_show(&WindowInfo)
 
 // Thread Safety Runner
 fn C.window_run_on_main_thread(voidptr, voidptr)
+fn C.window_run_on_main_thread_sync(voidptr, voidptr)
 
 // New general-purpose controls
 fn C.window_add_dropdown_control(&WindowInfo, &u8, &&u8, int, &u8) voidptr
@@ -370,6 +373,11 @@ fn C.window_set_prevents_app_termination(&WindowInfo, int)
 fn C.window_get_prevents_app_termination(&WindowInfo) int
 fn C.window_set_represented_filename(&WindowInfo, &u8)
 fn C.window_get_represented_filename(&WindowInfo) &u8
+fn C.window_set_frame_autosave_name(&WindowInfo, &u8)
+fn C.window_get_frame_autosave_name(&WindowInfo) &u8
+fn C.window_save_frame(&WindowInfo) int
+fn C.window_restore_frame(&WindowInfo) int
+fn C.window_capture_screenshot(&WindowInfo, &u8) int
 fn C.window_set_document_edited(&WindowInfo, int)
 fn C.window_is_document_edited(&WindowInfo) int
 fn C.window_fade_in(&WindowInfo, int)
@@ -663,6 +671,7 @@ mut:
 	hides_on_deactivate          bool
 	prevents_app_termination     bool = true
 	represented_filename         string
+	frame_autosave_name          string
 	document_edited              bool
 	titlebar_appears_transparent bool
 	full_size_content_view       bool
@@ -3455,6 +3464,28 @@ pub fn (win &SimpleWindow) copy_to_clipboard(text string) &SimpleWindow {
 	return win
 }
 
+// clipboard_text returns UTF-8 text from the system clipboard.
+pub fn clipboard_text() string {
+	res := C.window_get_clipboard_text()
+	if res != unsafe { nil } {
+		return unsafe { tos3(res) }
+	}
+	return ''
+}
+
+// reveal_in_finder asks Finder to reveal an existing path.
+pub fn reveal_in_finder(path string) bool {
+	if path == '' {
+		return false
+	}
+	return C.window_reveal_in_finder(path.str) == 1
+}
+
+// get_clipboard_text returns UTF-8 text from the system clipboard.
+pub fn (win &SimpleWindow) get_clipboard_text() string {
+	return clipboard_text()
+}
+
 // inspect_controls performs inspect controls.
 pub fn (win &SimpleWindow) inspect_controls() string {
 	mut names := []string{}
@@ -4266,6 +4297,59 @@ pub fn (win &SimpleWindow) get_represented_filename() string {
 		}
 	}
 	return win.represented_filename
+}
+
+// set_frame_autosave_name enables frame persistence under a stable autosave key.
+pub fn (win &SimpleWindow) set_frame_autosave_name(autosave_name string) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.frame_autosave_name = autosave_name
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_set_frame_autosave_name(win.window_info, autosave_name.str)
+	}
+	return win
+}
+
+// get_frame_autosave_name returns the active autosave key used for frame persistence.
+pub fn (win &SimpleWindow) get_frame_autosave_name() string {
+	if win.window_info != unsafe { nil } {
+		res := C.window_get_frame_autosave_name(win.window_info)
+		if res != unsafe { nil } {
+			s := unsafe { tos3(res) }
+			if s.len > 0 {
+				return s
+			}
+		}
+	}
+	return win.frame_autosave_name
+}
+
+// save_frame persists current window bounds using the configured autosave key.
+pub fn (win &SimpleWindow) save_frame() bool {
+	if win.window_info != unsafe { nil } {
+		return C.window_save_frame(win.window_info) == 1
+	}
+	return false
+}
+
+// restore_frame restores window bounds previously saved with autosave.
+pub fn (win &SimpleWindow) restore_frame() bool {
+	if win.window_info != unsafe { nil } {
+		return C.window_restore_frame(win.window_info) == 1
+	}
+	return false
+}
+
+// capture_screenshot writes a PNG screenshot of the current window to file_path.
+pub fn (win &SimpleWindow) capture_screenshot(file_path string) bool {
+	if file_path == '' {
+		return false
+	}
+	if win.window_info != unsafe { nil } {
+		return C.window_capture_screenshot(win.window_info, file_path.str) == 1
+	}
+	return false
 }
 
 // set_document_edited sets the unsaved changes dirty indicator in window titlebar close button.
@@ -5731,6 +5815,18 @@ pub fn (win &SimpleWindow) run_on_main_thread(callback VoidEventCallback) &Simpl
 			cb:  callback
 		}
 		C.window_run_on_main_thread(vlang_main_thread_dispatcher, data)
+	}
+	return win
+}
+
+// run_on_main_thread_sync performs run on main thread and waits for completion.
+pub fn (win &SimpleWindow) run_on_main_thread_sync(callback VoidEventCallback) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		data := &MainThreadCallback{
+			win: win
+			cb:  callback
+		}
+		C.window_run_on_main_thread_sync(vlang_main_thread_dispatcher, data)
 	}
 	return win
 }

@@ -42,6 +42,8 @@ void window_run_after(main__WindowInfo *info, int ms, const char *handler_name);
 void window_show_toast(main__WindowInfo *info, const char *message);
 void window_open_url(main__WindowInfo *info, const char *url);
 void window_copy_to_clipboard(main__WindowInfo *info, const char *text);
+char *window_get_clipboard_text(void);
+int window_reveal_in_finder(const char *path);
 
 // Name-based generic control accessors
 void window_set_control_text_by_name(main__WindowInfo *info, const char *name, const char *text);
@@ -141,6 +143,7 @@ void window_show(main__WindowInfo *info);
 
 // Thread Safety Runner
 void window_run_on_main_thread(void *callback_fn, void *context);
+void window_run_on_main_thread_sync(void *callback_fn, void *context);
 
 // New general-purpose controls
 void *window_add_dropdown_control(main__WindowInfo *info, const char *name, const char **items, int items_count, const char *selected);
@@ -541,6 +544,11 @@ void window_set_prevents_app_termination(main__WindowInfo *info, int enabled);
 int window_get_prevents_app_termination(main__WindowInfo *info);
 void window_set_represented_filename(main__WindowInfo *info, const char *filepath);
 const char *window_get_represented_filename(main__WindowInfo *info);
+void window_set_frame_autosave_name(main__WindowInfo *info, const char *autosave_name);
+const char *window_get_frame_autosave_name(main__WindowInfo *info);
+int window_save_frame(main__WindowInfo *info);
+int window_restore_frame(main__WindowInfo *info);
+int window_capture_screenshot(main__WindowInfo *info, const char *file_path);
 void window_set_document_edited(main__WindowInfo *info, int edited);
 int window_is_document_edited(main__WindowInfo *info);
 void window_fade_in(main__WindowInfo *info, int duration_ms);

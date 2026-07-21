@@ -11023,6 +11023,44 @@ void window_copy_to_clipboard(main__WindowInfo *info, const char *text) {
   });
 }
 
+char *window_get_clipboard_text(void) {
+  __block NSString *value = @"";
+  void (^runBlock)(void) = ^{
+    NSPasteboard *pasteboard = [NSPasteboard generalPasteboard];
+    NSString *pbText = [pasteboard stringForType:NSPasteboardTypeString];
+    value = pbText ?: @"";
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+
+  return strdup([value UTF8String]);
+}
+
+int window_reveal_in_finder(const char *path) {
+  if (!path || strlen(path) == 0) {
+    return 0;
+  }
+
+  __block int result = 0;
+  NSString *targetPath = nsstring(path);
+  void (^runBlock)(void) = ^{
+    if ([[NSFileManager defaultManager] fileExistsAtPath:targetPath]) {
+      NSURL *url = [NSURL fileURLWithPath:targetPath];
+      [[NSWorkspace sharedWorkspace] activateFileViewerSelectingURLs:@[url]];
+      result = 1;
+    }
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return result;
+}
+
 // C creation bridges calling AppDelegate make methods
 void *window_add_label_control(main__WindowInfo *info, const char *name, const char *text) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
@@ -12730,6 +12768,21 @@ void window_run_on_main_thread(void *callback_fn, void *context) {
   dispatch_async(dispatch_get_main_queue(), ^{
     cb(context);
   });
+}
+
+void window_run_on_main_thread_sync(void *callback_fn, void *context) {
+  void (*cb)(void *) = (void (*)(void *))callback_fn;
+  if (!cb) {
+    return;
+  }
+
+  if ([NSThread isMainThread]) {
+    cb(context);
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), ^{
+      cb(context);
+    });
+  }
 }
 
 void *window_add_dropdown_control(main__WindowInfo *info, const char *name, const char **items, int items_count, const char *selected) {
@@ -16686,6 +16739,100 @@ const char *window_get_represented_filename(main__WindowInfo *info) {
   };
   if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
   return [res UTF8String];
+}
+
+void window_set_frame_autosave_name(main__WindowInfo *info, const char *autosave_name) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    if (delegate.window) {
+      if (autosave_name && strlen(autosave_name) > 0) {
+        [delegate.window setFrameAutosaveName:nsstring(autosave_name)];
+      } else {
+        [delegate.window setFrameAutosaveName:nil];
+      }
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+const char *window_get_frame_autosave_name(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSString *res = @"";
+  void (^runBlock)(void) = ^{
+    if (delegate.window) {
+      NSString *name = [delegate.window frameAutosaveName];
+      res = name ?: @"";
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return strdup([res UTF8String]);
+}
+
+int window_save_frame(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block BOOL saved = NO;
+  void (^runBlock)(void) = ^{
+    if (delegate.window) {
+      NSString *name = [delegate.window frameAutosaveName];
+      if (name.length > 0) {
+        [delegate.window saveFrameUsingName:name];
+        saved = YES;
+      }
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return saved ? 1 : 0;
+}
+
+int window_restore_frame(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block BOOL restored = NO;
+  void (^runBlock)(void) = ^{
+    if (delegate.window) {
+      NSString *name = [delegate.window frameAutosaveName];
+      if (name.length > 0) {
+        restored = [delegate.window setFrameUsingName:name];
+      }
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return restored ? 1 : 0;
+}
+
+int window_capture_screenshot(main__WindowInfo *info, const char *file_path) {
+  if (!file_path || strlen(file_path) == 0) {
+    return 0;
+  }
+
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block BOOL wrote = NO;
+  NSString *path = nsstring(file_path);
+
+  void (^runBlock)(void) = ^{
+    if (!delegate.window) {
+      return;
+    }
+
+    NSView *contentView = [delegate.window contentView];
+    if (!contentView) {
+      return;
+    }
+
+    NSRect bounds = [contentView bounds];
+    NSBitmapImageRep *bitmapRep = [contentView bitmapImageRepForCachingDisplayInRect:bounds];
+    if (!bitmapRep) {
+      return;
+    }
+
+    [contentView cacheDisplayInRect:bounds toBitmapImageRep:bitmapRep];
+    NSData *pngData = [bitmapRep representationUsingType:NSBitmapImageFileTypePNG properties:@{}];
+    if (pngData) {
+      wrote = [pngData writeToFile:path atomically:YES];
+    }
+  };
+
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return wrote ? 1 : 0;
 }
 
 void window_set_document_edited(main__WindowInfo *info, int edited) {

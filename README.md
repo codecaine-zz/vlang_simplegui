@@ -80,7 +80,8 @@ The goal is a simple, high-abstraction GUI layer that feels familiar to anyone u
   - Multi-select List Box and Table helpers with Cmd/Shift selection and double-click actions.
   - Live search filtering (`bind_search_to_list`) and CSV/JSON table import/export.
   - Application top menu bar (`add_menu`) and right-click context menu binding (`add_context_menu`).
-  - Async thread execution (`run_async`, `run_on_main_thread`) to run intensive tasks off the UI thread cleanly.
+  - Async thread execution (`run_async`, `run_on_main_thread`, `run_on_main_thread_sync`) to run intensive tasks off the UI thread cleanly while supporting deterministic, blocking UI handoff when needed.
+  - Native production utilities for app state and OS integration: window frame autosave/restore (`set_frame_autosave_name`, `save_frame`, `restore_frame`), window PNG capture (`capture_screenshot`), clipboard read/write (`copy_to_clipboard`, `get_clipboard_text`, `simplegui.clipboard_text()`), and Finder reveal (`simplegui.reveal_in_finder(path)`).
 - **Native Keyboard Shortcuts & Overlay Levels**:
   - `CMD + F` for full screen, `CMD + Q` to quit, custom shortcut recorder widget, and window always-on-top level control.
 
@@ -1081,6 +1082,7 @@ Full API documentation and detailed signature references are maintained in [API.
 - **Appearance & Opacity**: `win.set_title(t)`, `win.set_subtitle(s)`, `win.set_opacity(alpha)`, `win.set_background_color(hex)`, `win.set_font_color(color)`, `win.set_titlebar_visible()`, `win.set_titlebar_appears_transparent()`, `win.set_full_size_content_view()`
 - **17 Theme Presets**: `win.set_theme(name)` applies any built-in theme (`Apple Light`, `Apple Dark`, `Midnight Space Gray`, `Apple Sunset`, `Sonoma Emerald`, `Ventura Amber`, `Soft Pastel`, `Catppuccin`, `Nord`, `Dracula`, `Cyberpunk`, `Solarized Light`, `Solarized Dark`, `GitHub Dark`, `GitHub Light`, `Navy Blue`, `Forest Green`). List all themes with `simplegui.list_themes()`.
 - **Window Stacking & Dock**: `win.set_always_on_top(bool)`, `win.set_window_level(level)`, `win.toggle_fullscreen()`, `win.bounce_dock(critical)`, `win.set_dock_badge(count)`, `win.set_movable_by_window_background()`
+- **Production Window State**: `win.set_represented_filename(path)`, `win.set_document_edited(bool)`, `win.set_frame_autosave_name(name)`, `win.save_frame()`, `win.restore_frame()`, `win.capture_screenshot(path)`
 
 ### 2. Control Layout & Containers
 
@@ -1117,6 +1119,7 @@ Full API documentation and detailed signature references are maintained in [API.
 - **Network Tools**: `win.get_local_ip()`, `win.get_external_ip()`, `win.ping(host, count)`, `win.dns_lookup(host)`, `win.get_wifi_ssid()`, `win.get_listening_ports()`, `win.is_internet_connected()`
 - **Resource Monitoring**: `win.get_cpu_usage_percent()`, `win.get_process_memory_mb(pid)`, `win.get_load_average()`, `win.get_memory_pressure()`
 - **macOS System Actions**: `win.show_system_notification()`, `win.say()`, `win.speak_with_voice()`, `win.toggle_dark_mode()`, `win.get_battery_percent()`, `win.get_volume()`, `win.take_screenshot()`, `win.trash_file()`, `win.defaults_read/write`
+- **Clipboard & Finder**: `win.copy_to_clipboard(text)`, `win.get_clipboard_text()`, `simplegui.clipboard_text()`, `simplegui.reveal_in_finder(path)`
 
 ### 7. V Standard Library High-Level Wrappers
 
@@ -1145,7 +1148,7 @@ Full API documentation and detailed signature references are maintained in [API.
 - **Settings Persistence**: `win.save_values_to_file("settings.json")!`, `win.load_values_from_file("settings.json")!`
 - **Form Dirty Tracking**: `win.is_dirty()`, `win.is_control_dirty(name)`, `win.commit_changes()`, `win.confirm_discard_changes()`
 - **Live Search Filtering**: `win.bind_search_to_list(search_name, list_name)`
-- **Async Execution**: `win.run_async(bg_task_fn, on_complete_cb)`, `win.run_on_main_thread(cb)`
+- **Async Execution**: `win.run_async(bg_task_fn, on_complete_cb)`, `win.run_on_main_thread(cb)`, `win.run_on_main_thread_sync(cb)`
 - **System Tray Mode**: `win.enable_status_bar(icon_path)`
 
 For complete method details, arguments, and full code examples, view [API.md](API.md).
