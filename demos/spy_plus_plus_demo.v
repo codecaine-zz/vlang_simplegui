@@ -1,22 +1,410 @@
 module main
 
 import simplegui
+import os
 import time
 
 const default_target_title = 'Target Application — Support Desk'
 
-struct SelectedTarget {
-	scope string
-	name  string
-	pid   int
-	valid bool
+// SpyTarget represents a unified target application window (internal SimpleGUI or external macOS process).
+struct SpyTarget {
+pub mut:
+	scope     string // 'internal' or 'external'
+	name      string // Window title or app name
+	pid       int    // Process ID (0 for internal windows)
+	bundle_id string // macOS bundle ID (for external apps)
+	valid     bool
 }
 
+// ControlRef represents a normalized inspection record for any UI control.
+struct ControlRef {
+pub mut:
+	kind    string
+	name    string
+	label   string
+	value   string
+	enabled bool
+	visible bool
+	checked bool
+	width   int
+	height  int
+}
+
+// WatchState manages real-time control polling state.
 @[heap]
 struct WatchState {
 mut:
 	last_key   string
 	last_value string
+}
+
+fn (t SpyTarget) is_external() bool {
+	return t.scope == 'external' || t.pid > 0
+}
+
+fn (t SpyTarget) label() string {
+	if t.is_external() {
+		return 'External App (PID ${t.pid}) — ${t.name}'
+	}
+	return 'Internal Window — "${t.name}"'
+}
+
+// list_controls inspects and normalizes controls from the target matching an optional query filter.
+fn (t SpyTarget) list_controls(filter_query string) []ControlRef {
+	query := filter_query.trim_space().to_lower()
+	mut result := []ControlRef{}
+
+	if t.is_external() {
+		controls := simplegui.sys_spy_external_app(t.pid)
+		for ctrl in controls {
+			name := if ctrl.title.trim_space() != '' {
+				ctrl.title.trim_space()
+			} else {
+				ctrl.role.trim_space()
+			}
+			if name == '' {
+				continue
+			}
+			haystack := '${ctrl.role} ${ctrl.title} ${ctrl.value}'.to_lower()
+			if query != '' && !haystack.contains(query) {
+				continue
+			}
+			result << ControlRef{
+				kind:    ctrl.role
+				name:    name
+				label:   ctrl.title
+				value:   ctrl.value
+				enabled: ctrl.enabled
+				visible: true
+				checked: false
+				width:   0
+				height:  0
+			}
+		}
+	} else {
+		controls := simplegui.sys_spy_window(t.name) or { return []ControlRef{} }
+		for ctrl in controls {
+			haystack := '${ctrl.kind} ${ctrl.name} ${ctrl.label} ${ctrl.value}'.to_lower()
+			if query != '' && !haystack.contains(query) {
+				continue
+			}
+			result << ControlRef{
+				kind:    ctrl.kind
+				name:    ctrl.name
+				label:   ctrl.label
+				value:   ctrl.value
+				enabled: ctrl.enabled
+				visible: ctrl.visible
+				checked: ctrl.checked
+				width:   ctrl.width
+				height:  ctrl.height
+			}
+		}
+	}
+	return result
+}
+
+fn resolve_internal_control_name(win_title string, selector string) string {
+	raw := selector.trim_space()
+	if raw == '' {
+		return ''
+	}
+	target_win := simplegui.sys_get_window(win_title) or { return raw }
+	if target_win.has_control(raw) {
+		return raw
+	}
+	raw_lower := raw.to_lower()
+	for ctrl in target_win.spy_controls() {
+		if ctrl.label.to_lower() == raw_lower || ctrl.name.to_lower() == raw_lower {
+			return ctrl.name
+		}
+	}
+	for ctrl in target_win.spy_controls() {
+		if ctrl.kind.to_lower() == raw_lower {
+			return ctrl.name
+		}
+	}
+	return raw
+}
+
+fn parse_non_negative_index(raw string) ?int {
+	text := raw.trim_space()
+	if text == '' {
+		return none
+	}
+	for b in text.bytes() {
+		if b < `0` || b > `9` {
+			return none
+		}
+	}
+	return text.int()
+}
+
+// get_control_text reads control value from target.
+fn (t SpyTarget) get_control_text(control_name string, strict bool) ?string {
+	if control_name.trim_space() == '' {
+		return none
+	}
+	if t.is_external() {
+		controls := simplegui.sys_spy_external_app(t.pid)
+		needle := control_name.trim_space().to_lower()
+		for info in controls {
+			if info.title.trim_space().to_lower() == needle {
+				return if info.value != '' { info.value } else { info.title }
+			}
+		}
+		for info in controls {
+			if info.role.trim_space().to_lower() == needle {
+				return if info.value != '' { info.value } else { info.title }
+			}
+		}
+		if !strict {
+			for info in controls {
+				if info.title.to_lower().contains(needle) || info.role.to_lower().contains(needle) {
+					return if info.value != '' { info.value } else { info.title }
+				}
+			}
+		}
+		return none
+	}
+	real_name := resolve_internal_control_name(t.name, control_name)
+	target_win := simplegui.sys_get_window(t.name) or { return none }
+	info := target_win.spy_control(real_name) or { return none }
+	if info.kind == 'button' || info.kind == 'checkbox' {
+		return if info.label != '' { info.label } else { info.value }
+	}
+	if info.kind == 'listbox' {
+		selected := target_win.get_list_selected_text(real_name)
+		if selected != '' {
+			return selected
+		}
+		idx := target_win.get_list_selected(real_name)
+		if idx >= 0 {
+			return idx.str()
+		}
+		return ''
+	}
+	return simplegui.sys_get_control_text(t.name, real_name)
+}
+
+// set_control_text writes control value to target.
+fn (t SpyTarget) set_control_text(control_name string, value string) bool {
+	if t.is_external() {
+		return simplegui.sys_set_external_control_value(t.pid, control_name, value)
+	}
+	real_name := resolve_internal_control_name(t.name, control_name)
+	target_win := simplegui.sys_get_window(t.name) or { return false }
+	if target_win.get_control_kind(real_name) == 'listbox' {
+		trimmed := value.trim_space()
+		if trimmed == '' {
+			target_win.clear_list_selection(real_name)
+			return true
+		}
+		items := target_win.get_list_items(real_name)
+		if idx := parse_non_negative_index(trimmed) {
+			if idx >= 0 && idx < items.len {
+				target_win.set_list_selected(real_name, idx)
+				return true
+			}
+		}
+		if target_win.select_list_item_by_text(real_name, value) {
+			return true
+		}
+		needle := trimmed.to_lower()
+		for i, item in items {
+			if item.to_lower() == needle {
+				target_win.set_list_selected(real_name, i)
+				return true
+			}
+		}
+		for i, item in items {
+			if item.to_lower().contains(needle) {
+				target_win.set_list_selected(real_name, i)
+				return true
+			}
+		}
+		return false
+	}
+	return simplegui.sys_set_control_text(t.name, real_name, value)
+}
+
+// press_control triggers click/press on control in target.
+fn (t SpyTarget) press_control(control_name string) bool {
+	if t.is_external() {
+		return simplegui.sys_press_external_control(t.pid, control_name)
+	}
+	real_name := resolve_internal_control_name(t.name, control_name)
+	target_win := simplegui.sys_get_window(t.name) or { return false }
+	return target_win.click(real_name)
+}
+
+// flash_control draws visual highlight on control in target.
+fn (t SpyTarget) flash_control(control_name string) bool {
+	if t.is_external() {
+		return simplegui.sys_flash_external_control(t.pid, control_name)
+	}
+	real_name := resolve_internal_control_name(t.name, control_name)
+	return simplegui.sys_flash_control(t.name, real_name)
+}
+
+// set_control_enabled enables/disables control in target.
+fn (t SpyTarget) set_control_enabled(control_name string, enabled bool) bool {
+	if t.is_external() {
+		return simplegui.sys_set_external_control_enabled(t.pid, control_name, enabled)
+	}
+	real_name := resolve_internal_control_name(t.name, control_name)
+	return simplegui.sys_set_control_enabled(t.name, real_name, enabled)
+}
+
+// set_control_visible shows/hides control in target.
+fn (t SpyTarget) set_control_visible(control_name string, visible bool) bool {
+	if t.is_external() {
+		return simplegui.sys_set_external_control_visible(t.pid, control_name, visible)
+	}
+	real_name := resolve_internal_control_name(t.name, control_name)
+	return simplegui.sys_set_control_visible(t.name, real_name, visible)
+}
+
+// order_front brings target to front.
+fn (t SpyTarget) order_front() bool {
+	if t.is_external() {
+		return simplegui.sys_set_external_app_frontmost(t.pid)
+	}
+	return simplegui.sys_order_app_window_front(t.name)
+}
+
+// order_back sends target behind other windows.
+fn (t SpyTarget) order_back() bool {
+	if t.is_external() {
+		return false
+	}
+	return simplegui.sys_order_app_window_back(t.name)
+}
+
+// set_visible shows or hides target window.
+fn (t SpyTarget) set_visible(visible bool) bool {
+	if t.is_external() {
+		return simplegui.sys_set_external_app_visible(t.pid, visible)
+	}
+	return simplegui.sys_set_app_window_visible(t.name, visible)
+}
+
+// generate_v_code produces executable V code for automating the specified target action.
+fn (t SpyTarget) generate_v_code(action string, control string, value string) string {
+	escaped_val := value.replace("'", "\\'")
+	escaped_ctrl := control.replace("'", "\\'")
+	if t.is_external() {
+		match action {
+			'set_text' {
+				return "simplegui.sys_set_external_control_value(${t.pid}, '${escaped_ctrl}', '${escaped_val}')"
+			}
+			'press' {
+				return "simplegui.sys_press_external_control(${t.pid}, '${escaped_ctrl}')"
+			}
+			'enable' {
+				return "simplegui.sys_set_external_control_enabled(${t.pid}, '${escaped_ctrl}', true)"
+			}
+			'disable' {
+				return "simplegui.sys_set_external_control_enabled(${t.pid}, '${escaped_ctrl}', false)"
+			}
+			'flash' {
+				return "simplegui.sys_flash_external_control(${t.pid}, '${escaped_ctrl}')"
+			}
+			else {
+				return "// External action '${action}' on PID ${t.pid}"
+			}
+		}
+	} else {
+		escaped_win := t.name.replace("'", "\\'")
+		match action {
+			'set_text' {
+				return "simplegui.sys_set_control_text('${escaped_win}', '${escaped_ctrl}', '${escaped_val}')"
+			}
+			'get_text' {
+				return "val := simplegui.sys_get_control_text('${escaped_win}', '${escaped_ctrl}')"
+			}
+			'press' {
+				return "if mut win := simplegui.sys_get_window('${escaped_win}') { win.click('${escaped_ctrl}') }"
+			}
+			'enable' {
+				return "simplegui.sys_set_control_enabled('${escaped_win}', '${escaped_ctrl}', true)"
+			}
+			'disable' {
+				return "simplegui.sys_set_control_enabled('${escaped_win}', '${escaped_ctrl}', false)"
+			}
+			'flash' {
+				return "simplegui.sys_flash_control('${escaped_win}', '${escaped_ctrl}')"
+			}
+			else {
+				return "// Internal action '${action}' on '${escaped_win}'"
+			}
+		}
+	}
+}
+
+// generate_python_code produces executable Python automation code snippet.
+fn (t SpyTarget) generate_python_code(action string, control string, value string) string {
+	escaped_val := value.replace('"', '\\"')
+	escaped_ctrl := control.replace('"', '\\"')
+	if t.is_external() {
+		match action {
+			'set_text' {
+				return 'import subprocess\nsubprocess.run(["osascript", "-e", \'tell application "System Events" to set value of UI element "${escaped_ctrl}" of (first process whose unix id is ${t.pid}) to "${escaped_val}"\'])'
+			}
+			'press' {
+				return 'import subprocess\nsubprocess.run(["osascript", "-e", \'tell application "System Events" to click UI element "${escaped_ctrl}" of (first process whose unix id is ${t.pid})\'])'
+			}
+			else {
+				return '# Python script snippet for external PID ${t.pid} action "${action}"'
+			}
+		}
+	} else {
+		escaped_win := t.name.replace('"', '\\"')
+		return '# V-SimpleGUI internal window automation ("${escaped_win}")\n# Action: ${action} on control "${escaped_ctrl}" with value "${escaped_val}"'
+	}
+}
+
+// export_csv serializes control tree snapshot to CSV format.
+fn (t SpyTarget) export_csv(path string, mut win simplegui.SimpleWindow) bool {
+	ctrls := t.list_controls('')
+	mut lines := []string{}
+	lines << 'Kind_Role,Name_Title,Label,Value,Enabled,Visible,Width,Height'
+	for c in ctrls {
+		lines << '"${c.kind.replace('"', '""')}","${c.name.replace('"', '""')}","${c.label.replace('"',
+			'""')}","${c.value.replace('"', '""')}",${c.enabled},${c.visible},${c.width},${c.height}'
+	}
+	payload := lines.join('\n')
+	win.write_file(path, payload)
+	return win.file_exists(path)
+}
+
+// export_json serializes full target snapshot to JSON format.
+fn (t SpyTarget) export_json(path string, mut win simplegui.SimpleWindow) bool {
+	mut payload := ''
+	if t.is_external() {
+		ext_ctrls := simplegui.sys_spy_external_app(t.pid)
+		mut lines := []string{}
+		lines << '{'
+		lines << '  "scope": "external",'
+		lines << '  "pid": ${t.pid},'
+		lines << '  "name": "${t.name.replace('"', '\\"')}",'
+		lines << '  "controls_count": ${ext_ctrls.len},'
+		lines << '  "controls": ['
+		for i, ctrl in ext_ctrls {
+			comma := if i < ext_ctrls.len - 1 { ',' } else { '' }
+			lines << '    {"role":"${ctrl.role.replace('"', '\\"')}","title":"${ctrl.title.replace('"',
+				'\\"')}","value":"${ctrl.value.replace('"', '\\"')}","enabled":${ctrl.enabled}}${comma}'
+		}
+		lines << '  ]'
+		lines << '}'
+		payload = lines.join('\n')
+	} else {
+		target_internal := simplegui.sys_get_window(t.name) or { return false }
+		payload = target_internal.spy_json()
+	}
+
+	win.write_file(path, payload)
+	return win.file_exists(path)
 }
 
 fn strict_selector_enabled(mut win simplegui.SimpleWindow) bool {
@@ -75,72 +463,38 @@ fn selected_control_name(mut win simplegui.SimpleWindow) string {
 fn require_control_name(mut win simplegui.SimpleWindow, action string) ?string {
 	name := selected_control_name(mut win)
 	if name == '' {
-		win.append_console('spy_output', '⚠️ ${action}: no control selected. Pick a control from tree or type a control selector first.',
+		win.append_console('spy_output', '⚠️ ${action}: no control selected. Pick a control from tree or enter a selector first.',
 			0)
 		return none
 	}
 	return name
 }
 
-fn export_selected_target_json(mut win simplegui.SimpleWindow, path string) bool {
-	target := selected_target(mut win)
-	mut payload := ''
-	if target.pid > 0 {
-		ext_ctrls := simplegui.sys_spy_external_app(target.pid)
-		mut lines := []string{}
-		lines << '{'
-		lines << '  "scope": "external",'
-		lines << '  "pid": ${target.pid},'
-		lines << '  "name": "${target.name.replace('"', '\\"')}",'
-		lines << '  "controls": ['
-		for i, ctrl in ext_ctrls {
-			comma := if i < ext_ctrls.len - 1 { ',' } else { '' }
-			lines << '    {"role":"${ctrl.role.replace('"', '\\"')}","title":"${ctrl.title.replace('"',
-				'\\"')}","value":"${ctrl.value.replace('"', '\\"')}","enabled":${ctrl.enabled}}${comma}'
-		}
-		lines << '  ]'
-		lines << '}'
-		payload = lines.join('\n')
-	} else {
-		target_internal := simplegui.sys_get_window(target.name) or {
-			win.append_console('spy_output', '❌ Export failed: internal target window "${target.name}" not found.',
-				0)
-			return false
-		}
-		payload = target_internal.spy_json()
-	}
-
-	win.write_file(path, payload)
-	if win.file_exists(path) {
-		win.append_console('spy_output', '💾 Exported snapshot JSON to ${path}', 0)
-		return true
-	}
-	win.append_console('spy_output', '❌ Export failed: could not write ${path}', 0)
-	return false
-}
-
-fn selected_target(mut win simplegui.SimpleWindow) SelectedTarget {
+fn selected_target(mut win simplegui.SimpleWindow) SpyTarget {
 	rows := win.get_table_rows('targets_table')
 	idx := win.get_table_selected('targets_table')
 	if idx >= 0 && idx < rows.len && rows[idx].len >= 3 {
 		scope := rows[idx][0]
 		name := rows[idx][1]
 		pid := rows[idx][2].int()
-		return SelectedTarget{
-			scope: scope
-			name:  name
-			pid:   pid
-			valid: true
+		bundle_id := if rows[idx].len >= 4 { rows[idx][3] } else { '' }
+		return SpyTarget{
+			scope:     scope
+			name:      name
+			pid:       pid
+			bundle_id: bundle_id
+			valid:     true
 		}
 	}
 
 	pid := win.get_control_text('ext_pid_input').trim_space().int()
 	if pid > 0 {
-		return SelectedTarget{
-			scope: 'external'
-			name:  'PID ${pid}'
-			pid:   pid
-			valid: true
+		return SpyTarget{
+			scope:     'external'
+			name:      'PID ${pid}'
+			pid:       pid
+			bundle_id: ''
+			valid:     true
 		}
 	}
 
@@ -148,11 +502,12 @@ fn selected_target(mut win simplegui.SimpleWindow) SelectedTarget {
 	if title == '' {
 		title = default_target_title
 	}
-	return SelectedTarget{
-		scope: 'internal'
-		name:  title
-		pid:   0
-		valid: true
+	return SpyTarget{
+		scope:     'internal'
+		name:      title
+		pid:       0
+		bundle_id: ''
+		valid:     true
 	}
 }
 
@@ -205,7 +560,7 @@ fn refresh_targets_table(mut win simplegui.SimpleWindow) {
 		win.set_table_selected('targets_table', 0)
 	}
 	sync_selected_target(mut win)
-	win.append_console('spy_output', '🔄 Refreshed target catalog (${rows.len} rows).',
+	win.append_console('spy_output', '🔄 Refreshed target catalog (${rows.len} available targets).',
 		0)
 }
 
@@ -213,10 +568,11 @@ fn sync_selected_target(mut win simplegui.SimpleWindow) {
 	target := selected_target(mut win)
 	if !target.valid {
 		win.set_text('selected_target_label', 'Selected target: none')
+		win.set_text('dashboard_metrics', 'Metrics: Target=None | Discovered Controls=0')
 		return
 	}
 
-	if target.scope == 'external' {
+	if target.is_external() {
 		win.set_control_text('ext_pid_input', target.pid.str())
 		win.set_text('target_window_input', '')
 		win.set_text('selected_target_label', 'Selected target: external PID ${target.pid} (${target.name})')
@@ -234,76 +590,35 @@ fn load_controls_for_selected_target(mut win simplegui.SimpleWindow) {
 		return
 	}
 
-	control_filter := win.get_control_text('control_filter_input').trim_space().to_lower()
+	control_filter := win.get_control_text('control_filter_input').trim_space()
+	ctrls := target.list_controls(control_filter)
 
 	mut nodes := []simplegui.TreeNode{}
-	nodes << simplegui.tree_root('root', if target.scope == 'external' {
-		'External PID ${target.pid} Controls'
+	root_title := if target.is_external() {
+		'External PID ${target.pid} Controls (${ctrls.len})'
 	} else {
-		'Internal Window Controls'
-	})
+		'Internal Window Controls (${ctrls.len})'
+	}
+	nodes << simplegui.tree_root('root', root_title)
 
-	if target.scope == 'external' {
-		controls := simplegui.sys_spy_external_app(target.pid)
-		mut visible_count := 0
-		for i, ctrl in controls {
-			selector := if ctrl.title.trim_space() != '' {
-				ctrl.title.trim_space()
-			} else {
-				ctrl.role.trim_space()
-			}
-			if selector == '' {
-				continue
-			}
-			haystack := '${ctrl.role} ${ctrl.title} ${ctrl.value}'.to_lower()
-			if control_filter != '' && !haystack.contains(control_filter) {
-				continue
-			}
-			node_id := 'sel::${selector}'
-			node_text := if ctrl.title.trim_space() != '' {
-				'${ctrl.role} - ${ctrl.title}'
-			} else {
-				ctrl.role
-			}
-			nodes << simplegui.tree_child(node_id, 'root', node_text)
-			visible_count++
-			if i == 0 {
-				win.set_control_text('ctrl_name_input', selector)
-			}
+	for i, ctrl in ctrls {
+		node_id := 'sel::${ctrl.name}'
+		node_text := '${ctrl.kind} - ${ctrl.name}'
+		nodes << simplegui.tree_child(node_id, 'root', node_text)
+		if i == 0 {
+			win.set_control_text('ctrl_name_input', ctrl.name)
+			update_control_details_card(mut win, ctrl)
 		}
-		win.append_console('spy_output', '🕵️ Loaded ${visible_count}/${controls.len} external controls for PID ${target.pid}.',
-			0)
-	} else {
-		controls := simplegui.sys_spy_window(target.name) or {
-			win.append_console('spy_output', '❌ Internal target window "${target.name}" not found in registry.',
-				0)
-			win.set_tree_nodes('control_tree', nodes)
-			return
-		}
-		mut visible_count := 0
-		for i, ctrl in controls {
-			selector := ctrl.name.trim_space()
-			if selector == '' {
-				continue
-			}
-			haystack := '${ctrl.kind} ${ctrl.name} ${ctrl.label} ${ctrl.value}'.to_lower()
-			if control_filter != '' && !haystack.contains(control_filter) {
-				continue
-			}
-			node_id := 'sel::${selector}'
-			node_text := '${ctrl.kind} - ${ctrl.name}'
-			nodes << simplegui.tree_child(node_id, 'root', node_text)
-			visible_count++
-			if i == 0 {
-				win.set_control_text('ctrl_name_input', selector)
-			}
-		}
-		win.append_console('spy_output', '🧩 Loaded ${visible_count}/${controls.len} internal controls for "${target.name}".',
-			0)
 	}
 
 	win.set_tree_nodes('control_tree', nodes)
 	win.open_tree('control_tree')
+
+	win.set_text('dashboard_metrics', 'Metrics: Target=${target.name} (${target.scope}) | Controls=${ctrls.len}')
+	win.append_console('spy_output', '🧩 Loaded ${ctrls.len} controls for ${target.label()}.',
+		0)
+
+	update_code_generator(mut win, 'inspect')
 }
 
 fn parse_tree_selector(node_id string) string {
@@ -313,52 +628,119 @@ fn parse_tree_selector(node_id string) string {
 	return ''
 }
 
-fn find_external_control_match(pid int, selector string, strict bool) ?simplegui.ExternalControlInfo {
-	if pid <= 0 || selector.trim_space() == '' {
-		return none
-	}
-	needle := selector.trim_space().to_lower()
-	controls := simplegui.sys_spy_external_app(pid)
-
-	for info in controls {
-		if info.title.trim_space().to_lower() == needle {
-			return info
-		}
-	}
-	for info in controls {
-		if info.role.trim_space().to_lower() == needle {
-			return info
-		}
-	}
-	if strict {
-		return none
-	}
-	for info in controls {
-		if info.title.to_lower().contains(needle) || info.role.to_lower().contains(needle) {
-			return info
-		}
-	}
-	return none
+fn update_control_details_card(mut win simplegui.SimpleWindow, ctrl ControlRef) {
+	detail_text := 'Name: ${ctrl.name} | Kind/Role: ${ctrl.kind} | Value: "${ctrl.value}" | Enabled: ${ctrl.enabled} | Visible: ${ctrl.visible}'
+	win.set_text('ctrl_detail_text', detail_text)
 }
 
-fn find_external_control_best_match(pid int, selector string) ?simplegui.ExternalControlInfo {
-	return find_external_control_match(pid, selector, false)
+fn update_code_generator(mut win simplegui.SimpleWindow, action string) {
+	target := selected_target(mut win)
+	ctrl_name := win.get_control_text('ctrl_name_input').trim_space()
+	val_text := win.get_control_text('new_value_input')
+
+	v_code := target.generate_v_code(action, ctrl_name, val_text)
+	py_code := target.generate_python_code(action, ctrl_name, val_text)
+
+	win.set_control_text('code_snippet_v', v_code)
+	win.set_control_text('code_snippet_py', py_code)
 }
 
-fn read_control_value_for_target(mut win simplegui.SimpleWindow, target SelectedTarget, control_name string, strict bool) ?string {
-	if control_name.trim_space() == '' {
-		return none
+fn run_health_check(mut win simplegui.SimpleWindow) {
+	target := selected_target(mut win)
+	strict := strict_selector_enabled(mut win)
+	ctrl := selected_control_name(mut win).trim_space()
+	win.append_console('spy_output', '=== 🩺 Spy++ Comprehensive Health Check ===',
+		0)
+	win.append_console('spy_output', 'Target: scope=${target.scope} pid=${target.pid} name="${target.name}" strict=${strict} control="${ctrl}"',
+		0)
+
+	if target.is_external() {
+		apps := simplegui.sys_list_external_apps()
+		mut listed := false
+		for app in apps {
+			if app.pid == target.pid {
+				listed = true
+				win.append_console('spy_output', '✅ External PID ${target.pid} active: ${app.name} (${app.bundle_id})',
+					0)
+				break
+			}
+		}
+		if !listed {
+			win.append_console('spy_output', '⚠️ External PID ${target.pid} not found in desktop application list.',
+				0)
+		}
+		controls := target.list_controls('')
+		win.append_console('spy_output', '📊 Inspectable AXUIElement controls count: ${controls.len}',
+			0)
+		if controls.len == 0 {
+			win.append_console('spy_output', '💡 Troubleshooting Tip: Ensure Accessibility permission is granted in macOS System Settings -> Privacy & Security -> Accessibility.',
+				0)
+		}
+		if ctrl != '' {
+			val := target.get_control_text(ctrl, strict) or {
+				win.append_console('spy_output', '❌ Selector "${ctrl}" did not resolve under strict=${strict}.',
+					0)
+				log_action(mut win, 'health_check', 'external:${target.pid}', ctrl, 'unresolved')
+				return
+			}
+			win.append_console('spy_output', '✅ Selector "${ctrl}" resolved successfully with value: "${val}".',
+				0)
+			log_action(mut win, 'health_check', 'external:${target.pid}', ctrl, 'ok')
+		}
+	} else {
+		target_win := simplegui.sys_get_window(target.name) or {
+			win.append_console('spy_output', '❌ Internal target window "${target.name}" not registered in registry.',
+				0)
+			log_action(mut win, 'health_check', 'internal:${target.name}', ctrl, 'missing_window')
+			return
+		}
+		_ := target_win
+		win.append_console('spy_output', '✅ Internal target window "${target.name}" registered and operational.',
+			0)
+		if ctrl != '' {
+			val := target.get_control_text(ctrl, strict) or { '' }
+			win.append_console('spy_output', '✅ Internal control readback for "${ctrl}": "${val}"',
+				0)
+		}
+		log_action(mut win, 'health_check', 'internal:${target.name}', ctrl, 'ok')
 	}
-	if target.pid > 0 {
-		hit := find_external_control_match(target.pid, control_name, strict) or { return none }
-		return hit.value
+}
+
+fn run_listbox_get_set_self_check(mut win simplegui.SimpleWindow) {
+	target := SpyTarget{
+		scope: 'internal'
+		name:  default_target_title
+		pid:   0
+		valid: true
 	}
-	return simplegui.sys_get_control_text(target.name, control_name)
+	control_name := 'support_queue'
+	expected_by_text := 'Priority Escalations'
+	expected_by_index := 'Billing Questions'
+
+	set_text_ok := target.set_control_text(control_name, expected_by_text)
+	read_text := target.get_control_text(control_name, true) or { '' }
+	get_text_ok := read_text == expected_by_text
+
+	set_index_ok := target.set_control_text(control_name, '2')
+	read_index_text := target.get_control_text(control_name, true) or { '' }
+	get_index_ok := read_index_text == expected_by_index
+
+	passed := set_text_ok && get_text_ok && set_index_ok && get_index_ok
+	status := if passed { 'PASS' } else { 'FAIL' }
+	win.set_text('dashboard_metrics', 'Metrics: Target=${target.name} (${target.scope}) | Listbox Self-Check=${status}')
+	win.set_text('selected_control_label', 'Selected control: ${control_name} (self-check=${status})')
+	win.set_control_text('ctrl_name_input', control_name)
+	win.set_control_text('new_value_input', expected_by_text)
+	win.set_text('ctrl_detail_text', 'Self-check readbacks -> by_text="${read_text}" | by_index="${read_index_text}"')
+	win.append_console('spy_output', '[SELF-CHECK:listbox_get_set] ${status} | set_text=${set_text_ok} read_text="${read_text}" | set_index=${set_index_ok} read_index="${read_index_text}"',
+		if passed { 4 } else { 3 })
+	println('[SELF-CHECK:listbox_get_set] ${status} set_text=${set_text_ok} read_text="${read_text}" set_index=${set_index_ok} read_index="${read_index_text}"')
+	log_action(mut win, 'self_check_listbox', target.name, control_name, status)
 }
 
 fn main() {
 	// =========================================================================
-	// 1. Create Target Application Window (The app being inspected & spied on)
+	// 1. Create Target Application Window (The sample application being spied on)
 	// =========================================================================
 	mut target_win := simplegui.new_simple_window(default_target_title, 500, 480)
 
@@ -371,6 +753,10 @@ fn main() {
 
 	target_win.add_checkbox('chk_vip', 'VIP Enterprise Customer', true)
 	target_win.add_checkbox('chk_newsletter', 'Subscribe to Product Updates', false)
+	target_win.add_label('lbl_queue_title', 'Support Queue')
+	target_win.add_list_box('support_queue', ['General Inquiry', 'Priority Escalations',
+		'Billing Questions', 'Technical Support'])
+	target_win.add_label('lbl_queue_status', 'Queue Selection: General Inquiry')
 
 	target_win.add_textarea('ticket_notes', 'Customer requires urgent assistance with API license key activation.')
 
@@ -390,27 +776,34 @@ fn main() {
 		w.set_control_text('lbl_status', 'Status: Form cleared.')
 	})
 
+	target_win.on_change('support_queue', fn (mut w simplegui.SimpleWindow, value string) {
+		w.set_control_text('lbl_queue_status', 'Queue Selection: ${value}')
+	})
+
 	// =========================================================================
-	// 2. Create Spy++ Control Center Window (The Inspector / Spy++ Program)
+	// 2. Create Spy++ Control Center Window (The Inspector / Automation Tool)
 	// =========================================================================
-	mut spy_win := simplegui.new_simple_window('SimpleGUI Spy++ Control Center', 980,
-		860)
+	mut spy_win := simplegui.new_simple_window('SimpleGUI Spy++ Control Center & Automation Studio',
+		980, 920)
 	mut watch_state := &WatchState{}
 
 	spy_win.add_label('spy_header', '🔍 Spy++ Real-Time Application & System AXUIElement Inspector')
+	spy_win.add_label('dashboard_metrics', 'Metrics: Initializing catalog...')
 	spy_win.add_label('selected_target_label', 'Selected target: none')
-	spy_win.add_section_header('sec_targets', 'Target Discovery', 'Choose which internal/external window to control, then load/filter controls')
+
+	spy_win.add_section_header('sec_targets', 'Target Discovery Catalog', 'Select internal window or desktop application process to inspect')
 
 	spy_win.begin_row('catalog_tools_row')
 	spy_win.add_button('btn_refresh_targets', '🔄 Refresh Open Windows / Apps')
 	spy_win.add_button('btn_load_controls', '🧩 Load Selected Target Controls')
-	spy_win.add_button('btn_target_front', '⬆️ Bring Selected Target Front')
-	spy_win.add_button('btn_target_back', '⬇️ Send Selected Target Back')
+	spy_win.add_button('btn_target_front', '⬆️ Bring Target Front')
+	spy_win.add_button('btn_target_back', '⬇️ Send Target Back')
 	spy_win.end_row()
 
 	spy_win.begin_row('target_window_visibility_row')
-	spy_win.add_button('btn_target_show', '👁️ Show Selected Target')
-	spy_win.add_button('btn_target_hide', '🙈 Hide Selected Target')
+	spy_win.add_button('btn_target_show', '👁️ Show Target')
+	spy_win.add_button('btn_target_hide', '🙈 Hide Target')
+	spy_win.add_button('btn_copy_target', '📌 Copy Target Selector')
 	spy_win.end_row()
 
 	spy_win.begin_row('targets_filter_row')
@@ -418,82 +811,97 @@ fn main() {
 	spy_win.add_dropdown('scope_filter', ['all', 'internal', 'external'], 'all')
 	spy_win.add_button('btn_apply_target_filter', 'Apply')
 	spy_win.add_button('btn_reset_target_filter', 'Reset')
-	spy_win.add_checkbox('auto_refresh_targets', 'Auto Refresh', false)
+	spy_win.add_checkbox('auto_refresh_targets', 'Auto Refresh (2.5s)', false)
 	spy_win.end_row()
 	spy_win.set_control_width('target_filter_input', 380)
 	spy_win.set_control_width('scope_filter', 120)
 
 	spy_win.add_table('targets_table', ['Scope', 'Window / App', 'PID', 'Bundle / Notes'])
-	spy_win.set_control_height('targets_table', 170)
+	spy_win.set_control_height('targets_table', 160)
+
+	spy_win.add_section_header('sec_controls', 'Control Hierarchy & Inspection Details',
+		'Explore elements, filter by query, and inspect properties')
 
 	spy_win.begin_row('controls_filter_row')
-	spy_win.add_search_field('control_filter_input', 'Filter loaded controls by name/role/kind/value')
+	spy_win.add_search_field('control_filter_input', 'Filter controls by role, title, name, or value')
 	spy_win.add_button('btn_apply_control_filter', 'Apply')
 	spy_win.add_button('btn_reset_control_filter', 'Reset')
 	spy_win.end_row()
 	spy_win.set_control_width('control_filter_input', 420)
 
-	spy_win.add_tree_view('control_tree', 220)
+	spy_win.add_tree_view('control_tree', 200)
 	spy_win.add_label('selected_control_label', 'Selected control: none')
-	spy_win.add_section_header('sec_actions', 'Control Actions', 'Run operations against selected control and target')
+	spy_win.add_label('ctrl_detail_text', 'Properties: Select a control in the tree above')
 
-	// Control selection and actions
+	spy_win.add_section_header('sec_actions', 'Control Actions & Automation Studio', 'Run operations against target control and generate code snippets')
+
+	// Control selection inputs
 	spy_win.add_input('ctrl_name_input', 'customer_name')
-	spy_win.set_placeholder('ctrl_name_input', 'Control name / title / role (e.g. customer_name, btn_submit, or AXButton)')
+	spy_win.set_placeholder('ctrl_name_input', 'Control selector (e.g. customer_name, btn_submit, or AXButton)')
 
 	spy_win.add_input('new_value_input', 'Jane Smith')
 	spy_win.set_placeholder('new_value_input', 'Enter new text/value to set on target control')
 
 	spy_win.add_input('target_window_input', default_target_title)
-	spy_win.set_placeholder('target_window_input', 'Internal target window title (used when PID is 0)')
+	spy_win.set_placeholder('target_window_input', 'Internal target window title')
 
-	spy_win.add_label('lbl_ext_header', '📱 Target External App PID (Enter 0 for internal windows, or PID from list below):')
+	spy_win.add_label('lbl_ext_header', '📱 External Process PID (0 = internal window mode):')
 	spy_win.add_input('ext_pid_input', '0')
-	spy_win.set_placeholder('ext_pid_input', '0 for internal app window, or enter External Process PID (e.g. 12345)')
+	spy_win.set_placeholder('ext_pid_input', '0 or Process PID (e.g. 12345)')
 	spy_win.add_label('external_pid_status', 'External PID status: inactive (0 = internal target mode)')
-	spy_win.add_label('external_pid_help', 'Tip: use exact control titles from the tree for best Set/Get results. If external actions fail, enable Accessibility for your app in macOS Settings -> Privacy & Security -> Accessibility.')
 
 	spy_win.begin_row('external_pid_tools_row')
 	spy_win.add_button('btn_use_frontmost_pid', '🎯 Use Frontmost App PID')
 	spy_win.add_button('btn_validate_pid', '✅ Validate PID')
 	spy_win.add_button('btn_probe_pid', '🧪 Probe PID Controls')
-	spy_win.add_button('btn_open_accessibility', '⚙️ Open Accessibility Settings')
+	spy_win.add_button('btn_open_accessibility', '⚙️ macOS Accessibility Settings')
 	spy_win.end_row()
 
 	spy_win.begin_row('external_mode_row')
-	spy_win.add_checkbox('strict_selector_mode', 'Strict selector mode (exact title/role only)', false)
+	spy_win.add_checkbox('strict_selector_mode', 'Strict selector mode', false)
 	spy_win.add_checkbox('auto_watch_control', 'Watch selected control value', false)
-	spy_win.add_button('btn_health_check', '🩺 Health Check')
-	spy_win.add_button('btn_resolve_match', '🎯 Resolve Selector Match')
+	spy_win.add_button('btn_health_check', '🩺 Run Health Check')
 	spy_win.end_row()
 	spy_win.add_label('watch_status', 'Watch mode: idle')
 
+	// Primary Action Buttons
+	spy_win.begin_row('primary_actions_row1')
 	spy_win.add_button('btn_inspect', '🔎 Inspect Control')
-	spy_win.add_button('btn_flash', '🎯 Flash / Highlight Control')
+	spy_win.add_button('btn_flash', '🎯 Flash Outline')
 	spy_win.add_button('btn_enable', '✅ Enable Control')
 	spy_win.add_button('btn_disable', '🚫 Disable Control')
+	spy_win.add_button('btn_press', '🖱️ Click / Press')
+	spy_win.end_row()
+
+	spy_win.begin_row('primary_actions_row2')
 	spy_win.add_button('btn_show', '👁️ Show Control')
 	spy_win.add_button('btn_hide', '🙈 Hide Control')
-	spy_win.add_button('btn_get_text', '📖 Get Control Text')
-	spy_win.add_button('btn_set_text', '✍️ Set Control Text')
-	spy_win.add_button('btn_tree', '🌳 View Internal Control Tree')
-	spy_win.add_button('btn_dump_json', '📋 Export Inspection JSON')
-	spy_win.add_button('btn_press', '🖱️ Press / Click Control')
+	spy_win.add_button('btn_get_text', '📖 Get Text')
+	spy_win.add_button('btn_set_text', '✍️ Set Text')
+	spy_win.add_button('btn_copy_control', '🎯 Copy Selector')
+	spy_win.end_row()
 
-	spy_win.add_button('btn_list_ext', '📱 List Running Desktop Apps')
-	spy_win.add_button('btn_spy_ext', '🕵️ Spy External App PID')
+	// Code Generator Section
+	spy_win.add_section_header('sec_codegen', '⚡ Automation Code Generator', 'Ready-to-use executable V and Python code snippets')
+	spy_win.add_label('lbl_v_code', 'V Code Snippet:')
+	spy_win.add_input('code_snippet_v', '')
+	spy_win.add_label('lbl_py_code', 'Python Code Snippet:')
+	spy_win.add_input('code_snippet_py', '')
 
-	spy_win.begin_row('dev_tools_row')
-	spy_win.add_button('btn_export_json_file', '💾 Save Snapshot JSON As...')
-	spy_win.add_button('btn_copy_target', '📌 Copy Selected Target')
-	spy_win.add_button('btn_copy_control', '🎯 Copy Control Selector')
+	spy_win.begin_row('export_tools_row')
+	spy_win.add_button('btn_copy_v_snippet', '📋 Copy V Code')
+	spy_win.add_button('btn_copy_py_snippet', '📋 Copy Python Code')
+	spy_win.add_button('btn_export_json_file', '💾 Save Snapshot JSON')
+	spy_win.add_button('btn_export_csv_file', '📊 Save Control Tree CSV')
 	spy_win.add_button('btn_clear_log', '🧹 Clear Log')
 	spy_win.end_row()
 
-	spy_win.add_console('spy_output', 280)
+	spy_win.add_section_header('sec_logs', 'Live Interaction & Action History Logs', 'Real-time UI events and audit trail')
+	spy_win.add_console('spy_output', 220)
 	spy_win.add_table('action_history', ['Time', 'Action', 'Target', 'Control', 'Result'])
-	spy_win.set_control_height('action_history', 140)
+	spy_win.set_control_height('action_history', 130)
 
+	// Event Handlers
 	spy_win.on_table_select('targets_table', fn (mut w simplegui.SimpleWindow, _ string) {
 		sync_selected_target(mut w)
 		load_controls_for_selected_target(mut w)
@@ -507,6 +915,21 @@ fn main() {
 		}
 		w.set_control_text('ctrl_name_input', selector)
 		w.set_text('selected_control_label', 'Selected control: ${selector}')
+
+		target := selected_target(mut w)
+		strict := strict_selector_enabled(mut w)
+		if val := target.get_control_text(selector, strict) {
+			ctrl := ControlRef{
+				kind:    'Element'
+				name:    selector
+				label:   selector
+				value:   val
+				enabled: true
+				visible: true
+			}
+			update_control_details_card(mut w, ctrl)
+		}
+		update_code_generator(mut w, 'set_text')
 	})
 
 	spy_win.on_click('btn_refresh_targets', fn (mut w simplegui.SimpleWindow) {
@@ -535,10 +958,19 @@ fn main() {
 		update_external_pid_status(mut w)
 	})
 
+	spy_win.on_change('ctrl_name_input', fn (mut w simplegui.SimpleWindow, _ string) {
+		update_code_generator(mut w, 'set_text')
+	})
+
+	spy_win.on_change('new_value_input', fn (mut w simplegui.SimpleWindow, _ string) {
+		update_code_generator(mut w, 'set_text')
+	})
+
 	spy_win.on_click('btn_use_frontmost_pid', fn (mut w simplegui.SimpleWindow) {
 		pid := get_frontmost_pid(mut w)
 		if pid <= 0 {
-			w.append_console('spy_output', '❌ Could not resolve frontmost app PID.', 0)
+			w.append_console('spy_output', '❌ Could not resolve frontmost app PID.',
+				0)
 			return
 		}
 		w.set_control_text('ext_pid_input', pid.str())
@@ -550,14 +982,15 @@ fn main() {
 	spy_win.on_click('btn_validate_pid', fn (mut w simplegui.SimpleWindow) {
 		pid := pid_from_input(mut w)
 		if pid <= 0 {
-			w.append_console('spy_output', 'ℹ️ PID is 0 or empty: internal target mode active.', 0)
+			w.append_console('spy_output', 'ℹ️ PID is 0: internal target mode active.',
+				0)
 			update_external_pid_status(mut w)
 			return
 		}
 		apps := simplegui.sys_list_external_apps()
 		for app in apps {
 			if app.pid == pid {
-				w.append_console('spy_output', '✅ PID ${pid} is valid: ${app.name} (${app.bundle_id}).',
+				w.append_console('spy_output', '✅ PID ${pid} is active: ${app.name} (${app.bundle_id}).',
 					0)
 				log_action(mut w, 'validate_pid', 'external:${pid}', '-', 'ok')
 				update_external_pid_status(mut w)
@@ -573,28 +1006,27 @@ fn main() {
 	spy_win.on_click('btn_probe_pid', fn (mut w simplegui.SimpleWindow) {
 		pid := pid_from_input(mut w)
 		if pid <= 0 {
-			w.append_console('spy_output', '⚠️ Enter an external PID (>0) before probing.', 0)
+			w.append_console('spy_output', '⚠️ Enter an external PID (>0) before probing.',
+				0)
 			return
 		}
 		controls := simplegui.sys_spy_external_app(pid)
-		w.append_console('spy_output', '🧪 Probe PID ${pid}: discovered ${controls.len} controls.',
+		w.append_console('spy_output', '🧪 Probe PID ${pid}: discovered ${controls.len} AXUIElement controls.',
 			0)
 		log_action(mut w, 'probe_pid', 'external:${pid}', '-', 'controls=${controls.len}')
-		if controls.len == 0 {
-			w.append_console('spy_output', 'ℹ️ If this stays 0, check Accessibility permissions and ensure the app has inspectable controls.',
-				0)
-		}
 	})
 
 	spy_win.on_click('btn_open_accessibility', fn (mut w simplegui.SimpleWindow) {
 		w.open_url('x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility')
-		w.append_console('spy_output', '⚙️ Opened macOS Accessibility settings.', 0)
+		w.append_console('spy_output', '⚙️ Opened macOS Accessibility Settings.',
+			0)
 		log_action(mut w, 'open_accessibility', '-', '-', 'ok')
 	})
 
 	spy_win.on_change('strict_selector_mode', fn (mut w simplegui.SimpleWindow, value string) {
 		mode := if value == 'true' { 'strict' } else { 'flexible' }
-		w.append_console('spy_output', '🎛️ Selector mode: ${mode}.', 0)
+		w.append_console('spy_output', '🎛️ Selector matching mode set to ${mode}.',
+			0)
 	})
 
 	spy_win.on_change('auto_watch_control', fn [mut watch_state] (mut w simplegui.SimpleWindow, value string) {
@@ -602,7 +1034,7 @@ fn main() {
 		if enabled {
 			watch_state.last_key = ''
 			watch_state.last_value = ''
-			w.set_text('watch_status', 'Watch mode: active')
+			w.set_text('watch_status', 'Watch mode: active (polling 800ms)')
 			w.set_interval('spy_watch_control', 800, fn [mut watch_state] (mut w2 simplegui.SimpleWindow) {
 				target := selected_target(mut w2)
 				ctrl_name := selected_control_name(mut w2).trim_space()
@@ -610,27 +1042,22 @@ fn main() {
 					return
 				}
 				strict := strict_selector_enabled(mut w2)
-				val := read_control_value_for_target(mut w2, target, ctrl_name, strict) or {
-					return
-				}
-				key := if target.pid > 0 {
-					'external:${target.pid}:${ctrl_name}'
-				} else {
-					'internal:${target.name}:${ctrl_name}'
-				}
+				val := target.get_control_text(ctrl_name, strict) or { return }
+				key := '${target.scope}:${target.pid}:${target.name}:${ctrl_name}'
 				if key != watch_state.last_key {
 					watch_state.last_key = key
 					watch_state.last_value = val
 					return
 				}
 				if val != watch_state.last_value {
-					w2.append_console('spy_output', '👀 Watch change ${key}: "${watch_state.last_value}" -> "${val}"',
+					w2.append_console('spy_output', '👀 [WATCH CHANGE] ${ctrl_name}: "${watch_state.last_value}" -> "${val}"',
 						0)
 					log_action(mut w2, 'watch_change', key, ctrl_name, 'updated')
 					watch_state.last_value = val
 				}
 			})
-			w.append_console('spy_output', '👀 Watch mode enabled (800ms polling).', 0)
+			w.append_console('spy_output', '👀 Real-time watch mode enabled (800ms interval).',
+				0)
 		} else {
 			w.stop_interval('spy_watch_control')
 			w.set_text('watch_status', 'Watch mode: idle')
@@ -639,79 +1066,7 @@ fn main() {
 	})
 
 	spy_win.on_click('btn_health_check', fn (mut w simplegui.SimpleWindow) {
-		target := selected_target(mut w)
-		strict := strict_selector_enabled(mut w)
-		ctrl := selected_control_name(mut w).trim_space()
-		w.append_console('spy_output', '=== Spy++ Health Check ===', 0)
-		w.append_console('spy_output', 'Target scope=${target.scope} pid=${target.pid} strict=${strict} control="${ctrl}"',
-			0)
-		if target.pid > 0 {
-			apps := simplegui.sys_list_external_apps()
-			mut listed := false
-			for app in apps {
-				if app.pid == target.pid {
-					listed = true
-					w.append_console('spy_output', 'External PID listed: ${app.name} (${app.bundle_id})',
-						0)
-					break
-				}
-			}
-			if !listed {
-				w.append_console('spy_output', 'External PID not listed in desktop apps.', 0)
-			}
-			controls := simplegui.sys_spy_external_app(target.pid)
-			w.append_console('spy_output', 'Inspectable controls count: ${controls.len}', 0)
-			if ctrl != '' {
-				hit := find_external_control_match(target.pid, ctrl, strict) or {
-					w.append_console('spy_output', 'Selector did not resolve under current mode.',
-						0)
-					log_action(mut w, 'health_check', 'external:${target.pid}', ctrl,
-						'unresolved')
-					return
-				}
-				w.append_console('spy_output', 'Selector resolves to role=${hit.role}, title="${hit.title}".',
-					0)
-				log_action(mut w, 'health_check', 'external:${target.pid}', ctrl, 'ok')
-			}
-		} else {
-			win_ref := simplegui.sys_get_window(target.name) or {
-				w.append_console('spy_output', 'Internal target window not registered/found.', 0)
-				log_action(mut w, 'health_check', 'internal:${target.name}', ctrl, 'missing_window')
-				return
-			}
-			_ := win_ref
-			if ctrl != '' {
-				val := simplegui.sys_get_control_text(target.name, ctrl)
-				w.append_console('spy_output', 'Internal selector readback: "${val}"', 0)
-			}
-			log_action(mut w, 'health_check', 'internal:${target.name}', ctrl, 'ok')
-		}
-	})
-
-	spy_win.on_click('btn_resolve_match', fn (mut w simplegui.SimpleWindow) {
-		target := selected_target(mut w)
-		ctrl := selected_control_name(mut w).trim_space()
-		if target.pid <= 0 {
-			w.append_console('spy_output', 'ℹ️ Resolve match is for external PID mode.', 0)
-			return
-		}
-		if ctrl == '' {
-			w.append_console('spy_output', '⚠️ Enter or select a control selector first.', 0)
-			return
-		}
-		strict := strict_selector_enabled(mut w)
-		hit := find_external_control_match(target.pid, ctrl, strict) or {
-			w.append_console('spy_output', '❌ No external control matched "${ctrl}" (strict=${strict}).',
-				0)
-			log_action(mut w, 'resolve_match', 'external:${target.pid}', ctrl, 'not_found')
-			return
-		}
-		canonical := if hit.title.trim_space() != '' { hit.title.trim_space() } else { hit.role.trim_space() }
-		w.set_control_text('ctrl_name_input', canonical)
-		w.set_text('selected_control_label', 'Selected control: ${canonical}')
-		w.append_console('spy_output', '✅ Resolved selector "${ctrl}" -> title="${hit.title}" role=${hit.role}',
-			0)
-		log_action(mut w, 'resolve_match', 'external:${target.pid}', ctrl, 'ok')
+		run_health_check(mut w)
 	})
 
 	spy_win.on_change('auto_refresh_targets', fn (mut w simplegui.SimpleWindow, value string) {
@@ -720,7 +1075,8 @@ fn main() {
 			w.set_interval('spy_targets_auto_refresh', 2500, fn (mut w2 simplegui.SimpleWindow) {
 				refresh_targets_table(mut w2)
 			})
-			w.append_console('spy_output', '⏱️ Auto refresh enabled (2.5s).', 0)
+			w.append_console('spy_output', '⏱️ Auto refresh enabled (2.5s interval).',
+				0)
 		} else {
 			w.stop_interval('spy_targets_auto_refresh')
 			w.append_console('spy_output', '⏱️ Auto refresh disabled.', 0)
@@ -747,84 +1103,52 @@ fn main() {
 
 	spy_win.on_click('btn_target_front', fn (mut w simplegui.SimpleWindow) {
 		target := selected_target(mut w)
-		if target.scope == 'external' {
-			if simplegui.sys_set_external_app_frontmost(target.pid) {
-				w.append_console('spy_output', '⬆️ Brought external PID ${target.pid} to front.',
-					0)
-			} else {
-				w.append_console('spy_output', '❌ Failed to bring external PID ${target.pid} to front.',
-					0)
-			}
+		if target.order_front() {
+			w.append_console('spy_output', '⬆️ Brought ${target.label()} to front.',
+				0)
+			log_action(mut w, 'bring_front', target.name, '-', 'ok')
 		} else {
-			if simplegui.sys_order_app_window_front(target.name) {
-				w.append_console('spy_output', '⬆️ Brought internal window "${target.name}" to front.',
-					0)
-			} else {
-				w.append_console('spy_output', '❌ Failed to bring internal window "${target.name}" to front.',
-					0)
-			}
+			w.append_console('spy_output', '❌ Failed to bring ${target.label()} to front.',
+				0)
+			log_action(mut w, 'bring_front', target.name, '-', 'failed')
 		}
 	})
 
 	spy_win.on_click('btn_target_back', fn (mut w simplegui.SimpleWindow) {
 		target := selected_target(mut w)
-		if target.scope == 'external' {
-			w.append_console('spy_output', '⚠️ Send-to-back is only available for internal registered windows.',
-				0)
-			return
-		}
-		if simplegui.sys_order_app_window_back(target.name) {
-			w.append_console('spy_output', '⬇️ Sent internal window "${target.name}" to back.',
-				0)
+		if target.order_back() {
+			w.append_console('spy_output', '⬇️ Sent ${target.label()} to back.', 0)
+			log_action(mut w, 'send_back', target.name, '-', 'ok')
 		} else {
-			w.append_console('spy_output', '❌ Failed to send internal window "${target.name}" to back.',
+			w.append_console('spy_output', '⚠️ Send-to-back is supported on internal registered windows.',
 				0)
+			log_action(mut w, 'send_back', target.name, '-', 'unsupported')
 		}
 	})
 
 	spy_win.on_click('btn_target_show', fn (mut w simplegui.SimpleWindow) {
 		target := selected_target(mut w)
-		if target.scope == 'external' {
-			if simplegui.sys_set_external_app_visible(target.pid, true) {
-				w.append_console('spy_output', '👁️ Showed external PID ${target.pid}.',
-					0)
-			} else {
-				w.append_console('spy_output', '❌ Failed to show external PID ${target.pid}.',
-					0)
-			}
+		if target.set_visible(true) {
+			w.append_console('spy_output', '👁️ Showed ${target.label()}.', 0)
+			log_action(mut w, 'show_target', target.name, '-', 'ok')
 		} else {
-			if simplegui.sys_set_app_window_visible(target.name, true) {
-				w.append_console('spy_output', '👁️ Showed internal window "${target.name}".',
-					0)
-			} else {
-				w.append_console('spy_output', '❌ Failed to show internal window "${target.name}".',
-					0)
-			}
+			w.append_console('spy_output', '❌ Failed to show ${target.label()}.', 0)
+			log_action(mut w, 'show_target', target.name, '-', 'failed')
 		}
 	})
 
 	spy_win.on_click('btn_target_hide', fn (mut w simplegui.SimpleWindow) {
 		target := selected_target(mut w)
-		if target.scope == 'external' {
-			if simplegui.sys_set_external_app_visible(target.pid, false) {
-				w.append_console('spy_output', '🙈 Hid external PID ${target.pid}.',
-					0)
-			} else {
-				w.append_console('spy_output', '❌ Failed to hide external PID ${target.pid}.',
-					0)
-			}
+		if target.set_visible(false) {
+			w.append_console('spy_output', '🙈 Hid ${target.label()}.', 0)
+			log_action(mut w, 'hide_target', target.name, '-', 'ok')
 		} else {
-			if simplegui.sys_set_app_window_visible(target.name, false) {
-				w.append_console('spy_output', '🙈 Hid internal window "${target.name}".',
-					0)
-			} else {
-				w.append_console('spy_output', '❌ Failed to hide internal window "${target.name}".',
-					0)
-			}
+			w.append_console('spy_output', '❌ Failed to hide ${target.label()}.', 0)
+			log_action(mut w, 'hide_target', target.name, '-', 'failed')
 		}
 	})
 
-	// Attach Live Event Stream Observer to target_win so all interactions show up immediately!
+	// Attach Live Event Stream Observer to target_win
 	target_win.on_any_event(fn [mut spy_win] (mut w simplegui.SimpleWindow, control_name string, event_name string, value string) {
 		timestamp := time.now().format_ss()
 		val_suffix := if value.len > 0 { ' -> "${value}"' } else { '' }
@@ -832,302 +1156,177 @@ fn main() {
 			0)
 	})
 
-	// Inspect single control (internal window or external PID)
+	// Control Actions
 	spy_win.on_click('btn_inspect', fn (mut w simplegui.SimpleWindow) {
 		ctrl_name := require_control_name(mut w, 'Inspect') or { return }
 		target := selected_target(mut w)
-		pid := target.pid
+		strict := strict_selector_enabled(mut w)
 
-		if pid > 0 {
-			w.append_console('spy_output', '=== Inspecting External App PID ${pid} for "${ctrl_name}" ===',
-				0)
-			ext_ctrls := simplegui.sys_spy_external_app(pid)
-			mut found := false
-			for info in ext_ctrls {
-				if ctrl_name.len == 0 || info.title.to_lower().contains(ctrl_name.to_lower())
-					|| info.role.to_lower().contains(ctrl_name.to_lower()) {
-					w.append_console('spy_output', '  • Role: ${info.role} | Title: "${info.title}" | Value: "${info.value}"',
-						0)
-					found = true
-				}
-			}
-			if !found {
-				w.append_console('spy_output', '⚠️ No matching controls found in PID ${pid} for "${ctrl_name}". Total controls: ${ext_ctrls.len}',
-					0)
-			}
+		w.append_console('spy_output', '=== 🔎 Inspection Result for "${ctrl_name}" in ${target.label()} ===',
+			0)
+
+		if val := target.get_control_text(ctrl_name, strict) {
+			w.append_console('spy_output', '  • Control Selector: "${ctrl_name}"', 0)
+			w.append_console('spy_output', '  • Value: "${val}"', 0)
+			log_action(mut w, 'inspect', target.name, ctrl_name, 'ok')
 		} else {
-			target_win_name := target.name
-			target_internal := simplegui.sys_get_window(target_win_name) or {
-				w.append_console('spy_output', '❌ Target window "${target_win_name}" not found!',
-					0)
-				return
-			}
-			info := target_internal.spy_control(ctrl_name) or {
-				w.append_console('spy_output', '⚠️ Control "${ctrl_name}" not found in target window.',
-					0)
-				return
-			}
-			w.append_console('spy_output', '=== Spy++ Inspection Result for "${info.name}" ===',
+			w.append_console('spy_output', '⚠️ Control "${ctrl_name}" not found or could not read value.',
 				0)
-			w.append_console('spy_output', '  • Kind: ${info.kind} | Label: "${info.label}" | Value: "${info.value}"',
-				0)
-			w.append_console('spy_output', '  • Enabled: ${info.enabled} | Visible: ${info.visible} | Checked: ${info.checked}',
-				0)
-			w.append_console('spy_output', '  • Dimensions: ${info.width}x${info.height}',
-				0)
+			log_action(mut w, 'inspect', target.name, ctrl_name, 'not_found')
 		}
+		update_code_generator(mut w, 'inspect')
 	})
 
-	// Flash control on screen (internal window or external PID overlay)
 	spy_win.on_click('btn_flash', fn (mut w simplegui.SimpleWindow) {
 		ctrl_name := require_control_name(mut w, 'Flash') or { return }
 		target := selected_target(mut w)
-		pid := target.pid
 
-		if pid > 0 {
-			if simplegui.sys_flash_external_control(pid, ctrl_name) {
-				w.append_console('spy_output', '🎯 Flashing visual screen overlay on External PID ${pid} control "${ctrl_name}"!',
-					0)
-			} else {
-				w.append_console('spy_output', '❌ Failed to flash control "${ctrl_name}" on External PID ${pid}.',
-					0)
-			}
+		if target.flash_control(ctrl_name) {
+			w.append_console('spy_output', '🎯 Flashing outline over control "${ctrl_name}" on ${target.label()}!',
+				0)
+			log_action(mut w, 'flash', target.name, ctrl_name, 'ok')
 		} else {
-			if simplegui.sys_flash_control(target.name, ctrl_name) {
-				w.append_console('spy_output', '🎯 Flashing control "${ctrl_name}" on target window!',
-					0)
-			} else {
-				w.append_console('spy_output', '❌ Failed to flash control "${ctrl_name}".',
-					0)
-			}
+			w.append_console('spy_output', '❌ Failed to flash control "${ctrl_name}".',
+				0)
+			log_action(mut w, 'flash', target.name, ctrl_name, 'failed')
 		}
+		update_code_generator(mut w, 'flash')
 	})
 
-	// Enable control (internal window or external PID)
 	spy_win.on_click('btn_enable', fn (mut w simplegui.SimpleWindow) {
 		ctrl_name := require_control_name(mut w, 'Enable') or { return }
 		target := selected_target(mut w)
-		pid := target.pid
 
-		if pid > 0 {
-			if simplegui.sys_set_external_control_enabled(pid, ctrl_name, true) {
-				w.append_console('spy_output', '✅ Enabled control "${ctrl_name}" on External App PID ${pid}.',
-					0)
-			} else {
-				w.append_console('spy_output', '❌ Failed to enable control "${ctrl_name}" on External PID ${pid}.',
-					0)
-			}
+		if target.set_control_enabled(ctrl_name, true) {
+			w.append_console('spy_output', '✅ Enabled control "${ctrl_name}" on ${target.label()}.',
+				0)
+			log_action(mut w, 'enable', target.name, ctrl_name, 'ok')
 		} else {
-			if simplegui.sys_set_control_enabled(target.name, ctrl_name, true) {
-				w.append_console('spy_output', '✅ Enabled control "${ctrl_name}" on target window.',
-					0)
-			} else {
-				w.append_console('spy_output', '❌ Failed to enable control "${ctrl_name}".',
-					0)
-			}
+			w.append_console('spy_output', '❌ Failed to enable control "${ctrl_name}".',
+				0)
+			log_action(mut w, 'enable', target.name, ctrl_name, 'failed')
 		}
+		update_code_generator(mut w, 'enable')
 	})
 
-	// Disable control (internal window or external PID)
 	spy_win.on_click('btn_disable', fn (mut w simplegui.SimpleWindow) {
 		ctrl_name := require_control_name(mut w, 'Disable') or { return }
 		target := selected_target(mut w)
-		pid := target.pid
 
-		if pid > 0 {
-			if simplegui.sys_set_external_control_enabled(pid, ctrl_name, false) {
-				w.append_console('spy_output', '🚫 Disabled control "${ctrl_name}" on External App PID ${pid}.',
-					0)
-			} else {
-				w.append_console('spy_output', '❌ Failed to disable control "${ctrl_name}" on External PID ${pid}.',
-					0)
-			}
+		if target.set_control_enabled(ctrl_name, false) {
+			w.append_console('spy_output', '🚫 Disabled control "${ctrl_name}" on ${target.label()}.',
+				0)
+			log_action(mut w, 'disable', target.name, ctrl_name, 'ok')
 		} else {
-			if simplegui.sys_set_control_enabled(target.name, ctrl_name, false) {
-				w.append_console('spy_output', '🚫 Disabled control "${ctrl_name}" on target window.',
-					0)
-			} else {
-				w.append_console('spy_output', '❌ Failed to disable control "${ctrl_name}".',
-					0)
-			}
+			w.append_console('spy_output', '❌ Failed to disable control "${ctrl_name}".',
+				0)
+			log_action(mut w, 'disable', target.name, ctrl_name, 'failed')
 		}
+		update_code_generator(mut w, 'disable')
 	})
 
-	// Show control (internal window or external PID)
 	spy_win.on_click('btn_show', fn (mut w simplegui.SimpleWindow) {
 		ctrl_name := require_control_name(mut w, 'Show') or { return }
 		target := selected_target(mut w)
-		pid := target.pid
 
-		if pid > 0 {
-			if simplegui.sys_set_external_control_visible(pid, ctrl_name, true) {
-				w.append_console('spy_output', '👁️ Showed control "${ctrl_name}" on External App PID ${pid}.',
-					0)
-			} else {
-				w.append_console('spy_output', '❌ Failed to show control "${ctrl_name}" on External PID ${pid}.',
-					0)
-			}
+		if target.set_control_visible(ctrl_name, true) {
+			w.append_console('spy_output', '👁️ Showed control "${ctrl_name}" on ${target.label()}.',
+				0)
+			log_action(mut w, 'show_control', target.name, ctrl_name, 'ok')
 		} else {
-			if simplegui.sys_set_control_visible(target.name, ctrl_name, true) {
-				w.append_console('spy_output', '👁️ Showed control "${ctrl_name}" on target window.',
-					0)
-			} else {
-				w.append_console('spy_output', '❌ Failed to show control "${ctrl_name}".',
-					0)
-			}
+			w.append_console('spy_output', '❌ Failed to show control "${ctrl_name}".',
+				0)
+			log_action(mut w, 'show_control', target.name, ctrl_name, 'failed')
 		}
 	})
 
-	// Hide control (internal window or external PID)
 	spy_win.on_click('btn_hide', fn (mut w simplegui.SimpleWindow) {
 		ctrl_name := require_control_name(mut w, 'Hide') or { return }
 		target := selected_target(mut w)
-		pid := target.pid
 
-		if pid > 0 {
-			if simplegui.sys_set_external_control_visible(pid, ctrl_name, false) {
-				w.append_console('spy_output', '🙈 Hid control "${ctrl_name}" on External App PID ${pid}.',
-					0)
-			} else {
-				w.append_console('spy_output', '❌ Failed to hide control "${ctrl_name}" on External PID ${pid}.',
-					0)
-			}
+		if target.set_control_visible(ctrl_name, false) {
+			w.append_console('spy_output', '🙈 Hid control "${ctrl_name}" on ${target.label()}.',
+				0)
+			log_action(mut w, 'hide_control', target.name, ctrl_name, 'ok')
 		} else {
-			if simplegui.sys_set_control_visible(target.name, ctrl_name, false) {
-				w.append_console('spy_output', '🙈 Hid control "${ctrl_name}" on target window.',
-					0)
-			} else {
-				w.append_console('spy_output', '❌ Failed to hide control "${ctrl_name}".',
-					0)
-			}
+			w.append_console('spy_output', '❌ Failed to hide control "${ctrl_name}".',
+				0)
+			log_action(mut w, 'hide_control', target.name, ctrl_name, 'failed')
 		}
 	})
 
-	// Get control text (internal window or external PID)
 	spy_win.on_click('btn_get_text', fn (mut w simplegui.SimpleWindow) {
 		ctrl_name := require_control_name(mut w, 'Get text') or { return }
 		target := selected_target(mut w)
-		pid := target.pid
+		strict := strict_selector_enabled(mut w)
 
-		if pid > 0 {
-			hit := find_external_control_best_match(pid, ctrl_name) or {
-				w.append_console('spy_output', '⚠️ Control "${ctrl_name}" not found in External PID ${pid}.',
-					0)
-				return
-			}
-			w.append_console('spy_output', '📖 External PID ${pid} control "${hit.title}" (${hit.role}) text/val: "${hit.value}"',
+		if val := target.get_control_text(ctrl_name, strict) {
+			w.append_console('spy_output', '📖 Read value of "${ctrl_name}": "${val}"',
 				0)
+			log_action(mut w, 'get_text', target.name, ctrl_name, 'ok')
 		} else {
-			text := simplegui.sys_get_control_text(target.name, ctrl_name)
-			w.append_console('spy_output', '📖 Text of "${ctrl_name}": "${text}"', 0)
+			w.append_console('spy_output', '⚠️ Could not read text/value of "${ctrl_name}".',
+				0)
+			log_action(mut w, 'get_text', target.name, ctrl_name, 'failed')
 		}
+		update_code_generator(mut w, 'get_text')
 	})
 
-	// Set control text (internal window or external PID)
 	spy_win.on_click('btn_set_text', fn (mut w simplegui.SimpleWindow) {
 		ctrl_name := require_control_name(mut w, 'Set text') or { return }
 		new_text := w.get_control_text('new_value_input')
 		target := selected_target(mut w)
-		pid := target.pid
+		strict := strict_selector_enabled(mut w)
 
-		if pid > 0 {
-			if simplegui.sys_set_external_control_value(pid, ctrl_name, new_text) {
-				w.append_console('spy_output', '✍️ Set value of control "${ctrl_name}" on External PID ${pid} to "${new_text}"',
-					0)
-				w.run_after(150, fn [pid, ctrl_name, new_text] (mut w2 simplegui.SimpleWindow) {
-					hit := find_external_control_best_match(pid, ctrl_name) or {
-						w2.append_console('spy_output', '⚠️ Verification: could not read back control "${ctrl_name}" on PID ${pid}.',
-							0)
-						return
-					}
-					ok := hit.value == new_text
-					w2.append_console('spy_output', '🔎 Verify external "${ctrl_name}": got "${hit.value}" (expected "${new_text}") => ${ok}',
-						0)
-				})
-			} else {
-				w.append_console('spy_output', '❌ Failed to set value on External PID ${pid} control "${ctrl_name}".',
-					0)
-			}
-		} else {
-			if simplegui.sys_set_control_text(target.name, ctrl_name, new_text) {
-				w.append_console('spy_output', '✍️ Set text of "${ctrl_name}" to "${new_text}"',
-					0)
-				read_back := simplegui.sys_get_control_text(target.name, ctrl_name)
+		if target.set_control_text(ctrl_name, new_text) {
+			w.append_console('spy_output', '✍️ Set value of "${ctrl_name}" to "${new_text}"',
+				0)
+			log_action(mut w, 'set_text', target.name, ctrl_name, 'ok')
+			w.run_after(150, fn [target, ctrl_name, new_text, strict] (mut w2 simplegui.SimpleWindow) {
+				read_back := target.get_control_text(ctrl_name, strict) or { '' }
 				ok := read_back == new_text
-				w.append_console('spy_output', '🔎 Verify internal "${ctrl_name}": got "${read_back}" (expected "${new_text}") => ${ok}',
+				w2.append_console('spy_output', '🔎 Readback verify "${ctrl_name}": got "${read_back}" (expected "${new_text}") => ${ok}',
 					0)
-			} else {
-				w.append_console('spy_output', '❌ Failed to set text on control "${ctrl_name}".',
-					0)
-			}
-		}
-	})
-
-	// Print full tree
-	spy_win.on_click('btn_tree', fn (mut w simplegui.SimpleWindow) {
-		target := selected_target(mut w)
-		if target.scope == 'external' {
-			load_controls_for_selected_target(mut w)
-			w.append_console('spy_output', '🌳 External controls loaded into tree for PID ${target.pid}.',
-				0)
-			return
-		}
-		target_internal := simplegui.sys_get_window(target.name) or {
-			w.append_console('spy_output', '❌ Internal target window "${target.name}" not found!',
-				0)
-			return
-		}
-		tree_str := target_internal.spy_tree()
-		w.append_console('spy_output', tree_str, 0)
-	})
-
-	// Export JSON
-	spy_win.on_click('btn_dump_json', fn (mut w simplegui.SimpleWindow) {
-		target := selected_target(mut w)
-		pid := target.pid
-		if pid > 0 {
-			ext_ctrls := simplegui.sys_spy_external_app(pid)
-			w.append_console('spy_output', '=== External App PID ${pid} Controls Snapshot ===',
-				0)
-			for info in ext_ctrls {
-				w.append_console('spy_output', '  • ${info.role} | Title: "${info.title}" | Value: "${info.value}"',
-					0)
-			}
+			})
 		} else {
-			target_internal := simplegui.sys_get_window(target.name) or {
-				w.append_console('spy_output', '❌ Internal target window "${target.name}" not found!',
-					0)
-				return
-			}
-			json_str := target_internal.spy_json()
-			w.append_console('spy_output', '=== Window Controls JSON Snapshot ===', 0)
-			w.append_console('spy_output', json_str, 0)
+			w.append_console('spy_output', '❌ Failed to set value on control "${ctrl_name}".',
+				0)
+			log_action(mut w, 'set_text', target.name, ctrl_name, 'failed')
 		}
+		update_code_generator(mut w, 'set_text')
 	})
 
 	spy_win.on_click('btn_press', fn (mut w simplegui.SimpleWindow) {
 		ctrl_name := require_control_name(mut w, 'Press / Click') or { return }
 		target := selected_target(mut w)
-		if target.pid > 0 {
-			if simplegui.sys_press_external_control(target.pid, ctrl_name) {
-				w.append_console('spy_output', '🖱️ Pressed external control "${ctrl_name}" on PID ${target.pid}.',
-					0)
-			} else {
-				w.append_console('spy_output', '❌ Failed to press external control "${ctrl_name}" on PID ${target.pid}.',
-					0)
-			}
-			return
-		}
-		target_internal := simplegui.sys_get_window(target.name) or {
-			w.append_console('spy_output', '❌ Internal target window "${target.name}" not found!',
+
+		if target.press_control(ctrl_name) {
+			w.append_console('spy_output', '🖱️ Clicked/Pressed control "${ctrl_name}" on ${target.label()}.',
 				0)
-			return
-		}
-		if target_internal.click(ctrl_name) {
-			w.append_console('spy_output', '🖱️ Clicked internal control "${ctrl_name}".',
-				0)
+			log_action(mut w, 'press', target.name, ctrl_name, 'ok')
 		} else {
-			w.append_console('spy_output', '❌ Failed to click internal control "${ctrl_name}".',
+			w.append_console('spy_output', '❌ Failed to press control "${ctrl_name}".',
+				0)
+			log_action(mut w, 'press', target.name, ctrl_name, 'failed')
+		}
+		update_code_generator(mut w, 'press')
+	})
+
+	// Code Generator & Export Handlers
+	spy_win.on_click('btn_copy_v_snippet', fn (mut w simplegui.SimpleWindow) {
+		code := w.get_control_text('code_snippet_v')
+		if code.trim_space() != '' {
+			w.copy_to_clipboard(code)
+			w.append_console('spy_output', '📋 Copied V code snippet to clipboard.',
+				0)
+		}
+	})
+
+	spy_win.on_click('btn_copy_py_snippet', fn (mut w simplegui.SimpleWindow) {
+		code := w.get_control_text('code_snippet_py')
+		if code.trim_space() != '' {
+			w.copy_to_clipboard(code)
+			w.append_console('spy_output', '📋 Copied Python snippet to clipboard.',
 				0)
 		}
 	})
@@ -1138,12 +1337,38 @@ fn main() {
 			w.append_console('spy_output', 'ℹ️ Export canceled.', 0)
 			return
 		}
-		export_selected_target_json(mut w, path)
+		target := selected_target(mut w)
+		if target.export_json(path, mut w) {
+			w.append_console('spy_output', '💾 Saved target snapshot JSON to ${path}',
+				0)
+			log_action(mut w, 'export_json', target.name, '-', 'ok')
+		} else {
+			w.append_console('spy_output', '❌ Failed to save JSON snapshot to ${path}',
+				0)
+			log_action(mut w, 'export_json', target.name, '-', 'failed')
+		}
+	})
+
+	spy_win.on_click('btn_export_csv_file', fn (mut w simplegui.SimpleWindow) {
+		path := w.save_file_picker()
+		if path.trim_space() == '' {
+			w.append_console('spy_output', 'ℹ️ Export canceled.', 0)
+			return
+		}
+		target := selected_target(mut w)
+		if target.export_csv(path, mut w) {
+			w.append_console('spy_output', '📊 Saved control tree CSV to ${path}', 0)
+			log_action(mut w, 'export_csv', target.name, '-', 'ok')
+		} else {
+			w.append_console('spy_output', '❌ Failed to save CSV snapshot to ${path}',
+				0)
+			log_action(mut w, 'export_csv', target.name, '-', 'failed')
+		}
 	})
 
 	spy_win.on_click('btn_copy_target', fn (mut w simplegui.SimpleWindow) {
 		target := selected_target(mut w)
-		target_str := if target.pid > 0 {
+		target_str := if target.is_external() {
 			'external:${target.pid}:${target.name}'
 		} else {
 			'internal:${target.name}'
@@ -1160,27 +1385,34 @@ fn main() {
 
 	spy_win.on_click('btn_clear_log', fn (mut w simplegui.SimpleWindow) {
 		w.clear_console('spy_output')
-		w.append_console('spy_output', '🧹 Log cleared.', 0)
+		w.append_console('spy_output', '🧹 Console log cleared.', 0)
 	})
 
-	// List External Desktop Apps
-	spy_win.on_click('btn_list_ext', fn (mut w simplegui.SimpleWindow) {
-		refresh_targets_table(mut w)
-	})
-
-	// Spy External App by PID
-	spy_win.on_click('btn_spy_ext', fn (mut w simplegui.SimpleWindow) {
-		sync_selected_target(mut w)
-		load_controls_for_selected_target(mut w)
-	})
-
+	// Initial catalog load
 	refresh_targets_table(mut spy_win)
 	load_controls_for_selected_target(mut spy_win)
 	update_external_pid_status(mut spy_win)
-	spy_win.append_console('spy_output', '🔍 Spy++ Inspector ready.', 0)
-	spy_win.append_console('spy_output', '💡 Click a row in the targets table, then click a control in the tree. Actions run against that selected target/control.',
+	spy_win.append_console('spy_output', '🔍 Spy++ Application Inspector & Automation Studio ready.',
 		0)
+	spy_win.append_console('spy_output', '💡 Select a target application from the catalog and pick elements in the control tree to generate code or execute actions.',
+		0)
+	spy_win.run_after(450, fn (mut w simplegui.SimpleWindow) {
+		run_listbox_get_set_self_check(mut w)
+	})
 
-	// Run event loop
+	capture_path := os.getenv('SIMPLEGUI_CAPTURE')
+	if capture_path != '' {
+		spy_win.run_after(900, fn [capture_path] (mut w simplegui.SimpleWindow) {
+			if w.capture_screenshot(capture_path) {
+				w.append_console('spy_output', '📸 Captured screenshot: ${capture_path}',
+					4)
+			} else {
+				w.append_console('spy_output', '❌ Screenshot capture failed: ${capture_path}',
+					3)
+			}
+		})
+	}
+
+	// Launch event loop
 	spy_win.run()
 }

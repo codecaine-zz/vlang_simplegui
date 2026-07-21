@@ -2841,6 +2841,9 @@ pub fn (win &SimpleWindow) set_control_value(name string, value string) &SimpleW
 			mut w := &SimpleWindow(win)
 			mut entry := w.controls[idx]
 			entry.value = value
+			if entry.kind == 'button' || entry.kind == 'checkbox' {
+				entry.label = value
+			}
 			w.controls[idx] = entry
 		}
 	}

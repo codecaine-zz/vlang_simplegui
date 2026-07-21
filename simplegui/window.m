@@ -12274,7 +12274,7 @@ static NSString *helper_cf_to_string(CFTypeRef ref) {
 }
 
 static void helper_collect_ax_elements(AXUIElementRef element, NSMutableArray *results, int depth) {
-  if (!element || depth > 3) return;
+  if (!element || depth > 8 || results.count >= 400) return;
   
   CFStringRef roleRef = NULL;
   CFStringRef titleRef = NULL;
@@ -12284,10 +12284,18 @@ static void helper_collect_ax_elements(AXUIElementRef element, NSMutableArray *r
     NSString *role = helper_cf_to_string(roleRef);
     CFRelease(roleRef);
     
+    // Try AXTitle first; many apps (e.g. Calculator) expose labels via AXDescription instead.
     NSString *title = @"";
     if (AXUIElementCopyAttributeValue(element, kAXTitleAttribute, (CFTypeRef *)&titleRef) == kAXErrorSuccess && titleRef) {
       title = helper_cf_to_string(titleRef);
       CFRelease(titleRef);
+    }
+    if (title.length == 0) {
+      CFStringRef descRef = NULL;
+      if (AXUIElementCopyAttributeValue(element, kAXDescriptionAttribute, (CFTypeRef *)&descRef) == kAXErrorSuccess && descRef) {
+        title = helper_cf_to_string(descRef);
+        CFRelease(descRef);
+      }
     }
     
     NSString *valStr = @"";
@@ -12297,11 +12305,19 @@ static void helper_collect_ax_elements(AXUIElementRef element, NSMutableArray *r
     }
     
     if (role.length > 0) {
+      CFTypeRef enabledRef = NULL;
+      BOOL enabled = YES;
+      if (AXUIElementCopyAttributeValue(element, kAXEnabledAttribute, &enabledRef) == kAXErrorSuccess && enabledRef) {
+        if (CFGetTypeID(enabledRef) == CFBooleanGetTypeID()) {
+          enabled = CFBooleanGetValue((CFBooleanRef)enabledRef);
+        }
+        CFRelease(enabledRef);
+      }
       [results addObject:@{
         @"role": role ?: @"",
         @"title": title ?: @"",
         @"value": valStr ?: @"",
-        @"enabled": @YES
+        @"enabled": @(enabled)
       }];
     }
   }
@@ -12309,7 +12325,7 @@ static void helper_collect_ax_elements(AXUIElementRef element, NSMutableArray *r
   CFArrayRef childrenRef = NULL;
   if (AXUIElementCopyAttributeValue(element, kAXChildrenAttribute, (CFTypeRef *)&childrenRef) == kAXErrorSuccess && childrenRef) {
     CFIndex count = CFArrayGetCount(childrenRef);
-    for (CFIndex i = 0; i < count && i < 30; i++) {
+    for (CFIndex i = 0; i < count && i < 60; i++) {
       AXUIElementRef child = (AXUIElementRef)CFArrayGetValueAtIndex(childrenRef, i);
       if (child) {
         helper_collect_ax_elements(child, results, depth + 1);
@@ -12362,6 +12378,26 @@ static BOOL helper_ax_matches_target(AXUIElementRef element, NSString *target) {
     }
   }
 
+  // AXDescription — used by many modern apps (e.g. Calculator buttons) instead of AXTitle.
+  CFStringRef descRef = NULL;
+  if (AXUIElementCopyAttributeValue(element, kAXDescriptionAttribute, (CFTypeRef *)&descRef) == kAXErrorSuccess && descRef) {
+    NSString *desc = helper_cf_to_string(descRef);
+    CFRelease(descRef);
+    if (desc && [desc.lowercaseString containsString:targetLower]) {
+      return YES;
+    }
+  }
+
+  // Exact value match — lets callers target a display/result element by its shown value.
+  CFTypeRef valRef = NULL;
+  if (AXUIElementCopyAttributeValue(element, kAXValueAttribute, &valRef) == kAXErrorSuccess && valRef) {
+    NSString *val = helper_cf_to_string(valRef);
+    CFRelease(valRef);
+    if (val && [val.lowercaseString isEqualToString:targetLower]) {
+      return YES;
+    }
+  }
+
   CFStringRef roleDescRef = NULL;
   if (AXUIElementCopyAttributeValue(element, kAXRoleDescriptionAttribute, (CFTypeRef *)&roleDescRef) == kAXErrorSuccess && roleDescRef) {
     NSString *roleDesc = helper_cf_to_string(roleDescRef);
@@ -12379,6 +12415,8 @@ static BOOL helper_find_and_set_ax_val(AXUIElementRef element, NSString *target,
 
   if (helper_ax_matches_target(element, target)) {
     AXError err = AXUIElementSetAttributeValue(element, kAXValueAttribute, (__bridge CFStringRef)newVal);
+    if (err == kAXErrorSuccess) return YES;
+    err = AXUIElementSetAttributeValue(element, kAXTitleAttribute, (__bridge CFStringRef)newVal);
     if (err == kAXErrorSuccess) return YES;
   }
 

@@ -1269,6 +1269,7 @@ Notes:
 - Match selectors should typically use a control title first, then role as fallback.
 - See `demos/spy_plus_plus_demo.v` for a production-ready target-table + control-tree workflow.
 - The Spy++ demo now includes a strict selector mode (exact title/role), control value watch mode, one-click health check diagnostics, selector resolve helper, and action-history audit table for production debugging workflows.
+- `demos/ext_spy_calc_check.v` is a lightweight proof-of-concept that auto-opens Calculator when needed, drives it through `sys_spy_external_app()` and `sys_press_external_control()`, and verifies the readback with a single `v run demos/ext_spy_calc_check.v` command.
 
 #### Quick start example
 

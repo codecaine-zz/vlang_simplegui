@@ -580,6 +580,7 @@ v run .
 | [developer_controls_demo.v](demos/developer_controls_demo.v)         | Breadcrumbs, shortcut recorders, charts, gauges, property grids, and log consoles                                                                                              |
 | [editable_grid_showcase_demo.v](demos/editable_grid_showcase_demo.v) | Editable grid workflow: selection, filtering, sorting, and programmatic cell access                                                                                            |
 | [spy_plus_plus_demo.v](demos/spy_plus_plus_demo.v)                   | Production Spy++-style inspector: target table + control tree, strict selector mode, value watch mode, health checks, action history, and JSON snapshot export                 |
+| [ext_spy_calc_check.v](demos/ext_spy_calc_check.v)                   | External Calculator accessibility probe: auto-opens Calculator, drives the UI with AXUIElement, and verifies button presses plus readback results                      |
 | [tree_view_demo.v](demos/tree_view_demo.v)                           | Hierarchical tree view                                                                                                                                                         |
 | [advanced_features_demo.v](demos/advanced_features_demo.v)           | Advanced typography and macOS APIs                                                                                                                                             |
 | [menu_demo.v](demos/menu_demo.v)                                     | Standard macOS application menus and text editing shortcuts                                                                                                                    |
@@ -754,6 +755,14 @@ v run demos/tree_view_demo.v
 ```bash
 v run demos/spy_plus_plus_demo.v
 ```
+
+### Run the external Calculator accessibility probe demo
+
+```bash
+v run demos/ext_spy_calc_check.v
+```
+
+This demo opens Calculator automatically if needed, inspects its AXUIElement controls, presses buttons, and reads back the display so the workflow can be verified end to end.
 
 ### Run the Ergonomic Helpers demo
 
