@@ -16,6 +16,7 @@ fn main() {
 	mut win := simplegui.new_simple_window('SimpleGUI RAD Visual UI Designer (Delphi & VB Inspired)',
 		1480, 940)
 	win.set_responsive_layout(true)
+	win.set_fullscreen(true)
 
 	win.set_background_color('#060911')
 		.set_font_color('#f1f5f9')
@@ -162,10 +163,10 @@ fn main() {
 
 	capture_path := os.getenv('SIMPLEGUI_CAPTURE')
 	if capture_path != '' {
-		win.after(1000, fn [capture_path] (mut w simplegui.SimpleWindow) {
+		win.after(2500, fn [capture_path] (mut w simplegui.SimpleWindow) {
 			w.capture_screenshot(capture_path)
 			w.set_status('Captured screenshot to: ${capture_path}')
-			w.after(300, fn (mut w2 simplegui.SimpleWindow) {
+			w.after(400, fn (mut w2 simplegui.SimpleWindow) {
 				w2.close()
 			})
 		})

@@ -2785,7 +2785,7 @@ Compiles an interactive HTML5/CSS3/JavaScript visual design studio canvas contai
   - ⚡ **Gauges, Cards & Widgets**: Star Rating, Stepper, Tag Field, Path Bar, Drop Zone, Circular Progress, Metric Meter, Status Light, Metric Card, Alert Banner, Code View
   - 📦 **Containers & Layout**: Data Grid, Panel Box, Separator
 - **Component Tree Inspector Tab**: Hierarchical control tree for layer z-index depth re-ordering (`Bring to Front`, `Send to Back`, `Move Up`, `Move Down`) and locking (`Lock`/`Unlock`).
-- **Multi-Selection & Batch Property Editing**: Marquee drag selection box, `Shift`/`Cmd`-click selection, and `Cmd+A` / `Ctrl+A` Select All with instant simultaneous batch property updates (width, height, text/caption, font size, font/background colors, color swatch presets, hover styles, cursor styles, position, and RAD event callbacks).
+- **Multi-Selection & Simultaneous Move/Resize**: Marquee drag selection box, `Shift`/`Cmd`-click selection, and `Cmd+A` / `Ctrl+A` Select All with simultaneous multi-control drag moving and multi-control handle resizing, plus batch property updates (width, height, text/caption, font size, font/background colors, color swatch presets, hover styles, cursor styles, position, and RAD event callbacks).
 - **Interactive Hotkeys Modal (`⌨️ Hotkeys`)**: Quick reference cheat-sheet detailing all keyboard shortcuts.
 - **New Form Creation**: Non-blocking `📄 New` form reset button (`clearForm()`) restoring title, canvas geometry (`840x560`), and controls.
 - **Alignment & Distribute Tools**: `Align Left`, `Center`, `Right`, `Top`, `Middle`, `Bottom`, `Center H Form`, `Center V Form`, `Distribute Horizontally/Vertically`, `Equal Width/Height`, `Fit Text Size`.

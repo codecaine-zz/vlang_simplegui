@@ -3049,53 +3049,73 @@
 							saveHistoryState();
 							let rStartX = he.clientX;
 							let rStartY = he.clientY;
-							let rOrigX = ctrl.x;
-							let rOrigY = ctrl.y;
-							let rOrigW = ctrl.width;
-							let rOrigH = ctrl.height;
+
+							const targetIndices = selectedIndices.includes(idx) ? selectedIndices : [idx];
+							const initialGeometries = targetIndices.map(i => ({
+								idx: i,
+								ctrl: formSpec.controls[i],
+								x: formSpec.controls[i].x,
+								y: formSpec.controls[i].y,
+								w: formSpec.controls[i].width,
+								h: formSpec.controls[i].height
+							}));
 
 							const onResizeMove = (rme) => {
 								rme.preventDefault();
 								let rdx = (rme.clientX - rStartX) / canvasScale;
 								let rdy = (rme.clientY - rStartY) / canvasScale;
 
-								if (handlePos.includes("e")) {
-									ctrl.width = Math.max(20, Math.round(rOrigW + rdx));
-								}
-								if (handlePos.includes("w")) {
-									let nw = Math.max(20, Math.round(rOrigW - rdx));
-									ctrl.x = Math.round(rOrigX + (rOrigW - nw));
-									ctrl.width = nw;
-									div.style.left = ctrl.x + "px";
+								initialGeometries.forEach(geo => {
+									let tCtrl = geo.ctrl;
+									if (tCtrl.locked) return;
+
+									if (handlePos.includes("e")) {
+										tCtrl.width = Math.max(20, Math.round(geo.w + rdx));
+									}
+									if (handlePos.includes("w")) {
+										let nw = Math.max(20, Math.round(geo.w - rdx));
+										tCtrl.x = Math.round(geo.x + (geo.w - nw));
+										tCtrl.width = nw;
+									}
+									if (handlePos.includes("s")) {
+										tCtrl.height = Math.max(4, Math.round(geo.h + rdy));
+									}
+									if (handlePos.includes("n")) {
+										let nh = Math.max(4, Math.round(geo.h - rdy));
+										tCtrl.y = Math.round(geo.y + (geo.h - nh));
+										tCtrl.height = nh;
+									}
+
+									const targetDom = canvas.querySelector('.designer-control[data-ctrl-index="' + geo.idx + '"]');
+									if (targetDom) {
+										const badgeEl = targetDom.querySelector('.dim-badge');
+										syncControlDom(tCtrl, targetDom, badgeEl);
+									}
+								});
+
+								if (selectedIndices.length === 1) {
 									const propXEl = document.getElementById("propX");
 									if (propXEl) propXEl.value = ctrl.x;
-								}
-								if (handlePos.includes("s")) {
-									ctrl.height = Math.max(4, Math.round(rOrigH + rdy));
-								}
-								if (handlePos.includes("n")) {
-									let nh = Math.max(4, Math.round(rOrigH - rdy));
-									ctrl.y = Math.round(rOrigY + (rOrigH - nh));
-									ctrl.height = nh;
-									div.style.top = ctrl.y + "px";
 									const propYEl = document.getElementById("propY");
 									if (propYEl) propYEl.value = ctrl.y;
+									const propWEl = document.getElementById("propWidth");
+									if (propWEl) propWEl.value = ctrl.width;
+									const propHEl = document.getElementById("propHeight");
+									if (propHEl) propHEl.value = ctrl.height;
+									document.getElementById("statusMsg").textContent = "Resizing " + ctrl.id + " to " + ctrl.width + "x" + ctrl.height;
+								} else {
+									document.getElementById("statusMsg").textContent = "Resizing " + initialGeometries.length + " selected controls simultaneously.";
 								}
-
-								syncControlDom(ctrl, div, dimBadge);
-								const propWEl = document.getElementById("propWidth");
-								if (propWEl) propWEl.value = ctrl.width;
-								const propHEl = document.getElementById("propHeight");
-								if (propHEl) propHEl.value = ctrl.height;
-								document.getElementById("statusMsg").textContent = "Resizing " + ctrl.id + " to " + ctrl.width + "x" + ctrl.height;
 							};
 
 							const onResizeUp = () => {
 								window.removeEventListener("mousemove", onResizeMove);
 								window.removeEventListener("mouseup", onResizeUp);
+								renderCanvas();
 								renderCode();
 								renderTree();
 								populateInspector();
+								syncSpecToV();
 							};
 
 							window.addEventListener("mousemove", onResizeMove);
