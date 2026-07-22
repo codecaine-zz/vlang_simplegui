@@ -107,12 +107,9 @@ fn main() {
 
 	capture_path := os.getenv('SIMPLEGUI_CAPTURE')
 	if capture_path != '' {
-		win.after(2500, fn [capture_path] (mut w simplegui.SimpleWindow) {
-			w.capture_screenshot(capture_path)
-			w.after(400, fn (mut w2 simplegui.SimpleWindow) {
-				w2.close()
-				exit(0)
-			})
+		win.after(800, fn [state] (mut w simplegui.SimpleWindow) {
+			w.toast('Launching live preview for screenshot...')
+			launch_preview_window(state.spec)
 		})
 	}
 

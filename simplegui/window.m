@@ -2238,10 +2238,10 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
     NSDatePicker *picker = (NSDatePicker *)view;
     [picker setControlSize:NSControlSizeRegular];
     [picker setWantsLayer:YES];
-    picker.layer.cornerRadius = 8.0;
-    picker.layer.borderWidth = 1.0;
-    picker.layer.borderColor = [NSColor separatorColor].CGColor;
-    picker.layer.backgroundColor = (backgroundColor ?: modernElevatedSurfaceColor()).CGColor;
+    picker.layer.cornerRadius = 6.0;
+    picker.layer.borderWidth = 0.0;
+    picker.layer.backgroundColor = [NSColor clearColor].CGColor;
+    [picker setDrawsBackground:YES];
   } else if ([view isKindOfClass:[NSStepper class]]) {
     NSStepper *stepper = (NSStepper *)view;
     [stepper setControlSize:NSControlSizeRegular];
@@ -3219,6 +3219,7 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [picker setTarget:self];
   [picker setAction:@selector(handleDatePickerChanged:)];
   [self makeStretchableView:picker minimumWidth:160];
+  [picker.heightAnchor constraintEqualToConstant:28.0].active = YES;
   [picker setWantsLayer:YES];
   
   applyStyleToView(picker, self.currentBackgroundColor, self.currentFontColor);
@@ -3242,6 +3243,7 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [picker setTarget:self];
   [picker setAction:@selector(handleDatePickerChanged:)];
   [self makeStretchableView:picker minimumWidth:200];
+  [picker.heightAnchor constraintEqualToConstant:28.0].active = YES;
   [picker setWantsLayer:YES];
   
   applyStyleToView(picker, self.currentBackgroundColor, self.currentFontColor);
@@ -3395,11 +3397,15 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [row setAlignment:NSLayoutAttributeCenterY];
   [row setSpacing:8.0];
   [row setTranslatesAutoresizingMaskIntoConstraints:NO];
+  [row setWantsLayer:YES];
+  row.layer.backgroundColor = [NSColor clearColor].CGColor;
 
   NSTextField *label = [NSTextField labelWithString:labelText];
   [label setFont:[NSFont systemFontOfSize:13]];
   if (self.currentFontColor) {
-    applyStyleToView(label, nil, self.currentFontColor);
+    applyStyleToView(label, [NSColor clearColor], self.currentFontColor);
+  } else {
+    applyStyleToView(label, [NSColor clearColor], modernTextColor());
   }
   
   NSSwitch *sw = [[NSSwitch alloc] init];

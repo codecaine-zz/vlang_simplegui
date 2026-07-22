@@ -2187,12 +2187,13 @@
 			let defaultH = 36;
 			if (type === "textarea" || type === "table" || type === "panel" || type === "form_textarea" || type === "code_view") { defaultW = 280; defaultH = 120; }
 			if (type === "form_field" || type === "form_password" || type === "form_dropdown" || type === "form_date" || type === "form_slider" || type === "form_progress") { defaultW = 220; defaultH = 44; }
+			if (type === "form_switch") { defaultW = 220; defaultH = 32; }
 			if (type === "metric_card") { defaultW = 180; defaultH = 75; }
 			if (type === "alert_banner") { defaultW = 320; defaultH = 40; }
 			if (type === "circular_progress") { defaultW = 80; defaultH = 80; }
 			if (type === "divider") { defaultW = 300; defaultH = 4; }
 			if (type === "badge" || type === "status_indicator" || type === "form_link") { defaultW = 140; defaultH = 26; }
-			if (type === "radio" || type === "form_switch") { defaultW = 180; defaultH = 28; }
+			if (type === "radio" || type === "switch" || type === "date" || type === "date_picker") { defaultW = 180; defaultH = 28; }
 			if (type === "rating" || type === "stepper") { defaultW = 120; defaultH = 32; }
 
 			const themeSelect = document.getElementById("propFormTheme");
@@ -2744,6 +2745,7 @@
 				div.appendChild(track);
 			} else if (type === "switch") {
 				div.style.backgroundColor = "transparent";
+				div.style.border = "none";
 				div.style.justifyContent = "flex-start";
 				div.style.gap = "8px";
 				const onClass = ctrl.checked ? " on" : "";
@@ -2798,10 +2800,10 @@
 				const fg = ctrl.font_color || "inherit";
 				const val = ctrl.value !== undefined ? ctrl.value : 0;
 				div.innerHTML = "<div style='display:flex; justify-content:space-between; width:100%; align-items:center; padding:0 6px; color:" + fg + "'><span>🔢 " + text + "</span><span style='background:rgba(255,255,255,0.1); padding:2px 6px; border-radius:3px; font-weight:bold;'>" + val + "</span></div>";
-			} else if (type === "date") {
-				div.style.backgroundColor = ctrl.background_color || "#1e293b";
+			} else if (type === "date" || type === "date_picker") {
+				div.style.backgroundColor = "transparent";
 				const fg = ctrl.font_color || "inherit";
-				div.innerHTML = "<div style='display:flex; align-items:center; gap:6px; width:100%; padding:0 6px; color:" + fg + "'><span>📅</span><span>" + text + "</span></div>";
+				div.innerHTML = "<div class='ctrl-input-box' style='height:28px; width:100%; display:flex; align-items:center; gap:6px; padding:0 8px; font-size:12px; color:" + fg + ";'><span>📅</span><span>" + text + "</span></div>";
 			} else if (type === "search") {
 				div.style.backgroundColor = ctrl.background_color || "#1e293b";
 				const fg = ctrl.font_color || "inherit";
