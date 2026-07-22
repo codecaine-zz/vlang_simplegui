@@ -476,6 +476,26 @@
 		.ctrl-panel-box {
 			border: 1px solid var(--border-color); border-radius: 8px; background: rgba(30, 41, 59, 0.6); width: 100%; height: 100%; display: flex; flex-direction: column;
 		}
+		.tab-order-badge {
+			position: absolute;
+			top: -10px;
+			left: -10px;
+			background: #f59e0b;
+			color: #000000;
+			font-size: 11px;
+			font-weight: 800;
+			min-width: 20px;
+			height: 20px;
+			padding: 0 4px;
+			border-radius: 10px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+			z-index: 9999;
+			border: 1.5px solid #ffffff;
+			pointer-events: none;
+		}
 		.ctrl-panel-header {
 			background: rgba(15, 23, 42, 0.8); border-bottom: 1px solid var(--border-color); padding: 4px 10px; font-size: 11px; font-weight: 700; color: var(--accent);
 		}
@@ -841,6 +861,8 @@
 			<button class="btn btn-icon" onclick="bringToFront()" title="Bring to Front">🔝</button>
 			<button class="btn btn-icon" onclick="sendToBack()" title="Send to Back">🔙</button>
 			<button class="btn" onclick="showSnapGridMenu()" id="snapBtn" title="Toggle Grid Snapping">📐 Snap: 8px</button>
+			<button class="btn" id="tabOrderBtn" onclick="toggleTabOrderMode()" title="Toggle interactive Tab Order sequence editor mode on canvas">🔢 Tab Order</button>
+			<button class="btn" onclick="autoSequenceTabOrder()" title="Auto-sequence tab focus order based on spatial position (Top-to-Bottom, Left-to-Right)">⚡ Auto Tab</button>
 			<button class="btn" id="liveHoverTestBtn" onclick="toggleLiveHoverMode()" title="Toggle interactive live hover & test mode directly on the canvas">⚡ Live Hover Mode</button>
 			<button class="btn" onclick="showDiagnosticsModal()" title="Audit form layout for overlaps, missing fields, or errors">🔍 Audit Form</button>
 			<button class="btn" onclick="showHotkeysModal()" title="Keyboard Shortcuts Cheat Sheet">⌨️ Hotkeys</button>
@@ -1875,6 +1897,45 @@
 
 		let gridSize = 8;
 		let isLiveHoverMode = false;
+		let isTabOrderMode = false;
+		let nextTabSeq = 0;
+
+		function toggleTabOrderMode() {
+			isTabOrderMode = !isTabOrderMode;
+			const btn = document.getElementById("tabOrderBtn");
+			if (btn) {
+				btn.textContent = "🔢 Tab Order: " + (isTabOrderMode ? "ON" : "OFF");
+				btn.className = isTabOrderMode ? "btn btn-warning" : "btn";
+			}
+			if (isTabOrderMode) {
+				nextTabSeq = 0;
+			}
+			renderCanvas();
+			const statusMsg = document.getElementById("statusMsg");
+			if (statusMsg) {
+				statusMsg.textContent = isTabOrderMode 
+					? "🔢 Tab Order Mode active. Click controls sequentially on canvas to set focus index (0, 1, 2...)." 
+					: "Exited Tab Order Mode.";
+			}
+		}
+
+		function autoSequenceTabOrder() {
+			saveHistoryState();
+			let sorted = formSpec.controls.slice().map((c, i) => ({ ctrl: c, index: i }));
+			sorted.sort((a, b) => {
+				const dy = Math.abs(a.ctrl.y - b.ctrl.y);
+				if (dy > 22) return a.ctrl.y - b.ctrl.y;
+				return a.ctrl.x - b.ctrl.x;
+			});
+			sorted.forEach((item, seq) => {
+				item.ctrl.tab_order = seq;
+			});
+			renderCanvas();
+			renderCode();
+			populateInspector();
+			const statusMsg = document.getElementById("statusMsg");
+			if (statusMsg) statusMsg.textContent = "Auto-sequenced tab order (Top-to-Bottom, Left-to-Right) for all controls.";
+		}
 
 		function toggleLiveHoverMode() {
 			isLiveHoverMode = !isLiveHoverMode;
@@ -2920,6 +2981,14 @@
 				dimBadge.textContent = ctrl.id + " (" + ctrl.width + "x" + ctrl.height + ")";
 				div.appendChild(dimBadge);
 
+				if (isTabOrderMode) {
+					const tabBadge = document.createElement("div");
+					tabBadge.className = "tab-order-badge";
+					const tVal = (ctrl.tab_order !== undefined && ctrl.tab_order !== null && ctrl.tab_order >= 0) ? ctrl.tab_order : idx;
+					tabBadge.textContent = String(tVal);
+					div.appendChild(tabBadge);
+				}
+
 				div.onmouseenter = () => {
 					if (isLiveHoverMode) {
 						if (ctrl.hover_color) div.style.backgroundColor = ctrl.hover_color;
@@ -2951,6 +3020,17 @@
 				div.onmousedown = (e) => {
 					if (e.button !== 0) return;
 					if (e.target.classList.contains("resize-handle")) return;
+					if (isTabOrderMode) {
+						e.preventDefault();
+						e.stopPropagation();
+						ctrl.tab_order = nextTabSeq++;
+						renderCanvas();
+						renderCode();
+						populateInspector();
+						const statusMsg = document.getElementById("statusMsg");
+						if (statusMsg) statusMsg.textContent = "Assigned Tab Order [" + ctrl.tab_order + "] to " + ctrl.id;
+						return;
+					}
 					if (isLiveHoverMode) {
 						e.preventDefault();
 						e.stopPropagation();

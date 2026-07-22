@@ -33,6 +33,7 @@ pub mut:
 	visible          bool = true
 	checked          bool
 	locked           bool
+	tab_order        int
 	event_handlers   map[string]string // e.g. {"onClick": "on_button_click", "onHover": "on_button_hover", "onHoverExit": "on_button_hover_exit"}
 }
 

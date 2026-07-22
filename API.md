@@ -2735,6 +2735,7 @@ pub mut:
 	visible          bool = true
 	checked          bool
 	locked           bool
+	tab_order        int
 	event_handlers   map[string]string
 }
 ```
@@ -2769,6 +2770,8 @@ Generates clean, idiomatic V source code targeting `simplegui` from a `FormSpec`
 
 #### `simplegui.compile_designer_html(spec FormSpec) string`
 Compiles an interactive HTML5/CSS3/JavaScript visual design studio canvas containing:
+- **🔢 Visual Tab Order Editor (`TabOrder` / `TabIndex`)**: Interactive Tab Order Mode with numbered canvas badges (`[0]`, `[1]`, `[2]`, ...), 1-click focus index assignment, and spatial `Auto-Sequence` computation (Top-to-Bottom, Left-to-Right).
+- **🔒 Lock Control Position (Delphi/VB `Lock Controls`)**: Individual control position locking (`locked: true`) and global lock toggle with visual 🔒 lock badges to prevent accidental dragging or resizing.
 - **⚡ Component Selector Dropdown**: Top Object Inspector component dropdown listing all controls on form (`id: ControlType ("Caption")`) for instant selection and canvas highlighting.
 - **Object Inspector Property Search & Filter**: Live keyword search/filter bar (`filterControlProps`) to filter property fields (`color`, `width`, `text`, `hover`, etc.).
 - **Auto-Generated Event Callbacks & Code Stubs**: 1-click RAD event generator (`autoGenerateEvents`) populating `on_<id>_click`, `on_<id>_change`, `on_<id>_hover`, `on_<id>_hover_exit` and V function stubs.
@@ -2777,7 +2780,7 @@ Compiles an interactive HTML5/CSS3/JavaScript visual design studio canvas contai
 - **Custom Right-Click Context Menu**: Right-click canvas controls for instant Cut, Copy, Paste, Duplicate, Delete, Lock/Unlock, Bring to Front, Send to Back, and Alignment actions.
 - **Canvas Rulers & Pan/Zoom Workspace**: Top and left pixel rulers, `Space + Mouse Drag` canvas panning, and smooth `Ctrl/Cmd + Wheel` canvas zooming (50% to 200%).
 - **Distance & Gap Measuring Guides**: Smart snap lines paired with real-time numeric distance gap badges (`16px` gap overlays between adjacent controls).
-- **Categorized Component Palette**: 25+ controls organized into 6 collapsible categories:
+- **Categorized Component Palette & Search Filter**: 25+ controls organized into 6 collapsible categories with live search filtering (`filterPalette`):
   - 🚀 **Standard Controls**: Button, Label, Input, Password, Text Area
   - 🎛️ **Toggles & Options**: Checkbox, Switch, Radio Button, Slider, Mode Toggle
   - 📊 **Pickers & Displays**: Number, Date Picker, Color Well, Progress Bar, Image, Badge, Search
