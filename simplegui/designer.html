@@ -1360,6 +1360,8 @@
 		<div class="context-menu-divider"></div>
 		<div class="context-menu-item" onclick="toggleLockSelected()">🔒 Lock / Unlock</div>
 		<div class="context-menu-item" onclick="bringToFront()">🔝 Bring to Front</div>
+		<div class="context-menu-item" onclick="moveForward()">▲ Move Forward</div>
+		<div class="context-menu-item" onclick="moveBackward()">▼ Move Backward</div>
 		<div class="context-menu-item" onclick="sendToBack()">🔙 Send to Back</div>
 		<div class="context-menu-divider"></div>
 		<div class="context-menu-item" onclick="alignControls('center')">↔️ Align Center</div>
@@ -1720,10 +1722,19 @@
 		// Custom Context Menu
 		function onCanvasContextMenu(e) {
 			e.preventDefault();
+			const ctrlDiv = e.target.closest ? e.target.closest(".designer-control") : null;
+			if (ctrlDiv && ctrlDiv.dataset && ctrlDiv.dataset.ctrlIndex !== undefined) {
+				const idx = parseInt(ctrlDiv.dataset.ctrlIndex, 10);
+				if (!isNaN(idx) && !selectedIndices.includes(idx)) {
+					selectControl(idx, e);
+				}
+			}
 			const menu = document.getElementById("contextMenu");
-			menu.style.left = e.clientX + "px";
-			menu.style.top = e.clientY + "px";
-			menu.style.display = "block";
+			if (menu) {
+				menu.style.left = e.clientX + "px";
+				menu.style.top = e.clientY + "px";
+				menu.style.display = "block";
+			}
 		}
 
 		function hideContextMenu() {
@@ -2498,7 +2509,7 @@
 			const isSel = !isNaN(idx) && selectedIndices.includes(idx);
 
 			const baseZ = isNaN(idx) ? 10 : (idx + 10);
-			div.style.zIndex = isSel ? (baseZ + 1000) : baseZ;
+			div.style.zIndex = baseZ;
 
 			if (ctrl.cursor && ctrl.cursor !== "default") {
 				const cursorCss = ctrl.cursor === "pointer" ? "pointer" : (ctrl.cursor === "crosshair" ? "crosshair" : (ctrl.cursor === "text" ? "text" : (ctrl.cursor === "not-allowed" ? "not-allowed" : (ctrl.cursor === "grab" ? "grab" : (ctrl.cursor === "zoom-in" ? "zoom-in" : (ctrl.cursor === "help" ? "help" : "pointer"))))));
