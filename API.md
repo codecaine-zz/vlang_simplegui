@@ -2766,16 +2766,19 @@ Generates clean, idiomatic V source code targeting `simplegui` from a `FormSpec`
 #### `simplegui.compile_designer_html(spec FormSpec) string`
 Compiles an interactive HTML5/CSS3/JavaScript visual design studio canvas containing:
 - **Undo (`Cmd+Z`) & Redo (`Cmd+Y`) Engine**: Snapshot history stack for all canvas modifications.
-- **Component Tree Inspector Tab**: Hierarchical control tree for layer z-index re-ordering (`Move Up`/`Move Down`) and locking.
-- **Marquee Selection Box**: Drag-select multiple controls on canvas; hold `Shift` for toggle selection.
+- **Component Tree Inspector Tab**: Hierarchical control tree for layer z-index re-ordering (`Move Up`/`Move Down`) and locking (`Lock`/`Unlock`).
+- **Multi-Selection & Batch Property Editing**: Marquee drag selection box, `Shift`/`Cmd`-click selection, and `Cmd+A` / `Ctrl+A` Select All with instant simultaneous batch property updates (width, height, text/caption, font size, font/background colors, color swatch presets, position, and RAD event callbacks).
+- **New Form Creation**: Non-blocking `📄 New` form reset button (`clearForm()`) restoring title, canvas geometry (`840x560`), and controls.
 - **Alignment & Distribute Tools**: `Align Left`, `Center`, `Right`, `Top`, `Middle`, `Bottom`, `Distribute Horizontally/Vertically`, `Equal Width/Height`.
 - **Smart Snap Alignment Guides**: Red guide lines snapping control edges and centers.
 - **Arrow Key Nudge Movement**: Fine-tune position using keyboard arrow keys (`1px`, `8px` with `Shift`).
 - **Layout JSON Import / Export**: Import custom JSON layout specs or copy generated V code.
+- **Live V Engine Sync**: Real-time two-way synchronization (`syncSpecToV()`) with V runtime state and live preview execution (`launch_preview_window`).
 
 #### Form Template Preset Helpers
-- `simplegui.get_default_form_spec() FormSpec`: Customer Account Registration Form layout preset.
+- `simplegui.get_default_form_spec() FormSpec`: Customer Account Registration 2-Column Form layout preset.
 - `simplegui.get_login_form_spec() FormSpec`: User Authentication Sign-In Dialog layout preset.
-- `simplegui.get_dashboard_form_spec() FormSpec`: Executive KPI Performance Dashboard layout preset.
-- `simplegui.get_settings_form_spec() FormSpec`: Application Settings & Preferences Studio layout preset.
+- `simplegui.get_dashboard_form_spec() FormSpec`: Executive KPI Performance Dashboard 3-Column layout preset.
+- `simplegui.get_settings_form_spec() FormSpec`: Application Settings & Preferences Studio 2-Column layout preset.
+- `simplegui.get_checkout_form_spec() FormSpec`: E-Commerce Multi-Column Order Checkout & Payment layout preset.
 

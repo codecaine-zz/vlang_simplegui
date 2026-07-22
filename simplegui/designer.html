@@ -1,0 +1,2627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>SimpleGUI RAD Designer</title>
+	<style>
+		:root {
+			--bg-main: #060911;
+			--bg-panel: #0f172a;
+			--bg-card: #1e293b;
+			--bg-hover: #334155;
+			--accent: #38bdf8;
+			--accent-hover: #0284c7;
+			--success: #10b981;
+			--warning: #f59e0b;
+			--danger: #ef4444;
+			--text-primary: #f8fafc;
+			--text-muted: #94a3b8;
+			--border-color: rgba(255, 255, 255, 0.08);
+			--grid-color: rgba(255, 255, 255, 0.05);
+			--radius: 8px;
+		}
+
+		* {
+			box-sizing: border-box;
+			user-select: none;
+			-webkit-user-select: none;
+		}
+
+		html, body {
+			margin: 0;
+			padding: 0;
+			width: 100%;
+			height: 100%;
+			background-color: var(--bg-main);
+			color: var(--text-primary);
+			font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+			overflow: hidden;
+		}
+
+		/* Custom scrollbar styling */
+		::-webkit-scrollbar {
+			width: 6px;
+			height: 6px;
+		}
+		::-webkit-scrollbar-track {
+			background: rgba(0, 0, 0, 0.2);
+		}
+		::-webkit-scrollbar-thumb {
+			background: rgba(255, 255, 255, 0.15);
+			border-radius: 3px;
+		}
+		::-webkit-scrollbar-thumb:hover {
+			background: var(--accent);
+		}
+
+		/* Top Navigation Toolbar */
+		.app-header {
+			height: 44px;
+			background: var(--bg-panel);
+			border-bottom: 1px solid var(--border-color);
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			padding: 0 14px;
+		}
+
+		.app-title {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			font-weight: 700;
+			font-size: 13px;
+			color: var(--accent);
+		}
+
+		.badge-rad {
+			background: rgba(56, 189, 248, 0.15);
+			color: var(--accent);
+			border: 1px solid rgba(56, 189, 248, 0.3);
+			padding: 2px 6px;
+			border-radius: 9999px;
+			font-size: 9px;
+			text-transform: uppercase;
+			font-weight: 700;
+		}
+
+		.toolbar-actions {
+			display: flex;
+			align-items: center;
+			gap: 6px;
+		}
+
+		.btn {
+			background: var(--bg-card);
+			color: var(--text-primary);
+			border: 1px solid var(--border-color);
+			padding: 4px 8px;
+			border-radius: 5px;
+			font-size: 11px;
+			font-weight: 600;
+			cursor: pointer;
+			display: inline-flex;
+			align-items: center;
+			gap: 4px;
+			transition: all 0.15s ease;
+		}
+
+		.btn:hover {
+			background: var(--bg-hover);
+			border-color: var(--accent);
+		}
+
+		.btn-primary {
+			background: var(--accent-hover);
+			color: #ffffff;
+			border-color: var(--accent);
+		}
+
+		.btn-primary:hover {
+			background: var(--accent);
+		}
+
+		.btn-success {
+			background: #059669;
+			color: #ffffff;
+			border-color: var(--success);
+		}
+
+		.btn-success:hover {
+			background: var(--success);
+		}
+
+		/* Main Layout Grid - Expanding Full Width & Height */
+		.studio-container {
+			display: grid;
+			grid-template-columns: 180px 1fr 240px;
+			height: calc(100vh - 66px);
+			width: 100vw;
+			overflow: hidden;
+		}
+
+		/* Left Toolbox Palette */
+		.palette-sidebar {
+			background: var(--bg-panel);
+			border-right: 1px solid var(--border-color);
+			display: flex;
+			flex-direction: column;
+			padding: 10px;
+			gap: 8px;
+			overflow-y: auto;
+		}
+
+		.sidebar-heading {
+			font-size: 10px;
+			font-weight: 700;
+			text-transform: uppercase;
+			letter-spacing: 0.8px;
+			color: var(--text-muted);
+			margin-bottom: 2px;
+		}
+
+		.templates-row {
+			display: flex;
+			gap: 4px;
+			flex-wrap: wrap;
+		}
+
+		.template-chip {
+			background: rgba(255, 255, 255, 0.05);
+			border: 1px solid var(--border-color);
+			padding: 3px 6px;
+			border-radius: 4px;
+			font-size: 10px;
+			cursor: pointer;
+			color: var(--accent);
+			transition: all 0.15s ease;
+		}
+
+		.template-chip:hover {
+			background: rgba(56, 189, 248, 0.15);
+			border-color: var(--accent);
+		}
+
+		.search-box {
+			background: var(--bg-main);
+			border: 1px solid var(--border-color);
+			color: var(--text-primary);
+			padding: 5px 8px;
+			border-radius: 5px;
+			font-size: 11px;
+			width: 100%;
+			outline: none;
+		}
+
+		.search-box:focus {
+			border-color: var(--accent);
+		}
+
+		.palette-grid {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 6px;
+		}
+
+		.palette-item {
+			background: var(--bg-card);
+			border: 1px solid var(--border-color);
+			border-radius: 5px;
+			padding: 6px 4px;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			gap: 2px;
+			cursor: pointer;
+			transition: all 0.15s ease;
+			font-size: 10px;
+			color: var(--text-primary);
+		}
+
+		.palette-item:hover {
+			background: var(--bg-hover);
+			border-color: var(--accent);
+			transform: translateY(-1px);
+		}
+
+		.palette-icon {
+			font-size: 15px;
+		}
+
+		/* Center Canvas Viewport - Spacious Workspace */
+		.canvas-viewport {
+			background: #04060a;
+			padding: 8px;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: flex-start;
+			overflow: auto;
+			position: relative;
+			width: 100%;
+			height: 100%;
+		}
+
+		.canvas-toolbar {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			width: 100%;
+			margin-bottom: 6px;
+			font-size: 11px;
+			color: var(--text-muted);
+			flex-wrap: wrap;
+			gap: 4px;
+		}
+
+		.quick-align-bar {
+			display: flex;
+			gap: 4px;
+			flex-wrap: wrap;
+		}
+
+		/* Scalable Full Canvas Window Frame */
+		.window-frame-wrapper {
+			width: 100%;
+			height: 100%;
+			display: flex;
+			align-items: flex-start;
+			justify-content: center;
+			overflow: auto;
+		}
+
+		.window-frame {
+			width: 100%;
+			min-width: 720px;
+			height: 100%;
+			min-height: 480px;
+			background: var(--bg-main);
+			border-radius: var(--radius);
+			box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.1);
+			display: flex;
+			flex-direction: column;
+			position: relative;
+			overflow: hidden;
+			transition: transform 0.15s ease;
+		}
+
+		.window-titlebar {
+			height: 32px;
+			background: #0b1120;
+			border-bottom: 1px solid var(--border-color);
+			display: flex;
+			align-items: center;
+			padding: 0 10px;
+			gap: 6px;
+		}
+
+		.win-dots {
+			display: flex;
+			gap: 5px;
+		}
+
+		.dot {
+			width: 9px;
+			height: 9px;
+			border-radius: 50%;
+		}
+		.dot-close { background: #ef4444; }
+		.dot-min { background: #f59e0b; }
+		.dot-max { background: #10b981; }
+
+		.win-title-text {
+			font-size: 11px;
+			font-weight: 600;
+			color: var(--text-muted);
+			margin-left: 6px;
+		}
+
+		.form-canvas {
+			flex: 1;
+			position: relative;
+			background-size: 16px 16px;
+			background-image: radial-gradient(circle, var(--grid-color) 1px, transparent 1px);
+			overflow: auto;
+			min-height: 420px;
+		}
+
+		/* Placed Canvas Control Elements */
+		.designer-control {
+			position: absolute;
+			border: 1px dashed rgba(255, 255, 255, 0.25);
+			border-radius: 4px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 12px;
+			box-sizing: border-box;
+			cursor: move;
+			transition: border 0.1s ease;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			padding: 2px 6px;
+		}
+
+		.control-caption {
+			pointer-events: none;
+		}
+
+		/* Component Specific Canvas Previews */
+		.ctrl-color-well {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			width: 100%;
+			height: 100%;
+			padding: 0 8px;
+			font-size: 11px;
+			font-weight: 600;
+		}
+		.ctrl-color-swatch {
+			width: 22px;
+			height: 22px;
+			border-radius: 4px;
+			border: 1px solid rgba(255,255,255,0.4);
+			box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+			flex-shrink: 0;
+		}
+		.ctrl-slider-track {
+			position: relative;
+			width: 90%;
+			height: 6px;
+			background: #334155;
+			border-radius: 3px;
+		}
+		.ctrl-slider-fill {
+			height: 100%;
+			background: var(--accent);
+			border-radius: 3px;
+		}
+		.ctrl-slider-thumb {
+			position: absolute;
+			top: -5px;
+			width: 16px;
+			height: 16px;
+			border-radius: 50%;
+			background: #ffffff;
+			border: 2px solid var(--accent);
+			transform: translateX(-50%);
+			box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+		}
+		.ctrl-progress-track {
+			position: relative;
+			width: 96%;
+			height: 16px;
+			background: #1e293b;
+			border-radius: 8px;
+			overflow: hidden;
+			border: 1px solid var(--border-color);
+		}
+		.ctrl-progress-fill {
+			height: 100%;
+			background: linear-gradient(90deg, #10b981, #38bdf8);
+			border-radius: 8px;
+		}
+		.ctrl-progress-text {
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 10px;
+			font-weight: 700;
+			color: #ffffff;
+			text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+		}
+		.ctrl-switch-pill {
+			width: 36px;
+			height: 20px;
+			background: #334155;
+			border-radius: 10px;
+			position: relative;
+			flex-shrink: 0;
+		}
+		.ctrl-switch-pill.on {
+			background: #10b981;
+		}
+		.ctrl-switch-thumb {
+			width: 16px;
+			height: 16px;
+			background: #ffffff;
+			border-radius: 50%;
+			position: absolute;
+			top: 2px;
+			left: 2px;
+		}
+		.ctrl-switch-pill.on .ctrl-switch-thumb {
+			transform: translateX(16px);
+		}
+		.ctrl-checkbox-box {
+			width: 18px;
+			height: 18px;
+			border: 1.5px solid var(--accent);
+			border-radius: 4px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 12px;
+			font-weight: 800;
+			color: var(--accent);
+			background: rgba(56, 189, 248, 0.1);
+			flex-shrink: 0;
+		}
+		.ctrl-radio-circle {
+			width: 18px;
+			height: 18px;
+			border: 1.5px solid var(--accent);
+			border-radius: 50%;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 10px;
+			color: var(--accent);
+			background: rgba(56, 189, 248, 0.1);
+			flex-shrink: 0;
+		}
+		.ctrl-badge {
+			padding: 4px 12px;
+			border-radius: 9999px;
+			font-size: 11px;
+			font-weight: 700;
+			letter-spacing: 0.5px;
+			box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+		}
+		.ctrl-panel-box {
+			border: 1px solid var(--border-color);
+			border-radius: 8px;
+			background: rgba(30, 41, 59, 0.6);
+			width: 100%;
+			height: 100%;
+			display: flex;
+			flex-direction: column;
+		}
+		.ctrl-panel-header {
+			background: rgba(15, 23, 42, 0.8);
+			border-bottom: 1px solid var(--border-color);
+			padding: 4px 10px;
+			font-size: 11px;
+			font-weight: 700;
+			color: var(--accent);
+		}
+		.ctrl-mini-table {
+			width: 100%;
+			height: 100%;
+			border-collapse: collapse;
+			font-size: 10px;
+		}
+		.ctrl-mini-table th, .ctrl-mini-table td {
+			border: 1px solid var(--border-color);
+			padding: 4px 8px;
+			text-align: left;
+		}
+		.ctrl-mini-table th {
+			background: rgba(15, 23, 42, 0.9);
+			color: var(--accent);
+		}
+
+		.designer-control.selected {
+			border: 2px solid var(--accent) !important;
+			box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
+		}
+
+		.designer-control.locked {
+			cursor: not-allowed !important;
+			border: 1px solid #f59e0b !important;
+		}
+
+		.designer-control.locked::after {
+			content: '🔒';
+			position: absolute;
+			top: 2px;
+			right: 4px;
+			font-size: 9px;
+		}
+
+		/* Dimension Badge */
+		.dim-badge {
+			position: absolute;
+			top: -18px;
+			left: 0;
+			background: var(--accent);
+			color: #000000;
+			font-size: 9px;
+			font-weight: 700;
+			padding: 1px 4px;
+			border-radius: 3px;
+			display: none;
+			pointer-events: none;
+			white-space: nowrap;
+			z-index: 101;
+		}
+
+		.designer-control.selected .dim-badge {
+			display: block;
+		}
+
+		/* Resize Handles */
+		.resize-handle {
+			position: absolute;
+			width: 8px;
+			height: 8px;
+			background: var(--accent);
+			border: 1px solid #ffffff;
+			border-radius: 2px;
+			display: none;
+			z-index: 100;
+		}
+
+		.designer-control.selected:not(.locked) .resize-handle {
+			display: block;
+		}
+
+		.handle-nw { top: -5px; left: -5px; cursor: nwse-resize; }
+		.handle-n  { top: -5px; left: 50%; margin-left: -4px; cursor: ns-resize; }
+		.handle-ne { top: -5px; right: -5px; cursor: nesw-resize; }
+		.handle-e  { top: 50%; margin-top: -4px; right: -5px; cursor: ew-resize; }
+		.handle-se { bottom: -5px; right: -5px; cursor: nwse-resize; }
+		.handle-s  { bottom: -5px; left: 50%; margin-left: -4px; cursor: ns-resize; }
+		.handle-sw { bottom: -5px; left: -5px; cursor: nesw-resize; }
+		.handle-w  { top: 50%; margin-top: -4px; left: -5px; cursor: ew-resize; }
+
+		/* Marquee Drag Selection Box */
+		#marqueeBox {
+			position: absolute;
+			border: 1px dashed var(--accent);
+			background: rgba(56, 189, 248, 0.15);
+			pointer-events: none;
+			display: none;
+			z-index: 200;
+		}
+
+		/* Smart Snap Lines */
+		.snap-line {
+			position: absolute;
+			pointer-events: none;
+			display: none;
+			z-index: 150;
+		}
+		#snapLineH {
+			left: 0;
+			width: 100%;
+			height: 1px;
+			background: #ef4444;
+			box-shadow: 0 0 4px #ef4444;
+		}
+		#snapLineV {
+			top: 0;
+			height: 100%;
+			width: 1px;
+			background: #ef4444;
+			box-shadow: 0 0 4px #ef4444;
+		}
+
+		/* Inspector Sidebar Right */
+		.inspector-sidebar {
+			background: var(--bg-panel);
+			border-left: 1px solid var(--border-color);
+			display: flex;
+			flex-direction: column;
+			overflow: hidden;
+		}
+
+		.tab-bar {
+			display: flex;
+			background: #090d16;
+			border-bottom: 1px solid var(--border-color);
+		}
+
+		.tab-item {
+			flex: 1;
+			padding: 8px 2px;
+			text-align: center;
+			font-size: 10px;
+			font-weight: 700;
+			color: var(--text-muted);
+			cursor: pointer;
+			border-bottom: 2px solid transparent;
+			transition: all 0.15s ease;
+		}
+
+		.tab-item.active {
+			color: var(--accent);
+			border-bottom-color: var(--accent);
+			background: rgba(56, 189, 248, 0.05);
+		}
+
+		.tab-content {
+			flex: 1;
+			padding: 10px;
+			overflow-y: auto;
+			display: none;
+		}
+
+		.tab-content.active {
+			display: block;
+		}
+
+		.prop-row {
+			display: flex;
+			flex-direction: column;
+			gap: 3px;
+			margin-bottom: 8px;
+		}
+
+		.prop-label {
+			font-size: 10px;
+			font-weight: 600;
+			color: var(--text-muted);
+		}
+
+		.prop-input {
+			background: var(--bg-main);
+			border: 1px solid var(--border-color);
+			color: var(--text-primary);
+			padding: 5px 8px;
+			border-radius: 5px;
+			font-size: 11px;
+			outline: none;
+			width: 100%;
+		}
+
+		.prop-input:focus {
+			border-color: var(--accent);
+		}
+
+		.color-swatches {
+			display: flex;
+			gap: 5px;
+			margin-top: 2px;
+		}
+
+		.swatch {
+			width: 18px;
+			height: 18px;
+			border-radius: 50%;
+			cursor: pointer;
+			border: 1px solid rgba(255,255,255,0.2);
+			transition: transform 0.1s ease;
+		}
+
+		.swatch:hover {
+			transform: scale(1.2);
+		}
+
+		.prop-grid-2 {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 6px;
+		}
+
+		/* Tree View Item Styling */
+		.tree-item {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			padding: 5px 8px;
+			background: var(--bg-card);
+			border: 1px solid var(--border-color);
+			border-radius: 4px;
+			margin-bottom: 4px;
+			font-size: 11px;
+			cursor: pointer;
+			transition: all 0.15s ease;
+		}
+
+		.tree-item:hover {
+			background: var(--bg-hover);
+			border-color: var(--accent);
+		}
+
+		.tree-item.selected {
+			background: rgba(56, 189, 248, 0.15);
+			border-color: var(--accent);
+			font-weight: 600;
+		}
+
+		.tree-actions {
+			display: flex;
+			gap: 4px;
+		}
+
+		.tree-btn {
+			background: transparent;
+			border: none;
+			color: var(--text-muted);
+			font-size: 10px;
+			cursor: pointer;
+			padding: 2px 4px;
+			border-radius: 3px;
+		}
+
+		.tree-btn:hover {
+			color: #ffffff;
+			background: rgba(255, 255, 255, 0.1);
+		}
+
+		textarea.code-area {
+			width: 100%;
+			height: 400px;
+			background: #04070d;
+			border: 1px solid var(--border-color);
+			color: #e2e8f0;
+			font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+			font-size: 10px;
+			padding: 8px;
+			border-radius: 5px;
+			resize: none;
+			user-select: text;
+			-webkit-user-select: text;
+			outline: none;
+			white-space: pre;
+			line-height: 1.4;
+		}
+
+		/* Bottom Status Bar */
+		.app-statusbar {
+			height: 22px;
+			background: #04070d;
+			border-top: 1px solid var(--border-color);
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			padding: 0 10px;
+			font-size: 10px;
+			color: var(--text-muted);
+		}
+
+		/* Import Modal */
+		.modal-overlay {
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100vw;
+			height: 100vh;
+			background: rgba(0, 0, 0, 0.7);
+			display: none;
+			align-items: center;
+			justify-content: center;
+			z-index: 1000;
+		}
+
+		.modal-box {
+			background: var(--bg-panel);
+			border: 1px solid var(--border-color);
+			border-radius: 8px;
+			padding: 16px;
+			width: 500px;
+			max-width: 90vw;
+			display: flex;
+			flex-direction: column;
+			gap: 12px;
+			box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+		}
+	</style>
+</head>
+<body>
+
+	<!-- Top Bar -->
+	<header class="app-header">
+		<div class="app-title">
+			<span>⚡ SimpleGUI RAD Studio</span>
+			<span class="badge-rad">Delphi / VB / Lazarus Studio</span>
+		</div>
+		<div class="toolbar-actions">
+			<button class="btn" onclick="clearForm()">📄 New</button>
+			<button class="btn" onclick="undo()" id="undoBtn">↩️ Undo</button>
+			<button class="btn" onclick="redo()" id="redoBtn">↪️ Redo</button>
+			<button class="btn" onclick="toggleSnapGrid()" id="snapBtn">📐 Snap: ON</button>
+			<button class="btn" onclick="duplicateSelectedControl()">📋 Duplicate (Cmd+D)</button>
+			<button class="btn" onclick="toggleLockSelected()">🔒 Lock</button>
+			<button class="btn" onclick="showImportModal()">📥 Import JSON</button>
+			<button class="btn" onclick="copyVCode()">📋 Copy Code</button>
+			<button class="btn btn-primary" onclick="exportFormJSON()">💾 Save JSON</button>
+			<button class="btn btn-success" onclick="triggerRunForm()">⚡ Run Live Form</button>
+		</div>
+	</header>
+
+	<!-- Studio Body Layout -->
+	<div class="studio-container">
+
+		<!-- Left Control Palette -->
+		<aside class="palette-sidebar">
+			<span class="sidebar-heading">Form Templates</span>
+			<div class="templates-row">
+				<span class="template-chip" onclick="loadTemplate('default')">Customer</span>
+				<span class="template-chip" onclick="loadTemplate('login')">Auth Login</span>
+				<span class="template-chip" onclick="loadTemplate('dash')">Dashboard</span>
+				<span class="template-chip" onclick="loadTemplate('settings')">Settings</span>
+				<span class="template-chip" onclick="loadTemplate('checkout')">Checkout</span>
+			</div>
+
+			<hr style="border: 0; border-top: 1px solid var(--border-color); margin: 4px 0;">
+
+			<span class="sidebar-heading">Component Palette (Click or Drag)</span>
+			<input type="text" class="search-box" placeholder="Filter controls..." oninput="filterPalette(this.value)">
+
+			<div class="palette-grid" id="paletteGrid">
+				<div class="palette-item" draggable="true" onclick="spawnControl('button')" ondragstart="onDragStart(event, 'button')">
+					<span class="palette-icon">🔘</span>
+					<span>Button</span>
+				</div>
+				<div class="palette-item" draggable="true" onclick="spawnControl('label')" ondragstart="onDragStart(event, 'label')">
+					<span class="palette-icon">🏷️</span>
+					<span>Label</span>
+				</div>
+				<div class="palette-item" draggable="true" onclick="spawnControl('input')" ondragstart="onDragStart(event, 'input')">
+					<span class="palette-icon">✏️</span>
+					<span>Input</span>
+				</div>
+				<div class="palette-item" draggable="true" onclick="spawnControl('password')" ondragstart="onDragStart(event, 'password')">
+					<span class="palette-icon">🔒</span>
+					<span>Password</span>
+				</div>
+				<div class="palette-item" draggable="true" onclick="spawnControl('textarea')" ondragstart="onDragStart(event, 'textarea')">
+					<span class="palette-icon">📝</span>
+					<span>Text Area</span>
+				</div>
+				<div class="palette-item" draggable="true" onclick="spawnControl('checkbox')" ondragstart="onDragStart(event, 'checkbox')">
+					<span class="palette-icon">☑️</span>
+					<span>Checkbox</span>
+				</div>
+				<div class="palette-item" draggable="true" onclick="spawnControl('switch')" ondragstart="onDragStart(event, 'switch')">
+					<span class="palette-icon">🔀</span>
+					<span>Switch</span>
+				</div>
+				<div class="palette-item" draggable="true" onclick="spawnControl('slider')" ondragstart="onDragStart(event, 'slider')">
+					<span class="palette-icon">🎚️</span>
+					<span>Slider</span>
+				</div>
+				<div class="palette-item" draggable="true" onclick="spawnControl('number')" ondragstart="onDragStart(event, 'number')">
+					<span class="palette-icon">🔢</span>
+					<span>Number</span>
+				</div>
+				<div class="palette-item" draggable="true" onclick="spawnControl('date')" ondragstart="onDragStart(event, 'date')">
+					<span class="palette-icon">📅</span>
+					<span>Date Picker</span>
+				</div>
+				<div class="palette-item" draggable="true" onclick="spawnControl('color')" ondragstart="onDragStart(event, 'color')">
+					<span class="palette-icon">🎨</span>
+					<span>Color Well</span>
+				</div>
+				<div class="palette-item" draggable="true" onclick="spawnControl('progress')" ondragstart="onDragStart(event, 'progress')">
+					<span class="palette-icon">📊</span>
+					<span>Progress</span>
+				</div>
+				<div class="palette-item" draggable="true" onclick="spawnControl('image')" ondragstart="onDragStart(event, 'image')">
+					<span class="palette-icon">🖼️</span>
+					<span>Image</span>
+				</div>
+				<div class="palette-item" draggable="true" onclick="spawnControl('table')" ondragstart="onDragStart(event, 'table')">
+					<span class="palette-icon">📋</span>
+					<span>Data Grid</span>
+				</div>
+				<div class="palette-item" draggable="true" onclick="spawnControl('panel')" ondragstart="onDragStart(event, 'panel')">
+					<span class="palette-icon">📦</span>
+					<span>Panel Box</span>
+				</div>
+				<div class="palette-item" draggable="true" onclick="spawnControl('radio')" ondragstart="onDragStart(event, 'radio')">
+					<span class="palette-icon">🔘</span>
+					<span>Radio Button</span>
+				</div>
+				<div class="palette-item" draggable="true" onclick="spawnControl('divider')" ondragstart="onDragStart(event, 'divider')">
+					<span class="palette-icon">➖</span>
+					<span>Separator</span>
+				</div>
+				<div class="palette-item" draggable="true" onclick="spawnControl('badge')" ondragstart="onDragStart(event, 'badge')">
+					<span class="palette-icon">🏷️</span>
+					<span>Status Badge</span>
+				</div>
+				<div class="palette-item" draggable="true" onclick="spawnControl('search')" ondragstart="onDragStart(event, 'search')">
+					<span class="palette-icon">🔍</span>
+					<span>Search Input</span>
+				</div>
+			</div>
+		</aside>
+
+		<!-- Center Design Canvas -->
+		<main class="canvas-viewport" onclick="deselectControl(event)">
+			<div class="canvas-toolbar">
+				<span id="canvasStats">Form: 840x540 | Controls: 0</span>
+				<div class="quick-align-bar">
+					<button class="btn" onclick="selectAllControls()">☑️ Select All</button>
+					<button class="btn" onclick="zoomCanvas(0.1)">🔍 In</button>
+					<button class="btn" onclick="zoomCanvas(-0.1)">🔍 Out</button>
+					<button class="btn" onclick="autoArrangeColumns(2)">📊 2-Cols</button>
+					<button class="btn" onclick="autoArrangeColumns(3)">📊 3-Cols</button>
+					<button class="btn" onclick="alignControls('left')">⬅️ Left</button>
+					<button class="btn" onclick="alignControls('center')">↔️ Center</button>
+					<button class="btn" onclick="alignControls('right')">➡️ Right</button>
+					<button class="btn" onclick="alignControls('top')">⬆️ Top</button>
+					<button class="btn" onclick="alignControls('middle')">↕️ Middle</button>
+					<button class="btn" onclick="alignControls('bottom')">⬇️ Bottom</button>
+					<button class="btn" onclick="distributeControls('horiz')">⬌ Dist H</button>
+					<button class="btn" onclick="distributeControls('vert')">⬍ Dist V</button>
+					<button class="btn" onclick="equalizeSize('width')">📐 Eq W</button>
+					<button class="btn" onclick="equalizeSize('height')">📐 Eq H</button>
+				</div>
+			</div>
+
+			<div class="window-frame-wrapper">
+				<div class="window-frame" id="windowFrame">
+					<div class="window-titlebar">
+						<div class="win-dots">
+							<div class="dot dot-close"></div>
+							<div class="dot dot-min"></div>
+							<div class="dot dot-max"></div>
+						</div>
+						<span class="win-title-text" id="winTitleHeader">Delphi/VB RAD Form Studio</span>
+					</div>
+
+					<div class="form-canvas" id="formCanvas" ondragover="event.preventDefault()" ondrop="onCanvasDrop(event)">
+						<!-- Marquee Selection Box -->
+						<div id="marqueeBox"></div>
+						<!-- Smart Snap Lines -->
+						<div id="snapLineH" class="snap-line"></div>
+						<div id="snapLineV" class="snap-line"></div>
+						<div id="colGuideLine" style="position: absolute; left: 445px; top: 0; bottom: 0; width: 1px; border-left: 1px dashed rgba(56, 189, 248, 0.35); pointer-events: none; z-index: 2;"><span style="font-size: 9px; color: rgba(56, 189, 248, 0.75); background: rgba(15, 23, 42, 0.85); padding: 2px 6px; border-radius: 3px; white-space: nowrap; margin-left: 4px; margin-top: 4px; border: 1px solid rgba(56, 189, 248, 0.3);">Column 1 ↔ Column 2 (X: 445)</span></div>
+						<!-- Controls dynamically rendered here -->
+					</div>
+				</div>
+			</div>
+		</main>
+
+		<!-- Right Object Inspector -->
+		<aside class="inspector-sidebar">
+			<div class="tab-bar">
+				<div class="tab-item active" onclick="switchTab('tabProps', event)">Properties</div>
+				<div class="tab-item" onclick="switchTab('tabTree', event)">Tree</div>
+				<div class="tab-item" onclick="switchTab('tabEvents', event)">Events</div>
+				<div class="tab-item" onclick="switchTab('tabCode', event)">V Code</div>
+				<div class="tab-item" onclick="switchTab('tabJSON', event)">JSON</div>
+			</div>
+
+			<!-- Properties Tab -->
+			<div class="tab-content active" id="tabProps">
+				<div class="prop-row">
+					<span class="prop-label">Form Title</span>
+					<input type="text" class="prop-input" id="propFormTitle" oninput="updateFormSpec()">
+				</div>
+				<div class="prop-row">
+					<span class="prop-label">Form Theme</span>
+					<select class="prop-input" id="propFormTheme" onchange="updateFormTheme()">
+						<option value="Dark">Dark Mode</option>
+						<option value="Light">Light Mode</option>
+						<option value="High Contrast">High Contrast</option>
+						<option value="Cyberpunk">Cyberpunk Neon</option>
+						<option value="Midnight">Midnight Navy</option>
+					</select>
+				</div>
+
+				<hr style="border: 0; border-top: 1px solid var(--border-color); margin: 8px 0;">
+
+				<div id="controlPropContainer">
+					<span class="prop-label" id="selectedPropHeader" style="color: var(--accent);">Selected Control Properties</span>
+					
+					<div class="prop-row" style="margin-top: 6px;">
+						<span class="prop-label">Control ID / Var Name</span>
+						<input type="text" class="prop-input" id="propId" oninput="updateSelectedControl('id')">
+					</div>
+					<div class="prop-row">
+						<span class="prop-label">Caption / Text</span>
+						<input type="text" class="prop-input" id="propText" oninput="updateSelectedControl('text')">
+					</div>
+
+					<div class="prop-grid-2">
+						<div class="prop-row">
+							<span class="prop-label">X Pos (px)</span>
+							<input type="number" class="prop-input" id="propX" oninput="updateSelectedControl('x')">
+						</div>
+						<div class="prop-row">
+							<span class="prop-label">Y Pos (px)</span>
+							<input type="number" class="prop-input" id="propY" oninput="updateSelectedControl('y')">
+						</div>
+					</div>
+
+					<div class="prop-grid-2">
+						<div class="prop-row">
+							<span class="prop-label">Width (px)</span>
+							<input type="number" class="prop-input" id="propWidth" oninput="updateSelectedControl('width')">
+						</div>
+						<div class="prop-row">
+							<span class="prop-label">Height (px)</span>
+							<input type="number" class="prop-input" id="propHeight" oninput="updateSelectedControl('height')">
+						</div>
+					</div>
+
+					<div class="prop-grid-2">
+						<div class="prop-row">
+							<span class="prop-label">Font Size</span>
+							<input type="number" class="prop-input" id="propFontSize" oninput="updateSelectedControl('font_size')">
+						</div>
+						<div class="prop-row">
+							<span class="prop-label">Font Color</span>
+							<input type="color" class="prop-input" id="propFontColor" oninput="updateSelectedControl('font_color')">
+						</div>
+					</div>
+
+					<div class="prop-row">
+						<span class="prop-label">Background Color</span>
+						<input type="color" class="prop-input" id="propBgColor" oninput="updateSelectedControl('background_color')">
+					</div>
+
+					<div class="prop-row">
+						<span class="prop-label">Background Presets</span>
+						<div class="color-swatches">
+							<div class="swatch" style="background:#0284c7;" onclick="setBgColor('#0284c7')"></div>
+							<div class="swatch" style="background:#10b981;" onclick="setBgColor('#10b981')"></div>
+							<div class="swatch" style="background:#8b5cf6;" onclick="setBgColor('#8b5cf6')"></div>
+							<div class="swatch" style="background:#f59e0b;" onclick="setBgColor('#f59e0b')"></div>
+							<div class="swatch" style="background:#ef4444;" onclick="setBgColor('#ef4444')"></div>
+							<div class="swatch" style="background:#1e293b;" onclick="setBgColor('#1e293b')"></div>
+						</div>
+					</div>
+
+					<div style="display:flex; gap:6px; margin-top:12px;">
+						<button class="btn" style="flex:1;" onclick="toggleLockSelected()">🔒 Lock / Unlock</button>
+						<button class="btn" style="flex:1; background:#ef4444; color:white;" onclick="deleteSelectedControl()">🗑️ Delete</button>
+					</div>
+				</div>
+			</div>
+
+			<!-- Component Tree Tab -->
+			<div class="tab-content" id="tabTree">
+				<span class="prop-label" style="color: var(--accent); display: block; margin-bottom: 8px;">Component Hierarchy & Order</span>
+				<div id="treeContainer"></div>
+			</div>
+
+			<!-- Events Tab (Delphi / VB style placeholders) -->
+			<div class="tab-content" id="tabEvents">
+				<span class="prop-label" style="color: var(--accent); display: block; margin-bottom: 8px;">RAD Event Handlers & Placeholders</span>
+
+				<div class="prop-row">
+					<span class="prop-label">onClick Handler</span>
+					<input type="text" class="prop-input" id="evtOnClick" placeholder="e.g. on_btn_click" oninput="updateEventPlaceholder('onClick', this.value)">
+				</div>
+
+				<div class="prop-row">
+					<span class="prop-label">onChange Handler</span>
+					<input type="text" class="prop-input" id="evtOnChange" placeholder="e.g. on_input_change" oninput="updateEventPlaceholder('onChange', this.value)">
+				</div>
+
+				<div class="prop-row">
+					<span class="prop-label">onDoubleClick Handler</span>
+					<input type="text" class="prop-input" id="evtOnDblClick" placeholder="e.g. on_card_dblclick" oninput="updateEventPlaceholder('onDoubleClick', this.value)">
+				</div>
+
+				<button class="btn btn-primary" style="width: 100%; margin-top: 10px;" onclick="autoGenerateEvents()">⚡ Auto-Generate Event Names</button>
+			</div>
+
+			<!-- Code Tab -->
+			<div class="tab-content" id="tabCode">
+				<textarea class="code-area" id="codePreviewText" readonly></textarea>
+			</div>
+
+			<!-- JSON Tab -->
+			<div class="tab-content" id="tabJSON">
+				<textarea class="code-area" id="jsonPreviewText" readonly></textarea>
+			</div>
+		</aside>
+	</div>
+
+	<!-- Status Footer -->
+	<footer class="app-statusbar">
+		<span id="statusMsg">Ready. Left-click & drag controls on canvas to move them.</span>
+		<span>Grid Snap: 8px | Shift+Click Multi-select | Arrow keys to Nudge</span>
+	</footer>
+
+	<!-- Import JSON Modal -->
+	<div class="modal-overlay" id="importModal">
+		<div class="modal-box">
+			<span style="font-weight:700; color:var(--accent);">📥 Import FormSpec JSON Layout</span>
+			<textarea class="code-area" id="importJsonText" placeholder="Paste FormSpec JSON structure here..." style="height:200px;"></textarea>
+			<div style="display:flex; justify-content:flex-end; gap:8px;">
+				<button class="btn" onclick="hideImportModal()">Cancel</button>
+				<button class="btn btn-primary" onclick="processImportJSON()">Load Layout</button>
+			</div>
+		</div>
+	</div>
+
+	<script>
+		// Initial State loaded from V engine
+		let formSpec = __SPEC_JSON__;
+		let selectedIndices = []; // Multi-selection indices
+		let undoStack = [];
+		let redoStack = [];
+		let snapToGrid = true;
+		let draggedType = null;
+		let canvasScale = 1.0;
+
+		// Initialize designer state & keyboard shortcuts
+		function initDesignerApp() {
+			const propTitleEl = document.getElementById("propFormTitle");
+			if (propTitleEl) propTitleEl.value = formSpec.title || "";
+			bindLivePropertyEditors();
+			renderCanvas();
+			renderCode();
+			renderTree();
+
+			const inspector = document.querySelector(".inspector-sidebar");
+			if (inspector) {
+				inspector.addEventListener("mousedown", (e) => e.stopPropagation());
+				inspector.addEventListener("click", (e) => e.stopPropagation());
+			}
+
+			// Keyboard shortcuts
+			window.addEventListener("keydown", (e) => {
+				if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA" || e.target.tagName === "SELECT") return;
+				if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "a") {
+					e.preventDefault();
+					selectAllControls();
+				} else if ((e.metaKey || e.ctrlKey) && e.key === "z") {
+					e.preventDefault();
+					if (e.shiftKey) redo(); else undo();
+				} else if ((e.metaKey || e.ctrlKey) && e.key === "y") {
+					e.preventDefault();
+					redo();
+				} else if ((e.metaKey || e.ctrlKey) && e.key === "d") {
+					e.preventDefault();
+					duplicateSelectedControl();
+				} else if (e.key === "Delete" || e.key === "Backspace") {
+					e.preventDefault();
+					deleteSelectedControl();
+				} else if (e.key === "Escape") {
+					selectedIndices = [];
+					renderCanvas();
+					populateInspector();
+				} else if (e.key === "ArrowLeft") {
+					e.preventDefault();
+					moveSelectedControlsBy(- (e.shiftKey ? 8 : 1), 0);
+				} else if (e.key === "ArrowRight") {
+					e.preventDefault();
+					moveSelectedControlsBy(e.shiftKey ? 8 : 1, 0);
+				} else if (e.key === "ArrowUp") {
+					e.preventDefault();
+					moveSelectedControlsBy(0, - (e.shiftKey ? 8 : 1));
+				} else if (e.key === "ArrowDown") {
+					e.preventDefault();
+					moveSelectedControlsBy(0, e.shiftKey ? 8 : 1);
+				}
+			});
+
+			setupMarqueeSelection();
+		}
+
+		function selectAllControls() {
+			selectedIndices = formSpec.controls.map((_, i) => i);
+			renderCanvas();
+			renderTree();
+			populateInspector();
+			document.getElementById("statusMsg").textContent = "Selected all " + selectedIndices.length + " controls. Batch update text, size, color in inspector.";
+		}
+
+		if (document.readyState === "complete" || document.readyState === "interactive") {
+			initDesignerApp();
+		} else {
+			document.addEventListener("DOMContentLoaded", initDesignerApp);
+		}
+
+		function saveHistoryState() {
+			if (undoStack.length > 30) undoStack.shift();
+			undoStack.push(JSON.stringify(formSpec));
+			redoStack = []; // Clear redo stack on new action
+			updateUndoRedoButtons();
+		}
+
+		function undo() {
+			if (undoStack.length === 0) return;
+			redoStack.push(JSON.stringify(formSpec));
+			const prev = undoStack.pop();
+			formSpec = JSON.parse(prev);
+			selectedIndices = [];
+			renderCanvas();
+			renderCode();
+			renderTree();
+			populateInspector();
+			updateUndoRedoButtons();
+			document.getElementById("statusMsg").textContent = "Undid last action.";
+		}
+
+		function redo() {
+			if (redoStack.length === 0) return;
+			undoStack.push(JSON.stringify(formSpec));
+			const next = redoStack.pop();
+			formSpec = JSON.parse(next);
+			selectedIndices = [];
+			renderCanvas();
+			renderCode();
+			renderTree();
+			populateInspector();
+			updateUndoRedoButtons();
+			document.getElementById("statusMsg").textContent = "Redid action.";
+		}
+
+		function updateUndoRedoButtons() {
+			document.getElementById("undoBtn").style.opacity = undoStack.length > 0 ? "1" : "0.4";
+			document.getElementById("redoBtn").style.opacity = redoStack.length > 0 ? "1" : "0.4";
+		}
+
+		function bindLivePropertyEditors() {
+			const propIds = ["propId", "propText", "propX", "propY", "propWidth", "propHeight", "propFontSize", "propFontColor", "propBgColor"];
+			propIds.forEach((id) => {
+				const el = document.getElementById(id);
+				if (!el) return;
+				["input", "keyup", "change"].forEach((evt) => {
+					el.addEventListener(evt, updateSelectedControl);
+				});
+			});
+
+			const formTitleEl = document.getElementById("propFormTitle");
+			if (formTitleEl) {
+				["input", "keyup", "change"].forEach((evt) => {
+					formTitleEl.addEventListener(evt, updateFormSpec);
+				});
+			}
+		}
+
+		function toggleSnapGrid() {
+			snapToGrid = !snapToGrid;
+			document.getElementById("snapBtn").textContent = "📐 Snap: " + (snapToGrid ? "ON" : "OFF");
+		}
+
+		function zoomCanvas(delta) {
+			canvasScale = Math.min(1.8, Math.max(0.6, canvasScale + delta));
+			const frame = document.getElementById("windowFrame");
+			frame.style.transform = "scale(" + canvasScale + ")";
+			frame.style.transformOrigin = "top center";
+		}
+
+		function filterPalette(query) {
+			const items = document.querySelectorAll(".palette-item");
+			query = query.toLowerCase();
+			items.forEach(item => {
+				const match = item.textContent.toLowerCase().includes(query);
+				item.style.display = match ? "flex" : "none";
+			});
+		}
+
+		function spawnControl(type) {
+			saveHistoryState();
+			const count = formSpec.controls.length + 1;
+			const id = type + "_" + count;
+
+			const row = Math.floor(formSpec.controls.length / 4);
+			const col = formSpec.controls.length % 4;
+			let x = 30 + col * 180;
+			let y = 50 + row * 65;
+
+			if (snapToGrid) {
+				x = Math.round(x / 8) * 8;
+				y = Math.round(y / 8) * 8;
+			}
+
+			let defaultW = 150;
+			let defaultH = 36;
+			if (type === "textarea" || type === "table" || type === "panel") { defaultW = 280; defaultH = 120; }
+			if (type === "divider") { defaultW = 300; defaultH = 4; }
+			if (type === "badge") { defaultW = 120; defaultH = 26; }
+			if (type === "radio") { defaultW = 160; defaultH = 28; }
+
+			const newControl = {
+				id: id,
+				control_type: type,
+				x: x,
+				y: y,
+				width: defaultW,
+				height: defaultH,
+				text: capitalize(type) + " " + count,
+				font_size: 13,
+				font_color: "#ffffff",
+				background_color: type === "button" ? "#0284c7" : (type === "badge" ? "#10b981" : "#1e293b"),
+				enabled: true,
+				visible: true,
+				locked: false,
+				event_handlers: {
+					"onClick": "on_" + id + "_click"
+				}
+			};
+
+			formSpec.controls.push(newControl);
+			selectedIndices = [formSpec.controls.length - 1];
+			renderCanvas();
+			renderCode();
+			renderTree();
+			populateInspector();
+			document.getElementById("statusMsg").textContent = "Placed " + type + " control (" + id + ")";
+		}
+
+		function onDragStart(e, type) {
+			draggedType = type;
+			e.dataTransfer.setData("text/plain", type);
+		}
+
+		function onCanvasDrop(e) {
+			e.preventDefault();
+			saveHistoryState();
+			const canvas = document.getElementById("formCanvas");
+			const rect = canvas.getBoundingClientRect();
+			let x = Math.round((e.clientX - rect.left) / canvasScale);
+			let y = Math.round((e.clientY - rect.top) / canvasScale);
+
+			if (snapToGrid) {
+				x = Math.round(x / 8) * 8;
+				y = Math.round(y / 8) * 8;
+			}
+
+			const type = draggedType || e.dataTransfer.getData("text/plain") || "button";
+			const count = formSpec.controls.length + 1;
+			const id = type + "_" + count;
+
+			let defaultW = 150;
+			let defaultH = 36;
+			if (type === "textarea" || type === "table" || type === "panel") { defaultW = 280; defaultH = 120; }
+			if (type === "divider") { defaultW = 300; defaultH = 4; }
+			if (type === "badge") { defaultW = 120; defaultH = 26; }
+			if (type === "radio") { defaultW = 160; defaultH = 28; }
+
+			const newControl = {
+				id: id,
+				control_type: type,
+				x: Math.max(10, x),
+				y: Math.max(10, y),
+				width: defaultW,
+				height: defaultH,
+				text: capitalize(type) + " " + count,
+				font_size: 13,
+				font_color: "#ffffff",
+				background_color: type === "button" ? "#0284c7" : (type === "badge" ? "#10b981" : "#1e293b"),
+				enabled: true,
+				visible: true,
+				locked: false,
+				event_handlers: {
+					"onClick": "on_" + id + "_click"
+				}
+			};
+
+			formSpec.controls.push(newControl);
+			selectedIndices = [formSpec.controls.length - 1];
+			renderCanvas();
+			renderCode();
+			renderTree();
+			populateInspector();
+			document.getElementById("statusMsg").textContent = "Dropped " + type + " control (" + id + ")";
+		}
+
+		function duplicateSelectedControl() {
+			if (selectedIndices.length === 0) return;
+			saveHistoryState();
+			let newIndices = [];
+			selectedIndices.forEach(idx => {
+				const orig = formSpec.controls[idx];
+				const count = formSpec.controls.length + 1;
+				const newId = orig.control_type + "_" + count;
+
+				const copy = JSON.parse(JSON.stringify(orig));
+				copy.id = newId;
+				copy.x += 16;
+				copy.y += 16;
+				copy.event_handlers = { "onClick": "on_" + newId + "_click" };
+
+				formSpec.controls.push(copy);
+				newIndices.push(formSpec.controls.length - 1);
+			});
+
+			selectedIndices = newIndices;
+			renderCanvas();
+			renderCode();
+			renderTree();
+			populateInspector();
+			document.getElementById("statusMsg").textContent = "Duplicated " + newIndices.length + " control(s).";
+		}
+
+		function toggleLockSelected() {
+			if (selectedIndices.length === 0) return;
+			saveHistoryState();
+			selectedIndices.forEach(idx => {
+				formSpec.controls[idx].locked = !formSpec.controls[idx].locked;
+			});
+			renderCanvas();
+			renderTree();
+			populateInspector();
+		}
+
+		function moveSelectedControlsBy(dx, dy) {
+			if (selectedIndices.length === 0) return;
+			saveHistoryState();
+			selectedIndices.forEach(idx => {
+				const ctrl = formSpec.controls[idx];
+				if (!ctrl.locked) {
+					ctrl.x = Math.max(0, ctrl.x + dx);
+					ctrl.y = Math.max(0, ctrl.y + dy);
+				}
+			});
+			renderCanvas();
+			renderCode();
+			renderTree();
+			populateInspector();
+		}
+
+		function autoArrangeColumns(cols) {
+			saveHistoryState();
+			const targets = selectedIndices.length > 0 ? selectedIndices : formSpec.controls.map((_, i) => i);
+			if (targets.length === 0) return;
+
+			const startX = 24;
+			const startY = 64;
+			const gapX = 16;
+			const gapY = 16;
+			const availableWidth = formSpec.width - startX * 2;
+			const colWidth = Math.max(120, Math.floor((availableWidth - (cols - 1) * gapX) / cols));
+
+			targets.forEach((idx, i) => {
+				const col = i % cols;
+				const row = Math.floor(i / cols);
+				const ctrl = formSpec.controls[idx];
+				if (ctrl.locked) return;
+
+				ctrl.x = Math.round(startX + col * (colWidth + gapX));
+				ctrl.y = Math.round(startY + row * (40 + gapY));
+				if (ctrl.control_type !== "panel" && ctrl.control_type !== "table") {
+					ctrl.width = colWidth;
+				}
+			});
+
+			renderCanvas();
+			renderCode();
+			renderTree();
+			populateInspector();
+			document.getElementById("statusMsg").textContent = "Auto-arranged " + targets.length + " control(s) into " + cols + " column(s).";
+		}
+
+		function alignControls(mode) {
+			if (selectedIndices.length === 0) return;
+			saveHistoryState();
+			const first = formSpec.controls[selectedIndices[0]];
+			selectedIndices.forEach(idx => {
+				const active = formSpec.controls[idx];
+				if (active.locked) return;
+				if (mode === "left") active.x = selectedIndices.length > 1 ? first.x : 24;
+				if (mode === "center") active.x = selectedIndices.length > 1 ? Math.max(10, Math.round(first.x + (first.width - active.width) / 2)) : Math.max(10, Math.round((formSpec.width - active.width) / 2));
+				if (mode === "right") active.x = selectedIndices.length > 1 ? Math.max(10, first.x + first.width - active.width) : Math.max(10, formSpec.width - active.width - 24);
+				if (mode === "top") active.y = selectedIndices.length > 1 ? first.y : 24;
+				if (mode === "middle") active.y = selectedIndices.length > 1 ? Math.max(10, Math.round(first.y + (first.height - active.height) / 2)) : Math.max(10, Math.round((formSpec.height - active.height) / 2));
+				if (mode === "bottom") active.y = selectedIndices.length > 1 ? Math.max(10, first.y + first.height - active.height) : Math.max(10, formSpec.height - active.height - 24);
+			});
+			renderCanvas();
+			renderCode();
+			renderTree();
+			populateInspector();
+		}
+
+		function distributeControls(axis) {
+			if (selectedIndices.length < 3) return;
+			saveHistoryState();
+			let items = selectedIndices.map(i => formSpec.controls[i]);
+			if (axis === "horiz") {
+				items.sort((a, b) => a.x - b.x);
+				let minX = items[0].x;
+				let maxX = items[items.length - 1].x;
+				let totalGap = (maxX - minX);
+				let step = totalGap / (items.length - 1);
+				items.forEach((item, index) => {
+					if (!item.locked) item.x = Math.round(minX + index * step);
+				});
+			} else {
+				items.sort((a, b) => a.y - b.y);
+				let minY = items[0].y;
+				let maxY = items[items.length - 1].y;
+				let totalGap = (maxY - minY);
+				let step = totalGap / (items.length - 1);
+				items.forEach((item, index) => {
+					if (!item.locked) item.y = Math.round(minY + index * step);
+				});
+			}
+			renderCanvas();
+			renderCode();
+			renderTree();
+		}
+
+		function equalizeSize(dimension) {
+			if (selectedIndices.length < 2) return;
+			saveHistoryState();
+			const targetVal = dimension === "width" ? formSpec.controls[selectedIndices[0]].width : formSpec.controls[selectedIndices[0]].height;
+			selectedIndices.forEach(idx => {
+				const ctrl = formSpec.controls[idx];
+				if (ctrl.locked) return;
+				if (dimension === "width") ctrl.width = targetVal;
+				if (dimension === "height") ctrl.height = targetVal;
+			});
+			renderCanvas();
+			renderCode();
+			renderTree();
+			populateInspector();
+		}
+
+		function updateFormTheme() {
+			saveHistoryState();
+			const theme = document.getElementById("propFormTheme").value;
+			if (theme === "Light") {
+				formSpec.background_color = "#f8fafc";
+				formSpec.font_color = "#0f172a";
+			} else if (theme === "High Contrast") {
+				formSpec.background_color = "#000000";
+				formSpec.font_color = "#00ff00";
+			} else if (theme === "Cyberpunk") {
+				formSpec.background_color = "#0d0221";
+				formSpec.font_color = "#00f6ff";
+			} else if (theme === "Midnight") {
+				formSpec.background_color = "#090d16";
+				formSpec.font_color = "#e2e8f0";
+			} else { // Dark
+				formSpec.background_color = "#0f172a";
+				formSpec.font_color = "#f8fafc";
+			}
+			renderCanvas();
+			renderCode();
+		}
+
+		function loadTemplate(name) {
+			saveHistoryState();
+			if (name === "login") {
+				formSpec.title = "User Authentication Dialog";
+				formSpec.width = 480;
+				formSpec.height = 420;
+				formSpec.controls = [
+					{ id: "lbl_header", control_type: "label", x: 24, y: 24, width: 360, height: 32, text: "🔐 Account Sign In", font_size: 18, font_color: "#38bdf8", background_color: "" },
+					{ id: "inp_email", control_type: "input", x: 24, y: 70, width: 360, height: 36, text: "admin@developer.org", event_handlers: { "onChange": "on_email_change" } },
+					{ id: "inp_pass", control_type: "password", x: 24, y: 116, width: 360, height: 36, text: "password123", event_handlers: { "onChange": "on_pass_change" } },
+					{ id: "chk_remember", control_type: "checkbox", x: 24, y: 162, width: 240, height: 24, text: "Remember login session", checked: true },
+					{ id: "btn_signin", control_type: "button", x: 24, y: 200, width: 360, height: 42, text: "Sign In Now", background_color: "#0284c7", event_handlers: { "onClick": "on_signin_click" } }
+				];
+			} else if (name === "dash") {
+				formSpec.title = "Fintech Analytics KPI Dashboard";
+				formSpec.width = 960;
+				formSpec.height = 580;
+				formSpec.controls = [
+					{ id: "lbl_dash", control_type: "label", x: 20, y: 20, width: 460, height: 32, text: "📊 Executive Performance Dashboard", font_size: 18, font_color: "#10b981" },
+					{ id: "inp_target", control_type: "input", x: 20, y: 64, width: 280, height: 34, text: "Q3 Target: $4.2M" },
+					{ id: "progress_target", control_type: "progress", x: 320, y: 64, width: 360, height: 34, value: 85 },
+					{ id: "btn_refresh", control_type: "button", x: 20, y: 110, width: 160, height: 36, text: "Refresh Data", background_color: "#10b981", event_handlers: { "onClick": "on_refresh_click" } }
+				];
+			} else if (name === "settings") {
+				formSpec.title = "Application Settings Studio";
+				formSpec.width = 860;
+				formSpec.height = 580;
+				formSpec.controls = [
+					{ id: "lbl_settings_header", control_type: "label", x: 24, y: 24, width: 420, height: 32, text: "⚙️ System Settings & Preferences", font_size: 18, font_color: "#38bdf8" },
+					{ id: "panel_gen", control_type: "panel", x: 24, y: 70, width: 380, height: 220, text: "General Settings", background_color: "#1e293b" },
+					{ id: "panel_sec", control_type: "panel", x: 430, y: 70, width: 400, height: 220, text: "Security & Telemetry", background_color: "#1e293b" },
+					{ id: "inp_app_name", control_type: "input", x: 40, y: 110, width: 340, height: 36, text: "Vlang Studio App" },
+					{ id: "slider_sec", control_type: "slider", x: 446, y: 110, width: 360, height: 28, value: 80 },
+					{ id: "sw_gpu", control_type: "switch", x: 40, y: 160, width: 260, height: 28, text: "Enable GPU Acceleration", checked: true },
+					{ id: "badge_status", control_type: "badge", x: 446, y: 160, width: 140, height: 28, text: "VERIFIED SECURE", background_color: "#059669" },
+					{ id: "btn_save", control_type: "button", x: 24, y: 310, width: 200, height: 42, text: "Save Preferences", background_color: "#0284c7", event_handlers: { "onClick": "on_save_click" } }
+				];
+			} else if (name === "checkout") {
+				formSpec.title = "E-Commerce Multi-Column Checkout";
+				formSpec.width = 960;
+				formSpec.height = 640;
+				formSpec.controls = [
+					{ id: "lbl_checkout", control_type: "label", x: 24, y: 20, width: 420, height: 32, text: "🛒 Order Checkout & Payment", font_size: 20, font_color: "#38bdf8" },
+					{ id: "panel_billing", control_type: "panel", x: 24, y: 64, width: 440, height: 450, text: "Billing & Shipping Details", background_color: "#1e293b" },
+					{ id: "panel_payment", control_type: "panel", x: 490, y: 64, width: 440, height: 450, text: "Payment Method & Summary", background_color: "#1e293b" },
+					{ id: "inp_full_name", control_type: "input", x: 40, y: 104, width: 408, height: 36, text: "Ada Lovelace" },
+					{ id: "inp_card", control_type: "input", x: 506, y: 104, width: 408, height: 36, text: "4532 •••• •••• 8892" },
+					{ id: "inp_email_addr", control_type: "input", x: 40, y: 152, width: 408, height: 36, text: "ada@lovelace.org" },
+					{ id: "badge_total", control_type: "badge", x: 506, y: 160, width: 408, height: 38, text: "TOTAL DUE: $299.00 USD", background_color: "#059669" },
+					{ id: "inp_address", control_type: "input", x: 40, y: 200, width: 408, height: 36, text: "100 Innovation Way, Suite 400" },
+					{ id: "btn_place_order", control_type: "button", x: 506, y: 216, width: 408, height: 44, text: "💳 Complete Payment & Order", background_color: "#0284c7", event_handlers: { "onClick": "on_pay_click" } }
+				];
+			} else {
+				// default
+				formSpec.title = "Delphi/VB RAD Enterprise Portal";
+				formSpec.width = 940;
+				formSpec.height = 620;
+				formSpec.controls = [
+					{ id: "lbl_title", control_type: "label", x: 24, y: 20, width: 460, height: 32, text: "📋 Customer Account & Portal Registration", font_size: 18, font_color: "#38bdf8" },
+					{ id: "panel_profile", control_type: "panel", x: 24, y: 64, width: 420, height: 440, text: "Profile Information", background_color: "#1e293b" },
+					{ id: "panel_prefs", control_type: "panel", x: 470, y: 64, width: 440, height: 440, text: "Security & Priority Settings", background_color: "#1e293b" },
+					{ id: "input_fullname", control_type: "input", x: 40, y: 104, width: 388, height: 36, text: "Ada Lovelace" },
+					{ id: "slider_priority", control_type: "slider", x: 486, y: 104, width: 408, height: 28, value: 75 },
+					{ id: "input_email", control_type: "input", x: 40, y: 152, width: 388, height: 36, text: "ada@lovelace.org" },
+					{ id: "btn_submit", control_type: "button", x: 24, y: 520, width: 180, height: 42, text: "💾 Save Account", background_color: "#0284c7", event_handlers: { "onClick": "on_save_click" } }
+				];
+			}
+			selectedIndices = [];
+			document.getElementById("propFormTitle").value = formSpec.title;
+			renderCanvas();
+			renderCode();
+			renderTree();
+			populateInspector();
+			document.getElementById("statusMsg").textContent = "Loaded " + name + " template layout.";
+		}
+
+		function setBgColor(hex) {
+			const bgEl = document.getElementById("propBgColor");
+			if (bgEl) {
+				bgEl.value = hex;
+				updateSelectedControl();
+			}
+		}
+
+		function capitalize(str) {
+			return str.charAt(0).toUpperCase() + str.slice(1);
+		}
+
+		function selectControl(idx, e) {
+			if (e) e.stopPropagation();
+			if (e && (e.shiftKey || e.metaKey || e.ctrlKey)) {
+				const existingIndex = selectedIndices.indexOf(idx);
+				if (existingIndex >= 0) {
+					selectedIndices.splice(existingIndex, 1);
+				} else {
+					selectedIndices.push(idx);
+				}
+			} else {
+				selectedIndices = [idx];
+			}
+			renderCanvas();
+			renderTree();
+			populateInspector();
+		}
+
+		function syncControlDom(ctrl, div, dimBadge) {
+			div.style.left = ctrl.x + "px";
+			div.style.top = ctrl.y + "px";
+			div.style.width = ctrl.width + "px";
+			div.style.height = ctrl.height + "px";
+			div.style.fontSize = (ctrl.font_size || 12) + "px";
+			const idx = parseInt(div.dataset.ctrlIndex, 10);
+			const isSel = !isNaN(idx) && selectedIndices.includes(idx);
+			if (ctrl.control_type === "panel") {
+				div.style.zIndex = isSel ? "15" : "1";
+			} else {
+				div.style.zIndex = isSel ? "50" : "10";
+			}
+			if (ctrl.locked) div.classList.add("locked"); else div.classList.remove("locked");
+			if (dimBadge) {
+				dimBadge.textContent = ctrl.id + " (" + ctrl.width + "x" + ctrl.height + ")";
+			}
+		}
+
+		function renderControlContent(ctrl, div) {
+			div.innerHTML = "";
+			const type = ctrl.control_type || "button";
+			const text = ctrl.text || ctrl.id;
+
+			if (type === "color") {
+				const col = ctrl.font_color && ctrl.font_color !== "#ffffff" ? ctrl.font_color : (ctrl.background_color && ctrl.background_color !== "#1e293b" ? ctrl.background_color : "#38bdf8");
+				div.style.backgroundColor = "transparent";
+				div.style.border = "1px solid var(--border-color)";
+				div.innerHTML = "<div class='ctrl-color-well'><div class='ctrl-color-swatch' style='background-color: " + col + "'></div><span>🎨 " + text + " (" + col + ")</span></div>";
+			} else if (type === "slider") {
+				const val = ctrl.value !== undefined ? ctrl.value : 50;
+				div.style.backgroundColor = "transparent";
+				const fill = document.createElement("div");
+				fill.className = "ctrl-slider-fill";
+				fill.style.width = val + "%";
+				const thumb = document.createElement("div");
+				thumb.className = "ctrl-slider-thumb";
+				thumb.style.left = val + "%";
+				const track = document.createElement("div");
+				track.className = "ctrl-slider-track";
+				track.appendChild(fill);
+				track.appendChild(thumb);
+
+				const label = document.createElement("div");
+				label.style.fontSize = "10px";
+				label.style.opacity = "0.8";
+				label.style.width = "100%";
+				label.style.display = "flex";
+				label.style.justifyContent = "space-between";
+				label.innerHTML = "<span>" + text + "</span><span>" + val + "%</span>";
+
+				const wrap = document.createElement("div");
+				wrap.style.display = "flex";
+				wrap.style.flexDirection = "column";
+				wrap.style.width = "100%";
+				wrap.style.gap = "4px";
+				wrap.style.alignItems = "center";
+				wrap.appendChild(label);
+				wrap.appendChild(track);
+				div.appendChild(wrap);
+			} else if (type === "progress") {
+				const val = ctrl.value !== undefined ? ctrl.value : 60;
+				const bg = ctrl.background_color || "#10b981";
+				div.style.backgroundColor = "transparent";
+				const fill = document.createElement("div");
+				fill.className = "ctrl-progress-fill";
+				fill.style.width = val + "%";
+				fill.style.backgroundColor = bg;
+				const txt = document.createElement("span");
+				txt.className = "ctrl-progress-text";
+				txt.textContent = text + ": " + val + "%";
+				const track = document.createElement("div");
+				track.className = "ctrl-progress-track";
+				track.appendChild(fill);
+				track.appendChild(txt);
+				div.appendChild(track);
+			} else if (type === "switch") {
+				div.style.backgroundColor = "transparent";
+				div.style.justifyContent = "flex-start";
+				div.style.gap = "8px";
+				const onClass = ctrl.checked ? " on" : "";
+				const fg = ctrl.font_color || "inherit";
+				div.innerHTML = "<div class='ctrl-switch-pill" + onClass + "'><div class='ctrl-switch-thumb'></div></div><span style='color:" + fg + "'>" + text + "</span>";
+			} else if (type === "checkbox") {
+				div.style.backgroundColor = "transparent";
+				div.style.justifyContent = "flex-start";
+				div.style.gap = "8px";
+				const chkClass = ctrl.checked ? " checked" : "";
+				const chkMark = ctrl.checked ? "✓" : "";
+				const fg = ctrl.font_color || "inherit";
+				div.innerHTML = "<div class='ctrl-checkbox-box" + chkClass + "'>" + chkMark + "</div><span style='color:" + fg + "'>" + text + "</span>";
+			} else if (type === "radio") {
+				div.style.backgroundColor = "transparent";
+				div.style.justifyContent = "flex-start";
+				div.style.gap = "8px";
+				const radClass = ctrl.checked ? " checked" : "";
+				const radMark = ctrl.checked ? "●" : "";
+				const fg = ctrl.font_color || "inherit";
+				div.innerHTML = "<div class='ctrl-radio-circle" + radClass + "'>" + radMark + "</div><span style='color:" + fg + "'>" + text + "</span>";
+			} else if (type === "badge") {
+				div.style.backgroundColor = "transparent";
+				div.style.border = "none";
+				const bg = ctrl.background_color || "#059669";
+				const fg = ctrl.font_color || "#ffffff";
+				div.innerHTML = "<span class='ctrl-badge' style='background-color:" + bg + "; color:" + fg + "'>" + text + "</span>";
+			} else if (type === "panel") {
+				div.style.padding = "0";
+				div.style.overflow = "hidden";
+				const bg = ctrl.background_color || "#1e293b";
+				div.innerHTML = "<div class='ctrl-panel-box' style='background-color:" + bg + "'><div class='ctrl-panel-header'>📦 " + text + "</div></div>";
+			} else if (type === "table") {
+				div.style.padding = "0";
+				div.style.overflow = "hidden";
+				div.innerHTML = "<table class='ctrl-mini-table'><thead><tr><th>ID</th><th>Name</th><th>Status</th></tr></thead><tbody><tr><td>101</td><td>Ada Lovelace</td><td>Active</td></tr><tr><td>102</td><td>Alan Turing</td><td>Verified</td></tr></tbody></table>";
+			} else if (type === "divider") {
+				div.style.backgroundColor = "transparent";
+				div.style.border = "none";
+				const hr = document.createElement("hr");
+				hr.style.width = "100%";
+				hr.style.border = "0";
+				hr.style.borderTop = "1px solid rgba(255,255,255,0.3)";
+				hr.style.margin = "0";
+				div.appendChild(hr);
+			} else if (type === "textarea") {
+				div.style.backgroundColor = ctrl.background_color || "#1e293b";
+				div.style.alignItems = "flex-start";
+				div.style.padding = "6px";
+				const fg = ctrl.font_color || "inherit";
+				div.innerHTML = "<div style='opacity:0.7; font-size:11px; color:" + fg + "'>📝 " + text + "</div>";
+			} else if (type === "number") {
+				div.style.backgroundColor = ctrl.background_color || "#1e293b";
+				const fg = ctrl.font_color || "inherit";
+				const val = ctrl.value !== undefined ? ctrl.value : 0;
+				div.innerHTML = "<div style='display:flex; justify-content:space-between; width:100%; align-items:center; padding:0 6px; color:" + fg + "'><span>🔢 " + text + "</span><span style='background:rgba(255,255,255,0.1); padding:2px 6px; border-radius:3px; font-weight:bold;'>" + val + "</span></div>";
+			} else if (type === "date") {
+				div.style.backgroundColor = ctrl.background_color || "#1e293b";
+				const fg = ctrl.font_color || "inherit";
+				div.innerHTML = "<div style='display:flex; align-items:center; gap:6px; width:100%; padding:0 6px; color:" + fg + "'><span>📅</span><span>" + text + "</span></div>";
+			} else if (type === "search") {
+				div.style.backgroundColor = ctrl.background_color || "#1e293b";
+				const fg = ctrl.font_color || "inherit";
+				div.innerHTML = "<div style='display:flex; align-items:center; gap:6px; width:100%; padding:0 6px; color:" + fg + "'><span>🔍</span><span>" + text + "</span></div>";
+			} else if (type === "password") {
+				div.style.backgroundColor = ctrl.background_color || "#1e293b";
+				const fg = ctrl.font_color || "inherit";
+				div.innerHTML = "<div style='display:flex; align-items:center; gap:6px; width:100%; padding:0 6px; color:" + fg + "'><span>🔒</span><span>••••••••</span></div>";
+			} else if (type === "input") {
+				div.style.backgroundColor = ctrl.background_color || "#1e293b";
+				const fg = ctrl.font_color || "inherit";
+				div.innerHTML = "<div style='display:flex; align-items:center; gap:6px; width:100%; padding:0 6px; color:" + fg + "'><span>✏️</span><span>" + text + "</span></div>";
+			} else if (type === "image") {
+				div.style.backgroundColor = ctrl.background_color || "#1e293b";
+				const fg = ctrl.font_color || "inherit";
+				div.innerHTML = "<div style='display:flex; align-items:center; justify-content:center; gap:6px; width:100%; opacity:0.8; color:" + fg + "'><span>🖼️</span><span>" + text + "</span></div>";
+			} else if (type === "mode") {
+				div.style.backgroundColor = ctrl.background_color || "#1e293b";
+				div.innerHTML = "<div style='display:flex; align-items:center; justify-content:center; width:100%; gap:2px;'><span style='background:var(--accent); color:#000; padding:2px 6px; border-radius:3px; font-weight:bold;'>" + text + "</span></div>";
+			} else {
+				// Button, Label, or default
+				if (ctrl.background_color) div.style.backgroundColor = ctrl.background_color;
+				const fg = ctrl.font_color || "#ffffff";
+				div.innerHTML = "<span class='control-caption' style='color:" + fg + "'>" + text + "</span>";
+			}
+		}
+
+		function deselectControl(e) {
+			if (e.target.id === "formCanvas" || e.target.id === "windowFrame") {
+				selectedIndices = [];
+				renderCanvas();
+				renderTree();
+				populateInspector();
+			}
+		}
+
+		function setupMarqueeSelection() {
+			const canvas = document.getElementById("formCanvas");
+			const marquee = document.getElementById("marqueeBox");
+			let startX = 0, startY = 0, isSelecting = false;
+
+			canvas.addEventListener("mousedown", (e) => {
+				if (e.target.id !== "formCanvas") return;
+				if (e.button !== 0) return;
+				isSelecting = true;
+				const rect = canvas.getBoundingClientRect();
+				startX = (e.clientX - rect.left) / canvasScale;
+				startY = (e.clientY - rect.top) / canvasScale;
+
+				marquee.style.left = startX + "px";
+				marquee.style.top = startY + "px";
+				marquee.style.width = "0px";
+				marquee.style.height = "0px";
+				marquee.style.display = "block";
+
+				const onMouseMove = (me) => {
+					if (!isSelecting) return;
+					const curX = (me.clientX - rect.left) / canvasScale;
+					const curY = (me.clientY - rect.top) / canvasScale;
+
+					const left = Math.min(startX, curX);
+					const top = Math.min(startY, curY);
+					const width = Math.abs(curX - startX);
+					const height = Math.abs(curY - startY);
+
+					marquee.style.left = left + "px";
+					marquee.style.top = top + "px";
+					marquee.style.width = width + "px";
+					marquee.style.height = height + "px";
+
+					// Check intersections
+					let newSelected = [];
+					formSpec.controls.forEach((c, idx) => {
+						if (c.x < left + width && c.x + c.width > left &&
+							c.y < top + height && c.y + c.height > top) {
+							newSelected.push(idx);
+						}
+					});
+					selectedIndices = newSelected;
+					renderCanvasSelectionOnly();
+				};
+
+				const onMouseUp = () => {
+					isSelecting = false;
+					marquee.style.display = "none";
+					window.removeEventListener("mousemove", onMouseMove);
+					window.removeEventListener("mouseup", onMouseUp);
+					renderTree();
+					populateInspector();
+				};
+
+				window.addEventListener("mousemove", onMouseMove);
+				window.addEventListener("mouseup", onMouseUp);
+			});
+		}
+
+		function renderCanvasSelectionOnly() {
+			document.querySelectorAll(".designer-control").forEach((div) => {
+				const idx = parseInt(div.dataset.ctrlIndex, 10);
+				if (selectedIndices.includes(idx)) {
+					div.classList.add("selected");
+				} else {
+					div.classList.remove("selected");
+				}
+			});
+		}
+
+		function renderCanvas() {
+			const canvas = document.getElementById("formCanvas");
+			canvas.querySelectorAll(".designer-control").forEach(el => el.remove());
+			canvas.style.backgroundColor = formSpec.background_color || "#0f172a";
+			canvas.style.color = formSpec.font_color || "#f8fafc";
+
+			document.getElementById("winTitleHeader").textContent = formSpec.title;
+			document.getElementById("canvasStats").textContent = "Form: " + formSpec.width + "x" + formSpec.height + " | Controls: " + formSpec.controls.length + (selectedIndices.length > 0 ? " (Selected: " + selectedIndices.length + ")" : "");
+
+			// Render panel controls first as backdrop containers, then non-panels
+			const sortedIndices = formSpec.controls.map((c, i) => i).sort((a, b) => {
+				const isPanelA = formSpec.controls[a].control_type === "panel";
+				const isPanelB = formSpec.controls[b].control_type === "panel";
+				if (isPanelA && !isPanelB) return -1;
+				if (!isPanelA && isPanelB) return 1;
+				return a - b;
+			});
+
+			sortedIndices.forEach((idx) => {
+				const ctrl = formSpec.controls[idx];
+				const div = document.createElement("div");
+				div.className = "designer-control" + (selectedIndices.includes(idx) ? " selected" : "");
+				div.setAttribute("draggable", "false");
+				div.dataset.ctrlIndex = String(idx);
+				syncControlDom(ctrl, div, null);
+
+				renderControlContent(ctrl, div);
+
+				// Dimension badge
+				const dimBadge = document.createElement("span");
+				dimBadge.className = "dim-badge";
+				dimBadge.textContent = ctrl.id + " (" + ctrl.width + "x" + ctrl.height + ")";
+				div.appendChild(dimBadge);
+
+				div.ondblclick = (e) => {
+					selectControl(idx, e);
+					switchTab("tabEvents");
+					autoGenerateEvents();
+				};
+
+				// Left-click Drag & Repositioning Logic
+				let isDragging = false;
+				let startX, startY, origX, origY;
+				let initialPositions = [];
+
+				div.onmousedown = (e) => {
+					if (e.button !== 0) return; // Only primary left-click
+					if (e.target.classList.contains("resize-handle")) return;
+					if (ctrl.locked) return;
+					
+					e.preventDefault();
+					e.stopPropagation();
+
+					if (!selectedIndices.includes(idx)) {
+						selectControl(idx, e);
+					}
+
+					saveHistoryState();
+					isDragging = true;
+					startX = e.clientX;
+					startY = e.clientY;
+					origX = ctrl.x;
+					origY = ctrl.y;
+
+					initialPositions = selectedIndices.map(i => ({ idx: i, x: formSpec.controls[i].x, y: formSpec.controls[i].y }));
+
+					const onMouseMove = (me) => {
+						if (!isDragging) return;
+						me.preventDefault();
+
+						let dx = (me.clientX - startX) / canvasScale;
+						let dy = (me.clientY - startY) / canvasScale;
+
+						// Smart snap alignment check for single element drag
+						if (selectedIndices.length === 1) {
+							checkSmartSnapGuides(ctrl, origX + dx, origY + dy);
+						}
+
+						initialPositions.forEach(pos => {
+							let newX = pos.x + dx;
+							let newY = pos.y + dy;
+
+							if (snapToGrid) {
+								newX = Math.round(newX / 8) * 8;
+								newY = Math.round(newY / 8) * 8;
+							}
+
+							let targetCtrl = formSpec.controls[pos.idx];
+							if (!targetCtrl.locked) {
+								targetCtrl.x = Math.max(0, Math.round(newX));
+								targetCtrl.y = Math.max(0, Math.round(newY));
+
+								let domEl = canvas.querySelector('.designer-control[data-ctrl-index="'+ pos.idx + '"]');
+								if (domEl) {
+									domEl.style.left = targetCtrl.x + "px";
+									domEl.style.top = targetCtrl.y + "px";
+								}
+							}
+						});
+
+						if (selectedIndices.length === 1) {
+							const propXEl = document.getElementById("propX");
+							if (propXEl) propXEl.value = ctrl.x;
+							const propYEl = document.getElementById("propY");
+							if (propYEl) propYEl.value = ctrl.y;
+							document.getElementById("statusMsg").textContent = "Moving " + ctrl.id + " to (" + ctrl.x + ", " + ctrl.y + ")";
+						}
+					};
+
+					const onMouseUp = () => {
+						isDragging = false;
+						hideSmartSnapGuides();
+						window.removeEventListener("mousemove", onMouseMove);
+						window.removeEventListener("mouseup", onMouseUp);
+						renderCanvas();
+						renderCode();
+						renderTree();
+						populateInspector();
+					};
+
+					window.addEventListener("mousemove", onMouseMove);
+					window.addEventListener("mouseup", onMouseUp);
+				};
+
+				// Full 8-Handle Resize System
+				if (selectedIndices.includes(idx) && !ctrl.locked) {
+					["nw", "n", "ne", "e", "se", "s", "sw", "w"].forEach(handlePos => {
+						const handle = document.createElement("div");
+						handle.className = "resize-handle handle-" + handlePos;
+						handle.setAttribute("draggable", "false");
+
+						handle.onmousedown = (he) => {
+							if (he.button !== 0) return;
+							he.preventDefault();
+							he.stopPropagation();
+
+							saveHistoryState();
+							let rStartX = he.clientX;
+							let rStartY = he.clientY;
+							let rOrigX = ctrl.x;
+							let rOrigY = ctrl.y;
+							let rOrigW = ctrl.width;
+							let rOrigH = ctrl.height;
+
+							const onResizeMove = (rme) => {
+								rme.preventDefault();
+								let rdx = (rme.clientX - rStartX) / canvasScale;
+								let rdy = (rme.clientY - rStartY) / canvasScale;
+
+								if (handlePos.includes("e")) {
+									ctrl.width = Math.max(20, Math.round(rOrigW + rdx));
+								}
+								if (handlePos.includes("w")) {
+									let nw = Math.max(20, Math.round(rOrigW - rdx));
+									ctrl.x = Math.round(rOrigX + (rOrigW - nw));
+									ctrl.width = nw;
+									div.style.left = ctrl.x + "px";
+									const propXEl = document.getElementById("propX");
+									if (propXEl) propXEl.value = ctrl.x;
+								}
+								if (handlePos.includes("s")) {
+									ctrl.height = Math.max(4, Math.round(rOrigH + rdy));
+								}
+								if (handlePos.includes("n")) {
+									let nh = Math.max(4, Math.round(rOrigH - rdy));
+									ctrl.y = Math.round(rOrigY + (rOrigH - nh));
+									ctrl.height = nh;
+									div.style.top = ctrl.y + "px";
+									const propYEl = document.getElementById("propY");
+									if (propYEl) propYEl.value = ctrl.y;
+								}
+
+								syncControlDom(ctrl, div, dimBadge);
+
+								const propWEl = document.getElementById("propWidth");
+								if (propWEl) propWEl.value = ctrl.width;
+								const propHEl = document.getElementById("propHeight");
+								if (propHEl) propHEl.value = ctrl.height;
+								document.getElementById("statusMsg").textContent = "Resizing " + ctrl.id + " to " + ctrl.width + "x" + ctrl.height;
+							};
+
+							const onResizeUp = () => {
+								window.removeEventListener("mousemove", onResizeMove);
+								window.removeEventListener("mouseup", onResizeUp);
+								renderCode();
+								renderTree();
+								populateInspector();
+							};
+
+							window.addEventListener("mousemove", onResizeMove);
+							window.addEventListener("mouseup", onResizeUp);
+						};
+						div.appendChild(handle);
+					});
+				}
+
+				canvas.appendChild(div);
+			});
+		}
+
+		function checkSmartSnapGuides(ctrl, newX, newY) {
+			const lineH = document.getElementById("snapLineH");
+			const lineV = document.getElementById("snapLineV");
+			if (!lineH || !lineV) return;
+			let showH = false, showV = false;
+
+			formSpec.controls.forEach((other) => {
+				if (other.id === ctrl.id) return;
+				// Horizontal snap
+				if (Math.abs(newY - other.y) < 5) { showH = true; lineH.style.top = other.y + "px"; }
+				if (Math.abs((newY + ctrl.height) - (other.y + other.height)) < 5) { showH = true; lineH.style.top = (other.y + other.height) + "px"; }
+				// Vertical snap
+				if (Math.abs(newX - other.x) < 5) { showV = true; lineV.style.left = other.x + "px"; }
+				if (Math.abs((newX + ctrl.width) - (other.x + other.width)) < 5) { showV = true; lineV.style.left = (other.x + other.width) + "px"; }
+			});
+
+			lineH.style.display = showH ? "block" : "none";
+			lineV.style.display = showV ? "block" : "none";
+		}
+
+		function hideSmartSnapGuides() {
+			const lineH = document.getElementById("snapLineH");
+			const lineV = document.getElementById("snapLineV");
+			if (lineH) lineH.style.display = "none";
+			if (lineV) lineV.style.display = "none";
+		}
+
+		function renderTree() {
+			const container = document.getElementById("treeContainer");
+			if (!container) return;
+			container.innerHTML = "";
+
+			formSpec.controls.forEach((ctrl, idx) => {
+				const item = document.createElement("div");
+				item.className = "tree-item" + (selectedIndices.includes(idx) ? " selected" : "");
+				item.onclick = (e) => selectControl(idx, e);
+
+				const label = document.createElement("span");
+				label.textContent = (ctrl.locked ? "🔒 " : "") + ctrl.id + " (" + ctrl.control_type + ")";
+				item.appendChild(label);
+
+				const actions = document.createElement("div");
+				actions.className = "tree-actions";
+
+				const btnUp = document.createElement("button");
+				btnUp.className = "tree-btn";
+				btnUp.textContent = "▲";
+				btnUp.onclick = (e) => { e.stopPropagation(); moveControlOrder(idx, -1); };
+
+				const btnDown = document.createElement("button");
+				btnDown.className = "tree-btn";
+				btnDown.textContent = "▼";
+				btnDown.onclick = (e) => { e.stopPropagation(); moveControlOrder(idx, 1); };
+
+				actions.appendChild(btnUp);
+				actions.appendChild(btnDown);
+				item.appendChild(actions);
+
+				container.appendChild(item);
+			});
+		}
+
+		function moveControlOrder(idx, dir) {
+			const target = idx + dir;
+			if (target < 0 || target >= formSpec.controls.length) return;
+			saveHistoryState();
+			const temp = formSpec.controls[idx];
+			formSpec.controls[idx] = formSpec.controls[target];
+			formSpec.controls[target] = temp;
+			selectedIndices = [target];
+			renderCanvas();
+			renderCode();
+			renderTree();
+		}
+
+		function populateInspector() {
+			const container = document.getElementById("controlPropContainer");
+			if (!container) return;
+			if (selectedIndices.length === 0) {
+				container.style.opacity = "0.4";
+				container.style.pointerEvents = "none";
+				const header = document.getElementById("selectedPropHeader");
+				if (header) header.textContent = "Selected Control Properties";
+				return;
+			}
+			container.style.opacity = "1";
+			container.style.pointerEvents = "auto";
+
+			const header = document.getElementById("selectedPropHeader");
+			if (header) {
+				header.textContent = selectedIndices.length === 1 
+					? "Selected Control Properties" 
+					: "Selected Control Properties (" + selectedIndices.length + " items)";
+			}
+
+			const propIdEl = document.getElementById("propId");
+			const propTextEl = document.getElementById("propText");
+			const propXEl = document.getElementById("propX");
+			const propYEl = document.getElementById("propY");
+			const propWEl = document.getElementById("propWidth");
+			const propHEl = document.getElementById("propHeight");
+			const propFSEl = document.getElementById("propFontSize");
+			const fontEl = document.getElementById("propFontColor");
+			const bgEl = document.getElementById("propBgColor");
+
+			if (selectedIndices.length === 1) {
+				const c = formSpec.controls[selectedIndices[0]];
+				if (propIdEl) { propIdEl.value = c.id; propIdEl.disabled = false; propIdEl.placeholder = ""; }
+				if (propTextEl) { propTextEl.value = c.text || ""; propTextEl.placeholder = ""; }
+				if (propXEl) { propXEl.value = c.x; propXEl.placeholder = ""; }
+				if (propYEl) { propYEl.value = c.y; propYEl.placeholder = ""; }
+				if (propWEl) { propWEl.value = c.width; propWEl.placeholder = ""; }
+				if (propHEl) { propHEl.value = c.height; propHEl.placeholder = ""; }
+				if (propFSEl) { propFSEl.value = c.font_size || 13; propFSEl.placeholder = ""; }
+				if (fontEl) fontEl.value = c.font_color || "#ffffff";
+				if (bgEl) bgEl.value = c.background_color || "#1e293b";
+
+				c.event_handlers = c.event_handlers || {};
+				const evtClickEl = document.getElementById("evtOnClick");
+				if (evtClickEl) evtClickEl.value = c.event_handlers["onClick"] || "";
+				const evtChangeEl = document.getElementById("evtOnChange");
+				if (evtChangeEl) evtChangeEl.value = c.event_handlers["onChange"] || "";
+				const evtDblClickEl = document.getElementById("evtOnDblClick");
+				if (evtDblClickEl) evtDblClickEl.value = c.event_handlers["onDoubleClick"] || "";
+			} else {
+				const selectedCtrls = selectedIndices.map(i => formSpec.controls[i]);
+
+				if (propIdEl) { propIdEl.value = ""; propIdEl.placeholder = "(Multiple)"; propIdEl.disabled = true; }
+
+				const allSame = (key) => selectedCtrls.every(c => c[key] === selectedCtrls[0][key]);
+
+				if (propTextEl) {
+					propTextEl.value = allSame("text") ? selectedCtrls[0].text : "";
+					propTextEl.placeholder = allSame("text") ? "" : "(Multiple values)";
+				}
+				if (propXEl) {
+					propXEl.value = allSame("x") ? selectedCtrls[0].x : "";
+					propXEl.placeholder = allSame("x") ? "" : "(Multiple)";
+				}
+				if (propYEl) {
+					propYEl.value = allSame("y") ? selectedCtrls[0].y : "";
+					propYEl.placeholder = allSame("y") ? "" : "(Multiple)";
+				}
+				if (propWEl) {
+					propWEl.value = allSame("width") ? selectedCtrls[0].width : "";
+					propWEl.placeholder = allSame("width") ? "" : "(Multiple)";
+				}
+				if (propHEl) {
+					propHEl.value = allSame("height") ? selectedCtrls[0].height : "";
+					propHEl.placeholder = allSame("height") ? "" : "(Multiple)";
+				}
+				if (propFSEl) {
+					propFSEl.value = allSame("font_size") ? (selectedCtrls[0].font_size || 13) : "";
+					propFSEl.placeholder = allSame("font_size") ? "" : "(Multiple)";
+				}
+				if (fontEl) {
+					fontEl.value = allSame("font_color") ? (selectedCtrls[0].font_color || "#ffffff") : "#ffffff";
+				}
+				if (bgEl) {
+					bgEl.value = allSame("background_color") ? (selectedCtrls[0].background_color || "#1e293b") : "#1e293b";
+				}
+
+				const evtClickEl = document.getElementById("evtOnClick");
+				if (evtClickEl) {
+					const sameEvt = selectedCtrls.every(c => (c.event_handlers && c.event_handlers["onClick"]) === (selectedCtrls[0].event_handlers && selectedCtrls[0].event_handlers["onClick"]));
+					evtClickEl.value = sameEvt && selectedCtrls[0].event_handlers ? (selectedCtrls[0].event_handlers["onClick"] || "") : "";
+					evtClickEl.placeholder = sameEvt ? "e.g. on_btn_click" : "(Multiple)";
+				}
+				const evtChangeEl = document.getElementById("evtOnChange");
+				if (evtChangeEl) {
+					const sameEvt = selectedCtrls.every(c => (c.event_handlers && c.event_handlers["onChange"]) === (selectedCtrls[0].event_handlers && selectedCtrls[0].event_handlers["onChange"]));
+					evtChangeEl.value = sameEvt && selectedCtrls[0].event_handlers ? (selectedCtrls[0].event_handlers["onChange"] || "") : "";
+					evtChangeEl.placeholder = sameEvt ? "e.g. on_input_change" : "(Multiple)";
+				}
+				const evtDblClickEl = document.getElementById("evtOnDblClick");
+				if (evtDblClickEl) {
+					const sameEvt = selectedCtrls.every(c => (c.event_handlers && c.event_handlers["onDoubleClick"]) === (selectedCtrls[0].event_handlers && selectedCtrls[0].event_handlers["onDoubleClick"]));
+					evtDblClickEl.value = sameEvt && selectedCtrls[0].event_handlers ? (selectedCtrls[0].event_handlers["onDoubleClick"] || "") : "";
+					evtDblClickEl.placeholder = sameEvt ? "e.g. on_dblclick" : "(Multiple)";
+				}
+			}
+		}
+
+		function updateSelectedControl(changedProp) {
+			if (selectedIndices.length === 0) return;
+			saveHistoryState();
+
+			const propIdEl = document.getElementById("propId");
+			const propTextEl = document.getElementById("propText");
+			const propXEl = document.getElementById("propX");
+			const propYEl = document.getElementById("propY");
+			const propWEl = document.getElementById("propWidth");
+			const propHEl = document.getElementById("propHeight");
+			const propFSEl = document.getElementById("propFontSize");
+			const fontEl = document.getElementById("propFontColor");
+			const bgEl = document.getElementById("propBgColor");
+
+			const parseNum = (val, fallback, minVal) => {
+				if (val === undefined || val === null || val === "") return fallback;
+				const p = parseInt(val, 10);
+				if (Number.isNaN(p)) return fallback;
+				return Math.max(minVal, p);
+			};
+
+			selectedIndices.forEach((idx) => {
+				const ctrl = formSpec.controls[idx];
+
+				if ((!changedProp || changedProp === 'id') && selectedIndices.length === 1) {
+					if (propIdEl && propIdEl.value && propIdEl.value.trim() !== "") {
+						ctrl.id = propIdEl.value.trim();
+					}
+				}
+
+				if (!changedProp || changedProp === 'text') {
+					if (propTextEl && propTextEl.value !== "") {
+						ctrl.text = propTextEl.value;
+					}
+				}
+
+				if (!changedProp || changedProp === 'x') {
+					if (propXEl && propXEl.value !== "") {
+						ctrl.x = parseNum(propXEl.value, ctrl.x, 0);
+					}
+				}
+
+				if (!changedProp || changedProp === 'y') {
+					if (propYEl && propYEl.value !== "") {
+						ctrl.y = parseNum(propYEl.value, ctrl.y, 0);
+					}
+				}
+
+				if (!changedProp || changedProp === 'width') {
+					if (propWEl && propWEl.value !== "") {
+						ctrl.width = parseNum(propWEl.value, ctrl.width, 10);
+					}
+				}
+
+				if (!changedProp || changedProp === 'height') {
+					if (propHEl && propHEl.value !== "") {
+						ctrl.height = parseNum(propHEl.value, ctrl.height, 4);
+					}
+				}
+
+				if (!changedProp || changedProp === 'font_size') {
+					if (propFSEl && propFSEl.value !== "") {
+						ctrl.font_size = parseNum(propFSEl.value, ctrl.font_size || 13, 1);
+					}
+				}
+
+				if (!changedProp || changedProp === 'font_color') {
+					if (fontEl) {
+						ctrl.font_color = fontEl.value;
+					}
+				}
+
+				if (!changedProp || changedProp === 'background_color') {
+					if (bgEl) {
+						ctrl.background_color = bgEl.value;
+					}
+				}
+			});
+
+			renderCanvas();
+			renderCode();
+			renderTree();
+			syncSpecToV();
+
+			if (selectedIndices.length > 1) {
+				const labelName = changedProp ? changedProp.replace('_', ' ') : 'properties';
+				document.getElementById("statusMsg").textContent = "Updated " + labelName + " across " + selectedIndices.length + " selected controls.";
+			}
+		}
+
+		function updateEventPlaceholder(evtName, val) {
+			if (selectedIndices.length === 0) return;
+			saveHistoryState();
+			selectedIndices.forEach(idx => {
+				const c = formSpec.controls[idx];
+				c.event_handlers = c.event_handlers || {};
+				c.event_handlers[evtName] = val;
+			});
+			renderCode();
+			syncSpecToV();
+		}
+
+		function autoGenerateEvents() {
+			if (selectedIndices.length === 0) return;
+			saveHistoryState();
+			selectedIndices.forEach(idx => {
+				const c = formSpec.controls[idx];
+				c.event_handlers = c.event_handlers || {};
+				c.event_handlers["onClick"] = "on_" + c.id + "_click";
+				c.event_handlers["onChange"] = "on_" + c.id + "_change";
+			});
+			populateInspector();
+			renderCode();
+			syncSpecToV();
+			document.getElementById("statusMsg").textContent = "Auto-generated event placeholders for " + selectedIndices.length + " control(s).";
+		}
+
+		function deleteSelectedControl() {
+			if (selectedIndices.length === 0) return;
+			saveHistoryState();
+			selectedIndices.sort((a, b) => b - a).forEach(idx => {
+				formSpec.controls.splice(idx, 1);
+			});
+			selectedIndices = [];
+			renderCanvas();
+			renderCode();
+			renderTree();
+			populateInspector();
+			document.getElementById("statusMsg").textContent = "Selected control(s) deleted.";
+		}
+
+		function updateFormSpec() {
+			saveHistoryState();
+			const formTitleEl = document.getElementById("propFormTitle");
+			if (formTitleEl) formSpec.title = formTitleEl.value;
+			renderCanvas();
+			renderCode();
+		}
+
+		function switchTab(tabId, evt) {
+			document.querySelectorAll(".tab-item").forEach(t => t.classList.remove("active"));
+			document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+
+			if (evt && evt.target) evt.target.classList.add("active");
+			const targetContent = document.getElementById(tabId);
+			if (targetContent) targetContent.classList.add("active");
+		}
+
+		function syncSpecToV() {
+			const payload = JSON.stringify(formSpec);
+			if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.simplegui) {
+				window.webkit.messageHandlers.simplegui.postMessage({
+					control: "designer_canvas",
+					event: "change",
+					value: "spec_update:" + payload
+				});
+			} else {
+				window.location.href = "simplegui://change/designer_canvas/spec_update:" + encodeURIComponent(payload);
+			}
+		}
+
+		function renderCode() {
+			const jsonStr = JSON.stringify(formSpec, null, 2);
+			const jsonEl = document.getElementById("jsonPreviewText");
+			if (jsonEl) jsonEl.value = jsonStr;
+
+			let vcode = "module main\n\nimport simplegui\n\nfn main() {\n";
+			vcode += "  mut win := simplegui.new_simple_window('" + formSpec.title + "', " + formSpec.width + ", " + formSpec.height + ")\n";
+			vcode += "  win.set_background_color('" + formSpec.background_color + "')\n";
+			vcode += "    .set_font_color('" + formSpec.font_color + "')\n";
+			vcode += "    .set_padding(" + formSpec.padding + ")\n";
+			vcode += "    .set_spacing(" + formSpec.spacing + ")\n\n";
+
+			// Group controls into row clusters based on Y position (within 25px)
+			let sorted = [...formSpec.controls].filter(c => c.visible !== false);
+			sorted.sort((a, b) => {
+				if (Math.abs(a.y - b.y) > 25) return a.y - b.y;
+				return a.x - b.x;
+			});
+
+			let rows = [];
+			let currentRow = [];
+			let currentY = -1000;
+
+			sorted.forEach(c => {
+				if (currentRow.length === 0) {
+					currentRow.push(c);
+					currentY = c.y;
+				} else if (Math.abs(c.y - currentY) <= 25) {
+					currentRow.push(c);
+				} else {
+					rows.push(currentRow);
+					currentRow = [c];
+					currentY = c.y;
+				}
+			});
+			if (currentRow.length > 0) rows.push(currentRow);
+
+			rows.forEach((row, rIdx) => {
+				let isMulti = row.length > 1;
+				if (isMulti) {
+					vcode += "  win.begin_row('row_" + (rIdx + 1) + "')\n";
+				}
+				row.forEach(c => {
+					vcode += "  win.add_" + c.control_type + "('" + c.id + "', '" + c.text + "')\n";
+					if (c.width) vcode += "  win.set_control_width('" + c.id + "', " + c.width + ")\n";
+					if (c.height) vcode += "  win.set_control_height('" + c.id + "', " + c.height + ")\n";
+					if (c.font_color && c.font_color !== "#ffffff") vcode += "  win.set_control_font_color('" + c.id + "', '" + c.font_color + "')\n";
+					if (c.background_color) vcode += "  win.set_control_background_color('" + c.id + "', '" + c.background_color + "')\n";
+				});
+				if (isMulti) {
+					vcode += "  win.end_row()\n";
+				}
+			});
+
+			vcode += "\n  // RAD Event Bindings\n";
+			let handlers = [];
+			formSpec.controls.forEach(c => {
+				if (c.event_handlers) {
+					for (let evt in c.event_handlers) {
+						let fname = c.event_handlers[evt];
+						if (fname && fname.trim()) {
+							vcode += "  win.on_click('" + c.id + "', " + fname.trim() + ")\n";
+							handlers.push({ name: fname.trim(), id: c.id });
+						}
+					}
+				}
+			});
+
+			vcode += "\n  win.run()\n}\n\n";
+			vcode += "// RAD Event Callback Placeholders\n";
+			handlers.forEach(h => {
+				vcode += "fn " + h.name + "(mut win simplegui.SimpleWindow) {\n";
+				vcode += "  win.set_status('Event: " + h.name + " on " + h.id + "')\n";
+				vcode += "  // TODO: Implement business logic\n}\n\n";
+			});
+
+			const codeEl = document.getElementById("codePreviewText");
+			if (codeEl) codeEl.value = vcode;
+			syncSpecToV();
+		}
+
+		function clearForm() {
+			saveHistoryState();
+			formSpec = {
+				title: "New RAD Form",
+				width: 840,
+				height: 560,
+				background_color: "#0f172a",
+				font_color: "#f8fafc",
+				padding: 20,
+				spacing: 12,
+				controls: []
+			};
+			selectedIndices = [];
+			const formTitleEl = document.getElementById("propFormTitle");
+			if (formTitleEl) formTitleEl.value = formSpec.title;
+			renderCanvas();
+			renderCode();
+			renderTree();
+			populateInspector();
+			syncSpecToV();
+			document.getElementById("statusMsg").textContent = "Created a new blank form layout.";
+		}
+
+		function copyVCode() {
+			const text = document.getElementById("codePreviewText").value;
+			navigator.clipboard.writeText(text);
+			document.getElementById("statusMsg").textContent = "V source code copied to clipboard!";
+		}
+
+		function exportFormJSON() {
+			const text = document.getElementById("jsonPreviewText").value;
+			navigator.clipboard.writeText(text);
+			document.getElementById("statusMsg").textContent = "Form JSON layout copied to clipboard!";
+		}
+
+		function showImportModal() {
+			const modal = document.getElementById("importModal");
+			if (modal) modal.style.display = "flex";
+		}
+
+		function hideImportModal() {
+			const modal = document.getElementById("importModal");
+			if (modal) modal.style.display = "none";
+		}
+
+		function processImportJSON() {
+			const text = document.getElementById("importJsonText").value;
+			try {
+				const parsed = JSON.parse(text);
+				if (parsed && (parsed.controls || parsed.title)) {
+					saveHistoryState();
+					formSpec = parsed;
+					selectedIndices = [];
+					renderCanvas();
+					renderCode();
+					renderTree();
+					populateInspector();
+					hideImportModal();
+					document.getElementById("statusMsg").textContent = "Successfully imported FormSpec JSON layout!";
+				}
+			} catch (err) {
+				alert("Invalid JSON format: " + err.message);
+			}
+		}
+
+		function triggerRunForm() {
+			document.getElementById("statusMsg").textContent = "Launching live SimpleGUI test window...";
+			const payload = JSON.stringify(formSpec);
+			if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.simplegui) {
+				window.webkit.messageHandlers.simplegui.postMessage({
+					control: "designer_canvas",
+					event: "change",
+					value: "run_spec:" + payload
+				});
+			} else {
+				window.location.href = "simplegui://change/designer_canvas/run_spec:" + encodeURIComponent(payload);
+			}
+		}
+	</script>
+</body>
+</html>

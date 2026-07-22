@@ -90,14 +90,15 @@ The goal is a simple, high-abstraction GUI layer that feels familiar to anyone u
   - Delphi/VB/Lazarus-inspired drag-and-drop visual design studio (`v run ui_designer.v` or `v run demos/ui_designer.v`).
   - Full Undo (`Cmd+Z`) and Redo (`Cmd+Y`) state history engine.
   - Component Tree / Object Hierarchy inspector tab for z-index layer ordering (`Move Up`/`Move Down`) and locking (`Lock`/`Unlock`).
-  - Marquee drag selection box & `Shift`-click multi-selection with group movement and batch property editing.
+  - **Multi-Selection & Simultaneous Property Updates**: Marquee drag selection box, `Shift`/`Cmd`-click selection, and `Cmd+A` / `Ctrl+A` Select All with instant simultaneous batch property updates (width, height, text/caption, font size, font/background colors, color swatch presets, position, and RAD event callbacks).
+  - Instant **📄 New Form** creation to reset canvas, title, and specs cleanly for fresh layouts.
   - Full alignment and distribution toolbar (`Align Left`, `Center`, `Right`, `Top`, `Middle`, `Bottom`, `Distribute Horizontally/Vertically`, `Equal Width/Height`).
   - Smart snap alignment guide lines for instant pixel-perfect layout alignment.
   - Arrow key nudge controls (`1px`, or `8px` with `Shift`).
   - 19+ Supported component types: buttons, labels, inputs, password fields, textareas, checkboxes, switches, sliders, progress indicators, panel boxes, radio buttons, separators, status badges, search inputs, data grids, color wells, date pickers.
-  - Pre-loaded layout presets: Customer Registration, Auth Login, KPI Dashboard, and Settings Studio.
+  - Pre-loaded layout presets: Customer Registration, Auth Login, KPI Dashboard, Checkout, and Settings Studio.
   - One-click V source code generator producing clean `simplegui` code with event handler callback stubs.
-  - Import / Export JSON layout specs and launch live native preview test windows (`launch_preview_window`).
+  - Import / Export JSON layout specs, live V runtime state sync (`syncSpecToV()`), and launch live native preview test windows (`launch_preview_window`).
 
 The developer controls demo in [demos/developer_controls_demo.v](demos/developer_controls_demo.v) showcases these richer UI helpers in one place, while [demos/editable_grid_showcase_demo.v](demos/editable_grid_showcase_demo.v) demonstrates the editable-grid workflow with selection, filtering, sorting, and programmatic cell access.
 
