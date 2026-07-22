@@ -26,18 +26,16 @@ fn main() {
 	win.add_label('workspace_intro', 'Design forms in a familiar RAD flow: pick a template, tune properties, auto-arrange multi-column grids, and preview live windows.')
 	win.set_control_font_size('workspace_intro', 11)
 
-	win.add_toolbar_item('tb_login', 'Auth Login Template', 'Load Login Form layout',
-		'lock.shield')
-	win.add_toolbar_item('tb_dash', 'Dashboard Template', 'Load KPI Analytics Dashboard',
-		'chart.bar.fill')
-	win.add_toolbar_item('tb_settings', 'Settings Template', 'Load System Settings layout',
-		'gearshape.fill')
-	win.add_toolbar_item('tb_checkout', 'Checkout Template', 'Load Multi-Column Checkout layout',
-		'cart.fill')
-	win.add_toolbar_item('tb_code', 'Copy V Code', 'Copy generated V code to clipboard',
-		'doc.on.doc')
-	win.add_toolbar_item('tb_run', 'Test Run Form', 'Launch live interactive window preview',
-		'play.circle.fill')
+	win.add_toolbar_item('tb_login', 'Auth Login', 'Load Login Form layout', 'lock.shield')
+	win.add_toolbar_item('tb_dash', 'Dashboard', 'Load KPI Analytics Dashboard', 'chart.bar.fill')
+	win.add_toolbar_item('tb_settings', 'Settings', 'Load System Settings layout', 'gearshape.fill')
+	win.add_toolbar_item('tb_checkout', 'Checkout', 'Load Multi-Column Checkout layout', 'cart.fill')
+	win.add_toolbar_item('tb_crud', 'Data CRUD', 'Load Enterprise Data Grid & CRUD Manager', 'tablecells')
+	win.add_toolbar_item('tb_ticket', 'Support Ticket', 'Load Support & Bug Ticket layout', 'exclamationmark.bubble.fill')
+	win.add_toolbar_item('tb_api', 'API Tester', 'Load REST API Client & Endpoint Tester', 'network')
+	win.add_toolbar_item('tb_media', 'Media Player', 'Load Audio Player layout', 'play.tv.fill')
+	win.add_toolbar_item('tb_code', 'Copy V Code', 'Copy generated V code to clipboard', 'doc.on.doc')
+	win.add_toolbar_item('tb_run', 'Test Run Form', 'Launch live interactive window preview', 'play.circle.fill')
 
 	win.on_toolbar_click('tb_login', fn [mut state] (mut w simplegui.SimpleWindow) {
 		state.spec = simplegui.get_login_form_spec()
@@ -65,6 +63,34 @@ fn main() {
 		w.set_html('designer_canvas', simplegui.compile_designer_html(state.spec))
 		w.toast('Loaded multi-column checkout layout')
 		w.set_status('Checkout template loaded.')
+	})
+
+	win.on_toolbar_click('tb_crud', fn [mut state] (mut w simplegui.SimpleWindow) {
+		state.spec = simplegui.get_crud_form_spec()
+		w.set_html('designer_canvas', simplegui.compile_designer_html(state.spec))
+		w.toast('Loaded Enterprise Data Grid CRUD layout')
+		w.set_status('Data CRUD template loaded.')
+	})
+
+	win.on_toolbar_click('tb_ticket', fn [mut state] (mut w simplegui.SimpleWindow) {
+		state.spec = simplegui.get_ticket_form_spec()
+		w.set_html('designer_canvas', simplegui.compile_designer_html(state.spec))
+		w.toast('Loaded Support Ticket layout')
+		w.set_status('Support Ticket template loaded.')
+	})
+
+	win.on_toolbar_click('tb_api', fn [mut state] (mut w simplegui.SimpleWindow) {
+		state.spec = simplegui.get_api_form_spec()
+		w.set_html('designer_canvas', simplegui.compile_designer_html(state.spec))
+		w.toast('Loaded REST API Client layout')
+		w.set_status('API Client template loaded.')
+	})
+
+	win.on_toolbar_click('tb_media', fn [mut state] (mut w simplegui.SimpleWindow) {
+		state.spec = simplegui.get_media_form_spec()
+		w.set_html('designer_canvas', simplegui.compile_designer_html(state.spec))
+		w.toast('Loaded Audio Media Player layout')
+		w.set_status('Media Player template loaded.')
 	})
 
 	win.on_toolbar_click('tb_code', fn [state] (mut w simplegui.SimpleWindow) {
@@ -110,6 +136,16 @@ fn main() {
 				state.spec = simplegui.get_settings_form_spec()
 			} else if tpl == 'checkout' {
 				state.spec = simplegui.get_checkout_form_spec()
+			} else if tpl == 'crud' {
+				state.spec = simplegui.get_crud_form_spec()
+			} else if tpl == 'ticket' {
+				state.spec = simplegui.get_ticket_form_spec()
+			} else if tpl == 'api_tester' {
+				state.spec = simplegui.get_api_form_spec()
+			} else if tpl == 'media' {
+				state.spec = simplegui.get_media_form_spec()
+			} else if tpl == 'profile' {
+				state.spec = simplegui.get_profile_form_spec()
 			} else {
 				state.spec = simplegui.get_default_form_spec()
 			}
@@ -426,13 +462,33 @@ fn launch_preview_window(spec simplegui.FormSpec) {
 	}
 
 	for c in spec.controls {
-		if c.control_type == 'button' {
+		if h := c.event_handlers['onClick'] {
+			if h.trim_space().len > 0 {
+				ctrl_id := c.id
+				ctrl_text := c.text
+				h_name := h.trim_space()
+				prev_win.on_click(ctrl_id, fn [ctrl_text, h_name] (mut w simplegui.SimpleWindow) {
+					w.toast('Clicked: ${ctrl_text}')
+					w.set_status('Executed RAD handler `${h_name}` for ${ctrl_text}')
+				})
+			}
+		} else if c.control_type == 'button' {
 			btn_id := c.id
 			btn_text := c.text
 			prev_win.on_click(btn_id, fn [btn_text] (mut w simplegui.SimpleWindow) {
 				w.toast('Clicked: ${btn_text}')
-				w.set_status('Executed handler for: ${btn_text}')
+				w.set_status('Executed default click handler for: ${btn_text}')
 			})
+		}
+		if h := c.event_handlers['onChange'] {
+			if h.trim_space().len > 0 {
+				ctrl_id := c.id
+				ctrl_text := c.text
+				h_name := h.trim_space()
+				prev_win.on_change(ctrl_id, fn [ctrl_text, h_name] (mut w simplegui.SimpleWindow, val string) {
+					w.set_status('Changed ${ctrl_text}: "${val}" (Handler: `${h_name}`)')
+				})
+			}
 		}
 		if h := c.event_handlers['onHover'] {
 			if h.trim_space().len > 0 {
@@ -440,7 +496,7 @@ fn launch_preview_window(spec simplegui.FormSpec) {
 				ctrl_text := c.text
 				h_name := h.trim_space()
 				prev_win.on_hover(ctrl_id, fn [ctrl_text, h_name] (mut w simplegui.SimpleWindow) {
-					w.set_status('Hovered: ${ctrl_text} (Handler: ${h_name})')
+					w.set_status('Hovered: ${ctrl_text} (Handler: `${h_name}`)')
 					w.toast('Hover enter: ${ctrl_text}')
 				})
 			}
@@ -451,7 +507,7 @@ fn launch_preview_window(spec simplegui.FormSpec) {
 				ctrl_text := c.text
 				h_name := h.trim_space()
 				prev_win.on_hover_exit(ctrl_id, fn [ctrl_text, h_name] (mut w simplegui.SimpleWindow) {
-					w.set_status('Hover exit: ${ctrl_text} (Handler: ${h_name})')
+					w.set_status('Hover exit: ${ctrl_text} (Handler: `${h_name}`)')
 				})
 			}
 		}

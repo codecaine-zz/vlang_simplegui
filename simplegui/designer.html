@@ -1100,6 +1100,8 @@
 					<button class="btn" onclick="distributeControls('vert')">⬍ Dist V</button>
 					<button class="btn" onclick="equalizeSize('width')">📐 Eq W</button>
 					<button class="btn" onclick="equalizeSize('height')">📐 Eq H</button>
+					<button class="btn" onclick="centerInForm('horiz')" title="Center selected control(s) horizontally inside form window">🎯 Center H Form</button>
+					<button class="btn" onclick="centerInForm('vert')" title="Center selected control(s) vertically inside form window">🎯 Center V Form</button>
 					<button class="btn" onclick="fitControlToContent()" title="Auto-size control to fit font size and text length">📏 Fit Text Size</button>
 				</div>
 			</div>
@@ -1137,6 +1139,13 @@
 
 		<!-- Right Object Inspector -->
 		<aside class="inspector-sidebar">
+			<div class="control-selector-header" style="padding: 8px 10px; background: rgba(0, 0, 0, 0.25); border-bottom: 1px solid var(--border-color);">
+				<span style="font-size: 9px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.6px; display: block; margin-bottom: 4px;">⚡ Component Selector</span>
+				<select class="prop-input" id="objectInspectorSelector" onchange="selectControlFromDropdown(this.value)" style="width: 100%; font-weight: 600; color: var(--text-primary); background: var(--bg-card); border-color: var(--accent);" title="Select component on form to inspect properties">
+					<option value="-1">Form: Delphi/VB RAD Form Studio</option>
+				</select>
+			</div>
+
 			<div class="tab-bar">
 				<div class="tab-item active" onclick="switchTab('tabProps', event)">Properties</div>
 				<div class="tab-item" onclick="switchTab('tabTree', event)">Tree</div>
@@ -1174,8 +1183,9 @@
 
 				<div id="controlPropContainer">
 					<span class="prop-label" id="selectedPropHeader" style="color: var(--accent);">Selected Control Properties</span>
+					<input type="text" class="search-box" id="propFilterBox" placeholder="Filter property fields..." oninput="filterControlProps(this.value)" style="margin-top: 6px; margin-bottom: 6px;" title="Filter properties by keyword (e.g., color, width, text, hover)">
 
-					<div class="prop-row" style="margin-top: 6px;">
+					<div class="prop-row" style="margin-top: 4px;">
 						<span class="prop-label">Control ID / Var Name</span>
 						<input type="text" class="prop-input" id="propId" oninput="updateSelectedControl('id')">
 					</div>
@@ -2031,6 +2041,42 @@
 				const match = item.textContent.toLowerCase().includes(query);
 				item.style.display = match ? "flex" : "none";
 			});
+		}
+
+		function filterControlProps(query) {
+			const q = (query || "").toLowerCase().trim();
+			const container = document.getElementById("controlPropContainer");
+			if (!container) return;
+			const rows = container.querySelectorAll(".prop-row, .prop-grid-2");
+			rows.forEach(r => {
+				const label = r.querySelector(".prop-label") || r;
+				const text = label.textContent.toLowerCase();
+				if (!q || text.includes(q)) {
+					r.style.display = "";
+				} else {
+					r.style.display = "none";
+				}
+			});
+		}
+
+		function centerInForm(dir) {
+			if (selectedIndices.length === 0) return;
+			saveHistoryState();
+			selectedIndices.forEach(idx => {
+				const c = formSpec.controls[idx];
+				if (c.locked) return;
+				if (dir === "horiz" || dir === "h") {
+					c.x = Math.max(10, Math.round((formSpec.width - c.width) / 2));
+				} else if (dir === "vert" || dir === "v") {
+					c.y = Math.max(10, Math.round((formSpec.height - c.height) / 2));
+				}
+			});
+			renderCanvas();
+			renderCode();
+			renderTree();
+			populateInspector();
+			syncSpecToV();
+			document.getElementById("statusMsg").textContent = "Centered " + selectedIndices.length + " control(s) in form.";
 		}
 
 		function spawnControl(type) {
@@ -3151,7 +3197,52 @@
 			renderTree();
 		}
 
+		function updateObjectInspectorDropdown() {
+			const sel = document.getElementById("objectInspectorSelector");
+			if (!sel) return;
+			sel.innerHTML = "";
+
+			const formOpt = document.createElement("option");
+			formOpt.value = "-1";
+			formOpt.textContent = "Form: " + (formSpec.title || "Delphi/VB Form");
+			if (selectedIndices.length === 0) formOpt.selected = true;
+			sel.appendChild(formOpt);
+
+			formSpec.controls.forEach((c, idx) => {
+				const opt = document.createElement("option");
+				opt.value = idx;
+				const typeLabel = c.control_type ? (c.control_type.charAt(0).toUpperCase() + c.control_type.slice(1)) : "Control";
+				const textLabel = c.text ? ` ("${c.text}")` : "";
+				opt.textContent = `${c.id}: ${typeLabel}${textLabel}`;
+				if (selectedIndices.length === 1 && selectedIndices[0] === idx) {
+					opt.selected = true;
+				}
+				sel.appendChild(opt);
+			});
+		}
+
+		function selectControlFromDropdown(valIndex) {
+			const idx = parseInt(valIndex, 10);
+			if (idx === -1 || isNaN(idx)) {
+				selectedIndices = [];
+			} else if (idx >= 0 && idx < formSpec.controls.length) {
+				selectedIndices = [idx];
+			}
+			renderCanvas();
+			populateInspector();
+			renderTree();
+			if (selectedIndices.length > 0) {
+				const c = formSpec.controls[selectedIndices[0]];
+				showToast(`Selected: ${c.id} (${c.control_type})`);
+				document.getElementById("statusMsg").textContent = "Selected component '" + c.id + "' on form.";
+			} else {
+				showToast("Selected: Form");
+				document.getElementById("statusMsg").textContent = "Selected main parent Form.";
+			}
+		}
+
 		function populateInspector() {
+			updateObjectInspectorDropdown();
 			const container = document.getElementById("controlPropContainer");
 			if (!container) return;
 			if (selectedIndices.length === 0) {

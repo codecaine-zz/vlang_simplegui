@@ -2723,7 +2723,11 @@ pub mut:
 	font_size        int    = 13
 	font_color       string = '#ffffff'
 	background_color string = '#1e293b'
+	hover_color      string
+	hover_text_color string
+	cursor           string
 	placeholder      string
+	tooltip          string
 	min_val          int
 	max_val          int  = 100
 	value            int  = 50
@@ -2765,21 +2769,26 @@ Generates clean, idiomatic V source code targeting `simplegui` from a `FormSpec`
 
 #### `simplegui.compile_designer_html(spec FormSpec) string`
 Compiles an interactive HTML5/CSS3/JavaScript visual design studio canvas containing:
+- **⚡ Component Selector Dropdown**: Top Object Inspector component dropdown listing all controls on form (`id: ControlType ("Caption")`) for instant selection and canvas highlighting.
+- **Object Inspector Property Search & Filter**: Live keyword search/filter bar (`filterControlProps`) to filter property fields (`color`, `width`, `text`, `hover`, etc.).
+- **Auto-Generated Event Callbacks & Code Stubs**: 1-click RAD event generator (`autoGenerateEvents`) populating `on_<id>_click`, `on_<id>_change`, `on_<id>_hover`, `on_<id>_hover_exit` and V function stubs.
 - **Undo (`Cmd+Z`) & Redo (`Cmd+Shift+Z`) Engine**: 40-step snapshot history stack for all canvas modifications.
 - **Clipboard Engine (`Cmd+C` / `Cmd+V` / `Cmd+D`)**: Full internal clipboard support for copying, pasting with offset, and duplicating single or multiple selected controls.
 - **Custom Right-Click Context Menu**: Right-click canvas controls for instant Cut, Copy, Paste, Duplicate, Delete, Lock/Unlock, Bring to Front, Send to Back, and Alignment actions.
 - **Canvas Rulers & Pan/Zoom Workspace**: Top and left pixel rulers, `Space + Mouse Drag` canvas panning, and smooth `Ctrl/Cmd + Wheel` canvas zooming (50% to 200%).
 - **Distance & Gap Measuring Guides**: Smart snap lines paired with real-time numeric distance gap badges (`16px` gap overlays between adjacent controls).
-- **Categorized Component Palette**: 20+ controls organized into 4 collapsible categories:
+- **Categorized Component Palette**: 25+ controls organized into 6 collapsible categories:
   - 🚀 **Standard Controls**: Button, Label, Input, Password, Text Area
   - 🎛️ **Toggles & Options**: Checkbox, Switch, Radio Button, Slider, Mode Toggle
   - 📊 **Pickers & Displays**: Number, Date Picker, Color Well, Progress Bar, Image, Badge, Search
+  - 📝 **Labeled Form Controls**: Form Field, Form Textarea, Form Password, Form Number, Form Slider, Form Dropdown, Form Date, Form Progress, Form Switch, Form Link
+  - ⚡ **Gauges, Cards & Widgets**: Star Rating, Stepper, Tag Field, Path Bar, Drop Zone, Circular Progress, Metric Meter, Status Light, Metric Card, Alert Banner, Code View
   - 📦 **Containers & Layout**: Data Grid, Panel Box, Separator
 - **Component Tree Inspector Tab**: Hierarchical control tree for layer z-index depth re-ordering (`Bring to Front`, `Send to Back`, `Move Up`, `Move Down`) and locking (`Lock`/`Unlock`).
-- **Multi-Selection & Batch Property Editing**: Marquee drag selection box, `Shift`/`Cmd`-click selection, and `Cmd+A` / `Ctrl+A` Select All with instant simultaneous batch property updates (width, height, text/caption, font size, font/background colors, color swatch presets, position, and RAD event callbacks).
+- **Multi-Selection & Batch Property Editing**: Marquee drag selection box, `Shift`/`Cmd`-click selection, and `Cmd+A` / `Ctrl+A` Select All with instant simultaneous batch property updates (width, height, text/caption, font size, font/background colors, color swatch presets, hover styles, cursor styles, position, and RAD event callbacks).
 - **Interactive Hotkeys Modal (`⌨️ Hotkeys`)**: Quick reference cheat-sheet detailing all keyboard shortcuts.
 - **New Form Creation**: Non-blocking `📄 New` form reset button (`clearForm()`) restoring title, canvas geometry (`840x560`), and controls.
-- **Alignment & Distribute Tools**: `Align Left`, `Center`, `Right`, `Top`, `Middle`, `Bottom`, `Distribute Horizontally/Vertically`, `Equal Width/Height`.
+- **Alignment & Distribute Tools**: `Align Left`, `Center`, `Right`, `Top`, `Middle`, `Bottom`, `Center H Form`, `Center V Form`, `Distribute Horizontally/Vertically`, `Equal Width/Height`, `Fit Text Size`.
 - **Layout JSON Import / Export**: Import custom JSON layout specs or copy generated V code.
 - **Live V Engine Sync**: Real-time two-way synchronization (`syncSpecToV()`) with V runtime state and live preview execution (`launch_preview_window`).
 
@@ -2789,5 +2798,10 @@ Compiles an interactive HTML5/CSS3/JavaScript visual design studio canvas contai
 - `simplegui.get_dashboard_form_spec() FormSpec`: Executive KPI Performance Dashboard 3-Column layout preset.
 - `simplegui.get_settings_form_spec() FormSpec`: Application Settings & Preferences Studio 2-Column layout preset.
 - `simplegui.get_checkout_form_spec() FormSpec`: E-Commerce Multi-Column Order Checkout & Payment layout preset.
+- `simplegui.get_crud_form_spec() FormSpec`: Enterprise Data Grid & Database Record Manager CRUD layout preset.
+- `simplegui.get_ticket_form_spec() FormSpec`: Help Desk & Support Ticket Reporter layout preset.
+- `simplegui.get_api_form_spec() FormSpec`: REST API Client & Endpoint Tester layout preset.
+- `simplegui.get_media_form_spec() FormSpec`: Hi-Fi Audio Media Player & Controls layout preset.
+- `simplegui.get_profile_form_spec() FormSpec`: User Profile & Account Settings layout preset.
 
 

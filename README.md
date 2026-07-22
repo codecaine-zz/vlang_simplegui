@@ -88,17 +88,20 @@ The goal is a simple, high-abstraction GUI layer that feels familiar to anyone u
   - `CMD + F` for full screen, `CMD + Q` to quit, custom shortcut recorder widget, and window always-on-top level control.
 - **RAD Visual UI Designer & Code Generator**:
   - Delphi/VB/Lazarus-inspired drag-and-drop visual design studio (`v run ui_designer.v` or `v run demos/ui_designer.v`).
-  - Full Undo (`Cmd+Z`) and Redo (`Cmd+Y`) state history engine.
+  - **⚡ Object Inspector Component Selector Dropdown**: Top dropdown selector listing all controls on the form (`id: ControlType ("Caption")`) for instant selection and canvas highlighting.
+  - **Object Inspector Property Search & Filter**: Live keyword filter bar in Object Inspector to instantly search properties (`color`, `width`, `text`, `hover`, etc.).
+  - **Auto-Generated Event Callbacks & Code Stubs**: 1-click RAD event generator (`on_<id>_click`, `on_<id>_change`, `on_<id>_hover`, `on_<id>_hover_exit`) and generated V callback function stubs.
+  - Full Undo (`Cmd+Z`) and Redo (`Cmd+Shift+Z`) state history engine.
   - Component Tree / Object Hierarchy inspector tab for z-index layer ordering (`Move Up`/`Move Down`) and locking (`Lock`/`Unlock`).
-  - **Multi-Selection & Simultaneous Property Updates**: Marquee drag selection box, `Shift`/`Cmd`-click selection, and `Cmd+A` / `Ctrl+A` Select All with instant simultaneous batch property updates (width, height, text/caption, font size, font/background colors, color swatch presets, position, and RAD event callbacks).
+  - **Multi-Selection & Simultaneous Property Updates**: Marquee drag selection box, `Shift`/`Cmd`-click selection, and `Cmd+A` / `Ctrl+A` Select All with instant simultaneous batch property updates (width, height, text/caption, font size, font/background colors, color swatch presets, hover styles, cursor styles, position, and RAD event callbacks).
   - Instant **📄 New Form** creation to reset canvas, title, and specs cleanly for fresh layouts.
-  - Full alignment and distribution toolbar (`Align Left`, `Center`, `Right`, `Top`, `Middle`, `Bottom`, `Distribute Horizontally/Vertically`, `Equal Width/Height`).
+  - Full alignment and distribution toolbar (`Align Left`, `Center`, `Right`, `Top`, `Middle`, `Bottom`, `Center H Form`, `Center V Form`, `Distribute Horizontally/Vertically`, `Equal Width/Height`, `Fit Text Size`).
   - Smart snap alignment guide lines for instant pixel-perfect layout alignment.
   - Arrow key nudge controls (`1px`, or `8px` with `Shift`).
-  - 19+ Supported component types: buttons, labels, inputs, password fields, textareas, checkboxes, switches, sliders, progress indicators, panel boxes, radio buttons, separators, status badges, search inputs, data grids, color wells, date pickers.
-  - Pre-loaded layout presets: Customer Registration, Auth Login, KPI Dashboard, Checkout, and Settings Studio.
+  - 25+ Supported component types: buttons, labels, inputs, password fields, textareas, checkboxes, switches, sliders, progress indicators, panel boxes, radio buttons, separators, status badges, search inputs, data grids, color wells, date pickers, metric cards, alert banners, circular progress dials, code views, drop zones, rating stars, steppers, and token fields.
+  - 10 Pre-loaded layout presets: Customer Registration, Auth Login, KPI Dashboard, Settings Studio, Checkout, Enterprise Data Grid CRUD Manager, Support Ticket Reporter, REST API Client Tester, Audio Media Player, and User Profile.
   - One-click V source code generator producing clean `simplegui` code with event handler callback stubs.
-  - Import / Export JSON layout specs, live V runtime state sync (`syncSpecToV()`), and launch live native preview test windows (`launch_preview_window`).
+  - Import / Export JSON layout specs, live V runtime state sync (`syncSpecToV()`), and launch live native preview test windows (`launch_preview_window`) executing click, hover, hover exit, and change callbacks.
 
 The developer controls demo in [demos/developer_controls_demo.v](demos/developer_controls_demo.v) showcases these richer UI helpers in one place, while [demos/editable_grid_showcase_demo.v](demos/editable_grid_showcase_demo.v) demonstrates the editable-grid workflow with selection, filtering, sorting, and programmatic cell access.
 
