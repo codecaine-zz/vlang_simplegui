@@ -2768,6 +2768,9 @@ Parses a JSON layout string into a `FormSpec` object.
 #### `simplegui.generate_v_code(spec FormSpec) string`
 Generates clean, idiomatic V source code targeting `simplegui` from a `FormSpec` design, including RAD event handler callback stubs.
 
+#### `simplegui.generate_html_code(spec FormSpec) string`
+Generates clean, standalone semantic HTML5 & modern CSS webpage markup from a `FormSpec` design layout.
+
 #### `simplegui.compile_designer_html(spec FormSpec) string`
 Compiles an interactive HTML5/CSS3/JavaScript visual design studio canvas containing:
 - **🔢 Visual Tab Order Editor (`TabOrder` / `TabIndex`)**: Interactive Tab Order Mode with numbered canvas badges (`[0]`, `[1]`, `[2]`, ...), 1-click focus index assignment, and spatial `Auto-Sequence` computation (Top-to-Bottom, Left-to-Right).

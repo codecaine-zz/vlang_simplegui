@@ -56,13 +56,14 @@
 
 		/* Top Navigation Toolbar */
 		.app-header {
-			height: 44px;
+			min-height: 44px;
+			height: auto;
 			background: var(--bg-panel);
 			border-bottom: 1px solid var(--border-color);
 			display: flex;
 			align-items: center;
 			justify-content: space-between;
-			padding: 0 14px;
+			padding: 4px 14px;
 			gap: 12px;
 		}
 
@@ -91,6 +92,7 @@
 			display: flex;
 			align-items: center;
 			gap: 4px;
+			flex-wrap: wrap;
 			overflow: visible;
 		}
 
@@ -106,7 +108,7 @@
 			background: var(--bg-card);
 			color: var(--text-primary);
 			border: 1px solid var(--border-color);
-			padding: 4px 8px;
+			padding: 4px 7px;
 			border-radius: 5px;
 			font-size: 11px;
 			font-weight: 600;
@@ -849,7 +851,8 @@
 		<div class="toolbar-actions">
 			<button class="btn btn-success" onclick="triggerRunForm()" title="Launch live interactive window preview">⚡ Run Live Form</button>
 			<button class="btn btn-primary" onclick="exportFormJSON()" title="Save JSON layout to clipboard">💾 Save JSON</button>
-			<button class="btn" onclick="copyVCode()" title="Copy V source code to clipboard">📋 Copy Code</button>
+			<button class="btn" onclick="copyVCode()" title="Copy V source code to clipboard">📋 Copy V</button>
+			<button class="btn" onclick="copyHTMLCode()" title="Copy standalone HTML5 & CSS webpage code to clipboard">🌐 Copy HTML</button>
 			<button class="btn" onclick="clearForm()" title="New blank form layout">📄 New</button>
 			<span class="toolbar-divider"></span>
 			<button class="btn btn-icon" onclick="undo()" id="undoBtn" title="Undo (Cmd+Z)">↩️</button>
@@ -1120,8 +1123,12 @@
 					<button class="btn" onclick="alignControls('bottom')">⬇️ Bottom</button>
 					<button class="btn" onclick="distributeControls('horiz')">⬌ Dist H</button>
 					<button class="btn" onclick="distributeControls('vert')">⬍ Dist V</button>
-					<button class="btn" onclick="equalizeSize('width')">📐 Eq W</button>
-					<button class="btn" onclick="equalizeSize('height')">📐 Eq H</button>
+					<button class="btn" onclick="equalizeSize('width', 'first')">📐 Eq W</button>
+					<button class="btn" onclick="equalizeSize('height', 'first')">📐 Eq H</button>
+					<button class="btn" onclick="equalizeSize('width', 'widest')" title="Make all selected controls match the widest control (MS Access style)">↔️ Widest</button>
+					<button class="btn" onclick="equalizeSize('width', 'narrowest')" title="Make all selected controls match the narrowest control">↔️ Narrowest</button>
+					<button class="btn" onclick="equalizeSize('height', 'tallest')" title="Make all selected controls match the tallest control (MS Access style)">↕️ Tallest</button>
+					<button class="btn" onclick="equalizeSize('height', 'shortest')" title="Make all selected controls match the shortest control">↕️ Shortest</button>
 					<button class="btn" onclick="centerInForm('horiz')" title="Center selected control(s) horizontally inside form window">🎯 Center H Form</button>
 					<button class="btn" onclick="centerInForm('vert')" title="Center selected control(s) vertically inside form window">🎯 Center V Form</button>
 					<button class="btn" onclick="fitControlToContent()" title="Auto-size control to fit font size and text length">📏 Fit Text Size</button>
@@ -1173,6 +1180,7 @@
 				<div class="tab-item" onclick="switchTab('tabTree', event)">Tree</div>
 				<div class="tab-item" onclick="switchTab('tabEvents', event)">Events</div>
 				<div class="tab-item" onclick="switchTab('tabCode', event)">V Code</div>
+				<div class="tab-item" onclick="switchTab('tabHTML', event)">HTML</div>
 				<div class="tab-item" onclick="switchTab('tabJSON', event)">JSON</div>
 			</div>
 
@@ -1376,6 +1384,11 @@
 				<textarea class="code-area" id="codePreviewText" readonly></textarea>
 			</div>
 
+			<!-- HTML / CSS Export Tab -->
+			<div class="tab-content" id="tabHTML">
+				<textarea class="code-area" id="htmlPreviewText" readonly></textarea>
+			</div>
+
 			<!-- JSON Export Tab -->
 			<div class="tab-content" id="tabJSON">
 				<textarea class="code-area" id="jsonPreviewText" readonly></textarea>
@@ -1398,6 +1411,12 @@
 		<div class="context-menu-divider"></div>
 		<div class="context-menu-item" onclick="alignControls('center')">↔️ Align Center</div>
 		<div class="context-menu-item" onclick="alignControls('middle')">↕️ Align Middle</div>
+		<div class="context-menu-divider"></div>
+		<div class="context-menu-item" onclick="equalizeSize('width', 'widest')">↔️ Size to Widest</div>
+		<div class="context-menu-item" onclick="equalizeSize('width', 'narrowest')">↔️ Size to Narrowest</div>
+		<div class="context-menu-item" onclick="equalizeSize('height', 'tallest')">↕️ Size to Tallest</div>
+		<div class="context-menu-item" onclick="equalizeSize('height', 'shortest')">↕️ Size to Shortest</div>
+		<div class="context-menu-item" onclick="fitControlToContent()">📏 Size to Fit</div>
 	</div>
 
 	<!-- Status Bar -->
@@ -2375,16 +2394,37 @@
 			renderTree();
 		}
 
-		function equalizeSize(dimension) {
+		function equalizeSize(dimension, mode = "first") {
 			if (selectedIndices.length < 2) return;
 			saveHistoryState();
-			const targetVal = dimension === "width" ? formSpec.controls[selectedIndices[0]].width : formSpec.controls[selectedIndices[0]].height;
-			selectedIndices.forEach(idx => {
-				const ctrl = formSpec.controls[idx];
-				if (ctrl.locked) return;
-				if (dimension === "width") ctrl.width = targetVal;
-				if (dimension === "height") ctrl.height = targetVal;
-			});
+			let targetVal = 0;
+			const selectedCtrls = selectedIndices.map(i => formSpec.controls[i]);
+
+			if (dimension === "width") {
+				if (mode === "widest") {
+					targetVal = Math.max(...selectedCtrls.map(c => c.width));
+				} else if (mode === "narrowest") {
+					targetVal = Math.min(...selectedCtrls.map(c => c.width));
+				} else {
+					targetVal = formSpec.controls[selectedIndices[0]].width;
+				}
+				selectedIndices.forEach(idx => {
+					const ctrl = formSpec.controls[idx];
+					if (!ctrl.locked) ctrl.width = targetVal;
+				});
+			} else if (dimension === "height") {
+				if (mode === "tallest") {
+					targetVal = Math.max(...selectedCtrls.map(c => c.height));
+				} else if (mode === "shortest") {
+					targetVal = Math.min(...selectedCtrls.map(c => c.height));
+				} else {
+					targetVal = formSpec.controls[selectedIndices[0]].height;
+				}
+				selectedIndices.forEach(idx => {
+					const ctrl = formSpec.controls[idx];
+					if (!ctrl.locked) ctrl.height = targetVal;
+				});
+			}
 			renderCanvas();
 			renderCode();
 			renderTree();
@@ -3120,6 +3160,27 @@
 						const handle = document.createElement("div");
 						handle.className = "resize-handle handle-" + handlePos;
 						handle.setAttribute("draggable", "false");
+						handle.title = "Drag to resize | Double-click edge: Size to Widest/Tallest (MS Access style)";
+
+						handle.ondblclick = (dbe) => {
+							dbe.preventDefault();
+							dbe.stopPropagation();
+							if (selectedIndices.length > 1) {
+								if (handlePos === "e" || handlePos === "w") {
+									equalizeSize("width", "widest");
+									document.getElementById("statusMsg").textContent = "⚡ MS Access Double-Click: Resized " + selectedIndices.length + " controls to Widest.";
+								} else if (handlePos === "n" || handlePos === "s") {
+									equalizeSize("height", "tallest");
+									document.getElementById("statusMsg").textContent = "⚡ MS Access Double-Click: Resized " + selectedIndices.length + " controls to Tallest.";
+								} else {
+									equalizeSize("width", "widest");
+									equalizeSize("height", "tallest");
+									document.getElementById("statusMsg").textContent = "⚡ MS Access Double-Click: Resized " + selectedIndices.length + " controls to Widest & Tallest.";
+								}
+							} else {
+								fitControlToContent();
+							}
+						};
 
 						handle.onmousedown = (he) => {
 							if (he.button !== 0) return;
@@ -3699,7 +3760,105 @@
 
 			const codeEl = document.getElementById("codePreviewText");
 			if (codeEl) codeEl.value = vcode;
+
+			const htmlStr = generateHTMLCode();
+			const htmlEl = document.getElementById("htmlPreviewText");
+			if (htmlEl) htmlEl.value = htmlStr;
+
 			syncSpecToV();
+		}
+
+		function generateHTMLCode() {
+			const bg = formSpec.background_color || "#0f172a";
+			const fg = formSpec.font_color || "#f8fafc";
+			let html = "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n";
+			html += "  <meta charset=\"utf-8\">\n";
+			html += "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n";
+			html += "  <title>" + (formSpec.title || "Form").replace(/</g, "&lt;") + "</title>\n";
+			html += "  <style>\n";
+			html += "    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }\n";
+			html += "    body { background-color: " + bg + "; color: " + fg + "; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }\n";
+			html += "    .form-window { position: relative; width: " + (formSpec.width || 840) + "px; min-height: " + (formSpec.height || 560) + "px; background-color: " + bg + "; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); padding: " + (formSpec.padding || 20) + "px; overflow: hidden; }\n";
+			html += "    .form-title { font-size: 20px; font-weight: 700; margin-bottom: 16px; color: " + fg + "; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 10px; }\n";
+			html += "    .control-item { position: absolute; box-sizing: border-box; display: flex; align-items: center; transition: all 0.15s ease; }\n";
+			html += "    .control-item.panel-ctrl { align-items: flex-start; justify-content: flex-start; }\n";
+			html += "    .btn-ctrl { display: inline-flex; align-items: center; justify-content: center; font-weight: 600; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.15); cursor: pointer; text-decoration: none; }\n";
+			html += "    .btn-ctrl:hover { filter: brightness(1.15); transform: translateY(-1px); }\n";
+			html += "    .input-ctrl { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 6px; color: inherit; padding: 6px 12px; outline: none; width: 100%; height: 100%; }\n";
+			html += "    .input-ctrl:focus { border-color: #38bdf8; box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.25); }\n";
+			html += "    .panel-ctrl { border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; background: rgba(255, 255, 255, 0.03); padding: 10px 14px; font-size: 14px; font-weight: 700; align-items: flex-start; justify-content: flex-start; }\n";
+			html += "    .badge-ctrl { display: inline-flex; align-items: center; justify-content: center; padding: 4px 10px; border-radius: 9999px; font-size: 11px; font-weight: 700; }\n";
+			html += "  </style>\n</head>\n<body>\n\n";
+
+			html += "<main class=\"form-window\">\n";
+			html += "  <h1 class=\"form-title\">" + (formSpec.title || "Form").replace(/</g, "&lt;") + "</h1>\n";
+
+			(formSpec.controls || []).forEach(c => {
+				if (c.visible === false) return;
+				const c_bg = c.background_color || "transparent";
+				const c_fg = c.font_color || fg;
+				const c_fs = c.font_size || 13;
+				const text = (c.text || c.id || "").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+				const posStyle = "left: " + c.x + "px; top: " + (c.y + 40) + "px; width: " + c.width + "px; height: " + c.height + "px; color: " + c_fg + "; font-size: " + c_fs + "px;";
+
+				if (c.control_type === "button") {
+					html += "  <div class=\"control-item\" style=\"" + posStyle + "\">\n";
+					html += "    <button class=\"btn-ctrl\" style=\"width:100%; height:100%; background-color:" + c_bg + "; color:" + c_fg + "; font-size:" + c_fs + "px;\" id=\"" + c.id + "\">" + text + "</button>\n";
+					html += "  </div>\n";
+				} else if (c.control_type === "label") {
+					html += "  <div class=\"control-item\" style=\"" + posStyle + " font-weight: 600;\">\n";
+					html += "    <span id=\"" + c.id + "\">" + text + "</span>\n";
+					html += "  </div>\n";
+				} else if (c.control_type === "input") {
+					html += "  <div class=\"control-item\" style=\"" + posStyle + "\">\n";
+					html += "    <input type=\"text\" class=\"input-ctrl\" id=\"" + c.id + "\" value=\"" + text + "\" placeholder=\"" + (c.placeholder || "") + "\">\n";
+					html += "  </div>\n";
+				} else if (c.control_type === "password") {
+					html += "  <div class=\"control-item\" style=\"" + posStyle + "\">\n";
+					html += "    <input type=\"password\" class=\"input-ctrl\" id=\"" + c.id + "\" value=\"" + text + "\" placeholder=\"" + (c.placeholder || "") + "\">\n";
+					html += "  </div>\n";
+				} else if (c.control_type === "textarea") {
+					html += "  <div class=\"control-item\" style=\"" + posStyle + "\">\n";
+					html += "    <textarea class=\"input-ctrl\" id=\"" + c.id + "\" style=\"resize:none;\">" + text + "</textarea>\n";
+					html += "  </div>\n";
+				} else if (c.control_type === "checkbox") {
+					const chk = c.checked ? "checked" : "";
+					html += "  <div class=\"control-item\" style=\"" + posStyle + " gap:8px;\">\n";
+					html += "    <input type=\"checkbox\" id=\"" + c.id + "\" " + chk + ">\n";
+					html += "    <label for=\"" + c.id + "\">" + text + "</label>\n";
+					html += "  </div>\n";
+				} else if (c.control_type === "badge") {
+					html += "  <div class=\"control-item\" style=\"" + posStyle + "\">\n";
+					html += "    <span class=\"badge-ctrl\" style=\"background-color:" + c_bg + "; color:" + c_fg + ";\" id=\"" + c.id + "\">" + text + "</span>\n";
+					html += "  </div>\n";
+				} else if (c.control_type === "panel") {
+					html += "  <div class=\"control-item panel-ctrl\" style=\"" + posStyle + " background-color:" + c_bg + "; color:" + c_fg + ";\" id=\"" + c.id + "\">\n";
+					html += "    📦 " + text + "\n";
+					html += "  </div>\n";
+				} else {
+					html += "  <div class=\"control-item\" style=\"" + posStyle + "\">\n";
+					html += "    <div id=\"" + c.id + "\" style=\"width:100%; height:100%; background-color:" + c_bg + "; padding:6px; border-radius:6px;\">" + text + "</div>\n";
+					html += "  </div>\n";
+				}
+			});
+
+			html += "</main>\n\n</body>\n</html>";
+			return html;
+		}
+
+		function copyHTMLCode() {
+			const htmlStr = generateHTMLCode();
+			navigator.clipboard.writeText(htmlStr).then(() => {
+				const statusMsg = document.getElementById("statusMsg");
+				if (statusMsg) statusMsg.textContent = "Copied standalone HTML/CSS web code to clipboard!";
+			}).catch(() => {
+				const htmlEl = document.getElementById("htmlPreviewText");
+				if (htmlEl) {
+					htmlEl.value = htmlStr;
+					htmlEl.select();
+					document.execCommand("copy");
+				}
+			});
 		}
 
 		function clearForm() {

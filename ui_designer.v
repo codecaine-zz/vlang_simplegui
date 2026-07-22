@@ -14,7 +14,7 @@ fn main() {
 	}
 
 	mut win := simplegui.new_simple_window('SimpleGUI RAD Visual UI Designer (Delphi & VB Inspired)',
-		1480, 940)
+		1680, 960)
 	win.set_responsive_layout(true)
 	win.set_fullscreen(true)
 
@@ -27,78 +27,22 @@ fn main() {
 	win.add_label('workspace_intro', 'Design forms in a familiar RAD flow: pick a template, tune properties, auto-arrange multi-column grids, and preview live windows.')
 	win.set_control_font_size('workspace_intro', 11)
 
-	win.add_toolbar_item('tb_login', 'Auth Login', 'Load Login Form layout', 'lock.shield')
-	win.add_toolbar_item('tb_dash', 'Dashboard', 'Load KPI Analytics Dashboard', 'chart.bar.fill')
-	win.add_toolbar_item('tb_settings', 'Settings', 'Load System Settings layout', 'gearshape.fill')
-	win.add_toolbar_item('tb_checkout', 'Checkout', 'Load Multi-Column Checkout layout', 'cart.fill')
-	win.add_toolbar_item('tb_crud', 'Data CRUD', 'Load Enterprise Data Grid & CRUD Manager', 'tablecells')
-	win.add_toolbar_item('tb_ticket', 'Support Ticket', 'Load Support & Bug Ticket layout', 'exclamationmark.bubble.fill')
-	win.add_toolbar_item('tb_api', 'API Tester', 'Load REST API Client & Endpoint Tester', 'network')
-	win.add_toolbar_item('tb_media', 'Media Player', 'Load Audio Player layout', 'play.tv.fill')
 	win.add_toolbar_item('tb_code', 'Copy V Code', 'Copy generated V code to clipboard', 'doc.on.doc')
+	win.add_toolbar_item('tb_html', 'Copy HTML', 'Copy generated standalone HTML/CSS code to clipboard', 'globe')
 	win.add_toolbar_item('tb_run', 'Test Run Form', 'Launch live interactive window preview', 'play.circle.fill')
-
-	win.on_toolbar_click('tb_login', fn [mut state] (mut w simplegui.SimpleWindow) {
-		state.spec = simplegui.get_login_form_spec()
-		w.set_html('designer_canvas', simplegui.compile_designer_html(state.spec))
-		w.toast('Loaded login form layout')
-		w.set_status('Login template loaded.')
-	})
-
-	win.on_toolbar_click('tb_dash', fn [mut state] (mut w simplegui.SimpleWindow) {
-		state.spec = simplegui.get_dashboard_form_spec()
-		w.set_html('designer_canvas', simplegui.compile_designer_html(state.spec))
-		w.toast('Loaded dashboard layout')
-		w.set_status('Dashboard template loaded.')
-	})
-
-	win.on_toolbar_click('tb_settings', fn [mut state] (mut w simplegui.SimpleWindow) {
-		state.spec = simplegui.get_settings_form_spec()
-		w.set_html('designer_canvas', simplegui.compile_designer_html(state.spec))
-		w.toast('Loaded settings layout')
-		w.set_status('Settings template loaded.')
-	})
-
-	win.on_toolbar_click('tb_checkout', fn [mut state] (mut w simplegui.SimpleWindow) {
-		state.spec = simplegui.get_checkout_form_spec()
-		w.set_html('designer_canvas', simplegui.compile_designer_html(state.spec))
-		w.toast('Loaded multi-column checkout layout')
-		w.set_status('Checkout template loaded.')
-	})
-
-	win.on_toolbar_click('tb_crud', fn [mut state] (mut w simplegui.SimpleWindow) {
-		state.spec = simplegui.get_crud_form_spec()
-		w.set_html('designer_canvas', simplegui.compile_designer_html(state.spec))
-		w.toast('Loaded Enterprise Data Grid CRUD layout')
-		w.set_status('Data CRUD template loaded.')
-	})
-
-	win.on_toolbar_click('tb_ticket', fn [mut state] (mut w simplegui.SimpleWindow) {
-		state.spec = simplegui.get_ticket_form_spec()
-		w.set_html('designer_canvas', simplegui.compile_designer_html(state.spec))
-		w.toast('Loaded Support Ticket layout')
-		w.set_status('Support Ticket template loaded.')
-	})
-
-	win.on_toolbar_click('tb_api', fn [mut state] (mut w simplegui.SimpleWindow) {
-		state.spec = simplegui.get_api_form_spec()
-		w.set_html('designer_canvas', simplegui.compile_designer_html(state.spec))
-		w.toast('Loaded REST API Client layout')
-		w.set_status('API Client template loaded.')
-	})
-
-	win.on_toolbar_click('tb_media', fn [mut state] (mut w simplegui.SimpleWindow) {
-		state.spec = simplegui.get_media_form_spec()
-		w.set_html('designer_canvas', simplegui.compile_designer_html(state.spec))
-		w.toast('Loaded Audio Media Player layout')
-		w.set_status('Media Player template loaded.')
-	})
 
 	win.on_toolbar_click('tb_code', fn [state] (mut w simplegui.SimpleWindow) {
 		code := simplegui.generate_v_code(state.spec)
 		w.copy_to_clipboard(code)
 		w.alert('V Source Code Exported', 'Generated V source code with Delphi/VB style placeholders copied to clipboard.\n\nYou can paste it into any .v file and run it.')
 		w.toast('V source code copied')
+	})
+
+	win.on_toolbar_click('tb_html', fn [state] (mut w simplegui.SimpleWindow) {
+		html_code := simplegui.generate_html_code(state.spec)
+		w.copy_to_clipboard(html_code)
+		w.alert('HTML/CSS Webpage Code Exported', 'Generated standalone HTML5 & CSS webpage code copied to clipboard.\n\nYou can save it as an .html file or open it in any web browser.')
+		w.toast('HTML/CSS webpage code copied')
 	})
 
 	win.on_toolbar_click('tb_run', fn [state] (mut w simplegui.SimpleWindow) {
@@ -156,8 +100,8 @@ fn main() {
 	})
 
 	win.add_html_view('designer_canvas', simplegui.compile_designer_html(state.spec))
-	win.set_control_width('designer_canvas', 1460)
-	win.set_control_height('designer_canvas', 850)
+	win.set_control_width('designer_canvas', 1660)
+	win.set_control_height('designer_canvas', 880)
 
 	win.set_status('Delphi/VB/Lazarus RAD Studio loaded. Auto-arrange 2-Column and 3-Column layouts ready.')
 

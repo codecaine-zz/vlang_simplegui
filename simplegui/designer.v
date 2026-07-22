@@ -424,6 +424,117 @@ pub fn generate_v_code(spec FormSpec) string {
 	return sb.str()
 }
 
+// Generate standalone semantic HTML5 and modern CSS webpage from FormSpec layout
+pub fn generate_html_code(spec FormSpec) string {
+	mut sb := strings.new_builder(4096)
+	bg_col := if spec.background_color.len > 0 { spec.background_color } else { '#0f172a' }
+	fg_col := if spec.font_color.len > 0 { spec.font_color } else { '#f8fafc' }
+
+	sb.write_string('<!DOCTYPE html>\n<html lang="en">\n<head>\n')
+	sb.write_string('\t<meta charset="utf-8">\n')
+	sb.write_string('\t<meta name="viewport" content="width=device-width, initial-scale=1.0">\n')
+	sb.write_string('\t<title>${spec.title}</title>\n')
+	sb.write_string('\t<style>\n')
+	sb.write_string('\t\t* { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }\n')
+	sb.write_string('\t\tbody { background-color: ${bg_col}; color: ${fg_col}; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }\n')
+	sb.write_string('\t\t.form-window { position: relative; width: ${spec.width}px; min-height: ${spec.height}px; background-color: ${bg_col}; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5); padding: ${spec.padding}px; overflow: hidden; }\n')
+	sb.write_string('\t\t.form-title { font-size: 20px; font-weight: 700; margin-bottom: 16px; color: ${fg_col}; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 10px; }\n')
+	sb.write_string('\t\t.control-item { position: absolute; box-sizing: border-box; display: flex; align-items: center; transition: all 0.15s ease; }\n')
+	sb.write_string('\t\t.control-item.panel-ctrl { align-items: flex-start; justify-content: flex-start; }\n')
+	sb.write_string('\t\t.btn-ctrl { display: inline-flex; align-items: center; justify-content: center; font-weight: 600; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.15); cursor: pointer; text-decoration: none; }\n')
+	sb.write_string('\t\t.btn-ctrl:hover { filter: brightness(1.15); transform: translateY(-1px); }\n')
+	sb.write_string('\t\t.input-ctrl { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 6px; color: inherit; padding: 6px 12px; outline: none; width: 100%; height: 100%; }\n')
+	sb.write_string('\t\t.input-ctrl:focus { border-color: #38bdf8; box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.25); }\n')
+	sb.write_string('\t\t.panel-ctrl { border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; background: rgba(255, 255, 255, 0.03); padding: 10px 14px; font-size: 14px; font-weight: 700; align-items: flex-start; justify-content: flex-start; }\n')
+	sb.write_string('\t\t.badge-ctrl { display: inline-flex; align-items: center; justify-content: center; padding: 4px 10px; border-radius: 9999px; font-size: 11px; font-weight: 700; }\n')
+	sb.write_string('\t</style>\n</head>\n<body>\n\n')
+
+	sb.write_string('<main class="form-window">\n')
+	sb.write_string('\t<h1 class="form-title">${spec.title}</h1>\n')
+
+	for c in spec.controls {
+		if !c.visible {
+			continue
+		}
+		c_bg := if c.background_color.len > 0 { c.background_color } else { 'transparent' }
+		c_fg := if c.font_color.len > 0 { c.font_color } else { fg_col }
+		c_fs := if c.font_size > 0 { c.font_size } else { 13 }
+		clean_text := c.text.replace('<', '&lt;').replace('>', '&gt;')
+
+		pos_style := 'left: ${c.x}px; top: ${c.y + 40}px; width: ${c.width}px; height: ${c.height}px; color: ${c_fg}; font-size: ${c_fs}px;'
+
+		match c.control_type {
+			'button' {
+				sb.write_string('\t<div class="control-item" style="${pos_style}">\n')
+				sb.write_string('\t\t<button class="btn-ctrl" style="width:100%; height:100%; background-color:${c_bg}; color:${c_fg}; font-size:${c_fs}px;" id="${c.id}">${clean_text}</button>\n')
+				sb.write_string('\t</div>\n')
+			}
+			'label' {
+				sb.write_string('\t<div class="control-item" style="${pos_style} font-weight: 600;">\n')
+				sb.write_string('\t\t<span id="${c.id}">${clean_text}</span>\n')
+				sb.write_string('\t</div>\n')
+			}
+			'input' {
+				sb.write_string('\t<div class="control-item" style="${pos_style}">\n')
+				sb.write_string('\t\t<input type="text" class="input-ctrl" id="${c.id}" value="${clean_text}" placeholder="${c.placeholder}">\n')
+				sb.write_string('\t</div>\n')
+			}
+			'password' {
+				sb.write_string('\t<div class="control-item" style="${pos_style}">\n')
+				sb.write_string('\t\t<input type="password" class="input-ctrl" id="${c.id}" value="${clean_text}" placeholder="${c.placeholder}">\n')
+				sb.write_string('\t</div>\n')
+			}
+			'textarea' {
+				sb.write_string('\t<div class="control-item" style="${pos_style}">\n')
+				sb.write_string('\t\t<textarea class="input-ctrl" id="${c.id}" style="resize:none;">${clean_text}</textarea>\n')
+				sb.write_string('\t</div>\n')
+			}
+			'checkbox' {
+				chk := if c.checked { 'checked' } else { '' }
+				sb.write_string('\t<div class="control-item" style="${pos_style} gap:8px;">\n')
+				sb.write_string('\t\t<input type="checkbox" id="${c.id}" ${chk}>\n')
+				sb.write_string('\t\t<label for="${c.id}">${clean_text}</label>\n')
+				sb.write_string('\t</div>\n')
+			}
+			'switch' {
+				chk := if c.checked { 'checked' } else { '' }
+				sb.write_string('\t<div class="control-item" style="${pos_style} gap:8px;">\n')
+				sb.write_string('\t\t<input type="checkbox" role="switch" id="${c.id}" ${chk}>\n')
+				sb.write_string('\t\t<label for="${c.id}">${clean_text}</label>\n')
+				sb.write_string('\t</div>\n')
+			}
+			'slider' {
+				sb.write_string('\t<div class="control-item" style="${pos_style}">\n')
+				sb.write_string('\t\t<input type="range" id="${c.id}" min="${c.min_val}" max="${c.max_val}" value="${c.value}" style="width:100%;">\n')
+				sb.write_string('\t</div>\n')
+			}
+			'badge' {
+				sb.write_string('\t<div class="control-item" style="${pos_style}">\n')
+				sb.write_string('\t\t<span class="badge-ctrl" style="background-color:${c_bg}; color:${c_fg};" id="${c.id}">${clean_text}</span>\n')
+				sb.write_string('\t</div>\n')
+			}
+			'panel' {
+				sb.write_string('\t<div class="control-item panel-ctrl" style="${pos_style} background-color:${c_bg}; color:${c_fg};" id="${c.id}">\n')
+				sb.write_string('\t\t📦 ${clean_text}\n')
+				sb.write_string('\t</div>\n')
+			}
+			'progress' {
+				sb.write_string('\t<div class="control-item" style="${pos_style}">\n')
+				sb.write_string('\t\t<progress id="${c.id}" value="${c.value}" max="100" style="width:100%; height:100%;"></progress>\n')
+				sb.write_string('\t</div>\n')
+			}
+			else {
+				sb.write_string('\t<div class="control-item" style="${pos_style}">\n')
+				sb.write_string('\t\t<div id="${c.id}" style="width:100%; height:100%; background-color:${c_bg}; padding:6px; border-radius:6px;">${clean_text}</div>\n')
+				sb.write_string('\t</div>\n')
+			}
+		}
+	}
+
+	sb.write_string('</main>\n\n</body>\n</html>')
+	return sb.str()
+}
+
 // Starter Form Templates
 pub fn get_default_form_spec() FormSpec {
 	return FormSpec{
