@@ -2937,23 +2937,29 @@
 		}
 
 		function deselectControl(e) {
+			if (e.shiftKey || e.metaKey || e.ctrlKey) return;
 			if (e.target.id === "formCanvas" || e.target.id === "windowFrame" || e.target.id === "canvasViewport") {
 				selectedIndices = [];
-				renderCanvas();
+				renderCanvasSelectionOnly();
 				renderTree();
 				populateInspector();
 			}
 		}
 
 		function setupMarqueeSelection() {
+			const viewport = document.getElementById("canvasViewport");
 			const canvas = document.getElementById("formCanvas");
 			const marquee = document.getElementById("marqueeBox");
 			let startX = 0, startY = 0, isSelecting = false;
+			let initialSelectedAtMarqueeStart = [];
 
-			canvas.addEventListener("mousedown", (e) => {
-				if (e.target.id !== "formCanvas") return;
+			viewport.addEventListener("mousedown", (e) => {
+				if (e.target.classList.contains("designer-control") || e.target.closest(".designer-control") || e.target.closest(".inspector-sidebar") || e.target.closest(".palette-sidebar") || e.target.closest(".app-header") || e.target.closest(".canvas-toolbar")) return;
 				if (e.button !== 0) return;
 				isSelecting = true;
+				const isToggle = e.shiftKey || e.metaKey || e.ctrlKey;
+				initialSelectedAtMarqueeStart = isToggle ? [...selectedIndices] : [];
+
 				const rect = canvas.getBoundingClientRect();
 				startX = (e.clientX - rect.left) / canvasScale;
 				startY = (e.clientY - rect.top) / canvasScale;
@@ -2986,7 +2992,7 @@
 							newSelected.push(idx);
 						}
 					});
-					selectedIndices = newSelected;
+					selectedIndices = Array.from(new Set([...initialSelectedAtMarqueeStart, ...newSelected]));
 					renderCanvasSelectionOnly();
 				};
 
@@ -3013,6 +3019,10 @@
 					div.classList.remove("selected");
 				}
 			});
+			const canvasStats = document.getElementById("canvasStats");
+			if (canvasStats) {
+				canvasStats.textContent = "Form: " + formSpec.width + "x" + formSpec.height + " | Controls: " + formSpec.controls.length + (selectedIndices.length > 0 ? " (Selected: " + selectedIndices.length + ")" : "");
+			}
 		}
 
 		function renderCanvas() {
@@ -3094,6 +3104,7 @@
 				let isDragging = false;
 				let startX, startY, origX, origY;
 				let initialPositions = [];
+				let hasMoved = false;
 
 				div.onmousedown = (e) => {
 					if (e.button !== 0) return;
@@ -3138,25 +3149,46 @@
 					e.preventDefault();
 					e.stopPropagation();
 
-					if (!selectedIndices.includes(idx)) {
-						selectControl(idx, e);
+					const isToggle = e.shiftKey || e.metaKey || e.ctrlKey;
+					if (isToggle) {
+						const existingIndex = selectedIndices.indexOf(idx);
+						if (existingIndex >= 0) {
+							selectedIndices.splice(existingIndex, 1);
+						} else {
+							selectedIndices.push(idx);
+						}
+						renderCanvasSelectionOnly();
+						renderTree();
+						populateInspector();
+					} else {
+						if (!selectedIndices.includes(idx)) {
+							selectedIndices = [idx];
+							renderCanvasSelectionOnly();
+							renderTree();
+							populateInspector();
+						}
 					}
 
-					saveHistoryState();
-					isDragging = true;
+					isDragging = false;
+					hasMoved = false;
 					startX = e.clientX;
 					startY = e.clientY;
 					origX = ctrl.x;
 					origY = ctrl.y;
 
-					initialPositions = selectedIndices.map(i => ({ idx: i, x: formSpec.controls[i].x, y: formSpec.controls[i].y }));
-
 					const onMouseMove = (me) => {
-						if (!isDragging) return;
-						me.preventDefault();
-
 						let dx = (me.clientX - startX) / canvasScale;
 						let dy = (me.clientY - startY) / canvasScale;
+
+						if (!hasMoved && (Math.abs(dx) > 2 || Math.abs(dy) > 2)) {
+							hasMoved = true;
+							isDragging = true;
+							saveHistoryState();
+							initialPositions = selectedIndices.map(i => ({ idx: i, x: formSpec.controls[i].x, y: formSpec.controls[i].y }));
+						}
+
+						if (!hasMoved) return;
+						me.preventDefault();
 
 						if (selectedIndices.length === 1) {
 							checkSmartSnapGuides(ctrl, origX + dx, origY + dy);
@@ -3190,18 +3222,30 @@
 							const propYEl = document.getElementById("propY");
 							if (propYEl) propYEl.value = ctrl.y;
 							document.getElementById("statusMsg").textContent = "Moving " + ctrl.id + " to (" + ctrl.x + ", " + ctrl.y + ")";
+						} else {
+							document.getElementById("statusMsg").textContent = "Moving " + selectedIndices.length + " controls";
 						}
 					};
 
 					const onMouseUp = () => {
-						isDragging = false;
 						hideSmartSnapGuides();
 						window.removeEventListener("mousemove", onMouseMove);
 						window.removeEventListener("mouseup", onMouseUp);
-						renderCanvas();
-						renderCode();
-						renderTree();
-						populateInspector();
+
+						if (!hasMoved) {
+							if (!isToggle && selectedIndices.length > 1 && selectedIndices.includes(idx)) {
+								selectedIndices = [idx];
+								renderCanvasSelectionOnly();
+								renderTree();
+								populateInspector();
+							}
+						} else {
+							renderCanvas();
+							renderCode();
+							renderTree();
+							populateInspector();
+							syncSpecToV();
+						}
 					};
 
 					window.addEventListener("mousemove", onMouseMove);
@@ -3209,7 +3253,7 @@
 				};
 
 				// Resize Handles
-				if (selectedIndices.includes(idx) && !ctrl.locked) {
+				if (!ctrl.locked) {
 					["nw", "n", "ne", "e", "se", "s", "sw", "w"].forEach(handlePos => {
 						const handle = document.createElement("div");
 						handle.className = "resize-handle handle-" + handlePos;
@@ -3423,6 +3467,14 @@
 			if (selectedIndices.length === 0) formOpt.selected = true;
 			sel.appendChild(formOpt);
 
+			if (selectedIndices.length > 1) {
+				const multiOpt = document.createElement("option");
+				multiOpt.value = "-2";
+				multiOpt.textContent = "⚡ Multiple Controls Selected (" + selectedIndices.length + " items)";
+				multiOpt.selected = true;
+				sel.appendChild(multiOpt);
+			}
+
 			formSpec.controls.forEach((c, idx) => {
 				const opt = document.createElement("option");
 				opt.value = idx;
@@ -3563,6 +3615,9 @@
 
 		function updateSelectedControl(changedProp) {
 			if (selectedIndices.length === 0) return;
+			if (changedProp && typeof changedProp !== "string") {
+				changedProp = undefined;
+			}
 			saveHistoryState();
 
 			const propIdEl = document.getElementById("propId");
