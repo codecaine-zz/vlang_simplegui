@@ -1,6 +1,7 @@
 module main
 
 import simplegui
+import os
 
 struct DesignerState {
 pub mut:
@@ -13,7 +14,7 @@ fn main() {
 	}
 
 	mut win := simplegui.new_simple_window('SimpleGUI RAD Visual UI Designer (Delphi & VB Inspired)',
-		1260, 780)
+		1480, 940)
 	win.set_responsive_layout(true)
 
 	win.set_background_color('#060911')
@@ -118,10 +119,22 @@ fn main() {
 	})
 
 	win.add_html_view('designer_canvas', simplegui.compile_designer_html(state.spec))
-	win.set_control_width('designer_canvas', 1240)
-	win.set_control_height('designer_canvas', 690)
+	win.set_control_width('designer_canvas', 1460)
+	win.set_control_height('designer_canvas', 850)
 
 	win.set_status('Delphi/VB/Lazarus RAD Studio loaded. Auto-arrange 2-Column and 3-Column layouts ready.')
+
+	capture_path := os.getenv('SIMPLEGUI_CAPTURE')
+	if capture_path != '' {
+		win.after(1000, fn [capture_path] (mut w simplegui.SimpleWindow) {
+			w.capture_screenshot(capture_path)
+			w.set_status('Captured screenshot to: ${capture_path}')
+			w.after(300, fn (mut w2 simplegui.SimpleWindow) {
+				w2.close()
+			})
+		})
+	}
+
 	win.run()
 }
 
@@ -186,7 +199,74 @@ fn render_preview_control(mut prev_win simplegui.SimpleWindow, c simplegui.Contr
 			prev_win.add_label(c.id, '🏷️ ${c.text}')
 		}
 		'search' {
-			prev_win.add_input(c.id, c.text)
+			prev_win.add_search_field(c.id, c.text)
+		}
+
+		// Integrated Form Controls (Label + Input/Control)
+		'form_field' {
+			prev_win.add_form_field(c.text, c.id, 'Sample Input')
+		}
+		'form_textarea' {
+			prev_win.add_form_textarea(c.text, c.id, 'Multi-line notes...')
+		}
+		'form_password' {
+			prev_win.add_form_password(c.text, c.id, 'password123')
+		}
+		'form_number' {
+			prev_win.add_form_number(c.text, c.id, c.value)
+		}
+		'form_slider' {
+			prev_win.add_form_slider(c.text, c.id, c.value)
+		}
+		'form_dropdown' {
+			prev_win.add_form_dropdown(c.text, c.id, ['Option 1', 'Option 2', 'Option 3'], 'Option 1')
+		}
+		'form_date' {
+			prev_win.add_form_date_picker(c.text, c.id, '2026-07-22')
+		}
+		'form_progress' {
+			prev_win.add_form_progress(c.text, c.id, c.value)
+		}
+		'form_switch' {
+			prev_win.add_form_switch(c.text, c.id, 'Enable Alerts', c.checked)
+		}
+		'form_link' {
+			prev_win.add_form_link(c.text, c.id, 'View Documentation', 'https://github.com')
+		}
+
+		// Demo Controls & Widgets
+		'rating' {
+			prev_win.add_rating(c.id, c.value / 20)
+		}
+		'stepper' {
+			prev_win.add_stepper(c.id, 0, 100, 1, c.value)
+		}
+		'tag' {
+			prev_win.add_token_field(c.id, 'vlang,gui,simplegui')
+		}
+		'path' {
+			prev_win.add_path_control(c.id, '/Users/developer/Projects/vlang_simplegui')
+		}
+		'drop_zone' {
+			prev_win.add_drop_zone(c.id, c.text)
+		}
+		'circular_progress' {
+			prev_win.add_circular_progress(c.id, c.value, 0, 100)
+		}
+		'metric_meter' {
+			prev_win.add_metric_meter(c.id, c.text, c.value, 0, 100, '%')
+		}
+		'status_indicator' {
+			prev_win.add_status_indicator(c.id, c.text, 'online')
+		}
+		'metric_card' {
+			prev_win.add_metric_card(c.id, c.text, '$48.2K', '+12%', 'vs previous month')
+		}
+		'alert_banner' {
+			prev_win.add_alert_banner(c.id, c.text, 'System update completed successfully.', 'info')
+		}
+		'code_view' {
+			prev_win.add_code_view(c.id, 'v', 'fn main() {\n  println("Hello SimpleGUI")\n}', 100)
 		}
 		else {
 			prev_win.add_button(c.id, c.text)
@@ -210,6 +290,9 @@ fn render_preview_control(mut prev_win simplegui.SimpleWindow, c simplegui.Contr
 	}
 	if !c.enabled {
 		prev_win.set_control_enabled(c.id, false)
+	}
+	if c.tooltip.len > 0 {
+		prev_win.set_tooltip(c.id, c.tooltip)
 	}
 }
 

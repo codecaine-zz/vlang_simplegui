@@ -1708,6 +1708,10 @@ static NSColor *colorFromString(const char *colorString) {
   NSString *value = nsstring(colorString);
   NSString *normalized = [[value lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
 
+  if ([normalized isEqualToString:@"transparent"] || [normalized isEqualToString:@"clear"] || [normalized isEqualToString:@"none"] || [normalized isEqualToString:@"#00000000"] || [normalized isEqualToString:@"rgba(0,0,0,0)"]) {
+    return [NSColor clearColor];
+  }
+
   if ([normalized isEqualToString:@"black"]) return [NSColor blackColor];
   if ([normalized isEqualToString:@"white"]) return [NSColor whiteColor];
   if ([normalized isEqualToString:@"red"]) return [NSColor systemRedColor];

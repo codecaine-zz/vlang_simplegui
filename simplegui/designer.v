@@ -22,6 +22,7 @@ pub mut:
 	font_color       string = '#ffffff'
 	background_color string = '#1e293b'
 	placeholder      string
+	tooltip          string
 	min_val          int
 	max_val          int  = 100
 	value            int  = 50
@@ -121,6 +122,74 @@ fn write_single_control_v_code(mut sb strings.Builder, c ControlSpec) {
 		'search' {
 			sb.write_string('\twin.add_input(\'${c.id}\', \'${clean_text}\')\n')
 		}
+
+		// Integrated Form Controls (Label + Input/Control)
+		'form_field' {
+			sb.write_string('\twin.add_form_field(\'${clean_text}\', \'${c.id}\', \'Sample Text\')\n')
+		}
+		'form_textarea' {
+			sb.write_string('\twin.add_form_textarea(\'${clean_text}\', \'${c.id}\', \'Multi-line content...\')\n')
+		}
+		'form_password' {
+			sb.write_string('\twin.add_form_password(\'${clean_text}\', \'${c.id}\', \'secret123\')\n')
+		}
+		'form_number' {
+			sb.write_string('\twin.add_form_number(\'${clean_text}\', \'${c.id}\', ${c.value})\n')
+		}
+		'form_slider' {
+			sb.write_string('\twin.add_form_slider(\'${clean_text}\', \'${c.id}\', ${c.value})\n')
+		}
+		'form_dropdown' {
+			sb.write_string('\twin.add_form_dropdown(\'${clean_text}\', \'${c.id}\', [\'Option 1\', \'Option 2\', \'Option 3\'], \'Option 1\')\n')
+		}
+		'form_date' {
+			sb.write_string('\twin.add_form_date_picker(\'${clean_text}\', \'${c.id}\', \'2026-07-22\')\n')
+		}
+		'form_progress' {
+			sb.write_string('\twin.add_form_progress(\'${clean_text}\', \'${c.id}\', ${c.value})\n')
+		}
+		'form_switch' {
+			chk := if c.checked { 'true' } else { 'false' }
+			sb.write_string('\twin.add_form_switch(\'${clean_text}\', \'${c.id}\', \'Enable\', ${chk})\n')
+		}
+		'form_link' {
+			sb.write_string('\twin.add_form_link(\'${clean_text}\', \'${c.id}\', \'View Guide\', \'https://github.com\')\n')
+		}
+
+		// Demo Controls & Widgets
+		'rating' {
+			sb.write_string('\twin.add_rating(\'${c.id}\', ${c.value / 20})\n')
+		}
+		'stepper' {
+			sb.write_string('\twin.add_stepper(\'${c.id}\', 0, 100, 1, ${c.value})\n')
+		}
+		'tag' {
+			sb.write_string('\twin.add_token_field(\'${c.id}\', \'vlang,gui,simplegui\')\n')
+		}
+		'path' {
+			sb.write_string('\twin.add_path_control(\'${c.id}\', \'/Users/developer/Projects/vlang_simplegui\')\n')
+		}
+		'drop_zone' {
+			sb.write_string('\twin.add_drop_zone(\'${c.id}\', \'${clean_text}\')\n')
+		}
+		'circular_progress' {
+			sb.write_string('\twin.add_circular_progress(\'${c.id}\', ${c.value}, 0, 100)\n')
+		}
+		'metric_meter' {
+			sb.write_string('\twin.add_metric_meter(\'${c.id}\', \'${clean_text}\', ${c.value}, 0, 100, \'%\')\n')
+		}
+		'status_indicator' {
+			sb.write_string('\twin.add_status_indicator(\'${c.id}\', \'${clean_text}\', \'online\')\n')
+		}
+		'metric_card' {
+			sb.write_string('\twin.add_metric_card(\'${c.id}\', \'${clean_text}\', \'$48.2K\', \'+12%\', \'vs previous month\')\n')
+		}
+		'alert_banner' {
+			sb.write_string('\twin.add_alert_banner(\'${c.id}\', \'${clean_text}\', \'System update completed successfully.\', \'info\')\n')
+		}
+		'code_view' {
+			sb.write_string('\twin.add_code_view(\'${c.id}\', \'v\', \'fn main() { println("Hello SimpleGUI") }\', 100)\n')
+		}
 		else {
 			sb.write_string('\twin.add_button(\'${c.id}\', \'${clean_text}\')\n')
 		}
@@ -146,6 +215,10 @@ fn write_single_control_v_code(mut sb strings.Builder, c ControlSpec) {
 	}
 	if !c.visible {
 		sb.write_string('\twin.set_control_visible(\'${c.id}\', false)\n')
+	}
+	if c.tooltip.len > 0 {
+		clean_tooltip := c.tooltip.replace("'", "\\'")
+		sb.write_string('\twin.set_tooltip(\'${c.id}\', \'${clean_tooltip}\')\n')
 	}
 }
 
@@ -472,8 +545,426 @@ pub fn get_default_form_spec() FormSpec {
 				font_size:        14
 				background_color: '#334155'
 				event_handlers:   {
-					'onClick': 'on_btn_reset_click'
+					'onClick': 'on_place_order_click'
 				}
+			},
+		]
+	}
+}
+
+pub fn get_profile_form_spec() FormSpec {
+	return FormSpec{
+		title:            'User Profile & Account Settings'
+		width:            720
+		height:           560
+		background_color: '#0f172a'
+		font_color:       '#f8fafc'
+		padding:          20
+		spacing:          12
+		controls:         [
+			ControlSpec{
+				id:         'lbl_profile_header'
+				control_type: 'label'
+				x:          24
+				y:          20
+				width:      400
+				height:     32
+				text:       '👤 User Profile & Account'
+				font_size:  20
+				font_color: '#38bdf8'
+			},
+			ControlSpec{
+				id:         'field_name'
+				control_type: 'form_field'
+				x:          24
+				y:          64
+				width:      300
+				height:     44
+				text:       'Full Name: Alex Mercer'
+			},
+			ControlSpec{
+				id:         'field_username'
+				control_type: 'form_field'
+				x:          344
+				y:          64
+				width:      300
+				height:     44
+				text:       'Username: @alexmercer'
+			},
+			ControlSpec{
+				id:         'field_bio'
+				control_type: 'form_textarea'
+				x:          24
+				y:          120
+				width:      620
+				height:     100
+				text:       'Senior Systems Engineer building desktop applications with Vlang and SimpleGUI.'
+			},
+			ControlSpec{
+				id:         'switch_notif'
+				control_type: 'form_switch'
+				x:          24
+				y:          230
+				width:      280
+				height:     28
+				text:       'System Push Notifications'
+				checked:    true
+			},
+			ControlSpec{
+				id:         'dropdown_role'
+				control_type: 'form_dropdown'
+				x:          344
+				y:          230
+				width:      300
+				height:     44
+				text:       'Account Role'
+			},
+			ControlSpec{
+				id:               'btn_save_profile'
+				control_type:     'button'
+				x:                24
+				y:                290
+				width:            180
+				height:           42
+				text:             '💾 Save Profile'
+				background_color: '#0284c7'
+			},
+			ControlSpec{
+				id:               'btn_cancel_profile'
+				control_type:     'button'
+				x:                216
+				y:                290
+				width:            140
+				height:           42
+				text:             'Cancel'
+				background_color: '#334155'
+			},
+		]
+	}
+}
+
+pub fn get_crud_form_spec() FormSpec {
+	return FormSpec{
+		title:            'Enterprise Product Data Grid & CRUD'
+		width:            920
+		height:           620
+		background_color: '#0f172a'
+		font_color:       '#f8fafc'
+		padding:          20
+		spacing:          12
+		controls:         [
+			ControlSpec{
+				id:         'lbl_crud_header'
+				control_type: 'label'
+				x:          24
+				y:          20
+				width:      420
+				height:     32
+				text:       '🗄️ Database Record Manager'
+				font_size:  20
+				font_color: '#10b981'
+			},
+			ControlSpec{
+				id:         'inp_search'
+				control_type: 'search'
+				x:          24
+				y:          64
+				width:      320
+				height:     36
+				text:       'Search products...'
+			},
+			ControlSpec{
+				id:               'btn_add_record'
+				control_type:     'button'
+				x:                360
+				y:                64
+				width:            140
+				height:           36
+				text:             '➕ Add Record'
+				background_color: '#10b981'
+			},
+			ControlSpec{
+				id:               'btn_refresh_table'
+				control_type:     'button'
+				x:                510
+				y:                64
+				width:            120
+				height:           36
+				text:             '🔄 Refresh'
+				background_color: '#0284c7'
+			},
+			ControlSpec{
+				id:         'table_records'
+				control_type: 'table'
+				x:          24
+				y:          116
+				width:      860
+				height:     360
+				text:       'Product Database Grid'
+			},
+			ControlSpec{
+				id:               'badge_count'
+				control_type:     'badge'
+				x:                24
+				y:                490
+				width:            160
+				height:           28
+				text:             '148 Records Total'
+				background_color: '#38bdf8'
+			},
+			ControlSpec{
+				id:         'status_db'
+				control_type: 'status_indicator'
+				x:          200
+				y:          490
+				width:      180
+				height:     28
+				text:       'PostgreSQL Online'
+			},
+		]
+	}
+}
+
+pub fn get_ticket_form_spec() FormSpec {
+	return FormSpec{
+		title:            'Help Desk & Bug Ticket Reporter'
+		width:            760
+		height:           600
+		background_color: '#0f172a'
+		font_color:       '#f8fafc'
+		padding:          20
+		spacing:          12
+		controls:         [
+			ControlSpec{
+				id:         'lbl_ticket_header'
+				control_type: 'label'
+				x:          24
+				y:          20
+				width:      420
+				height:     32
+				text:       '🎫 Submit Support & Bug Ticket'
+				font_size:  20
+				font_color: '#38bdf8'
+			},
+			ControlSpec{
+				id:         'field_ticket_title'
+				control_type: 'form_field'
+				x:          24
+				y:          64
+				width:      680
+				height:     44
+				text:       'Issue Title: Canvas element overlap on high-DPI displays'
+			},
+			ControlSpec{
+				id:         'dropdown_severity'
+				control_type: 'form_dropdown'
+				x:          24
+				y:          120
+				width:      320
+				height:     44
+				text:       'Severity Level'
+			},
+			ControlSpec{
+				id:         'field_ticket_desc'
+				control_type: 'form_textarea'
+				x:          24
+				y:          176
+				width:      680
+				height:     110
+				text:       'Steps to reproduce:\n1. Open UI Designer\n2. Zoom to 150%\n3. Observe snap guidelines alignment.'
+			},
+			ControlSpec{
+				id:         'drop_attachment'
+				control_type: 'drop_zone'
+				x:          24
+				y:          296
+				width:      680
+				height:     80
+				text:       'Drag & drop log files or screenshots here'
+			},
+			ControlSpec{
+				id:         'rating_priority'
+				control_type: 'rating'
+				x:          24
+				y:          390
+				width:      140
+				height:     32
+				text:       'Urgency Rating'
+			},
+			ControlSpec{
+				id:               'btn_send_ticket'
+				control_type:     'button'
+				x:                24
+				y:                435
+				width:            220
+				height:           44
+				text:             '🚀 Submit Support Ticket'
+				background_color: '#0284c7'
+			},
+		]
+	}
+}
+
+pub fn get_api_form_spec() FormSpec {
+	return FormSpec{
+		title:            'REST API Request & Response Tester'
+		width:            860
+		height:           600
+		background_color: '#0f172a'
+		font_color:       '#f8fafc'
+		padding:          20
+		spacing:          12
+		controls:         [
+			ControlSpec{
+				id:         'lbl_api_header'
+				control_type: 'label'
+				x:          24
+				y:          20
+				width:      480
+				height:     32
+				text:       '⚡ REST API Client & Endpoint Tester'
+				font_size:  20
+				font_color: '#10b981'
+			},
+			ControlSpec{
+				id:         'dropdown_method'
+				control_type: 'form_dropdown'
+				x:          24
+				y:          64
+				width:      140
+				height:     44
+				text:       'HTTP Method'
+			},
+			ControlSpec{
+				id:         'field_url'
+				control_type: 'form_field'
+				x:          176
+				y:          64
+				width:      480
+				height:     44
+				text:       'Endpoint: https://api.vlang.org/v1/status'
+			},
+			ControlSpec{
+				id:               'btn_send_api'
+				control_type:     'button'
+				x:                668
+				y:                64
+				width:            140
+				height:           44
+				text:             '▶ Send'
+				background_color: '#10b981'
+			},
+			ControlSpec{
+				id:         'status_api'
+				control_type: 'status_indicator'
+				x:          24
+				y:          120
+				width:      220
+				height:     28
+				text:       '200 OK (38ms)'
+			},
+			ControlSpec{
+				id:         'code_response'
+				control_type: 'code_view'
+				x:          24
+				y:          160
+				width:      784
+				height:     340
+				text:       'JSON Response Payload'
+			},
+		]
+	}
+}
+
+pub fn get_media_form_spec() FormSpec {
+	return FormSpec{
+		title:            'Hi-Fi Audio & Media Control Panel'
+		width:            640
+		height:           520
+		background_color: '#0f172a'
+		font_color:       '#f8fafc'
+		padding:          20
+		spacing:          12
+		controls:         [
+			ControlSpec{
+				id:         'lbl_media_header'
+				control_type: 'label'
+				x:          24
+				y:          20
+				width:      400
+				height:     32
+				text:       '🎵 Hi-Fi Audio Player'
+				font_size:  20
+				font_color: '#38bdf8'
+			},
+			ControlSpec{
+				id:         'lbl_track_name'
+				control_type: 'label'
+				x:          24
+				y:          64
+				width:      400
+				height:     28
+				text:       'Track: Vlang Symphony No. 9 in D Minor'
+				font_size:  15
+			},
+			ControlSpec{
+				id:         'progress_playback'
+				control_type: 'progress'
+				x:          24
+				y:          100
+				width:      560
+				height:     32
+				value:      64
+				text:       'Playback Progress'
+			},
+			ControlSpec{
+				id:               'btn_prev'
+				control_type:     'button'
+				x:                24
+				y:                145
+				width:            100
+				height:           42
+				text:             '⏮ Prev'
+				background_color: '#334155'
+			},
+			ControlSpec{
+				id:               'btn_play'
+				control_type:     'button'
+				x:                136
+				y:                145
+				width:            140
+				height:           42
+				text:             '⏸ Pause'
+				background_color: '#0284c7'
+			},
+			ControlSpec{
+				id:               'btn_next'
+				control_type:     'button'
+				x:                288
+				y:                145
+				width:            100
+				height:           42
+				text:             '⏭ Next'
+				background_color: '#334155'
+			},
+			ControlSpec{
+				id:         'slider_volume'
+				control_type: 'slider'
+				x:          24
+				y:          205
+				width:      360
+				height:     28
+				value:      80
+				text:       'Volume Level'
+			},
+			ControlSpec{
+				id:         'rating_track'
+				control_type: 'rating'
+				x:          24
+				y:          245
+				width:      140
+				height:     32
+				text:       'Favorite Rating'
 			},
 		]
 	}

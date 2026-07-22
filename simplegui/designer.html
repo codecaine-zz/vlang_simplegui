@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 	<meta charset="utf-8">
-	<title>SimpleGUI RAD Designer</title>
+	<title>SimpleGUI RAD Designer & Form Studio</title>
 	<style>
 		:root {
 			--bg-main: #060911;
@@ -38,7 +38,7 @@
 			overflow: hidden;
 		}
 
-		/* Custom scrollbar styling */
+		/* Custom Scrollbar */
 		::-webkit-scrollbar {
 			width: 6px;
 			height: 6px;
@@ -63,6 +63,7 @@
 			align-items: center;
 			justify-content: space-between;
 			padding: 0 14px;
+			gap: 12px;
 		}
 
 		.app-title {
@@ -72,6 +73,7 @@
 			font-weight: 700;
 			font-size: 13px;
 			color: var(--accent);
+			white-space: nowrap;
 		}
 
 		.badge-rad {
@@ -88,7 +90,16 @@
 		.toolbar-actions {
 			display: flex;
 			align-items: center;
-			gap: 6px;
+			gap: 4px;
+			overflow: visible;
+		}
+
+		.toolbar-divider {
+			width: 1px;
+			height: 18px;
+			background: var(--border-color);
+			margin: 0 3px;
+			flex-shrink: 0;
 		}
 
 		.btn {
@@ -104,6 +115,14 @@
 			align-items: center;
 			gap: 4px;
 			transition: all 0.15s ease;
+			white-space: nowrap;
+			flex-shrink: 0;
+		}
+
+		.btn-icon {
+			padding: 4px 5px;
+			min-width: 26px;
+			justify-content: center;
 		}
 
 		.btn:hover {
@@ -116,31 +135,44 @@
 			color: #ffffff;
 			border-color: var(--accent);
 		}
-
-		.btn-primary:hover {
-			background: var(--accent);
-		}
+		.btn-primary:hover { background: var(--accent); }
 
 		.btn-success {
 			background: #059669;
 			color: #ffffff;
 			border-color: var(--success);
 		}
+		.btn-success:hover { background: var(--success); }
 
-		.btn-success:hover {
-			background: var(--success);
+		/* Instant Floating Custom Tooltip Badge */
+		.global-tooltip {
+			position: fixed;
+			z-index: 99999;
+			background: rgba(15, 23, 42, 0.95);
+			color: #f8fafc;
+			border: 1px solid var(--accent);
+			padding: 4px 10px;
+			border-radius: 6px;
+			font-size: 11px;
+			font-weight: 500;
+			pointer-events: none;
+			box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+			backdrop-filter: blur(8px);
+			display: none;
+			white-space: nowrap;
+			transition: opacity 0.1s ease;
 		}
 
-		/* Main Layout Grid - Expanding Full Width & Height */
+		/* Main Layout Grid */
 		.studio-container {
 			display: grid;
-			grid-template-columns: 180px 1fr 240px;
+			grid-template-columns: 210px 1fr 260px;
 			height: calc(100vh - 66px);
 			width: 100vw;
 			overflow: hidden;
 		}
 
-		/* Left Toolbox Palette */
+		/* Left Palette Sidebar */
 		.palette-sidebar {
 			background: var(--bg-panel);
 			border-right: 1px solid var(--border-color);
@@ -176,7 +208,6 @@
 			color: var(--accent);
 			transition: all 0.15s ease;
 		}
-
 		.template-chip:hover {
 			background: rgba(56, 189, 248, 0.15);
 			border-color: var(--accent);
@@ -192,9 +223,24 @@
 			width: 100%;
 			outline: none;
 		}
+		.search-box:focus { border-color: var(--accent); }
 
-		.search-box:focus {
-			border-color: var(--accent);
+		.palette-category {
+			margin-top: 4px;
+		}
+
+		.palette-cat-header {
+			font-size: 10px;
+			font-weight: 700;
+			color: var(--accent);
+			background: rgba(255, 255, 255, 0.03);
+			padding: 4px 6px;
+			border-radius: 4px;
+			margin-bottom: 4px;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			cursor: pointer;
 		}
 
 		.palette-grid {
@@ -213,34 +259,29 @@
 			align-items: center;
 			justify-content: center;
 			gap: 2px;
-			cursor: pointer;
+			cursor: grab;
 			transition: all 0.15s ease;
 			font-size: 10px;
 			color: var(--text-primary);
 		}
-
 		.palette-item:hover {
 			background: var(--bg-hover);
 			border-color: var(--accent);
 			transform: translateY(-1px);
 		}
+		.palette-item:active { cursor: grabbing; }
 
-		.palette-icon {
-			font-size: 15px;
-		}
+		.palette-icon { font-size: 14px; }
 
-		/* Center Canvas Viewport - Spacious Workspace */
-		.canvas-viewport {
-			background: #04060a;
-			padding: 8px;
+		/* Center Canvas Viewport */
+		.canvas-viewport-wrapper {
+			position: relative;
 			display: flex;
 			flex-direction: column;
-			align-items: center;
-			justify-content: flex-start;
-			overflow: auto;
-			position: relative;
 			width: 100%;
 			height: 100%;
+			background: #04060a;
+			overflow: hidden;
 		}
 
 		.canvas-toolbar {
@@ -248,11 +289,14 @@
 			align-items: center;
 			justify-content: space-between;
 			width: 100%;
-			margin-bottom: 6px;
+			padding: 6px 10px;
+			background: #090d16;
+			border-bottom: 1px solid var(--border-color);
 			font-size: 11px;
 			color: var(--text-muted);
 			flex-wrap: wrap;
 			gap: 4px;
+			z-index: 10;
 		}
 
 		.quick-align-bar {
@@ -261,16 +305,68 @@
 			flex-wrap: wrap;
 		}
 
-		/* Scalable Full Canvas Window Frame */
-		.window-frame-wrapper {
+		/* Canvas Workspace & Rulers Container */
+		.ruler-workspace {
+			position: relative;
+			flex: 1;
 			width: 100%;
 			height: 100%;
+			display: grid;
+			grid-template-columns: 20px 1fr;
+			grid-template-rows: 20px 1fr;
+			overflow: hidden;
+		}
+
+		.ruler-corner {
+			background: #090d16;
+			border-right: 1px solid var(--border-color);
+			border-bottom: 1px solid var(--border-color);
+			z-index: 5;
+		}
+
+		.ruler-h {
+			background: #090d16;
+			border-bottom: 1px solid var(--border-color);
+			overflow: hidden;
+			position: relative;
+			z-index: 4;
+		}
+
+		.ruler-v {
+			background: #090d16;
+			border-right: 1px solid var(--border-color);
+			overflow: hidden;
+			position: relative;
+			z-index: 4;
+		}
+
+		.ruler-ticks {
+			position: absolute;
+			top: 0;
+			left: 0;
+			pointer-events: none;
+		}
+
+		.canvas-viewport {
+			background: #04060a;
 			display: flex;
 			align-items: flex-start;
 			justify-content: center;
 			overflow: auto;
+			position: relative;
+			width: 100%;
+			height: 100%;
+			padding: 12px;
 		}
 
+		.canvas-viewport.panning {
+			cursor: grab;
+		}
+		.canvas-viewport.panning:active {
+			cursor: grabbing;
+		}
+
+		/* Window Frame Canvas */
 		.window-frame {
 			width: 100%;
 			min-width: 720px;
@@ -278,12 +374,13 @@
 			min-height: 480px;
 			background: var(--bg-main);
 			border-radius: var(--radius);
-			box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.1);
+			box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.1);
 			display: flex;
 			flex-direction: column;
 			position: relative;
 			overflow: hidden;
-			transition: transform 0.15s ease;
+			transition: transform 0.05s linear;
+			transform-origin: top center;
 		}
 
 		.window-titlebar {
@@ -296,16 +393,8 @@
 			gap: 6px;
 		}
 
-		.win-dots {
-			display: flex;
-			gap: 5px;
-		}
-
-		.dot {
-			width: 9px;
-			height: 9px;
-			border-radius: 50%;
-		}
+		.win-dots { display: flex; gap: 5px; }
+		.dot { width: 9px; height: 9px; border-radius: 50%; }
 		.dot-close { background: #ef4444; }
 		.dot-min { background: #f59e0b; }
 		.dot-max { background: #10b981; }
@@ -323,10 +412,10 @@
 			background-size: 16px 16px;
 			background-image: radial-gradient(circle, var(--grid-color) 1px, transparent 1px);
 			overflow: auto;
-			min-height: 420px;
+			min-height: 440px;
 		}
 
-		/* Placed Canvas Control Elements */
+		/* Canvas Placed Control Styling */
 		.designer-control {
 			position: absolute;
 			border: 1px dashed rgba(255, 255, 255, 0.25);
@@ -344,181 +433,69 @@
 			padding: 2px 6px;
 		}
 
-		.control-caption {
-			pointer-events: none;
-		}
+		.control-caption { pointer-events: none; }
 
-		/* Component Specific Canvas Previews */
+		/* Control Type Specific Canvas Visuals */
 		.ctrl-color-well {
-			display: flex;
-			align-items: center;
-			gap: 8px;
-			width: 100%;
-			height: 100%;
-			padding: 0 8px;
-			font-size: 11px;
-			font-weight: 600;
+			display: flex; align-items: center; gap: 8px; width: 100%; height: 100%; padding: 0 8px; font-size: 11px; font-weight: 600;
 		}
 		.ctrl-color-swatch {
-			width: 22px;
-			height: 22px;
-			border-radius: 4px;
-			border: 1px solid rgba(255,255,255,0.4);
-			box-shadow: 0 2px 6px rgba(0,0,0,0.5);
-			flex-shrink: 0;
+			width: 22px; height: 22px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.4); box-shadow: 0 2px 6px rgba(0,0,0,0.5); flex-shrink: 0;
 		}
 		.ctrl-slider-track {
-			position: relative;
-			width: 90%;
-			height: 6px;
-			background: #334155;
-			border-radius: 3px;
+			position: relative; width: 90%; height: 6px; background: #334155; border-radius: 3px;
 		}
-		.ctrl-slider-fill {
-			height: 100%;
-			background: var(--accent);
-			border-radius: 3px;
-		}
+		.ctrl-slider-fill { height: 100%; background: var(--accent); border-radius: 3px; }
 		.ctrl-slider-thumb {
-			position: absolute;
-			top: -5px;
-			width: 16px;
-			height: 16px;
-			border-radius: 50%;
-			background: #ffffff;
-			border: 2px solid var(--accent);
-			transform: translateX(-50%);
-			box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+			position: absolute; top: -5px; width: 16px; height: 16px; border-radius: 50%; background: #ffffff; border: 2px solid var(--accent); transform: translateX(-50%); box-shadow: 0 2px 4px rgba(0,0,0,0.4);
 		}
 		.ctrl-progress-track {
-			position: relative;
-			width: 96%;
-			height: 16px;
-			background: #1e293b;
-			border-radius: 8px;
-			overflow: hidden;
-			border: 1px solid var(--border-color);
+			position: relative; width: 96%; height: 16px; background: #1e293b; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color);
 		}
-		.ctrl-progress-fill {
-			height: 100%;
-			background: linear-gradient(90deg, #10b981, #38bdf8);
-			border-radius: 8px;
-		}
+		.ctrl-progress-fill { height: 100%; background: linear-gradient(90deg, #10b981, #38bdf8); border-radius: 8px; }
 		.ctrl-progress-text {
-			position: absolute;
-			top: 0;
-			left: 0;
-			width: 100%;
-			height: 100%;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			font-size: 10px;
-			font-weight: 700;
-			color: #ffffff;
-			text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+			position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #ffffff; text-shadow: 0 1px 2px rgba(0,0,0,0.8);
 		}
 		.ctrl-switch-pill {
-			width: 36px;
-			height: 20px;
-			background: #334155;
-			border-radius: 10px;
-			position: relative;
-			flex-shrink: 0;
+			width: 36px; height: 20px; background: #334155; border-radius: 10px; position: relative; flex-shrink: 0;
 		}
-		.ctrl-switch-pill.on {
-			background: #10b981;
-		}
+		.ctrl-switch-pill.on { background: #10b981; }
 		.ctrl-switch-thumb {
-			width: 16px;
-			height: 16px;
-			background: #ffffff;
-			border-radius: 50%;
-			position: absolute;
-			top: 2px;
-			left: 2px;
+			width: 16px; height: 16px; background: #ffffff; border-radius: 50%; position: absolute; top: 2px; left: 2px;
 		}
-		.ctrl-switch-pill.on .ctrl-switch-thumb {
-			transform: translateX(16px);
-		}
+		.ctrl-switch-pill.on .ctrl-switch-thumb { transform: translateX(16px); }
 		.ctrl-checkbox-box {
-			width: 18px;
-			height: 18px;
-			border: 1.5px solid var(--accent);
-			border-radius: 4px;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			font-size: 12px;
-			font-weight: 800;
-			color: var(--accent);
-			background: rgba(56, 189, 248, 0.1);
-			flex-shrink: 0;
+			width: 18px; height: 18px; border: 1.5px solid var(--accent); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; color: var(--accent); background: rgba(56, 189, 248, 0.1); flex-shrink: 0;
 		}
 		.ctrl-radio-circle {
-			width: 18px;
-			height: 18px;
-			border: 1.5px solid var(--accent);
-			border-radius: 50%;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			font-size: 10px;
-			color: var(--accent);
-			background: rgba(56, 189, 248, 0.1);
-			flex-shrink: 0;
+			width: 18px; height: 18px; border: 1.5px solid var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--accent); background: rgba(56, 189, 248, 0.1); flex-shrink: 0;
 		}
 		.ctrl-badge {
-			padding: 4px 12px;
-			border-radius: 9999px;
-			font-size: 11px;
-			font-weight: 700;
-			letter-spacing: 0.5px;
-			box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+			padding: 4px 12px; border-radius: 9999px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
 		}
 		.ctrl-panel-box {
-			border: 1px solid var(--border-color);
-			border-radius: 8px;
-			background: rgba(30, 41, 59, 0.6);
-			width: 100%;
-			height: 100%;
-			display: flex;
-			flex-direction: column;
+			border: 1px solid var(--border-color); border-radius: 8px; background: rgba(30, 41, 59, 0.6); width: 100%; height: 100%; display: flex; flex-direction: column;
 		}
 		.ctrl-panel-header {
-			background: rgba(15, 23, 42, 0.8);
-			border-bottom: 1px solid var(--border-color);
-			padding: 4px 10px;
-			font-size: 11px;
-			font-weight: 700;
-			color: var(--accent);
+			background: rgba(15, 23, 42, 0.8); border-bottom: 1px solid var(--border-color); padding: 4px 10px; font-size: 11px; font-weight: 700; color: var(--accent);
 		}
 		.ctrl-mini-table {
-			width: 100%;
-			height: 100%;
-			border-collapse: collapse;
-			font-size: 10px;
+			width: 100%; height: 100%; border-collapse: collapse; font-size: 10px;
 		}
 		.ctrl-mini-table th, .ctrl-mini-table td {
-			border: 1px solid var(--border-color);
-			padding: 4px 8px;
-			text-align: left;
+			border: 1px solid var(--border-color); padding: 4px 8px; text-align: left;
 		}
-		.ctrl-mini-table th {
-			background: rgba(15, 23, 42, 0.9);
-			color: var(--accent);
-		}
+		.ctrl-mini-table th { background: rgba(15, 23, 42, 0.9); color: var(--accent); }
 
 		.designer-control.selected {
 			border: 2px solid var(--accent) !important;
-			box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
+			box-shadow: 0 0 14px rgba(56, 189, 248, 0.4);
 		}
 
 		.designer-control.locked {
 			cursor: not-allowed !important;
 			border: 1px solid #f59e0b !important;
 		}
-
 		.designer-control.locked::after {
 			content: '🔒';
 			position: absolute;
@@ -543,10 +520,7 @@
 			white-space: nowrap;
 			z-index: 101;
 		}
-
-		.designer-control.selected .dim-badge {
-			display: block;
-		}
+		.designer-control.selected .dim-badge { display: block; }
 
 		/* Resize Handles */
 		.resize-handle {
@@ -559,10 +533,7 @@
 			display: none;
 			z-index: 100;
 		}
-
-		.designer-control.selected:not(.locked) .resize-handle {
-			display: block;
-		}
+		.designer-control.selected:not(.locked) .resize-handle { display: block; }
 
 		.handle-nw { top: -5px; left: -5px; cursor: nwse-resize; }
 		.handle-n  { top: -5px; left: 50%; margin-left: -4px; cursor: ns-resize; }
@@ -573,7 +544,7 @@
 		.handle-sw { bottom: -5px; left: -5px; cursor: nesw-resize; }
 		.handle-w  { top: 50%; margin-top: -4px; left: -5px; cursor: ew-resize; }
 
-		/* Marquee Drag Selection Box */
+		/* Marquee Selection Box */
 		#marqueeBox {
 			position: absolute;
 			border: 1px dashed var(--accent);
@@ -583,7 +554,7 @@
 			z-index: 200;
 		}
 
-		/* Smart Snap Lines */
+		/* Smart Snap & Gap Distance Lines */
 		.snap-line {
 			position: absolute;
 			pointer-events: none;
@@ -591,18 +562,59 @@
 			z-index: 150;
 		}
 		#snapLineH {
-			left: 0;
-			width: 100%;
-			height: 1px;
-			background: #ef4444;
-			box-shadow: 0 0 4px #ef4444;
+			left: 0; width: 100%; height: 1px; background: #ef4444; box-shadow: 0 0 4px #ef4444;
 		}
 		#snapLineV {
-			top: 0;
-			height: 100%;
-			width: 1px;
+			top: 0; height: 100%; width: 1px; background: #ef4444; box-shadow: 0 0 4px #ef4444;
+		}
+
+		.gap-badge {
+			position: absolute;
 			background: #ef4444;
-			box-shadow: 0 0 4px #ef4444;
+			color: #ffffff;
+			font-size: 9px;
+			font-weight: 700;
+			padding: 1px 4px;
+			border-radius: 3px;
+			pointer-events: none;
+			z-index: 160;
+			display: none;
+		}
+
+		/* Custom Context Menu */
+		.context-menu {
+			position: fixed;
+			background: var(--bg-panel);
+			border: 1px solid var(--border-color);
+			border-radius: 6px;
+			padding: 4px 0;
+			box-shadow: 0 10px 25px rgba(0,0,0,0.8);
+			z-index: 1000;
+			display: none;
+			min-width: 160px;
+		}
+		.context-menu-item {
+			padding: 6px 12px;
+			font-size: 11px;
+			color: var(--text-primary);
+			cursor: pointer;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+		}
+		.context-menu-item:hover {
+			background: var(--accent-hover);
+			color: #ffffff;
+		}
+		.context-menu-shortcut {
+			font-size: 9px;
+			color: var(--text-muted);
+			margin-left: 12px;
+		}
+		.context-menu-divider {
+			height: 1px;
+			background: var(--border-color);
+			margin: 4px 0;
 		}
 
 		/* Inspector Sidebar Right */
@@ -631,7 +643,6 @@
 			border-bottom: 2px solid transparent;
 			transition: all 0.15s ease;
 		}
-
 		.tab-item.active {
 			color: var(--accent);
 			border-bottom-color: var(--accent);
@@ -644,10 +655,7 @@
 			overflow-y: auto;
 			display: none;
 		}
-
-		.tab-content.active {
-			display: block;
-		}
+		.tab-content.active { display: block; }
 
 		.prop-row {
 			display: flex;
@@ -672,17 +680,13 @@
 			outline: none;
 			width: 100%;
 		}
-
-		.prop-input:focus {
-			border-color: var(--accent);
-		}
+		.prop-input:focus { border-color: var(--accent); }
 
 		.color-swatches {
 			display: flex;
 			gap: 5px;
 			margin-top: 2px;
 		}
-
 		.swatch {
 			width: 18px;
 			height: 18px;
@@ -691,10 +695,7 @@
 			border: 1px solid rgba(255,255,255,0.2);
 			transition: transform 0.1s ease;
 		}
-
-		.swatch:hover {
-			transform: scale(1.2);
-		}
+		.swatch:hover { transform: scale(1.2); }
 
 		.prop-grid-2 {
 			display: grid;
@@ -702,7 +703,7 @@
 			gap: 6px;
 		}
 
-		/* Tree View Item Styling */
+		/* Tree Item Styling */
 		.tree-item {
 			display: flex;
 			align-items: center;
@@ -716,23 +717,17 @@
 			cursor: pointer;
 			transition: all 0.15s ease;
 		}
-
 		.tree-item:hover {
 			background: var(--bg-hover);
 			border-color: var(--accent);
 		}
-
 		.tree-item.selected {
 			background: rgba(56, 189, 248, 0.15);
 			border-color: var(--accent);
 			font-weight: 600;
 		}
 
-		.tree-actions {
-			display: flex;
-			gap: 4px;
-		}
-
+		.tree-actions { display: flex; gap: 4px; }
 		.tree-btn {
 			background: transparent;
 			border: none;
@@ -742,7 +737,6 @@
 			padding: 2px 4px;
 			border-radius: 3px;
 		}
-
 		.tree-btn:hover {
 			color: #ffffff;
 			background: rgba(255, 255, 255, 0.1);
@@ -750,7 +744,7 @@
 
 		textarea.code-area {
 			width: 100%;
-			height: 400px;
+			height: 420px;
 			background: #04070d;
 			border: 1px solid var(--border-color);
 			color: #e2e8f0;
@@ -766,7 +760,7 @@
 			line-height: 1.4;
 		}
 
-		/* Bottom Status Bar */
+		/* Footer */
 		.app-statusbar {
 			height: 22px;
 			background: #04070d;
@@ -779,7 +773,7 @@
 			color: var(--text-muted);
 		}
 
-		/* Import Modal */
+		/* Modal Overlays */
 		.modal-overlay {
 			position: fixed;
 			top: 0;
@@ -792,150 +786,307 @@
 			justify-content: center;
 			z-index: 1000;
 		}
-
 		.modal-box {
 			background: var(--bg-panel);
 			border: 1px solid var(--border-color);
 			border-radius: 8px;
 			padding: 16px;
-			width: 500px;
+			width: 540px;
 			max-width: 90vw;
 			display: flex;
 			flex-direction: column;
 			gap: 12px;
 			box-shadow: 0 20px 40px rgba(0,0,0,0.8);
 		}
+		.hotkey-table {
+			width: 100%;
+			border-collapse: collapse;
+			font-size: 11px;
+		}
+		.hotkey-table td {
+			padding: 4px 6px;
+			border-bottom: 1px solid var(--border-color);
+		}
+		.hotkey-key {
+			font-family: monospace;
+			background: var(--bg-card);
+			border: 1px solid var(--border-color);
+			padding: 2px 6px;
+			border-radius: 4px;
+			color: var(--accent);
+			font-weight: bold;
+		}
 	</style>
 </head>
 <body>
 
-	<!-- Top Bar -->
+	<!-- Top Navigation Bar -->
 	<header class="app-header">
 		<div class="app-title">
 			<span>⚡ SimpleGUI RAD Studio</span>
-			<span class="badge-rad">Delphi / VB / Lazarus Studio</span>
+			<span class="badge-rad">Delphi / VB Studio</span>
 		</div>
 		<div class="toolbar-actions">
-			<button class="btn" onclick="clearForm()">📄 New</button>
-			<button class="btn" onclick="undo()" id="undoBtn">↩️ Undo</button>
-			<button class="btn" onclick="redo()" id="redoBtn">↪️ Redo</button>
-			<button class="btn" onclick="toggleSnapGrid()" id="snapBtn">📐 Snap: ON</button>
-			<button class="btn" onclick="duplicateSelectedControl()">📋 Duplicate (Cmd+D)</button>
-			<button class="btn" onclick="toggleLockSelected()">🔒 Lock</button>
-			<button class="btn" onclick="showImportModal()">📥 Import JSON</button>
-			<button class="btn" onclick="copyVCode()">📋 Copy Code</button>
-			<button class="btn btn-primary" onclick="exportFormJSON()">💾 Save JSON</button>
-			<button class="btn btn-success" onclick="triggerRunForm()">⚡ Run Live Form</button>
+			<button class="btn btn-success" onclick="triggerRunForm()" title="Launch live interactive window preview">⚡ Run Live Form</button>
+			<button class="btn btn-primary" onclick="exportFormJSON()" title="Save JSON layout to clipboard">💾 Save JSON</button>
+			<button class="btn" onclick="copyVCode()" title="Copy V source code to clipboard">📋 Copy Code</button>
+			<button class="btn" onclick="clearForm()" title="New blank form layout">📄 New</button>
+			<span class="toolbar-divider"></span>
+			<button class="btn btn-icon" onclick="undo()" id="undoBtn" title="Undo (Cmd+Z)">↩️</button>
+			<button class="btn btn-icon" onclick="redo()" id="redoBtn" title="Redo (Cmd+Shift+Z)">↪️</button>
+			<button class="btn btn-icon" onclick="copySelectedControl()" title="Copy (Cmd+C)">📋</button>
+			<button class="btn btn-icon" onclick="pasteCopiedControl()" title="Paste (Cmd+V)">📥</button>
+			<button class="btn btn-icon" onclick="duplicateSelectedControl()" title="Duplicate (Cmd+D)">✨</button>
+			<button class="btn btn-icon" onclick="toggleLockSelected()" title="Lock / Unlock">🔒</button>
+			<button class="btn btn-icon" onclick="bringToFront()" title="Bring to Front">🔝</button>
+			<button class="btn btn-icon" onclick="sendToBack()" title="Send to Back">🔙</button>
+			<span class="toolbar-divider"></span>
+			<button class="btn" onclick="toggleSnapGrid()" id="snapBtn" title="Toggle Grid Snapping">📐 Snap: ON</button>
+			<button class="btn" onclick="showHotkeysModal()" title="Keyboard Shortcuts Cheat Sheet">⌨️ Hotkeys</button>
+			<button class="btn" onclick="showImportModal()" title="Import JSON layout">📥 Import</button>
 		</div>
 	</header>
 
-	<!-- Studio Body Layout -->
+	<!-- Main Studio Workspace Grid -->
 	<div class="studio-container">
 
-		<!-- Left Control Palette -->
+		<!-- Left Toolbox Categorized Palette -->
 		<aside class="palette-sidebar">
-			<span class="sidebar-heading">Form Templates</span>
-			<div class="templates-row">
-				<span class="template-chip" onclick="loadTemplate('default')">Customer</span>
-				<span class="template-chip" onclick="loadTemplate('login')">Auth Login</span>
-				<span class="template-chip" onclick="loadTemplate('dash')">Dashboard</span>
-				<span class="template-chip" onclick="loadTemplate('settings')">Settings</span>
-				<span class="template-chip" onclick="loadTemplate('checkout')">Checkout</span>
+			<span class="sidebar-heading">Form Layout Templates</span>
+			<div class="templates-row" style="flex-wrap: wrap; gap: 4px;">
+				<span class="template-chip" onclick="loadTemplate('default')" title="Load Customer Account Registration preset form layout">Customer</span>
+				<span class="template-chip" onclick="loadTemplate('login')" title="Load User Authentication Sign-In Dialog preset form layout">Auth Login</span>
+				<span class="template-chip" onclick="loadTemplate('dash')" title="Load Executive KPI Analytics Dashboard preset form layout">Dashboard</span>
+				<span class="template-chip" onclick="loadTemplate('profile')" title="Load User Profile & Account Settings preset form layout">User Profile</span>
+				<span class="template-chip" onclick="loadTemplate('crud')" title="Load Enterprise Data Grid & CRUD Manager preset form layout">Data CRUD</span>
+				<span class="template-chip" onclick="loadTemplate('ticket')" title="Load Help Desk & Bug Support Ticket Reporter preset form layout">Support Ticket</span>
+				<span class="template-chip" onclick="loadTemplate('api_tester')" title="Load REST API Client & Endpoint Tester preset form layout">API Tester</span>
+				<span class="template-chip" onclick="loadTemplate('media')" title="Load Hi-Fi Audio Media Player Controls preset form layout">Media Player</span>
+				<span class="template-chip" onclick="loadTemplate('settings')" title="Load System Settings & Preferences preset form layout">Settings</span>
+				<span class="template-chip" onclick="loadTemplate('checkout')" title="Load E-Commerce Order Checkout & Payment preset form layout">Checkout</span>
 			</div>
 
 			<hr style="border: 0; border-top: 1px solid var(--border-color); margin: 4px 0;">
 
-			<span class="sidebar-heading">Component Palette (Click or Drag)</span>
-			<input type="text" class="search-box" placeholder="Filter controls..." oninput="filterPalette(this.value)">
+			<span class="sidebar-heading">Component Palette</span>
+			<input type="text" class="search-box" placeholder="Filter controls..." oninput="filterPalette(this.value)" title="Filter palette components by name">
 
-			<div class="palette-grid" id="paletteGrid">
-				<div class="palette-item" draggable="true" onclick="spawnControl('button')" ondragstart="onDragStart(event, 'button')">
-					<span class="palette-icon">🔘</span>
-					<span>Button</span>
+			<!-- Category 1: Standard Controls -->
+			<div class="palette-category">
+				<div class="palette-cat-header">🚀 Standard Controls</div>
+				<div class="palette-grid">
+					<div class="palette-item" draggable="true" onclick="spawnControl('button')" ondragstart="onDragStart(event, 'button')" title="Button: Clickable action button widget (win.add_button)">
+						<span class="palette-icon">🔘</span>
+						<span>Button</span>
+					</div>
+					<div class="palette-item" draggable="true" onclick="spawnControl('label')" ondragstart="onDragStart(event, 'label')" title="Label: Text title or caption label (win.add_label)">
+						<span class="palette-icon">🏷️</span>
+						<span>Label</span>
+					</div>
+					<div class="palette-item" draggable="true" onclick="spawnControl('input')" ondragstart="onDragStart(event, 'input')" title="Input: Single-line text input field (win.add_input)">
+						<span class="palette-icon">✏️</span>
+						<span>Input</span>
+					</div>
+					<div class="palette-item" draggable="true" onclick="spawnControl('password')" ondragstart="onDragStart(event, 'password')" title="Password: Masked password input field (win.add_password)">
+						<span class="palette-icon">🔒</span>
+						<span>Password</span>
+					</div>
+					<div class="palette-item" draggable="true" onclick="spawnControl('textarea')" ondragstart="onDragStart(event, 'textarea')" title="Text Area: Multi-line text input area (win.add_textarea)">
+						<span class="palette-icon">📝</span>
+						<span>Text Area</span>
+					</div>
 				</div>
-				<div class="palette-item" draggable="true" onclick="spawnControl('label')" ondragstart="onDragStart(event, 'label')">
-					<span class="palette-icon">🏷️</span>
-					<span>Label</span>
+			</div>
+
+			<!-- Category 2: Form Inputs & Toggles -->
+			<div class="palette-category">
+				<div class="palette-cat-header">🎛️ Toggles & Options</div>
+				<div class="palette-grid">
+					<div class="palette-item" draggable="true" onclick="spawnControl('checkbox')" ondragstart="onDragStart(event, 'checkbox')" title="Checkbox: Boolean check box toggle (win.add_checkbox)">
+						<span class="palette-icon">☑️</span>
+						<span>Checkbox</span>
+					</div>
+					<div class="palette-item" draggable="true" onclick="spawnControl('switch')" ondragstart="onDragStart(event, 'switch')" title="Switch: Toggle switch slider (win.add_switch)">
+						<span class="palette-icon">🔀</span>
+						<span>Switch</span>
+					</div>
+					<div class="palette-item" draggable="true" onclick="spawnControl('radio')" ondragstart="onDragStart(event, 'radio')" title="Radio Button: Single option radio selector (win.add_checkbox)">
+						<span class="palette-icon">🔘</span>
+						<span>Radio Button</span>
+					</div>
+					<div class="palette-item" draggable="true" onclick="spawnControl('slider')" ondragstart="onDragStart(event, 'slider')" title="Slider: Horizontal range slider bar (win.add_slider)">
+						<span class="palette-icon">🎚️</span>
+						<span>Slider</span>
+					</div>
+					<div class="palette-item" draggable="true" onclick="spawnControl('mode')" ondragstart="onDragStart(event, 'mode')" title="Mode Toggle: Theme/Mode toggle button (win.add_mode_control)">
+						<span class="palette-icon">🌓</span>
+						<span>Mode Toggle</span>
+					</div>
 				</div>
-				<div class="palette-item" draggable="true" onclick="spawnControl('input')" ondragstart="onDragStart(event, 'input')">
-					<span class="palette-icon">✏️</span>
-					<span>Input</span>
+			</div>
+
+			<!-- Category 3: Pickers & Displays -->
+			<div class="palette-category">
+				<div class="palette-cat-header">📊 Pickers & Displays</div>
+				<div class="palette-grid">
+					<div class="palette-item" draggable="true" onclick="spawnControl('number')" ondragstart="onDragStart(event, 'number')" title="Number: Numeric stepper input (win.add_number)">
+						<span class="palette-icon">🔢</span>
+						<span>Number</span>
+					</div>
+					<div class="palette-item" draggable="true" onclick="spawnControl('date')" ondragstart="onDragStart(event, 'date')" title="Date Picker: Calendar date selection picker (win.add_date_picker)">
+						<span class="palette-icon">📅</span>
+						<span>Date Picker</span>
+					</div>
+					<div class="palette-item" draggable="true" onclick="spawnControl('color')" ondragstart="onDragStart(event, 'color')" title="Color Well: Native color picker swatch (win.add_color_well)">
+						<span class="palette-icon">🎨</span>
+						<span>Color Well</span>
+					</div>
+					<div class="palette-item" draggable="true" onclick="spawnControl('progress')" ondragstart="onDragStart(event, 'progress')" title="Progress: Linear progress indicator bar (win.add_progress_indicator)">
+						<span class="palette-icon">📊</span>
+						<span>Progress</span>
+					</div>
+					<div class="palette-item" draggable="true" onclick="spawnControl('image')" ondragstart="onDragStart(event, 'image')" title="Image: Static image display frame (win.add_image)">
+						<span class="palette-icon">🖼️</span>
+						<span>Image</span>
+					</div>
+					<div class="palette-item" draggable="true" onclick="spawnControl('badge')" ondragstart="onDragStart(event, 'badge')" title="Badge: Status pill badge label (win.add_label)">
+						<span class="palette-icon">🏷️</span>
+						<span>Badge</span>
+					</div>
+					<div class="palette-item" draggable="true" onclick="spawnControl('search')" ondragstart="onDragStart(event, 'search')" title="Search: Search input with magnifying glass (win.add_search_field)">
+						<span class="palette-icon">🔍</span>
+						<span>Search</span>
+					</div>
 				</div>
-				<div class="palette-item" draggable="true" onclick="spawnControl('password')" ondragstart="onDragStart(event, 'password')">
-					<span class="palette-icon">🔒</span>
-					<span>Password</span>
+			</div>
+
+			<!-- Category 4: Labeled Form Controls -->
+			<div class="palette-category">
+				<div class="palette-cat-header">📝 Labeled Form Controls</div>
+				<div class="palette-grid">
+					<div class="palette-item" draggable="true" onclick="spawnControl('form_field')" ondragstart="onDragStart(event, 'form_field')" title="Form Field: Integrated Labeled Input field (win.add_form_field)">
+						<span class="palette-icon">✏️</span>
+						<span>Form Field</span>
+					</div>
+					<div class="palette-item" draggable="true" onclick="spawnControl('form_textarea')" ondragstart="onDragStart(event, 'form_textarea')" title="Form Textarea: Integrated Labeled Multi-line Textarea (win.add_form_textarea)">
+						<span class="palette-icon">📝</span>
+						<span>Form Textarea</span>
+					</div>
+					<div class="palette-item" draggable="true" onclick="spawnControl('form_password')" ondragstart="onDragStart(event, 'form_password')" title="Form Password: Integrated Labeled Masked Password (win.add_form_password)">
+						<span class="palette-icon">🔒</span>
+						<span>Form Password</span>
+					</div>
+					<div class="palette-item" draggable="true" onclick="spawnControl('form_number')" ondragstart="onDragStart(event, 'form_number')" title="Form Number: Integrated Labeled Numeric Stepper (win.add_form_number)">
+						<span class="palette-icon">🔢</span>
+						<span>Form Number</span>
+					</div>
+					<div class="palette-item" draggable="true" onclick="spawnControl('form_slider')" ondragstart="onDragStart(event, 'form_slider')" title="Form Slider: Integrated Labeled Range Slider (win.add_form_slider)">
+						<span class="palette-icon">🎚️</span>
+						<span>Form Slider</span>
+					</div>
+					<div class="palette-item" draggable="true" onclick="spawnControl('form_dropdown')" ondragstart="onDragStart(event, 'form_dropdown')" title="Form Dropdown: Integrated Labeled Dropdown Select (win.add_form_dropdown)">
+						<span class="palette-icon">🔽</span>
+						<span>Form Dropdown</span>
+					</div>
+					<div class="palette-item" draggable="true" onclick="spawnControl('form_date')" ondragstart="onDragStart(event, 'form_date')" title="Form Date: Integrated Labeled Date Picker (win.add_form_date_picker)">
+						<span class="palette-icon">📅</span>
+						<span>Form Date</span>
+					</div>
+					<div class="palette-item" draggable="true" onclick="spawnControl('form_progress')" ondragstart="onDragStart(event, 'form_progress')" title="Form Progress: Integrated Labeled Progress Bar (win.add_form_progress)">
+						<span class="palette-icon">📊</span>
+						<span>Form Progress</span>
+					</div>
+					<div class="palette-item" draggable="true" onclick="spawnControl('form_switch')" ondragstart="onDragStart(event, 'form_switch')" title="Form Switch: Integrated Labeled Toggle Switch (win.add_form_switch)">
+						<span class="palette-icon">🔀</span>
+						<span>Form Switch</span>
+					</div>
+					<div class="palette-item" draggable="true" onclick="spawnControl('form_link')" ondragstart="onDragStart(event, 'form_link')" title="Form Link: Integrated Labeled Hyperlink Button (win.add_form_link)">
+						<span class="palette-icon">🔗</span>
+						<span>Form Link</span>
+					</div>
 				</div>
-				<div class="palette-item" draggable="true" onclick="spawnControl('textarea')" ondragstart="onDragStart(event, 'textarea')">
-					<span class="palette-icon">📝</span>
-					<span>Text Area</span>
+			</div>
+
+			<!-- Category 5: Gauges, Cards & Widgets -->
+			<div class="palette-category">
+				<div class="palette-cat-header">⚡ Gauges, Cards & Widgets</div>
+				<div class="palette-grid">
+					<div class="palette-item" draggable="true" onclick="spawnControl('rating')" ondragstart="onDragStart(event, 'rating')" title="Star Rating: 5-Star interactive rating control (win.add_rating)">
+						<span class="palette-icon">⭐</span>
+						<span>Star Rating</span>
+					</div>
+					<div class="palette-item" draggable="true" onclick="spawnControl('stepper')" ondragstart="onDragStart(event, 'stepper')" title="Stepper: Compact numeric counter stepper (win.add_stepper)">
+						<span class="palette-icon">➕</span>
+						<span>Stepper</span>
+					</div>
+					<div class="palette-item" draggable="true" onclick="spawnControl('tag')" ondragstart="onDragStart(event, 'tag')" title="Tag Field: Tokenized chip tag input field (win.add_token_field)">
+						<span class="palette-icon">🏷️</span>
+						<span>Tag Field</span>
+					</div>
+					<div class="palette-item" draggable="true" onclick="spawnControl('path')" ondragstart="onDragStart(event, 'path')" title="Path Bar: macOS breadcrumb file path bar (win.add_path_control)">
+						<span class="palette-icon">📁</span>
+						<span>Path Bar</span>
+					</div>
+					<div class="palette-item" draggable="true" onclick="spawnControl('drop_zone')" ondragstart="onDragStart(event, 'drop_zone')" title="Drop Zone: Drag & drop file target area (win.add_drop_zone)">
+						<span class="palette-icon">📥</span>
+						<span>Drop Zone</span>
+					</div>
+					<div class="palette-item" draggable="true" onclick="spawnControl('circular_progress')" ondragstart="onDragStart(event, 'circular_progress')" title="Circular Progress: Radial percentage dial gauge (win.add_circular_progress)">
+						<span class="palette-icon">⭕</span>
+						<span>Circular Progress</span>
+					</div>
+					<div class="palette-item" draggable="true" onclick="spawnControl('metric_meter')" ondragstart="onDragStart(event, 'metric_meter')" title="Metric Meter: Telemetry percentage bar gauge (win.add_metric_meter)">
+						<span class="palette-icon">🎛️</span>
+						<span>Metric Meter</span>
+					</div>
+					<div class="palette-item" draggable="true" onclick="spawnControl('status_indicator')" ondragstart="onDragStart(event, 'status_indicator')" title="Status Light: System/Server status indicator pill (win.add_status_indicator)">
+						<span class="palette-icon">🟢</span>
+						<span>Status Light</span>
+					</div>
+					<div class="palette-item" draggable="true" onclick="spawnControl('metric_card')" ondragstart="onDragStart(event, 'metric_card')" title="Metric Card: KPI Stat Card with trend badge (win.add_metric_card)">
+						<span class="palette-icon">📈</span>
+						<span>Metric Card</span>
+					</div>
+					<div class="palette-item" draggable="true" onclick="spawnControl('alert_banner')" ondragstart="onDragStart(event, 'alert_banner')" title="Alert Banner: Callout notification alert strip (win.add_alert_banner)">
+						<span class="palette-icon">ℹ️</span>
+						<span>Alert Banner</span>
+					</div>
+					<div class="palette-item" draggable="true" onclick="spawnControl('code_view')" ondragstart="onDragStart(event, 'code_view')" title="Code View: Monospaced syntax highlighted code block (win.add_code_view)">
+						<span class="palette-icon">💻</span>
+						<span>Code View</span>
+					</div>
 				</div>
-				<div class="palette-item" draggable="true" onclick="spawnControl('checkbox')" ondragstart="onDragStart(event, 'checkbox')">
-					<span class="palette-icon">☑️</span>
-					<span>Checkbox</span>
-				</div>
-				<div class="palette-item" draggable="true" onclick="spawnControl('switch')" ondragstart="onDragStart(event, 'switch')">
-					<span class="palette-icon">🔀</span>
-					<span>Switch</span>
-				</div>
-				<div class="palette-item" draggable="true" onclick="spawnControl('slider')" ondragstart="onDragStart(event, 'slider')">
-					<span class="palette-icon">🎚️</span>
-					<span>Slider</span>
-				</div>
-				<div class="palette-item" draggable="true" onclick="spawnControl('number')" ondragstart="onDragStart(event, 'number')">
-					<span class="palette-icon">🔢</span>
-					<span>Number</span>
-				</div>
-				<div class="palette-item" draggable="true" onclick="spawnControl('date')" ondragstart="onDragStart(event, 'date')">
-					<span class="palette-icon">📅</span>
-					<span>Date Picker</span>
-				</div>
-				<div class="palette-item" draggable="true" onclick="spawnControl('color')" ondragstart="onDragStart(event, 'color')">
-					<span class="palette-icon">🎨</span>
-					<span>Color Well</span>
-				</div>
-				<div class="palette-item" draggable="true" onclick="spawnControl('progress')" ondragstart="onDragStart(event, 'progress')">
-					<span class="palette-icon">📊</span>
-					<span>Progress</span>
-				</div>
-				<div class="palette-item" draggable="true" onclick="spawnControl('image')" ondragstart="onDragStart(event, 'image')">
-					<span class="palette-icon">🖼️</span>
-					<span>Image</span>
-				</div>
-				<div class="palette-item" draggable="true" onclick="spawnControl('table')" ondragstart="onDragStart(event, 'table')">
-					<span class="palette-icon">📋</span>
-					<span>Data Grid</span>
-				</div>
-				<div class="palette-item" draggable="true" onclick="spawnControl('panel')" ondragstart="onDragStart(event, 'panel')">
-					<span class="palette-icon">📦</span>
-					<span>Panel Box</span>
-				</div>
-				<div class="palette-item" draggable="true" onclick="spawnControl('radio')" ondragstart="onDragStart(event, 'radio')">
-					<span class="palette-icon">🔘</span>
-					<span>Radio Button</span>
-				</div>
-				<div class="palette-item" draggable="true" onclick="spawnControl('divider')" ondragstart="onDragStart(event, 'divider')">
-					<span class="palette-icon">➖</span>
-					<span>Separator</span>
-				</div>
-				<div class="palette-item" draggable="true" onclick="spawnControl('badge')" ondragstart="onDragStart(event, 'badge')">
-					<span class="palette-icon">🏷️</span>
-					<span>Status Badge</span>
-				</div>
-				<div class="palette-item" draggable="true" onclick="spawnControl('search')" ondragstart="onDragStart(event, 'search')">
-					<span class="palette-icon">🔍</span>
-					<span>Search Input</span>
+			</div>
+
+			<!-- Category 6: Containers & Layout -->
+			<div class="palette-category">
+				<div class="palette-cat-header">📦 Containers & Layout</div>
+				<div class="palette-grid">
+					<div class="palette-item" draggable="true" onclick="spawnControl('table')" ondragstart="onDragStart(event, 'table')" title="Data Grid: Multi-column data table grid (win.add_table)">
+						<span class="palette-icon">📋</span>
+						<span>Data Grid</span>
+					</div>
+					<div class="palette-item" draggable="true" onclick="spawnControl('panel')" ondragstart="onDragStart(event, 'panel')" title="Panel Box: Container group box panel (win.add_heading)">
+						<span class="palette-icon">📦</span>
+						<span>Panel Box</span>
+					</div>
+					<div class="palette-item" draggable="true" onclick="spawnControl('divider')" ondragstart="onDragStart(event, 'divider')" title="Separator: Horizontal line layout divider (win.add_vertical_spacer)">
+						<span class="palette-icon">➖</span>
+						<span>Separator</span>
+					</div>
 				</div>
 			</div>
 		</aside>
 
-		<!-- Center Design Canvas -->
-		<main class="canvas-viewport" onclick="deselectControl(event)">
+		<!-- Center Canvas Viewport with Rulers -->
+		<div class="canvas-viewport-wrapper">
 			<div class="canvas-toolbar">
 				<span id="canvasStats">Form: 840x540 | Controls: 0</span>
 				<div class="quick-align-bar">
 					<button class="btn" onclick="selectAllControls()">☑️ Select All</button>
 					<button class="btn" onclick="zoomCanvas(0.1)">🔍 In</button>
 					<button class="btn" onclick="zoomCanvas(-0.1)">🔍 Out</button>
+					<button class="btn" onclick="resetZoom()">🔍 100%</button>
 					<button class="btn" onclick="autoArrangeColumns(2)">📊 2-Cols</button>
 					<button class="btn" onclick="autoArrangeColumns(3)">📊 3-Cols</button>
 					<button class="btn" onclick="alignControls('left')">⬅️ Left</button>
@@ -951,29 +1102,36 @@
 				</div>
 			</div>
 
-			<div class="window-frame-wrapper">
-				<div class="window-frame" id="windowFrame">
-					<div class="window-titlebar">
-						<div class="win-dots">
-							<div class="dot dot-close"></div>
-							<div class="dot dot-min"></div>
-							<div class="dot dot-max"></div>
-						</div>
-						<span class="win-title-text" id="winTitleHeader">Delphi/VB RAD Form Studio</span>
-					</div>
+			<div class="ruler-workspace">
+				<div class="ruler-corner"></div>
+				<div class="ruler-h" id="rulerH"><canvas id="rulerHCanvas" height="20"></canvas></div>
+				<div class="ruler-v" id="rulerV"><canvas id="rulerVCanvas" width="20"></canvas></div>
 
-					<div class="form-canvas" id="formCanvas" ondragover="event.preventDefault()" ondrop="onCanvasDrop(event)">
-						<!-- Marquee Selection Box -->
-						<div id="marqueeBox"></div>
-						<!-- Smart Snap Lines -->
-						<div id="snapLineH" class="snap-line"></div>
-						<div id="snapLineV" class="snap-line"></div>
-						<div id="colGuideLine" style="position: absolute; left: 445px; top: 0; bottom: 0; width: 1px; border-left: 1px dashed rgba(56, 189, 248, 0.35); pointer-events: none; z-index: 2;"><span style="font-size: 9px; color: rgba(56, 189, 248, 0.75); background: rgba(15, 23, 42, 0.85); padding: 2px 6px; border-radius: 3px; white-space: nowrap; margin-left: 4px; margin-top: 4px; border: 1px solid rgba(56, 189, 248, 0.3);">Column 1 ↔ Column 2 (X: 445)</span></div>
-						<!-- Controls dynamically rendered here -->
+				<main class="canvas-viewport" id="canvasViewport" onclick="deselectControl(event)" oncontextmenu="onCanvasContextMenu(event)">
+					<div class="window-frame" id="windowFrame">
+						<div class="window-titlebar">
+							<div class="win-dots">
+								<div class="dot dot-close"></div>
+								<div class="dot dot-min"></div>
+								<div class="dot dot-max"></div>
+							</div>
+							<span class="win-title-text" id="winTitleHeader">Delphi/VB RAD Form Studio</span>
+						</div>
+
+						<div class="form-canvas" id="formCanvas" ondragover="event.preventDefault()" ondrop="onCanvasDrop(event)">
+							<!-- Marquee Selection Box -->
+							<div id="marqueeBox"></div>
+							<!-- Smart Snap Lines -->
+							<div id="snapLineH" class="snap-line"></div>
+							<div id="snapLineV" class="snap-line"></div>
+							<div id="gapBadge" class="gap-badge"></div>
+							<div id="colGuideLine" style="position: absolute; left: 445px; top: 0; bottom: 0; width: 1px; border-left: 1px dashed rgba(56, 189, 248, 0.35); pointer-events: none; z-index: 2;"><span style="font-size: 9px; color: rgba(56, 189, 248, 0.75); background: rgba(15, 23, 42, 0.85); padding: 2px 6px; border-radius: 3px; white-space: nowrap; margin-left: 4px; margin-top: 4px; border: 1px solid rgba(56, 189, 248, 0.3);">Column 1 ↔ Column 2 (X: 445)</span></div>
+							<!-- Controls dynamically rendered here -->
+						</div>
 					</div>
-				</div>
+				</main>
 			</div>
-		</main>
+		</div>
 
 		<!-- Right Object Inspector -->
 		<aside class="inspector-sidebar">
@@ -993,12 +1151,20 @@
 				</div>
 				<div class="prop-row">
 					<span class="prop-label">Form Theme</span>
-					<select class="prop-input" id="propFormTheme" onchange="updateFormTheme()">
+					<select class="prop-input" id="propFormTheme" onchange="updateFormTheme()" title="Switch application theme palette">
 						<option value="Dark">Dark Mode</option>
-						<option value="Light">Light Mode</option>
-						<option value="High Contrast">High Contrast</option>
+						<option value="Light">Light Mode (Aqua)</option>
+						<option value="Apple Dark">Apple Dark</option>
+						<option value="Midnight">Midnight Space Gray</option>
+						<option value="Apple Sunset">Apple Sunset</option>
+						<option value="Sonoma Emerald">Sonoma Emerald</option>
+						<option value="Catppuccin">Catppuccin Mocha</option>
+						<option value="Dracula">Dracula Studio</option>
 						<option value="Cyberpunk">Cyberpunk Neon</option>
-						<option value="Midnight">Midnight Navy</option>
+						<option value="Nord">Nordic Ice</option>
+						<option value="Solarized Light">Solarized Light</option>
+						<option value="Solarized Dark">Solarized Dark</option>
+						<option value="High Contrast">High Contrast</option>
 					</select>
 				</div>
 
@@ -1006,7 +1172,7 @@
 
 				<div id="controlPropContainer">
 					<span class="prop-label" id="selectedPropHeader" style="color: var(--accent);">Selected Control Properties</span>
-					
+
 					<div class="prop-row" style="margin-top: 6px;">
 						<span class="prop-label">Control ID / Var Name</span>
 						<input type="text" class="prop-input" id="propId" oninput="updateSelectedControl('id')">
@@ -1014,6 +1180,10 @@
 					<div class="prop-row">
 						<span class="prop-label">Caption / Text</span>
 						<input type="text" class="prop-input" id="propText" oninput="updateSelectedControl('text')">
+					</div>
+					<div class="prop-row">
+						<span class="prop-label">Hover Tooltip / Hint</span>
+						<input type="text" class="prop-input" id="propTooltip" placeholder="Tooltip text on hover..." oninput="updateSelectedControl('tooltip')" title="Tooltip hint text displayed when user hovers over control">
 					</div>
 
 					<div class="prop-grid-2">
@@ -1056,19 +1226,22 @@
 
 					<div class="prop-row">
 						<span class="prop-label">Background Presets</span>
-						<div class="color-swatches">
-							<div class="swatch" style="background:#0284c7;" onclick="setBgColor('#0284c7')"></div>
-							<div class="swatch" style="background:#10b981;" onclick="setBgColor('#10b981')"></div>
-							<div class="swatch" style="background:#8b5cf6;" onclick="setBgColor('#8b5cf6')"></div>
-							<div class="swatch" style="background:#f59e0b;" onclick="setBgColor('#f59e0b')"></div>
-							<div class="swatch" style="background:#ef4444;" onclick="setBgColor('#ef4444')"></div>
-							<div class="swatch" style="background:#1e293b;" onclick="setBgColor('#1e293b')"></div>
+						<div class="color-swatches" style="flex-wrap: wrap; gap: 4px;">
+							<div class="swatch" style="background:#0284c7;" onclick="setBgColor('#0284c7')" title="Sky Blue"></div>
+							<div class="swatch" style="background:#10b981;" onclick="setBgColor('#10b981')" title="Emerald Green"></div>
+							<div class="swatch" style="background:#8b5cf6;" onclick="setBgColor('#8b5cf6')" title="Purple"></div>
+							<div class="swatch" style="background:#f59e0b;" onclick="setBgColor('#f59e0b')" title="Amber Orange"></div>
+							<div class="swatch" style="background:#ef4444;" onclick="setBgColor('#ef4444')" title="Crimson Red"></div>
+							<div class="swatch" style="background:#1e293b;" onclick="setBgColor('#1e293b')" title="Slate Dark"></div>
+							<button class="btn" style="padding: 2px 8px; font-size: 10px; border-style: dashed;" onclick="setBgColor('transparent')" title="Set control background to 100% transparent">🏁 Transparent</button>
 						</div>
 					</div>
 
-					<div style="display:flex; gap:6px; margin-top:12px;">
-						<button class="btn" style="flex:1;" onclick="toggleLockSelected()">🔒 Lock / Unlock</button>
-						<button class="btn" style="flex:1; background:#ef4444; color:white;" onclick="deleteSelectedControl()">🗑️ Delete</button>
+					<div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; margin-top:10px;">
+						<button class="btn" onclick="bringToFront()">🔝 Bring Front</button>
+						<button class="btn" onclick="sendToBack()">🔙 Send Back</button>
+						<button class="btn" onclick="toggleLockSelected()">🔒 Lock / Unlock</button>
+						<button class="btn" style="background:#ef4444; color:white;" onclick="deleteSelectedControl()">🗑️ Delete</button>
 					</div>
 				</div>
 			</div>
@@ -1079,7 +1252,7 @@
 				<div id="treeContainer"></div>
 			</div>
 
-			<!-- Events Tab (Delphi / VB style placeholders) -->
+			<!-- Events Tab -->
 			<div class="tab-content" id="tabEvents">
 				<span class="prop-label" style="color: var(--accent); display: block; margin-bottom: 8px;">RAD Event Handlers & Placeholders</span>
 
@@ -1101,22 +1274,37 @@
 				<button class="btn btn-primary" style="width: 100%; margin-top: 10px;" onclick="autoGenerateEvents()">⚡ Auto-Generate Event Names</button>
 			</div>
 
-			<!-- Code Tab -->
+			<!-- V Code Export Tab -->
 			<div class="tab-content" id="tabCode">
 				<textarea class="code-area" id="codePreviewText" readonly></textarea>
 			</div>
 
-			<!-- JSON Tab -->
+			<!-- JSON Export Tab -->
 			<div class="tab-content" id="tabJSON">
 				<textarea class="code-area" id="jsonPreviewText" readonly></textarea>
 			</div>
 		</aside>
 	</div>
 
-	<!-- Status Footer -->
+	<!-- Custom Right-Click Context Menu -->
+	<div class="context-menu" id="contextMenu">
+		<div class="context-menu-item" onclick="copySelectedControl()">📋 Copy <span class="context-menu-shortcut">Cmd+C</span></div>
+		<div class="context-menu-item" onclick="pasteCopiedControl()">📥 Paste <span class="context-menu-shortcut">Cmd+V</span></div>
+		<div class="context-menu-item" onclick="duplicateSelectedControl()">✨ Duplicate <span class="context-menu-shortcut">Cmd+D</span></div>
+		<div class="context-menu-item" onclick="deleteSelectedControl()">🗑️ Delete <span class="context-menu-shortcut">Del</span></div>
+		<div class="context-menu-divider"></div>
+		<div class="context-menu-item" onclick="toggleLockSelected()">🔒 Lock / Unlock</div>
+		<div class="context-menu-item" onclick="bringToFront()">🔝 Bring to Front</div>
+		<div class="context-menu-item" onclick="sendToBack()">🔙 Send to Back</div>
+		<div class="context-menu-divider"></div>
+		<div class="context-menu-item" onclick="alignControls('center')">↔️ Align Center</div>
+		<div class="context-menu-item" onclick="alignControls('middle')">↕️ Align Middle</div>
+	</div>
+
+	<!-- Status Bar -->
 	<footer class="app-statusbar">
-		<span id="statusMsg">Ready. Left-click & drag controls on canvas to move them.</span>
-		<span>Grid Snap: 8px | Shift+Click Multi-select | Arrow keys to Nudge</span>
+		<span id="statusMsg">Ready. Left-click & drag controls on canvas. Space+Drag to Pan. Ctrl+Wheel to Zoom.</span>
+		<span>Grid Snap: 8px | Shift+Click Multi-select | Arrow keys Nudge</span>
 	</footer>
 
 	<!-- Import JSON Modal -->
@@ -1131,21 +1319,53 @@
 		</div>
 	</div>
 
+	<!-- Hotkeys Modal -->
+	<div class="modal-overlay" id="hotkeysModal">
+		<div class="modal-box">
+			<span style="font-weight:700; color:var(--accent); font-size:14px;">⌨️ Keyboard Shortcuts & Power Actions</span>
+			<table class="hotkey-table">
+				<tr><td><span class="hotkey-key">Cmd + C</span> / <span class="hotkey-key">Ctrl + C</span></td><td>Copy selected control(s)</td></tr>
+				<tr><td><span class="hotkey-key">Cmd + V</span> / <span class="hotkey-key">Ctrl + V</span></td><td>Paste copied control(s)</td></tr>
+				<tr><td><span class="hotkey-key">Cmd + D</span> / <span class="hotkey-key">Ctrl + D</span></td><td>Duplicate selected control(s)</td></tr>
+				<tr><td><span class="hotkey-key">Cmd + A</span> / <span class="hotkey-key">Ctrl + A</span></td><td>Select all controls on canvas</td></tr>
+				<tr><td><span class="hotkey-key">Cmd + Z</span> / <span class="hotkey-key">Ctrl + Z</span></td><td>Undo action</td></tr>
+				<tr><td><span class="hotkey-key">Cmd + Shift + Z</span></td><td>Redo action</td></tr>
+				<tr><td><span class="hotkey-key">Delete</span> / <span class="hotkey-key">Backspace</span></td><td>Delete selected control(s)</td></tr>
+				<tr><td><span class="hotkey-key">Arrows</span></td><td>Nudge control position by 1px</td></tr>
+				<tr><td><span class="hotkey-key">Shift + Arrows</span></td><td>Nudge control position by 8px (Grid snap)</td></tr>
+				<tr><td><span class="hotkey-key">Space + Drag</span> / <span class="hotkey-key">Middle Click Drag</span></td><td>Pan canvas workspace view</td></tr>
+				<tr><td><span class="hotkey-key">Ctrl / Cmd + Wheel</span></td><td>Smooth zoom canvas workspace</td></tr>
+				<tr><td><span class="hotkey-key">Escape</span></td><td>Deselect all controls & close modals</td></tr>
+			</table>
+			<div style="display:flex; justify-content:flex-end;">
+				<button class="btn btn-primary" onclick="hideHotkeysModal()">Got it!</button>
+			</div>
+		</div>
+	</div>
+
 	<script>
-		// Initial State loaded from V engine
+		// Global RAD Designer State
 		let formSpec = __SPEC_JSON__;
-		let selectedIndices = []; // Multi-selection indices
+		let selectedIndices = [];
+		let clipboardBuffer = [];
 		let undoStack = [];
 		let redoStack = [];
 		let snapToGrid = true;
 		let draggedType = null;
 		let canvasScale = 1.0;
 
-		// Initialize designer state & keyboard shortcuts
+		// Pan workspace state
+		let isPanning = false;
+		let panStartX = 0, panStartY = 0;
+		let scrollLeftStart = 0, scrollTopStart = 0;
+
 		function initDesignerApp() {
 			const propTitleEl = document.getElementById("propFormTitle");
 			if (propTitleEl) propTitleEl.value = formSpec.title || "";
 			bindLivePropertyEditors();
+			setupCanvasZoomAndPan();
+			setupCustomTooltipEngine();
+			drawRulers();
 			renderCanvas();
 			renderCode();
 			renderTree();
@@ -1156,19 +1376,85 @@
 				inspector.addEventListener("click", (e) => e.stopPropagation());
 			}
 
-			// Keyboard shortcuts
+			// Dismiss context menu on click elsewhere
+			window.addEventListener("click", () => hideContextMenu());
+
+		function setupCustomTooltipEngine() {
+			let tip = document.getElementById("globalTooltip");
+			if (!tip) {
+				tip = document.createElement("div");
+				tip.id = "globalTooltip";
+				tip.className = "global-tooltip";
+				document.body.appendChild(tip);
+			}
+
+			const updateTipPosition = (e) => {
+				let x = e.clientX + 14;
+				let y = e.clientY + 18;
+				if (x + tip.offsetWidth > window.innerWidth - 12) {
+					x = e.clientX - tip.offsetWidth - 10;
+				}
+				if (y + tip.offsetHeight > window.innerHeight - 12) {
+					y = e.clientY - tip.offsetHeight - 10;
+				}
+				tip.style.left = x + "px";
+				tip.style.top = y + "px";
+			};
+
+			document.addEventListener("mouseover", (e) => {
+				const target = e.target.closest("[title], [data-tooltip], .btn, .palette-item, .tree-item, .designer-control");
+				if (!target) return;
+
+				let text = target.getAttribute("data-tooltip") || target.getAttribute("title");
+				if (!text && target.classList.contains("designer-control")) {
+					const idx = parseInt(target.dataset.ctrlIndex, 10);
+					if (!isNaN(idx) && formSpec.controls[idx]) {
+						const c = formSpec.controls[idx];
+						text = c.tooltip ? "Hint: " + c.tooltip : (c.id + " (" + c.control_type + ")");
+					}
+				}
+
+				if (text && text.trim()) {
+					tip.textContent = text;
+					tip.style.display = "block";
+					updateTipPosition(e);
+				}
+			});
+
+			document.addEventListener("mousemove", (e) => {
+				if (tip.style.display === "block") {
+					updateTipPosition(e);
+				}
+			});
+
+			document.addEventListener("mouseout", (e) => {
+				const target = e.target.closest("[title], [data-tooltip], .btn, .palette-item, .tree-item, .designer-control");
+				if (target) {
+					tip.style.display = "none";
+				}
+			});
+		}
+
+			// Keyboard shortcuts engine
 			window.addEventListener("keydown", (e) => {
 				if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA" || e.target.tagName === "SELECT") return;
-				if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "a") {
+
+				if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "c") {
+					e.preventDefault();
+					copySelectedControl();
+				} else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "v") {
+					e.preventDefault();
+					pasteCopiedControl();
+				} else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "a") {
 					e.preventDefault();
 					selectAllControls();
-				} else if ((e.metaKey || e.ctrlKey) && e.key === "z") {
+				} else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "z") {
 					e.preventDefault();
 					if (e.shiftKey) redo(); else undo();
-				} else if ((e.metaKey || e.ctrlKey) && e.key === "y") {
+				} else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "y") {
 					e.preventDefault();
 					redo();
-				} else if ((e.metaKey || e.ctrlKey) && e.key === "d") {
+				} else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "d") {
 					e.preventDefault();
 					duplicateSelectedControl();
 				} else if (e.key === "Delete" || e.key === "Backspace") {
@@ -1176,6 +1462,9 @@
 					deleteSelectedControl();
 				} else if (e.key === "Escape") {
 					selectedIndices = [];
+					hideContextMenu();
+					hideHotkeysModal();
+					hideImportModal();
 					renderCanvas();
 					populateInspector();
 				} else if (e.key === "ArrowLeft") {
@@ -1196,24 +1485,10 @@
 			setupMarqueeSelection();
 		}
 
-		function selectAllControls() {
-			selectedIndices = formSpec.controls.map((_, i) => i);
-			renderCanvas();
-			renderTree();
-			populateInspector();
-			document.getElementById("statusMsg").textContent = "Selected all " + selectedIndices.length + " controls. Batch update text, size, color in inspector.";
-		}
-
-		if (document.readyState === "complete" || document.readyState === "interactive") {
-			initDesignerApp();
-		} else {
-			document.addEventListener("DOMContentLoaded", initDesignerApp);
-		}
-
 		function saveHistoryState() {
-			if (undoStack.length > 30) undoStack.shift();
+			if (undoStack.length > 40) undoStack.shift();
 			undoStack.push(JSON.stringify(formSpec));
-			redoStack = []; // Clear redo stack on new action
+			redoStack = [];
 			updateUndoRedoButtons();
 		}
 
@@ -1250,8 +1525,240 @@
 			document.getElementById("redoBtn").style.opacity = redoStack.length > 0 ? "1" : "0.4";
 		}
 
+		// Clipboard Engine
+		function copySelectedControl() {
+			if (selectedIndices.length === 0) return;
+			clipboardBuffer = selectedIndices.map(idx => JSON.parse(JSON.stringify(formSpec.controls[idx])));
+			document.getElementById("statusMsg").textContent = "Copied " + clipboardBuffer.length + " control(s) to internal clipboard.";
+		}
+
+		function pasteCopiedControl() {
+			if (clipboardBuffer.length === 0) return;
+			saveHistoryState();
+			let newIndices = [];
+			clipboardBuffer.forEach(item => {
+				const count = formSpec.controls.length + 1;
+				const newId = item.control_type + "_" + count;
+				const copy = JSON.parse(JSON.stringify(item));
+				copy.id = newId;
+				copy.x += 16;
+				copy.y += 16;
+				copy.event_handlers = { "onClick": "on_" + newId + "_click" };
+				formSpec.controls.push(copy);
+				newIndices.push(formSpec.controls.length - 1);
+			});
+			selectedIndices = newIndices;
+			renderCanvas();
+			renderCode();
+			renderTree();
+			populateInspector();
+			document.getElementById("statusMsg").textContent = "Pasted " + newIndices.length + " control(s).";
+		}
+
+		function duplicateSelectedControl() {
+			if (selectedIndices.length === 0) return;
+			copySelectedControl();
+			pasteCopiedControl();
+		}
+
+		// Z-Order Depth Control
+		function bringToFront() {
+			if (selectedIndices.length === 0) return;
+			saveHistoryState();
+			selectedIndices.sort((a, b) => a - b);
+			const movingCtrls = selectedIndices.map(idx => formSpec.controls[idx]);
+			selectedIndices.sort((a, b) => b - a).forEach(idx => formSpec.controls.splice(idx, 1));
+			movingCtrls.forEach(ctrl => formSpec.controls.push(ctrl));
+			selectedIndices = movingCtrls.map((_, i) => formSpec.controls.length - movingCtrls.length + i);
+			renderCanvas();
+			renderTree();
+			renderCode();
+			populateInspector();
+			syncSpecToV();
+			document.getElementById("statusMsg").textContent = "Brought " + selectedIndices.length + " control(s) to front.";
+		}
+
+		function sendToBack() {
+			if (selectedIndices.length === 0) return;
+			saveHistoryState();
+			selectedIndices.sort((a, b) => b - a);
+			const movingCtrls = selectedIndices.map(idx => formSpec.controls[idx]);
+			selectedIndices.forEach(idx => formSpec.controls.splice(idx, 1));
+			movingCtrls.reverse().forEach(ctrl => formSpec.controls.unshift(ctrl));
+			selectedIndices = movingCtrls.map((_, i) => i);
+			renderCanvas();
+			renderTree();
+			renderCode();
+			populateInspector();
+			syncSpecToV();
+			document.getElementById("statusMsg").textContent = "Sent " + selectedIndices.length + " control(s) to back.";
+		}
+
+		function moveForward() {
+			if (selectedIndices.length === 0) return;
+			saveHistoryState();
+			selectedIndices.sort((a, b) => b - a);
+			let newIndices = [];
+			selectedIndices.forEach(idx => {
+				if (idx < formSpec.controls.length - 1) {
+					const temp = formSpec.controls[idx];
+					formSpec.controls[idx] = formSpec.controls[idx + 1];
+					formSpec.controls[idx + 1] = temp;
+					newIndices.push(idx + 1);
+				} else {
+					newIndices.push(idx);
+				}
+			});
+			selectedIndices = newIndices;
+			renderCanvas();
+			renderTree();
+			renderCode();
+			populateInspector();
+			syncSpecToV();
+		}
+
+		function moveBackward() {
+			if (selectedIndices.length === 0) return;
+			saveHistoryState();
+			selectedIndices.sort((a, b) => a - b);
+			let newIndices = [];
+			selectedIndices.forEach(idx => {
+				if (idx > 0) {
+					const temp = formSpec.controls[idx];
+					formSpec.controls[idx] = formSpec.controls[idx - 1];
+					formSpec.controls[idx - 1] = temp;
+					newIndices.push(idx - 1);
+				} else {
+					newIndices.push(idx);
+				}
+			});
+			selectedIndices = newIndices;
+			renderCanvas();
+			renderTree();
+			renderCode();
+			populateInspector();
+			syncSpecToV();
+		}
+
+		// Custom Context Menu
+		function onCanvasContextMenu(e) {
+			e.preventDefault();
+			const menu = document.getElementById("contextMenu");
+			menu.style.left = e.clientX + "px";
+			menu.style.top = e.clientY + "px";
+			menu.style.display = "block";
+		}
+
+		function hideContextMenu() {
+			const menu = document.getElementById("contextMenu");
+			if (menu) menu.style.display = "none";
+		}
+
+		// Zoom & Pan Workspace Engine
+		function setupCanvasZoomAndPan() {
+			const viewport = document.getElementById("canvasViewport");
+
+			viewport.addEventListener("wheel", (e) => {
+				if (e.ctrlKey || e.metaKey) {
+					e.preventDefault();
+					const delta = e.deltaY < 0 ? 0.08 : -0.08;
+					zoomCanvas(delta);
+				}
+			}, { passive: false });
+
+			// Spacebar or Middle Click Panning
+			window.addEventListener("keydown", (e) => {
+				if (e.code === "Space" && e.target === document.body) {
+					e.preventDefault();
+					viewport.classList.add("panning");
+				}
+			});
+
+			window.addEventListener("keyup", (e) => {
+				if (e.code === "Space") {
+					viewport.classList.remove("panning");
+				}
+			});
+		}
+
+		function zoomCanvas(delta) {
+			canvasScale = Math.min(2.0, Math.max(0.5, canvasScale + delta));
+			const frame = document.getElementById("windowFrame");
+			frame.style.transform = "scale(" + canvasScale + ")";
+			document.getElementById("statusMsg").textContent = "Canvas Zoom: " + Math.round(canvasScale * 100) + "%";
+			drawRulers();
+		}
+
+		function resetZoom() {
+			canvasScale = 1.0;
+			const frame = document.getElementById("windowFrame");
+			frame.style.transform = "scale(1.0)";
+			drawRulers();
+		}
+
+		function drawRulers() {
+			const rH = document.getElementById("rulerHCanvas");
+			const rV = document.getElementById("rulerVCanvas");
+			if (!rH || !rV) return;
+
+			rH.width = rH.parentElement.clientWidth;
+			rH.height = 20;
+			rV.width = 20;
+			rV.height = rV.parentElement.clientHeight;
+
+			const ctxH = rH.getContext("2d");
+			ctxH.fillStyle = "#090d16";
+			ctxH.fillRect(0, 0, rH.width, 20);
+			ctxH.strokeStyle = "#334155";
+			ctxH.fillStyle = "#94a3b8";
+			ctxH.font = "8px sans-serif";
+
+			for (let x = 0; x < rH.width; x += 20 * canvasScale) {
+				ctxH.beginPath();
+				ctxH.moveTo(x, 12);
+				ctxH.lineTo(x, 20);
+				ctxH.stroke();
+				const val = Math.round(x / canvasScale);
+				if (val % 100 === 0) {
+					ctxH.fillText(val, x + 2, 10);
+				}
+			}
+
+			const ctxV = rV.getContext("2d");
+			ctxV.fillStyle = "#090d16";
+			ctxV.fillRect(0, 0, 20, rV.height);
+			ctxV.strokeStyle = "#334155";
+			ctxV.fillStyle = "#94a3b8";
+			ctxV.font = "8px sans-serif";
+
+			for (let y = 0; y < rV.height; y += 20 * canvasScale) {
+				ctxV.beginPath();
+				ctxV.moveTo(12, y);
+				ctxV.lineTo(20, y);
+				ctxV.stroke();
+				const val = Math.round(y / canvasScale);
+				if (val % 100 === 0) {
+					ctxV.fillText(val, 2, y + 8);
+				}
+			}
+		}
+
+		function selectAllControls() {
+			selectedIndices = formSpec.controls.map((_, i) => i);
+			renderCanvas();
+			renderTree();
+			populateInspector();
+			document.getElementById("statusMsg").textContent = "Selected all " + selectedIndices.length + " controls.";
+		}
+
+		if (document.readyState === "complete" || document.readyState === "interactive") {
+			initDesignerApp();
+		} else {
+			document.addEventListener("DOMContentLoaded", initDesignerApp);
+		}
+
 		function bindLivePropertyEditors() {
-			const propIds = ["propId", "propText", "propX", "propY", "propWidth", "propHeight", "propFontSize", "propFontColor", "propBgColor"];
+			const propIds = ["propId", "propText", "propTooltip", "propX", "propY", "propWidth", "propHeight", "propFontSize", "propFontColor", "propBgColor"];
 			propIds.forEach((id) => {
 				const el = document.getElementById(id);
 				if (!el) return;
@@ -1273,13 +1780,6 @@
 			document.getElementById("snapBtn").textContent = "📐 Snap: " + (snapToGrid ? "ON" : "OFF");
 		}
 
-		function zoomCanvas(delta) {
-			canvasScale = Math.min(1.8, Math.max(0.6, canvasScale + delta));
-			const frame = document.getElementById("windowFrame");
-			frame.style.transform = "scale(" + canvasScale + ")";
-			frame.style.transformOrigin = "top center";
-		}
-
 		function filterPalette(query) {
 			const items = document.querySelectorAll(".palette-item");
 			query = query.toLowerCase();
@@ -1293,7 +1793,6 @@
 			saveHistoryState();
 			const count = formSpec.controls.length + 1;
 			const id = type + "_" + count;
-
 			const row = Math.floor(formSpec.controls.length / 4);
 			const col = formSpec.controls.length % 4;
 			let x = 30 + col * 180;
@@ -1306,10 +1805,29 @@
 
 			let defaultW = 150;
 			let defaultH = 36;
-			if (type === "textarea" || type === "table" || type === "panel") { defaultW = 280; defaultH = 120; }
+			if (type === "textarea" || type === "table" || type === "panel" || type === "form_textarea" || type === "code_view") { defaultW = 280; defaultH = 120; }
+			if (type === "form_field" || type === "form_password" || type === "form_dropdown" || type === "form_date" || type === "form_slider" || type === "form_progress") { defaultW = 220; defaultH = 44; }
+			if (type === "metric_card") { defaultW = 180; defaultH = 75; }
+			if (type === "alert_banner") { defaultW = 320; defaultH = 40; }
+			if (type === "circular_progress") { defaultW = 80; defaultH = 80; }
 			if (type === "divider") { defaultW = 300; defaultH = 4; }
-			if (type === "badge") { defaultW = 120; defaultH = 26; }
-			if (type === "radio") { defaultW = 160; defaultH = 28; }
+			if (type === "badge" || type === "status_indicator" || type === "form_link") { defaultW = 140; defaultH = 26; }
+			if (type === "radio" || type === "form_switch") { defaultW = 180; defaultH = 28; }
+			if (type === "rating" || type === "stepper") { defaultW = 120; defaultH = 32; }
+
+			const themeSelect = document.getElementById("propFormTheme");
+			const activeTheme = themeSelect ? themeSelect.value : "Dark";
+			const themeColors = getThemeColors(activeTheme);
+
+			const transparentTypes = ["label", "checkbox", "switch", "radio", "rating", "status_indicator", "circular_progress", "slider", "mode", "divider", "badge", "form_link", "alert_banner", "path"];
+			let defaultBg = themeColors.ctrlBg;
+			if (transparentTypes.includes(type)) {
+				defaultBg = "transparent";
+			} else if (type === "button") {
+				defaultBg = themeColors.btnBg;
+			} else if (type === "panel") {
+				defaultBg = themeColors.panelBg;
+			}
 
 			const newControl = {
 				id: id,
@@ -1320,8 +1838,8 @@
 				height: defaultH,
 				text: capitalize(type) + " " + count,
 				font_size: 13,
-				font_color: "#ffffff",
-				background_color: type === "button" ? "#0284c7" : (type === "badge" ? "#10b981" : "#1e293b"),
+				font_color: (type === "button" && activeTheme === "High Contrast") ? "#000000" : (type === "label" ? themeColors.formFg : themeColors.ctrlFg),
+				background_color: defaultBg,
 				enabled: true,
 				visible: true,
 				locked: false,
@@ -1366,7 +1884,10 @@
 			if (type === "textarea" || type === "table" || type === "panel") { defaultW = 280; defaultH = 120; }
 			if (type === "divider") { defaultW = 300; defaultH = 4; }
 			if (type === "badge") { defaultW = 120; defaultH = 26; }
-			if (type === "radio") { defaultW = 160; defaultH = 28; }
+
+			const themeSelect = document.getElementById("propFormTheme");
+			const activeTheme = themeSelect ? themeSelect.value : "Dark";
+			const themeColors = getThemeColors(activeTheme);
 
 			const newControl = {
 				id: id,
@@ -1377,8 +1898,8 @@
 				height: defaultH,
 				text: capitalize(type) + " " + count,
 				font_size: 13,
-				font_color: "#ffffff",
-				background_color: type === "button" ? "#0284c7" : (type === "badge" ? "#10b981" : "#1e293b"),
+				font_color: (type === "button" && activeTheme === "High Contrast") ? "#000000" : (type === "label" ? themeColors.formFg : themeColors.ctrlFg),
+				background_color: type === "button" ? themeColors.btnBg : (type === "badge" ? "#10b981" : (type === "panel" ? themeColors.panelBg : themeColors.ctrlBg)),
 				enabled: true,
 				visible: true,
 				locked: false,
@@ -1394,33 +1915,6 @@
 			renderTree();
 			populateInspector();
 			document.getElementById("statusMsg").textContent = "Dropped " + type + " control (" + id + ")";
-		}
-
-		function duplicateSelectedControl() {
-			if (selectedIndices.length === 0) return;
-			saveHistoryState();
-			let newIndices = [];
-			selectedIndices.forEach(idx => {
-				const orig = formSpec.controls[idx];
-				const count = formSpec.controls.length + 1;
-				const newId = orig.control_type + "_" + count;
-
-				const copy = JSON.parse(JSON.stringify(orig));
-				copy.id = newId;
-				copy.x += 16;
-				copy.y += 16;
-				copy.event_handlers = { "onClick": "on_" + newId + "_click" };
-
-				formSpec.controls.push(copy);
-				newIndices.push(formSpec.controls.length - 1);
-			});
-
-			selectedIndices = newIndices;
-			renderCanvas();
-			renderCode();
-			renderTree();
-			populateInspector();
-			document.getElementById("statusMsg").textContent = "Duplicated " + newIndices.length + " control(s).";
 		}
 
 		function toggleLockSelected() {
@@ -1479,7 +1973,7 @@
 			renderCode();
 			renderTree();
 			populateInspector();
-			document.getElementById("statusMsg").textContent = "Auto-arranged " + targets.length + " control(s) into " + cols + " column(s).";
+			document.getElementById("statusMsg").textContent = "Auto-arranged controls into " + cols + " columns.";
 		}
 
 		function alignControls(mode) {
@@ -1546,27 +2040,49 @@
 			populateInspector();
 		}
 
+		function getThemeColors(theme) {
+			if (theme === "Light") {
+				return { formBg: "#f8fafc", formFg: "#0f172a", ctrlBg: "#ffffff", ctrlFg: "#0f172a", btnBg: "#0284c7", panelBg: "#e2e8f0" };
+			} else if (theme === "High Contrast") {
+				return { formBg: "#000000", formFg: "#00ff00", ctrlBg: "#111111", ctrlFg: "#00ff00", btnBg: "#00ff00", panelBg: "#1a1a1a" };
+			} else if (theme === "Cyberpunk") {
+				return { formBg: "#0d0221", formFg: "#00f6ff", ctrlBg: "#190536", ctrlFg: "#00f6ff", btnBg: "#ff007f", panelBg: "#24094a" };
+			} else if (theme === "Midnight") {
+				return { formBg: "#090d16", formFg: "#e2e8f0", ctrlBg: "#111827", ctrlFg: "#f3f4f6", btnBg: "#2563eb", panelBg: "#1f2937" };
+			} else { // Dark / Default
+				return { formBg: "#0f172a", formFg: "#f8fafc", ctrlBg: "#1e293b", ctrlFg: "#ffffff", btnBg: "#0284c7", panelBg: "#1e293b" };
+			}
+		}
+
 		function updateFormTheme() {
 			saveHistoryState();
-			const theme = document.getElementById("propFormTheme").value;
-			if (theme === "Light") {
-				formSpec.background_color = "#f8fafc";
-				formSpec.font_color = "#0f172a";
-			} else if (theme === "High Contrast") {
-				formSpec.background_color = "#000000";
-				formSpec.font_color = "#00ff00";
-			} else if (theme === "Cyberpunk") {
-				formSpec.background_color = "#0d0221";
-				formSpec.font_color = "#00f6ff";
-			} else if (theme === "Midnight") {
-				formSpec.background_color = "#090d16";
-				formSpec.font_color = "#e2e8f0";
-			} else { // Dark
-				formSpec.background_color = "#0f172a";
-				formSpec.font_color = "#f8fafc";
-			}
+			const themeSelect = document.getElementById("propFormTheme");
+			const theme = themeSelect ? themeSelect.value : "Dark";
+			const colors = getThemeColors(theme);
+			formSpec.background_color = colors.formBg;
+			formSpec.font_color = colors.formFg;
+
+			// Harmonize all controls so their background & font colors complement the form background
+			formSpec.controls.forEach(ctrl => {
+				if (ctrl.control_type === "button") {
+					ctrl.background_color = colors.btnBg;
+					ctrl.font_color = (theme === "High Contrast") ? "#000000" : "#ffffff";
+				} else if (ctrl.control_type === "panel") {
+					ctrl.background_color = colors.panelBg;
+					ctrl.font_color = colors.formFg;
+				} else if (ctrl.control_type === "label") {
+					ctrl.font_color = colors.formFg;
+				} else if (ctrl.control_type !== "badge" && ctrl.control_type !== "progress" && ctrl.control_type !== "divider") {
+					ctrl.background_color = colors.ctrlBg;
+					ctrl.font_color = colors.ctrlFg;
+				}
+			});
+
 			renderCanvas();
 			renderCode();
+			populateInspector();
+			syncSpecToV();
+			document.getElementById("statusMsg").textContent = "Applied " + theme + " theme color palette.";
 		}
 
 		function loadTemplate(name) {
@@ -1606,6 +2122,72 @@
 					{ id: "badge_status", control_type: "badge", x: 446, y: 160, width: 140, height: 28, text: "VERIFIED SECURE", background_color: "#059669" },
 					{ id: "btn_save", control_type: "button", x: 24, y: 310, width: 200, height: 42, text: "Save Preferences", background_color: "#0284c7", event_handlers: { "onClick": "on_save_click" } }
 				];
+			} else if (name === "profile") {
+				formSpec.title = "User Profile & Account Settings";
+				formSpec.width = 720;
+				formSpec.height = 560;
+				formSpec.controls = [
+					{ id: "lbl_profile_header", control_type: "label", x: 24, y: 20, width: 400, height: 32, text: "👤 User Profile & Account", font_size: 20, font_color: "#38bdf8" },
+					{ id: "field_name", control_type: "form_field", x: 24, y: 64, width: 300, height: 44, text: "Full Name: Alex Mercer" },
+					{ id: "field_username", control_type: "form_field", x: 344, y: 64, width: 300, height: 44, text: "Username: @alexmercer" },
+					{ id: "field_bio", control_type: "form_textarea", x: 24, y: 120, width: 620, height: 100, text: "Senior Systems Engineer building desktop applications with Vlang and SimpleGUI." },
+					{ id: "switch_notif", control_type: "form_switch", x: 24, y: 230, width: 280, height: 28, text: "System Push Notifications", checked: true },
+					{ id: "dropdown_role", control_type: "form_dropdown", x: 344, y: 230, width: 300, height: 44, text: "Account Role" },
+					{ id: "btn_save_profile", control_type: "button", x: 24, y: 290, width: 180, height: 42, text: "💾 Save Profile", background_color: "#0284c7" },
+					{ id: "btn_cancel_profile", control_type: "button", x: 216, y: 290, width: 140, height: 42, text: "Cancel", background_color: "#334155" }
+				];
+			} else if (name === "crud") {
+				formSpec.title = "Enterprise Product Data Grid & CRUD";
+				formSpec.width = 920;
+				formSpec.height = 620;
+				formSpec.controls = [
+					{ id: "lbl_crud_header", control_type: "label", x: 24, y: 20, width: 420, height: 32, text: "🗄️ Database Record Manager", font_size: 20, font_color: "#10b981" },
+					{ id: "inp_search", control_type: "search", x: 24, y: 64, width: 320, height: 36, text: "Search products..." },
+					{ id: "btn_add_record", control_type: "button", x: 360, y: 64, width: 140, height: 36, text: "➕ Add Record", background_color: "#10b981" },
+					{ id: "btn_refresh_table", control_type: "button", x: 510, y: 64, width: 120, height: 36, text: "🔄 Refresh", background_color: "#0284c7" },
+					{ id: "table_records", control_type: "table", x: 24, y: 116, width: 860, height: 360, text: "Product Database Grid" },
+					{ id: "badge_count", control_type: "badge", x: 24, y: 490, width: 160, height: 28, text: "148 Records Total", background_color: "#38bdf8" },
+					{ id: "status_db", control_type: "status_indicator", x: 200, y: 490, width: 180, height: 28, text: "PostgreSQL Online" }
+				];
+			} else if (name === "ticket") {
+				formSpec.title = "Help Desk & Bug Ticket Reporter";
+				formSpec.width = 760;
+				formSpec.height = 600;
+				formSpec.controls = [
+					{ id: "lbl_ticket_header", control_type: "label", x: 24, y: 20, width: 420, height: 32, text: "🎫 Submit Support & Bug Ticket", font_size: 20, font_color: "#38bdf8" },
+					{ id: "field_ticket_title", control_type: "form_field", x: 24, y: 64, width: 680, height: 44, text: "Issue Title: Canvas element overlap on high-DPI displays" },
+					{ id: "dropdown_severity", control_type: "form_dropdown", x: 24, y: 120, width: 320, height: 44, text: "Severity Level" },
+					{ id: "field_ticket_desc", control_type: "form_textarea", x: 24, y: 176, width: 680, height: 110, text: "Steps to reproduce:\n1. Open UI Designer\n2. Zoom to 150%\n3. Observe snap guidelines alignment." },
+					{ id: "drop_attachment", control_type: "drop_zone", x: 24, y: 296, width: 680, height: 80, text: "Drag & drop log files or screenshots here" },
+					{ id: "rating_priority", control_type: "rating", x: 24, y: 390, width: 140, height: 32, text: "Urgency Rating" },
+					{ id: "btn_send_ticket", control_type: "button", x: 24, y: 435, width: 220, height: 44, text: "🚀 Submit Support Ticket", background_color: "#0284c7" }
+				];
+			} else if (name === "api_tester") {
+				formSpec.title = "REST API Request & Response Tester";
+				formSpec.width = 860;
+				formSpec.height = 600;
+				formSpec.controls = [
+					{ id: "lbl_api_header", control_type: "label", x: 24, y: 20, width: 480, height: 32, text: "⚡ REST API Client & Endpoint Tester", font_size: 20, font_color: "#10b981" },
+					{ id: "dropdown_method", control_type: "form_dropdown", x: 24, y: 64, width: 140, height: 44, text: "HTTP Method" },
+					{ id: "field_url", control_type: "form_field", x: 176, y: 64, width: 480, height: 44, text: "Endpoint: https://api.vlang.org/v1/status" },
+					{ id: "btn_send_api", control_type: "button", x: 668, y: 64, width: 140, height: 44, text: "▶ Send", background_color: "#10b981" },
+					{ id: "status_api", control_type: "status_indicator", x: 24, y: 120, width: 220, height: 28, text: "200 OK (38ms)" },
+					{ id: "code_response", control_type: "code_view", x: 24, y: 160, width: 784, height: 340, text: "JSON Response Payload" }
+				];
+			} else if (name === "media") {
+				formSpec.title = "Hi-Fi Audio & Media Control Panel";
+				formSpec.width = 640;
+				formSpec.height = 520;
+				formSpec.controls = [
+					{ id: "lbl_media_header", control_type: "label", x: 24, y: 20, width: 400, height: 32, text: "🎵 Hi-Fi Audio Player", font_size: 20, font_color: "#38bdf8" },
+					{ id: "lbl_track_name", control_type: "label", x: 24, y: 64, width: 400, height: 28, text: "Track: Vlang Symphony No. 9 in D Minor", font_size: 15 },
+					{ id: "progress_playback", control_type: "progress", x: 24, y: 100, width: 560, height: 32, value: 64, text: "Playback Progress" },
+					{ id: "btn_prev", control_type: "button", x: 24, y: 145, width: 100, height: 42, text: "⏮ Prev", background_color: "#334155" },
+					{ id: "btn_play", control_type: "button", x: 136, y: 145, width: 140, height: 42, text: "⏸ Pause", background_color: "#0284c7" },
+					{ id: "btn_next", control_type: "button", x: 288, y: 145, width: 100, height: 42, text: "⏭ Next", background_color: "#334155" },
+					{ id: "slider_volume", control_type: "slider", x: 24, y: 205, width: 360, height: 28, value: 80, text: "Volume Level" },
+					{ id: "rating_track", control_type: "rating", x: 24, y: 245, width: 140, height: 32, text: "Favorite Rating" }
+				];
 			} else if (name === "checkout") {
 				formSpec.title = "E-Commerce Multi-Column Checkout";
 				formSpec.width = 960;
@@ -1622,7 +2204,6 @@
 					{ id: "btn_place_order", control_type: "button", x: 506, y: 216, width: 408, height: 44, text: "💳 Complete Payment & Order", background_color: "#0284c7", event_handlers: { "onClick": "on_pay_click" } }
 				];
 			} else {
-				// default
 				formSpec.title = "Delphi/VB RAD Enterprise Portal";
 				formSpec.width = 940;
 				formSpec.height = 620;
@@ -1682,11 +2263,10 @@
 			div.style.fontSize = (ctrl.font_size || 12) + "px";
 			const idx = parseInt(div.dataset.ctrlIndex, 10);
 			const isSel = !isNaN(idx) && selectedIndices.includes(idx);
-			if (ctrl.control_type === "panel") {
-				div.style.zIndex = isSel ? "15" : "1";
-			} else {
-				div.style.zIndex = isSel ? "50" : "10";
-			}
+
+			const baseZ = isNaN(idx) ? 10 : (idx + 10);
+			div.style.zIndex = isSel ? (baseZ + 1000) : baseZ;
+
 			if (ctrl.locked) div.classList.add("locked"); else div.classList.remove("locked");
 			if (dimBadge) {
 				dimBadge.textContent = ctrl.id + " (" + ctrl.width + "x" + ctrl.height + ")";
@@ -1761,18 +2341,16 @@
 				div.style.backgroundColor = "transparent";
 				div.style.justifyContent = "flex-start";
 				div.style.gap = "8px";
-				const chkClass = ctrl.checked ? " checked" : "";
 				const chkMark = ctrl.checked ? "✓" : "";
 				const fg = ctrl.font_color || "inherit";
-				div.innerHTML = "<div class='ctrl-checkbox-box" + chkClass + "'>" + chkMark + "</div><span style='color:" + fg + "'>" + text + "</span>";
+				div.innerHTML = "<div class='ctrl-checkbox-box'>" + chkMark + "</div><span style='color:" + fg + "'>" + text + "</span>";
 			} else if (type === "radio") {
 				div.style.backgroundColor = "transparent";
 				div.style.justifyContent = "flex-start";
 				div.style.gap = "8px";
-				const radClass = ctrl.checked ? " checked" : "";
 				const radMark = ctrl.checked ? "●" : "";
 				const fg = ctrl.font_color || "inherit";
-				div.innerHTML = "<div class='ctrl-radio-circle" + radClass + "'>" + radMark + "</div><span style='color:" + fg + "'>" + text + "</span>";
+				div.innerHTML = "<div class='ctrl-radio-circle'>" + radMark + "</div><span style='color:" + fg + "'>" + text + "</span>";
 			} else if (type === "badge") {
 				div.style.backgroundColor = "transparent";
 				div.style.border = "none";
@@ -1831,8 +2409,113 @@
 			} else if (type === "mode") {
 				div.style.backgroundColor = ctrl.background_color || "#1e293b";
 				div.innerHTML = "<div style='display:flex; align-items:center; justify-content:center; width:100%; gap:2px;'><span style='background:var(--accent); color:#000; padding:2px 6px; border-radius:3px; font-weight:bold;'>" + text + "</span></div>";
+
+			// Labeled Form Controls
+			} else if (type === "form_field") {
+				div.style.backgroundColor = "transparent";
+				div.style.border = "none";
+				const fg = ctrl.font_color || "inherit";
+				div.innerHTML = "<div style='display:flex; flex-direction:column; width:100%; gap:2px;'><span style='font-size:10px; font-weight:bold; opacity:0.8; color:" + fg + "'>" + text + "</span><div style='background:" + (ctrl.background_color || "#1e293b") + "; border:1px solid var(--border-color); padding:4px 8px; border-radius:4px; font-size:11px;'>Sample Input</div></div>";
+			} else if (type === "form_textarea") {
+				div.style.backgroundColor = "transparent";
+				div.style.border = "none";
+				const fg = ctrl.font_color || "inherit";
+				div.innerHTML = "<div style='display:flex; flex-direction:column; width:100%; height:100%; gap:2px;'><span style='font-size:10px; font-weight:bold; opacity:0.8; color:" + fg + "'>" + text + "</span><div style='flex:1; background:" + (ctrl.background_color || "#1e293b") + "; border:1px solid var(--border-color); padding:6px; border-radius:4px; font-size:11px;'>Multi-line content...</div></div>";
+			} else if (type === "form_password") {
+				div.style.backgroundColor = "transparent";
+				div.style.border = "none";
+				const fg = ctrl.font_color || "inherit";
+				div.innerHTML = "<div style='display:flex; flex-direction:column; width:100%; gap:2px;'><span style='font-size:10px; font-weight:bold; opacity:0.8; color:" + fg + "'>" + text + "</span><div style='background:" + (ctrl.background_color || "#1e293b") + "; border:1px solid var(--border-color); padding:4px 8px; border-radius:4px; font-size:11px;'>••••••••</div></div>";
+			} else if (type === "form_number") {
+				div.style.backgroundColor = "transparent";
+				div.style.border = "none";
+				const fg = ctrl.font_color || "inherit";
+				const val = ctrl.value !== undefined ? ctrl.value : 0;
+				div.innerHTML = "<div style='display:flex; justify-content:space-between; align-items:center; width:100%; gap:8px;'><span style='font-size:11px; font-weight:bold; color:" + fg + "'>" + text + "</span><div style='background:" + (ctrl.background_color || "#1e293b") + "; border:1px solid var(--border-color); padding:2px 8px; border-radius:4px; font-weight:bold;'>" + val + "</div></div>";
+			} else if (type === "form_slider") {
+				div.style.backgroundColor = "transparent";
+				div.style.border = "none";
+				const fg = ctrl.font_color || "inherit";
+				const val = ctrl.value !== undefined ? ctrl.value : 50;
+				div.innerHTML = "<div style='display:flex; flex-direction:column; width:100%; gap:2px;'><div style='display:flex; justify-content:space-between; font-size:10px; font-weight:bold; color:" + fg + "'><span>" + text + "</span><span>" + val + "%</span></div><div class='ctrl-slider-track'><div class='ctrl-slider-fill' style='width:" + val + "%'></div></div></div>";
+			} else if (type === "form_dropdown") {
+				div.style.backgroundColor = "transparent";
+				div.style.border = "none";
+				const fg = ctrl.font_color || "inherit";
+				div.innerHTML = "<div style='display:flex; flex-direction:column; width:100%; gap:2px;'><span style='font-size:10px; font-weight:bold; opacity:0.8; color:" + fg + "'>" + text + "</span><div style='display:flex; justify-content:space-between; background:" + (ctrl.background_color || "#1e293b") + "; border:1px solid var(--border-color); padding:4px 8px; border-radius:4px; font-size:11px;'><span>Option 1</span><span>▼</span></div></div>";
+			} else if (type === "form_date") {
+				div.style.backgroundColor = "transparent";
+				div.style.border = "none";
+				const fg = ctrl.font_color || "inherit";
+				div.innerHTML = "<div style='display:flex; flex-direction:column; width:100%; gap:2px;'><span style='font-size:10px; font-weight:bold; opacity:0.8; color:" + fg + "'>" + text + "</span><div style='display:flex; align-items:center; gap:6px; background:" + (ctrl.background_color || "#1e293b") + "; border:1px solid var(--border-color); padding:4px 8px; border-radius:4px; font-size:11px;'><span>📅</span><span>2026-07-22</span></div></div>";
+			} else if (type === "form_progress") {
+				div.style.backgroundColor = "transparent";
+				div.style.border = "none";
+				const fg = ctrl.font_color || "inherit";
+				const val = ctrl.value !== undefined ? ctrl.value : 60;
+				div.innerHTML = "<div style='display:flex; flex-direction:column; width:100%; gap:2px;'><div style='display:flex; justify-content:space-between; font-size:10px; font-weight:bold; color:" + fg + "'><span>" + text + "</span><span>" + val + "%</span></div><div class='ctrl-progress-track'><div class='ctrl-progress-fill' style='width:" + val + "%; background:#10b981;'></div></div></div>";
+			} else if (type === "form_switch") {
+				div.style.backgroundColor = "transparent";
+				div.style.border = "none";
+				const fg = ctrl.font_color || "inherit";
+				const onClass = ctrl.checked ? " on" : "";
+				div.innerHTML = "<div style='display:flex; justify-content:space-between; align-items:center; width:100%;'><span style='font-size:11px; font-weight:bold; color:" + fg + "'>" + text + "</span><div class='ctrl-switch-pill" + onClass + "'><div class='ctrl-switch-thumb'></div></div></div>";
+			} else if (type === "form_link") {
+				div.style.backgroundColor = "transparent";
+				div.style.border = "none";
+				const fg = ctrl.font_color || "inherit";
+				div.innerHTML = "<div style='display:flex; justify-content:space-between; align-items:center; width:100%;'><span style='font-size:11px; opacity:0.8; color:" + fg + "'>" + text + "</span><span style='color:var(--accent); text-decoration:underline; font-size:11px; font-weight:bold;'>View Link 🔗</span></div>";
+
+			// Gauges & Demo Widgets
+			} else if (type === "rating") {
+				div.style.backgroundColor = "transparent";
+				div.style.border = "none";
+				div.innerHTML = "<div style='display:flex; gap:4px; font-size:16px; color:#f59e0b;'>★ ★ ★ ★ ☆</div>";
+			} else if (type === "stepper") {
+				div.style.backgroundColor = ctrl.background_color || "#1e293b";
+				const val = ctrl.value !== undefined ? ctrl.value : 5;
+				div.innerHTML = "<div style='display:flex; justify-content:space-between; align-items:center; width:100%; padding:0 4px;'><span style='font-weight:bold;'>-</span><span style='font-weight:bold;'>" + val + "</span><span style='font-weight:bold;'>+</span></div>";
+			} else if (type === "tag") {
+				div.style.backgroundColor = ctrl.background_color || "#1e293b";
+				div.innerHTML = "<div style='display:flex; gap:4px; align-items:center; width:100%; padding:0 4px; font-size:10px;'><span style='background:rgba(56,189,248,0.2); color:#38bdf8; padding:2px 6px; border-radius:10px;'>vlang</span><span style='background:rgba(56,189,248,0.2); color:#38bdf8; padding:2px 6px; border-radius:10px;'>gui</span></div>";
+			} else if (type === "path") {
+				div.style.backgroundColor = ctrl.background_color || "#1e293b";
+				div.innerHTML = "<div style='display:flex; gap:4px; align-items:center; width:100%; padding:0 6px; font-size:10px; opacity:0.8;'><span>📁</span><span>Users</span><span>›</span><span>developer</span><span>›</span><span>project</span></div>";
+			} else if (type === "drop_zone") {
+				div.style.backgroundColor = "rgba(56, 189, 248, 0.05)";
+				div.style.border = "2px dashed var(--accent)";
+				div.innerHTML = "<div style='display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%; height:100%; gap:2px; font-size:10px; opacity:0.9;'><span>📥 " + text + "</span></div>";
+			} else if (type === "circular_progress") {
+				div.style.backgroundColor = "transparent";
+				div.style.border = "none";
+				const val = ctrl.value !== undefined ? ctrl.value : 75;
+				div.innerHTML = "<div style='display:flex; align-items:center; justify-content:center; width:100%; height:100%; background:radial-gradient(circle, #1e293b 60%, var(--accent) 60%); border-radius:50%; font-weight:bold; font-size:11px;'>" + val + "%</div>";
+			} else if (type === "metric_meter") {
+				div.style.backgroundColor = ctrl.background_color || "#1e293b";
+				const val = ctrl.value !== undefined ? ctrl.value : 48;
+				div.innerHTML = "<div style='display:flex; flex-direction:column; width:100%; padding:4px 8px; gap:2px;'><div style='display:flex; justify-content:space-between; font-size:10px;'><span>" + text + "</span><span>" + val + "%</span></div><div style='height:4px; background:rgba(255,255,255,0.1); border-radius:2px;'><div style='height:100%; width:" + val + "%; background:var(--accent); border-radius:2px;'></div></div></div>";
+			} else if (type === "status_indicator") {
+				div.style.backgroundColor = "transparent";
+				div.style.border = "none";
+				div.innerHTML = "<div style='display:flex; align-items:center; gap:6px; font-size:11px;'><span style='width:8px; height:8px; border-radius:50%; background:#10b981;'></span><span>" + text + ": Online</span></div>";
+			} else if (type === "metric_card") {
+				div.style.backgroundColor = ctrl.background_color || "#1e293b";
+				div.style.flexDirection = "column";
+				div.style.alignItems = "flex-start";
+				div.style.padding = "6px 10px";
+				div.innerHTML = "<div style='font-size:10px; opacity:0.7;'>" + text + "</div><div style='font-size:15px; font-weight:bold; color:var(--accent); margin:2px 0;'>$48,250</div><div style='font-size:9px; color:#10b981;'>▲ +12% this month</div>";
+			} else if (type === "alert_banner") {
+				div.style.backgroundColor = "rgba(56, 189, 248, 0.15)";
+				div.style.borderLeft = "4px solid var(--accent)";
+				div.innerHTML = "<div style='display:flex; align-items:center; gap:8px; padding:0 8px; font-size:11px;'><span>ℹ️</span><span><b>" + text + ":</b> System operating normally.</span></div>";
+			} else if (type === "code_view") {
+				div.style.backgroundColor = "#0d1117";
+				div.style.fontFamily = "monospace";
+				div.style.fontSize = "10px";
+				div.style.padding = "6px";
+				div.style.alignItems = "flex-start";
+				div.innerHTML = "<span style='color:#ff79c6;'>fn</span> <span style='color:#50fa7b;'>main</span>() {\n  <span style='color:#f1fa8c;'>println(\"Hello\")</span>\n}";
 			} else {
-				// Button, Label, or default
 				if (ctrl.background_color) div.style.backgroundColor = ctrl.background_color;
 				const fg = ctrl.font_color || "#ffffff";
 				div.innerHTML = "<span class='control-caption' style='color:" + fg + "'>" + text + "</span>";
@@ -1840,7 +2523,7 @@
 		}
 
 		function deselectControl(e) {
-			if (e.target.id === "formCanvas" || e.target.id === "windowFrame") {
+			if (e.target.id === "formCanvas" || e.target.id === "windowFrame" || e.target.id === "canvasViewport") {
 				selectedIndices = [];
 				renderCanvas();
 				renderTree();
@@ -1882,7 +2565,6 @@
 					marquee.style.width = width + "px";
 					marquee.style.height = height + "px";
 
-					// Check intersections
 					let newSelected = [];
 					formSpec.controls.forEach((c, idx) => {
 						if (c.x < left + width && c.x + c.width > left &&
@@ -1928,26 +2610,14 @@
 			document.getElementById("winTitleHeader").textContent = formSpec.title;
 			document.getElementById("canvasStats").textContent = "Form: " + formSpec.width + "x" + formSpec.height + " | Controls: " + formSpec.controls.length + (selectedIndices.length > 0 ? " (Selected: " + selectedIndices.length + ")" : "");
 
-			// Render panel controls first as backdrop containers, then non-panels
-			const sortedIndices = formSpec.controls.map((c, i) => i).sort((a, b) => {
-				const isPanelA = formSpec.controls[a].control_type === "panel";
-				const isPanelB = formSpec.controls[b].control_type === "panel";
-				if (isPanelA && !isPanelB) return -1;
-				if (!isPanelA && isPanelB) return 1;
-				return a - b;
-			});
-
-			sortedIndices.forEach((idx) => {
-				const ctrl = formSpec.controls[idx];
+			formSpec.controls.forEach((ctrl, idx) => {
 				const div = document.createElement("div");
 				div.className = "designer-control" + (selectedIndices.includes(idx) ? " selected" : "");
 				div.setAttribute("draggable", "false");
 				div.dataset.ctrlIndex = String(idx);
 				syncControlDom(ctrl, div, null);
-
 				renderControlContent(ctrl, div);
 
-				// Dimension badge
 				const dimBadge = document.createElement("span");
 				dimBadge.className = "dim-badge";
 				dimBadge.textContent = ctrl.id + " (" + ctrl.width + "x" + ctrl.height + ")";
@@ -1959,16 +2629,15 @@
 					autoGenerateEvents();
 				};
 
-				// Left-click Drag & Repositioning Logic
 				let isDragging = false;
 				let startX, startY, origX, origY;
 				let initialPositions = [];
 
 				div.onmousedown = (e) => {
-					if (e.button !== 0) return; // Only primary left-click
+					if (e.button !== 0) return;
 					if (e.target.classList.contains("resize-handle")) return;
 					if (ctrl.locked) return;
-					
+
 					e.preventDefault();
 					e.stopPropagation();
 
@@ -1992,7 +2661,6 @@
 						let dx = (me.clientX - startX) / canvasScale;
 						let dy = (me.clientY - startY) / canvasScale;
 
-						// Smart snap alignment check for single element drag
 						if (selectedIndices.length === 1) {
 							checkSmartSnapGuides(ctrl, origX + dx, origY + dy);
 						}
@@ -2043,7 +2711,7 @@
 					window.addEventListener("mouseup", onMouseUp);
 				};
 
-				// Full 8-Handle Resize System
+				// Resize Handles
 				if (selectedIndices.includes(idx) && !ctrl.locked) {
 					["nw", "n", "ne", "e", "se", "s", "sw", "w"].forEach(handlePos => {
 						const handle = document.createElement("div");
@@ -2092,7 +2760,6 @@
 								}
 
 								syncControlDom(ctrl, div, dimBadge);
-
 								const propWEl = document.getElementById("propWidth");
 								if (propWEl) propWEl.value = ctrl.width;
 								const propHEl = document.getElementById("propHeight");
@@ -2122,17 +2789,24 @@
 		function checkSmartSnapGuides(ctrl, newX, newY) {
 			const lineH = document.getElementById("snapLineH");
 			const lineV = document.getElementById("snapLineV");
+			const gapBadge = document.getElementById("gapBadge");
 			if (!lineH || !lineV) return;
 			let showH = false, showV = false;
 
 			formSpec.controls.forEach((other) => {
 				if (other.id === ctrl.id) return;
-				// Horizontal snap
-				if (Math.abs(newY - other.y) < 5) { showH = true; lineH.style.top = other.y + "px"; }
-				if (Math.abs((newY + ctrl.height) - (other.y + other.height)) < 5) { showH = true; lineH.style.top = (other.y + other.height) + "px"; }
-				// Vertical snap
-				if (Math.abs(newX - other.x) < 5) { showV = true; lineV.style.left = other.x + "px"; }
-				if (Math.abs((newX + ctrl.width) - (other.x + other.width)) < 5) { showV = true; lineV.style.left = (other.x + other.width) + "px"; }
+				if (Math.abs(newY - other.y) < 6) { showH = true; lineH.style.top = other.y + "px"; }
+				if (Math.abs((newY + ctrl.height) - (other.y + other.height)) < 6) { showH = true; lineH.style.top = (other.y + other.height) + "px"; }
+				if (Math.abs(newX - other.x) < 6) { showV = true; lineV.style.left = other.x + "px"; }
+				if (Math.abs((newX + ctrl.width) - (other.x + other.width)) < 6) { showV = true; lineV.style.left = (other.x + other.width) + "px"; }
+
+				const gapX = Math.abs(newX - (other.x + other.width));
+				if (gapX < 30 && Math.abs(newY - other.y) < 20) {
+					gapBadge.style.left = (other.x + other.width + gapX / 2) + "px";
+					gapBadge.style.top = (newY + 4) + "px";
+					gapBadge.textContent = Math.round(gapX) + "px";
+					gapBadge.style.display = "block";
+				}
 			});
 
 			lineH.style.display = showH ? "block" : "none";
@@ -2142,8 +2816,10 @@
 		function hideSmartSnapGuides() {
 			const lineH = document.getElementById("snapLineH");
 			const lineV = document.getElementById("snapLineV");
+			const gapBadge = document.getElementById("gapBadge");
 			if (lineH) lineH.style.display = "none";
 			if (lineV) lineV.style.display = "none";
+			if (gapBadge) gapBadge.style.display = "none";
 		}
 
 		function renderTree() {
@@ -2216,6 +2892,7 @@
 
 			const propIdEl = document.getElementById("propId");
 			const propTextEl = document.getElementById("propText");
+			const propTooltipEl = document.getElementById("propTooltip");
 			const propXEl = document.getElementById("propX");
 			const propYEl = document.getElementById("propY");
 			const propWEl = document.getElementById("propWidth");
@@ -2228,6 +2905,7 @@
 				const c = formSpec.controls[selectedIndices[0]];
 				if (propIdEl) { propIdEl.value = c.id; propIdEl.disabled = false; propIdEl.placeholder = ""; }
 				if (propTextEl) { propTextEl.value = c.text || ""; propTextEl.placeholder = ""; }
+				if (propTooltipEl) { propTooltipEl.value = c.tooltip || ""; propTooltipEl.placeholder = ""; }
 				if (propXEl) { propXEl.value = c.x; propXEl.placeholder = ""; }
 				if (propYEl) { propYEl.value = c.y; propYEl.placeholder = ""; }
 				if (propWEl) { propWEl.value = c.width; propWEl.placeholder = ""; }
@@ -2245,14 +2923,16 @@
 				if (evtDblClickEl) evtDblClickEl.value = c.event_handlers["onDoubleClick"] || "";
 			} else {
 				const selectedCtrls = selectedIndices.map(i => formSpec.controls[i]);
-
 				if (propIdEl) { propIdEl.value = ""; propIdEl.placeholder = "(Multiple)"; propIdEl.disabled = true; }
-
 				const allSame = (key) => selectedCtrls.every(c => c[key] === selectedCtrls[0][key]);
 
 				if (propTextEl) {
 					propTextEl.value = allSame("text") ? selectedCtrls[0].text : "";
 					propTextEl.placeholder = allSame("text") ? "" : "(Multiple values)";
+				}
+				if (propTooltipEl) {
+					propTooltipEl.value = allSame("tooltip") ? (selectedCtrls[0].tooltip || "") : "";
+					propTooltipEl.placeholder = allSame("tooltip") ? "" : "(Multiple values)";
 				}
 				if (propXEl) {
 					propXEl.value = allSame("x") ? selectedCtrls[0].x : "";
@@ -2274,31 +2954,8 @@
 					propFSEl.value = allSame("font_size") ? (selectedCtrls[0].font_size || 13) : "";
 					propFSEl.placeholder = allSame("font_size") ? "" : "(Multiple)";
 				}
-				if (fontEl) {
-					fontEl.value = allSame("font_color") ? (selectedCtrls[0].font_color || "#ffffff") : "#ffffff";
-				}
-				if (bgEl) {
-					bgEl.value = allSame("background_color") ? (selectedCtrls[0].background_color || "#1e293b") : "#1e293b";
-				}
-
-				const evtClickEl = document.getElementById("evtOnClick");
-				if (evtClickEl) {
-					const sameEvt = selectedCtrls.every(c => (c.event_handlers && c.event_handlers["onClick"]) === (selectedCtrls[0].event_handlers && selectedCtrls[0].event_handlers["onClick"]));
-					evtClickEl.value = sameEvt && selectedCtrls[0].event_handlers ? (selectedCtrls[0].event_handlers["onClick"] || "") : "";
-					evtClickEl.placeholder = sameEvt ? "e.g. on_btn_click" : "(Multiple)";
-				}
-				const evtChangeEl = document.getElementById("evtOnChange");
-				if (evtChangeEl) {
-					const sameEvt = selectedCtrls.every(c => (c.event_handlers && c.event_handlers["onChange"]) === (selectedCtrls[0].event_handlers && selectedCtrls[0].event_handlers["onChange"]));
-					evtChangeEl.value = sameEvt && selectedCtrls[0].event_handlers ? (selectedCtrls[0].event_handlers["onChange"] || "") : "";
-					evtChangeEl.placeholder = sameEvt ? "e.g. on_input_change" : "(Multiple)";
-				}
-				const evtDblClickEl = document.getElementById("evtOnDblClick");
-				if (evtDblClickEl) {
-					const sameEvt = selectedCtrls.every(c => (c.event_handlers && c.event_handlers["onDoubleClick"]) === (selectedCtrls[0].event_handlers && selectedCtrls[0].event_handlers["onDoubleClick"]));
-					evtDblClickEl.value = sameEvt && selectedCtrls[0].event_handlers ? (selectedCtrls[0].event_handlers["onDoubleClick"] || "") : "";
-					evtDblClickEl.placeholder = sameEvt ? "e.g. on_dblclick" : "(Multiple)";
-				}
+				if (fontEl) fontEl.value = allSame("font_color") ? (selectedCtrls[0].font_color || "#ffffff") : "#ffffff";
+				if (bgEl) bgEl.value = allSame("background_color") ? (selectedCtrls[0].background_color || "#1e293b") : "#1e293b";
 			}
 		}
 
@@ -2308,6 +2965,7 @@
 
 			const propIdEl = document.getElementById("propId");
 			const propTextEl = document.getElementById("propText");
+			const propTooltipEl = document.getElementById("propTooltip");
 			const propXEl = document.getElementById("propX");
 			const propYEl = document.getElementById("propY");
 			const propWEl = document.getElementById("propWidth");
@@ -2325,59 +2983,35 @@
 
 			selectedIndices.forEach((idx) => {
 				const ctrl = formSpec.controls[idx];
-
 				if ((!changedProp || changedProp === 'id') && selectedIndices.length === 1) {
-					if (propIdEl && propIdEl.value && propIdEl.value.trim() !== "") {
-						ctrl.id = propIdEl.value.trim();
-					}
+					if (propIdEl && propIdEl.value && propIdEl.value.trim() !== "") ctrl.id = propIdEl.value.trim();
 				}
-
 				if (!changedProp || changedProp === 'text') {
-					if (propTextEl && propTextEl.value !== "") {
-						ctrl.text = propTextEl.value;
-					}
+					if (propTextEl && propTextEl.value !== "") ctrl.text = propTextEl.value;
 				}
-
+				if (!changedProp || changedProp === 'tooltip') {
+					if (propTooltipEl) ctrl.tooltip = propTooltipEl.value;
+				}
 				if (!changedProp || changedProp === 'x') {
-					if (propXEl && propXEl.value !== "") {
-						ctrl.x = parseNum(propXEl.value, ctrl.x, 0);
-					}
+					if (propXEl && propXEl.value !== "") ctrl.x = parseNum(propXEl.value, ctrl.x, 0);
 				}
-
 				if (!changedProp || changedProp === 'y') {
-					if (propYEl && propYEl.value !== "") {
-						ctrl.y = parseNum(propYEl.value, ctrl.y, 0);
-					}
+					if (propYEl && propYEl.value !== "") ctrl.y = parseNum(propYEl.value, ctrl.y, 0);
 				}
-
 				if (!changedProp || changedProp === 'width') {
-					if (propWEl && propWEl.value !== "") {
-						ctrl.width = parseNum(propWEl.value, ctrl.width, 10);
-					}
+					if (propWEl && propWEl.value !== "") ctrl.width = parseNum(propWEl.value, ctrl.width, 10);
 				}
-
 				if (!changedProp || changedProp === 'height') {
-					if (propHEl && propHEl.value !== "") {
-						ctrl.height = parseNum(propHEl.value, ctrl.height, 4);
-					}
+					if (propHEl && propHEl.value !== "") ctrl.height = parseNum(propHEl.value, ctrl.height, 4);
 				}
-
 				if (!changedProp || changedProp === 'font_size') {
-					if (propFSEl && propFSEl.value !== "") {
-						ctrl.font_size = parseNum(propFSEl.value, ctrl.font_size || 13, 1);
-					}
+					if (propFSEl && propFSEl.value !== "") ctrl.font_size = parseNum(propFSEl.value, ctrl.font_size || 13, 1);
 				}
-
 				if (!changedProp || changedProp === 'font_color') {
-					if (fontEl) {
-						ctrl.font_color = fontEl.value;
-					}
+					if (fontEl) ctrl.font_color = fontEl.value;
 				}
-
 				if (!changedProp || changedProp === 'background_color') {
-					if (bgEl) {
-						ctrl.background_color = bgEl.value;
-					}
+					if (bgEl) ctrl.background_color = bgEl.value;
 				}
 			});
 
@@ -2385,11 +3019,21 @@
 			renderCode();
 			renderTree();
 			syncSpecToV();
+		}
 
-			if (selectedIndices.length > 1) {
-				const labelName = changedProp ? changedProp.replace('_', ' ') : 'properties';
-				document.getElementById("statusMsg").textContent = "Updated " + labelName + " across " + selectedIndices.length + " selected controls.";
-			}
+		function setBgColor(color) {
+			if (selectedIndices.length === 0) return;
+			saveHistoryState();
+			selectedIndices.forEach(idx => {
+				formSpec.controls[idx].background_color = color;
+			});
+			const bgEl = document.getElementById("propBgColor");
+			if (bgEl && color !== "transparent") bgEl.value = color;
+			renderCanvas();
+			renderCode();
+			renderTree();
+			populateInspector();
+			syncSpecToV();
 		}
 
 		function updateEventPlaceholder(evtName, val) {
@@ -2416,7 +3060,7 @@
 			populateInspector();
 			renderCode();
 			syncSpecToV();
-			document.getElementById("statusMsg").textContent = "Auto-generated event placeholders for " + selectedIndices.length + " control(s).";
+			document.getElementById("statusMsg").textContent = "Auto-generated event placeholders.";
 		}
 
 		function deleteSelectedControl() {
@@ -2444,7 +3088,6 @@
 		function switchTab(tabId, evt) {
 			document.querySelectorAll(".tab-item").forEach(t => t.classList.remove("active"));
 			document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
-
 			if (evt && evt.target) evt.target.classList.add("active");
 			const targetContent = document.getElementById(tabId);
 			if (targetContent) targetContent.classList.add("active");
@@ -2469,13 +3112,12 @@
 			if (jsonEl) jsonEl.value = jsonStr;
 
 			let vcode = "module main\n\nimport simplegui\n\nfn main() {\n";
-			vcode += "  mut win := simplegui.new_simple_window('" + formSpec.title + "', " + formSpec.width + ", " + formSpec.height + ")\n";
+			vcode += "  mut win := simplegui.new_simple_window('" + formSpec.title.replace(/'/g, "\\'") + "', " + formSpec.width + ", " + formSpec.height + ")\n";
 			vcode += "  win.set_background_color('" + formSpec.background_color + "')\n";
 			vcode += "    .set_font_color('" + formSpec.font_color + "')\n";
-			vcode += "    .set_padding(" + formSpec.padding + ")\n";
-			vcode += "    .set_spacing(" + formSpec.spacing + ")\n\n";
+			vcode += "    .set_padding(" + (formSpec.padding || 20) + ")\n";
+			vcode += "    .set_spacing(" + (formSpec.spacing || 12) + ")\n\n";
 
-			// Group controls into row clusters based on Y position (within 25px)
 			let sorted = [...formSpec.controls].filter(c => c.visible !== false);
 			sorted.sort((a, b) => {
 				if (Math.abs(a.y - b.y) > 25) return a.y - b.y;
@@ -2502,19 +3144,16 @@
 
 			rows.forEach((row, rIdx) => {
 				let isMulti = row.length > 1;
-				if (isMulti) {
-					vcode += "  win.begin_row('row_" + (rIdx + 1) + "')\n";
-				}
+				if (isMulti) vcode += "  win.begin_row('row_" + (rIdx + 1) + "')\n";
 				row.forEach(c => {
-					vcode += "  win.add_" + c.control_type + "('" + c.id + "', '" + c.text + "')\n";
+					const cleanText = c.text ? c.text.replace(/'/g, "\\'") : c.id;
+					vcode += "  win.add_" + (c.control_type || "button") + "('" + c.id + "', '" + cleanText + "')\n";
 					if (c.width) vcode += "  win.set_control_width('" + c.id + "', " + c.width + ")\n";
 					if (c.height) vcode += "  win.set_control_height('" + c.id + "', " + c.height + ")\n";
 					if (c.font_color && c.font_color !== "#ffffff") vcode += "  win.set_control_font_color('" + c.id + "', '" + c.font_color + "')\n";
 					if (c.background_color) vcode += "  win.set_control_background_color('" + c.id + "', '" + c.background_color + "')\n";
 				});
-				if (isMulti) {
-					vcode += "  win.end_row()\n";
-				}
+				if (isMulti) vcode += "  win.end_row()\n";
 			});
 
 			vcode += "\n  // RAD Event Bindings\n";
@@ -2535,8 +3174,8 @@
 			vcode += "// RAD Event Callback Placeholders\n";
 			handlers.forEach(h => {
 				vcode += "fn " + h.name + "(mut win simplegui.SimpleWindow) {\n";
-				vcode += "  win.set_status('Event: " + h.name + " on " + h.id + "')\n";
-				vcode += "  // TODO: Implement business logic\n}\n\n";
+				vcode += "  win.set_status('Event triggered: " + h.name + " on " + h.id + "')\n";
+				vcode += "  // TODO: Implement custom RAD logic\n}\n\n";
 			});
 
 			const codeEl = document.getElementById("codePreviewText");
@@ -2583,9 +3222,17 @@
 			const modal = document.getElementById("importModal");
 			if (modal) modal.style.display = "flex";
 		}
-
 		function hideImportModal() {
 			const modal = document.getElementById("importModal");
+			if (modal) modal.style.display = "none";
+		}
+
+		function showHotkeysModal() {
+			const modal = document.getElementById("hotkeysModal");
+			if (modal) modal.style.display = "flex";
+		}
+		function hideHotkeysModal() {
+			const modal = document.getElementById("hotkeysModal");
 			if (modal) modal.style.display = "none";
 		}
 
