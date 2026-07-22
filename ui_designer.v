@@ -109,9 +109,9 @@ fn main() {
 	if capture_path != '' {
 		win.after(2500, fn [capture_path] (mut w simplegui.SimpleWindow) {
 			w.capture_screenshot(capture_path)
-			w.set_status('Captured screenshot to: ${capture_path}')
 			w.after(400, fn (mut w2 simplegui.SimpleWindow) {
 				w2.close()
+				exit(0)
 			})
 		})
 	}
@@ -171,7 +171,7 @@ fn render_preview_control(mut prev_win simplegui.SimpleWindow, c simplegui.Contr
 			prev_win.add_heading('📦 ${c.text}')
 		}
 		'radio' {
-			prev_win.add_checkbox(c.id, '🔘 ${c.text}', c.checked)
+			prev_win.add_radio(c.id, c.text, c.checked)
 		}
 		'divider' {
 			prev_win.add_vertical_spacer(6)
@@ -424,6 +424,22 @@ fn launch_preview_window(spec simplegui.FormSpec) {
 				w.toast('Clicked: ${btn_text}')
 				w.set_status('Executed default click handler for: ${btn_text}')
 			})
+		} else if c.control_type == 'radio' {
+			radio_id := c.id
+			radio_text := c.text
+			mut all_radios := []string{}
+			for r in spec.controls {
+				if r.control_type == 'radio' {
+					all_radios << r.id
+				}
+			}
+			prev_win.on_click(radio_id, fn [radio_id, radio_text, all_radios] (mut w simplegui.SimpleWindow) {
+				for r_id in all_radios {
+					w.set_checked(r_id, r_id == radio_id)
+				}
+				w.toast('Selected radio: ${radio_text}')
+				w.set_status('Radio option selected: ${radio_text}')
+			})
 		}
 		if h := c.event_handlers['onChange'] {
 			if h.trim_space().len > 0 {
@@ -459,5 +475,18 @@ fn launch_preview_window(spec simplegui.FormSpec) {
 	}
 
 	prev_win.set_status('Live form preview active for: ${spec.title}')
+
+	capture_path := os.getenv('SIMPLEGUI_CAPTURE')
+	if capture_path != '' {
+		prev_win.after(2000, fn [capture_path] (mut w simplegui.SimpleWindow) {
+			w.capture_screenshot(capture_path)
+			w.set_status('Captured live preview screenshot to: ${capture_path}')
+			w.after(400, fn (mut w2 simplegui.SimpleWindow) {
+				w2.close()
+				exit(0)
+			})
+		})
+	}
+
 	prev_win.run()
 }

@@ -908,6 +908,7 @@ extern BOOL vlang_dispatch_event(void *win_ptr, const char *name, const char *ev
 - (NSView *)makeButtonWithName:(NSString *)name title:(NSString *)title;
 - (NSView *)makeLinkWithName:(NSString *)name text:(NSString *)text url:(NSString *)urlStr;
 - (NSView *)makeCheckboxWithName:(NSString *)name label:(NSString *)label checked:(BOOL)checked;
+- (NSView *)makeRadioButtonWithName:(NSString *)name label:(NSString *)label checked:(BOOL)checked;
 - (NSView *)makeDisclosureButtonWithName:(NSString *)name title:(NSString *)title state:(BOOL)open;
 - (NSView *)makeNumberFieldWithName:(NSString *)name value:(int)value;
 - (NSView *)makeSliderWithName:(NSString *)name value:(int)value;
@@ -3068,6 +3069,19 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   return checkbox;
 }
 
+- (NSView *)makeRadioButtonWithName:(NSString *)name label:(NSString *)label checked:(BOOL)checked {
+  NSButton *radio = [NSButton radioButtonWithTitle:label target:self action:@selector(handleRadioButtonClicked:)];
+  [radio setIdentifier:name];
+  [radio setState:checked ? NSOnState : NSOffState];
+  [radio setWantsLayer:YES];
+  
+  applyStyleToView(radio, nil, self.currentFontColor ?: modernTextColor());
+  
+  self.controlsByName[[name lowercaseString]] = radio;
+  [self addControlToLayout:radio];
+  return radio;
+}
+
 - (NSView *)makeDisclosureButtonWithName:(NSString *)name title:(NSString *)title state:(BOOL)open {
   NSButton *disclosure = [[NSButton alloc] initWithFrame:NSZeroRect];
   [disclosure setButtonType:NSButtonTypeOnOff];
@@ -4534,6 +4548,32 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   BOOL checked = [(NSButton *)sender state] == NSOnState;
   if (name && self.win_ptr) {
     vlang_dispatch_event(self.win_ptr, [name UTF8String], "change", checked ? "true" : "false");
+  }
+}
+
+- (void)handleRadioButtonClicked:(id)sender {
+  NSButton *clickedRadio = (NSButton *)sender;
+  NSString *name = [self nameForControl:clickedRadio];
+  
+  NSView *parent = [clickedRadio superview];
+  if (parent) {
+    for (NSView *subview in [parent subviews]) {
+      if ([subview isKindOfClass:[NSButton class]]) {
+        NSButton *btn = (NSButton *)subview;
+        if (btn != clickedRadio) {
+          NSString *btnName = [self nameForControl:btn];
+          if (btnName && ([btnName containsString:@"radio"] || [btnName containsString:@"rad"])) {
+            [btn setState:NSOffState];
+          }
+        }
+      }
+    }
+  }
+  [clickedRadio setState:NSOnState];
+  
+  if (name && self.win_ptr) {
+    vlang_dispatch_event(self.win_ptr, [name UTF8String], "click", "true");
+    vlang_dispatch_event(self.win_ptr, [name UTF8String], "change", "true");
   }
 }
 
@@ -11312,6 +11352,11 @@ void *window_add_drop_zone_control(main__WindowInfo *info, const char *name, con
 void *window_add_checkbox_control(main__WindowInfo *info, const char *name, const char *text, int checked) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
   return [delegate makeCheckboxWithName:nsstring(name) label:nsstring(text) checked:checked == 1];
+}
+
+void *window_add_radio_control(main__WindowInfo *info, const char *name, const char *text, int checked) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  return [delegate makeRadioButtonWithName:nsstring(name) label:nsstring(text) checked:checked == 1];
 }
 
 void *window_add_button_control(main__WindowInfo *info, const char *name, const char *text) {

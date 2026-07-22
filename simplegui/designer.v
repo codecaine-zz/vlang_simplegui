@@ -115,7 +115,7 @@ fn write_single_control_v_code(mut sb strings.Builder, c ControlSpec) {
 		}
 		'radio' {
 			chk := if c.checked { 'true' } else { 'false' }
-			sb.write_string('\twin.add_checkbox(\'${c.id}\', \'${clean_text}\', ${chk})\n')
+			sb.write_string('\twin.add_radio(\'${c.id}\', \'${clean_text}\', ${chk})\n')
 		}
 		'divider' {
 			sb.write_string('\twin.add_vertical_spacer(6)\n')
@@ -496,6 +496,13 @@ pub fn generate_html_code(spec FormSpec) string {
 				sb.write_string('\t\t<label for="${c.id}">${clean_text}</label>\n')
 				sb.write_string('\t</div>\n')
 			}
+			'radio' {
+				chk := if c.checked { 'checked' } else { '' }
+				sb.write_string('\t<div class="control-item" style="${pos_style} gap:8px;">\n')
+				sb.write_string('\t\t<input type="radio" name="form_radios" id="${c.id}" ${chk}>\n')
+				sb.write_string('\t\t<label for="${c.id}">${clean_text}</label>\n')
+				sb.write_string('\t</div>\n')
+			}
 			'switch' {
 				chk := if c.checked { 'checked' } else { '' }
 				sb.write_string('\t<div class="control-item" style="${pos_style} gap:8px;">\n')
@@ -645,6 +652,36 @@ pub fn get_default_form_spec() FormSpec {
 				height:         26
 				text:           'Subscribe to Developer Updates'
 				checked:        true
+			},
+			ControlSpec{
+				id:           'radio_plan_std'
+				control_type: 'radio'
+				x:            486
+				y:            230
+				width:        180
+				height:       26
+				text:         'Standard Account'
+				checked:      false
+			},
+			ControlSpec{
+				id:           'radio_plan_pro'
+				control_type: 'radio'
+				x:            486
+				y:            260
+				width:        180
+				height:       26
+				text:         'Pro Developer Tier'
+				checked:      true
+			},
+			ControlSpec{
+				id:           'radio_plan_ent'
+				control_type: 'radio'
+				x:            486
+				y:            290
+				width:        180
+				height:       26
+				text:         'Enterprise Studio'
+				checked:      false
 			},
 			ControlSpec{
 				id:               'btn_submit'

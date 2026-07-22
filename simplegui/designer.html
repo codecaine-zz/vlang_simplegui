@@ -470,7 +470,10 @@
 			width: 18px; height: 18px; border: 1.5px solid var(--accent); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; color: var(--accent); background: rgba(56, 189, 248, 0.1); flex-shrink: 0;
 		}
 		.ctrl-radio-circle {
-			width: 18px; height: 18px; border: 1.5px solid var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--accent); background: rgba(56, 189, 248, 0.1); flex-shrink: 0;
+			width: 18px; height: 18px; border: 1.5px solid var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(56, 189, 248, 0.1); flex-shrink: 0;
+		}
+		.ctrl-radio-dot {
+			width: 8px; height: 8px; border-radius: 50%; background: var(--accent);
 		}
 		.ctrl-badge {
 			padding: 4px 12px; border-radius: 9999px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
@@ -1222,6 +1225,13 @@
 					<div class="prop-row">
 						<span class="prop-label">Caption / Text</span>
 						<input type="text" class="prop-input" id="propText" oninput="updateSelectedControl('text')">
+					</div>
+					<div class="prop-row" id="propCheckedRow">
+						<span class="prop-label">Checked / Selected</span>
+						<select class="prop-input" id="propChecked" onchange="updateSelectedControl('checked')" title="Toggle checked/selected state for radio buttons, checkboxes, and switches">
+							<option value="false">Unchecked (false)</option>
+							<option value="true">Checked (true)</option>
+						</select>
 					</div>
 					<div class="prop-row">
 						<span class="prop-label">Hover Tooltip / Hint</span>
@@ -2189,7 +2199,7 @@
 			const activeTheme = themeSelect ? themeSelect.value : "Dark";
 			const themeColors = getThemeColors(activeTheme);
 
-			const transparentTypes = ["label", "checkbox", "switch", "radio", "rating", "status_indicator", "circular_progress", "slider", "mode", "divider", "badge", "form_link", "alert_banner", "path"];
+			const transparentTypes = ["label", "checkbox", "switch", "radio", "rating", "status_indicator", "circular_progress", "slider", "mode", "divider", "badge", "form_link", "alert_banner", "path", "form_field", "form_textarea", "form_password", "form_number", "form_slider", "form_dropdown", "form_date", "form_progress", "form_switch", "stepper", "tag", "metric_meter", "progress", "number", "date", "search"];
 			let defaultBg = themeColors.ctrlBg;
 			if (transparentTypes.includes(type)) {
 				defaultBg = "transparent";
@@ -2605,6 +2615,10 @@
 					{ id: "input_fullname", control_type: "input", x: 40, y: 104, width: 388, height: 36, text: "Ada Lovelace" },
 					{ id: "slider_priority", control_type: "slider", x: 486, y: 104, width: 408, height: 28, value: 75 },
 					{ id: "input_email", control_type: "input", x: 40, y: 152, width: 388, height: 36, text: "ada@lovelace.org" },
+					{ id: "sw_two_factor", control_type: "switch", x: 486, y: 148, width: 300, height: 28, text: "Enable 2FA Authentication", checked: true },
+					{ id: "radio_plan_std", control_type: "radio", x: 486, y: 190, width: 180, height: 26, text: "Standard Account", checked: false },
+					{ id: "radio_plan_pro", control_type: "radio", x: 486, y: 220, width: 180, height: 26, text: "Pro Developer Tier", checked: true },
+					{ id: "radio_plan_ent", control_type: "radio", x: 486, y: 250, width: 180, height: 26, text: "Enterprise Studio", checked: false },
 					{ id: "btn_submit", control_type: "button", x: 24, y: 520, width: 180, height: 42, text: "💾 Save Account", background_color: "#0284c7", event_handlers: { "onClick": "on_save_click" } }
 				];
 			}
@@ -2746,9 +2760,9 @@
 				div.style.backgroundColor = "transparent";
 				div.style.justifyContent = "flex-start";
 				div.style.gap = "8px";
-				const radMark = ctrl.checked ? "●" : "";
+				const dotStyle = ctrl.checked ? "display:block;" : "display:none;";
 				const fg = ctrl.font_color || "inherit";
-				div.innerHTML = "<div class='ctrl-radio-circle'>" + radMark + "</div><span style='color:" + fg + "'>" + text + "</span>";
+				div.innerHTML = "<div class='ctrl-radio-circle'><div class='ctrl-radio-dot' style='" + dotStyle + "'></div></div><span style='color:" + fg + "'>" + text + "</span>";
 			} else if (type === "badge") {
 				div.style.backgroundColor = "transparent";
 				div.style.border = "none";
@@ -3049,6 +3063,28 @@
 
 				div.ondblclick = (e) => {
 					selectControl(idx, e);
+					if (ctrl.control_type === "radio") {
+						formSpec.controls.forEach(c => {
+							if (c.control_type === "radio") c.checked = false;
+						});
+						ctrl.checked = true;
+						renderCanvas();
+						renderCode();
+						populateInspector();
+						syncSpecToV();
+						const statusMsg = document.getElementById("statusMsg");
+						if (statusMsg) statusMsg.textContent = "Radio option selected: " + ctrl.text;
+						return;
+					} else if (ctrl.control_type === "checkbox" || ctrl.control_type === "switch" || ctrl.control_type === "form_switch") {
+						ctrl.checked = !ctrl.checked;
+						renderCanvas();
+						renderCode();
+						populateInspector();
+						syncSpecToV();
+						const statusMsg = document.getElementById("statusMsg");
+						if (statusMsg) statusMsg.textContent = "Toggled " + ctrl.id + ": " + ctrl.checked;
+						return;
+					}
 					switchTab("tabEvents");
 					autoGenerateEvents();
 				};
@@ -3074,9 +3110,25 @@
 					if (isLiveHoverMode) {
 						e.preventDefault();
 						e.stopPropagation();
+						if (ctrl.control_type === "radio") {
+							formSpec.controls.forEach(c => {
+								if (c.control_type === "radio") c.checked = false;
+							});
+							ctrl.checked = true;
+							renderCanvas();
+							renderCode();
+							populateInspector();
+							syncSpecToV();
+						} else if (ctrl.control_type === "checkbox" || ctrl.control_type === "switch" || ctrl.control_type === "form_switch") {
+							ctrl.checked = !ctrl.checked;
+							renderCanvas();
+							renderCode();
+							populateInspector();
+							syncSpecToV();
+						}
 						const statusMsg = document.getElementById("statusMsg");
 						const clickEvt = ctrl.event_handlers ? ctrl.event_handlers["onClick"] : null;
-						if (statusMsg) statusMsg.textContent = "⚡ Live Click Executed on " + ctrl.id + (clickEvt ? " -> " + clickEvt + "()" : "");
+						if (statusMsg) statusMsg.textContent = "⚡ Live Click Executed on " + ctrl.id + " (checked: " + ctrl.checked + ")" + (clickEvt ? " -> " + clickEvt + "()" : "");
 						return;
 					}
 					if (ctrl.locked) return;
@@ -3441,6 +3493,8 @@
 				const c = formSpec.controls[selectedIndices[0]];
 				if (propIdEl) { propIdEl.value = c.id; propIdEl.disabled = false; propIdEl.placeholder = ""; }
 				if (propTextEl) { propTextEl.value = c.text || ""; propTextEl.placeholder = ""; }
+				const propCheckedEl = document.getElementById("propChecked");
+				if (propCheckedEl) { propCheckedEl.value = c.checked ? "true" : "false"; }
 				if (propTooltipEl) { propTooltipEl.value = c.tooltip || ""; propTooltipEl.placeholder = ""; }
 				if (propXEl) { propXEl.value = c.x; propXEl.placeholder = ""; }
 				if (propYEl) { propYEl.value = c.y; propYEl.placeholder = ""; }
@@ -3537,6 +3591,18 @@
 				}
 				if (!changedProp || changedProp === 'text') {
 					if (propTextEl && propTextEl.value !== "") ctrl.text = propTextEl.value;
+				}
+				if (!changedProp || changedProp === 'checked') {
+					const propCheckedEl = document.getElementById("propChecked");
+					if (propCheckedEl) {
+						const isChk = propCheckedEl.value === "true";
+						if (ctrl.control_type === "radio" && isChk) {
+							formSpec.controls.forEach(c => {
+								if (c.control_type === "radio") c.checked = false;
+							});
+						}
+						ctrl.checked = isChk;
+					}
 				}
 				if (!changedProp || changedProp === 'tooltip') {
 					if (propTooltipEl) ctrl.tooltip = propTooltipEl.value;
@@ -3825,6 +3891,12 @@
 					const chk = c.checked ? "checked" : "";
 					html += "  <div class=\"control-item\" style=\"" + posStyle + " gap:8px;\">\n";
 					html += "    <input type=\"checkbox\" id=\"" + c.id + "\" " + chk + ">\n";
+					html += "    <label for=\"" + c.id + "\">" + text + "</label>\n";
+					html += "  </div>\n";
+				} else if (c.control_type === "radio") {
+					const chk = c.checked ? "checked" : "";
+					html += "  <div class=\"control-item\" style=\"" + posStyle + " gap:8px;\">\n";
+					html += "    <input type=\"radio\" name=\"form_radios\" id=\"" + c.id + "\" " + chk + ">\n";
 					html += "    <label for=\"" + c.id + "\">" + text + "</label>\n";
 					html += "  </div>\n";
 				} else if (c.control_type === "badge") {

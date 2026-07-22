@@ -113,6 +113,7 @@ fn C.window_add_textarea_control(&WindowInfo, &u8, &u8) voidptr
 fn C.window_add_html_view_control(&WindowInfo, &u8, &u8) voidptr
 fn C.window_add_drop_zone_control(&WindowInfo, &u8, &u8) voidptr
 fn C.window_add_checkbox_control(&WindowInfo, &u8, &u8, int) voidptr
+fn C.window_add_radio_control(&WindowInfo, &u8, &u8, int) voidptr
 fn C.window_add_button_control(&WindowInfo, &u8, &u8) voidptr
 fn C.window_add_number_control(&WindowInfo, &u8, int) voidptr
 fn C.window_add_slider_control(&WindowInfo, &u8, int) voidptr
@@ -1155,6 +1156,26 @@ pub fn (win &SimpleWindow) add_checkbox(name string, label string, checked bool)
 	if win.window_info != unsafe { nil } {
 		checked_val := if checked { 1 } else { 0 }
 		C.window_add_checkbox_control(win.window_info, real_name.str, label.str, checked_val)
+	}
+	return win
+}
+
+// add_radio adds an individual radio button control to the window layout.
+pub fn (win &SimpleWindow) add_radio(name string, label string, checked bool) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('radio')
+	}
+	if win.debug_mode {
+		println('[simplegui DEBUG] Created Control: "${real_name}" (Type: "radio", Label: "${label}", Checked: ${checked})')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.upsert_control(real_name, 'radio', label, '', checked, 0)
+	}
+	if win.window_info != unsafe { nil } {
+		checked_val := if checked { 1 } else { 0 }
+		C.window_add_radio_control(win.window_info, real_name.str, label.str, checked_val)
 	}
 	return win
 }

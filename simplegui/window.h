@@ -61,6 +61,7 @@ void *window_add_textarea_control(main__WindowInfo *info, const char *name, cons
 void *window_add_html_view_control(main__WindowInfo *info, const char *name, const char *html);
 void *window_add_drop_zone_control(main__WindowInfo *info, const char *name, const char *label);
 void *window_add_checkbox_control(main__WindowInfo *info, const char *name, const char *text, int checked);
+void *window_add_radio_control(main__WindowInfo *info, const char *name, const char *text, int checked);
 void *window_add_button_control(main__WindowInfo *info, const char *name, const char *text);
 void *window_add_number_control(main__WindowInfo *info, const char *name, int value);
 void *window_add_slider_control(main__WindowInfo *info, const char *name, int value);
