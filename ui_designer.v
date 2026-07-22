@@ -294,6 +294,9 @@ fn render_preview_control(mut prev_win simplegui.SimpleWindow, c simplegui.Contr
 	if c.tooltip.len > 0 {
 		prev_win.set_tooltip(c.id, c.tooltip)
 	}
+	if c.cursor.len > 0 && c.cursor != 'default' {
+		prev_win.set_control_cursor(c.id, c.cursor)
+	}
 }
 
 fn launch_preview_window(spec simplegui.FormSpec) {
@@ -430,6 +433,27 @@ fn launch_preview_window(spec simplegui.FormSpec) {
 				w.toast('Clicked: ${btn_text}')
 				w.set_status('Executed handler for: ${btn_text}')
 			})
+		}
+		if h := c.event_handlers['onHover'] {
+			if h.trim_space().len > 0 {
+				ctrl_id := c.id
+				ctrl_text := c.text
+				h_name := h.trim_space()
+				prev_win.on_hover(ctrl_id, fn [ctrl_text, h_name] (mut w simplegui.SimpleWindow) {
+					w.set_status('Hovered: ${ctrl_text} (Handler: ${h_name})')
+					w.toast('Hover enter: ${ctrl_text}')
+				})
+			}
+		}
+		if h := c.event_handlers['onHoverExit'] {
+			if h.trim_space().len > 0 {
+				ctrl_id := c.id
+				ctrl_text := c.text
+				h_name := h.trim_space()
+				prev_win.on_hover_exit(ctrl_id, fn [ctrl_text, h_name] (mut w simplegui.SimpleWindow) {
+					w.set_status('Hover exit: ${ctrl_text} (Handler: ${h_name})')
+				})
+			}
 		}
 	}
 

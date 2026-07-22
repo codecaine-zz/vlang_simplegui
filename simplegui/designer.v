@@ -21,6 +21,9 @@ pub mut:
 	font_size        int    = 13
 	font_color       string = '#ffffff'
 	background_color string = '#1e293b'
+	hover_color      string
+	hover_text_color string
+	cursor           string
 	placeholder      string
 	tooltip          string
 	min_val          int
@@ -30,7 +33,7 @@ pub mut:
 	visible          bool = true
 	checked          bool
 	locked           bool
-	event_handlers   map[string]string // e.g. {"onClick": "on_button_click"}
+	event_handlers   map[string]string // e.g. {"onClick": "on_button_click", "onHover": "on_button_hover", "onHoverExit": "on_button_hover_exit"}
 }
 
 // FormSpec represents the window form layout containing all design controls.
@@ -220,6 +223,9 @@ fn write_single_control_v_code(mut sb strings.Builder, c ControlSpec) {
 		clean_tooltip := c.tooltip.replace("'", "\\'")
 		sb.write_string('\twin.set_tooltip(\'${c.id}\', \'${clean_tooltip}\')\n')
 	}
+	if c.cursor.len > 0 && c.cursor != 'default' {
+		sb.write_string('\twin.set_control_cursor(\'${c.id}\', \'${c.cursor}\')\n')
+	}
 }
 
 // Generate complete idiomatic V simplegui code with RAD event handler placeholders
@@ -366,6 +372,14 @@ pub fn generate_v_code(spec FormSpec) string {
 					sb.write_string('\twin.on_change(\'${c.id}\', ${h_clean})\n')
 					handlers_to_generate[h_clean] = 'onChange for control `${c.id}`'
 				}
+				'onHover', 'onMouseEnter' {
+					sb.write_string('\twin.on_hover(\'${c.id}\', ${h_clean})\n')
+					handlers_to_generate[h_clean] = 'onHover for control `${c.id}`'
+				}
+				'onHoverExit', 'onMouseLeave' {
+					sb.write_string('\twin.on_hover_exit(\'${c.id}\', ${h_clean})\n')
+					handlers_to_generate[h_clean] = 'onHoverExit for control `${c.id}`'
+				}
 				'onDoubleClick' {
 					sb.write_string('\twin.add_context_menu_item(\'${c.id}\', \'Double Click\', ${h_clean})\n')
 					handlers_to_generate[h_clean] = 'onDoubleClick for control `${c.id}`'
@@ -389,7 +403,7 @@ pub fn generate_v_code(spec FormSpec) string {
 		sb.write_string('// No event placeholders generated yet.\n')
 	} else {
 		for handler_name, desc in handlers_to_generate {
-			if desc.starts_with('onClick') {
+			if desc.starts_with('onClick') || desc.starts_with('onHover') || desc.starts_with('onHoverExit') {
 				sb.write_string('// Handler: ${desc}\n')
 				sb.write_string('fn ${handler_name}(mut win simplegui.SimpleWindow) {\n')
 				sb.write_string('\twin.set_status(\'Event triggered: ${handler_name}\')\n')

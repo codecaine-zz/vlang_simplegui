@@ -840,8 +840,9 @@
 			<button class="btn btn-icon" onclick="toggleLockSelected()" title="Lock / Unlock">🔒</button>
 			<button class="btn btn-icon" onclick="bringToFront()" title="Bring to Front">🔝</button>
 			<button class="btn btn-icon" onclick="sendToBack()" title="Send to Back">🔙</button>
-			<span class="toolbar-divider"></span>
-			<button class="btn" onclick="toggleSnapGrid()" id="snapBtn" title="Toggle Grid Snapping">📐 Snap: ON</button>
+			<button class="btn" onclick="showSnapGridMenu()" id="snapBtn" title="Toggle Grid Snapping">📐 Snap: 8px</button>
+			<button class="btn" id="liveHoverTestBtn" onclick="toggleLiveHoverMode()" title="Toggle interactive live hover & test mode directly on the canvas">⚡ Live Hover Mode</button>
+			<button class="btn" onclick="showDiagnosticsModal()" title="Audit form layout for overlaps, missing fields, or errors">🔍 Audit Form</button>
 			<button class="btn" onclick="showHotkeysModal()" title="Keyboard Shortcuts Cheat Sheet">⌨️ Hotkeys</button>
 			<button class="btn" onclick="showImportModal()" title="Import JSON layout">📥 Import</button>
 		</div>
@@ -1099,6 +1100,7 @@
 					<button class="btn" onclick="distributeControls('vert')">⬍ Dist V</button>
 					<button class="btn" onclick="equalizeSize('width')">📐 Eq W</button>
 					<button class="btn" onclick="equalizeSize('height')">📐 Eq H</button>
+					<button class="btn" onclick="fitControlToContent()" title="Auto-size control to fit font size and text length">📏 Fit Text Size</button>
 				</div>
 			</div>
 
@@ -1237,6 +1239,58 @@
 						</div>
 					</div>
 
+					<hr style="border: 0; border-top: 1px solid var(--border-color); margin: 8px 0;">
+					<span class="prop-label" style="color: var(--accent);">Hover Styling & Mouse Cursor</span>
+
+					<div class="prop-grid-2" style="margin-top: 4px;">
+						<div class="prop-row">
+							<span class="prop-label">Hover Background</span>
+							<input type="color" class="prop-input" id="propHoverBgColor" oninput="updateSelectedControl('hover_color')">
+						</div>
+						<div class="prop-row">
+							<span class="prop-label">Hover Text Color</span>
+							<input type="color" class="prop-input" id="propHoverFgColor" oninput="updateSelectedControl('hover_text_color')">
+						</div>
+					</div>
+
+					<div class="prop-row">
+						<span class="prop-label">Hover Presets</span>
+						<div class="color-swatches" style="flex-wrap: wrap; gap: 4px;">
+							<div class="swatch" style="background:#0284c7;" onclick="setHoverBgColor('#0284c7')" title="Sky Blue Hover"></div>
+							<div class="swatch" style="background:#10b981;" onclick="setHoverBgColor('#10b981')" title="Emerald Hover"></div>
+							<div class="swatch" style="background:#f59e0b;" onclick="setHoverBgColor('#f59e0b')" title="Amber Hover"></div>
+							<div class="swatch" style="background:#ef4444;" onclick="setHoverBgColor('#ef4444')" title="Rose Hover"></div>
+							<div class="swatch" style="background:#8b5cf6;" onclick="setHoverBgColor('#8b5cf6')" title="Violet Hover"></div>
+							<button class="btn" style="padding: 2px 6px; font-size: 9px; border-style: dashed;" onclick="setHoverBgColor('')" title="Clear custom hover background">Clear</button>
+						</div>
+					</div>
+
+					<div class="prop-row">
+						<span class="prop-label">Mouse Cursor Style</span>
+						<select class="prop-input" id="propCursor" onchange="updateSelectedControl('cursor')" title="Native mouse cursor displayed on hover">
+							<option value="default">Default Pointer</option>
+							<option value="pointer">Hand / Link Pointer</option>
+							<option value="crosshair">Crosshair Target</option>
+							<option value="text">Text I-Beam</option>
+							<option value="not-allowed">Not Allowed / Prohibited</option>
+							<option value="grab">Grab Open Hand</option>
+							<option value="zoom-in">Zoom In</option>
+							<option value="help">Help Question Mark</option>
+						</select>
+					</div>
+
+					<div class="prop-row">
+						<span class="prop-label">Quick Style Themes</span>
+						<div style="display:flex; gap:4px; flex-wrap:wrap;">
+							<button class="btn" style="padding:2px 6px; font-size:9px; background:#0284c7; color:#fff;" onclick="applyQuickStylePreset('primary')">Primary</button>
+							<button class="btn" style="padding:2px 6px; font-size:9px; background:#10b981; color:#fff;" onclick="applyQuickStylePreset('success')">Success</button>
+							<button class="btn" style="padding:2px 6px; font-size:9px; background:#f59e0b; color:#fff;" onclick="applyQuickStylePreset('warning')">Warning</button>
+							<button class="btn" style="padding:2px 6px; font-size:9px; background:#ef4444; color:#fff;" onclick="applyQuickStylePreset('danger')">Danger</button>
+							<button class="btn" style="padding:2px 6px; font-size:9px; background:#8b5cf6; color:#fff;" onclick="applyQuickStylePreset('violet')">Violet</button>
+							<button class="btn" style="padding:2px 6px; font-size:9px; background:#334155; color:#fff;" onclick="applyQuickStylePreset('slate')">Slate</button>
+						</div>
+					</div>
+
 					<div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; margin-top:10px;">
 						<button class="btn" onclick="bringToFront()">🔝 Bring Front</button>
 						<button class="btn" onclick="sendToBack()">🔙 Send Back</button>
@@ -1249,6 +1303,7 @@
 			<!-- Component Tree Tab -->
 			<div class="tab-content" id="tabTree">
 				<span class="prop-label" style="color: var(--accent); display: block; margin-bottom: 8px;">Component Hierarchy & Order</span>
+				<input type="text" class="search-box" id="treeFilterBox" placeholder="Filter hierarchy tree..." oninput="renderTree()" style="margin-bottom: 8px;" title="Filter controls in component tree">
 				<div id="treeContainer"></div>
 			</div>
 
@@ -1269,6 +1324,16 @@
 				<div class="prop-row">
 					<span class="prop-label">onDoubleClick Handler</span>
 					<input type="text" class="prop-input" id="evtOnDblClick" placeholder="e.g. on_card_dblclick" oninput="updateEventPlaceholder('onDoubleClick', this.value)">
+				</div>
+
+				<div class="prop-row">
+					<span class="prop-label">onHover (Mouse Enter) Handler</span>
+					<input type="text" class="prop-input" id="evtOnHover" placeholder="e.g. on_btn_hover" oninput="updateEventPlaceholder('onHover', this.value)">
+				</div>
+
+				<div class="prop-row">
+					<span class="prop-label">onHoverExit (Mouse Exit) Handler</span>
+					<input type="text" class="prop-input" id="evtOnHoverExit" placeholder="e.g. on_btn_hover_exit" oninput="updateEventPlaceholder('onHoverExit', this.value)">
 				</div>
 
 				<button class="btn btn-primary" style="width: 100%; margin-top: 10px;" onclick="autoGenerateEvents()">⚡ Auto-Generate Event Names</button>
@@ -1339,6 +1404,18 @@
 			</table>
 			<div style="display:flex; justify-content:flex-end;">
 				<button class="btn btn-primary" onclick="hideHotkeysModal()">Got it!</button>
+			</div>
+		</div>
+	</div>
+
+	<!-- Layout Diagnostics Audit Modal -->
+	<div class="modal-overlay" id="diagnosticsModal">
+		<div class="modal-box" style="width: 580px;">
+			<span style="font-weight:700; color:var(--accent); font-size:14px;">🔍 Form Layout Audit & Health Diagnostics</span>
+			<div id="diagnosticsSummary" style="font-size: 11px; max-height: 280px; overflow-y: auto; background: var(--bg-main); padding: 10px; border-radius: 6px; border: 1px solid var(--border-color); line-height: 1.5;"></div>
+			<div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+				<button class="btn btn-success" onclick="autoFixLayoutIssues()">⚡ Auto-Fix Overlaps & Boundaries</button>
+				<button class="btn btn-primary" onclick="hideDiagnosticsModal()">Close</button>
 			</div>
 		</div>
 	</div>
@@ -1758,7 +1835,7 @@
 		}
 
 		function bindLivePropertyEditors() {
-			const propIds = ["propId", "propText", "propTooltip", "propX", "propY", "propWidth", "propHeight", "propFontSize", "propFontColor", "propBgColor"];
+			const propIds = ["propId", "propText", "propTooltip", "propX", "propY", "propWidth", "propHeight", "propFontSize", "propFontColor", "propBgColor", "propHoverBgColor", "propHoverFgColor", "propCursor"];
 			propIds.forEach((id) => {
 				const el = document.getElementById(id);
 				if (!el) return;
@@ -1775,9 +1852,165 @@
 			}
 		}
 
-		function toggleSnapGrid() {
-			snapToGrid = !snapToGrid;
-			document.getElementById("snapBtn").textContent = "📐 Snap: " + (snapToGrid ? "ON" : "OFF");
+		let gridSize = 8;
+		let isLiveHoverMode = false;
+
+		function toggleLiveHoverMode() {
+			isLiveHoverMode = !isLiveHoverMode;
+			const btn = document.getElementById("liveHoverTestBtn");
+			if (btn) {
+				btn.textContent = "⚡ Live Hover Mode: " + (isLiveHoverMode ? "ON" : "OFF");
+				btn.className = isLiveHoverMode ? "btn btn-success" : "btn";
+			}
+			renderCanvas();
+			document.getElementById("statusMsg").textContent = isLiveHoverMode 
+				? "⚡ Live Hover & Interactive Canvas Mode active. Hover/click controls to test live handlers." 
+				: "Design mode active. Drag & resize controls on canvas.";
+		}
+
+		function showSnapGridMenu() {
+			const options = [8, 4, 16, 32, 0];
+			const curIdx = options.indexOf(gridSize);
+			gridSize = options[(curIdx + 1) % options.length];
+			snapToGrid = gridSize > 0;
+			const snapBtn = document.getElementById("snapBtn");
+			if (snapBtn) snapBtn.textContent = "📐 Snap: " + (gridSize > 0 ? gridSize + "px" : "OFF");
+			document.getElementById("statusMsg").textContent = "Grid Snap set to: " + (gridSize > 0 ? gridSize + "px" : "Disabled");
+		}
+
+		function fitControlToContent() {
+			if (selectedIndices.length === 0) return;
+			saveHistoryState();
+			selectedIndices.forEach(idx => {
+				const c = formSpec.controls[idx];
+				if (c.locked) return;
+				const charW = (c.font_size || 13) * 0.62;
+				const len = (c.text || c.id).length;
+				c.width = Math.max(60, Math.round(len * charW + 28));
+				c.height = Math.max(26, Math.round((c.font_size || 13) * 1.8 + 8));
+			});
+			renderCanvas();
+			renderCode();
+			renderTree();
+			populateInspector();
+			document.getElementById("statusMsg").textContent = "Auto-fitted size for " + selectedIndices.length + " control(s).";
+		}
+
+		function setHoverBgColor(hex) {
+			if (selectedIndices.length === 0) return;
+			saveHistoryState();
+			selectedIndices.forEach(idx => {
+				formSpec.controls[idx].hover_color = hex;
+			});
+			const el = document.getElementById("propHoverBgColor");
+			if (el && hex) el.value = hex;
+			renderCanvas();
+			renderCode();
+			populateInspector();
+			syncSpecToV();
+		}
+
+		function applyQuickStylePreset(preset) {
+			if (selectedIndices.length === 0) return;
+			saveHistoryState();
+			const styles = {
+				primary: { bg: "#0284c7", fg: "#ffffff", hBg: "#0369a1", hFg: "#ffffff", cursor: "pointer" },
+				success: { bg: "#10b981", fg: "#ffffff", hBg: "#059669", hFg: "#ffffff", cursor: "pointer" },
+				warning: { bg: "#f59e0b", fg: "#ffffff", hBg: "#d97706", hFg: "#ffffff", cursor: "pointer" },
+				danger:  { bg: "#ef4444", fg: "#ffffff", hBg: "#dc2626", hFg: "#ffffff", cursor: "pointer" },
+				violet:  { bg: "#8b5cf6", fg: "#ffffff", hBg: "#7c3aed", hFg: "#ffffff", cursor: "pointer" },
+				slate:   { bg: "#334155", fg: "#ffffff", hBg: "#475569", hFg: "#ffffff", cursor: "default" }
+			};
+			const st = styles[preset] || styles.primary;
+			selectedIndices.forEach(idx => {
+				const c = formSpec.controls[idx];
+				c.background_color = st.bg;
+				c.font_color = st.fg;
+				c.hover_color = st.hBg;
+				c.hover_text_color = st.hFg;
+				c.cursor = st.cursor;
+			});
+			renderCanvas();
+			renderCode();
+			renderTree();
+			populateInspector();
+			syncSpecToV();
+			document.getElementById("statusMsg").textContent = "Applied " + preset.toUpperCase() + " style preset to " + selectedIndices.length + " control(s).";
+		}
+
+		function showDiagnosticsModal() {
+			const modal = document.getElementById("diagnosticsModal");
+			const summary = document.getElementById("diagnosticsSummary");
+			if (!modal || !summary) return;
+
+			let issues = [];
+			let idMap = {};
+			const winW = formSpec.width || 840;
+			const winH = formSpec.height || 560;
+
+			formSpec.controls.forEach((c, idx) => {
+				if (idMap[c.id]) {
+					issues.push("❌ <b>Duplicate ID:</b> <code>" + c.id + "</code> is used by multiple controls.");
+				} else {
+					idMap[c.id] = true;
+				}
+
+				if (c.x + c.width > winW || c.y + c.height > winH) {
+					issues.push("⚠️ <b>Out of Bounds:</b> Control <code>" + c.id + "</code> (" + c.x + ", " + c.y + ") exceeds form bounds (" + winW + "x" + winH + ").");
+				}
+
+				if (!c.text || !c.text.trim()) {
+					issues.push("ℹ️ <b>Empty Caption:</b> Control <code>" + c.id + "</code> has an empty text string.");
+				}
+
+				formSpec.controls.forEach((other, oIdx) => {
+					if (idx >= oIdx) return;
+					if (c.control_type === "panel" || other.control_type === "panel") return;
+					if (c.x < other.x + other.width && c.x + c.width > other.x &&
+						c.y < other.y + other.height && c.y + c.height > other.y) {
+						issues.push("⚠️ <b>Overlap Detected:</b> <code>" + c.id + "</code> overlaps with <code>" + other.id + "</code>.");
+					}
+				});
+			});
+
+			if (issues.length === 0) {
+				summary.innerHTML = "<div style='color:var(--success); font-weight:bold; font-size:12px;'>🎉 Perfect! No layout collisions or structural issues detected.</div><div style='margin-top:6px; opacity:0.8;'>Form: " + formSpec.title + " | Controls: " + formSpec.controls.length + "</div>";
+			} else {
+				summary.innerHTML = "<div style='color:var(--warning); font-weight:bold; margin-bottom:8px;'>Found " + issues.length + " item(s) requiring attention:</div>" + issues.map(i => "<div style='margin-bottom:4px;'>" + i + "</div>").join("");
+			}
+
+			modal.style.display = "flex";
+		}
+
+		function hideDiagnosticsModal() {
+			const modal = document.getElementById("diagnosticsModal");
+			if (modal) modal.style.display = "none";
+		}
+
+		function autoFixLayoutIssues() {
+			saveHistoryState();
+			const winW = formSpec.width || 840;
+			const winH = formSpec.height || 560;
+
+			let seen = {};
+			formSpec.controls.forEach((c, idx) => {
+				if (seen[c.id]) {
+					c.id = c.id + "_fixed" + (idx + 1);
+				}
+				seen[c.id] = true;
+			});
+
+			formSpec.controls.forEach((c) => {
+				if (c.x + c.width > winW - 20) c.x = Math.max(10, winW - c.width - 20);
+				if (c.y + c.height > winH - 20) c.y = Math.max(10, winH - c.height - 20);
+			});
+
+			renderCanvas();
+			renderCode();
+			renderTree();
+			populateInspector();
+			showDiagnosticsModal();
+			document.getElementById("statusMsg").textContent = "Auto-fixed layout duplicates and boundaries!";
 		}
 
 		function filterPalette(query) {
@@ -2267,6 +2500,13 @@
 			const baseZ = isNaN(idx) ? 10 : (idx + 10);
 			div.style.zIndex = isSel ? (baseZ + 1000) : baseZ;
 
+			if (ctrl.cursor && ctrl.cursor !== "default") {
+				const cursorCss = ctrl.cursor === "pointer" ? "pointer" : (ctrl.cursor === "crosshair" ? "crosshair" : (ctrl.cursor === "text" ? "text" : (ctrl.cursor === "not-allowed" ? "not-allowed" : (ctrl.cursor === "grab" ? "grab" : (ctrl.cursor === "zoom-in" ? "zoom-in" : (ctrl.cursor === "help" ? "help" : "pointer"))))));
+				div.style.cursor = cursorCss;
+			} else {
+				div.style.cursor = isLiveHoverMode ? "pointer" : "move";
+			}
+
 			if (ctrl.locked) div.classList.add("locked"); else div.classList.remove("locked");
 			if (dimBadge) {
 				dimBadge.textContent = ctrl.id + " (" + ctrl.width + "x" + ctrl.height + ")";
@@ -2623,6 +2863,24 @@
 				dimBadge.textContent = ctrl.id + " (" + ctrl.width + "x" + ctrl.height + ")";
 				div.appendChild(dimBadge);
 
+				div.onmouseenter = () => {
+					if (isLiveHoverMode) {
+						if (ctrl.hover_color) div.style.backgroundColor = ctrl.hover_color;
+						if (ctrl.hover_text_color) div.style.color = ctrl.hover_text_color;
+						const statusMsg = document.getElementById("statusMsg");
+						if (statusMsg) statusMsg.textContent = "⚡ Live Hover Enter: " + ctrl.id + (ctrl.event_handlers && ctrl.event_handlers.onHover ? " (Handler: " + ctrl.event_handlers.onHover + ")" : "");
+					}
+				};
+
+				div.onmouseleave = () => {
+					if (isLiveHoverMode) {
+						syncControlDom(ctrl, div, dimBadge);
+						renderControlContent(ctrl, div);
+						const statusMsg = document.getElementById("statusMsg");
+						if (statusMsg) statusMsg.textContent = "Live Hover Exit: " + ctrl.id;
+					}
+				};
+
 				div.ondblclick = (e) => {
 					selectControl(idx, e);
 					switchTab("tabEvents");
@@ -2636,6 +2894,14 @@
 				div.onmousedown = (e) => {
 					if (e.button !== 0) return;
 					if (e.target.classList.contains("resize-handle")) return;
+					if (isLiveHoverMode) {
+						e.preventDefault();
+						e.stopPropagation();
+						const statusMsg = document.getElementById("statusMsg");
+						const clickEvt = ctrl.event_handlers ? ctrl.event_handlers["onClick"] : null;
+						if (statusMsg) statusMsg.textContent = "⚡ Live Click Executed on " + ctrl.id + (clickEvt ? " -> " + clickEvt + "()" : "");
+						return;
+					}
 					if (ctrl.locked) return;
 
 					e.preventDefault();
@@ -2826,8 +3092,12 @@
 			const container = document.getElementById("treeContainer");
 			if (!container) return;
 			container.innerHTML = "";
+			const filterEl = document.getElementById("treeFilterBox");
+			const query = filterEl ? filterEl.value.toLowerCase().trim() : "";
 
 			formSpec.controls.forEach((ctrl, idx) => {
+				if (query && !ctrl.id.toLowerCase().includes(query) && !ctrl.control_type.toLowerCase().includes(query)) return;
+
 				const item = document.createElement("div");
 				item.className = "tree-item" + (selectedIndices.includes(idx) ? " selected" : "");
 				item.onclick = (e) => selectControl(idx, e);
@@ -2900,6 +3170,9 @@
 			const propFSEl = document.getElementById("propFontSize");
 			const fontEl = document.getElementById("propFontColor");
 			const bgEl = document.getElementById("propBgColor");
+			const hoverBgEl = document.getElementById("propHoverBgColor");
+			const hoverFgEl = document.getElementById("propHoverFgColor");
+			const cursorEl = document.getElementById("propCursor");
 
 			if (selectedIndices.length === 1) {
 				const c = formSpec.controls[selectedIndices[0]];
@@ -2913,6 +3186,9 @@
 				if (propFSEl) { propFSEl.value = c.font_size || 13; propFSEl.placeholder = ""; }
 				if (fontEl) fontEl.value = c.font_color || "#ffffff";
 				if (bgEl) bgEl.value = c.background_color || "#1e293b";
+				if (hoverBgEl) hoverBgEl.value = c.hover_color || "#0284c7";
+				if (hoverFgEl) hoverFgEl.value = c.hover_text_color || "#ffffff";
+				if (cursorEl) cursorEl.value = c.cursor || "default";
 
 				c.event_handlers = c.event_handlers || {};
 				const evtClickEl = document.getElementById("evtOnClick");
@@ -2921,6 +3197,10 @@
 				if (evtChangeEl) evtChangeEl.value = c.event_handlers["onChange"] || "";
 				const evtDblClickEl = document.getElementById("evtOnDblClick");
 				if (evtDblClickEl) evtDblClickEl.value = c.event_handlers["onDoubleClick"] || "";
+				const evtHoverEl = document.getElementById("evtOnHover");
+				if (evtHoverEl) evtHoverEl.value = c.event_handlers["onHover"] || "";
+				const evtHoverExitEl = document.getElementById("evtOnHoverExit");
+				if (evtHoverExitEl) evtHoverExitEl.value = c.event_handlers["onHoverExit"] || "";
 			} else {
 				const selectedCtrls = selectedIndices.map(i => formSpec.controls[i]);
 				if (propIdEl) { propIdEl.value = ""; propIdEl.placeholder = "(Multiple)"; propIdEl.disabled = true; }
@@ -2956,6 +3236,9 @@
 				}
 				if (fontEl) fontEl.value = allSame("font_color") ? (selectedCtrls[0].font_color || "#ffffff") : "#ffffff";
 				if (bgEl) bgEl.value = allSame("background_color") ? (selectedCtrls[0].background_color || "#1e293b") : "#1e293b";
+				if (hoverBgEl) hoverBgEl.value = allSame("hover_color") ? (selectedCtrls[0].hover_color || "#0284c7") : "#0284c7";
+				if (hoverFgEl) hoverFgEl.value = allSame("hover_text_color") ? (selectedCtrls[0].hover_text_color || "#ffffff") : "#ffffff";
+				if (cursorEl) cursorEl.value = allSame("cursor") ? (selectedCtrls[0].cursor || "default") : "default";
 			}
 		}
 
@@ -2973,6 +3256,9 @@
 			const propFSEl = document.getElementById("propFontSize");
 			const fontEl = document.getElementById("propFontColor");
 			const bgEl = document.getElementById("propBgColor");
+			const hoverBgEl = document.getElementById("propHoverBgColor");
+			const hoverFgEl = document.getElementById("propHoverFgColor");
+			const cursorEl = document.getElementById("propCursor");
 
 			const parseNum = (val, fallback, minVal) => {
 				if (val === undefined || val === null || val === "") return fallback;
@@ -3012,6 +3298,15 @@
 				}
 				if (!changedProp || changedProp === 'background_color') {
 					if (bgEl) ctrl.background_color = bgEl.value;
+				}
+				if (!changedProp || changedProp === 'hover_color') {
+					if (hoverBgEl) ctrl.hover_color = hoverBgEl.value;
+				}
+				if (!changedProp || changedProp === 'hover_text_color') {
+					if (hoverFgEl) ctrl.hover_text_color = hoverFgEl.value;
+				}
+				if (!changedProp || changedProp === 'cursor') {
+					if (cursorEl) ctrl.cursor = cursorEl.value;
 				}
 			});
 
@@ -3056,11 +3351,13 @@
 				c.event_handlers = c.event_handlers || {};
 				c.event_handlers["onClick"] = "on_" + c.id + "_click";
 				c.event_handlers["onChange"] = "on_" + c.id + "_change";
+				c.event_handlers["onHover"] = "on_" + c.id + "_hover";
+				c.event_handlers["onHoverExit"] = "on_" + c.id + "_hover_exit";
 			});
 			populateInspector();
 			renderCode();
 			syncSpecToV();
-			document.getElementById("statusMsg").textContent = "Auto-generated event placeholders.";
+			document.getElementById("statusMsg").textContent = "Auto-generated click, change, and hover event placeholders.";
 		}
 
 		function deleteSelectedControl() {
@@ -3159,12 +3456,26 @@
 			vcode += "\n  // RAD Event Bindings\n";
 			let handlers = [];
 			formSpec.controls.forEach(c => {
+				if (c.cursor && c.cursor !== "default") {
+					vcode += "  win.set_control_cursor('" + c.id + "', '" + c.cursor + "')\n";
+				}
 				if (c.event_handlers) {
 					for (let evt in c.event_handlers) {
 						let fname = c.event_handlers[evt];
 						if (fname && fname.trim()) {
-							vcode += "  win.on_click('" + c.id + "', " + fname.trim() + ")\n";
-							handlers.push({ name: fname.trim(), id: c.id });
+							let h_clean = fname.trim();
+							if (evt === "onClick") {
+								vcode += "  win.on_click('" + c.id + "', " + h_clean + ")\n";
+							} else if (evt === "onChange") {
+								vcode += "  win.on_change('" + c.id + "', " + h_clean + ")\n";
+							} else if (evt === "onHover" || evt === "onMouseEnter") {
+								vcode += "  win.on_hover('" + c.id + "', " + h_clean + ")\n";
+							} else if (evt === "onHoverExit" || evt === "onMouseLeave") {
+								vcode += "  win.on_hover_exit('" + c.id + "', " + h_clean + ")\n";
+							} else if (evt === "onDoubleClick") {
+								vcode += "  win.add_context_menu_item('" + c.id + "', 'Double Click', " + h_clean + ")\n";
+							}
+							handlers.push({ name: h_clean, id: c.id, evt: evt });
 						}
 					}
 				}
@@ -3173,9 +3484,15 @@
 			vcode += "\n  win.run()\n}\n\n";
 			vcode += "// RAD Event Callback Placeholders\n";
 			handlers.forEach(h => {
-				vcode += "fn " + h.name + "(mut win simplegui.SimpleWindow) {\n";
-				vcode += "  win.set_status('Event triggered: " + h.name + " on " + h.id + "')\n";
-				vcode += "  // TODO: Implement custom RAD logic\n}\n\n";
+				if (h.evt === "onChange") {
+					vcode += "fn " + h.name + "(mut win simplegui.SimpleWindow, value string) {\n";
+					vcode += "  win.set_status('Event triggered: " + h.name + " on " + h.id + " (Value: ' + value + ')')\n";
+					vcode += "  // TODO: Implement custom RAD logic\n}\n\n";
+				} else {
+					vcode += "fn " + h.name + "(mut win simplegui.SimpleWindow) {\n";
+					vcode += "  win.set_status('Event triggered: " + h.name + " on " + h.id + "')\n";
+					vcode += "  // TODO: Implement custom RAD logic\n}\n\n";
+				}
 			});
 
 			const codeEl = document.getElementById("codePreviewText");
