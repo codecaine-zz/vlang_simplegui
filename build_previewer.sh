@@ -4,9 +4,6 @@ set -e
 echo "🚀 Building standalone macOS .app bundle for SimpleGUI RAD Code Explorer & Live Previewer..."
 
 TARGET_FILE="vlang_simple_gui_previewer.v"
-if [ ! -f "$TARGET_FILE" ]; then
-    TARGET_FILE="demo_previewer.v"
-fi
 
 ICON_FILE="resources/developer.png"
 if [ ! -f "$ICON_FILE" ]; then

@@ -3004,6 +3004,13 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [textView setVerticallyResizable:YES];
   [textView setHorizontallyResizable:NO];
   [textView setAutoresizingMask:NSViewWidthSizable];
+  [textView setRichText:NO];
+  [textView setImportsGraphics:NO];
+  [textView setAutomaticQuoteSubstitutionEnabled:NO];
+  [textView setAutomaticDashSubstitutionEnabled:NO];
+  [textView setAutomaticTextReplacementEnabled:NO];
+  [textView setAutomaticSpellingCorrectionEnabled:NO];
+  [textView setSmartInsertDeleteEnabled:NO];
   [textView setString:value];
   [textView setDelegate:self];
   [textView setWantsLayer:YES];
@@ -4865,6 +4872,22 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   return YES;
 }
 
+- (id)windowWillReturnFieldEditor:(NSWindow *)sender toObject:(id)client {
+  (void)sender;
+  (void)client;
+  static NSTextView *customFieldEditor = nil;
+  if (!customFieldEditor) {
+    customFieldEditor = [[NSTextView alloc] initWithFrame:NSZeroRect];
+    [customFieldEditor setFieldEditor:YES];
+    [customFieldEditor setAutomaticQuoteSubstitutionEnabled:NO];
+    [customFieldEditor setAutomaticDashSubstitutionEnabled:NO];
+    [customFieldEditor setAutomaticTextReplacementEnabled:NO];
+    [customFieldEditor setAutomaticSpellingCorrectionEnabled:NO];
+    [customFieldEditor setSmartInsertDeleteEnabled:NO];
+  }
+  return customFieldEditor;
+}
+
 - (void)applicationWillTerminate:(NSNotification *)notification {
   (void)notification;
 }
@@ -6102,6 +6125,8 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [textView setAutomaticQuoteSubstitutionEnabled:NO];
   [textView setAutomaticDashSubstitutionEnabled:NO];
   [textView setAutomaticTextReplacementEnabled:NO];
+  [textView setAutomaticSpellingCorrectionEnabled:NO];
+  [textView setSmartInsertDeleteEnabled:NO];
   [textView setFont:[NSFont monospacedSystemFontOfSize:12.0 weight:NSFontWeightRegular]];
   [textView setBackgroundColor:[NSColor colorWithCalibratedRed:0.09 green:0.12 blue:0.18 alpha:1.0]];
   [textView setTextColor:[NSColor colorWithCalibratedRed:0.95 green:0.96 blue:0.98 alpha:1.0]];

@@ -103,7 +103,7 @@ The goal is a simple, high-abstraction GUI layer that feels familiar to anyone u
   - One-click V source code generator producing clean `simplegui` code with event handler callback stubs.
   - Import / Export JSON layout specs, live V runtime state sync (`syncSpecToV()`), and launch live native preview test windows (`launch_preview_window`) executing click, hover, hover exit, and change callbacks.
 - **RAD Code Explorer & Live Previewer Studio**:
-  - Interactive V code studio & file explorer (`v run demo_previewer.v` or `v run vlang_simple_gui_previewer.v`), buildable as a standalone macOS `.app` bundle via `v run build_previewer.vsh`.
+  - Interactive V code studio & file explorer (`v run vlang_simple_gui_previewer.v`), buildable as a standalone macOS `.app` bundle via `v run build_previewer.vsh`.
   - **📂 Workspace Folder Management & Drag & Drop**: Select any local V project directory (`w.select_folder()`) or drag-and-drop folders/files directly into the window to open them.
   - **📄 File Creation, Saving & Reverting**: Create new V source files (`📄 New File`), save edits back to disk (`💾 Save File`), or revert unsaved edits (`↺ Reset Code`) to original file contents.
   - **📚 Workspace File Explorer & Search**: Live list box with instant file search filtering (`bind_search_to_list`).
@@ -581,8 +581,7 @@ v run .
 | Demo                                                           | Description                                                                 |
 | -------------------------------------------------------------- | --------------------------------------------------------------------------- |
 | [ui_designer.v](ui_designer.v)                                 | Delphi & VB-inspired Visual RAD Designer studio & V code generator          |
-| [demo_previewer.v](demo_previewer.v)                           | Interactive V Code Explorer & Live Window Preview Studio                    |
-| [vlang_simple_gui_previewer.v](vlang_simple_gui_previewer.v)   | General-purpose V project directory code explorer & previewer studio        |
+| [vlang_simple_gui_previewer.v](vlang_simple_gui_previewer.v)   | Interactive V Code Explorer & Live Window Preview Studio                    |
 | [starter_template.v](demos/starter_template.v)                 | Minimal starter app for new developers                                      |
 | [beginner_demo.v](demos/beginner_demo.v)                       | Beginner-friendly signup form and profile builder                           |
 | [vertical_stack_starter.v](demos/vertical_stack_starter.v)     | Best-practice template for vertical stack forms                             |

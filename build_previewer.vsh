@@ -5,11 +5,7 @@ fn main() {
 	println('🚀 Building standalone macOS .app bundle for SimpleGUI RAD Code Explorer & Live Previewer...')
 
 	// Check required entry point
-	target_file := if os.exists('vlang_simple_gui_previewer.v') {
-		'vlang_simple_gui_previewer.v'
-	} else {
-		'demo_previewer.v'
-	}
+	target_file := 'vlang_simple_gui_previewer.v'
 
 	icon_file := if os.exists('resources/developer.png') {
 		'resources/developer.png'
