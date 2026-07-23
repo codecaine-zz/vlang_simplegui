@@ -1272,6 +1272,8 @@ Screenshots are auto-generated using `v run capture_demos.vsh`.
 
 ### High-Fidelity App & Web Studios
 
+- **RAD Code Explorer & Live Previewer Studio**: `v run vlang_simple_gui_previewer.v`
+  ![SimpleGUI RAD Code Explorer & Live Previewer Studio](screenshots/vlang_simple_gui_previewer.png)
 - **Web HTML Studio**: `v run demos/web_studio_demo.v`
   ![Web HTML Studio](screenshots/web_studio_demo.png)
 - **Markdown Live Editor**: `v run demos/markdown_editor.v`
