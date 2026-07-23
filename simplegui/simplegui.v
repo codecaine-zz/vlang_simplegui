@@ -5049,6 +5049,12 @@ pub fn (win &SimpleWindow) dispatch_event(name string, event_name string, value 
 		return false
 	}
 	handler := win.handlers[handler_idx]
+	if event_name == 'run_after' {
+		unsafe {
+			mut w := &SimpleWindow(win)
+			w.handlers.delete(handler_idx)
+		}
+	}
 	if event_name == 'file_drop' {
 		files := value.split('|')
 		unsafe {

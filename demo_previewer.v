@@ -762,33 +762,35 @@ fn run_live_demo(mut w simplegui.SimpleWindow, demo_name string) {
 	w.append_console('output_console', '⚡ Compiling V source code for ${demo_name}...', 1)
 	w.set_status('⏳ Compiling and launching live window preview for ${demo_name}...')
 
-	// Quick build validation check
-	build_res := os.execute('v -o ${os.quoted_path(tmp_exe_path)} ${os.quoted_path(tmp_runner_path)}')
-	if build_res.exit_code != 0 {
-		w.stop_spinner('live_spinner')
-		w.set_text('btn_run', '▶ Live Run Window')
-		w.append_console('output_console', '❌ Compilation Failed for ${demo_name}:', 3)
-		for err_line in build_res.output.split_into_lines() {
-			if err_line.trim_space().len > 0 {
-				w.append_console('output_console', '   ${err_line}', 3)
+	w.after(30, fn [demo_name, tmp_runner_path, tmp_exe_path] (mut w2 simplegui.SimpleWindow) {
+		// Quick build validation check
+		build_res := os.execute('v -o ${os.quoted_path(tmp_exe_path)} ${os.quoted_path(tmp_runner_path)}')
+		if build_res.exit_code != 0 {
+			w2.stop_spinner('live_spinner')
+			w2.set_text('btn_run', '▶ Live Run Window')
+			w2.append_console('output_console', '❌ Compilation Failed for ${demo_name}:', 3)
+			for err_line in build_res.output.split_into_lines() {
+				if err_line.trim_space().len > 0 {
+					w2.append_console('output_console', '   ${err_line}', 3)
+				}
 			}
+			w2.set_status('❌ Compilation failed for ${demo_name}. Check Diagnostic Console.')
+			return
 		}
-		w.set_status('❌ Compilation failed for ${demo_name}. Check Diagnostic Console.')
-		return
-	}
 
-	w.append_console('output_console', '✅ Compilation succeeded! Launching live preview window...', 4)
-	w.set_text('btn_run', '🚀 Running...')
+		w2.append_console('output_console', '✅ Compilation succeeded! Launching live preview window...', 4)
+		w2.set_text('btn_run', '🚀 Running...')
 
-	// Execute compiled binary in background spawn thread
-	spawn fn [tmp_exe_path] () {
-		os.execute(os.quoted_path(tmp_exe_path))
-	}()
+		// Execute compiled binary in background spawn thread
+		spawn fn [tmp_exe_path] () {
+			os.execute(os.quoted_path(tmp_exe_path))
+		}()
 
-	w.after(1500, fn [demo_name] (mut w2 simplegui.SimpleWindow) {
-		w2.stop_spinner('live_spinner')
-		w2.set_text('btn_run', '▶ Live Run Window')
-		w2.set_status('✅ Live window running: ${demo_name}')
+		w2.after(1500, fn [demo_name] (mut w3 simplegui.SimpleWindow) {
+			w3.stop_spinner('live_spinner')
+			w3.set_text('btn_run', '▶ Live Run Window')
+			w3.set_status('✅ Live window running: ${demo_name}')
+		})
 	})
 }
 
