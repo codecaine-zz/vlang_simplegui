@@ -118,7 +118,7 @@ The goal is a simple, high-abstraction GUI layer that feels familiar to anyone u
   - **🛠️ Compiler Diagnostics & Console Log**: Integrated diagnostic output log console with color-coded severity levels and 1-click log clear (`tb_console_clear`).
   - **🎨 Multi-Theme Workspace**: Dynamic workspace theme switching (Dracula, Nord, Dark, Light) with high-contrast label color adjustments.
 
-![SimpleGUI RAD Code Explorer & Live Previewer Studio](screenshots/demo_previewer.png)
+![SimpleGUI RAD Code Explorer & Live Previewer Studio](screenshots/vlang_simple_gui_previewer.png)
 
 ![SimpleGUI RAD Visual UI Designer Studio](screenshots/ui_designer.png)
 
