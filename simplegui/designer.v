@@ -126,7 +126,6 @@ fn write_single_control_v_code(mut sb strings.Builder, c ControlSpec) {
 		'search' {
 			sb.write_string('\twin.add_input(\'${c.id}\', \'${clean_text}\')\n')
 		}
-
 		// Integrated Form Controls (Label + Input/Control)
 		'form_field' {
 			sb.write_string('\twin.add_form_field(\'${clean_text}\', \'${c.id}\', \'Sample Text\')\n')
@@ -159,7 +158,6 @@ fn write_single_control_v_code(mut sb strings.Builder, c ControlSpec) {
 		'form_link' {
 			sb.write_string('\twin.add_form_link(\'${clean_text}\', \'${c.id}\', \'View Guide\', \'https://github.com\')\n')
 		}
-
 		// Demo Controls & Widgets
 		'rating' {
 			sb.write_string('\twin.add_rating(\'${c.id}\', ${c.value / 20})\n')
@@ -297,7 +295,7 @@ pub fn generate_v_code(spec FormSpec) string {
 
 	if panels.len > 0 {
 		if panels.len > 1 {
-			sb.write_string('\twin.begin_row(\'panel_headers_row\')\n')
+			sb.write_string("\twin.begin_row('panel_headers_row')\n")
 			for p in panels {
 				clean_text := p.text.replace("'", "\\'")
 				sb.write_string('\twin.add_heading(\'📦 ${clean_text}\')\n')
@@ -404,7 +402,8 @@ pub fn generate_v_code(spec FormSpec) string {
 		sb.write_string('// No event placeholders generated yet.\n')
 	} else {
 		for handler_name, desc in handlers_to_generate {
-			if desc.starts_with('onClick') || desc.starts_with('onHover') || desc.starts_with('onHoverExit') {
+			if desc.starts_with('onClick') || desc.starts_with('onHover')
+				|| desc.starts_with('onHoverExit') {
 				sb.write_string('// Handler: ${desc}\n')
 				sb.write_string('fn ${handler_name}(mut win simplegui.SimpleWindow) {\n')
 				sb.write_string('\twin.set_status(\'Event triggered: ${handler_name}\')\n')
@@ -554,15 +553,15 @@ pub fn get_default_form_spec() FormSpec {
 		spacing:          12
 		controls:         [
 			ControlSpec{
-				id:               'heading_title'
-				control_type:     'label'
-				x:                24
-				y:                20
-				width:            460
-				height:           32
-				text:             '📋 Customer Account & Portal Registration'
-				font_size:        18
-				font_color:       '#38bdf8'
+				id:           'heading_title'
+				control_type: 'label'
+				x:            24
+				y:            20
+				width:        460
+				height:       32
+				text:         '📋 Customer Account & Portal Registration'
+				font_size:    18
+				font_color:   '#38bdf8'
 			},
 			ControlSpec{
 				id:               'panel_profile'
@@ -585,53 +584,53 @@ pub fn get_default_form_spec() FormSpec {
 				background_color: '#1e293b'
 			},
 			ControlSpec{
-				id:             'input_fullname'
-				control_type:   'input'
-				x:              40
-				y:              104
-				width:          388
-				height:         36
-				text:           'Ada Lovelace'
-				placeholder:    'Full Name'
+				id:           'input_fullname'
+				control_type: 'input'
+				x:            40
+				y:            104
+				width:        388
+				height:       36
+				text:         'Ada Lovelace'
+				placeholder:  'Full Name'
 			},
 			ControlSpec{
-				id:             'slider_priority'
-				control_type:   'slider'
-				x:              486
-				y:              104
-				width:          408
-				height:         28
-				value:          75
+				id:           'slider_priority'
+				control_type: 'slider'
+				x:            486
+				y:            104
+				width:        408
+				height:       28
+				value:        75
 			},
 			ControlSpec{
-				id:             'input_email'
-				control_type:   'input'
-				x:              40
-				y:              152
-				width:          388
-				height:         36
-				text:           'ada@lovelace.org'
-				placeholder:    'Email Address'
+				id:           'input_email'
+				control_type: 'input'
+				x:            40
+				y:            152
+				width:        388
+				height:       36
+				text:         'ada@lovelace.org'
+				placeholder:  'Email Address'
 			},
 			ControlSpec{
-				id:             'sw_two_factor'
-				control_type:   'switch'
-				x:              486
-				y:              148
-				width:          300
-				height:         28
-				text:           'Enable 2FA Authentication'
-				checked:        true
+				id:           'sw_two_factor'
+				control_type: 'switch'
+				x:            486
+				y:            148
+				width:        300
+				height:       28
+				text:         'Enable 2FA Authentication'
+				checked:      true
 			},
 			ControlSpec{
-				id:             'inp_phone'
-				control_type:   'input'
-				x:              40
-				y:              200
-				width:          388
-				height:         36
-				text:           '+1 (555) 019-2834'
-				placeholder:    'Phone Number'
+				id:           'inp_phone'
+				control_type: 'input'
+				x:            40
+				y:            200
+				width:        388
+				height:       36
+				text:         '+1 (555) 019-2834'
+				placeholder:  'Phone Number'
 			},
 			ControlSpec{
 				id:               'badge_account_tier'
@@ -644,14 +643,14 @@ pub fn get_default_form_spec() FormSpec {
 				background_color: '#059669'
 			},
 			ControlSpec{
-				id:             'chk_newsletter'
-				control_type:   'checkbox'
-				x:              40
-				y:              248
-				width:          320
-				height:         26
-				text:           'Subscribe to Developer Updates'
-				checked:        true
+				id:           'chk_newsletter'
+				control_type: 'checkbox'
+				x:            40
+				y:            248
+				width:        320
+				height:       26
+				text:         'Subscribe to Developer Updates'
+				checked:      true
 			},
 			ControlSpec{
 				id:           'radio_plan_std'
@@ -726,61 +725,61 @@ pub fn get_profile_form_spec() FormSpec {
 		spacing:          12
 		controls:         [
 			ControlSpec{
-				id:         'lbl_profile_header'
+				id:           'lbl_profile_header'
 				control_type: 'label'
-				x:          24
-				y:          20
-				width:      400
-				height:     32
-				text:       '👤 User Profile & Account'
-				font_size:  20
-				font_color: '#38bdf8'
+				x:            24
+				y:            20
+				width:        400
+				height:       32
+				text:         '👤 User Profile & Account'
+				font_size:    20
+				font_color:   '#38bdf8'
 			},
 			ControlSpec{
-				id:         'field_name'
+				id:           'field_name'
 				control_type: 'form_field'
-				x:          24
-				y:          64
-				width:      300
-				height:     44
-				text:       'Full Name: Alex Mercer'
+				x:            24
+				y:            64
+				width:        300
+				height:       44
+				text:         'Full Name: Alex Mercer'
 			},
 			ControlSpec{
-				id:         'field_username'
+				id:           'field_username'
 				control_type: 'form_field'
-				x:          344
-				y:          64
-				width:      300
-				height:     44
-				text:       'Username: @alexmercer'
+				x:            344
+				y:            64
+				width:        300
+				height:       44
+				text:         'Username: @alexmercer'
 			},
 			ControlSpec{
-				id:         'field_bio'
+				id:           'field_bio'
 				control_type: 'form_textarea'
-				x:          24
-				y:          120
-				width:      620
-				height:     100
-				text:       'Senior Systems Engineer building desktop applications with Vlang and SimpleGUI.'
+				x:            24
+				y:            120
+				width:        620
+				height:       100
+				text:         'Senior Systems Engineer building desktop applications with Vlang and SimpleGUI.'
 			},
 			ControlSpec{
-				id:         'switch_notif'
+				id:           'switch_notif'
 				control_type: 'form_switch'
-				x:          24
-				y:          230
-				width:      280
-				height:     28
-				text:       'System Push Notifications'
-				checked:    true
+				x:            24
+				y:            230
+				width:        280
+				height:       28
+				text:         'System Push Notifications'
+				checked:      true
 			},
 			ControlSpec{
-				id:         'dropdown_role'
+				id:           'dropdown_role'
 				control_type: 'form_dropdown'
-				x:          344
-				y:          230
-				width:      300
-				height:     44
-				text:       'Account Role'
+				x:            344
+				y:            230
+				width:        300
+				height:       44
+				text:         'Account Role'
 			},
 			ControlSpec{
 				id:               'btn_save_profile'
@@ -817,24 +816,24 @@ pub fn get_crud_form_spec() FormSpec {
 		spacing:          12
 		controls:         [
 			ControlSpec{
-				id:         'lbl_crud_header'
+				id:           'lbl_crud_header'
 				control_type: 'label'
-				x:          24
-				y:          20
-				width:      420
-				height:     32
-				text:       '🗄️ Database Record Manager'
-				font_size:  20
-				font_color: '#10b981'
+				x:            24
+				y:            20
+				width:        420
+				height:       32
+				text:         '🗄️ Database Record Manager'
+				font_size:    20
+				font_color:   '#10b981'
 			},
 			ControlSpec{
-				id:         'inp_search'
+				id:           'inp_search'
 				control_type: 'search'
-				x:          24
-				y:          64
-				width:      320
-				height:     36
-				text:       'Search products...'
+				x:            24
+				y:            64
+				width:        320
+				height:       36
+				text:         'Search products...'
 			},
 			ControlSpec{
 				id:               'btn_add_record'
@@ -857,13 +856,13 @@ pub fn get_crud_form_spec() FormSpec {
 				background_color: '#0284c7'
 			},
 			ControlSpec{
-				id:         'table_records'
+				id:           'table_records'
 				control_type: 'table'
-				x:          24
-				y:          116
-				width:      860
-				height:     360
-				text:       'Product Database Grid'
+				x:            24
+				y:            116
+				width:        860
+				height:       360
+				text:         'Product Database Grid'
 			},
 			ControlSpec{
 				id:               'badge_count'
@@ -876,13 +875,13 @@ pub fn get_crud_form_spec() FormSpec {
 				background_color: '#38bdf8'
 			},
 			ControlSpec{
-				id:         'status_db'
+				id:           'status_db'
 				control_type: 'status_indicator'
-				x:          200
-				y:          490
-				width:      180
-				height:     28
-				text:       'PostgreSQL Online'
+				x:            200
+				y:            490
+				width:        180
+				height:       28
+				text:         'PostgreSQL Online'
 			},
 		]
 	}
@@ -899,60 +898,60 @@ pub fn get_ticket_form_spec() FormSpec {
 		spacing:          12
 		controls:         [
 			ControlSpec{
-				id:         'lbl_ticket_header'
+				id:           'lbl_ticket_header'
 				control_type: 'label'
-				x:          24
-				y:          20
-				width:      420
-				height:     32
-				text:       '🎫 Submit Support & Bug Ticket'
-				font_size:  20
-				font_color: '#38bdf8'
+				x:            24
+				y:            20
+				width:        420
+				height:       32
+				text:         '🎫 Submit Support & Bug Ticket'
+				font_size:    20
+				font_color:   '#38bdf8'
 			},
 			ControlSpec{
-				id:         'field_ticket_title'
+				id:           'field_ticket_title'
 				control_type: 'form_field'
-				x:          24
-				y:          64
-				width:      680
-				height:     44
-				text:       'Issue Title: Canvas element overlap on high-DPI displays'
+				x:            24
+				y:            64
+				width:        680
+				height:       44
+				text:         'Issue Title: Canvas element overlap on high-DPI displays'
 			},
 			ControlSpec{
-				id:         'dropdown_severity'
+				id:           'dropdown_severity'
 				control_type: 'form_dropdown'
-				x:          24
-				y:          120
-				width:      320
-				height:     44
-				text:       'Severity Level'
+				x:            24
+				y:            120
+				width:        320
+				height:       44
+				text:         'Severity Level'
 			},
 			ControlSpec{
-				id:         'field_ticket_desc'
+				id:           'field_ticket_desc'
 				control_type: 'form_textarea'
-				x:          24
-				y:          176
-				width:      680
-				height:     110
-				text:       'Steps to reproduce:\n1. Open UI Designer\n2. Zoom to 150%\n3. Observe snap guidelines alignment.'
+				x:            24
+				y:            176
+				width:        680
+				height:       110
+				text:         'Steps to reproduce:\n1. Open UI Designer\n2. Zoom to 150%\n3. Observe snap guidelines alignment.'
 			},
 			ControlSpec{
-				id:         'drop_attachment'
+				id:           'drop_attachment'
 				control_type: 'drop_zone'
-				x:          24
-				y:          296
-				width:      680
-				height:     80
-				text:       'Drag & drop log files or screenshots here'
+				x:            24
+				y:            296
+				width:        680
+				height:       80
+				text:         'Drag & drop log files or screenshots here'
 			},
 			ControlSpec{
-				id:         'rating_priority'
+				id:           'rating_priority'
 				control_type: 'rating'
-				x:          24
-				y:          390
-				width:      140
-				height:     32
-				text:       'Urgency Rating'
+				x:            24
+				y:            390
+				width:        140
+				height:       32
+				text:         'Urgency Rating'
 			},
 			ControlSpec{
 				id:               'btn_send_ticket'
@@ -979,33 +978,33 @@ pub fn get_api_form_spec() FormSpec {
 		spacing:          12
 		controls:         [
 			ControlSpec{
-				id:         'lbl_api_header'
+				id:           'lbl_api_header'
 				control_type: 'label'
-				x:          24
-				y:          20
-				width:      480
-				height:     32
-				text:       '⚡ REST API Client & Endpoint Tester'
-				font_size:  20
-				font_color: '#10b981'
+				x:            24
+				y:            20
+				width:        480
+				height:       32
+				text:         '⚡ REST API Client & Endpoint Tester'
+				font_size:    20
+				font_color:   '#10b981'
 			},
 			ControlSpec{
-				id:         'dropdown_method'
+				id:           'dropdown_method'
 				control_type: 'form_dropdown'
-				x:          24
-				y:          64
-				width:      140
-				height:     44
-				text:       'HTTP Method'
+				x:            24
+				y:            64
+				width:        140
+				height:       44
+				text:         'HTTP Method'
 			},
 			ControlSpec{
-				id:         'field_url'
+				id:           'field_url'
 				control_type: 'form_field'
-				x:          176
-				y:          64
-				width:      480
-				height:     44
-				text:       'Endpoint: https://api.vlang.org/v1/status'
+				x:            176
+				y:            64
+				width:        480
+				height:       44
+				text:         'Endpoint: https://api.vlang.org/v1/status'
 			},
 			ControlSpec{
 				id:               'btn_send_api'
@@ -1018,22 +1017,22 @@ pub fn get_api_form_spec() FormSpec {
 				background_color: '#10b981'
 			},
 			ControlSpec{
-				id:         'status_api'
+				id:           'status_api'
 				control_type: 'status_indicator'
-				x:          24
-				y:          120
-				width:      220
-				height:     28
-				text:       '200 OK (38ms)'
+				x:            24
+				y:            120
+				width:        220
+				height:       28
+				text:         '200 OK (38ms)'
 			},
 			ControlSpec{
-				id:         'code_response'
+				id:           'code_response'
 				control_type: 'code_view'
-				x:          24
-				y:          160
-				width:      784
-				height:     340
-				text:       'JSON Response Payload'
+				x:            24
+				y:            160
+				width:        784
+				height:       340
+				text:         'JSON Response Payload'
 			},
 		]
 	}
@@ -1050,35 +1049,35 @@ pub fn get_media_form_spec() FormSpec {
 		spacing:          12
 		controls:         [
 			ControlSpec{
-				id:         'lbl_media_header'
+				id:           'lbl_media_header'
 				control_type: 'label'
-				x:          24
-				y:          20
-				width:      400
-				height:     32
-				text:       '🎵 Hi-Fi Audio Player'
-				font_size:  20
-				font_color: '#38bdf8'
+				x:            24
+				y:            20
+				width:        400
+				height:       32
+				text:         '🎵 Hi-Fi Audio Player'
+				font_size:    20
+				font_color:   '#38bdf8'
 			},
 			ControlSpec{
-				id:         'lbl_track_name'
+				id:           'lbl_track_name'
 				control_type: 'label'
-				x:          24
-				y:          64
-				width:      400
-				height:     28
-				text:       'Track: Vlang Symphony No. 9 in D Minor'
-				font_size:  15
+				x:            24
+				y:            64
+				width:        400
+				height:       28
+				text:         'Track: Vlang Symphony No. 9 in D Minor'
+				font_size:    15
 			},
 			ControlSpec{
-				id:         'progress_playback'
+				id:           'progress_playback'
 				control_type: 'progress'
-				x:          24
-				y:          100
-				width:      560
-				height:     32
-				value:      64
-				text:       'Playback Progress'
+				x:            24
+				y:            100
+				width:        560
+				height:       32
+				value:        64
+				text:         'Playback Progress'
 			},
 			ControlSpec{
 				id:               'btn_prev'
@@ -1111,23 +1110,23 @@ pub fn get_media_form_spec() FormSpec {
 				background_color: '#334155'
 			},
 			ControlSpec{
-				id:         'slider_volume'
+				id:           'slider_volume'
 				control_type: 'slider'
-				x:          24
-				y:          205
-				width:      360
-				height:     28
-				value:      80
-				text:       'Volume Level'
+				x:            24
+				y:            205
+				width:        360
+				height:       28
+				value:        80
+				text:         'Volume Level'
 			},
 			ControlSpec{
-				id:         'rating_track'
+				id:           'rating_track'
 				control_type: 'rating'
-				x:          24
-				y:          245
-				width:      140
-				height:     32
-				text:       'Favorite Rating'
+				x:            24
+				y:            245
+				width:        140
+				height:       32
+				text:         'Favorite Rating'
 			},
 		]
 	}
@@ -1301,15 +1300,15 @@ pub fn get_settings_form_spec() FormSpec {
 		spacing:          12
 		controls:         [
 			ControlSpec{
-				id:               'lbl_settings_header'
-				control_type:     'label'
-				x:                24
-				y:                24
-				width:            420
-				height:           32
-				text:             '⚙️ System Settings & Preferences'
-				font_size:        18
-				font_color:       '#38bdf8'
+				id:           'lbl_settings_header'
+				control_type: 'label'
+				x:            24
+				y:            24
+				width:        420
+				height:       32
+				text:         '⚙️ System Settings & Preferences'
+				font_size:    18
+				font_color:   '#38bdf8'
 			},
 			ControlSpec{
 				id:               'panel_general'
@@ -1332,33 +1331,33 @@ pub fn get_settings_form_spec() FormSpec {
 				background_color: '#1e293b'
 			},
 			ControlSpec{
-				id:             'inp_app_name'
-				control_type:   'input'
-				x:              40
-				y:              110
-				width:          340
-				height:         36
-				text:           'Vlang Studio App'
-				placeholder:    'App Name'
+				id:           'inp_app_name'
+				control_type: 'input'
+				x:            40
+				y:            110
+				width:        340
+				height:       36
+				text:         'Vlang Studio App'
+				placeholder:  'App Name'
 			},
 			ControlSpec{
-				id:             'slider_security_level'
-				control_type:   'slider'
-				x:              446
-				y:              110
-				width:          360
-				height:         28
-				value:          80
+				id:           'slider_security_level'
+				control_type: 'slider'
+				x:            446
+				y:            110
+				width:        360
+				height:       28
+				value:        80
 			},
 			ControlSpec{
-				id:             'sw_dark_mode'
-				control_type:   'switch'
-				x:              40
-				y:              160
-				width:          260
-				height:         28
-				text:           'Enable GPU Acceleration'
-				checked:        true
+				id:           'sw_dark_mode'
+				control_type: 'switch'
+				x:            40
+				y:            160
+				width:        260
+				height:       28
+				text:         'Enable GPU Acceleration'
+				checked:      true
 			},
 			ControlSpec{
 				id:               'badge_status'
@@ -1371,14 +1370,14 @@ pub fn get_settings_form_spec() FormSpec {
 				background_color: '#059669'
 			},
 			ControlSpec{
-				id:             'sw_auto_save'
-				control_type:   'switch'
-				x:              40
-				y:              200
-				width:          260
-				height:         28
-				text:           'Auto-save Session State'
-				checked:        true
+				id:           'sw_auto_save'
+				control_type: 'switch'
+				x:            40
+				y:            200
+				width:        260
+				height:       28
+				text:         'Auto-save Session State'
+				checked:      true
 			},
 			ControlSpec{
 				id:               'btn_save_settings'
@@ -1409,15 +1408,15 @@ pub fn get_checkout_form_spec() FormSpec {
 		spacing:          12
 		controls:         [
 			ControlSpec{
-				id:               'lbl_checkout_header'
-				control_type:     'label'
-				x:                24
-				y:                20
-				width:            420
-				height:           32
-				text:             '🛒 Order Checkout & Payment'
-				font_size:        20
-				font_color:       '#38bdf8'
+				id:           'lbl_checkout_header'
+				control_type: 'label'
+				x:            24
+				y:            20
+				width:        420
+				height:       32
+				text:         '🛒 Order Checkout & Payment'
+				font_size:    20
+				font_color:   '#38bdf8'
 			},
 			ControlSpec{
 				id:               'panel_billing'
@@ -1440,34 +1439,34 @@ pub fn get_checkout_form_spec() FormSpec {
 				background_color: '#1e293b'
 			},
 			ControlSpec{
-				id:             'inp_full_name'
-				control_type:   'input'
-				x:              40
-				y:              104
-				width:          408
-				height:         36
-				text:           'Ada Lovelace'
-				placeholder:    'Full Name'
+				id:           'inp_full_name'
+				control_type: 'input'
+				x:            40
+				y:            104
+				width:        408
+				height:       36
+				text:         'Ada Lovelace'
+				placeholder:  'Full Name'
 			},
 			ControlSpec{
-				id:             'inp_card_number'
-				control_type:   'input'
-				x:              506
-				y:              104
-				width:          408
-				height:         36
-				text:           '4532 •••• •••• 8892'
-				placeholder:    'Credit Card Number'
+				id:           'inp_card_number'
+				control_type: 'input'
+				x:            506
+				y:            104
+				width:        408
+				height:       36
+				text:         '4532 •••• •••• 8892'
+				placeholder:  'Credit Card Number'
 			},
 			ControlSpec{
-				id:             'inp_email_addr'
-				control_type:   'input'
-				x:              40
-				y:              152
-				width:          408
-				height:         36
-				text:           'ada@lovelace.org'
-				placeholder:    'Email Address'
+				id:           'inp_email_addr'
+				control_type: 'input'
+				x:            40
+				y:            152
+				width:        408
+				height:       36
+				text:         'ada@lovelace.org'
+				placeholder:  'Email Address'
 			},
 			ControlSpec{
 				id:               'badge_total'
@@ -1480,14 +1479,14 @@ pub fn get_checkout_form_spec() FormSpec {
 				background_color: '#059669'
 			},
 			ControlSpec{
-				id:             'inp_address_line'
-				control_type:   'input'
-				x:              40
-				y:              200
-				width:          408
-				height:         36
-				text:           '100 Innovation Way, Suite 400'
-				placeholder:    'Street Address'
+				id:           'inp_address_line'
+				control_type: 'input'
+				x:            40
+				y:            200
+				width:        408
+				height:       36
+				text:         '100 Innovation Way, Suite 400'
+				placeholder:  'Street Address'
 			},
 			ControlSpec{
 				id:               'btn_place_order'

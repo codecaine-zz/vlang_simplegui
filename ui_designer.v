@@ -27,9 +27,12 @@ fn main() {
 	win.add_label('workspace_intro', 'Design forms in a familiar RAD flow: pick a template, tune properties, auto-arrange multi-column grids, and preview live windows.')
 	win.set_control_font_size('workspace_intro', 11)
 
-	win.add_toolbar_item('tb_code', 'Copy V Code', 'Copy generated V code to clipboard', 'doc.on.doc')
-	win.add_toolbar_item('tb_html', 'Copy HTML', 'Copy generated standalone HTML/CSS code to clipboard', 'globe')
-	win.add_toolbar_item('tb_run', 'Test Run Form', 'Launch live interactive window preview', 'play.circle.fill')
+	win.add_toolbar_item('tb_code', 'Copy V Code', 'Copy generated V code to clipboard',
+		'doc.on.doc')
+	win.add_toolbar_item('tb_html', 'Copy HTML', 'Copy generated standalone HTML/CSS code to clipboard',
+		'globe')
+	win.add_toolbar_item('tb_run', 'Test Run Form', 'Launch live interactive window preview',
+		'play.circle.fill')
 
 	win.on_toolbar_click('tb_code', fn [state] (mut w simplegui.SimpleWindow) {
 		code := simplegui.generate_v_code(state.spec)
@@ -143,7 +146,11 @@ fn render_preview_control(mut prev_win simplegui.SimpleWindow, c simplegui.Contr
 			prev_win.add_slider(c.id, c.value)
 		}
 		'color' {
-			col := if c.font_color.len > 0 && c.font_color != '#ffffff' { c.font_color } else { '#38bdf8' }
+			col := if c.font_color.len > 0 && c.font_color != '#ffffff' {
+				c.font_color
+			} else {
+				'#38bdf8'
+			}
 			prev_win.add_color_well(c.id, col)
 		}
 		'date' {
@@ -179,7 +186,6 @@ fn render_preview_control(mut prev_win simplegui.SimpleWindow, c simplegui.Contr
 		'search' {
 			prev_win.add_search_field(c.id, c.text)
 		}
-
 		// Integrated Form Controls (Label + Input/Control)
 		'form_field' {
 			prev_win.add_form_field(c.text, c.id, 'Sample Input')
@@ -197,7 +203,8 @@ fn render_preview_control(mut prev_win simplegui.SimpleWindow, c simplegui.Contr
 			prev_win.add_form_slider(c.text, c.id, c.value)
 		}
 		'form_dropdown' {
-			prev_win.add_form_dropdown(c.text, c.id, ['Option 1', 'Option 2', 'Option 3'], 'Option 1')
+			prev_win.add_form_dropdown(c.text, c.id, ['Option 1', 'Option 2', 'Option 3'],
+				'Option 1')
 		}
 		'form_date' {
 			prev_win.add_form_date_picker(c.text, c.id, '2026-07-22')
@@ -211,7 +218,6 @@ fn render_preview_control(mut prev_win simplegui.SimpleWindow, c simplegui.Contr
 		'form_link' {
 			prev_win.add_form_link(c.text, c.id, 'View Documentation', 'https://github.com')
 		}
-
 		// Demo Controls & Widgets
 		'rating' {
 			prev_win.add_rating(c.id, c.value / 20)
@@ -241,10 +247,12 @@ fn render_preview_control(mut prev_win simplegui.SimpleWindow, c simplegui.Contr
 			prev_win.add_metric_card(c.id, c.text, '$48.2K', '+12%', 'vs previous month')
 		}
 		'alert_banner' {
-			prev_win.add_alert_banner(c.id, c.text, 'System update completed successfully.', 'info')
+			prev_win.add_alert_banner(c.id, c.text, 'System update completed successfully.',
+				'info')
 		}
 		'code_view' {
-			prev_win.add_code_view(c.id, 'v', 'fn main() {\n  println("Hello SimpleGUI")\n}', 100)
+			prev_win.add_code_view(c.id, 'v', 'fn main() {\n  println("Hello SimpleGUI")\n}',
+				100)
 		}
 		else {
 			prev_win.add_button(c.id, c.text)
