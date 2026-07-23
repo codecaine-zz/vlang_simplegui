@@ -11345,6 +11345,56 @@ void *window_add_textarea_control(main__WindowInfo *info, const char *name, cons
   return [delegate makeTextAreaWithName:nsstring(name) value:nsstring(value)];
 }
 
+void window_textarea_goto_line(main__WindowInfo *info, const char *name, int line_number, int focus) {
+  if (!info || !name) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  if (!delegate) return;
+
+  void (^block)(void) = ^{
+    NSView *view = delegate.controlsByName[[nsstring(name) lowercaseString]];
+    NSTextView *textView = nil;
+    if ([view isKindOfClass:[NSTextView class]]) {
+      textView = (NSTextView *)view;
+    } else if ([view isKindOfClass:[NSScrollView class]]) {
+      NSScrollView *sv = (NSScrollView *)view;
+      if ([sv.documentView isKindOfClass:[NSTextView class]]) {
+        textView = (NSTextView *)sv.documentView;
+      }
+    }
+    if (!textView) return;
+
+    NSString *string = [textView string];
+    if (!string || string.length == 0) return;
+
+    NSArray *lines = [string componentsSeparatedByString:@"\n"];
+    int target_line = line_number;
+    if (target_line < 1) target_line = 1;
+    if (target_line > (int)lines.count) target_line = (int)lines.count;
+
+    NSUInteger charIdx = 0;
+    for (int i = 0; i < target_line - 1; i++) {
+      charIdx += [(NSString *)lines[i] length] + 1;
+    }
+
+    NSUInteger lineLen = [(NSString *)lines[target_line - 1] length];
+    NSRange lineRange = NSMakeRange(charIdx, lineLen);
+
+    if (NSMaxRange(lineRange) <= string.length) {
+      [textView setSelectedRange:lineRange];
+      [textView scrollRangeToVisible:lineRange];
+      if (focus == 1) {
+        [[textView window] makeFirstResponder:textView];
+      }
+    }
+  };
+
+  if ([NSThread isMainThread]) {
+    block();
+  } else {
+    dispatch_async(dispatch_get_main_queue(), block);
+  }
+}
+
 void *window_add_html_view_control(main__WindowInfo *info, const char *name, const char *html) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
   return [delegate makeHtmlViewWithName:nsstring(name) html:nsstring(html)];

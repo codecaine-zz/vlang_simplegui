@@ -110,6 +110,7 @@ fn C.window_add_label_control(&WindowInfo, &u8, &u8) voidptr
 fn C.window_add_input_control(&WindowInfo, &u8, &u8) voidptr
 fn C.window_add_password_control(&WindowInfo, &u8, &u8) voidptr
 fn C.window_add_textarea_control(&WindowInfo, &u8, &u8) voidptr
+fn C.window_textarea_goto_line(&WindowInfo, &u8, int, int)
 fn C.window_add_html_view_control(&WindowInfo, &u8, &u8) voidptr
 fn C.window_add_drop_zone_control(&WindowInfo, &u8, &u8) voidptr
 fn C.window_add_checkbox_control(&WindowInfo, &u8, &u8, int) voidptr
@@ -1060,6 +1061,15 @@ pub fn (win &SimpleWindow) add_textarea(name string, value string) &SimpleWindow
 	}
 	if win.window_info != unsafe { nil } {
 		C.window_add_textarea_control(win.window_info, real_name.str, value.str)
+	}
+	return win
+}
+
+// textarea_goto_line scrolls the named textarea control to line_number and selects the line.
+pub fn (win &SimpleWindow) textarea_goto_line(name string, line_number int, focus bool) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		do_focus := if focus { 1 } else { 0 }
+		C.window_textarea_goto_line(win.window_info, name.str, line_number, do_focus)
 	}
 	return win
 }

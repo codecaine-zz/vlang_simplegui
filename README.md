@@ -103,13 +103,20 @@ The goal is a simple, high-abstraction GUI layer that feels familiar to anyone u
   - One-click V source code generator producing clean `simplegui` code with event handler callback stubs.
   - Import / Export JSON layout specs, live V runtime state sync (`syncSpecToV()`), and launch live native preview test windows (`launch_preview_window`) executing click, hover, hover exit, and change callbacks.
 - **RAD Code Explorer & Live Previewer Studio**:
-  - Interactive V code studio & file explorer (`v run demo_previewer.v` or `v run vlang_simple_gui_previewer.v`).
-  - **📂 Native Folder Picker & Drag & Drop**: Select any local V project directory (`w.select_folder()`) or drag-and-drop folders/files to instantly inspect and edit code.
-  - **📚 Interactive File Browser**: Live list box with instant search filter (`bind_search_to_list`).
-  - **▶ Live Window Execution**: 1-click execution (`v run`) with animated loading spinners (`live_spinner`) and non-blocking process execution.
+  - Interactive V code studio & file explorer (`v run demo_previewer.v` or `v run vlang_simple_gui_previewer.v`), buildable as a standalone macOS `.app` bundle via `v run build_previewer.vsh`.
+  - **📂 Workspace Folder Management & Drag & Drop**: Select any local V project directory (`w.select_folder()`) or drag-and-drop folders/files directly into the window to open them.
+  - **📄 File Creation, Saving & Reverting**: Create new V source files (`📄 New File`), save edits back to disk (`💾 Save File`), or revert unsaved edits (`↺ Reset Code`) to original file contents.
+  - **📚 Workspace File Explorer & Search**: Live list box with instant file search filtering (`bind_search_to_list`).
+  - **#️⃣ Line Numbers & Line Gutter**: Enabled by default (`#️⃣ Line Numbers`), formatting monospaced line numbers (`001 | `, `002 | `, ...) and auto-stripping line numbers when compiling, formatting (`v fmt`), saving, or copying to clipboard.
+  - **🎯 Go To Line Number ("Jump Line")**: Instant line navigation (`input_goto_line` + `btn_goto_line`) that programmatically scrolls the native Cocoa `NSTextView` to the line, highlights it, and displays line contents in the status bar and output console. Preserves keyboard input focus while typing multi-digit numbers.
+  - **🔍 Find in Code Search**: Line-by-line code searching (`input_find_code` + `btn_find_code`) highlighting matching line numbers in the diagnostic console log and scrolling to the first match.
+  - **📊 Live Code Metrics & Stats**: Header bar displaying file line count, word count, character count, function count (`fn ...`), and live modification indicator (`* [Modified]`).
+  - **▶ Live Window Execution**: 1-click compilation and execution (`v run`) with animated loading spinners (`live_spinner`) and non-blocking background thread window launching.
   - **⚡ Integrated Auto-Formatting**: 1-click code formatting via `v fmt -w`.
-  - **📋 RAD Code Export**: One-click copy V code to system clipboard.
-  - **⚡ Quick Templates & Themes**: Insert GUI boilerplate snippets and dynamically switch workspace themes (Dracula, Nord, Dark, Light).
+  - **⚡ Quick RAD Templates**: 1-click loading of boilerplate GUI snippets (Minimal Window, Form & Input Row, Multi-Column Grid Table, Tabbed Layout View, Interactive Event Handlers, Canvas & Custom Drawing, Toolbar & Dialog Alerts).
+  - **📋 RAD Code Clipboard Export**: 1-click copy clean V code to system clipboard.
+  - **🛠️ Compiler Diagnostics & Console Log**: Integrated diagnostic output log console with color-coded severity levels and 1-click log clear (`tb_console_clear`).
+  - **🎨 Multi-Theme Workspace**: Dynamic workspace theme switching (Dracula, Nord, Dark, Light) with high-contrast label color adjustments.
 
 ![SimpleGUI RAD Code Explorer & Live Previewer Studio](screenshots/demo_previewer.png)
 

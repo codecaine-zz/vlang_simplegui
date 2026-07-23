@@ -58,6 +58,7 @@ void *window_add_label_control(main__WindowInfo *info, const char *name, const c
 void *window_add_input_control(main__WindowInfo *info, const char *name, const char *value);
 void *window_add_password_control(main__WindowInfo *info, const char *name, const char *value);
 void *window_add_textarea_control(main__WindowInfo *info, const char *name, const char *value);
+void window_textarea_goto_line(main__WindowInfo *info, const char *name, int line_number, int focus);
 void *window_add_html_view_control(main__WindowInfo *info, const char *name, const char *html);
 void *window_add_drop_zone_control(main__WindowInfo *info, const char *name, const char *label);
 void *window_add_checkbox_control(main__WindowInfo *info, const char *name, const char *text, int checked);
