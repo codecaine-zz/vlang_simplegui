@@ -10,7 +10,7 @@ pub mut:
 	selected_file     string
 	original_code     string
 	current_file_path string
-	theme_name        string = 'dracula'
+	theme_name        string = 'nord'
 	is_dirty          bool
 	show_line_numbers bool   = true
 }
@@ -40,11 +40,11 @@ fn main() {
 	win.add_label('studio_heading', 'SimpleGUI RAD Code Explorer & Interactive Live Previewer')
 		.bold(true)
 		.font_size(18)
-		.font_color('#8be9fd')
+		.font_color('#88c0d0')
 
 	win.add_label('studio_sub', 'Open any V project folder, browse code live, auto-format with `v fmt`, inspect compilation diagnostics, jump to line numbers, and copy RAD code.')
 		.font_size(11)
-		.font_color('#6272a4')
+		.font_color('#a3be8c')
 
 	win.add_separator()
 
@@ -78,13 +78,13 @@ fn main() {
 	win.add_label('lbl_search', '🔍 Filter:')
 		.bold(true)
 		.font_size(12)
-		.font_color('#f1fa8c')
+		.font_color('#88c0d0')
 	win.add_search_field('search_demos', 'Filter V files...')
 
 	win.add_label('lbl_tpl', '⚡ Templates:')
 		.bold(true)
 		.font_size(12)
-		.font_color('#8be9fd')
+		.font_color('#ebcb8b')
 	win.add_dropdown('tpl_picker', [
 		'Select Quick Template...',
 		'Minimal Window',
@@ -99,8 +99,8 @@ fn main() {
 	win.add_label('lbl_theme', '🎨 Theme:')
 		.bold(true)
 		.font_size(12)
-		.font_color('#bd93f9')
-	win.add_dropdown('theme_picker', ['Dracula', 'Nord', 'Dark', 'Light'], 'Dracula')
+		.font_color('#b48ead')
+	win.add_dropdown('theme_picker', ['Dracula', 'Nord', 'Dark', 'Light'], 'Nord')
 	win.end_row()
 
 	win.set_control_width('search_demos', 160)
@@ -125,12 +125,12 @@ fn main() {
 	win.add_label('lbl_demo_count', '📚 Folder: ${os.file_name(state.current_dir)} (${state.v_files.len} Files)')
 		.bold(true)
 		.font_size(13)
-		.font_color('#f8fafc')
+		.font_color('#eceff4')
 
 	win.add_label('code_stats', format_stats_header(state.selected_file, state.original_code, false))
 		.bold(true)
 		.font_size(13)
-		.font_color('#38bdf8')
+		.font_color('#81a1c1')
 	win.end_row()
 
 	win.set_control_width('lbl_demo_count', 330)
@@ -159,14 +159,14 @@ fn main() {
 	win.add_label('lbl_goto', '🎯 Jump Line:')
 		.bold(true)
 		.font_size(12)
-		.font_color('#50fa7b')
+		.font_color('#a3be8c')
 	win.add_input('input_goto_line', '')
 	win.add_button('btn_goto_line', 'Jump')
 
 	win.add_label('lbl_find_code', '🔍 Search Code:')
 		.bold(true)
 		.font_size(12)
-		.font_color('#ff79c6')
+		.font_color('#d08770')
 	win.add_input('input_find_code', '')
 	win.add_button('btn_find_code', 'Find')
 	win.end_row()
@@ -393,6 +393,17 @@ fn main() {
 	})
 
 	win.set_status('SimpleGUI Previewer loaded. Folder: ${state.current_dir} (${state.v_files.len} .v files)')
+
+	// Capture screenshot if automated inspection is requested
+	capture_path := os.getenv('SIMPLEGUI_CAPTURE')
+	if capture_path != '' {
+		win.after(1200, fn [capture_path] (mut w simplegui.SimpleWindow) {
+			w.capture_screenshot(capture_path)
+			w.after(400, fn (mut w2 simplegui.SimpleWindow) {
+				w2.close()
+			})
+		})
+	}
 
 	win.run()
 }
