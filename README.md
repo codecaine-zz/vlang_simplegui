@@ -102,6 +102,16 @@ The goal is a simple, high-abstraction GUI layer that feels familiar to anyone u
   - 10 Pre-loaded layout presets: Customer Registration, Auth Login, KPI Dashboard, Settings Studio, Checkout, Enterprise Data Grid CRUD Manager, Support Ticket Reporter, REST API Client Tester, Audio Media Player, and User Profile.
   - One-click V source code generator producing clean `simplegui` code with event handler callback stubs.
   - Import / Export JSON layout specs, live V runtime state sync (`syncSpecToV()`), and launch live native preview test windows (`launch_preview_window`) executing click, hover, hover exit, and change callbacks.
+- **RAD Code Explorer & Live Previewer Studio**:
+  - Interactive V code studio & file explorer (`v run demo_previewer.v` or `v run vlang_simple_gui_previewer.v`).
+  - **📂 Native Folder Picker & Drag & Drop**: Select any local V project directory (`w.select_folder()`) or drag-and-drop folders/files to instantly inspect and edit code.
+  - **📚 Interactive File Browser**: Live list box with instant search filter (`bind_search_to_list`).
+  - **▶ Live Window Execution**: 1-click execution (`v run`) with animated loading spinners (`live_spinner`) and non-blocking process execution.
+  - **⚡ Integrated Auto-Formatting**: 1-click code formatting via `v fmt -w`.
+  - **📋 RAD Code Export**: One-click copy V code to system clipboard.
+  - **⚡ Quick Templates & Themes**: Insert GUI boilerplate snippets and dynamically switch workspace themes (Dracula, Nord, Dark, Light).
+
+![SimpleGUI RAD Code Explorer & Live Previewer Studio](screenshots/demo_previewer.png)
 
 ![SimpleGUI RAD Visual UI Designer Studio](screenshots/ui_designer.png)
 
@@ -489,6 +499,9 @@ v run build.vsh demos/settings_editor.v --name "Preferences Panel" --icon resour
 
 # 6. Compile the Web Studio Demo with the high-fidelity Browser / DOM Explorer Tile icon
 v run build.vsh demos/web_studio_demo.v --name "Web BI Studio" --icon resources/browser.png
+
+# 7. Compile the RAD Code Explorer & Live Previewer into a standalone macOS .app bundle with icon
+v run build_previewer.vsh
 ```
 
 ### 4. Batch Compile All Demos
@@ -561,6 +574,8 @@ v run .
 | Demo                                                           | Description                                                                 |
 | -------------------------------------------------------------- | --------------------------------------------------------------------------- |
 | [ui_designer.v](ui_designer.v)                                 | Delphi & VB-inspired Visual RAD Designer studio & V code generator          |
+| [demo_previewer.v](demo_previewer.v)                           | Interactive V Code Explorer & Live Window Preview Studio                    |
+| [vlang_simple_gui_previewer.v](vlang_simple_gui_previewer.v)   | General-purpose V project directory code explorer & previewer studio        |
 | [starter_template.v](demos/starter_template.v)                 | Minimal starter app for new developers                                      |
 | [beginner_demo.v](demos/beginner_demo.v)                       | Beginner-friendly signup form and profile builder                           |
 | [vertical_stack_starter.v](demos/vertical_stack_starter.v)     | Best-practice template for vertical stack forms                             |
