@@ -312,7 +312,11 @@ win.run()
 
 ## Starter templates
 
-### Vertical stack layout (default flow)
+Here are copy-pasteable beginner templates for **every layout container and control pattern** supported by SimpleGUI:
+
+---
+
+### 1. Vertical Stack Layout (Default Flow)
 
 Best for simple forms, log views, setup wizards, and linear layouts where controls stack nicely top-to-bottom.
 
@@ -350,9 +354,9 @@ fn on_submit(mut win &simplegui.SimpleWindow) {
 
 ---
 
-### Side-by-side row layout (grid columns)
+### 2. Side-by-Side Horizontal Row Layout (`win.row` / `win.begin_row`)
 
-Best for tabular layouts, calculators, search bars with inline action buttons, or database filter fields aligned horizontally.
+Best for tabular layouts, search bars with inline action buttons, or database filter fields aligned horizontally.
 
 ```v
 module main
@@ -405,7 +409,241 @@ fn on_search_clicked(mut win &simplegui.SimpleWindow) {
 
 ---
 
-### Getting, setting, and event binding pattern
+### 3. Multi-Column Grid Layout (`win.begin_grid` / `win.grid`)
+
+Best for multi-column registration forms, survey cards, or dashboard grid boxes where controls automatically wrap across horizontal columns.
+
+```v
+module main
+
+import simplegui
+
+fn main() {
+    mut win := simplegui.new_simple_window('Grid Starter', 640, 480)
+        .set_padding(20)
+        .add_heading('Registration Form (2-Column Grid)')
+
+    // 2-column grid container with 12px spacing between elements
+    win.begin_grid('reg_grid', 2, 12)
+        .add_label('lbl_fn', 'First Name:')
+        .add_input('first_name', '')
+        .add_label('lbl_ln', 'Last Name:')
+        .add_input('last_name', '')
+        .add_label('lbl_email', 'Email Address:')
+        .add_input('email', '')
+        .add_label('lbl_role', 'Role:')
+        .add_dropdown('role', ['Developer', 'Designer', 'Manager'], 'Developer')
+        .end_grid()
+
+    win.add_vertical_spacer(15)
+    win.add_button('btn_submit', 'Register User')
+       .on_click('btn_submit', fn (mut w simplegui.SimpleWindow) {
+           fn_str := w.get_text('first_name')
+           ln_str := w.get_text('last_name')
+           w.info('Welcome', 'Registered ${fn_str} ${ln_str}!')
+       })
+
+    win.run()
+}
+```
+
+---
+
+### 4. Flexbox Container Layout (`win.begin_flex_box` / `win.flex_box`)
+
+Best for responsive toolbars, action footers, and flexible container cards with main-axis alignment (`start`, `center`, `end`, `space_between`, `fill`).
+
+```v
+module main
+
+import simplegui
+
+fn main() {
+    mut win := simplegui.new_simple_window('Flexbox Starter', 600, 380)
+        .set_padding(20)
+        .add_heading('Flexbox Action Toolbar')
+
+    // Flexbox row container with space_between distribution and centered alignment
+    win.begin_flex_box('flex_bar', 'row', 'space_between', 'center')
+        .add_label('lbl_status', 'Status: System Online')
+        .add_button('btn_refresh', 'Refresh Data')
+        .add_button('btn_settings', 'Settings')
+        .end_flex_box()
+
+    win.add_separator()
+    win.add_textarea('log_view', 'Activity logs will appear here...')
+        .height(180)
+
+    win.run()
+}
+```
+
+---
+
+### 5. Group Box Container Layout (`win.add_group_box` / `win.group`)
+
+Best for visually grouping related form fields (e.g., Personal Info, Security Settings, Preferences) inside framed boxes with titles.
+
+```v
+module main
+
+import simplegui
+
+fn main() {
+    mut win := simplegui.new_simple_window('Group Box Starter', 560, 450)
+        .set_padding(18)
+        .add_heading('Account & Security Settings')
+
+    // Group box 1: Personal Details
+    win.group('profile_group', 'Personal Details', fn (mut w simplegui.SimpleWindow) {
+        w.add_input('name', 'Ada Lovelace')
+        w.add_input('email', 'ada@example.com')
+    })
+
+    win.add_vertical_spacer(10)
+
+    // Group box 2: Security Credentials
+    win.group('security_group', 'Security & Authentication', fn (mut w simplegui.SimpleWindow) {
+        w.add_switch('2fa_switch', 'Enable Two-Factor Authentication', true)
+        w.add_password('pass', 'secret_password')
+    })
+
+    win.run()
+}
+```
+
+---
+
+### 6. Tabbed Multi-Pane Layout (`win.add_tabs`)
+
+Best for multi-view settings windows, preference panels, or dashboards where users switch between views using top tab buttons.
+
+```v
+module main
+
+import simplegui
+
+fn main() {
+    mut win := simplegui.new_simple_window('Tabs Starter', 640, 420)
+        .set_padding(15)
+
+    // Native macOS tabbed container view
+    win.add_tabs('main_tabs', ['General', 'Appearance', 'Notifications'])
+        .add_heading('General Preferences')
+        .add_input('app_name', 'My Custom Mac App')
+        .add_checkbox('auto_start', 'Launch application at system login', true)
+        .add_button('btn_save', 'Save Preferences')
+        .on_click('btn_save', fn (mut w simplegui.SimpleWindow) {
+            w.toast('Preferences saved successfully!')
+        })
+
+    win.run()
+}
+```
+
+---
+
+### 7. Scroll View Container Layout (`win.add_scroll_view`)
+
+Best for displaying long text documents, privacy policies, terms of service, or log feeds that exceed the window height.
+
+```v
+module main
+
+import simplegui
+
+fn main() {
+    mut win := simplegui.new_simple_window('Scroll View Starter', 500, 360)
+        .set_padding(15)
+        .add_heading('Terms of Service (Scrollable View)')
+
+    // Scroll view viewport locked to 200px height
+    win.add_scroll_view('scroll_terms', 200)
+        .add_textarea('terms_text', '1. License Agreement...\n2. Privacy Policy...\n3. User Responsibilities...')
+        .height(350) // Textarea height exceeds viewport, creating a scrollbar automatically
+
+    win.add_vertical_spacer(10)
+    win.add_checkbox('accept_chk', 'I have read and agree to the terms', false)
+    win.add_button('btn_continue', 'Continue')
+       .on_click('btn_continue', fn (mut w simplegui.SimpleWindow) {
+           if w.get_checked('accept_chk') {
+               w.info('Success', 'Terms accepted!')
+           } else {
+               w.warn('Notice', 'Please check the agreement box before continuing.')
+           }
+       })
+
+    win.run()
+}
+```
+
+---
+
+### 8. Multi-Column Data Table Layout (`win.add_table`)
+
+Best for displaying structured records, employee lists, inventory catalogs, or database results in a multi-column table view.
+
+```v
+module main
+
+import simplegui
+
+fn main() {
+    mut win := simplegui.new_simple_window('Data Table Starter', 640, 420)
+        .set_padding(18)
+        .add_heading('Employee Directory Table')
+
+    // Create a multi-column table with 3 headers
+    win.add_table('employees_table', ['ID', 'Name', 'Department'])
+       .set_table_rows('employees_table', [
+           ['101', 'Ada Lovelace', 'Engineering'],
+           ['102', 'Alan Turing', 'Research'],
+           ['103', 'Grace Hopper', 'Systems'],
+       ])
+
+    win.on_table_select('employees_table', fn (mut w simplegui.SimpleWindow, row_idx string) {
+        w.set_status('Selected row index: ${row_idx}')
+    })
+
+    win.run()
+}
+```
+
+---
+
+### 9. Hierarchical Tree View Layout (`win.add_tree_view`)
+
+Best for file browsers, folder navigation, category hierarchies, or organization charts with expandable parent-child nodes.
+
+```v
+module main
+
+import simplegui
+
+fn main() {
+    mut win := simplegui.new_simple_window('Tree View Starter', 520, 400)
+        .set_padding(18)
+        .add_heading('Project File Explorer Tree')
+
+    // Define tree nodes with parent-child relationships
+    nodes := [
+        simplegui.tree_root('root', 'My Project Workspace'),
+        simplegui.tree_child('src', 'root', 'src/'),
+        simplegui.tree_child('main', 'src', 'main.v'),
+        simplegui.tree_child('gui', 'src', 'simplegui.v'),
+        simplegui.tree_child('docs', 'root', 'README.md'),
+    ]
+
+    win.add_tree_view('file_tree', 250)
+       .set_tree_nodes('file_tree', nodes)
+
+    win.run()
+}
+```
+
+---
+
+### 10. State Controller & Reactive Event Binding Pattern
 
 Use this template to see how to programmatically manipulate labels, checkboxes, text values, sliders, and progress loaders dynamically on click or change.
 
