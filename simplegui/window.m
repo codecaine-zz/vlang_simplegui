@@ -12034,12 +12034,26 @@ int window_get_control_int_by_name(main__WindowInfo *info, const char *name) {
 
 void window_begin_row(main__WindowInfo *info, const char *name) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
-  [delegate beginRowWithName:nsstring(name)];
+  void (^runBlock)(void) = ^{
+    [delegate beginRowWithName:nsstring(name)];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
 }
 
 void window_end_row(main__WindowInfo *info) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
-  [delegate endRow];
+  void (^runBlock)(void) = ^{
+    [delegate endRow];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
 }
 
 void window_show_alert(main__WindowInfo *info, const char *title, const char *message) {
@@ -16856,30 +16870,50 @@ void window_set_wizard_stepper_step(main__WindowInfo *info, const char *name, in
 
 void window_begin_grid(main__WindowInfo *info, const char *name, int columns, int spacing) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
-  dispatch_async(dispatch_get_main_queue(), ^{
+  void (^runBlock)(void) = ^{
     [delegate beginGridWithName:nsstring(name) columns:columns spacing:spacing];
-  });
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
 }
 
 void window_end_grid(main__WindowInfo *info) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
-  dispatch_async(dispatch_get_main_queue(), ^{
+  void (^runBlock)(void) = ^{
     [delegate endGrid];
-  });
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
 }
 
 void window_begin_flex_box(main__WindowInfo *info, const char *name, const char *direction, const char *justify, const char *align) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
-  dispatch_async(dispatch_get_main_queue(), ^{
+  void (^runBlock)(void) = ^{
     [delegate beginFlexBoxWithName:nsstring(name) direction:nsstring(direction) justify:nsstring(justify) align:nsstring(align)];
-  });
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
 }
 
 void window_end_flex_box(main__WindowInfo *info) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
-  dispatch_async(dispatch_get_main_queue(), ^{
+  void (^runBlock)(void) = ^{
     [delegate endFlexBox];
-  });
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
 }
 
 void window_set_control_alignment_by_name(main__WindowInfo *info, const char *name, const char *alignment) {
