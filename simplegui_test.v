@@ -3156,3 +3156,92 @@ fn test_workflow_text_and_data_extras() {
 	ext_apps := simplegui.sys_list_external_apps()
 	assert ext_apps.len > 0
 }
+
+fn test_ergonomic_window_apis() {
+	mut win := simplegui.new_simple_window('Window Test', 640, 480)
+
+	// Fixed size and sizing presets
+	win.set_fixed_size(500, 400)
+	w, h := win.get_size()
+	assert w == 500
+	assert h == 400
+	assert win.get_resizable() == false
+
+	win.set_size_preset('hd')
+	w_hd, h_hd := win.get_size()
+	assert w_hd == 1280
+	assert h_hd == 720
+
+	win.set_preset_size('dialog')
+	w_dlg, h_dlg := win.get_size()
+	assert w_dlg == 420
+	assert h_dlg == 220
+
+	// Min/max size aliases
+	win.set_minimum_size(300, 200)
+	min_w, min_h := win.get_minimum_size()
+	assert min_w == 300
+	assert min_h == 200
+
+	win.set_maximum_size(1000, 800)
+	max_w, max_h := win.get_maximum_size()
+	assert max_w == 1000
+	assert max_h == 800
+
+	// Position and corner alignment presets
+	win.set_position_preset('top-left')
+	win.set_corner_position('bottom-right')
+	win.recenter()
+	win.center_on_screen()
+
+	// Title, topmost, frameless aliases
+	win.set_window_title('New Title')
+	assert win.get_title() == 'New Title'
+
+	win.set_topmost(true)
+	assert win.is_topmost() == true
+	win.set_topmost(false)
+	assert win.is_topmost() == false
+
+	win.make_frameless()
+	assert win.is_frameless() == true
+
+	// Theme shortcuts
+	win.set_dark_theme(true)
+	assert win.is_dark_theme() == true
+	win.set_dark_theme(false)
+	assert win.is_dark_theme() == false
+	win.toggle_window_theme()
+	assert win.is_dark_theme() == true
+
+	// Visibility, restore, attention & shake shortcuts
+	win.show()
+	win.restore()
+	win.restore_window()
+	win.trigger_shake()
+	win.flash_and_shake()
+	win.attention()
+
+	// Window Archetypes
+	mut dlg := simplegui.new_simple_window('Old Title', 100, 100)
+	dlg.make_fixed_dialog('Dialog Window', 400, 250)
+	assert dlg.get_title() == 'Dialog Window'
+	dlg_w, dlg_h := dlg.get_size()
+	assert dlg_w == 400
+	assert dlg_h == 250
+	assert dlg.get_resizable() == false
+	assert dlg.get_minimizable() == false
+	assert dlg.get_maximizable() == false
+
+	mut splash := simplegui.new_simple_window('Splash', 100, 100)
+	splash.make_splash_screen(500, 300)
+	assert splash.is_frameless() == true
+	assert splash.is_topmost() == true
+	spl_w, spl_h := splash.get_size()
+	assert spl_w == 500
+	assert spl_h == 300
+
+	mut panel := simplegui.new_simple_window('Panel', 300, 400)
+	panel.make_utility_panel()
+	assert panel.is_topmost() == true
+}

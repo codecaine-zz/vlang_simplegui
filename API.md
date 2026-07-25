@@ -470,8 +470,98 @@ Enables or disables standard macOS titlebar traffic light control buttons (Close
 
 Triggers an animated horizontal window shake feedback effect (ideal for error or validation failure indication).
 
+### `win.set_fixed_size(width int, height int)` &SimpleWindow
+
+Locks the window to fixed width and height dimensions and disables window resizing in a single call (`set_size(w, h)`, `set_min_size(w, h)`, `set_max_size(w, h)`, `set_resizable(false)`). Ideal for popups, login dialogs, and splash screens.
+
+### `win.set_size_preset(preset string)` / `win.set_preset_size(preset string)` &SimpleWindow
+
+Resizes the window using standard human-readable dimension presets:
+- `'small'` or `'compact'`: 400 × 300
+- `'medium'` or `'standard'`: 640 × 480
+- `'large'`: 800 × 600
+- `'xlarge'` or `'xl'`: 1024 × 768
+- `'hd'` or `'720p'`: 1280 × 720
+- `'full_hd'` or `'1080p'`: 1920 × 1080
+- `'dialog'` or `'alert'`: 420 × 220
+- `'login'` or `'auth'`: 380 × 450
+- `'settings'` or `'preferences'`: 550 × 400
+- `'sidebar'` or `'panel'`: 300 × 600
+- `'splash'`: 500 × 300
+- `'square'`: 500 × 500
+
+### `win.get_size() (int, int)`
+
+Retrieves the current window width and height as a 2-tuple `(width, height)`.
+
+### `win.set_minimum_size(width int, height int)` &SimpleWindow / `win.set_maximum_size(width int, height int)` &SimpleWindow
+
+Full-name ergonomic aliases for `set_min_size` and `set_max_size`.
+
+### `win.get_minimum_size() (int, int)` / `win.get_maximum_size() (int, int)`
+
+Full-name ergonomic aliases for `get_min_size()` and `get_max_size()`.
+
+### `win.get_position() (int, int)`
+
+Retrieves the current top-left screen coordinates of the window as an `(x, y)` 2-tuple.
+
+### `win.set_position_preset(preset string)` / `win.set_corner_position(corner string)` &SimpleWindow
+
+Positions the window on screen based on standard corner or edge preset names (`'top-left'`, `'top-right'`, `'bottom-left'`, `'bottom-right'`, `'top-center'`, `'bottom-center'`, `'center'`, `'middle-left'`, `'middle-right'`).
+
+### `win.recenter()` / `win.center_on_screen()` &SimpleWindow
+
+Friendly aliases for `center()` and `center_on_active_screen()`.
+
+### `win.show()` &SimpleWindow
+
+Unhides the window and brings it key to the front of the desktop screen stack (alias for `show_window()`).
+
+### `win.restore()` / `win.restore_window()` &SimpleWindow
+
+Restores the window from minimized state back to its standard desktop size and layout.
+
+### `win.set_window_title(title string)` &SimpleWindow
+
+Updates the window title text in the titlebar (friendly alias for `set_title(title)`).
+
+### `win.set_topmost(enabled bool)` &SimpleWindow / `win.is_topmost() bool`
+
+Friendly aliases for `set_always_on_top(enabled)` and `get_always_on_top()`.
+
+### `win.is_frameless() bool`
+
+Returns `true` if the window titlebar is hidden (`!is_titlebar_visible()`).
+
+### `win.set_dark_theme(dark bool)` &SimpleWindow / `win.toggle_window_theme()` &SimpleWindow / `win.is_dark_theme() bool`
+
+Simple boolean theme switchers: `set_dark_theme(true)` applies `'Apple Dark'` (or `'Apple Light'` when false), `toggle_window_theme()` flips between light and dark themes, and `is_dark_theme()` reports whether the active background is a dark palette.
+
+### `win.trigger_shake()` / `win.flash_and_shake()` / `win.attention()` &SimpleWindow
+
+Visual alert shortcuts: `trigger_shake()` performs a horizontal shake animation, `flash_and_shake()` flashes the window frame and shakes the window for error feedback, and `attention()` triggers a macOS Dock bounce request.
+
+### `win.make_fixed_dialog(title string, width int, height int)` &SimpleWindow
+
+Configures the window as a fixed-size dialog in one step: sets title, locks size, centers on screen, and disables minimize/maximize buttons.
+
+### `win.make_splash_screen(width int, height int)` &SimpleWindow
+
+Configures the window as a borderless centered splash screen (frameless, fixed size, centered, stay-on-top).
+
+### `win.make_utility_panel()` &SimpleWindow
+
+Configures the window as a floating tool panel (always-on-top, HUD vibrancy material, auto-hides on app blur).
+
 ### Ergonomic Window Shortcuts
 
+- **`win.set_fixed_size(w, h)`**: Locks window to non-resizable fixed width and height dimensions.
+- **`win.set_size_preset(preset)`**: Resizes window using standard presets (`'medium'`, `'hd'`, `'dialog'`, `'login'`, `'settings'`, `'sidebar'`, `'splash'`).
+- **`win.set_position_preset(preset)`**: Positions window to desktop corners (`'top-left'`, `'top-right'`, `'bottom-left'`, `'bottom-right'`, `'center'`).
+- **`win.make_fixed_dialog(title, w, h)`**: Creates a non-resizable centered dialog window.
+- **`win.make_splash_screen(w, h)`**: Creates a borderless centered splash screen.
+- **`win.make_utility_panel()`**: Creates a floating HUD tool panel that hides when app deactivates.
 - **`win.make_frameless()`**: Creates a clean borderless window with shadow (`set_titlebar_visible(false)` + `set_has_shadow(true)`).
 - **`win.make_vibrant(material)`**: Configures window background vibrancy material and background blur filter.
 - **`win.make_click_through(enabled)`**: Enables click-through overlay window behavior.
@@ -480,8 +570,8 @@ Triggers an animated horizontal window shake feedback effect (ideal for error or
 - **`win.make_panel()`**: Configures floating tool panel that hides on app deactivation.
 - **`win.make_translucent(alpha)`**: Sets window opacity level (`set_alpha(alpha)`).
 - **`win.make_sticky_space()`**: Configures window to stick across all virtual desktop Spaces (`set_collection_behavior('can_join_all_spaces')`).
-- **`win.shake_on_error()`**: Triggers window error shake animation and flashes window frame.
-- **`win.center_and_focus()`**: Centers window on active display and brings to front.
+- **`win.shake_on_error()` / `win.flash_and_shake()`**: Triggers window error shake animation and flashes window frame.
+- **`win.center_and_focus()` / `win.recenter()`**: Centers window on active display and brings to front.
 
 ### `win.run()`
 

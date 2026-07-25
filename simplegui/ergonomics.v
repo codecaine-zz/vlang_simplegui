@@ -2088,6 +2088,225 @@ pub fn (win &SimpleWindow) shake_on_error() &SimpleWindow {
 	return win.shake_window().flash_frame(true)
 }
 
+// set_fixed_size locks the window to a fixed width and height and disables resizability.
+pub fn (win &SimpleWindow) set_fixed_size(width int, height int) &SimpleWindow {
+	return win.set_size(width, height).set_min_size(width, height).set_max_size(width, height).set_resizable(false)
+}
+
+// set_size_preset resizes the window based on standard preset names (e.g. 'compact', 'medium', 'large', 'hd', 'full_hd', 'dialog', 'login', 'settings', 'sidebar', 'splash', 'square').
+pub fn (win &SimpleWindow) set_size_preset(preset string) &SimpleWindow {
+	norm := preset.to_lower().trim_space().replace('_', '-').replace(' ', '-')
+	match norm {
+		'small', 'compact' { return win.set_size(400, 300) }
+		'medium', 'standard' { return win.set_size(640, 480) }
+		'large' { return win.set_size(800, 600) }
+		'xlarge', 'xl' { return win.set_size(1024, 768) }
+		'hd', '720p' { return win.set_size(1280, 720) }
+		'full-hd', '1080p', 'fhd' { return win.set_size(1920, 1080) }
+		'dialog', 'alert', 'popup' { return win.set_size(420, 220) }
+		'login', 'auth' { return win.set_size(380, 450) }
+		'settings', 'preferences' { return win.set_size(550, 400) }
+		'sidebar', 'panel' { return win.set_size(300, 600) }
+		'splash' { return win.set_size(500, 300) }
+		'square' { return win.set_size(500, 500) }
+		else { return win.set_size(640, 480) }
+	}
+}
+
+// set_preset_size is an alias for set_size_preset.
+pub fn (win &SimpleWindow) set_preset_size(preset string) &SimpleWindow {
+	return win.set_size_preset(preset)
+}
+
+// get_size retrieves the current window width and height as a (width, height) tuple.
+pub fn (win &SimpleWindow) get_size() (int, int) {
+	return win.get_width(), win.get_height()
+}
+
+// set_minimum_size sets the minimum allowed window dimensions. Alias for set_min_size.
+pub fn (win &SimpleWindow) set_minimum_size(width int, height int) &SimpleWindow {
+	return win.set_min_size(width, height)
+}
+
+// set_maximum_size sets the maximum allowed window dimensions. Alias for set_max_size.
+pub fn (win &SimpleWindow) set_maximum_size(width int, height int) &SimpleWindow {
+	return win.set_max_size(width, height)
+}
+
+// get_minimum_size retrieves minimum window dimensions (w, h). Alias for get_min_size.
+pub fn (win &SimpleWindow) get_minimum_size() (int, int) {
+	return win.get_min_size()
+}
+
+// get_maximum_size retrieves maximum window dimensions (w, h). Alias for get_max_size.
+pub fn (win &SimpleWindow) get_maximum_size() (int, int) {
+	return win.get_max_size()
+}
+
+// get_position returns current screen coordinates as a (x, y) tuple.
+pub fn (win &SimpleWindow) get_position() (int, int) {
+	return win.get_x(), win.get_y()
+}
+
+// set_position_preset positions the window on screen based on standard corner or edge presets.
+pub fn (win &SimpleWindow) set_position_preset(preset string) &SimpleWindow {
+	norm := preset.to_lower().trim_space().replace('_', '-').replace(' ', '-')
+	match norm {
+		'top-left' { return win.align('top-left') }
+		'top-right' { return win.align('top-right') }
+		'bottom-left' { return win.align('bottom-left') }
+		'bottom-right' { return win.align('bottom-right') }
+		'top-center' { return win.align('top-center') }
+		'bottom-center' { return win.align('bottom-center') }
+		'center', 'middle', 'middle-center', 'screen-center' { return win.center() }
+		'left', 'middle-left' { return win.align('middle-left') }
+		'right', 'middle-right' { return win.align('middle-right') }
+		else { return win.center() }
+	}
+}
+
+// set_corner_position is an alias for set_position_preset.
+pub fn (win &SimpleWindow) set_corner_position(corner string) &SimpleWindow {
+	return win.set_position_preset(corner)
+}
+
+// recenter is a friendly alias for win.center().
+pub fn (win &SimpleWindow) recenter() &SimpleWindow {
+	return win.center()
+}
+
+// center_on_screen centers the window on the active display. Alias for center_on_active_screen.
+pub fn (win &SimpleWindow) center_on_screen() &SimpleWindow {
+	return win.center_on_active_screen()
+}
+
+// show unhides the window and brings it to front. Alias for show_window.
+pub fn (win &SimpleWindow) show() &SimpleWindow {
+	return win.show_window()
+}
+
+// set_window_title sets the window title bar text. Alias for set_title.
+pub fn (win &SimpleWindow) set_window_title(title string) &SimpleWindow {
+	return win.set_title(title)
+}
+
+// set_topmost keeps the window above other application windows. Alias for set_always_on_top.
+pub fn (win &SimpleWindow) set_topmost(enabled bool) &SimpleWindow {
+	return win.set_always_on_top(enabled)
+}
+
+// is_topmost checks if the window is configured to stay above other windows. Alias for get_always_on_top.
+pub fn (win &SimpleWindow) is_topmost() bool {
+	return win.get_always_on_top()
+}
+
+// is_frameless returns true if the window titlebar is hidden.
+pub fn (win &SimpleWindow) is_frameless() bool {
+	return !win.is_titlebar_visible()
+}
+
+// set_dark_theme toggles window theme between Apple Dark and Apple Light.
+pub fn (win &SimpleWindow) set_dark_theme(dark bool) &SimpleWindow {
+	if dark {
+		return win.set_theme('Apple Dark')
+	}
+	return win.set_theme('Apple Light')
+}
+
+// toggle_window_theme switches window theme between Light Mode and Dark Mode.
+pub fn (win &SimpleWindow) toggle_window_theme() &SimpleWindow {
+	if win.is_dark_theme() {
+		return win.set_theme('Apple Light')
+	}
+	return win.set_theme('Apple Dark')
+}
+
+// is_dark_theme reports whether the window currently has a dark background color.
+pub fn (win &SimpleWindow) is_dark_theme() bool {
+	bg := win.background_color.to_lower().trim_space()
+	if bg in ['#1c1c1e', '#161618', '#281a24', '#0d1f18', '#211815', '#1e1e2e', '#2e3440', '#282a36', '#0d0d15', '#002b36', '#0d1117', '#0f172a', '#14532d', 'dark', 'black'] {
+		return true
+	}
+	if bg.starts_with('#') && bg.len >= 7 {
+		r := hex_byte_val(bg[1..3])
+		g := hex_byte_val(bg[3..5])
+		b := hex_byte_val(bg[5..7])
+		return ((r * 299) + (g * 587) + (b * 114)) / 1000 < 128
+	}
+	return false
+}
+
+fn hex_byte_val(s string) int {
+	if s.len < 2 {
+		return 255
+	}
+	mut val := 0
+	for c in s {
+		val *= 16
+		if c >= `0` && c <= `9` {
+			val += int(c - `0`)
+		} else if c >= `a` && c <= `f` {
+			val += int(10 + c - `a`)
+		} else if c >= `A` && c <= `F` {
+			val += int(10 + c - `A`)
+		}
+	}
+	return val
+}
+
+// restore restores the window from minimized state to standard layout.
+pub fn (win &SimpleWindow) restore() &SimpleWindow {
+	if win.is_minimized() {
+		win.deminimize()
+	}
+	return win
+}
+
+// restore_window is an alias for restore.
+pub fn (win &SimpleWindow) restore_window() &SimpleWindow {
+	return win.restore()
+}
+
+// trigger_shake triggers an animated horizontal window shake. Alias for shake_window.
+pub fn (win &SimpleWindow) trigger_shake() &SimpleWindow {
+	return win.shake_window()
+}
+
+// flash_and_shake flashes the window frame and triggers an animated shake for error feedback.
+pub fn (win &SimpleWindow) flash_and_shake() &SimpleWindow {
+	return win.flash_frame(true).shake_window()
+}
+
+// attention bounces the Dock icon to catch user attention. Alias for bounce_dock_icon(true).
+pub fn (win &SimpleWindow) attention() &SimpleWindow {
+	return win.bounce_dock_icon(true)
+}
+
+// make_fixed_dialog configures window as a fixed-size dialog (title, size, centered, non-resizable, no min/max buttons).
+pub fn (win &SimpleWindow) make_fixed_dialog(title string, width int, height int) &SimpleWindow {
+	return win.set_title(title)
+		.set_fixed_size(width, height)
+		.center()
+		.set_minimizable(false)
+		.set_maximizable(false)
+}
+
+// make_splash_screen configures window as a borderless centered splash screen.
+pub fn (win &SimpleWindow) make_splash_screen(width int, height int) &SimpleWindow {
+	return win.make_frameless()
+		.set_fixed_size(width, height)
+		.center()
+		.set_always_on_top(true)
+}
+
+// make_utility_panel configures window as a floating tool panel (always on top, HUD vibrancy, auto-hide on blur).
+pub fn (win &SimpleWindow) make_utility_panel() &SimpleWindow {
+	return win.set_window_level('floating')
+		.set_hides_on_deactivate(true)
+		.set_always_on_top(true)
+		.set_vibrancy('hud')
+}
+
 // ==========================================
 // 21. Reactive Bindings & Data QoL
 // ==========================================
