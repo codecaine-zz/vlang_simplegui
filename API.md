@@ -4,15 +4,50 @@ SimpleGUI is a beginner-friendly framework for building native macOS Cocoa appli
 
 This guide is organized for fast scanning on GitHub and for quick reference while coding. The most common patterns are grouped first, followed by detailed API entries for individual controls and window actions.
 
+---
+
+## 📘 Beginner's Core Concepts & Jargon-Free Glossary
+
+If you are new to programming or desktop app creation, here are simple definitions for terms used throughout this guide:
+
+| Term | Simple Explanation | Real-World Analogy |
+| :--- | :--- | :--- |
+| **Window (`SimpleWindow`)** | The rectangular application frame on your computer screen that contains all app controls. | A picture frame or digital canvas displaying your app. |
+| **Control / Widget** | An interactive user interface element (like a button, text box, slider, or checkbox). | Building blocks like light switches, knobs, and text labels. |
+| **Layout Container** | An invisible box or row that automatically aligns and arranges controls side-by-side or stacked vertically. | A bookshelf that arranges books side-by-side instead of in a messy pile. |
+| **Event & Callback** | An action listener. When a user interacts with a control (e.g. clicks a button), the app triggers a "callback" function to execute code. | A doorbell: when someone presses it (event), a chime sounds (callback). |
+| **Fluent Chaining** | Connecting multiple setup actions in a single line using dots (e.g. `.width(200).tooltip('Help')`). | Snapping Lego blocks together in a continuous chain. |
+| **String (`string`)** | Text surrounded by quotes (e.g. `'Ada'` or `"Hello World"`). | Printed words on a label. |
+| **Integer (`int`)** | A whole number without decimals (e.g. `42`, `100`, `-5`). | Counting physical items like 5 apples or 10 buttons. |
+| **Float (`f64`)** | A number with decimal points (e.g. `3.14`, `0.75`). | Precise measurements like weight (1.5 kg) or percentage (99.9%). |
+| **Boolean (`bool`)** | A value that is strictly `true` (YES/ON) or `false` (NO/OFF). | A light switch position: ON or OFF. |
+| **Hex Color** | A color code starting with `#` followed by 6 characters (e.g. `#007aff` for Apple blue, `#ffffff` for white, `#000000` for black). | A paint swatch code from a hardware store. |
+
+---
+
 ## Table of contents
 
+- [📘 Beginner's Core Concepts Glossary](#-beginners-core-concepts--jargon-free-glossary)
 - [1. Window operations](#1-window-operations)
 - [2. Control layout and grid rows](#2-control-layout--grid-rows)
 - [3. Adding controls](#3-adding-controls)
 - [4. Control sizing and styling](#4-control-sizing--styling)
-- [5. Dialogs, popups, and file pickers](#5-dialogs-popups--file-pickers)
-- [6. Utilities and system actions](#6-utilities--system-actions)
-- [7. RAD Visual UI Designer & Code Generator API](#7-rad-visual-ui-designer--code-generator-api)
+- [5. Dialogs, popups, and file pickers](#5-dialogs-popups-and-file-pickers)
+- [6. Utilities and system actions](#6-utilities-and-system-actions)
+- [6c. V Standard Library High-Level Wrappers](#6c-v-standard-library-high-level-wrappers)
+- [7. List Box & Image View Operations](#7-list-box--image-view-operations)
+- [8. Scheduled Timers & Delays](#8-scheduled-timers--delays)
+- [9. Reading & Writing Values](#9-reading--writing-values)
+- [10. Event Handling](#10-event-handling)
+- [11. Custom Application Menus & Context Menus](#11-custom-application-menus--context-menus)
+- [12. Multi-Column Table / Data Grid](#12-multi-column-table--data-grid)
+- [12b. Hierarchical Tree View](#12b-hierarchical-tree-view)
+- [13. Bulk Data Binding](#13-bulk-data-binding)
+- [14. Layout Spacers & Visual Separators](#14-layout-spacers--visual-separators)
+- [15. System Status Tray Mode & Thread Safety](#15-system-status-tray-mode--thread-safety)
+- [16. Form Change & Dirty Tracking](#16-form-change--dirty-tracking)
+- [17. Ergonomic Helpers](#17-ergonomic-helpers)
+- [18. RAD Visual UI Designer & Code Generator API](#18-rad-visual-ui-designer--code-generator-api)
 
 ## Quick start
 
