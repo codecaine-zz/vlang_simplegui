@@ -411,7 +411,7 @@ fn on_search_clicked(mut win &simplegui.SimpleWindow) {
 
 ### 3. Multi-Column Grid Layout (`win.begin_grid` / `win.grid`)
 
-Best for multi-column registration forms, survey cards, or dashboard grid boxes where controls automatically wrap across horizontal columns.
+Best for multi-column registration forms, survey cards, or dashboard grid boxes where controls automatically wrap across horizontal columns (e.g. 2-column forms or 3/4-column action grids) with custom element spacing.
 
 ```v
 module main
@@ -419,24 +419,35 @@ module main
 import simplegui
 
 fn main() {
-    mut win := simplegui.new_simple_window('Grid Starter', 640, 480)
+    mut win := simplegui.new_simple_window('Multi-Column Grid Showcase', 680, 560)
         .set_padding(20)
-        .add_heading('Registration Form (2-Column Grid)')
+        .set_spacing(12)
 
-    // 2-column grid container with 12px spacing between elements
-    win.begin_grid('reg_grid', 2, 12)
-        .add_label('lbl_fn', 'First Name:')
-        .add_input('first_name', '')
-        .add_label('lbl_ln', 'Last Name:')
-        .add_input('last_name', '')
-        .add_label('lbl_email', 'Email Address:')
-        .add_input('email', '')
-        .add_label('lbl_role', 'Role:')
+    win.add_heading('User Profile & Dashboard (Multi-Column Grid)')
+
+    // 1. 2-Column Registration Form Grid with right-aligned labels (tight spacing to inputs)
+    win.begin_grid('reg_grid', 2, 8)
+        .add_label('lbl_fn', 'First Name:').align_right()
+        .add_input('first_name', 'Ada')
+        .add_label('lbl_ln', 'Last Name:').align_right()
+        .add_input('last_name', 'Lovelace')
+        .add_label('lbl_email', 'Email Address:').align_right()
+        .add_input('email', 'ada@example.com')
+        .add_label('lbl_role', 'Role:').align_right()
         .add_dropdown('role', ['Developer', 'Designer', 'Manager'], 'Developer')
         .end_grid()
 
     win.add_vertical_spacer(15)
-    win.add_button('btn_submit', 'Register User')
+
+    // 2. Closure-based 3-Column Metrics & Actions Grid (10px spacing)
+    win.grid('actions_grid', 3, 10, fn (mut g simplegui.SimpleWindow) {
+        g.add_button('btn_save', 'Save Changes')
+        g.add_button('btn_reset', 'Reset Form')
+        g.add_button('btn_export', 'Export CSV')
+    })
+
+    win.add_vertical_spacer(15)
+    win.add_button('btn_submit', 'Submit Registration')
        .on_click('btn_submit', fn (mut w simplegui.SimpleWindow) {
            fn_str := w.get_text('first_name')
            ln_str := w.get_text('last_name')

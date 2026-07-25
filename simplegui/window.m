@@ -206,6 +206,7 @@ extern BOOL vlang_dispatch_event(void *win_ptr, const char *name, const char *ev
 @property (nonatomic, assign) NSInteger currentChildCount;
 - (instancetype)initWithColumns:(NSInteger)cols spacing:(CGFloat)spc;
 - (void)addControlView:(NSView *)view;
+- (void)finalizeGrid;
 @end
 
 @implementation GridContainerView
@@ -239,6 +240,14 @@ extern BOOL vlang_dispatch_event(void *win_ptr, const char *name, const char *ev
   return self;
 }
 
+- (void)setSpacing:(CGFloat)spc {
+  _spacing = spc;
+  [self.verticalStack setSpacing:spc];
+  for (NSStackView *row in self.rowStacks) {
+    [row setSpacing:spc];
+  }
+}
+
 - (void)addControlView:(NSView *)view {
   NSStackView *currentRowStack = nil;
   if (self.currentChildCount % self.columns == 0) {
@@ -257,6 +266,16 @@ extern BOOL vlang_dispatch_event(void *win_ptr, const char *name, const char *ev
   }
   [currentRowStack addArrangedSubview:view];
   self.currentChildCount++;
+}
+
+- (void)finalizeGrid {
+  for (NSStackView *row in self.rowStacks) {
+    while (row.arrangedSubviews.count < self.columns) {
+      NSView *dummySpacer = [[NSView alloc] initWithFrame:NSZeroRect];
+      [dummySpacer setTranslatesAutoresizingMaskIntoConstraints:NO];
+      [row addArrangedSubview:dummySpacer];
+    }
+  }
 }
 @end
 
@@ -2598,7 +2617,9 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   }
   [view setContentHuggingPriority:NSLayoutPriorityDefaultLow forOrientation:NSLayoutConstraintOrientationHorizontal];
   [view setContentCompressionResistancePriority:NSLayoutPriorityDefaultHigh forOrientation:NSLayoutConstraintOrientationHorizontal];
-  [view.widthAnchor constraintGreaterThanOrEqualToConstant:minimumWidth].active = YES;
+  NSLayoutConstraint *minW = [view.widthAnchor constraintGreaterThanOrEqualToConstant:minimumWidth];
+  minW.priority = NSLayoutPriorityDefaultHigh;
+  minW.active = YES;
 }
 
 - (void)configureRowStack:(NSStackView *)row {
@@ -2733,6 +2754,10 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
 
 - (void)endGrid {
   if (self.containerStack && self.containerStack.count > 0) {
+    NSView *topContainer = [self.containerStack lastObject];
+    if ([topContainer isKindOfClass:[GridContainerView class]]) {
+      [(GridContainerView *)topContainer finalizeGrid];
+    }
     [self.containerStack removeLastObject];
   }
 }
