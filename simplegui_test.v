@@ -3244,4 +3244,39 @@ fn test_ergonomic_window_apis() {
 	mut panel := simplegui.new_simple_window('Panel', 300, 400)
 	panel.make_utility_panel()
 	assert panel.is_topmost() == true
+
+	// Section 27: Advanced Validation & Utility Shortcuts
+	mut form_win := simplegui.new_simple_window('Form Test', 600, 400)
+	form_win.add_input('f_name', '  ada  ')
+	form_win.add_input('f_email', '')
+
+	valid, missing := form_win.validate_required(['f_name', 'f_email'])
+	assert valid == false
+	assert missing == 'f_email'
+
+	form_win.set_value('f_email', 'ada@test.com')
+	valid_ok, _ := form_win.validate_required(['f_name', 'f_email'])
+	assert valid_ok == true
+
+	form_win.trim_all(['f_name'])
+	assert form_win.get_value('f_name') == 'ada'
+
+	form_win.uppercase_all(['f_name'])
+	assert form_win.get_value('f_name') == 'ADA'
+
+	form_win.lowercase_all(['f_name'])
+	assert form_win.get_value('f_name') == 'ada'
+
+	form_win.clear_form()
+	assert form_win.get_value('f_name') == ''
+	assert form_win.get_value('f_email') == ''
+
+	form_win.toast_info('Info Test')
+	form_win.toast_success('Success Test')
+	form_win.toast_warn('Warn Test')
+	form_win.toast_error('Error Test')
+	form_win.set_status_temporary('Temp Status', 500)
+
+	form_win.save_layout('unit_test_app')
+	form_win.restore_layout('unit_test_app')
 }

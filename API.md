@@ -1221,28 +1221,61 @@ Launches the native macOS file picker panel filtered by specific file extension 
 ### `win.select_folder() string`
 
 Launches the native macOS folder selection panel, returning the chosen folder path (or empty if cancelled).
-
 ### `win.save_file_picker() string`
 
 Launches the native macOS file save panel, returning the target path (or empty if cancelled).
 
----
-
-## 6. Utilities & System Actions
-
-### `win.toast(message string) &SimpleWindow`
+### `win.toast(message string)` &SimpleWindow
 
 Shows a self-dismissing native overlay toast notification containing the message text.
 
-### `win.open_url(url string) &SimpleWindow`
+### `win.toast_info(message string)` / `win.toast_success(message string)` / `win.toast_warn(message string)` / `win.toast_error(message string)` &SimpleWindow
+
+Icon-prefixed styled toast notifications (`ℹ️`, `✅`, `⚠️`, `❌`).
+
+### `win.validate_required(names []string) (bool, string)`
+
+Validates that every named control in `names` has a non-empty string value. If a required field is empty, it automatically flashes the control, sets focus to it, and returns `(false, missing_control_name)`.
+
+### `win.trim_all(names []string)` &SimpleWindow
+
+Trims leading and trailing whitespace from multiple named text inputs or textareas in a single call.
+
+### `win.uppercase_all(names []string)` / `win.lowercase_all(names []string)` &SimpleWindow
+
+Converts text values in multiple named controls to UPPERCASE or lowercase.
+
+### `win.clear_form()` / `win.reset_to_defaults()` &SimpleWindow
+
+Resets all text inputs, textareas, checkboxes, sliders, and number fields across the window to default blank state in one call.
+
+### `win.set_status_temporary(message string, duration_ms int)` &SimpleWindow
+
+Sets a status bar message temporarily and automatically restores the previous status text after `duration_ms`.
+
+### `win.play_sound(sound_name string)` &SimpleWindow
+
+Plays a native macOS system sound by name (e.g., `'Glass'`, `'Ping'`, `'Hero'`, `'Pop'`, `'Tink'`, `'Submarine'`).
+
+### `win.speak(text string)` &SimpleWindow
+
+Speaks text out loud using the macOS text-to-speech engine.
+
+### `win.save_layout(app_name string)` / `win.restore_layout(app_name string)` / `win.auto_save_layout(app_name string)` &SimpleWindow
+
+Saves and restores window position and size bounds automatically to JSON configuration. `auto_save_layout(app_name)` binds restoration on window startup and auto-saves bounds when the window is closed.
+
+### `win.open_url(url string)` &SimpleWindow
 
 Opens a web URL in the user's default web browser.
 
-### `win.copy_to_clipboard(text string) &SimpleWindow`
+### `win.copy_to_clipboard(text string)` &SimpleWindow
 
 Copies the specified text to the macOS system clipboard.
 
 ---
+
+## 6. Utilities & System Actions
 
 ### 6b. Neutralino-Inspired System Calls & Platform API
 

@@ -2652,3 +2652,156 @@ pub fn (win &SimpleWindow) load_values_if_exists(path string) bool {
 	win.load_values_from_file(path) or { return false }
 	return true
 }
+
+// ==========================================
+// 27. Advanced Form Validation & Utility Shortcuts
+// ==========================================
+
+// validate_required checks that all named controls contain non-empty string values.
+// If any control is empty, it flashes the missing control, sets focus to it, and returns (false, missing_name).
+pub fn (win &SimpleWindow) validate_required(names []string) (bool, string) {
+	for name in names {
+		val := win.get_text(name).trim_space()
+		if val.len == 0 {
+			win.flash_control(name)
+			win.set_focus(name)
+			win.set_status('Required field missing: ${name}')
+			return false, name
+		}
+	}
+	return true, ''
+}
+
+// trim_all trims leading and trailing whitespace from text controls in a single call.
+pub fn (win &SimpleWindow) trim_all(names []string) &SimpleWindow {
+	for name in names {
+		win.set_text(name, win.get_text(name).trim_space())
+	}
+	return win
+}
+
+// uppercase_all converts text values in multiple named controls to uppercase.
+pub fn (win &SimpleWindow) uppercase_all(names []string) &SimpleWindow {
+	for name in names {
+		win.set_text(name, win.get_text(name).to_upper())
+	}
+	return win
+}
+
+// lowercase_all converts text values in multiple named controls to lowercase.
+pub fn (win &SimpleWindow) lowercase_all(names []string) &SimpleWindow {
+	for name in names {
+		win.set_text(name, win.get_text(name).to_lower())
+	}
+	return win
+}
+
+// clear_form resets all registered form input controls across the window.
+pub fn (win &SimpleWindow) clear_form() &SimpleWindow {
+	for ctrl in win.controls {
+		match ctrl.kind {
+			'input', 'textarea', 'password' {
+				win.set_value(ctrl.name, '')
+			}
+			'checkbox', 'toggle', 'switch' {
+				win.set_bool(ctrl.name, false)
+			}
+			'slider', 'progress', 'number' {
+				win.set_number_value(ctrl.name, 0)
+			}
+			else {}
+		}
+	}
+	return win
+}
+
+// reset_to_defaults is an alias for clear_form.
+pub fn (win &SimpleWindow) reset_to_defaults() &SimpleWindow {
+	return win.clear_form()
+}
+
+// set_status_temporary displays a temporary status message and restores the previous message after duration_ms.
+pub fn (win &SimpleWindow) set_status_temporary(message string, duration_ms int) &SimpleWindow {
+	prev_status := win.status_text
+	win.set_status(message)
+	win.run_after(duration_ms, fn [prev_status] (mut w SimpleWindow) {
+		w.set_status(prev_status)
+	})
+	return win
+}
+
+// toast_info displays an informational toast notification.
+pub fn (win &SimpleWindow) toast_info(message string) &SimpleWindow {
+	return win.toast('ℹ️  ${message}')
+}
+
+// toast_success displays a success toast notification.
+pub fn (win &SimpleWindow) toast_success(message string) &SimpleWindow {
+	return win.toast('✅  ${message}')
+}
+
+// toast_warn displays a warning toast notification.
+pub fn (win &SimpleWindow) toast_warn(message string) &SimpleWindow {
+	return win.toast('⚠️  ${message}')
+}
+
+// toast_error displays an error toast notification.
+pub fn (win &SimpleWindow) toast_error(message string) &SimpleWindow {
+	return win.toast('❌  ${message}')
+}
+
+// play_sound plays a macOS system audio sound by name (e.g. "Glass", "Ping", "Hero", "Pop", "Tink", "Submarine").
+pub fn (win &SimpleWindow) play_sound(sound_name string) &SimpleWindow {
+	play_system_sound(sound_name)
+	return win
+}
+
+// speak speaks text out loud using macOS text-to-speech engine. Alias for say.
+pub fn (win &SimpleWindow) speak(text string) &SimpleWindow {
+	return win.say(text)
+}
+
+// save_layout saves window dimensions (w, h) and screen position (x, y) to path.
+pub fn (win &SimpleWindow) save_layout(app_name string) &SimpleWindow {
+	path := os.join_path(os.home_dir(), '.${app_name}_layout.json')
+	x, y, w, h := win.get_bounds()
+	m := {
+		'x':      x.str()
+		'y':      y.str()
+		'width':  w.str()
+		'height': h.str()
+	}
+	encoded := json.encode(m)
+	os.write_file(path, encoded) or {}
+	return win
+}
+
+// restore_layout restores window position and size from saved layout.
+pub fn (win &SimpleWindow) restore_layout(app_name string) &SimpleWindow {
+	path := os.join_path(os.home_dir(), '.${app_name}_layout.json')
+	if !os.exists(path) {
+		return win
+	}
+	content := os.read_file(path) or { return win }
+	m := json.decode(map[string]string, content) or { return win }
+	w := m['width'] or { '' }.int()
+	h := m['height'] or { '' }.int()
+	x := m['x'] or { '' }.int()
+	y := m['y'] or { '' }.int()
+	if w > 0 && h > 0 {
+		win.set_size(w, h)
+	}
+	if x > 0 || y > 0 {
+		win.set_position(x, y)
+	}
+	return win
+}
+
+// auto_save_layout automatically restores saved window layout on startup and saves layout on window close.
+pub fn (win &SimpleWindow) auto_save_layout(app_name string) &SimpleWindow {
+	win.restore_layout(app_name)
+	win.on_close(fn [app_name] (mut w SimpleWindow) {
+		w.save_layout(app_name)
+	})
+	return win
+}
