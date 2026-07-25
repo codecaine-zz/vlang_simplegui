@@ -11186,10 +11186,36 @@ void *window_add_scroll_view_control(main__WindowInfo *info, const char *name, i
     scroll = [[NSScrollView alloc] initWithFrame:NSZeroRect];
     [scroll setHasVerticalScroller:YES];
     [scroll setHasHorizontalScroller:NO];
-    [scroll.heightAnchor constraintEqualToConstant:height].active = YES;
-    NSView *content = [[NSView alloc] initWithFrame:NSZeroRect];
-    [content setFrameSize:NSMakeSize(300, height)];
+    [scroll setAutohidesScrollers:YES];
+    [scroll setDrawsBackground:YES];
+
+    scroll.wantsLayer = YES;
+    scroll.layer.cornerRadius = 8.0;
+    scroll.layer.masksToBounds = YES;
+    scroll.layer.borderWidth = 1.0;
+
+    BOOL isDark = delegate.currentBackgroundColor ? isDarkColor(delegate.currentBackgroundColor) : isSystemDark();
+    if (isDark) {
+      NSColor *bgColor = [NSColor colorWithRed:0.12 green:0.12 blue:0.14 alpha:1.0];
+      NSColor *borderColor = [NSColor colorWithRed:0.25 green:0.25 blue:0.28 alpha:1.0];
+      [scroll setBackgroundColor:bgColor];
+      scroll.layer.backgroundColor = bgColor.CGColor;
+      scroll.layer.borderColor = borderColor.CGColor;
+    } else {
+      NSColor *bgColor = [NSColor colorWithRed:0.97 green:0.97 blue:0.98 alpha:1.0];
+      NSColor *borderColor = [NSColor colorWithRed:0.84 green:0.84 blue:0.88 alpha:1.0];
+      [scroll setBackgroundColor:bgColor];
+      scroll.layer.backgroundColor = bgColor.CGColor;
+      scroll.layer.borderColor = borderColor.CGColor;
+    }
+
+    int h = height > 0 ? height : 150;
+    [scroll.heightAnchor constraintEqualToConstant:h].active = YES;
+
+    FlippedView *content = [[FlippedView alloc] initWithFrame:NSMakeRect(0, 0, 300, h)];
+    content.wantsLayer = YES;
     [scroll setDocumentView:content];
+
     [delegate addControlToLayout:scroll];
     NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
     delegate.controlsByName[key] = scroll;
