@@ -108,6 +108,16 @@ fn main() {
 - `win.get_maximizable() bool` returns whether window maximizability is enabled.
 - Missing control access now raises a clear panic so mistakes surface early.
 
+```v
+if win.has_control('username') {
+    println('Control exists')
+}
+controls := win.list_controls()
+kind := win.get_control_kind('username')
+name := win.require_control('username')
+title := win.get_title()
+```
+
 ### `new_simple_window(title string, width int, height int) &SimpleWindow`
 
 Initializes a new macOS window delegate.
@@ -118,25 +128,49 @@ Initializes a new macOS window delegate.
   - `height`: Default initial height.
 - **Notes**: By default, the window automatically resizes its height/width to wrap snugly around the registered controls at startup.
 
+```v
+mut win := simplegui.new_simple_window('Starter', 640, 420)
+```
+
 ### `win.set_debug_mode(enabled bool) &SimpleWindow`
 
 Enables or disables visual debug logging in stdout and prints events to the window status footer.
+
+```v
+win.set_debug_mode(true)
+```
 
 ### `win.get_debug_mode() bool`
 
 Returns whether debug mode is currently enabled.
 
+```v
+is_debug := win.get_debug_mode()
+```
+
 ### `win.set_title(title string) &SimpleWindow`
 
 Updates the window title bar text.
+
+```v
+win.set_title('App Title')
+```
 
 ### `win.set_always_on_top(enabled bool) &SimpleWindow`
 
 Keeps the window above other application windows while the app is running.
 
+```v
+win.set_always_on_top(true)
+```
+
 ### `win.get_always_on_top() bool`
 
 Returns whether the window is currently configured to stay on top.
+
+```v
+on_top := win.get_always_on_top()
+```
 
 ### `win.set_background_color(hex_color string) &SimpleWindow`
 
@@ -144,11 +178,19 @@ Applies a background theme color to the window content view.
 
 - **Format**: `#RRGGBB` or `#RGB`.
 
+```v
+win.set_background_color('#1c1c1e')
+```
+
 ### `win.set_font_color(color string) &SimpleWindow`
 
 Sets the default font text color for labels and form controls.
 
 - **Values**: `'white'`, `'black'`, or hex format.
+
+```v
+win.set_font_color('#ffffff')
+```
 
 ### `simplegui.list_themes() []string`
 
@@ -172,6 +214,10 @@ Returns all 17 built-in production theme preset names:
 - **Navy Blue**: Deep slate navy dark theme (`#0f172a` bg, `#f8fafc` fg, `#38bdf8` accent).
 - **Forest Green**: Rich emerald green dark theme (`#14532d` bg, `#f0fdf4` fg, `#4ade80` accent).
 
+```v
+themes := simplegui.list_themes()
+```
+
 ### `simplegui.get_theme(theme_name string) Theme`
 
 Retrieves a `Theme` struct configuration matching `theme_name`. Normalization allows flexible lookup (case-insensitive, space/hyphen/underscore tolerant). Unknown names fall back to `Apple Light`.
@@ -179,9 +225,18 @@ Retrieves a `Theme` struct configuration matching `theme_name`. Normalization al
 - **`Theme` fields**: `name string`, `background_color string`, `font_color string`, `accent_color string`, `description string`, `is_dark bool`.
 - **Aliases**: short forms work too, e.g. `'light'` → Apple Light, `'dark'` → Apple Dark, `'nord'`, `'dracula'`, `'catppuccin'`.
 
+```v
+theme := simplegui.get_theme('Apple Dark')
+```
+
 ### `win.apply_theme(t Theme) &SimpleWindow`
 
 Applies a `Theme` struct configuration directly to the window and controls. Accepts custom `Theme` values, so you can define your own palettes.
+
+```v
+theme := simplegui.get_theme('Nord')
+win.apply_theme(theme)
+```
 
 ### `win.set_theme(theme_name string) &SimpleWindow`
 
@@ -192,322 +247,673 @@ Looks up a built-in production theme by name (or alias) and applies its backgrou
 - **Window appearance**: the window's `NSAppearance` (Aqua / Dark Aqua) is switched automatically to match the theme background, so native bezels, menus, and scrollers stay consistent.
 - **Explicit overrides**: per-control colors set with `win.set_control_background_color()` / `win.set_control_font_color()` complement the theme — setting one property never resets the other. Applying a new theme restyles all controls, so re-apply per-control overrides after `set_theme()` when switching palettes at runtime (see [demos/form_color_theme_demo.v](demos/form_color_theme_demo.v)).
 
+```v
+win.set_theme('Apple Dark')
+```
+
 ### `win.set_padding(padding int) &SimpleWindow`
 
 Sets the window content margin padding.
+
+```v
+win.set_padding(20)
+```
 
 ### `win.get_padding() int`
 
 Gets the current window content margin padding.
 
+```v
+pad := win.get_padding()
+```
+
 ### `win.set_spacing(spacing int) &SimpleWindow`
 
 Sets the vertical spacing between stacked controls.
+
+```v
+win.set_spacing(12)
+```
 
 ### `win.get_spacing() int`
 
 Gets the current vertical spacing between stacked controls.
 
+```v
+space := win.get_spacing()
+```
+
 ### `win.set_responsive_layout(enabled bool) &SimpleWindow`
 
 Enables or disables responsive auto-layout so controls grow and shrink with the window.
+
+```v
+win.set_responsive_layout(true)
+```
 
 ### `win.get_responsive_layout() bool`
 
 Returns whether responsive auto-layout is currently enabled.
 
+```v
+responsive := win.get_responsive_layout()
+```
+
 ### `win.set_min_size(width int, height int) &SimpleWindow`
 
 Sets the minimum allowed width and height limits for the window resize action.
+
+```v
+win.set_min_size(400, 300)
+```
 
 ### `win.set_max_size(width int, height int) &SimpleWindow`
 
 Sets the maximum allowed width and height limits for the window resize action.
 
+```v
+win.set_max_size(1280, 800)
+```
+
 ### `win.set_resizable(enabled bool) &SimpleWindow`
 
 Enables or disables window resizability using the dragging border/corners.
+
+```v
+win.set_resizable(true)
+```
 
 ### `win.set_minimizable(enabled bool) &SimpleWindow`
 
 Enables or disables the native minimize window titlebar button.
 
+```v
+win.set_minimizable(true)
+```
+
 ### `win.set_maximizable(enabled bool) &SimpleWindow`
 
 Enables or disables the native zoom/maximize window titlebar button.
+
+```v
+win.set_maximizable(true)
+```
 
 ### `win.close()` / `win.close_window()` &SimpleWindow
 
 Programmatically closes the native window delegate.
 
+```v
+win.close()
+```
+
 ### `win.hide()` / `win.hide_window()` &SimpleWindow
 
 Temporarily hides the window from view.
 
+```v
+win.hide()
+```
+
 ### `win.center()` / `win.center_window()` &SimpleWindow
 
 Centers the window on the active display.
+
+```v
+win.center()
+```
 
 ### `win.align(position string)` / `win.align_window(position string)` &SimpleWindow
 
 Repositions the window relative to the active display/screen visible frame.
 Supports flexible, case-insensitive placement names (e.g., `'top-left'`, `'top-center'`, `'top-right'`, `'middle-left'`, `'center'` or `'middle-center'`, `'middle-right'`, `'bottom-left'`, `'bottom-center'`, `'bottom-right'`).
 
+```v
+win.align('top-right')
+```
+
 ### `win.set_size(width int, height int)` / `win.resize(width int, height int)` &SimpleWindow
 
 Programmatically resizes the active window content area.
+
+```v
+win.set_size(800, 600)
+```
 
 ### `win.get_width() int` / `win.get_height() int`
 
 Gets the current width/height of the window.
 
+```v
+w := win.get_width()
+h := win.get_height()
+```
+
 ### `win.set_position(x int, y int)` &SimpleWindow
 
 Repositions the top-left corner of the window on the desktop.
+
+```v
+win.set_position(100, 100)
+```
 
 ### `win.get_x() int` / `win.get_y() int`
 
 Gets the current screen coordinates of the window position.
 
+```v
+x := win.get_x()
+y := win.get_y()
+```
+
 ### `win.set_opacity(opacity f64)` &SimpleWindow
 
 Applies window transparency / alpha opacity channel (range `0.0` to `1.0`).
+
+```v
+win.set_opacity(0.9)
+```
 
 ### `win.get_opacity() f64`
 
 Gets the current window translucency.
 
+```v
+alpha := win.get_opacity()
+```
+
 ### `win.set_titlebar_visible(visible bool)` &SimpleWindow
 
 Toggles titlebar visibility for custom clean-bordered or borderless overlay look.
+
+```v
+win.set_titlebar_visible(false)
+```
 
 ### `win.set_cursor(cursor_name string)` &SimpleWindow / `win.get_cursor() string`
 
 Changes the window-wide mouse cursor icon for the app window. Common names include `'arrow'`, `'ibeam'`, `'crosshair'`, `'pointing_hand'`, `'open_hand'`, `'closed_hand'`, and the resize variants such as `'resize_left'`, `'resize_right'`, `'resize_left_right'`, `'resize_up'`, `'resize_down'`, and `'resize_up_down'`.
 
+```v
+win.set_cursor('pointing_hand')
+cur := win.get_cursor()
+```
+
 ### `win.set_cursor_size(scale f64)` &SimpleWindow / `win.get_cursor_size() f64`
 
 Scales the active cursor image. Use `1.0` for the system size, `2.0` for double-size, and so on. Values are clamped to the safe range `0.25`–`8.0`.
+
+```v
+win.set_cursor_size(1.5)
+scale := win.get_cursor_size()
+```
 
 ### `win.reset_cursor()` &SimpleWindow
 
 Restores the default arrow cursor and clears any custom cursor size or window-wide cursor override.
 
+```v
+win.set_cursor('pointing_hand')
+cur := win.get_cursor()
+```
+
 ### `win.push_cursor(cursor_name string)` &SimpleWindow / `win.pop_cursor()` &SimpleWindow
 
 Temporarily pushes a cursor onto the cursor stack and later restores the previous cursor with `pop_cursor()`.
+
+```v
+win.push_cursor('closed_hand')
+// ... action ...
+win.pop_cursor()
+```
 
 ### `win.set_control_cursor(control_name string, cursor_name string)` &SimpleWindow
 
 Assigns a cursor that is used while the mouse hovers over a specific named control. Pass `'default'` or an empty string to remove the override.
 
+```v
+win.set_control_cursor('btn_save', 'pointing_hand')
+```
+
 ### `win.get_mouse_location() (int, int)`
 
 Returns the current global mouse location in screen coordinates.
+
+```v
+mx, my := win.get_mouse_location()
+```
 
 ### `win.move_cursor_to(x int, y int)` &SimpleWindow
 
 Warps the mouse cursor to a new global screen position.
 
+```v
+win.move_cursor_to(500, 300)
+```
+
 ### `win.toggle_fullscreen()` &SimpleWindow
 
 Toggles native macOS full screen mode programmatically.
+
+```v
+win.toggle_fullscreen()
+```
 
 ### `win.minimize()` &SimpleWindow
 
 Minimizes the window to the dock.
 
+```v
+win.minimize()
+```
+
 ### `win.deminimize()` &SimpleWindow
 
 Restores the window from the dock.
+
+```v
+win.minimize()
+```
 
 ### `win.maximize()` / `win.zoom()` &SimpleWindow
 
 Toggles native maximized/zoomed window scale.
 
+```v
+win.maximize()
+```
+
 ### `win.is_minimized() bool` / `win.is_maximized() bool` / `win.is_fullscreen() bool`
 
 Queries the active window states to check if it's minimized, maximized, or in full-screen mode.
+
+```v
+if win.is_minimized() {
+    println('Window is minimized')
+}
+```
 
 ### `win.is_active() bool`
 
 Returns whether simplegui's window is currently the key focused window on the desktop.
 
+```v
+if win.is_active() {
+    println('Window has key focus')
+}
+```
+
 ### `win.request_attention(critical bool)` / `win.bounce_dock(critical bool)` &SimpleWindow
 
 Bounces the application icon in the macOS Dock to catch the user's attention. If `critical` is true, the icon bounces repeatedly until the application is activated; otherwise, it bounces once.
+
+```v
+win.request_attention(true)
+```
 
 ### `win.set_closable(enabled bool)` &SimpleWindow / `win.get_closable() bool`
 
 Toggles and queries whether the window has a close button and can be closed by the user.
 
+```v
+win.set_closable(false)
+can_close := win.get_closable()
+```
+
 ### `win.set_has_shadow(enabled bool)` &SimpleWindow / `win.get_has_shadow() bool`
 
 Toggles and queries whether the window casts a desktop shadow.
+
+```v
+win.set_has_shadow(true)
+has_shadow := win.get_has_shadow()
+```
 
 ### `win.set_movable_by_window_background(enabled bool)` &SimpleWindow / `win.get_movable_by_window_background() bool`
 
 Toggles and queries whether the user can click and drag anywhere in the window background area to move the window (useful for customized borderless layouts).
 
+```v
+win.set_movable_by_window_background(true)
+```
+
 ### `win.is_visible() bool`
 
 Returns whether the window is currently visible on screen.
+
+```v
+if win.is_visible() {
+    println('Window is visible')
+}
+```
 
 ### `win.set_title_visible(visible bool)` &SimpleWindow / `win.get_title_visible() bool` / `win.is_title_visible() bool`
 
 Toggles and queries the visibility of the window title text in the titlebar, without hiding the titlebar itself or traffic light controls.
 
+```v
+win.set_title_visible(false)
+```
+
 ### `win.is_titlebar_visible() bool`
 
 Returns whether the window's titlebar is currently visible (i.e. not hidden via titlebar visibility settings).
+
+```v
+if win.is_titlebar_visible() {
+    println('Titlebar visible')
+}
+```
 
 ### `win.set_subtitle(subtitle string)` &SimpleWindow / `win.get_subtitle() string`
 
 Sets or retrieves the window subtitle text displayed in the macOS titlebar (macOS 11.0+).
 
+```v
+win.set_subtitle('Project Workspace')
+sub := win.get_subtitle()
+```
+
 ### `win.set_titlebar_appears_transparent(transparent bool)` &SimpleWindow / `win.get_titlebar_appears_transparent() bool`
 
 Toggles or queries translucent/transparent titlebar background styling.
+
+```v
+win.set_titlebar_appears_transparent(true)
+```
 
 ### `win.set_full_size_content_view(enabled bool)` &SimpleWindow / `win.get_full_size_content_view() bool`
 
 Toggles or queries whether the window content view extends under the titlebar area.
 
+```v
+win.set_full_size_content_view(true)
+```
+
 ### `win.set_movable(enabled bool)` &SimpleWindow / `win.get_movable() bool`
 
 Enables, disables, or queries whether the window can be moved by dragging.
+
+```v
+win.set_movable(true)
+```
 
 ### `win.set_window_level(level string)` &SimpleWindow
 
 Sets the window layer stacking level (`'normal'`, `'floating'`, `'modal'`, `'mainMenu'`, `'statusBar'`, `'screenSaver'`).
 
+```v
+win.set_window_level('floating')
+```
+
 ### `win.set_aspect_ratio(width_ratio f64, height_ratio f64)` &SimpleWindow / `win.reset_aspect_ratio()` &SimpleWindow
 
 Locks or resets window resizing constraints to a fixed aspect ratio.
+
+```v
+win.set_aspect_ratio(16.0, 9.0)
+win.reset_aspect_ratio()
+```
 
 ### `win.bounce_dock_icon(critical bool)` &SimpleWindow
 
 Triggers an attention bounce request on the application Dock icon (`critical` bounces continuously until activated).
 
+```v
+win.bounce_dock_icon(false)
+```
+
 ### `win.set_fullscreen(enabled bool)` &SimpleWindow
 
 Programmatically enables or disables full screen mode.
+
+```v
+win.set_fullscreen(true)
+```
 
 ### `win.center_on_active_screen()` &SimpleWindow
 
 Centers the window on the active display currently containing the mouse cursor.
 
+```v
+win.center_on_active_screen()
+```
+
 ### `win.snap_to_edge(edge string)` &SimpleWindow
 
 Snaps the window frame to screen boundary positions (`'top_left'`, `'top_right'`, `'bottom_left'`, `'bottom_right'`, `'top'`, `'bottom'`, `'left'`, `'right'`, `'center'`).
+
+```v
+win.snap_to_edge('top_right')
+```
 
 ### `win.set_bounds(x int, y int, width int, height int)` &SimpleWindow / `win.get_bounds() (int, int, int, int)`
 
 Sets or retrieves the window x, y position and width, height bounds as a 4-tuple `(x, y, w, h)`.
 
+```v
+win.set_bounds(100, 100, 800, 600)
+x, y, w, h := win.get_bounds()
+```
+
 ### `win.has_aspect_ratio() bool`
 
 Queries whether a fixed aspect ratio constraint is currently enforced on window resizing.
+
+```v
+if win.has_aspect_ratio() {
+    println('Aspect ratio locked')
+}
+```
 
 ### `win.set_vibrancy(material string)` &SimpleWindow
 
 Applies macOS translucent background vibrancy material (`'sidebar'`, `'header'`, `'titlebar'`, `'menu'`, `'hud'`, `'window'`).
 
+```v
+win.set_vibrancy('sidebar')
+```
+
 ### `win.set_corner_radius(radius f64)` &SimpleWindow / `win.get_corner_radius() f64`
 
 Sets or retrieves the window corner rounding radius.
+
+```v
+win.set_corner_radius(12.0)
+r := win.get_corner_radius()
+```
 
 ### `win.set_background_blur(enabled bool)` &SimpleWindow
 
 Enables or disables desktop background blur effect behind the window.
 
+```v
+win.set_background_blur(true)
+```
+
 ### `win.get_window_level() string` / `win.set_level_type(level_type string)` &SimpleWindow
 
 Queries or sets the window z-level layer tier (`'normal'`, `'floating'`, `'modal'`, `'mainMenu'`, `'statusBar'`, `'screenSaver'`).
+
+```v
+level := win.get_window_level()
+win.set_level_type('floating')
+```
 
 ### `win.set_ignores_mouse_events(enabled bool)` &SimpleWindow / `win.get_ignores_mouse_events() bool`
 
 Toggles or queries click-through mode where mouse clicks pass through the window to underlying desktop applications.
 
+```v
+win.set_ignores_mouse_events(true)
+```
+
 ### `win.set_hides_on_deactivate(enabled bool)` &SimpleWindow / `win.get_hides_on_deactivate() bool`
 
 Toggles or queries whether the window automatically hides when the application loses focus.
+
+```v
+win.set_hides_on_deactivate(true)
+```
 
 ### `win.set_prevents_app_termination(enabled bool)` &SimpleWindow / `win.get_prevents_app_termination() bool`
 
 Controls whether closing this window prevents application process termination.
 
+```v
+win.set_prevents_app_termination(true)
+```
+
 ### `win.set_represented_filename(filepath string)` &SimpleWindow / `win.get_represented_filename() string`
 
 Associates a file path with the window, displaying the native document proxy icon in the titlebar.
+
+```v
+win.set_represented_filename('/path/to/doc.txt')
+```
 
 ### `win.set_document_edited(edited bool)` &SimpleWindow / `win.is_document_edited() bool`
 
 Displays or queries the unsaved changes dirty dot indicator inside the window close button.
 
+```v
+win.set_document_edited(true)
+```
+
 ### `win.flash_frame(critical bool)` &SimpleWindow
 
 Flashes the window frame/titlebar to catch user attention.
+
+```v
+win.flash_frame(true)
+```
 
 ### `win.fade_in(duration_ms int)` &SimpleWindow / `win.fade_out(duration_ms int)` &SimpleWindow
 
 Animates window opacity smoothly in or out over the specified duration in milliseconds.
 
+```v
+win.fade_in(300)
+win.fade_out(300)
+```
+
 ### `win.order_front()` / `win.bring_to_front()` &SimpleWindow
 
 Brings the window to the top of the desktop window stack and activates the app.
+
+```v
+win.bring_to_front()
+```
 
 ### `win.order_back()` / `win.send_to_back()` &SimpleWindow
 
 Sends the window behind all other open application windows.
 
+```v
+win.send_to_back()
+```
+
 ### `win.toggle_minimize()` / `win.toggle_maximize()` / `win.toggle_visibility()` &SimpleWindow
 
 Convenience toggles for window minimized, maximized, and visibility states.
+
+```v
+win.minimize()
+```
 
 ### `win.move_by(dx int, dy int)` &SimpleWindow / `win.resize_by(dw int, dh int)` &SimpleWindow
 
 Shifts the window position or adjusts window size by relative deltas.
 
+```v
+win.move_by(10, 20)
+win.resize_by(50, 50)
+```
+
 ### `win.get_center() (int, int)` / `win.set_center(center_x int, center_y int)` &SimpleWindow
 
 Gets or sets the window center point in global screen coordinates.
+
+```v
+win.center()
+```
 
 ### `win.center_horizontally()` &SimpleWindow / `win.center_vertically()` &SimpleWindow
 
 Centers the window on the active screen along one axis while preserving the other axis.
 
+```v
+win.center_horizontally()
+win.center_vertically()
+```
+
 ### `win.fit_to_screen()` &SimpleWindow / `win.constrain_to_screen()` &SimpleWindow
 
 Fits the window to the visible screen frame, or clamps existing bounds to keep it fully on-screen.
+
+```v
+win.fit_to_screen()
+win.constrain_to_screen()
+```
 
 ### `win.set_alpha(alpha f64)` &SimpleWindow / `win.get_alpha() f64`
 
 Sets or retrieves the window transparency level (range `0.0` transparent to `1.0` opaque).
 
+```v
+win.set_alpha(0.85)
+alpha := win.get_alpha()
+```
+
 ### `win.set_min_size(width int, height int)` &SimpleWindow / `win.get_min_size() (int, int)`
 
 Enforces or queries minimum allowed window width and height resize constraints.
+
+```v
+win.set_min_size(400, 300)
+```
 
 ### `win.set_max_size(width int, height int)` &SimpleWindow / `win.get_max_size() (int, int)`
 
 Enforces or queries maximum allowed window width and height resize constraints.
 
+```v
+win.set_max_size(1280, 800)
+```
+
 ### `win.set_collection_behavior(behavior string)` &SimpleWindow
 
 Configures macOS virtual desktop / Spaces behavior (`'can_join_all_spaces'`, `'move_to_active_space'`, `'transient'`, `'full_screen_primary'`, `'full_screen_auxiliary'`).
+
+```v
+win.set_collection_behavior('can_join_all_spaces')
+```
 
 ### `win.set_close_button_enabled(enabled bool)` &SimpleWindow / `win.set_minimize_button_enabled(enabled bool)` &SimpleWindow / `win.set_zoom_button_enabled(enabled bool)` &SimpleWindow
 
 Enables or disables standard macOS titlebar traffic light control buttons (Close, Minimize, Zoom).
 
+```v
+win.set_close_button_enabled(false)
+win.set_minimize_button_enabled(true)
+win.set_zoom_button_enabled(true)
+```
+
 ### `win.shake_window()` &SimpleWindow
 
 Triggers an animated horizontal window shake feedback effect (ideal for error or validation failure indication).
 
+```v
+win.shake_window()
+```
+
 ### `win.set_fixed_size(width int, height int)` &SimpleWindow
 
 Locks the window to fixed width and height dimensions and disables window resizing in a single call (`set_size(w, h)`, `set_min_size(w, h)`, `set_max_size(w, h)`, `set_resizable(false)`). Ideal for popups, login dialogs, and splash screens.
+
+```v
+win.set_fixed_size(400, 300)
+```
 
 ### `win.set_size_preset(preset string)` / `win.set_preset_size(preset string)` &SimpleWindow
 
@@ -525,69 +931,143 @@ Resizes the window using standard human-readable dimension presets:
 - `'splash'`: 500 × 300
 - `'square'`: 500 × 500
 
+```v
+win.set_size(800, 600)
+```
+
 ### `win.get_size() (int, int)`
 
 Retrieves the current window width and height as a 2-tuple `(width, height)`.
+
+```v
+w, h := win.get_size()
+```
 
 ### `win.set_minimum_size(width int, height int)` &SimpleWindow / `win.set_maximum_size(width int, height int)` &SimpleWindow
 
 Full-name ergonomic aliases for `set_min_size` and `set_max_size`.
 
+```v
+win.set_min_size(400, 300)
+```
+
 ### `win.get_minimum_size() (int, int)` / `win.get_maximum_size() (int, int)`
 
 Full-name ergonomic aliases for `get_min_size()` and `get_max_size()`.
+
+```v
+min_w, min_h := win.get_minimum_size()
+max_w, max_h := win.get_maximum_size()
+```
 
 ### `win.get_position() (int, int)`
 
 Retrieves the current top-left screen coordinates of the window as an `(x, y)` 2-tuple.
 
+```v
+x, y := win.get_position()
+```
+
 ### `win.set_position_preset(preset string)` / `win.set_corner_position(corner string)` &SimpleWindow
 
 Positions the window on screen based on standard corner or edge preset names (`'top-left'`, `'top-right'`, `'bottom-left'`, `'bottom-right'`, `'top-center'`, `'bottom-center'`, `'center'`, `'middle-left'`, `'middle-right'`).
+
+```v
+win.set_position_preset('top-right')
+```
 
 ### `win.recenter()` / `win.center_on_screen()` &SimpleWindow
 
 Friendly aliases for `center()` and `center_on_active_screen()`.
 
+```v
+win.center()
+```
+
 ### `win.show()` &SimpleWindow
 
 Unhides the window and brings it key to the front of the desktop screen stack (alias for `show_window()`).
+
+```v
+win.show()
+```
 
 ### `win.restore()` / `win.restore_window()` &SimpleWindow
 
 Restores the window from minimized state back to its standard desktop size and layout.
 
+```v
+win.restore()
+```
+
 ### `win.set_window_title(title string)` &SimpleWindow
 
 Updates the window title text in the titlebar (friendly alias for `set_title(title)`).
+
+```v
+win.set_title('App Title')
+```
 
 ### `win.set_topmost(enabled bool)` &SimpleWindow / `win.is_topmost() bool`
 
 Friendly aliases for `set_always_on_top(enabled)` and `get_always_on_top()`.
 
+```v
+win.set_always_on_top(true)
+```
+
 ### `win.is_frameless() bool`
 
 Returns `true` if the window titlebar is hidden (`!is_titlebar_visible()`).
+
+```v
+if win.is_frameless() {
+    println('Frameless mode active')
+}
+```
 
 ### `win.set_dark_theme(dark bool)` &SimpleWindow / `win.toggle_window_theme()` &SimpleWindow / `win.is_dark_theme() bool`
 
 Simple boolean theme switchers: `set_dark_theme(true)` applies `'Apple Dark'` (or `'Apple Light'` when false), `toggle_window_theme()` flips between light and dark themes, and `is_dark_theme()` reports whether the active background is a dark palette.
 
+```v
+win.set_dark_theme(true)
+win.toggle_window_theme()
+is_dark := win.is_dark_theme()
+```
+
 ### `win.trigger_shake()` / `win.flash_and_shake()` / `win.attention()` &SimpleWindow
 
 Visual alert shortcuts: `trigger_shake()` performs a horizontal shake animation, `flash_and_shake()` flashes the window frame and shakes the window for error feedback, and `attention()` triggers a macOS Dock bounce request.
+
+```v
+win.flash_and_shake()
+win.attention()
+```
 
 ### `win.make_fixed_dialog(title string, width int, height int)` &SimpleWindow
 
 Configures the window as a fixed-size dialog in one step: sets title, locks size, centers on screen, and disables minimize/maximize buttons.
 
+```v
+win.make_fixed_dialog('Confirm', 400, 220)
+```
+
 ### `win.make_splash_screen(width int, height int)` &SimpleWindow
 
 Configures the window as a borderless centered splash screen (frameless, fixed size, centered, stay-on-top).
 
+```v
+win.make_splash_screen(500, 300)
+```
+
 ### `win.make_utility_panel()` &SimpleWindow
 
 Configures the window as a floating tool panel (always-on-top, HUD vibrancy material, auto-hides on app blur).
+
+```v
+win.make_utility_panel()
+```
 
 ### Ergonomic Window Shortcuts
 
@@ -608,6 +1088,18 @@ Configures the window as a floating tool panel (always-on-top, HUD vibrancy mate
 - **`win.shake_on_error()` / `win.flash_and_shake()`**: Triggers window error shake animation and flashes window frame.
 - **`win.center_and_focus()` / `win.recenter()`**: Centers window on active display and brings to front.
 
+```v
+win.make_frameless()
+win.make_vibrant('hud')
+win.make_click_through(true)
+win.make_always_on_top(true)
+win.make_modal()
+win.make_translucent(0.9)
+win.make_sticky_space()
+win.shake_on_error()
+win.center_and_focus()
+```
+
 ### `win.run()`
 
 Launches the native NSApplication event loop and displays the centered window.
@@ -616,6 +1108,10 @@ Launches the native NSApplication event loop and displays the centered window.
 
 - **`CMD + F`**: Toggles native full screen mode.
 - **`CMD + Q`**: Quits the application immediately.
+
+```v
+win.run()
+```
 
 ---
 
@@ -627,77 +1123,180 @@ By default, all controls stack vertically. You can group multiple controls side-
 
 Starts a horizontal layout container. Any subsequent widgets added will align horizontally.
 
+```v
+win.begin_row('row_1')
+win.add_button('btn1', 'Button 1')
+win.add_button('btn2', 'Button 2')
+win.end_row()
+```
+
 ### `win.end_row() &SimpleWindow`
 
 Closes the active horizontal container. Subsequent controls return to vertical stacking.
+
+```v
+win.end_row()
+```
 
 ### `win.begin_grid(name string, columns int, spacing int) &SimpleWindow`
 
 Starts a CSS-like multi-column grid layout container with specified column count and item spacing. Automatically wraps controls across columns without manual row nesting.
 
+```v
+win.begin_grid('grid_1', 2, 10)
+win.add_button('b1', 'Box 1')
+win.add_button('b2', 'Box 2')
+win.end_grid()
+```
+
 ### `win.end_grid() &SimpleWindow`
 
 Closes the active multi-column grid layout container.
+
+```v
+win.end_grid()
+```
 
 ### `win.grid(name string, columns int, spacing int, callback VoidEventCallback) &SimpleWindow`
 
 Closure-based grid layout container helper. Executes the callback closure and automatically ends the grid layout.
 
+```v
+win.grid('my_grid', 3, 10, fn (mut win simplegui.SimpleWindow) {
+    win.add_button('g1', 'Item 1')
+    win.add_button('g2', 'Item 2')
+})
+```
+
 ### `win.begin_flex_box(name string, direction string, justify string, align string) &SimpleWindow`
 
 Starts a Flexbox layout container with specified `direction` (`'row'` | `'column'`), main-axis `justify` (`'start'` | `'center'` | `'end'` | `'space_between'` | `'space_around'` | `'fill'`), and cross-axis `align` (`'start'` | `'center'` | `'end'` | `'stretch'`).
+
+```v
+win.begin_flex_box('flex_box', 'row', 'center', 'center')
+win.add_button('b1', 'Action')
+win.end_flex_box()
+```
 
 ### `win.end_flex_box() &SimpleWindow`
 
 Closes the active flexbox container.
 
+```v
+win.end_flex_box()
+```
+
 ### `win.flex_box(name string, direction string, justify string, align string, callback VoidEventCallback) &SimpleWindow`
 
 Closure-based flexbox container helper. Executes the callback closure and automatically ends the flexbox layout.
+
+```v
+win.flex_box('flex', 'row', 'space_between', 'center', fn (mut win simplegui.SimpleWindow) {
+    win.add_button('b1', 'Left')
+    win.add_button('b2', 'Right')
+})
+```
 
 ### `win.align_left() &SimpleWindow` / `win.align_center()` / `win.align_right()` / `win.align_top()` / `win.align_bottom()`
 
 Fluent builder alignment modifiers for explicit control placement within containers. Attaches to the last created control.
 
+```v
+win.center()
+```
+
 ### `win.expand_fill() &SimpleWindow`
 
 Fluent builder modifier that configures the last created control to expand and fill available container space.
+
+```v
+win.add_input('search', '').expand_fill()
+```
 
 ### `win.set_control_alignment(name string, alignment string) &SimpleWindow` / `win.get_control_alignment(name string) string`
 
 Sets or retrieves explicit alignment (`'left'`, `'center'`, `'right'`, `'top'`, `'bottom'`) for a named control.
 
+```v
+win.set_control_alignment('submit', 'center')
+align := win.get_control_alignment('submit')
+```
+
 ### `win.set_control_expand_fill(name string, expand bool) &SimpleWindow` / `win.get_control_expand_fill(name string) bool`
 
 Enables or checks fill expansion configuration for a named control in its container.
+
+```v
+win.set_control_expand_fill('search', true)
+expanded := win.get_control_expand_fill('search')
+```
 
 ### `win.add_action_row(actions map[string]VoidEventCallback) &SimpleWindow`
 
 Lays out a set of buttons horizontally in a single call, binding each to its respective click event callback.
 
+```v
+win.add_action_row({
+    'Save': fn (mut win simplegui.SimpleWindow) { println('Save') },
+    'Cancel': fn (mut win simplegui.SimpleWindow) { println('Cancel') }
+})
+```
+
 ### `win.add_fields_row(fields map[string]string) &SimpleWindow`
 
 Lays out a set of labeled input fields side-by-side. The map maps label text to input control name (e.g. `{"First Name": "fn"}`).
+
+```v
+win.add_fields_row({
+    'First Name': 'fn_input',
+    'Last Name': 'ln_input'
+})
+```
 
 ### `win.add_group_box(name string, title string) &SimpleWindow`
 
 Adds a visual framed box container with an optional title label. Subsequent controls added will be nested inside this visual group.
 
+```v
+win.add_group_box('user_info', 'User Profile')
+```
+
 ### `win.add_tabs(name string, titles []string) &SimpleWindow`
 
 Adds a tabbed container choice selector displaying the tab panes matching the provided `titles`.
+
+```v
+win.add_tabs('main_tabs', ['General', 'Security', 'Advanced'])
+```
 
 ### `win.add_scroll_view(name string, height int) &SimpleWindow`
 
 Adds a scrollable layout viewport container with a fixed vertical height constraint.
 
+```v
+win.add_scroll_view('scroll_panel', 250)
+```
+
 ### `win.row(name string, callback VoidEventCallback) &SimpleWindow`
 
 Starts a horizontal row stack container, executes the callback closure passing the window reference, and automatically closes the horizontal container. Any widgets added inside the closure align horizontally.
 
+```v
+win.row('action_row', fn (mut win simplegui.SimpleWindow) {
+    win.add_button('save', 'Save')
+    win.add_button('cancel', 'Cancel')
+})
+```
+
 ### `win.group(name string, title string, callback VoidEventCallback) &SimpleWindow`
 
 Starts a visual group box container, executes the callback closure passing the window reference, allowing nested layout code.
+
+```v
+win.group('account_group', 'Account Settings', fn (mut win simplegui.SimpleWindow) {
+    win.add_input('username', 'Ada')
+})
+```
 
 ---
 
@@ -765,6 +1364,12 @@ For common forms, these helpers reduce boilerplate and keep the API friendly for
 - `win.validate_controls(validators map[string]ControlValidator) map[string]string` validates named controls and stores inline errors, while `simplegui.validate_not_empty(value string) string` provides a ready-made required-field validator.
 - `win.validate_struct[T]() bool` automatically validates form controls against struct field attributes (e.g. `@[required]`, `@[min_len: X]`, `@[max_len: Y]`, `@[email]`, `@[url]`, `@[alphanumeric]`, `@[min: A]`, `@[max: B]`) and displays visual inline errors on the window. Returns `true` if valid.
 
+```v
+win.add_form_field('Name:', 'name', 'Ada')
+win.add_form_password('Password:', 'pwd', '')
+win.add_form_dropdown('Country:', 'country', ['USA', 'Canada', 'UK'], 'USA')
+```
+
 ### Nameless default control helpers
 
 If your application only needs a single control of a specific type (or you do not want to manage control names), you can use nameless helpers which default to pre-configured keys (`'default_input'`, `'default_textarea'`, `'default_checkbox'`, `'default_number'`, `'default_button'`):
@@ -790,37 +1395,75 @@ If your application only needs a single control of a specific type (or you do no
 - `win.path_control(path string) &SimpleWindow`
 - `win.token_field(value string) &SimpleWindow`
 
+```v
+win.input('Ada')
+val := win.get_input()
+win.button('Click Me')
+```
+
 ### `win.add_label(name string, text string) &SimpleWindow`
 
 Adds a read-only text description label.
+
+```v
+win.add_label('control_name', 'Hello World')
+```
 
 ### `win.add_input(name string, value string) &SimpleWindow`
 
 Adds a single-line text input field.
 
+```v
+win.add_input('control_name', 'sample')
+```
+
 ### `win.add_password(name string, value string) &SimpleWindow`
 
 Adds a secure password entry field.
+
+```v
+win.add_password('control_name', 'sample')
+```
 
 ### `win.add_textarea(name string, value string) &SimpleWindow`
 
 Adds a scrollable, multi-line rich text area.
 
+```v
+win.add_textarea('control_name', 'sample')
+```
+
 ### `win.add_html_view(name string, html string) &SimpleWindow`
 
 Adds a lightweight HTML preview panel using WebKit.
+
+```v
+win.add_html_view('control_name', 'sample')
+```
 
 ### `win.add_drop_zone(name string, label string) &SimpleWindow`
 
 Adds a drag-and-drop target for file paths and other dropped content.
 
+```v
+win.add_drop_zone('control_name', 'Title')
+```
+
 ### `win.add_checkbox(name string, label string, checked bool) &SimpleWindow`
 
 Adds a toggle checkbox.
 
+```v
+win.add_checkbox('control_name', 'Title', true)
+```
+
 ### `win.add_button(name string, title string) &SimpleWindow`
 
 Adds a clickable push button.
+
+```v
+win.add_button('control_name', 'Title')
+```
 
 ### `win.add_number(name string, value int) &SimpleWindow`
 
@@ -828,61 +1471,121 @@ Adds a numeric input field bound to an increment/decrement stepper.
 
 - **Keyboard behavior**: when focused, `Up` increases and `Down` decreases the value by the step size (default `1`).
 
+```v
+win.add_number('control_name', 50)
+```
+
 ### `win.add_slider(name string, value int) &SimpleWindow`
 
 Adds a horizontal slider control (range `0` to `100`).
+
+```v
+win.add_slider('control_name', 50)
+```
 
 ### `win.add_theme_menu(name string, selected string) &SimpleWindow`
 
 Adds a standard popup dropdown menu selection for active theme (options: `Light`, `Dark`, `System`).
 
+```v
+win.add_theme_menu('control_name', 'sample')
+```
+
 ### `win.add_color_well(name string, color_hex string) &SimpleWindow`
 
 Adds a native macOS color well block. Clicking it launches the macOS Color Picker.
+
+```v
+win.add_color_well('control_name', '#007aff')
+```
 
 ### `win.add_date_picker(name string, date string) &SimpleWindow`
 
 Adds a calendar date picker input (input format: `yyyy-mm-dd`).
 
+```v
+win.add_date_picker('control_name', '2026-07-25')
+```
+
 ### `win.add_mode_control(name string, selected string) &SimpleWindow`
 
 Adds a segmented control choice selector (choices: `Simple`, `Advanced`, `Expert`).
+
+```v
+win.add_mode_control('control_name', 'sample')
+```
 
 ### `win.add_progress_indicator(name string, value int) &SimpleWindow`
 
 Adds a horizontal progress bar loader (range `0` to `100`).
 
+```v
+win.add_progress_indicator('control_name', 50)
+```
+
 ### `win.add_list_box(name string, items []string) &SimpleWindow`
 
 Adds a scrollable table list box control displaying the array items. Selection changes trigger change events.
+
+```v
+win.add_list_box('control_name', ['Option 1', 'Option 2', 'Option 3'])
+```
 
 ### `win.add_image(name string, file_path string) &SimpleWindow`
 
 Adds an image box displaying a local PNG or JPEG file. Custom widths/heights can resize it.
 
+```v
+win.add_image('control_name', '/path/to/file.txt')
+```
+
 ### `win.add_dropdown(name string, items []string, selected string) &SimpleWindow`
 
 Adds a generic popup dropdown choice selector with custom `items`. The selected item can be got/set using `win.get_text()` or `win.set_text()`.
+
+```v
+win.add_dropdown('control_name', ['Option 1', 'Option 2', 'Option 3'], 'sample')
+```
 
 ### `win.add_segmented_control(name string, items []string, selected string) &SimpleWindow`
 
 Adds a generic segmented control choice selector containing custom `items`. Choice updates can be set/got via label strings (`win.get_text()`) or 0-indexed segment positions (`win.get_value_int()`).
 
+```v
+win.add_segmented_control('control_name', ['Option 1', 'Option 2', 'Option 3'], 'sample')
+```
+
 ### `win.add_radio_group(name string, items []string, selected string) &SimpleWindow`
 
 Adds a vertical radio button group layout. Choice updates can be retrieved/set via label strings (`win.get_text()`) or 0-indexed positions (`win.get_value_int()`).
+
+```v
+win.add_radio_group('control_name', ['Option 1', 'Option 2', 'Option 3'], 'sample')
+```
 
 ### `win.add_switch(name string, label string, checked bool) &SimpleWindow`
 
 Adds a native horizontal toggle switch. Its active state can be got/set using `win.get_bool()` or `win.set_bool()`.
 
+```v
+win.add_switch('control_name', 'Title', true)
+```
+
 ### `win.add_search_field(name string, placeholder string) &SimpleWindow`
 
 Adds a native magnifying glass search bar textfield.
 
+```v
+win.add_search_field('control_name', 'sample')
+```
+
 ### `win.add_combo_box(name string, items []string, selected string) &SimpleWindow`
 
 Adds an editable combobox dropdown choice selector containing custom `items`. Users can both type freeform choices and choose from suggestions list. The input text can be get/set using `win.get_text()` or `win.set_text()`.
+
+```v
+win.add_combo_box('control_name', ['Option 1', 'Option 2', 'Option 3'], 'sample')
+```
 
 ### `win.add_level_indicator(name string, style int, min_val int, max_val int, value int) &SimpleWindow`
 
@@ -894,9 +1597,17 @@ Adds a versatile native macOS level and capacity gauge indicator.
   - `2`: Discrete capacity meter (ticks block)
   - `3`: Star Rating selector
 
+```v
+win.add_level_indicator('control_name', 42, 5, 5, 50)
+```
+
 ### `win.add_rating(name string, value int) &SimpleWindow`
 
 Convenient shorthand wrapper for `add_level_indicator` that creates an interactive 5-star rating control (min = 0, max = 5, style = 3). Users can click stars directly to change values, which triggers and registers change event callbacks.
+
+```v
+win.add_rating('control_name', 50)
+```
 
 ### `win.add_spinner(name string, active bool) &SimpleWindow`
 
@@ -906,6 +1617,10 @@ Adds an indeterminate activity loading spinner.
   - `active`: If true, the spinner immediately visible and plays its spinning animation loop. If false, the animation stops and the control hides.
 - **Toggling**: You can turn the animation on or off programmatically using `win.set_bool(name, true/false)`.
 
+```v
+win.add_spinner('control_name', true)
+```
+
 ### `win.add_path_control(name string, path string) &SimpleWindow`
 
 Adds a modern breadcrumb path control.
@@ -913,12 +1628,20 @@ Adds a modern breadcrumb path control.
 - **Features**: Displays folder tracks beautifully using standard macOS system icons. If `editable` is set to true (default), users can click on links or double-click to invoke standard file dialogues, or drag files direct into the field to populate it.
 - **Accessing**: Retrieve or update path text directly using the standard `win.get_text(name)` vs `win.set_text(name, path)`.
 
+```v
+win.add_path_control('control_name', '/path/to/file.txt')
+```
+
 ### `win.add_token_field(name string, value string) &SimpleWindow`
 
 Adds a token bubble tags editor input field.
 
 - **Features**: Converts typical text phrases into tag chips or tag buttons when users press comma.
 - **Reading**: Standard `win.get_text()` returns a clean comma-separated sequence.
+
+```v
+win.add_token_field('control_name', 'sample')
+```
 
 ### `win.add_stepper(name string, min_val int, max_val int, step int, value int) &SimpleWindow`
 
@@ -928,9 +1651,17 @@ Adds a standalone native up/down arrow stepper (`NSStepper`) with a live value l
 - **Accessing**: Use `win.get_value_int(name)` / `win.set_value_int(name, value)`; user clicks fire `change` events with the numeric value.
 - **Range**: Adjust bounds later with `win.set_slider_range(name, min, max)` or the chainable `.range(min, max)`.
 
+```v
+win.add_stepper('control_name', 5, 5, 5, 50)
+```
+
 ### `win.add_help_button(name string) &SimpleWindow`
 
 Adds the round native macOS "?" help button (`NSBezelStyleHelpButton`). Attach behavior with `.onclick()` — typically opening documentation or a popover-style dialog.
+
+```v
+win.add_help_button('control_name')
+```
 
 ### `win.add_knob(name string, value int) &SimpleWindow`
 
@@ -939,11 +1670,19 @@ Adds a circular rotary slider knob (`NSSliderTypeCircular`) with a live value la
 - **Range**: Defaults to 0–100; chain `.range(min, max)` to customize.
 - **Accessing**: Same numeric accessors and `change` events as a linear slider.
 
+```v
+win.add_knob('control_name', 50)
+```
+
 ### `win.add_pull_down(name string, title string, items []string) &SimpleWindow`
 
 Adds a native pull-down menu button (`NSPopUpButton` in pulls-down mode). Unlike `add_dropdown`, the button always displays `title` and acts as a compact action menu.
 
 - **Events**: Choosing an item fires a `change` event whose value is the chosen item's text.
+
+```v
+win.add_pull_down('control_name', 'Title', ['Option 1', 'Option 2', 'Option 3'])
+```
 
 ### `win.add_image_button(name string, symbol string, title string) &SimpleWindow`
 
@@ -952,6 +1691,10 @@ Adds a push button decorated with a native SF Symbol image (macOS 11+), e.g. `'t
 - **Icon-only**: Pass an empty `title` for a compact icon-only button.
 - **Events**: Fires standard `click` events (`.onclick()`).
 
+```v
+win.add_image_button('control_name', 'sample', 'Title')
+```
+
 ### `win.add_stat_card(name string, title string, value string, trend string, trend_style string)` / `win.stat_card(title string, value string, trend string, trend_style string) &SimpleWindow`
 
 Adds a dashboard metric stat card displaying an uppercase title, large metric value, and trend indicator (e.g. `+18.4%`).
@@ -959,9 +1702,19 @@ Adds a dashboard metric stat card displaying an uppercase title, large metric va
 - **Parameters**: `trend_style` accepts `"success"`, `"error"`, `"warning"`, or `"info"` for custom status coloring.
 - **Updating**: Use `win.set_stat_card(name, value, trend, trend_style)` or `win.set_value(name, value)` to update live metrics programmatically.
 
+```v
+win.add_stat_card('control_name', 'Title', 'sample', 'default', 'default')
+win.stat_card('Title', 'sample', 'default', 'default')
+```
+
 ### `win.add_banner(name string, text string, style string)` / `win.banner(text string, style string) &SimpleWindow`
 
 Adds an alert message banner strip across the layout. Acceptable `style` values are `"info"`, `"success"`, `"warning"`, or `"error"`.
+
+```v
+win.add_banner('control_name', 'Hello World', 'default')
+win.banner('Hello World', 'default')
+```
 
 ### `win.add_star_rating(name string, value int, max_stars int)` / `win.star_rating(value int, max_stars int) &SimpleWindow`
 
@@ -971,6 +1724,11 @@ Adds an interactive star rating selector control (★ ★ ★ ★ ☆) with cust
 - **Accessing**: Use `win.get_star_rating_value(name)` / `win.set_star_rating_value(name, val)`.
 - **Events**: Star clicks fire `change` events with the numeric rating string.
 
+```v
+win.add_star_rating('control_name', 50, 5)
+win.star_rating(50, 5)
+```
+
 ### `win.add_range_slider(name string, min_val int, max_val int, low_val int, high_val int)` / `win.range_slider(min_val int, max_val int, low_val int, high_val int) &SimpleWindow`
 
 Adds a dual-thumb range selector slider widget for minimum and maximum boundaries.
@@ -979,12 +1737,22 @@ Adds a dual-thumb range selector slider widget for minimum and maximum boundarie
 - **Accessing**: Use `win.get_range_slider_low(name)` / `win.get_range_slider_high(name)` / `win.set_range_slider_values(name, low, high)`.
 - **Events**: Handle adjustments fire `change` events formatted as `"low:high"`.
 
+```v
+win.add_range_slider('control_name', 5, 5, 50, 50)
+win.range_slider(5, 5, 50, 50)
+```
+
 ### `win.add_split_button(name string, title string, menu_items []string)` / `win.split_button(title string, menu_items []string) &SimpleWindow`
 
 Adds a primary action button paired with a secondary dropdown popup menu.
 
 - **Parameters**: `title` sets main button text; `menu_items` specifies popup menu options.
 - **Events**: Main button click fires `click` events (`.on_click()`). Menu item selection fires `"select_item"` (`.on_select_item()`) and `"change"` (`.on_change()`).
+
+```v
+win.add_split_button('control_name', 'Title', ['Option 1', 'Option 2', 'Option 3'])
+win.split_button('Title', ['Option 1', 'Option 2', 'Option 3'])
+```
 
 ### `win.add_tag_cloud(name string, tags []string)` / `win.tag_cloud(tags []string) &SimpleWindow`
 
@@ -993,6 +1761,11 @@ Adds an interactive tag chips list widget.
 - **Parameters**: `tags` array contains active tag string labels.
 - **Updating**: `win.set_tag_cloud_tags(name, tags)` updates the chip list.
 - **Events**: Tag chip clicks fire `"click_tag"` (`.on_click_tag()`) events with the tag text.
+
+```v
+win.add_tag_cloud('control_name', ['Option 1', 'Option 2', 'Option 3'])
+win.tag_cloud(['Option 1', 'Option 2', 'Option 3'])
+```
 
 ### `win.add_wizard_stepper(name string, steps []string, current_step int)` / `win.wizard_stepper(steps []string, current_step int) &SimpleWindow`
 
@@ -1007,9 +1780,19 @@ Adds a styled notice banner callout box for contextual alert messages.
 - **Parameters**: `style` accepts `"info"`, `"success"`, `"warning"`, or `"error"`.
 - **Updating**: Update banner message text using `win.set_banner(name, text)` or `win.set_text(name, text)`.
 
+```v
+win.add_wizard_stepper('control_name', ['item1', 'item2'], 5)
+win.wizard_stepper(['item1', 'item2'], 5)
+```
+
 ### `win.add_section_header(name string, title string, subtitle string)` / `win.section_header(title string, subtitle string) &SimpleWindow`
 
 Adds a section header layout widget featuring a bold section title, optional subtitle, and a full-width divider line.
+
+```v
+win.add_section_header('control_name', 'Title', 'Title')
+win.section_header('Title', 'Title')
+```
 
 ### `win.add_vertical_slider(name string, value int, min_val int, max_val int, height int)` / `win.vertical_slider(value int, min_val int, max_val int, height int) &SimpleWindow`
 
@@ -1018,12 +1801,22 @@ Adds a standalone native vertical `NSSlider` control with a live numeric value i
 - **Accessing**: Use `win.get_vertical_slider(name)` / `win.set_vertical_slider(name, value)` to read or update numeric slider values.
 - **Events**: User interactions fire `change` events with the new integer value.
 
+```v
+win.add_vertical_slider('control_name', 50, 5, 5, 420)
+win.vertical_slider(50, 5, 5, 420)
+```
+
 ### `win.add_chip_group(name string, chips []string, selected string)` / `win.chip_group(chips []string, selected string) &SimpleWindow`
 
 Adds a modern segmented tag/chip pill selection bar (`NSSegmentedControl`) for easy item or category selection.
 
 - **Accessing**: Retrieve or update the active chip using `win.get_chip_selected(name)` / `win.set_chip_selected(name, chip)`.
 - **Events**: Segment selection fires `change` events with the selected chip's text string.
+
+```v
+win.add_chip_group('control_name', ['Option 1', 'Option 2', 'Option 3'], 'sample')
+win.chip_group(['Option 1', 'Option 2', 'Option 3'], 'sample')
+```
 
 ### `win.add_badge(name string, text string, style string)` / `win.badge_pill(text string, style string) &SimpleWindow`
 
@@ -1032,9 +1825,19 @@ Adds a pill-shaped status badge label with styled background tint and text color
 - **Parameters**: `style` accepts `"success"`, `"error"`, `"warning"`, `"info"`, or `"neutral"`.
 - **Accessing**: Use `win.get_badge(name)` and `win.set_badge(name, text, style)` to retrieve or update badge content dynamically.
 
+```v
+win.add_badge('control_name', 'Hello World', 'default')
+win.badge_pill('Hello World', 'default')
+```
+
 ### `win.add_icon_segments(name string, symbols []string, selected string)` / `win.icon_segments(symbols []string, selected string) &SimpleWindow`
 
 Adds an SF Symbol-powered segmented button bar for switching modes or views with native icons.
+
+```v
+win.add_icon_segments('control_name', ['Option 1', 'Option 2', 'Option 3'], 'sample')
+win.icon_segments(['Option 1', 'Option 2', 'Option 3'], 'sample')
+```
 
 ### `win.add_status_indicator(name string, label string, status string)` / `win.status_indicator(label string, status string) &SimpleWindow`
 
@@ -1043,11 +1846,21 @@ Adds an LED status indicator light dot alongside a text title.
 - **Parameters**: `status` accepts `"active"` / `"online"` (emerald green LED), `"warning"` / `"busy"` (orange LED), `"error"` / `"offline"` (red LED), or `"idle"` (gray LED).
 - **Accessing**: Use `win.get_status_indicator(name)` and `win.set_status_indicator(name, status)` to read or update state dynamically.
 
+```v
+win.add_status_indicator('control_name', 'Title', 'default')
+win.status_indicator('Title', 'default')
+```
+
 ### `win.add_metric_meter(name string, title string, value int, min_val int, max_val int, unit string)` / `win.metric_meter(title string, value int, min_val int, max_val int, unit string) &SimpleWindow`
 
 Adds a resource meter card widget displaying a title, percentage fill bar, and right-aligned numeric reading (e.g. `48%` or `28 MB/s`).
 
 - **Accessing**: Use `win.get_metric_meter(name)` and `win.set_metric_meter(name, value)` to read or update meter progress dynamically.
+
+```v
+win.add_metric_meter('control_name', 'Title', 50, 5, 5, 'default')
+win.metric_meter('Title', 50, 5, 5, 'default')
+```
 
 ### `win.add_avatar_card(name string, title string, subtitle string, status string)` / `win.avatar_card(title string, subtitle string, status string) &SimpleWindow`
 
@@ -1055,11 +1868,21 @@ Adds a user/profile avatar tile widget featuring a round initial badge, title te
 
 - **Accessing**: Use `win.set_avatar_card(name, title, subtitle, status)` to update operator profile cards dynamically.
 
+```v
+win.add_avatar_card('control_name', 'Title', 'Title', 'default')
+win.avatar_card('Title', 'Title', 'default')
+```
+
 ### `win.add_time_picker(name string, time string)` / `win.time_picker(time string) &SimpleWindow`
 
 Adds a standalone native Cocoa clock/time selector (`NSDatePicker` with hour/minute/second stepper).
 
 - **Accessing**: Use `win.get_time_picker(name)` and `win.set_time_picker(name, time)` to read or update the selected time string (e.g. `"14:30:00"`).
+
+```v
+win.add_time_picker('control_name', '14:30:00')
+win.time_picker('14:30:00')
+```
 
 ### `win.add_tray_icon(name string, symbol string, title string)` / `win.tray_icon(symbol string, title string) &SimpleWindow`
 
@@ -1067,11 +1890,21 @@ Adds a macOS system menu bar status item / tray icon (`NSStatusItem`) in the top
 
 - **Accessing**: Use `win.set_tray_icon(name, symbol, title)` to update the status bar icon or title dynamically.
 
+```v
+win.add_tray_icon('control_name', 'sample', 'Title')
+win.tray_icon('sample', 'Title')
+```
+
 ### `win.add_collapsible_section(name string, title string, expanded bool)` / `win.collapsible_section(title string, expanded bool) &SimpleWindow`
 
 Adds a collapsible accordion container section header featuring an interactive disclosure triangle toggle.
 
 - **Accessing**: Use `win.set_collapsible_section_expanded(name, expanded)` to programmatically expand or collapse the section header.
+
+```v
+win.add_collapsible_section('control_name', 'Title', true)
+win.collapsible_section('Title', true)
+```
 
 ### `win.add_code_editor(name string, code string, height int)` / `win.code_editor(code string, height int) &SimpleWindow`
 
@@ -1079,15 +1912,29 @@ Adds an integrated dark-themed monospaced code editor container view.
 
 - **Accessing**: Use `win.get_code_editor(name)` and `win.set_code_editor(name, code)` to read or update text source code dynamically.
 
+```v
+win.add_code_editor('control_name', 'Hello World', 420)
+win.code_editor('Hello World', 420)
+```
+
 ### `win.add_timeline_view(name string, height int)` / `win.timeline_view(height int) &SimpleWindow`
 
 Adds an activity feed timeline stream widget for displaying real-time event logs with colored status indicators.
 
 - **Accessing**: Append event entries using `win.add_timeline_entry(name, time, title, detail, style)` or clear with `win.clear_timeline(name)`. `style` accepts `"success"`, `"warning"`, `"error"`, or `"info"`.
 
+```v
+win.add_timeline_view('control_name', 420)
+win.timeline_view(420)
+```
+
 ### `win.add_toolbar_item(name string, label string, tooltip string, symbol string)` & `win.on_toolbar_click(name, callback)`
 
 Adds a native macOS titlebar `NSToolbar` button with an SF Symbol icon and label, and wires click event handling.
+
+```v
+win.add_toolbar_item('control_name', 'Title', 'sample', 'sample', 'sample')
+```
 
 ---
 
@@ -1099,21 +1946,41 @@ Customize individual control dimensions and appearance by their registered name.
 
 Overwrites the control's Auto Layout width constraint.
 
+```v
+win.set_control_width('control_name', 640)
+```
+
 ### `win.set_control_height(name string, height int) &SimpleWindow`
 
 Overwrites the control's Auto Layout height constraint.
+
+```v
+win.set_control_height('control_name', 420)
+```
 
 ### `win.set_control_font_size(name string, size int) &SimpleWindow`
 
 Changes the control's font size (handles labels, text fields, textareas, and buttons).
 
+```v
+win.set_control_font_size('control_name', 42)
+```
+
 ### `win.set_control_font_bold(name string, bold bool) &SimpleWindow`
 
 Configures the control's font to Bold weight (supports labels, text fields, textareas, and buttons).
 
+```v
+win.set_control_font_bold('control_name', true)
+```
+
 ### `win.set_control_font_name(name string, font_name string) &SimpleWindow`
 
 Sets a custom font family/name (e.g. `"Courier"`, `"Helvetica"`, or `"Arial"`) for the control. Falls back to system font if unavailable.
+
+```v
+win.set_control_font_name('control_name', 'control_name')
+```
 
 ### `win.set_control_background_color(name string, hex_color string) &SimpleWindow`
 
@@ -1121,11 +1988,19 @@ Sets a custom background color for the individual control.
 
 - **Notes**: The explicit color is remembered — a later `set_control_font_color()` call will not reset it. Applying a theme afterwards restyles the control with theme colors, so re-apply overrides after `set_theme()` if needed.
 
+```v
+win.set_control_background_color('control_name', '#007aff')
+```
+
 ### `win.set_control_font_color(name string, hex_color string) &SimpleWindow`
 
 Sets a custom text font color for the individual control.
 
 - **Notes**: Setting only the font color preserves any explicitly set background color (and vice versa).
+
+```v
+win.set_control_font_color('control_name', '#007aff')
+```
 
 ### `win.set_control_visible(name string, visible bool) &SimpleWindow`
 
@@ -1133,69 +2008,141 @@ Toggles whether the control is shown on screen.
 
 - **Notes**: Hidden controls will automatically collapse within `NSStackView` layouts, dynamically shifting surrounding elements.
 
+```v
+win.set_control_visible('control_name', true)
+```
+
 ### `win.get_control_visible(name string) bool`
 
 Checks if the control is currently visible.
+
+```v
+if win.get_control_visible('control_name') {
+    // ...
+}
+```
 
 ### `win.set_control_enabled(name string, enabled bool) &SimpleWindow`
 
 Enables/disables user interaction on the control. Disabled controls will render greyed out.
 
+```v
+win.set_control_enabled('control_name', true)
+```
+
 ### `win.get_control_enabled(name string) bool`
 
 Checks if the control is currently enabled.
+
+```v
+if win.get_control_enabled('control_name') {
+    // ...
+}
+```
 
 ### `win.get_control_background_color(name string) string`
 
 Gets the custom background HEX color string of the specified control, or an empty string if none is set.
 
+```v
+val := win.get_control_background_color('control_name')
+```
+
 ### `win.get_control_font_color(name string) string`
 
 Gets the custom font HEX color string of the specified control, or an empty string if none is set.
+
+```v
+val := win.get_control_font_color('control_name')
+```
 
 ### `win.get_control_width(name string) int`
 
 Gets the custom layout width constraint of the specified control, or `0` if not explicitly constrained.
 
+```v
+val := win.get_control_width('control_name')
+```
+
 ### `win.get_control_height(name string) int`
 
 Gets the custom layout height constraint of the specified control, or `0` if not explicitly constrained.
+
+```v
+val := win.get_control_height('control_name')
+```
 
 ### `win.get_control_font_size(name string) int`
 
 Gets the custom font size of the specified control, or `0` if not explicitly configured.
 
+```v
+val := win.get_control_font_size('control_name')
+```
+
 ### `win.set_placeholder(name string, text string) &SimpleWindow`
 
 Sets placeholder text for text-based controls such as inputs and password fields.
+
+```v
+win.set_placeholder('control_name', 'Hello World')
+```
 
 ### `win.set_error(name string, text string) &SimpleWindow`
 
 Applies validation/error feedback to a control and highlights it visually.
 
+```v
+win.set_error('control_name', 'Hello World')
+```
+
 ### `win.clear_errors() &SimpleWindow`
 
 Clears all active visual validation error states and error messages across all controls at once.
+
+```v
+win.clear_errors()
+```
 
 ### `win.clear_error(name string) &SimpleWindow`
 
 Clears the visual validation error state and error message for a specific named control.
 
+```v
+win.clear_error('control_name')
+```
+
 ### `win.get_error(name string) string`
 
 Gets the validation error text currently associated with the specified control, or an empty string if there is no error.
+
+```v
+val := win.get_error('control_name')
+```
 
 ### `win.set_tooltip(name string, text string) &SimpleWindow`
 
 Sets a hover tooltip for any control.
 
+```v
+win.set_tooltip('control_name', 'Hello World')
+```
+
 ### `win.set_default_button(name string) &SimpleWindow`
 
 Marks a button as the default Enter-key action for the window.
 
+```v
+win.set_default_button('control_name')
+```
+
 ### `win.set_html(name string, html string) &SimpleWindow`
 
 Updates the content shown inside an HTML preview panel.
+
+```v
+win.set_html('control_name', 'sample')
+```
 
 ### Fluent Chaining Modifiers (Last-Control Helpers)
 
@@ -1221,6 +2168,14 @@ You can chain these modifiers directly onto control creation methods to style or
 - **`.onhover(callback VoidEventCallback) &SimpleWindow`**: Attaches a hover-enter handler to the last created control.
 - **`.onhover_exit(callback VoidEventCallback) &SimpleWindow`**: Attaches a hover-exit handler to the last created control.
 
+```v
+win.add_input('email', '')
+   .width(240)
+   .placeholder('user@domain.com')
+   .tooltip('Enter primary email address')
+   .bold(true)
+```
+
 ---
 
 ## 5. Dialogs, Popups, & File Pickers
@@ -1229,84 +2184,177 @@ You can chain these modifiers directly onto control creation methods to style or
 
 Shows a native modal information alert dialog with an OK button.
 
+```v
+win.alert('Title', 'Hello World')
+```
+
 ### `win.alert_with_style(title string, message string, style string) &SimpleWindow`
 
 Shows a native modal alert dialog with a specific visual severity style preset (options: `'info'`, `'warning'`, `'critical'`).
+
+```v
+win.alert_with_style('Title', 'Hello World', 'default')
+```
 
 ### `win.confirm(title string, message string) bool`
 
 Shows a warning confirmation popup with Yes/No actions, returning a boolean.
 
+```v
+if win.confirm('Title', 'Hello World') {
+    // ...
+}
+```
+
 ### `win.prompt(title string, message string, default_val string) string`
 
 Shows a popup prompt requesting input from the user, returning the entered string (or empty if cancelled).
+
+```v
+val := win.prompt('Title', 'Hello World', 'sample')
+```
 
 ### `win.choice_dialog(title string, message string, choices []string) int`
 
 Displays a native macOS alert with multiple custom button choices. Returns the 0-indexed choice clicked by the user (or `-1` if cancelled/dismissed).
 
+```v
+val := win.choice_dialog('Title', 'Hello World', ['Option 1', 'Option 2', 'Option 3'])
+```
+
 ### `win.select_file() string`
 
 Launches the native macOS file picker panel, returning the chosen file path (or empty if cancelled).
+
+```v
+val := win.select_file()
+```
 
 ### `win.select_file_with_extensions(extensions string) string`
 
 Launches the native macOS file picker panel filtered by specific file extension constraints (e.g. `'png,txt,pdf'`), returning the chosen file path (or empty if cancelled).
 
+```v
+val := win.select_file_with_extensions('sample')
+```
+
 ### `win.select_folder() string`
 
 Launches the native macOS folder selection panel, returning the chosen folder path (or empty if cancelled).
+
+```v
+val := win.select_folder()
+```
 ### `win.save_file_picker() string`
 
 Launches the native macOS file save panel, returning the target path (or empty if cancelled).
+
+```v
+val := win.save_file_picker()
+```
 
 ### `win.toast(message string)` &SimpleWindow
 
 Shows a self-dismissing native overlay toast notification containing the message text.
 
+```v
+win.toast('Hello World')
+```
+
 ### `win.toast_info(message string)` / `win.toast_success(message string)` / `win.toast_warn(message string)` / `win.toast_error(message string)` &SimpleWindow
 
 Icon-prefixed styled toast notifications (`ℹ️`, `✅`, `⚠️`, `❌`).
+
+```v
+win.toast_info('Hello World')
+win.toast_success('Hello World')
+win.toast_warn('Hello World')
+win.toast_error('Hello World')
+```
 
 ### `win.validate_required(names []string) (bool, string)`
 
 Validates that every named control in `names` has a non-empty string value. If a required field is empty, it automatically flashes the control, sets focus to it, and returns `(false, missing_control_name)`.
 
+```v
+res := win.validate_required(['name', 'email'])
+```
+
 ### `win.trim_all(names []string)` &SimpleWindow
 
 Trims leading and trailing whitespace from multiple named text inputs or textareas in a single call.
+
+```v
+win.trim_all(['name', 'email'])
+```
 
 ### `win.uppercase_all(names []string)` / `win.lowercase_all(names []string)` &SimpleWindow
 
 Converts text values in multiple named controls to UPPERCASE or lowercase.
 
+```v
+win.uppercase_all(['name', 'email'])
+win.lowercase_all(['name', 'email'])
+```
+
 ### `win.clear_form()` / `win.reset_to_defaults()` &SimpleWindow
 
 Resets all text inputs, textareas, checkboxes, sliders, and number fields across the window to default blank state in one call.
+
+```v
+win.clear_form()
+win.reset_to_defaults()
+```
 
 ### `win.set_status_temporary(message string, duration_ms int)` &SimpleWindow
 
 Sets a status bar message temporarily and automatically restores the previous status text after `duration_ms`.
 
+```v
+win.set_status_temporary('Hello World', 1000)
+```
+
 ### `win.play_sound(sound_name string)` &SimpleWindow
 
 Plays a native macOS system sound by name (e.g., `'Glass'`, `'Ping'`, `'Hero'`, `'Pop'`, `'Tink'`, `'Submarine'`).
+
+```v
+win.play_sound('control_name')
+```
 
 ### `win.speak(text string)` &SimpleWindow
 
 Speaks text out loud using the macOS text-to-speech engine.
 
+```v
+win.speak('Hello World')
+```
+
 ### `win.save_layout(app_name string)` / `win.restore_layout(app_name string)` / `win.auto_save_layout(app_name string)` &SimpleWindow
 
 Saves and restores window position and size bounds automatically to JSON configuration. `auto_save_layout(app_name)` binds restoration on window startup and auto-saves bounds when the window is closed.
+
+```v
+win.save_layout('control_name')
+win.restore_layout('control_name')
+win.auto_save_layout('control_name')
+```
 
 ### `win.open_url(url string)` &SimpleWindow
 
 Opens a web URL in the user's default web browser.
 
+```v
+win.open_url('https://vlang.io')
+```
+
 ### `win.copy_to_clipboard(text string)` &SimpleWindow
 
 Copies the specified text to the macOS system clipboard.
+
+```v
+win.copy_to_clipboard('Hello World')
+```
 
 ---
 
@@ -1315,6 +2363,12 @@ Copies the specified text to the macOS system clipboard.
 ### 6b. Neutralino-Inspired System Calls & Platform API
 
 To simplify system integrations and mirror key features from NeutralinoJS, `simplegui` includes fluent-style wrappers around the V standard library's `os` and core system actions. These methods extend `SimpleWindow` and are readily available inside event handlers.
+
+```v
+out, code := win.exec('uname -a')
+user := win.get_username()
+win.show_system_notification('SimpleGUI', 'System integration active')
+```
 
 ### Shell Execution (`NL_OS`)
 
@@ -1327,6 +2381,13 @@ To simplify system integrations and mirror key features from NeutralinoJS, `simp
 - `win.exec_retry(command string, max_attempts int, initial_delay_ms int, backoff_factor f64) CommandResult`: Retries failed commands using exponential backoff.
   - **Returned Type**: `CommandResult` contains `command`, `output`, `exit_code`, `timed_out`, `duration_ms`, and `attempts`.
 
+```v
+out, code := win.exec('ls -la')
+val := win.exec_or('which git', '/usr/bin/git')
+win.exec_bg('long_running_task.sh')
+res := win.exec_result('v version')
+```
+
 ### Environment Variables
 
 - `win.get_env(key string) string`: Retrieves the value of a system environment variable.
@@ -1335,6 +2396,11 @@ To simplify system integrations and mirror key features from NeutralinoJS, `simp
 - `win.get_envs() map[string]string`: Retrieves all system environment variables as a key-value map.
 - `win.set_env(key string, val string) &SimpleWindow`: Sets or overrides an environment variable for the running app.
 - `win.unset_env(key string) &SimpleWindow`: Removes an environment variable.
+
+```v
+user := win.get_env('USER')
+win.set_env('MODE', 'production')
+```
 
 ### System Diagnostics
 
@@ -1357,9 +2423,20 @@ To simplify system integrations and mirror key features from NeutralinoJS, `simp
 - `win.get_uname() Uname`: Retrieves system operating system and kernel architecture details.
   - **Returned Type**: `Uname` contains `sysname`, `nodename`, `release`, `version`, and `machine` string fields.
 
+```v
+host := win.get_hostname()
+user := win.get_username()
+pid := win.get_pid()
+if win.exists_in_path('git') { println('Git ready') }
+```
+
 ### System Notifications (`os.showNotification`)
 
 - `win.show_system_notification(title string, message string) &SimpleWindow`: Dispatches a native, standard, system-wide macOS notification banner using lightweight Applescript.
+
+```v
+win.show_system_notification('Notification Title', 'Message content body')
+```
 
 ### macOS Appearance & Power Controls
 
@@ -1386,6 +2463,12 @@ Notes:
 
 - Appearance and power calls are best-effort wrappers around macOS tools like `osascript`, `pmset`, and `CGSession`.
 - Depending on macOS privacy/security settings, your app may need Automation permissions (for `System Events`) to perform some actions.
+
+```v
+is_dark := win.is_dark_mode()
+win.sleep_display()
+win.start_prevent_sleep()
+```
 
 ### Cross-Window Registry & External App Automation (`simplegui.sys_*`)
 
@@ -1479,6 +2562,13 @@ fn main() {
 - `win.get_disk_usage(path string) !DiskStats`: Retrieves disk space usage statistics for the given folder path.
   - **Returned Type**: `DiskStats` has `total`, `available`, and `used` as `u64` fields representing size in bytes.
 
+```v
+cpu := win.get_cpu_info()
+cores := win.get_cpu_cores()
+ram := win.get_memory_info()
+arch := win.get_cpu_architecture()
+```
+
 ### System Paths Lookup
 
 - `win.get_system_path(name string) string`: Resolves canonical folders:
@@ -1495,6 +2585,12 @@ fn main() {
 - `win.get_user_downloads_dir() string`: Returns absolute path to the user's Downloads folder.
 - `win.get_user_documents_dir() string`: Returns absolute path to the user's Documents folder.
 - `win.get_user_desktop_dir() string`: Returns absolute path to the user's Desktop folder.
+
+```v
+home := win.get_system_path('home')
+downloads := win.get_user_downloads_dir()
+app_data := win.get_app_data_dir('MyApp')
+```
 
 ### Filesystem IO Utilities (`NL_FILESYSTEM`)
 
@@ -1538,6 +2634,13 @@ fn main() {
 - `win.tail_file(path string, max_lines int) ![]string`: Returns up to the last `max_lines` lines of a file (log-style usage).
 - `win.wait_for_file(path string, timeout_ms int, poll_ms int) bool`: Waits until a file exists or timeout elapses.
 
+```v
+if win.file_exists('/path/to/file.txt') {
+    text := win.read_file('/path/to/file.txt')
+    win.write_file('/path/to/copy.txt', text)
+}
+```
+
 ### Path String Parsing
 
 - `win.path_dir(path string) string`: Returns the parent directory of the path.
@@ -1549,10 +2652,21 @@ fn main() {
 - `win.path_norm(path string) string`: Normalizes path separators.
 - `win.path_split(path string) (string, string, string)`: Splits a path into `(directory, filename, extension)`.
 
+```v
+dir := win.path_dir('/a/b/c.txt')   // '/a/b'
+base := win.path_base('/a/b/c.txt') // 'c.txt'
+ext := win.path_ext('/a/b/c.txt')   // '.txt'
+```
+
 ### File Metadata
 
 - `win.get_file_metadata(path string) !FileMetadata`: Retrieves detailed metadata for the file at the given path.
   - **Returned Type**: `FileMetadata` contains size, inode, nlink, dev, uid, gid, atime, mtime, ctime, file_type, mode_bitmask, and individual boolean permission fields for owner, group, and others (e.g. `owner_r`, `owner_w`, `owner_x`).
+
+```v
+meta := win.get_file_metadata('/path/to/file.txt')!
+println('Size: ${meta.size} bytes, Owner read: ${meta.owner_r}')
+```
 
 ### Asynchronous Subprocesses
 
@@ -1567,6 +2681,14 @@ fn main() {
     - `proc.wait()`: Waits for the subprocess to exit and blocks until completion.
     - `proc.close()`: Cleans up and releases process resources.
 
+```v
+mut proc := win.spawn_process('ping', ['127.0.0.1'], {})!
+if proc.is_alive() {
+    out := proc.read()
+    proc.terminate()
+}
+```
+
 ### System Clock & Time
 
 - `win.get_time() SystemTime`: Returns current local date and time in a structured `SystemTime` object.
@@ -1578,6 +2700,13 @@ fn main() {
 - `win.get_uptime_formatted() string`: Returns human-readable system uptime string (e.g. `"3 days, 4 hours, 12 mins"`).
 - `win.get_boot_timestamp() i64`: Returns system boot Unix epoch timestamp.
 - `win.sleep_ms(ms u64) &SimpleWindow`: Pauses execution for specified milliseconds.
+
+```v
+time_obj := win.get_time()
+println('Year: ${time_obj.year}, RFC3339: ${time_obj.rfc3339}')
+epoch := win.get_unix_epoch()
+uptime := win.get_uptime_formatted()
+```
 
 ### Network Utilities
 
@@ -1594,6 +2723,12 @@ fn main() {
 - `win.is_internet_connected() bool`: Tests active internet connectivity via ping host checks.
 - `win.get_listening_ports() []int`: Returns array of active listening TCP ports on system.
 
+```v
+ip := win.get_local_ip()
+is_online := win.is_internet_connected()
+ip_addr := win.dns_lookup('vlang.io')
+```
+
 ### System Resource Monitoring
 
 - `win.get_cpu_usage_percent() f64`: Returns CPU utilization percentage estimate across all processes.
@@ -1604,6 +2739,12 @@ fn main() {
 - `win.get_running_process_count() int`: Returns total count of running processes.
 - `win.get_open_file_count() int`: Returns total count of open file descriptors in system.
 - `win.get_swap_usage() string`: Returns virtual memory swap utilization summary.
+
+```v
+cpu_pct := win.get_cpu_usage_percent()
+mem_mb := win.get_process_memory_mb(0)
+load1, load5, load15 := win.get_load_average()
+```
 
 ### Terminal & Shell Utilities
 
@@ -1616,6 +2757,12 @@ fn main() {
 - `win.osascript_alert(title string, message string) bool`: Displays native macOS alert dialog box.
 - `win.osascript_choose_file() string`: Displays native macOS file picker dialog returning selected POSIX path.
 - `win.osascript_choose_folder() string`: Displays native macOS folder picker dialog returning selected POSIX path.
+
+```v
+win.beep()
+win.say('Task complete')
+win.play_system_sound('Glass')
+```
 
 ### macOS Details & App Integration
 
@@ -1695,6 +2842,13 @@ fn main() {
 - `win.launch_at_login_add(app_path string) &SimpleWindow`: Registers application in macOS Login Items.
 - `win.launch_at_login_remove(app_name string) &SimpleWindow`: Removes application from macOS Login Items.
 
+```v
+ver := win.get_macos_version()
+is_arm := win.is_apple_silicon()
+win.open_in_finder('/Users/username/Downloads')
+win.set_dock_badge(3)
+```
+
 ---
 
 ## 6c. V Standard Library High-Level Wrappers
@@ -1713,6 +2867,11 @@ fn main() {
 - `win.http_get_strict(url string) !string`: Sends a strict GET request and returns response body or explicit error.
 - `win.http_post_strict(url string, data string) !string`: Sends a strict POST request and returns response body or explicit error.
 
+```v
+body := win.http_get('https://api.github.com/zen')
+resp := win.http_post('https://httpbin.org/post', '{"key":"value"}')
+```
+
 ### Regular Expressions (`regex`)
 
 - `win.regex_match(text string, pattern string) bool`: Checks if a target string contains matches for a regular expression pattern.
@@ -1721,6 +2880,12 @@ fn main() {
 - `win.regex_match_strict(text string, pattern string) !bool`: Same as `regex_match`, but returns an explicit error if the pattern is invalid.
 - `win.regex_find_strict(text string, pattern string) ![]string`: Same as `regex_find`, but returns an explicit error if the pattern is invalid.
 - `win.regex_replace_strict(text string, pattern string, replacement string) !string`: Same as `regex_replace`, but returns an explicit error if the pattern is invalid.
+
+```v
+is_match := win.regex_match('hello123', r'^[a-z]+\d+$')
+matches := win.regex_find('word 100 word 200', r'\d+')
+clean_text := win.regex_replace('abc 123', r'\d+', '456')
+```
 
 ### Cryptography & Hash Functions (`crypto`, `crypto.hmac`, `hash`)
 
@@ -1739,12 +2904,24 @@ fn main() {
 - `win.crypto_encrypt_aes_secure(plain_text string, key_hex string) !string`: Production-safe AES-CBC encryption with random IV and PKCS7 padding validation, returning hex of `iv + ciphertext`.
 - `win.crypto_decrypt_aes_secure(payload_hex string, key_hex string) !string`: Decrypts payloads from `crypto_encrypt_aes_secure`, validating key length, payload framing, and PKCS7 padding.
 
+```v
+hash := win.crypto_sha256('password')
+md5 := win.crypto_md5('hello')
+bcrypt_hash := win.crypto_bcrypt_hash('pass')!
+```
+
 ### Encoding (`encoding.hex`, `encoding.base64`)
 
 - `win.hex_encode(text string) string`: Converts a raw text string into its hex-encoded representation.
 - `win.hex_decode(hex_str string) string`: Decodes a hex-encoded string back into raw text.
 - `win.base64_encode(text string) string`: Converts a raw text string into its Base64-encoded representation.
 - `win.base64_decode(b64_str string) string`: Decodes a Base64-encoded string back into raw text.
+
+```v
+hex_str := win.hex_encode('Hello V')
+raw_text := win.hex_decode(hex_str)
+b64_str := win.base64_encode('Hello V')
+```
 
 ### Compression (`compress.gzip`, `compress.zlib`, `compress.deflate`, & `compress.zstd`)
 
@@ -1756,6 +2933,11 @@ fn main() {
 - `win.decompress_deflate(data []u8) string`: Decompresses Deflate-compressed binary bytes back to a string.
 - `win.compress_zstd(text string) []u8`: Compresses a string using Zstd format.
 - `win.decompress_zstd(data []u8) string`: Decompresses Zstd-compressed binary bytes back to a string.
+
+```v
+gz_bytes := win.compress_gzip('Sample string to compress')
+orig_text := win.decompress_gzip(gz_bytes)
+```
 
 ### Random Numbers (`rand`, `crypto.rand`)
 
@@ -1770,6 +2952,12 @@ fn main() {
 - `win.crypto_rand_hex(length int) string`: Produces a cryptographically secure hex string token.
 - `win.crypto_rand_uuid() string`: Generates a cryptographically secure UUID v4 string (`8-4-4-4-12` hex format).
 
+```v
+rand_num := win.rand_int(1, 100)
+token := win.rand_string(16)
+uuid_str := win.crypto_rand_uuid()
+```
+
 ### Time & Calendar Calculations (`time`)
 
 - `win.time_now() string`: Returns the formatted current timestamp (`YYYY-MM-DD HH:MM:SS`).
@@ -1779,6 +2967,12 @@ fn main() {
 - `win.time_is_leap_year(year int) bool`: Returns true if specified year is a leap year.
 - `win.time_days_in_month(year int, month int) int`: Returns total number of days in a specific year and month (1-12).
 
+```v
+now_str := win.time_now()
+is_leap := win.time_is_leap_year(2028)
+days := win.time_days_in_month(2026, 7)
+```
+
 ### URL Escaping & Object Model (`net.urllib`)
 
 - `win.url_encode(text string) string`: Outputs a secure, percent-encoded string for URL query parameters.
@@ -1787,6 +2981,12 @@ fn main() {
 - `win.url_build(scheme string, host string, path string, query_params map[string]string) string`: Constructs a canonical URL string from scheme, host, path, and query parameter map.
 - **Returned Type**: `SimpleURL` supports:
   - `u.build_url() string`: Assembles the full canonical URL string from fields (`scheme`, `host`, `port`, `path`, `query`, `fragment`).
+
+```v
+encoded := win.url_encode('search & query')
+parsed := win.url_parse('https://vlang.io/docs?page=1')
+println(parsed.host) // 'vlang.io'
+```
 
 ### Config Parsers (TOML & JSON)
 
@@ -1799,12 +2999,24 @@ fn main() {
 - `win.json_validate(json_str string) bool`: Checks if a string contains valid JSON syntax.
 - `win.json_pretty_print(json_str string) string`: Formats a flat key-value map JSON string with clean line indents.
 
+```v
+json_map := win.json_decode_map('{"name": "Ada", "role": "Dev"}')
+pretty_json := win.json_pretty_print('{"a":"1","b":"2"}')
+```
+
 ### WebSocket Client (`net.websocket`)
 
 - `win.websocket_client(url string, on_msg SimpleWSMessageCallback) ?&SimpleWSClient`: Spawns a WebSocket client on a background thread.
   - **Returned Type**: `SimpleWSClient` supports:
     - `ws.write_string(msg string) !`: Sends a text payload to the active WebSocket server.
     - `ws.close()`: Cleanly disconnects from the remote WebSocket server.
+
+```v
+mut ws := win.websocket_client('wss://echo.websocket.org', fn (msg string) {
+    println('Received: ${msg}')
+})?
+ws.write_string('Hello Server')!
+```
 
 ### Stopwatch Utility (`time`)
 
@@ -1814,10 +3026,21 @@ fn main() {
     - `sw.elapsed_sec() f64`: Returns elapsed duration in seconds.
     - `sw.restart()`: Resets and restarts the stopwatch in-place.
 
+```v
+mut sw := win.start_stopwatch()
+// ... task ...
+elapsed_ms := sw.elapsed_ms()
+```
+
 ### System Clipboard (`clipboard`)
 
 - `win.clipboard_copy(text string) bool`: Copies the specified text to the system clipboard.
 - `win.clipboard_read() string`: Pastes and returns the text content from the system clipboard.
+
+```v
+win.clipboard_copy('Copied content')
+clip_text := win.clipboard_read()
+```
 
 ### Benchmark & Execution Timing (`benchmark`)
 
@@ -1831,6 +3054,13 @@ fn main() {
   - `sb.step_message(label string) string`: Retrieves step duration detail message.
   - `sb.total_message(label string) string`: Retrieves full benchmark overview.
   - `sb.stop()`: Halts benchmark timing.
+
+```v
+mut bm := win.start_benchmark()
+bm.measure('Step 1')
+bm.measure('Step 2')
+println(bm.total_message('Benchmark Overview'))
+```
 
 ### Network Sockets (TCP, UDP, Unix Domain Clients)
 
@@ -1852,6 +3082,13 @@ fn main() {
     - `s.read() !string`: Reads data from the Unix socket.
     - `s.close()`: Closes the active stream connection.
 
+```v
+mut client := win.tcp_connect('127.0.0.1:8080')!
+client.write('Hello Server')!
+msg := client.read()!
+client.close()
+```
+
 ### HTML Parser (`net.html`)
 
 - `win.html_parse(content string) SimpleHTMLDocument`: Parses HTML string content into a queryable Document Object Model (DOM).
@@ -1863,6 +3100,12 @@ fn main() {
     - `d.get_all_images() []string`: Extracts all image `src` URLs from `<img>` tags in the document.
     - `d.strip_tags() string`: Removes HTML tags from the document, returning plain text content.
 
+```v
+doc := win.html_parse('<html><body><h1>Header</h1><a href="https://vlang.io">Link</a></body></html>')
+title := doc.get_tag_text('h1')
+links := doc.get_all_links()
+```
+
 ### Placeholder Text Generator (`strings.lorem`)
 
 - `win.lorem_generate(corpus_name string, paragraphs int, sentences int, words int) string`: Generates pseudo-random placeholder paragraphs based on Markov chains from corpora.
@@ -1872,9 +3115,17 @@ fn main() {
     - `sentences`: Number of sentences per paragraph.
     - `words`: Number of words per sentence.
 
+```v
+lorem := win.lorem_generate('lorem', 2, 3, 10)
+```
+
 ### Console Text Styling (`term`)
 
 - `win.term_color(text string, style string) string`: Styles console text outputs (supports `'red'`, `'green'`, `'blue'`, `'yellow'`, `'bold'`, `'underline'`).
+
+```v
+styled := win.term_color('Success!', 'green')
+```
 
 ### Standard Collections & Datatypes (`datatypes`)
 
@@ -1916,6 +3167,16 @@ fn main() {
   - `smh.peek() !T`: Returns the smallest item without removing it.
   - `smh.len() int`: Returns total number of items stored in the min-heap.
 
+```v
+mut stack := simplegui.new_stack[string]()
+stack.push('first')
+stack.push('second')
+top := stack.pop()!
+
+mut set := simplegui.new_set[string]()
+set.add('unique_item')
+```
+
 ### Complex Number Arithmetic (`math.complex`)
 
 - `win.complex_new(re f64, im f64) SimpleComplex` / `simplegui.complex_new(re f64, im f64) SimpleComplex`: Constructs a 2D complex number (real + imaginary).
@@ -1929,6 +3190,13 @@ fn main() {
   - `c.conj() SimpleComplex`: Returns complex conjugate.
   - `c.exp() SimpleComplex`: Computes $e^z$.
   - `c.str() string`: Formats complex number as string (`re + im i`).
+
+```v
+c1 := win.complex_new(3.0, 4.0)
+c2 := win.complex_new(1.0, 2.0)
+sum := c1.add(c2)
+abs_val := c1.abs() // 5.0
+```
 
 ### Math & Trigonometry (`math`)
 
@@ -1954,6 +3222,12 @@ fn main() {
 - `win.math_log2(x f64) f64`: Returns base-2 logarithm of a positive floating point number.
 - `win.math_round_sig(x f64, sig_digits int) f64`: Rounds a floating point number to a given number of significant digits.
 
+```v
+sin_val := win.math_sin(1.5708)
+sq := win.math_sqrt(16.0)
+clamped := win.math_clamp(150.0, 0.0, 100.0) // 100.0
+```
+
 ### Statistical Analysis (`math.stats`)
 
 - `win.stats_mean(data []f64) f64`: Computes the arithmetic mean of a floating-point dataset.
@@ -1971,6 +3245,13 @@ fn main() {
 - `win.stats_population_variance(data []f64) f64`: Computes the population variance of a dataset.
 - `win.stats_population_std_dev(data []f64) f64`: Computes the population standard deviation of a dataset.
 
+```v
+data := [10.0, 20.0, 30.0, 40.0, 50.0]
+mean := win.stats_mean(data)
+med := win.stats_median(data)
+std_dev := win.stats_sample_std_dev(data)
+```
+
 ### Arbitrary-Precision BigInteger Math (`math.big`)
 
 - `win.big_int_from_int(v int) SimpleBigInt`: Constructs a `SimpleBigInt` from an integer value.
@@ -1983,6 +3264,13 @@ fn main() {
   - `b.mod(other SimpleBigInt) SimpleBigInt`: Returns the remainder of two BigInts.
   - `b.str() string`: Formats the BigInt as a decimal string representation.
 
+```v
+b1 := win.big_int_from_str('1000000000000000000000')
+b2 := win.big_int_from_str('2000000000000000000000')
+sum := b1.add(b2)
+println(sum.str())
+```
+
 ### Array Processing Utilities (`arrays`)
 
 - `win.array_min(arr []int) int`: Returns the minimum value in an integer array (or `0` if empty).
@@ -1993,10 +3281,21 @@ fn main() {
 - `win.array_sum_f64(arr []f64) f64`: Computes the sum of all elements in a float array.
 - `win.array_unique_strings(arr []string) []string`: Deduplicates string array values while preserving original insertion order.
 
+```v
+min_v := win.array_min([10, 5, 20, 3])
+max_v := win.array_max([10, 5, 20, 3])
+unique_list := win.array_unique_strings(['a', 'b', 'a', 'c'])
+```
+
 ### UTF-8 String Utilities (`encoding.utf8`)
 
 - `win.utf8_len(text string) int`: Returns the total number of UTF-8 code points/characters in a string.
 - `win.utf8_is_valid(text string) bool`: Validates whether a string contains valid UTF-8 character encoding.
+
+```v
+char_len := win.utf8_len('Hello 🚀') // 7
+is_valid := win.utf8_is_valid('Valid UTF-8')
+```
 
 ### String Distance, Metrics & Utilities (`strings`)
 
@@ -2016,6 +3315,12 @@ fn main() {
   - `sb.str() string`: Returns the complete accumulated string content.
   - `sb.len() int`: Returns the byte length of accumulated content.
 
+```v
+dist := win.string_levenshtein('kitten', 'sitting') // 3
+sim := win.string_jaro_winkler_similarity('martha', 'marhta')
+word_cnt := win.string_count_words('The quick brown fox')
+```
+
 ### CSV Matrix Operations (`encoding.csv`)
 
 - `win.csv_parse(content string) [][]string`: Parses a CSV formatted string into a 2D matrix of row/column strings.
@@ -2023,15 +3328,30 @@ fn main() {
 - `win.csv_extract_column(rows [][]string, col_idx int) []string`: Extracts all row values belonging to a specific zero-based column index.
 - `win.csv_filter_by_column(rows [][]string, col_idx int, search_term string) [][]string`: Returns only CSV rows where a column matches a given search string.
 
+```v
+matrix := win.csv_parse('Name,Age\nAda,36\nBob,25')
+csv_text := win.csv_encode([['ID', 'Name'], ['1', 'Ada']])
+```
+
 ### Ed25519 Digital Signatures (`crypto.ed25519`)
 
 - `win.crypto_ed25519_generate_key() !SimpleEd25519KeyPair`: Generates a new Ed25519 public/private key pair.
 - `win.crypto_ed25519_sign(priv_key []u8, msg string) ![]u8`: Signs a string payload using an Ed25519 private key.
 - `win.crypto_ed25519_verify(pub_key []u8, msg string, sig []u8) bool`: Verifies an Ed25519 signature against a public key and message.
 
+```v
+keys := win.crypto_ed25519_generate_key()!
+sig := win.crypto_ed25519_sign(keys.private_key, 'msg')!
+is_valid := win.crypto_ed25519_verify(keys.public_key, 'msg', sig)
+```
+
 ### Password-Based Key Derivation (`crypto.pbkdf2`)
 
 - `win.crypto_pbkdf2(password string, salt string, iterations int, key_len int) []u8`: Derives cryptographic keys from a password and salt using PBKDF2 with HMAC-SHA256.
+
+```v
+key := win.crypto_pbkdf2('password', 'salt123', 10000, 32)
+```
 
 ### Thread Synchronization Primitives (`sync`)
 
@@ -2043,6 +3363,18 @@ fn main() {
   - `wg.done()`: Decrements counter by 1.
   - `wg.wait()`: Blocks until counter reaches zero.
 
+```v
+mut m := win.new_mutex()
+m.lock()
+// ... thread-safe critical section ...
+m.unlock()
+
+mut wg := win.new_wait_group()
+wg.add(2)
+// ... workers call wg.done() ...
+wg.wait()
+```
+
 ---
 
 ## 7. List Box & Image View Operations
@@ -2051,17 +3383,33 @@ fn main() {
 
 Updates the entire set of rows displayed inside the list box. This is useful for search filters or dynamic updates.
 
+```v
+win.update_list_items('control_name', ['Option 1', 'Option 2', 'Option 3'])
+```
+
 ### `win.set_list_selected(name string, index int) &SimpleWindow`
 
 Sets the selected row index in the list box.
+
+```v
+win.set_list_selected('control_name', 0)
+```
 
 ### `win.get_list_selected(name string) int`
 
 Returns the 0-indexed selected row in the list box (or `-1` if no row is selected).
 
+```v
+val := win.get_list_selected('control_name')
+```
+
 ### `win.set_image_path(name string, file_path string) &SimpleWindow`
 
 Updates the active image shown in the specified image view control.
+
+```v
+win.set_image_path('control_name', '/path/to/file.txt')
+```
 
 ---
 
@@ -2073,13 +3421,29 @@ Starts a recurring main-loop timer that triggers the callback function every `N`
 
 - **Timer Callbacks**: Attaches to `timer_name` trigger. Callback is executed on main V thread.
 
+```v
+win.set_interval('control_name', 1000, fn (mut win &simplegui.SimpleWindow) {
+    println("Action triggered")
+})
+```
+
 ### `win.stop_interval(timer_name string) &SimpleWindow`
 
 Cancels and invalidates the active interval timer.
 
+```v
+win.stop_interval('control_name')
+```
+
 ### `win.run_after(ms int, callback VoidEventCallback) &SimpleWindow`
 
 Schedules a one-shot delay, executing the callback once after `ms` milliseconds have elapsed.
+
+```v
+win.run_after(1000, fn (mut win &simplegui.SimpleWindow) {
+    println("Action triggered")
+})
+```
 
 ---
 
@@ -2089,61 +3453,123 @@ Schedules a one-shot delay, executing the callback once after `ms` milliseconds 
 
 Reads the string value of any text input, textarea, label, color well, popup, or date picker (including list boxes, returning the text of the selected row).
 
+```v
+val := win.get_text('control_name')
+```
+
 ### `win.get(name string) string`
 
 Beginner-friendly shorthand alias for `win.get_text(name)`.
+
+```v
+val := win.get('control_name')
+```
 
 ### `win.get_as[T](name string) T`
 
 Helper method to fetch any control value in its native type. Supports fetching strings (`string`), booleans (`bool`), integers (`int`), and floats (`f64`).
 
+```v
+val := win.get_as[T]('control_name')
+```
+
 ### `win.set_text(name string, text string) &SimpleWindow`
 
 Sets/updates the text content of any input, textarea, or label.
+
+```v
+win.set_text('control_name', 'Hello World')
+```
 
 ### `win.set[T](name string, value T) &SimpleWindow`
 
 Beginner-friendly, generic shorthand method to set or update any control value (replaces the older non-generic `win.set`). Automatically routes to `set_text`, `set_bool`, `set_number_value`, or `set_float` based on the compile-time type of `T` (via type inference).
 
+```v
+win.set[T]('control_name', data)
+```
+
 ### `win.get_checked(name string) bool`
 
 Gets the toggle state of a checkbox.
+
+```v
+if win.get_checked('control_name') {
+    // ...
+}
+```
 
 ### `win.set_checked(name string, checked bool) &SimpleWindow`
 
 Sets the toggle state of a checkbox.
 
+```v
+win.set_checked('control_name', true)
+```
+
 ### `win.get_value_int(name string) int`
 
 Gets the integer value of a slider, progress bar, list box selected index, or number/stepper input.
+
+```v
+val := win.get_value_int('control_name')
+```
 
 ### `win.set_value_int(name string, value int) &SimpleWindow`
 
 Sets the integer value of a slider, progress bar, list box selected index, or number/stepper input.
 
+```v
+win.set_value_int('control_name', 50)
+```
+
 ### `win.get_status() string`
 
 Reads the current text value of the window status footer.
+
+```v
+val := win.get_status()
+```
 
 ### `win.set_status(text string) &SimpleWindow`
 
 Updates the text display of the window status footer.
 
+```v
+win.set_status('Hello World')
+```
+
 ### `win.status(text string) &SimpleWindow`
 
 Alias for `set_status(text)`, updating the window status footer.
+
+```v
+win.status('Hello World')
+```
 
 ### `win.clear(name string) &SimpleWindow`
 
 Clears the value of a specific named control. Text inputs and textareas are set to `""`, checkboxes to `false`, and numeric controls to `0`.
 
+```v
+win.clear('control_name')
+```
+
 ### `win.clear_all() &SimpleWindow`
 
 Clears all input controls in the window.
 
+```v
+win.clear_all()
+```
+
 ### `win.reset_form() &SimpleWindow`
 
 Resets all form input controls back to their initial/default values at registration time.
+
+```v
+win.reset_form()
+```
 
 ### Name-based generic control accessors
 
@@ -2152,6 +3578,15 @@ For advanced operations, these methods bypass type assumptions and directly set 
 - **`win.get_value(name string) string`** / **`win.set_value(name string, value string) &SimpleWindow`**: Directly sets or retrieves the raw string value representing any text/HTML-based control content.
 - **`win.get_bool(name string) bool`** / **`win.set_bool(name string, checked bool) &SimpleWindow`**: Gets or sets the toggle boolean state of checkbox and switch controls.
 - **`win.get_number_value(name string) int`** / **`win.set_number_value(name string, value int) &SimpleWindow`**: Gets or sets the primitive integer value of sliders, progress bars, list boxes selection/indexing, or numeric box steppers.
+
+```v
+win.set_value('name_field', 'Ada')
+val := win.get_value('name_field')
+win.set_bool('agree_switch', true)
+is_on := win.get_bool('agree_switch')
+win.set_number_value('volume_slider', 80)
+vol := win.get_number_value('volume_slider')
+```
 
 ---
 
@@ -2165,39 +3600,93 @@ Attaches an event handler for button click events.
 
 - **Callback Signature**: `fn (mut win &SimpleWindow)`
 
+```v
+win.on_click('control_name', fn (mut win &simplegui.SimpleWindow) {
+    println("Action triggered")
+})
+```
+
 ### `win.on_change(name string, callback StringEventCallback) &SimpleWindow`
 
 Attaches an event handler for input changes (inputs, checkboxes, sliders, dropdowns, segmented controls, list boxes).
 
 - **Callback Signature**: `fn (mut win &simplegui.SimpleWindow, value string)`
 
+```v
+win.on_change('control_name', fn (mut win &simplegui.SimpleWindow, val string) {
+    println(val)
+})
+```
+
 ### `win.on_hover(name string, callback VoidEventCallback) &SimpleWindow`
 
 Attaches an event handler when the mouse pointer enters the bounding area of the control.
+
+```v
+win.on_hover('control_name', fn (mut win &simplegui.SimpleWindow) {
+    println("Action triggered")
+})
+```
 
 ### `win.on_hover_exit(name string, callback VoidEventCallback) &SimpleWindow`
 
 Attaches an event handler when the mouse pointer exits the bounding area of the control.
 
+```v
+win.on_hover_exit('control_name', fn (mut win &simplegui.SimpleWindow) {
+    println("Action triggered")
+})
+```
+
 ### `win.on_focus(name string, callback VoidEventCallback) &SimpleWindow`
 
 Attaches an event handler when a text field input control gains active focus.
+
+```v
+win.on_focus('control_name', fn (mut win &simplegui.SimpleWindow) {
+    println("Action triggered")
+})
+```
 
 ### `win.on_blur(name string, callback VoidEventCallback) &SimpleWindow`
 
 Attaches an event handler when a text field input control loses focus.
 
+```v
+win.on_blur('control_name', fn (mut win &simplegui.SimpleWindow) {
+    println("Action triggered")
+})
+```
+
 ### `win.on_enter(name string, callback VoidEventCallback) &SimpleWindow`
 
 Attaches an event handler triggered when the Enter/Return key is pressed inside a text input field.
+
+```v
+win.on_enter('control_name', fn (mut win &simplegui.SimpleWindow) {
+    println("Action triggered")
+})
+```
 
 ### `win.on_key(key string, callback StringEventCallback) &SimpleWindow`
 
 Attaches a global window-wide keyboard shortcut event listener. The callback value receives the key string.
 
+```v
+win.on_key('control_name', fn (mut win &simplegui.SimpleWindow, val string) {
+    println(val)
+})
+```
+
 ### `win.on_close(callback VoidEventCallback) &SimpleWindow`
 
 Attaches an event handler executed right before the window is closed and terminated.
+
+```v
+win.on_close(fn (mut win &simplegui.SimpleWindow) {
+    println("Action triggered")
+})
+```
 
 ### `win.on_resize(callback StringEventCallback) &SimpleWindow`
 
@@ -2205,21 +3694,49 @@ Attaches an event handler when the application window is resized by the user.
 
 - **Callback Signature**: `fn (mut win &simplegui.SimpleWindow, new_size string)` (where `new_size` has format `"widthxheight"`, e.g. `"640x480"`)
 
+```v
+win.set_size(800, 600)
+```
+
 ### `win.on_window_focus(callback VoidEventCallback) &SimpleWindow`
 
 Attaches an event handler triggered when the application window gains focus (becomes key).
+
+```v
+win.on_window_focus(fn (mut win &simplegui.SimpleWindow) {
+    println("Action triggered")
+})
+```
 
 ### `win.on_window_blur(callback VoidEventCallback) &SimpleWindow`
 
 Attaches an event handler triggered when the application window loses focus (resigns key).
 
+```v
+win.on_window_blur(fn (mut win &simplegui.SimpleWindow) {
+    println("Action triggered")
+})
+```
+
 ### `win.on_window_minimize(callback VoidEventCallback) &SimpleWindow`
 
 Attaches an event handler triggered when the window is minimized / miniaturized to the macOS Dock.
 
+```v
+win.on_window_minimize(fn (mut win &simplegui.SimpleWindow) {
+    println("Action triggered")
+})
+```
+
 ### `win.on_window_restore(callback VoidEventCallback) &SimpleWindow`
 
 Attaches an event handler triggered when the window is restored / deminiaturized from the macOS Dock.
+
+```v
+win.on_window_restore(fn (mut win &simplegui.SimpleWindow) {
+    println("Action triggered")
+})
+```
 
 ### `win.on_file_drop(callback FileDropCallback) &SimpleWindow`
 
@@ -2227,11 +3744,23 @@ Attaches an event handler when files are dragged and dropped onto the window or 
 
 - **Callback Signature**: `fn (mut win &simplegui.SimpleWindow, files []string)`
 
+```v
+win.on_file_drop(fn (mut win &simplegui.SimpleWindow) {
+    println("Action triggered")
+})
+```
+
 ### `win.on_change_step(name string, callback StringEventCallback) &SimpleWindow`
 
 Attaches an event handler for wizard stepper step changes (`"change_step"`).
 
 - **Callback Signature**: `fn (mut win &simplegui.SimpleWindow, step string)`
+
+```v
+win.on_change_step('control_name', fn (mut win &simplegui.SimpleWindow, val string) {
+    println(val)
+})
+```
 
 ### `win.on_click_tag(name string, callback StringEventCallback) &SimpleWindow`
 
@@ -2239,11 +3768,23 @@ Attaches an event handler for tag cloud chip clicks (`"click_tag"`).
 
 - **Callback Signature**: `fn (mut win &simplegui.SimpleWindow, tag string)`
 
+```v
+win.on_click_tag('control_name', fn (mut win &simplegui.SimpleWindow, val string) {
+    println(val)
+})
+```
+
 ### `win.on_select_item(name string, callback StringEventCallback) &SimpleWindow`
 
 Attaches an event handler for split button menu item selection (`"select_item"`).
 
 - **Callback Signature**: `fn (mut win &simplegui.SimpleWindow, item string)`
+
+```v
+win.on_select_item('control_name', fn (mut win &simplegui.SimpleWindow, val string) {
+    println(val)
+})
+```
 
 ---
 
@@ -2258,9 +3799,21 @@ Adds a custom drop-down menu item under the main macOS application menu bar (e.g
 - **Shortcut format**: modifier tokens joined with `+`, e.g. `'cmd+s'`, `'cmd+shift+s'`, `'ctrl+alt+d'`. Supported modifiers: `cmd`/`command`, `ctrl`/`control`, `opt`/`option`/`alt`, `shift`. Special keys: `return`/`enter`, `escape`/`esc`, `space`. Pass `''` for no shortcut.
 - Passing `'-'` as `item_title` inserts a native separator line.
 
+```v
+win.add_menu_item('control_name', 'Title', 'sample', fn (mut win &simplegui.SimpleWindow) {
+    println("Action triggered")
+})
+```
+
 ### `win.add_context_menu_item(control_name string, item_title string, callback VoidEventCallback) &SimpleWindow`
 
 Binds a native right-click Context Menu item directly to any control by its `name` handle (or `"window"` to bind it to the general window background). Clicking the triggered choice executes the callback function.
+
+```v
+win.add_context_menu_item('control_name', 'Title', fn (mut win &simplegui.SimpleWindow) {
+    println("Action triggered")
+})
+```
 
 ### `win.add_menu(menu_name string, items []MenuItem) &SimpleWindow`
 
@@ -2293,6 +3846,10 @@ win.add_menu('Demo', [
 
 Creates a structured right-click Context Menu on any control or the general `"window"`.
 
+```v
+win.add_context_menu('control_name', data)
+```
+
 ---
 
 ## 12. Multi-Column Table / Data Grid
@@ -2301,9 +3858,17 @@ Creates a structured right-click Context Menu on any control or the general `"wi
 
 Adds a scrollable multi-column table view widget with column headers.
 
+```v
+win.add_table('control_name', ['ID', 'Name', 'Role'])
+```
+
 ### `win.set_table_rows(name string, rows [][]string) &SimpleWindow`
 
 Updates the entire set of row cells displayed inside the table grid.
+
+```v
+win.set_table_rows('control_name', ['item1', 'item2'])
+```
 
 ### `win.load_table_from_structs[T](name string, items []T) &SimpleWindow`
 
@@ -2311,9 +3876,17 @@ Populates and renders a scrollable multi-column table widget automatically using
 
 Table rows are tracked automatically on the V side, enabling the incremental row-management, selection, and event helpers described in [Section 17](#17-ergonomic-helpers) (`add_table_row`, `remove_selected_table_rows`, `on_table_select`, `on_table_double_click`, and more).
 
+```v
+win.load_table_from_structs[T]('control_name', data)
+```
+
 ### `win.add_grid(name string, headers []string, initial_rows [][]string) &SimpleWindow`
 
 Adds a native editable data grid for spreadsheet-style layouts. It supports inline editing, persistent selection, checkbox and button cell types, column resizing, filtering, and programmatic sorting.
+
+```v
+win.add_grid('control_name', ['ID', 'Name', 'Role'], ['item1', 'item2'])
+```
 
 ### Grid row and column management
 
@@ -2324,6 +3897,12 @@ Adds a native editable data grid for spreadsheet-style layouts. It supports inli
 - `win.grid_get_rows(name)` and `win.grid_set_rows(name, rows)` read or replace the entire dataset.
 - `win.grid_get_row(name, row_idx)` / `win.grid_set_row(name, row_idx, values)` and `win.grid_get_column(name, col_idx)` / `win.grid_set_column(name, col_idx, values)` support common spreadsheet-style row and column updates.
 
+```v
+win.grid_add_row('grid1', ['101', 'Widget', '$19.99'])
+win.grid_delete_row('grid1', 0)
+win.grid_add_column('grid1', 'Stock')
+```
+
 ### Grid cell and selection helpers
 
 - `win.grid_set_cell(name, row, col, value)` and `win.grid_get_cell(name, row, col)` read and write individual cells.
@@ -2332,6 +3911,12 @@ Adds a native editable data grid for spreadsheet-style layouts. It supports inli
 - `win.grid_get_row_values(name, row_idx)` and `win.grid_get_column_values(name, col_idx)` return the current contents of a row or column.
 - `win.grid_set_row_values(name, row_idx, values)` and `win.grid_set_column_values(name, col_idx, values)` update entire rows or columns.
 
+```v
+cell_val := win.grid_get_cell('grid1', 0, 1)
+win.grid_set_cell('grid1', 0, 1, 'Updated')
+sel_row := win.grid_get_selected_row('grid1')
+```
+
 ### Grid filtering, sorting, and display options
 
 - `win.grid_set_filter(name, query)` and `win.grid_clear_filter(name)` filter visible rows by cell contents.
@@ -2339,6 +3924,11 @@ Adds a native editable data grid for spreadsheet-style layouts. It supports inli
 - `win.grid_set_column_type(name, col_idx, type)` controls rendering for text, checkbox, or button cells.
 - `win.grid_set_column_width(name, col_idx, width)` and `win.grid_set_row_height(name, height)` adjust sizing.
 - `win.grid_autosize_columns(name)` resizes columns to fit their current content.
+
+```v
+win.grid_sort_by_column('grid1', 1, true)
+win.grid_filter_rows('grid1', 'Widget')
+```
 
 ### Grid editability and enabled-state helpers
 
@@ -2349,11 +3939,22 @@ Adds a native editable data grid for spreadsheet-style layouts. It supports inli
 - `win.grid_set_row_enabled(name, row_idx, enabled)` / `win.grid_get_row_enabled(name, row_idx)`
 - `win.grid_set_cell_enabled(name, row, col, enabled)` / `win.grid_get_cell_enabled(name, row, col)`
 
+```v
+win.grid_set_editable('grid1', true)
+win.grid_set_cell_enabled('grid1', 0, 1, false)
+```
+
 ### Grid event hooks
 
 - `on_change('grid_name', handler)` fires when the grid contents or selection changes.
 - `on_column_click('grid_name', handler)` fires when a column is selected.
 - `on_cell_button_click('grid_name', handler)` fires when a button-style cell is clicked.
+
+```v
+win.on_change('grid1', fn (mut win simplegui.SimpleWindow, val string) {
+    println('Grid contents changed: ${val}')
+})
+```
 
 ---
 
@@ -2397,61 +3998,127 @@ nodes := simplegui.tree_nodes_from_paths([
 
 Adds a scrollable, native hierarchal tree view control with a defined vertical height.
 
+```v
+win.add_tree_view('control_name', 420)
+```
+
 ### `win.set_tree_nodes(name string, nodes []TreeNode) &SimpleWindow`
 
 Builds and populates the tree hierarchy from a flat array of nodes. It automatically resolves parent-child relations and expands the nodes by default.
+
+```v
+win.set_tree_nodes('control_name', data)
+```
 
 ### `win.get_tree_selected(name string) string`
 
 Returns the `id` of the currently selected tree view node, or `""` if no cell is selected.
 
+```v
+val := win.get_tree_selected('control_name')
+```
+
 ### `win.set_tree_selected(name string, node_id string) &SimpleWindow`
 
 Programmatically expands parent items as needed, selects the specified node by its `node_id`, and scrolls it into view.
+
+```v
+win.set_tree_selected('control_name', 'control_name')
+```
 
 ### `win.expand_tree(name string) &SimpleWindow` / `win.open_tree(name string) &SimpleWindow`
 
 Expands all nodes in the target tree.
 
+```v
+win.expand_tree('control_name')
+win.open_tree('control_name')
+```
+
 ### `win.collapse_tree(name string) &SimpleWindow` / `win.close_tree(name string) &SimpleWindow`
 
 Collapses all nodes in the target tree.
+
+```v
+win.collapse_tree('control_name')
+win.close_tree('control_name')
+```
 
 ### `win.expand_tree_node(name string, node_id string, expand_children bool) &SimpleWindow`
 
 Expands a specific node by id. If `expand_children` is `true`, expands the full subtree under that node.
 
+```v
+win.expand_tree_node('control_name', 'control_name', true)
+```
+
 ### `win.collapse_tree_node(name string, node_id string, collapse_children bool) &SimpleWindow`
 
 Collapses a specific node by id. If `collapse_children` is `true`, collapses all descendants too.
+
+```v
+win.collapse_tree_node('control_name', 'control_name', true)
+```
 
 ### `win.set_tree(name string, nodes []TreeNode) &SimpleWindow`
 
 Alias for `set_tree_nodes(...)`.
 
+```v
+win.set_tree('control_name', data)
+```
+
 ### `win.clear_tree(name string) &SimpleWindow`
 
 Clears all nodes and current selection in a single call.
+
+```v
+win.clear_tree('control_name')
+```
 
 ### `win.clear_tree_selection(name string) &SimpleWindow`
 
 Clears only the current selected node.
 
+```v
+win.clear_tree_selection('control_name')
+```
+
 ### `win.get_tree_nodes(name string) []TreeNode`
 
 Returns a copy of nodes currently registered for that tree in V-side state.
+
+```v
+val := win.get_tree_nodes('control_name')
+```
 
 ### `win.has_tree_node(name string, node_id string) bool`
 
 Returns true if `node_id` exists in the tree.
 
+```v
+if win.has_tree_node('control_name', 'control_name') {
+    // ...
+}
+```
+
 ### `win.get_tree_node(name string, node_id string) ?TreeNode`
 
 Returns the matching node when found, otherwise `none`.
 
+```v
+if node := win.get_tree_node('my_tree', 'node_101') {
+    println('Node found: ${node.text}')
+}
+```
+
 ### `win.add_tree_node(name string, node TreeNode) &SimpleWindow`
 
 Adds a new node or updates an existing one with the same `id`.
+
+```v
+win.add_tree_node('control_name', data)
+```
 
 ### `win.remove_tree_node(name string, node_id string, remove_children bool) &SimpleWindow`
 
@@ -2460,17 +4127,33 @@ Removes a node.
 - If `remove_children` is `true`, removes the full subtree.
 - If `false`, reparents direct children to the removed node's parent.
 
+```v
+win.remove_tree_node('control_name', 'control_name', true)
+```
+
 ### `win.set_tree_node_text(name string, node_id string, text string) &SimpleWindow`
 
 Updates the visible label text of one node.
+
+```v
+win.set_tree_node_text('control_name', 'control_name', 'Hello World')
+```
 
 ### `win.set_tree_paths(name string, paths []string) &SimpleWindow`
 
 Builds/replaces a tree from slash-separated path values.
 
+```v
+win.set_tree_paths('control_name', ['item1', 'item2'])
+```
+
 ### `win.set_tree_paths_with_separator(name string, paths []string, separator string) &SimpleWindow`
 
 Same as `set_tree_paths`, but with a custom path separator.
+
+```v
+win.set_tree_paths_with_separator('control_name', ['item1', 'item2'], 'sample')
+```
 
 ---
 
@@ -2482,25 +4165,49 @@ Same as `set_tree_paths`, but with a custom path separator.
 
 Serializes and returns a map containing all input control names matched to their current text values.
 
+```v
+val := win.get_values()
+```
+
 ### `win.set_values(values map[string]string) &SimpleWindow`
 
 Sets/updates multiple control text values from a name-value map.
+
+```v
+win.set_values({'key': 'value'})
+```
 
 ### `win.inspect_controls() string`
 
 Returns a comma-separated string containing the names of all currently registered controls.
 
+```v
+val := win.inspect_controls()
+```
+
 ### `win.dump_values() map[string]string`
 
 Alias for `get_values()`, serializing all form inputs to a name-value string map.
+
+```v
+val := win.dump_values()
+```
 
 ### `win.bind_to_struct[T](mut data T) &SimpleWindow`
 
 Queries all input control values and populates the matching field names on a mutable struct using compile-time reflection. Supports `string`, `int`, and `bool` fields.
 
+```v
+win.bind_to_struct[T](data)
+```
+
 ### `win.load_from_struct[T](data T) &SimpleWindow`
 
 Populates GUI controls using matching field name values from the passed struct.
+
+```v
+win.load_from_struct[T](data)
+```
 
 ---
 
@@ -2510,13 +4217,25 @@ Populates GUI controls using matching field name values from the passed struct.
 
 Inserts an empty spacing box of the specified height in the layout stack.
 
+```v
+win.add_vertical_spacer(420)
+```
+
 ### `win.add_horizontal_spacer(width int) &SimpleWindow`
 
 Inserts an empty spacing box of the specified width in horizontal layout rows.
 
+```v
+win.add_horizontal_spacer(640)
+```
+
 ### `win.add_separator() &SimpleWindow`
 
 Draws a native horizontal visual line divider.
+
+```v
+win.add_separator()
+```
 
 ---
 
@@ -2526,17 +4245,37 @@ Draws a native horizontal visual line divider.
 
 Hides the main window and runs the application as a background macOS menu bar accessory with a dropdown status menu.
 
+```v
+win.enable_status_bar('/path/to/file.txt')
+```
+
 ### `win.show_window() &SimpleWindow`
 
 Restores window visibility and brings the window to the front.
+
+```v
+win.show_window()
+```
 
 ### `win.run_on_main_thread(callback VoidEventCallback) &SimpleWindow`
 
 Safely queues a UI update callback to execute on the main event thread, bridging background execution threads.
 
+```v
+win.run_on_main_thread(fn (mut win &simplegui.SimpleWindow) {
+    println("Action triggered")
+})
+```
+
 ### `win.run_async(bg_task fn (), on_complete VoidEventCallback) &SimpleWindow`
 
 Runs a time-consuming background or I/O task on a separate concurrent worker thread to keep the application window fully responsive. Upon completion, automatically dispatches the `on_complete` callback on the main thread for thread-safe UI updates.
+
+```v
+res := win.run_async(fn (mut win &simplegui.SimpleWindow) {
+    println("Action triggered")
+})
+```
 
 ---
 
@@ -2548,13 +4287,29 @@ You can track if users have modified form fields compared to their baseline stat
 
 Returns `true` if any input control (text input, checkbox, toggle, slider, number) has a value different from its last committed baseline state.
 
+```v
+if win.is_dirty() {
+    // ...
+}
+```
+
 ### `win.is_control_dirty(name string) bool`
 
 Returns `true` if the specific named control has changed compared to its baseline state.
 
+```v
+if win.is_control_dirty('control_name') {
+    // ...
+}
+```
+
 ### `win.commit_changes() &SimpleWindow`
 
 Sets the current control values as the new baseline state, causing `is_dirty()` to reset to `false` without needing to reload the window. Typical use case is after a successful save action.
+
+```v
+win.commit_changes()
+```
 
 ---
 
@@ -2576,6 +4331,13 @@ A set of high-level shortcuts designed to make everyday tasks one-liners. See `d
 - `win.choose_save_file() string` opens a native save file dialog panel.
 - `win.quit()` terminates the application event loop immediately.
 
+```v
+win.info('Title', 'Message')
+if win.ask('Confirm', 'Proceed?') {
+    path := win.choose_file()
+}
+```
+
 ### Batch Control Operations
 
 - `win.show_controls(names []string)` / `win.hide_controls(names []string)` toggle visibility for many controls at once.
@@ -2583,6 +4345,12 @@ A set of high-level shortcuts designed to make everyday tasks one-liners. See `d
 - `win.enable_all_controls()` / `win.disable_all_controls()` affect every registered control (e.g. lock the UI while processing).
 - `win.toggle_visible(name string) bool` flips visibility and returns the new state.
 - `win.toggle_enabled(name string) bool` flips the enabled state and returns the new state.
+
+```v
+win.disable_controls(['btn_save', 'btn_submit'])
+win.enable_controls(['btn_save', 'btn_submit'])
+win.enable_all_controls()
+```
 
 ### Value Convenience Accessors
 
@@ -2615,6 +4383,13 @@ A set of high-level shortcuts designed to make everyday tasks one-liners. See `d
 - `win.reset_many(names []string)` restores a subset of controls to their original values.
 - `win.focus(name)` moves keyboard focus to a control (alias of `set_focus`).
 
+```v
+win.set_int('quantity', 10)
+qty := win.get_int('quantity')
+win.set_float('price', 19.99)
+price := win.get_float('price')
+```
+
 ### List Box Item Management
 
 Items are tracked automatically for every list box, so you can manage them incrementally:
@@ -2631,6 +4406,13 @@ Items are tracked automatically for every list box, so you can manage them incre
 - `win.get_list_count(name) int` returns the item count.
 - `win.get_list_selected_text(name) string` returns the selected row's text, or `''`.
 
+```v
+items := win.get_list_items('my_list')
+win.add_list_item('my_list', 'New Item')
+win.remove_selected_list_item('my_list')
+win.clear_list_items('my_list')
+```
+
 ### List Box Multi-Selection & Double-Click
 
 - `win.set_list_multi_select(name, enabled bool)` enables Cmd/Shift-click multiple row selection.
@@ -2642,10 +4424,23 @@ Items are tracked automatically for every list box, so you can manage them incre
 - `win.remove_selected_list_items(name) []string` removes all selected rows and returns the removed items (works in both single and multi mode).
 - `win.on_list_double_click(name, callback StringEventCallback)` fires when a row is double-clicked; the callback receives the 0-based row index as a string.
 
+```v
+win.set_list_multi_select('my_list', true)
+selected_texts := win.get_list_selected_texts('my_list')
+win.on_list_double_click('my_list', fn (mut win simplegui.SimpleWindow, idx string) {
+    println('Double-clicked index: ${idx}')
+})
+```
+
 ### Settings Persistence
 
 - `win.save_values_to_file(path string) !` writes every control value to a JSON file.
 - `win.load_values_from_file(path string) !` restores control values from a JSON file (unknown control names are skipped safely).
+
+```v
+win.save_values_to_file('settings.json')!
+win.load_values_from_file('settings.json')!
+```
 
 ### Labeled Control Rows
 
@@ -2657,12 +4452,27 @@ One-call label + control rows (no `begin_row`/`end_row` needed):
 - `win.add_labeled_date_picker(label, name, date)`
 - `win.add_labeled_progress(label, name, value)`
 
+```v
+win.add_labeled_slider('Volume:', 'volume', 80)
+win.add_labeled_dropdown('Language:', 'lang', ['English', 'Spanish'], 'English')
+win.add_labeled_number('Age:', 'age', 30)
+```
+
 ### Timer & Event Sugar
 
 - `win.every(ms int, callback)` runs the callback repeatedly with an auto-generated timer name.
 - `win.after(ms int, callback)` runs the callback once after the delay (alias of `run_after`).
 - `win.on_change_many(names []string, callback)` binds a change callback to multiple controls.
 - `win.on_click_many(names []string, callback)` binds a click callback to multiple controls.
+
+```v
+win.every(1000, fn (mut win simplegui.SimpleWindow) {
+    println('Periodic tick')
+})
+win.after(2000, fn (mut win simplegui.SimpleWindow) {
+    println('Delayed action')
+})
+```
 
 ### Table Row Management
 
@@ -2702,6 +4512,12 @@ Strict production variants (`!` return type) are also available:
 
 `set_table_rows` and `set_table_rows_strict` normalize row width to the table's column count (truncate extra cells, pad missing cells with empty strings) so table data remains schema-safe.
 
+```v
+win.add_table_row('data_table', ['101', 'Ada', 'Admin'])
+rows := win.get_table_rows('data_table')
+count := win.get_table_row_count('data_table')
+```
+
 ### Table Selection & Events
 
 - `win.get_table_selected(name) int` returns the selected row index (`-1` when none).
@@ -2722,12 +4538,27 @@ Strict production variants (`!` return type) are also available:
 - `win.on_table_double_click(name, callback StringEventCallback)` fires when a row is double-clicked; the callback receives the 0-based row index as a string.
 - `win.on_table_column_select(name, callback StringEventCallback)` fires when a column is selected (with column selection mode enabled); callback receives the 0-based column index as a string.
 
+```v
+selected_row := win.get_table_selected('data_table')
+win.set_table_selected('data_table', 0)
+win.on_table_select('data_table', fn (mut win simplegui.SimpleWindow, idx string) {
+    println('Selected row: ${idx}')
+})
+```
+
 ### Table Querying, Mapping & Filtering
 
 - `win.has_table_row(name string, column int, value string) bool` returns whether any row has `row[column] == value`.
 - `win.map_table_column(name string, column int, f fn (val string) string)` transforms all cells in a specific column in-place using `f`.
 - `win.filter_table_rows(name string, predicate fn (row []string) bool) [][]string` returns a filtered list of rows matching `predicate`.
 - `win.find_table_row_where(name string, predicate fn (row []string) bool) int` returns the index of the first row matching `predicate`, or `-1`.
+
+```v
+has_row := win.has_table_row('data_table', 2, 'Admin')
+filtered := win.filter_table_rows('data_table', fn (row []string) bool {
+    return row.len > 2 && row[2] == 'Admin'
+})
+```
 
 ### Quick Validation
 
@@ -2745,6 +4576,12 @@ Strict production variants (`!` return type) are also available:
 - `simplegui.one_of_validator(options []string) ControlValidator` builds a validator requiring the value to be one of the given options (case-insensitive, whitespace trimmed).
 - `simplegui.chain_validators(validators ...ControlValidator) ControlValidator` combines several validators into one; the first non-empty error message wins.
 
+```v
+if win.require_fields(['username', 'email']) {
+    println('Form is valid')
+}
+```
+
 ### Batch Value Access & Reset Helpers
 
 - `win.clear_fields(names []string)` empties every named text-based control and clears its error state in one call.
@@ -2752,12 +4589,24 @@ Strict production variants (`!` return type) are also available:
 - `win.clear_all_fields() &SimpleWindow` empties the text or boolean states of all controls to empty/unchecked.
 - `win.reset_all_fields() &SimpleWindow` restores every control in the window to its initial default value.
 
+```v
+win.clear_fields(['username', 'email', 'notes'])
+win.clear_all_errors()
+win.reset_all_fields()
+```
+
 ### Token Field Ergonomics
 
 - `win.get_tokens(name string) []string` parses the comma-separated text of a token field into a cleaned slice of strings.
 - `win.set_tokens(name string, tokens []string) &SimpleWindow` formats and sets a slice of strings into a token field.
 - `win.add_token(name string, token string) &SimpleWindow` appends a token if not already present.
 - `win.remove_token(name string, token string) &SimpleWindow` removes a token if present.
+
+```v
+tokens := win.get_tokens('tags_input')
+win.set_tokens('tags_input', ['vlang', 'gui', 'macos'])
+win.add_token('tags_input', 'swift')
+```
 
 ### List Sorting, Reordering & Live Search
 
@@ -2771,6 +4620,12 @@ Strict production variants (`!` return type) are also available:
 - `win.save_list_to_file(name, path)` / `win.load_list_from_file(name, path)` saves/loads list box items to/from a line-separated text file.
 - `win.save_list_to_json(name, path) !` / `win.load_list_from_json(name, path) !` saves/loads list box items to/from a JSON file.
 
+```v
+win.sort_list_items('my_list', true)
+win.move_selected_list_item_up('my_list')
+win.bind_search_to_list('search_field', 'my_list')
+```
+
 ### Table Sorting & CSV/JSON Import/Export
 
 - `win.sort_table_by_column(name, column, ascending bool)` sorts rows by a 0-based column — numerically when every cell in the column parses as a number, otherwise as case-insensitive text.
@@ -2780,6 +4635,12 @@ Strict production variants (`!` return type) are also available:
 - `win.load_table_from_csv(name, path) !` replaces a table's rows with the contents of a CSV file.
 - `win.save_table_to_json(name, path) !` / `win.load_table_from_json(name, path) !` exports/imports table rows to/from a JSON file.
 
+```v
+win.sort_table_by_column('data_table', 1, true)
+win.save_table_to_csv('data_table', 'export.csv')!
+win.load_table_from_csv('data_table', 'export.csv')!
+```
+
 ### Clipboard & State Helpers
 
 - `win.copy_control_to_clipboard(name)` copies the text value of a named control to the system clipboard.
@@ -2787,6 +4648,12 @@ Strict production variants (`!` return type) are also available:
 - `win.copy_list_to_clipboard(name)` copies all list box items to the clipboard, one item per line.
 - `win.copy_table_to_clipboard(name)` copies all table rows to the clipboard as tab-separated lines (paste-ready for spreadsheets).
 - `win.confirm_discard_changes(title, message) bool` prompts the user with a confirmation dialog if the window has unsaved dirty changes, returning `true` if it's safe to proceed.
+
+```v
+win.copy_control_to_clipboard('notes')
+win.paste_from_clipboard_to_control('notes')
+win.copy_table_to_clipboard('data_table')
+```
 
 ### Reactive Bindings & Data QoL
 
@@ -2802,6 +4669,12 @@ Strict production variants (`!` return type) are also available:
 - `win.dedupe_table_rows(name)` removes duplicate table rows (all cells equal), keeping the first occurrence.
 - `win.count_table_rows_where(name, predicate fn (row []string) bool) int` returns how many table rows match the predicate.
 
+```v
+win.bind_value_to_label('volume_slider', 'vol_label', 'Volume: ', '%')
+win.bind_checkbox_enables('enable_adv', ['adv_setting_1', 'adv_setting_2'])
+win.bind_char_counter('bio_textarea', 'bio_counter', 280)
+```
+
 ### Workflow, Text & Data Extras
 
 - `win.on_change_debounced(name, ms, callback StringEventCallback)` fires the callback only after the user stops changing the control for `ms` milliseconds — ideal for search-as-you-type. The callback receives the most recent value.
@@ -2816,6 +4689,15 @@ Strict production variants (`!` return type) are also available:
 - `win.select_list_item_by_text(name, text) bool` selects the first list row whose text matches exactly; returns `true` when found.
 - `win.enable_autosave(path, interval_ms)` saves every control value to a JSON file at a fixed interval (failed writes are silently skipped). Pair with `load_values_if_exists` at startup for crash-safe forms.
 - `win.load_values_if_exists(path) bool` restores control values from a JSON file when it exists, returning `true` when values were loaded.
+
+```v
+win.on_change_debounced('search_input', 300, fn (mut win simplegui.SimpleWindow, val string) {
+    println('Debounced search query: ${val}')
+})
+win.submit_on_enter(['user_field', 'pass_field'], fn (mut win simplegui.SimpleWindow) {
+    println('Form submitted via Enter')
+})
+```
 
 ### RAD / DX Ergonomics
 
@@ -2840,6 +4722,13 @@ Strict production variants (`!` return type) are also available:
 - `simplegui.speak_with_voice(text string, voice string)` speaks text out loud using a specific macOS voice name (e.g. `"Samantha"`, `"Alex"`, `"Fred"`).
 - `simplegui.toggle_dark_mode()` toggles macOS system appearance mode between Light and Dark.
 
+```v
+win.set_status_temp('Action completed temporary notice', 2500)
+dirty_controls := win.get_dirty_controls()
+win.notify('Alert', 'New task assigned')
+win.badge('5')
+```
+
 ### Developer Inspection & Interactive UI Controls
 
 - `win.add_diff_view(name, old_code, new_code, height)` / `win.set_diff_view(name, old_code, new_code)`: Renders a unified side-by-side code diff comparison view with syntax highlighting and added (`+` green) / removed (`-` red) line indicators.
@@ -2856,6 +4745,15 @@ Strict production variants (`!` return type) are also available:
 - `win.add_hotkey_badge(name, shortcut_str, description)` / `win.set_hotkey_badge_shortcut(name, shortcut_str, description)`: macOS metallic keycap hotkey display badge paired with description text.
 - `win.on_shortcut(shortcut_str, callback)`: Registers a global keyboard shortcut handler using flexible formats (e.g. `'cmd+shift+p'`, `'Cmd+Shift+P'`, `'⌘+⇧+P'`, `'⌘K'`). Automatically normalizes modifier tokens and suppresses standard unhandled alert beeps when triggered.
 - `simplegui.normalize_key_shortcut(input)`: Utility function converting shortcut notation variants into canonical format (`cmd+shift+p`).
+
+```v
+win.add_diff_view('code_diff', 'fn old() {}', 'fn new() {}', 200)
+win.add_json_tree('json_viewer', '{"name": "SimpleGUI", "version": "1.0"}', 200)
+win.add_terminal_view('terminal', 'v run main.v', 200)
+win.on_shortcut('cmd+shift+p', fn (mut win simplegui.SimpleWindow, key string) {
+    println('Command palette shortcut pressed!')
+})
+```
 
 ---
 
@@ -2967,5 +4865,13 @@ Compiles an interactive HTML5/CSS3/JavaScript visual design studio canvas contai
 - `simplegui.get_api_form_spec() FormSpec`: REST API Client & Endpoint Tester layout preset.
 - `simplegui.get_media_form_spec() FormSpec`: Hi-Fi Audio Media Player & Controls layout preset.
 - `simplegui.get_profile_form_spec() FormSpec`: User Profile & Account Settings layout preset.
+
+```v
+spec := simplegui.get_default_form_spec()
+json_str := spec.to_json()
+reconstructed := simplegui.form_spec_from_json(json_str)
+v_code := simplegui.generate_v_code(spec)
+html_code := simplegui.generate_html_code(spec)
+```
 
 
