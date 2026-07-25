@@ -6,35 +6,35 @@ import strconv
 import time
 import encoding.csv
 
-// ergonomics.v - High-level ergonomic helpers for SimpleGUI
-// A collection of shortcuts, batch operations, and convenience methods designed to
-// make everyday GUI programming tasks shorter, safer, and easier to read.
+// ergonomics.v - Beginner-friendly ergonomic helpers for SimpleGUI
+// High-level shortcuts, batch control operations, and convenience methods designed to
+// make everyday desktop GUI programming in V intuitive, readable, and accessible for everyone.
 
 // ==========================================
 // 1. Dialog Shortcuts
 // ==========================================
 
-// info shows an informational alert dialog with a single OK button.
+// info displays a native macOS informational alert pop-up box with an OK button.
 pub fn (win &SimpleWindow) info(title string, message string) &SimpleWindow {
 	return win.alert_with_style(title, message, 'info')
 }
 
-// warn shows a warning-styled alert dialog.
+// warn displays a styled warning alert pop-up box with a warning icon.
 pub fn (win &SimpleWindow) warn(title string, message string) &SimpleWindow {
 	return win.alert_with_style(title, message, 'warning')
 }
 
-// error_dialog shows a critical error-styled alert dialog.
+// error_dialog displays a critical error alert pop-up box with an error icon.
 pub fn (win &SimpleWindow) error_dialog(title string, message string) &SimpleWindow {
 	return win.alert_with_style(title, message, 'error')
 }
 
-// ask shows a Yes/No confirmation dialog and returns true when confirmed.
+// ask displays a native Yes/No confirmation dialog box and returns true if confirmed.
 pub fn (win &SimpleWindow) ask(title string, question string) bool {
 	return win.confirm(title, question)
 }
 
-// quit terminates the application event loop and exits immediately.
+// quit terminates the application event loop and closes the app window immediately.
 pub fn (win &SimpleWindow) quit() {
 	if win.window_info != unsafe { nil } {
 		C.window_app_exit(win.window_info)
