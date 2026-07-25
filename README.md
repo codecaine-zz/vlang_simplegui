@@ -12,6 +12,7 @@ Build real, native Cocoa desktop apps in [V](https://vlang.io) with a beginner-f
 ## Table of contents
 
 - [Overview](#overview)
+- [📘 Beginner's Core Concepts Glossary](#-beginners-core-concepts--jargon-free-glossary)
 - [Features](#features)
 - [Installation](#installation)
 - [Quick start](#quick-start)
@@ -31,13 +32,34 @@ Build real, native Cocoa desktop apps in [V](https://vlang.io) with a beginner-f
 
 ## Overview
 
-SimpleGUI combines:
+SimpleGUI makes building desktop software on macOS effortless and enjoyable for beginners and experienced developers alike. It combines:
 
-- a lightweight V-side wrapper for creating GUI controls
-- a native Cocoa bridge for real macOS windows and controls
-- a beginner-friendly API for adding named controls, setting/getting values, and attaching event handlers
+- **Lightweight V Code**: Write clean, concise code in [V](https://vlang.io) without heavy frameworks or bloated web views.
+- **Native macOS Cocoa Bridge**: Displays real, native Mac windows, buttons, text fields, and menus that match the macOS operating system seamlessly.
+- **Beginner-Friendly API**: Add named controls, read/write input values, and attach click or change events in just a few lines of code.
 
-The goal is a simple, high-abstraction GUI layer that feels familiar to anyone used to event-driven environments like Delphi, VBA, or Python-based UI toolkits — far more direct and less manual than the raw Cocoa/Objective-C approach.
+The goal is to provide an intuitive, event-driven GUI framework similar to classic tools like Delphi, Visual Basic, or Python UI libraries — while delivering the lightning-fast performance of compiled native software.
+
+---
+
+## 📘 Beginner's Core Concepts & Jargon-Free Glossary
+
+If you are new to programming or desktop app creation, here are simple definitions for terms used throughout this guide:
+
+| Term | Simple Explanation | Real-World Analogy |
+| :--- | :--- | :--- |
+| **Window (`SimpleWindow`)** | The rectangular application frame on your computer screen that contains all app controls. | A picture frame or digital canvas displaying your app. |
+| **Control / Widget** | An interactive user interface element (like a button, text box, slider, or checkbox). | Building blocks like light switches, knobs, and text labels. |
+| **Layout Container** | An invisible box or row that automatically aligns and arranges controls side-by-side or stacked vertically. | A bookshelf that arranges books side-by-side instead of in a messy pile. |
+| **Event & Callback** | An action listener. When a user interacts with a control (e.g. clicks a button), the app triggers a "callback" function to execute code. | A doorbell: when someone presses it (event), a chime sounds (callback). |
+| **Fluent Chaining** | Connecting multiple setup actions in a single line using dots (e.g. `.width(200).tooltip('Help')`). | Snapping Lego blocks together in a continuous chain. |
+| **String (`string`)** | Text surrounded by quotes (e.g. `'Ada'` or `"Hello World"`). | Printed words on a label. |
+| **Integer (`int`)** | A whole number without decimals (e.g. `42`, `100`, `-5`). | Counting physical items like 5 apples or 10 buttons. |
+| **Float (`f64`)** | A number with decimal points (e.g. `3.14`, `0.75`). | Precise measurements like weight (1.5 kg) or percentage (99.9%). |
+| **Boolean (`bool`)** | A value that is strictly `true` (YES/ON) or `false` (NO/OFF). | A light switch position: ON or OFF. |
+| **Hex Color** | A color code starting with `#` followed by 6 characters (e.g. `#007aff` for Apple blue, `#ffffff` for white, `#000000` for black). | A paint swatch code from a hardware store. |
+
+---
 
 ## Features
 
