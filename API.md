@@ -2239,7 +2239,9 @@ file_path := win.select_file()
 
 ### `win.select_file_with_extensions(extensions string) string`
 
-Launches the native macOS file picker panel filtered by specific file extension constraints (e.g. `'png,txt,pdf'`), returning the chosen file path (or empty if cancelled). Also available as ergonomic alias `win.choose_file_ext(extensions)`.
+Launches the native macOS file picker panel filtered by specific file extension constraints, returning the chosen file path (or empty string if cancelled). Also available as ergonomic alias `win.choose_file_ext(extensions)`.
+
+- **Delimiter parameter**: `extensions string` — a comma-separated (`','`) list of allowed file extensions (e.g. `'png,jpg,jpeg'` or `'png, txt, pdf'`). Leading dots (`.`), wildcards (`*`), and surrounding whitespace are automatically trimmed.
 
 ```v
 img_path := win.select_file_with_extensions('png,jpg,jpeg')
@@ -4391,7 +4393,7 @@ A set of high-level shortcuts designed to make everyday tasks one-liners. See `d
 - `win.choose(title string, message string, choices []string) int` shows a Choice/Dropdown dialog box and returns the selected 0-based option index.
 - `win.ask_text(title string, message string, default_val string) string` prompts the user for text input with a dialog box, returning the response.
 - `win.choose_file() string` opens a native file dialog selection panel.
-- `win.choose_file_ext(extensions string) string` opens a native file dialog selection panel filtered by file extensions.
+- `win.choose_file_ext(extensions string) string` opens a native file dialog selection panel filtered by file extensions. Accepts a comma-separated (`','`) string of extensions (e.g. `'png,jpg,jpeg'`).
 - `win.choose_folder() string` opens a native directory selection panel.
 - `win.choose_save_file() string` opens a native save file dialog panel.
 - `win.quit()` terminates the application event loop immediately.
