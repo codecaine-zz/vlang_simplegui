@@ -453,8 +453,7 @@ scale := win.get_cursor_size()
 Restores the default arrow cursor and clears any custom cursor size or window-wide cursor override.
 
 ```v
-win.set_cursor('pointing_hand')
-cur := win.get_cursor()
+win.reset_cursor()
 ```
 
 ### `win.push_cursor(cursor_name string)` &SimpleWindow / `win.pop_cursor()` &SimpleWindow
@@ -512,7 +511,7 @@ win.minimize()
 Restores the window from the dock.
 
 ```v
-win.minimize()
+win.deminimize()
 ```
 
 ### `win.maximize()` / `win.zoom()` &SimpleWindow
@@ -818,7 +817,9 @@ win.send_to_back()
 Convenience toggles for window minimized, maximized, and visibility states.
 
 ```v
-win.minimize()
+win.toggle_minimize()
+win.toggle_maximize()
+win.toggle_visibility()
 ```
 
 ### `win.move_by(dx int, dy int)` &SimpleWindow / `win.resize_by(dw int, dh int)` &SimpleWindow
@@ -835,7 +836,8 @@ win.resize_by(50, 50)
 Gets or sets the window center point in global screen coordinates.
 
 ```v
-win.center()
+cx, cy := win.get_center()
+win.set_center(400, 300)
 ```
 
 ### `win.center_horizontally()` &SimpleWindow / `win.center_vertically()` &SimpleWindow
@@ -932,7 +934,7 @@ Resizes the window using standard human-readable dimension presets:
 - `'square'`: 500 × 500
 
 ```v
-win.set_size(800, 600)
+win.set_size_preset('medium')
 ```
 
 ### `win.get_size() (int, int)`
@@ -948,7 +950,8 @@ w, h := win.get_size()
 Full-name ergonomic aliases for `set_min_size` and `set_max_size`.
 
 ```v
-win.set_min_size(400, 300)
+win.set_minimum_size(400, 300)
+win.set_maximum_size(1280, 800)
 ```
 
 ### `win.get_minimum_size() (int, int)` / `win.get_maximum_size() (int, int)`
@@ -1005,7 +1008,7 @@ win.restore()
 Updates the window title text in the titlebar (friendly alias for `set_title(title)`).
 
 ```v
-win.set_title('App Title')
+win.set_window_title('App Title')
 ```
 
 ### `win.set_topmost(enabled bool)` &SimpleWindow / `win.is_topmost() bool`
@@ -1013,7 +1016,8 @@ win.set_title('App Title')
 Friendly aliases for `set_always_on_top(enabled)` and `get_always_on_top()`.
 
 ```v
-win.set_always_on_top(true)
+win.set_topmost(true)
+is_top := win.is_topmost()
 ```
 
 ### `win.is_frameless() bool`
@@ -1406,7 +1410,7 @@ win.button('Click Me')
 Adds a read-only text description label.
 
 ```v
-win.add_label('control_name', 'Hello World')
+win.add_label('lbl_welcome', 'Welcome to SimpleGUI')
 ```
 
 ### `win.add_input(name string, value string) &SimpleWindow`
@@ -1414,7 +1418,7 @@ win.add_label('control_name', 'Hello World')
 Adds a single-line text input field.
 
 ```v
-win.add_input('control_name', 'sample')
+win.add_input('username', 'ada_lovelace')
 ```
 
 ### `win.add_password(name string, value string) &SimpleWindow`
@@ -1422,7 +1426,7 @@ win.add_input('control_name', 'sample')
 Adds a secure password entry field.
 
 ```v
-win.add_password('control_name', 'sample')
+win.add_password('pwd', 'secret123')
 ```
 
 ### `win.add_textarea(name string, value string) &SimpleWindow`
@@ -1430,7 +1434,7 @@ win.add_password('control_name', 'sample')
 Adds a scrollable, multi-line rich text area.
 
 ```v
-win.add_textarea('control_name', 'sample')
+win.add_textarea('notes', 'Type your bio here...')
 ```
 
 ### `win.add_html_view(name string, html string) &SimpleWindow`
@@ -1438,7 +1442,7 @@ win.add_textarea('control_name', 'sample')
 Adds a lightweight HTML preview panel using WebKit.
 
 ```v
-win.add_html_view('control_name', 'sample')
+win.add_html_view('html_panel', '<h1>Welcome</h1><p>HTML preview content</p>')
 ```
 
 ### `win.add_drop_zone(name string, label string) &SimpleWindow`
@@ -1446,7 +1450,7 @@ win.add_html_view('control_name', 'sample')
 Adds a drag-and-drop target for file paths and other dropped content.
 
 ```v
-win.add_drop_zone('control_name', 'Title')
+win.add_drop_zone('file_drop', 'Drop files or folders here')
 ```
 
 ### `win.add_checkbox(name string, label string, checked bool) &SimpleWindow`
@@ -1454,7 +1458,7 @@ win.add_drop_zone('control_name', 'Title')
 Adds a toggle checkbox.
 
 ```v
-win.add_checkbox('control_name', 'Title', true)
+win.add_checkbox('chk_agree', 'Accept Terms & Conditions', true)
 ```
 
 ### `win.add_button(name string, title string) &SimpleWindow`
@@ -1462,7 +1466,7 @@ win.add_checkbox('control_name', 'Title', true)
 Adds a clickable push button.
 
 ```v
-win.add_button('control_name', 'Title')
+win.add_button('btn_submit', 'Submit Form')
 ```
 
 ### `win.add_number(name string, value int) &SimpleWindow`
@@ -1472,7 +1476,7 @@ Adds a numeric input field bound to an increment/decrement stepper.
 - **Keyboard behavior**: when focused, `Up` increases and `Down` decreases the value by the step size (default `1`).
 
 ```v
-win.add_number('control_name', 50)
+win.add_number('num_qty', 10)
 ```
 
 ### `win.add_slider(name string, value int) &SimpleWindow`
@@ -1480,7 +1484,7 @@ win.add_number('control_name', 50)
 Adds a horizontal slider control (range `0` to `100`).
 
 ```v
-win.add_slider('control_name', 50)
+win.add_slider('sld_vol', 75)
 ```
 
 ### `win.add_theme_menu(name string, selected string) &SimpleWindow`
@@ -1488,7 +1492,7 @@ win.add_slider('control_name', 50)
 Adds a standard popup dropdown menu selection for active theme (options: `Light`, `Dark`, `System`).
 
 ```v
-win.add_theme_menu('control_name', 'sample')
+win.add_theme_menu('theme_select', 'Dark')
 ```
 
 ### `win.add_color_well(name string, color_hex string) &SimpleWindow`
@@ -1496,7 +1500,7 @@ win.add_theme_menu('control_name', 'sample')
 Adds a native macOS color well block. Clicking it launches the macOS Color Picker.
 
 ```v
-win.add_color_well('control_name', '#007aff')
+win.add_color_well('color_picker', '#007aff')
 ```
 
 ### `win.add_date_picker(name string, date string) &SimpleWindow`
@@ -1504,7 +1508,7 @@ win.add_color_well('control_name', '#007aff')
 Adds a calendar date picker input (input format: `yyyy-mm-dd`).
 
 ```v
-win.add_date_picker('control_name', '2026-07-25')
+win.add_date_picker('dob', '2026-07-25')
 ```
 
 ### `win.add_mode_control(name string, selected string) &SimpleWindow`
@@ -1512,7 +1516,7 @@ win.add_date_picker('control_name', '2026-07-25')
 Adds a segmented control choice selector (choices: `Simple`, `Advanced`, `Expert`).
 
 ```v
-win.add_mode_control('control_name', 'sample')
+win.add_mode_control('mode_select', 'Advanced')
 ```
 
 ### `win.add_progress_indicator(name string, value int) &SimpleWindow`
@@ -1520,7 +1524,7 @@ win.add_mode_control('control_name', 'sample')
 Adds a horizontal progress bar loader (range `0` to `100`).
 
 ```v
-win.add_progress_indicator('control_name', 50)
+win.add_progress_indicator('progress_bar', 45)
 ```
 
 ### `win.add_list_box(name string, items []string) &SimpleWindow`
@@ -1528,7 +1532,7 @@ win.add_progress_indicator('control_name', 50)
 Adds a scrollable table list box control displaying the array items. Selection changes trigger change events.
 
 ```v
-win.add_list_box('control_name', ['Option 1', 'Option 2', 'Option 3'])
+win.add_list_box('user_list', ['Alice', 'Bob', 'Charlie'])
 ```
 
 ### `win.add_image(name string, file_path string) &SimpleWindow`
@@ -1536,7 +1540,7 @@ win.add_list_box('control_name', ['Option 1', 'Option 2', 'Option 3'])
 Adds an image box displaying a local PNG or JPEG file. Custom widths/heights can resize it.
 
 ```v
-win.add_image('control_name', '/path/to/file.txt')
+win.add_image('logo_img', 'assets/logo.png')
 ```
 
 ### `win.add_dropdown(name string, items []string, selected string) &SimpleWindow`
@@ -1544,7 +1548,7 @@ win.add_image('control_name', '/path/to/file.txt')
 Adds a generic popup dropdown choice selector with custom `items`. The selected item can be got/set using `win.get_text()` or `win.set_text()`.
 
 ```v
-win.add_dropdown('control_name', ['Option 1', 'Option 2', 'Option 3'], 'sample')
+win.add_dropdown('country_select', ['USA', 'Canada', 'UK'], 'USA')
 ```
 
 ### `win.add_segmented_control(name string, items []string, selected string) &SimpleWindow`
@@ -1552,7 +1556,7 @@ win.add_dropdown('control_name', ['Option 1', 'Option 2', 'Option 3'], 'sample')
 Adds a generic segmented control choice selector containing custom `items`. Choice updates can be set/got via label strings (`win.get_text()`) or 0-indexed segment positions (`win.get_value_int()`).
 
 ```v
-win.add_segmented_control('control_name', ['Option 1', 'Option 2', 'Option 3'], 'sample')
+win.add_segmented_control('tab_switch', ['Day', 'Week', 'Month'], 'Day')
 ```
 
 ### `win.add_radio_group(name string, items []string, selected string) &SimpleWindow`
@@ -1560,7 +1564,7 @@ win.add_segmented_control('control_name', ['Option 1', 'Option 2', 'Option 3'], 
 Adds a vertical radio button group layout. Choice updates can be retrieved/set via label strings (`win.get_text()`) or 0-indexed positions (`win.get_value_int()`).
 
 ```v
-win.add_radio_group('control_name', ['Option 1', 'Option 2', 'Option 3'], 'sample')
+win.add_radio_group('plan_choice', ['Free', 'Pro', 'Enterprise'], 'Pro')
 ```
 
 ### `win.add_switch(name string, label string, checked bool) &SimpleWindow`
@@ -1568,7 +1572,7 @@ win.add_radio_group('control_name', ['Option 1', 'Option 2', 'Option 3'], 'sampl
 Adds a native horizontal toggle switch. Its active state can be got/set using `win.get_bool()` or `win.set_bool()`.
 
 ```v
-win.add_switch('control_name', 'Title', true)
+win.add_switch('notifications_switch', 'Enable Notifications', true)
 ```
 
 ### `win.add_search_field(name string, placeholder string) &SimpleWindow`
@@ -1576,7 +1580,7 @@ win.add_switch('control_name', 'Title', true)
 Adds a native magnifying glass search bar textfield.
 
 ```v
-win.add_search_field('control_name', 'sample')
+win.add_search_field('search_box', 'Search documentation...')
 ```
 
 ### `win.add_combo_box(name string, items []string, selected string) &SimpleWindow`
@@ -1584,7 +1588,7 @@ win.add_search_field('control_name', 'sample')
 Adds an editable combobox dropdown choice selector containing custom `items`. Users can both type freeform choices and choose from suggestions list. The input text can be get/set using `win.get_text()` or `win.set_text()`.
 
 ```v
-win.add_combo_box('control_name', ['Option 1', 'Option 2', 'Option 3'], 'sample')
+win.add_combo_box('font_combo', ['Arial', 'Helvetica', 'Times New Roman'], 'Helvetica')
 ```
 
 ### `win.add_level_indicator(name string, style int, min_val int, max_val int, value int) &SimpleWindow`
@@ -1598,7 +1602,7 @@ Adds a versatile native macOS level and capacity gauge indicator.
   - `3`: Star Rating selector
 
 ```v
-win.add_level_indicator('control_name', 42, 5, 5, 50)
+win.add_level_indicator('battery_meter', 1, 0, 100, 75)
 ```
 
 ### `win.add_rating(name string, value int) &SimpleWindow`
@@ -1606,7 +1610,7 @@ win.add_level_indicator('control_name', 42, 5, 5, 50)
 Convenient shorthand wrapper for `add_level_indicator` that creates an interactive 5-star rating control (min = 0, max = 5, style = 3). Users can click stars directly to change values, which triggers and registers change event callbacks.
 
 ```v
-win.add_rating('control_name', 50)
+win.add_rating('star_rating', 4)
 ```
 
 ### `win.add_spinner(name string, active bool) &SimpleWindow`
@@ -1618,7 +1622,7 @@ Adds an indeterminate activity loading spinner.
 - **Toggling**: You can turn the animation on or off programmatically using `win.set_bool(name, true/false)`.
 
 ```v
-win.add_spinner('control_name', true)
+win.add_spinner('loading_spinner', true)
 ```
 
 ### `win.add_path_control(name string, path string) &SimpleWindow`
@@ -1629,7 +1633,7 @@ Adds a modern breadcrumb path control.
 - **Accessing**: Retrieve or update path text directly using the standard `win.get_text(name)` vs `win.set_text(name, path)`.
 
 ```v
-win.add_path_control('control_name', '/path/to/file.txt')
+win.add_path_control('doc_path', '/Users/ada/Documents/report.pdf')
 ```
 
 ### `win.add_token_field(name string, value string) &SimpleWindow`
@@ -1640,7 +1644,7 @@ Adds a token bubble tags editor input field.
 - **Reading**: Standard `win.get_text()` returns a clean comma-separated sequence.
 
 ```v
-win.add_token_field('control_name', 'sample')
+win.add_token_field('tags_field', 'vlang, macos, gui')
 ```
 
 ### `win.add_stepper(name string, min_val int, max_val int, step int, value int) &SimpleWindow`
@@ -1652,7 +1656,7 @@ Adds a standalone native up/down arrow stepper (`NSStepper`) with a live value l
 - **Range**: Adjust bounds later with `win.set_slider_range(name, min, max)` or the chainable `.range(min, max)`.
 
 ```v
-win.add_stepper('control_name', 5, 5, 5, 50)
+win.add_stepper('font_size_stepper', 8, 72, 1, 14)
 ```
 
 ### `win.add_help_button(name string) &SimpleWindow`
@@ -1660,7 +1664,7 @@ win.add_stepper('control_name', 5, 5, 5, 50)
 Adds the round native macOS "?" help button (`NSBezelStyleHelpButton`). Attach behavior with `.onclick()` — typically opening documentation or a popover-style dialog.
 
 ```v
-win.add_help_button('control_name')
+win.add_help_button('help_btn')
 ```
 
 ### `win.add_knob(name string, value int) &SimpleWindow`
@@ -1671,7 +1675,7 @@ Adds a circular rotary slider knob (`NSSliderTypeCircular`) with a live value la
 - **Accessing**: Same numeric accessors and `change` events as a linear slider.
 
 ```v
-win.add_knob('control_name', 50)
+win.add_knob('gain_knob', 50)
 ```
 
 ### `win.add_pull_down(name string, title string, items []string) &SimpleWindow`
@@ -1681,7 +1685,7 @@ Adds a native pull-down menu button (`NSPopUpButton` in pulls-down mode). Unlike
 - **Events**: Choosing an item fires a `change` event whose value is the chosen item's text.
 
 ```v
-win.add_pull_down('control_name', 'Title', ['Option 1', 'Option 2', 'Option 3'])
+win.add_pull_down('export_menu', 'Export Format', ['PDF', 'PNG', 'SVG'])
 ```
 
 ### `win.add_image_button(name string, symbol string, title string) &SimpleWindow`
@@ -1692,7 +1696,7 @@ Adds a push button decorated with a native SF Symbol image (macOS 11+), e.g. `'t
 - **Events**: Fires standard `click` events (`.onclick()`).
 
 ```v
-win.add_image_button('control_name', 'sample', 'Title')
+win.add_image_button('trash_btn', 'trash', 'Delete Item')
 ```
 
 ### `win.add_stat_card(name string, title string, value string, trend string, trend_style string)` / `win.stat_card(title string, value string, trend string, trend_style string) &SimpleWindow`
@@ -1703,8 +1707,8 @@ Adds a dashboard metric stat card displaying an uppercase title, large metric va
 - **Updating**: Use `win.set_stat_card(name, value, trend, trend_style)` or `win.set_value(name, value)` to update live metrics programmatically.
 
 ```v
-win.add_stat_card('control_name', 'Title', 'sample', 'default', 'default')
-win.stat_card('Title', 'sample', 'default', 'default')
+win.add_stat_card('revenue_card', 'Total Revenue', '$45,230', '+12.5%', 'success')
+win.stat_card('Total Revenue', '$45,230', '+12.5%', 'success')
 ```
 
 ### `win.add_banner(name string, text string, style string)` / `win.banner(text string, style string) &SimpleWindow`
@@ -1712,8 +1716,8 @@ win.stat_card('Title', 'sample', 'default', 'default')
 Adds an alert message banner strip across the layout. Acceptable `style` values are `"info"`, `"success"`, `"warning"`, or `"error"`.
 
 ```v
-win.add_banner('control_name', 'Hello World', 'default')
-win.banner('Hello World', 'default')
+win.add_banner('alert_banner', 'System maintenance scheduled at midnight', 'warning')
+win.banner('System maintenance scheduled at midnight', 'warning')
 ```
 
 ### `win.add_star_rating(name string, value int, max_stars int)` / `win.star_rating(value int, max_stars int) &SimpleWindow`
@@ -1725,8 +1729,8 @@ Adds an interactive star rating selector control (★ ★ ★ ★ ☆) with cust
 - **Events**: Star clicks fire `change` events with the numeric rating string.
 
 ```v
-win.add_star_rating('control_name', 50, 5)
-win.star_rating(50, 5)
+win.add_star_rating('product_rating', 4, 5)
+win.star_rating(4, 5)
 ```
 
 ### `win.add_range_slider(name string, min_val int, max_val int, low_val int, high_val int)` / `win.range_slider(min_val int, max_val int, low_val int, high_val int) &SimpleWindow`
@@ -1738,8 +1742,8 @@ Adds a dual-thumb range selector slider widget for minimum and maximum boundarie
 - **Events**: Handle adjustments fire `change` events formatted as `"low:high"`.
 
 ```v
-win.add_range_slider('control_name', 5, 5, 50, 50)
-win.range_slider(5, 5, 50, 50)
+win.add_range_slider('price_range', 0, 1000, 150, 600)
+win.range_slider(0, 1000, 150, 600)
 ```
 
 ### `win.add_split_button(name string, title string, menu_items []string)` / `win.split_button(title string, menu_items []string) &SimpleWindow`
@@ -1750,8 +1754,8 @@ Adds a primary action button paired with a secondary dropdown popup menu.
 - **Events**: Main button click fires `click` events (`.on_click()`). Menu item selection fires `"select_item"` (`.on_select_item()`) and `"change"` (`.on_change()`).
 
 ```v
-win.add_split_button('control_name', 'Title', ['Option 1', 'Option 2', 'Option 3'])
-win.split_button('Title', ['Option 1', 'Option 2', 'Option 3'])
+win.add_split_button('save_split', 'Save File', ['Save As...', 'Export PDF'])
+win.split_button('Save File', ['Save As...', 'Export PDF'])
 ```
 
 ### `win.add_tag_cloud(name string, tags []string)` / `win.tag_cloud(tags []string) &SimpleWindow`
@@ -1763,8 +1767,8 @@ Adds an interactive tag chips list widget.
 - **Events**: Tag chip clicks fire `"click_tag"` (`.on_click_tag()`) events with the tag text.
 
 ```v
-win.add_tag_cloud('control_name', ['Option 1', 'Option 2', 'Option 3'])
-win.tag_cloud(['Option 1', 'Option 2', 'Option 3'])
+win.add_tag_cloud('skills_tags', ['V', 'Cocoa', 'GUI', 'macOS'])
+win.tag_cloud(['V', 'Cocoa', 'GUI', 'macOS'])
 ```
 
 ### `win.add_wizard_stepper(name string, steps []string, current_step int)` / `win.wizard_stepper(steps []string, current_step int) &SimpleWindow`
@@ -1775,14 +1779,9 @@ Adds a multi-step process indicator bar showing active, completed, and pending s
 - **Updating**: `win.set_wizard_stepper_step(name, step)` updates active step index.
 - **Events**: Step clicks fire `"change_step"` (`.on_change_step()`) events with the new step index string.
 
-Adds a styled notice banner callout box for contextual alert messages.
-
-- **Parameters**: `style` accepts `"info"`, `"success"`, `"warning"`, or `"error"`.
-- **Updating**: Update banner message text using `win.set_banner(name, text)` or `win.set_text(name, text)`.
-
 ```v
-win.add_wizard_stepper('control_name', ['item1', 'item2'], 5)
-win.wizard_stepper(['item1', 'item2'], 5)
+win.add_wizard_stepper('checkout_wizard', ['Cart', 'Shipping', 'Payment', 'Review'], 1)
+win.wizard_stepper(['Cart', 'Shipping', 'Payment', 'Review'], 1)
 ```
 
 ### `win.add_section_header(name string, title string, subtitle string)` / `win.section_header(title string, subtitle string) &SimpleWindow`
@@ -1790,8 +1789,8 @@ win.wizard_stepper(['item1', 'item2'], 5)
 Adds a section header layout widget featuring a bold section title, optional subtitle, and a full-width divider line.
 
 ```v
-win.add_section_header('control_name', 'Title', 'Title')
-win.section_header('Title', 'Title')
+win.add_section_header('sec_hdr', 'Security Settings', 'Manage passwords and 2FA authentication')
+win.section_header('Security Settings', 'Manage passwords and 2FA authentication')
 ```
 
 ### `win.add_vertical_slider(name string, value int, min_val int, max_val int, height int)` / `win.vertical_slider(value int, min_val int, max_val int, height int) &SimpleWindow`
@@ -1802,8 +1801,8 @@ Adds a standalone native vertical `NSSlider` control with a live numeric value i
 - **Events**: User interactions fire `change` events with the new integer value.
 
 ```v
-win.add_vertical_slider('control_name', 50, 5, 5, 420)
-win.vertical_slider(50, 5, 5, 420)
+win.add_vertical_slider('eq_bass', 50, 0, 100, 200)
+win.vertical_slider(50, 0, 100, 200)
 ```
 
 ### `win.add_chip_group(name string, chips []string, selected string)` / `win.chip_group(chips []string, selected string) &SimpleWindow`
@@ -1814,8 +1813,8 @@ Adds a modern segmented tag/chip pill selection bar (`NSSegmentedControl`) for e
 - **Events**: Segment selection fires `change` events with the selected chip's text string.
 
 ```v
-win.add_chip_group('control_name', ['Option 1', 'Option 2', 'Option 3'], 'sample')
-win.chip_group(['Option 1', 'Option 2', 'Option 3'], 'sample')
+win.add_chip_group('filter_chips', ['All', 'Active', 'Completed'], 'Active')
+win.chip_group(['All', 'Active', 'Completed'], 'Active')
 ```
 
 ### `win.add_badge(name string, text string, style string)` / `win.badge_pill(text string, style string) &SimpleWindow`
@@ -1826,8 +1825,8 @@ Adds a pill-shaped status badge label with styled background tint and text color
 - **Accessing**: Use `win.get_badge(name)` and `win.set_badge(name, text, style)` to retrieve or update badge content dynamically.
 
 ```v
-win.add_badge('control_name', 'Hello World', 'default')
-win.badge_pill('Hello World', 'default')
+win.add_badge('status_badge', 'ONLINE', 'success')
+win.badge_pill('ONLINE', 'success')
 ```
 
 ### `win.add_icon_segments(name string, symbols []string, selected string)` / `win.icon_segments(symbols []string, selected string) &SimpleWindow`
@@ -1835,8 +1834,8 @@ win.badge_pill('Hello World', 'default')
 Adds an SF Symbol-powered segmented button bar for switching modes or views with native icons.
 
 ```v
-win.add_icon_segments('control_name', ['Option 1', 'Option 2', 'Option 3'], 'sample')
-win.icon_segments(['Option 1', 'Option 2', 'Option 3'], 'sample')
+win.add_icon_segments('view_mode', ['square.grid.2x2', 'list.bullet'], 'list.bullet')
+win.icon_segments(['square.grid.2x2', 'list.bullet'], 'list.bullet')
 ```
 
 ### `win.add_status_indicator(name string, label string, status string)` / `win.status_indicator(label string, status string) &SimpleWindow`
@@ -1847,8 +1846,8 @@ Adds an LED status indicator light dot alongside a text title.
 - **Accessing**: Use `win.get_status_indicator(name)` and `win.set_status_indicator(name, status)` to read or update state dynamically.
 
 ```v
-win.add_status_indicator('control_name', 'Title', 'default')
-win.status_indicator('Title', 'default')
+win.add_status_indicator('server_status', 'Database Server', 'online')
+win.status_indicator('Database Server', 'online')
 ```
 
 ### `win.add_metric_meter(name string, title string, value int, min_val int, max_val int, unit string)` / `win.metric_meter(title string, value int, min_val int, max_val int, unit string) &SimpleWindow`
@@ -1858,8 +1857,8 @@ Adds a resource meter card widget displaying a title, percentage fill bar, and r
 - **Accessing**: Use `win.get_metric_meter(name)` and `win.set_metric_meter(name, value)` to read or update meter progress dynamically.
 
 ```v
-win.add_metric_meter('control_name', 'Title', 50, 5, 5, 'default')
-win.metric_meter('Title', 50, 5, 5, 'default')
+win.add_metric_meter('cpu_meter', 'CPU Usage', 42, 0, 100, '%')
+win.metric_meter('CPU Usage', 42, 0, 100, '%')
 ```
 
 ### `win.add_avatar_card(name string, title string, subtitle string, status string)` / `win.avatar_card(title string, subtitle string, status string) &SimpleWindow`
@@ -1869,8 +1868,8 @@ Adds a user/profile avatar tile widget featuring a round initial badge, title te
 - **Accessing**: Use `win.set_avatar_card(name, title, subtitle, status)` to update operator profile cards dynamically.
 
 ```v
-win.add_avatar_card('control_name', 'Title', 'Title', 'default')
-win.avatar_card('Title', 'Title', 'default')
+win.add_avatar_card('user_card', 'Ada Lovelace', 'Lead Engineer', 'active')
+win.avatar_card('Ada Lovelace', 'Lead Engineer', 'active')
 ```
 
 ### `win.add_time_picker(name string, time string)` / `win.time_picker(time string) &SimpleWindow`
@@ -1880,7 +1879,7 @@ Adds a standalone native Cocoa clock/time selector (`NSDatePicker` with hour/min
 - **Accessing**: Use `win.get_time_picker(name)` and `win.set_time_picker(name, time)` to read or update the selected time string (e.g. `"14:30:00"`).
 
 ```v
-win.add_time_picker('control_name', '14:30:00')
+win.add_time_picker('alarm_time', '14:30:00')
 win.time_picker('14:30:00')
 ```
 
@@ -1891,8 +1890,8 @@ Adds a macOS system menu bar status item / tray icon (`NSStatusItem`) in the top
 - **Accessing**: Use `win.set_tray_icon(name, symbol, title)` to update the status bar icon or title dynamically.
 
 ```v
-win.add_tray_icon('control_name', 'sample', 'Title')
-win.tray_icon('sample', 'Title')
+win.add_tray_icon('app_tray', 'gearshape', 'SimpleGUI Helper')
+win.tray_icon('gearshape', 'SimpleGUI Helper')
 ```
 
 ### `win.add_collapsible_section(name string, title string, expanded bool)` / `win.collapsible_section(title string, expanded bool) &SimpleWindow`
@@ -1902,8 +1901,8 @@ Adds a collapsible accordion container section header featuring an interactive d
 - **Accessing**: Use `win.set_collapsible_section_expanded(name, expanded)` to programmatically expand or collapse the section header.
 
 ```v
-win.add_collapsible_section('control_name', 'Title', true)
-win.collapsible_section('Title', true)
+win.add_collapsible_section('adv_opts', 'Advanced Options', false)
+win.collapsible_section('Advanced Options', false)
 ```
 
 ### `win.add_code_editor(name string, code string, height int)` / `win.code_editor(code string, height int) &SimpleWindow`
@@ -1913,8 +1912,8 @@ Adds an integrated dark-themed monospaced code editor container view.
 - **Accessing**: Use `win.get_code_editor(name)` and `win.set_code_editor(name, code)` to read or update text source code dynamically.
 
 ```v
-win.add_code_editor('control_name', 'Hello World', 420)
-win.code_editor('Hello World', 420)
+win.add_code_editor('code_in', 'module main\n\nfn main() {\n\tprintln("Hello")\n}', 240)
+win.code_editor('module main\n\nfn main() {\n\tprintln("Hello")\n}', 240)
 ```
 
 ### `win.add_timeline_view(name string, height int)` / `win.timeline_view(height int) &SimpleWindow`
@@ -1924,8 +1923,8 @@ Adds an activity feed timeline stream widget for displaying real-time event logs
 - **Accessing**: Append event entries using `win.add_timeline_entry(name, time, title, detail, style)` or clear with `win.clear_timeline(name)`. `style` accepts `"success"`, `"warning"`, `"error"`, or `"info"`.
 
 ```v
-win.add_timeline_view('control_name', 420)
-win.timeline_view(420)
+win.add_timeline_view('log_timeline', 200)
+win.timeline_view(200)
 ```
 
 ### `win.add_toolbar_item(name string, label string, tooltip string, symbol string)` & `win.on_toolbar_click(name, callback)`
@@ -1933,7 +1932,7 @@ win.timeline_view(420)
 Adds a native macOS titlebar `NSToolbar` button with an SF Symbol icon and label, and wires click event handling.
 
 ```v
-win.add_toolbar_item('control_name', 'Title', 'sample', 'sample', 'sample')
+win.add_toolbar_item('tb_reload', 'Reload', 'Refresh data', 'arrow.clockwise')
 ```
 
 ---
@@ -1947,7 +1946,7 @@ Customize individual control dimensions and appearance by their registered name.
 Overwrites the control's Auto Layout width constraint.
 
 ```v
-win.set_control_width('control_name', 640)
+win.set_control_width('btn_save', 200)
 ```
 
 ### `win.set_control_height(name string, height int) &SimpleWindow`
@@ -1955,7 +1954,7 @@ win.set_control_width('control_name', 640)
 Overwrites the control's Auto Layout height constraint.
 
 ```v
-win.set_control_height('control_name', 420)
+win.set_control_height('txt_bio', 120)
 ```
 
 ### `win.set_control_font_size(name string, size int) &SimpleWindow`
@@ -1963,7 +1962,7 @@ win.set_control_height('control_name', 420)
 Changes the control's font size (handles labels, text fields, textareas, and buttons).
 
 ```v
-win.set_control_font_size('control_name', 42)
+win.set_control_font_size('lbl_title', 18)
 ```
 
 ### `win.set_control_font_bold(name string, bold bool) &SimpleWindow`
@@ -1971,7 +1970,7 @@ win.set_control_font_size('control_name', 42)
 Configures the control's font to Bold weight (supports labels, text fields, textareas, and buttons).
 
 ```v
-win.set_control_font_bold('control_name', true)
+win.set_control_font_bold('lbl_title', true)
 ```
 
 ### `win.set_control_font_name(name string, font_name string) &SimpleWindow`
@@ -1979,7 +1978,7 @@ win.set_control_font_bold('control_name', true)
 Sets a custom font family/name (e.g. `"Courier"`, `"Helvetica"`, or `"Arial"`) for the control. Falls back to system font if unavailable.
 
 ```v
-win.set_control_font_name('control_name', 'control_name')
+win.set_control_font_name('code_view', 'Courier')
 ```
 
 ### `win.set_control_background_color(name string, hex_color string) &SimpleWindow`
@@ -1989,7 +1988,7 @@ Sets a custom background color for the individual control.
 - **Notes**: The explicit color is remembered — a later `set_control_font_color()` call will not reset it. Applying a theme afterwards restyles the control with theme colors, so re-apply overrides after `set_theme()` if needed.
 
 ```v
-win.set_control_background_color('control_name', '#007aff')
+win.set_control_background_color('btn_accent', '#007aff')
 ```
 
 ### `win.set_control_font_color(name string, hex_color string) &SimpleWindow`
@@ -1999,7 +1998,7 @@ Sets a custom text font color for the individual control.
 - **Notes**: Setting only the font color preserves any explicitly set background color (and vice versa).
 
 ```v
-win.set_control_font_color('control_name', '#007aff')
+win.set_control_font_color('btn_accent', '#ffffff')
 ```
 
 ### `win.set_control_visible(name string, visible bool) &SimpleWindow`
@@ -2009,7 +2008,7 @@ Toggles whether the control is shown on screen.
 - **Notes**: Hidden controls will automatically collapse within `NSStackView` layouts, dynamically shifting surrounding elements.
 
 ```v
-win.set_control_visible('control_name', true)
+win.set_control_visible('adv_options', false)
 ```
 
 ### `win.get_control_visible(name string) bool`
@@ -2017,8 +2016,8 @@ win.set_control_visible('control_name', true)
 Checks if the control is currently visible.
 
 ```v
-if win.get_control_visible('control_name') {
-    // ...
+if win.get_control_visible('adv_options') {
+    println('Advanced options visible')
 }
 ```
 
@@ -2027,7 +2026,7 @@ if win.get_control_visible('control_name') {
 Enables/disables user interaction on the control. Disabled controls will render greyed out.
 
 ```v
-win.set_control_enabled('control_name', true)
+win.set_control_enabled('btn_submit', true)
 ```
 
 ### `win.get_control_enabled(name string) bool`
@@ -2035,8 +2034,8 @@ win.set_control_enabled('control_name', true)
 Checks if the control is currently enabled.
 
 ```v
-if win.get_control_enabled('control_name') {
-    // ...
+if win.get_control_enabled('btn_submit') {
+    println('Submit button enabled')
 }
 ```
 
@@ -2045,7 +2044,7 @@ if win.get_control_enabled('control_name') {
 Gets the custom background HEX color string of the specified control, or an empty string if none is set.
 
 ```v
-val := win.get_control_background_color('control_name')
+bg := win.get_control_background_color('btn_submit')
 ```
 
 ### `win.get_control_font_color(name string) string`
@@ -2053,7 +2052,7 @@ val := win.get_control_background_color('control_name')
 Gets the custom font HEX color string of the specified control, or an empty string if none is set.
 
 ```v
-val := win.get_control_font_color('control_name')
+fg := win.get_control_font_color('btn_submit')
 ```
 
 ### `win.get_control_width(name string) int`
@@ -2061,7 +2060,7 @@ val := win.get_control_font_color('control_name')
 Gets the custom layout width constraint of the specified control, or `0` if not explicitly constrained.
 
 ```v
-val := win.get_control_width('control_name')
+w := win.get_control_width('btn_submit')
 ```
 
 ### `win.get_control_height(name string) int`
@@ -2069,7 +2068,7 @@ val := win.get_control_width('control_name')
 Gets the custom layout height constraint of the specified control, or `0` if not explicitly constrained.
 
 ```v
-val := win.get_control_height('control_name')
+h := win.get_control_height('btn_submit')
 ```
 
 ### `win.get_control_font_size(name string) int`
@@ -2077,7 +2076,7 @@ val := win.get_control_height('control_name')
 Gets the custom font size of the specified control, or `0` if not explicitly configured.
 
 ```v
-val := win.get_control_font_size('control_name')
+sz := win.get_control_font_size('btn_submit')
 ```
 
 ### `win.set_placeholder(name string, text string) &SimpleWindow`
@@ -2085,7 +2084,7 @@ val := win.get_control_font_size('control_name')
 Sets placeholder text for text-based controls such as inputs and password fields.
 
 ```v
-win.set_placeholder('control_name', 'Hello World')
+win.set_placeholder('email_input', 'user@domain.com')
 ```
 
 ### `win.set_error(name string, text string) &SimpleWindow`
@@ -2093,7 +2092,7 @@ win.set_placeholder('control_name', 'Hello World')
 Applies validation/error feedback to a control and highlights it visually.
 
 ```v
-win.set_error('control_name', 'Hello World')
+win.set_error('email_input', 'Invalid email format')
 ```
 
 ### `win.clear_errors() &SimpleWindow`
@@ -2109,7 +2108,7 @@ win.clear_errors()
 Clears the visual validation error state and error message for a specific named control.
 
 ```v
-win.clear_error('control_name')
+win.clear_error('email_input')
 ```
 
 ### `win.get_error(name string) string`
@@ -2117,7 +2116,7 @@ win.clear_error('control_name')
 Gets the validation error text currently associated with the specified control, or an empty string if there is no error.
 
 ```v
-val := win.get_error('control_name')
+err_text := win.get_error('email_input')
 ```
 
 ### `win.set_tooltip(name string, text string) &SimpleWindow`
@@ -2125,7 +2124,7 @@ val := win.get_error('control_name')
 Sets a hover tooltip for any control.
 
 ```v
-win.set_tooltip('control_name', 'Hello World')
+win.set_tooltip('btn_save', 'Click to save changes (Cmd+S)')
 ```
 
 ### `win.set_default_button(name string) &SimpleWindow`
@@ -2133,7 +2132,7 @@ win.set_tooltip('control_name', 'Hello World')
 Marks a button as the default Enter-key action for the window.
 
 ```v
-win.set_default_button('control_name')
+win.set_default_button('btn_save')
 ```
 
 ### `win.set_html(name string, html string) &SimpleWindow`
@@ -2141,7 +2140,7 @@ win.set_default_button('control_name')
 Updates the content shown inside an HTML preview panel.
 
 ```v
-win.set_html('control_name', 'sample')
+win.set_html('html_view', '<h2>Updated Title</h2><p>Live preview text</p>')
 ```
 
 ### Fluent Chaining Modifiers (Last-Control Helpers)
@@ -2185,7 +2184,7 @@ win.add_input('email', '')
 Shows a native modal information alert dialog with an OK button.
 
 ```v
-win.alert('Title', 'Hello World')
+win.alert('Success', 'File saved successfully!')
 ```
 
 ### `win.alert_with_style(title string, message string, style string) &SimpleWindow`
@@ -2193,7 +2192,7 @@ win.alert('Title', 'Hello World')
 Shows a native modal alert dialog with a specific visual severity style preset (options: `'info'`, `'warning'`, `'critical'`).
 
 ```v
-win.alert_with_style('Title', 'Hello World', 'default')
+win.alert_with_style('Warning', 'Low disk space remaining', 'warning')
 ```
 
 ### `win.confirm(title string, message string) bool`
@@ -2201,8 +2200,8 @@ win.alert_with_style('Title', 'Hello World', 'default')
 Shows a warning confirmation popup with Yes/No actions, returning a boolean.
 
 ```v
-if win.confirm('Title', 'Hello World') {
-    // ...
+if win.confirm('Delete File', 'Are you sure you want to delete this file?') {
+    println('User confirmed deletion')
 }
 ```
 
@@ -2211,7 +2210,7 @@ if win.confirm('Title', 'Hello World') {
 Shows a popup prompt requesting input from the user, returning the entered string (or empty if cancelled).
 
 ```v
-val := win.prompt('Title', 'Hello World', 'sample')
+new_name := win.prompt('Rename', 'Enter new filename:', 'Untitled.txt')
 ```
 
 ### `win.choice_dialog(title string, message string, choices []string) int`
@@ -2219,7 +2218,7 @@ val := win.prompt('Title', 'Hello World', 'sample')
 Displays a native macOS alert with multiple custom button choices. Returns the 0-indexed choice clicked by the user (or `-1` if cancelled/dismissed).
 
 ```v
-val := win.choice_dialog('Title', 'Hello World', ['Option 1', 'Option 2', 'Option 3'])
+choice := win.choice_dialog('Save Changes', 'Do you want to save before closing?', ['Save', 'Don\'t Save', 'Cancel'])
 ```
 
 ### `win.select_file() string`
@@ -2227,7 +2226,7 @@ val := win.choice_dialog('Title', 'Hello World', ['Option 1', 'Option 2', 'Optio
 Launches the native macOS file picker panel, returning the chosen file path (or empty if cancelled).
 
 ```v
-val := win.select_file()
+file_path := win.select_file()
 ```
 
 ### `win.select_file_with_extensions(extensions string) string`
@@ -2235,7 +2234,7 @@ val := win.select_file()
 Launches the native macOS file picker panel filtered by specific file extension constraints (e.g. `'png,txt,pdf'`), returning the chosen file path (or empty if cancelled).
 
 ```v
-val := win.select_file_with_extensions('sample')
+img_path := win.select_file_with_extensions('png,jpg,jpeg')
 ```
 
 ### `win.select_folder() string`
@@ -2243,14 +2242,14 @@ val := win.select_file_with_extensions('sample')
 Launches the native macOS folder selection panel, returning the chosen folder path (or empty if cancelled).
 
 ```v
-val := win.select_folder()
+folder_path := win.select_folder()
 ```
 ### `win.save_file_picker() string`
 
 Launches the native macOS file save panel, returning the target path (or empty if cancelled).
 
 ```v
-val := win.save_file_picker()
+target_path := win.save_file_picker()
 ```
 
 ### `win.toast(message string)` &SimpleWindow
@@ -2258,7 +2257,7 @@ val := win.save_file_picker()
 Shows a self-dismissing native overlay toast notification containing the message text.
 
 ```v
-win.toast('Hello World')
+win.toast('Changes saved!')
 ```
 
 ### `win.toast_info(message string)` / `win.toast_success(message string)` / `win.toast_warn(message string)` / `win.toast_error(message string)` &SimpleWindow
@@ -2266,10 +2265,10 @@ win.toast('Hello World')
 Icon-prefixed styled toast notifications (`ℹ️`, `✅`, `⚠️`, `❌`).
 
 ```v
-win.toast_info('Hello World')
-win.toast_success('Hello World')
-win.toast_warn('Hello World')
-win.toast_error('Hello World')
+win.toast_info('Update available')
+win.toast_success('Connected to server')
+win.toast_warn('Low memory warning')
+win.toast_error('Failed to connect')
 ```
 
 ### `win.validate_required(names []string) (bool, string)`
@@ -2277,7 +2276,7 @@ win.toast_error('Hello World')
 Validates that every named control in `names` has a non-empty string value. If a required field is empty, it automatically flashes the control, sets focus to it, and returns `(false, missing_control_name)`.
 
 ```v
-res := win.validate_required(['name', 'email'])
+valid, missing := win.validate_required(['username', 'email'])
 ```
 
 ### `win.trim_all(names []string)` &SimpleWindow
@@ -2285,7 +2284,7 @@ res := win.validate_required(['name', 'email'])
 Trims leading and trailing whitespace from multiple named text inputs or textareas in a single call.
 
 ```v
-win.trim_all(['name', 'email'])
+win.trim_all(['username', 'email', 'notes'])
 ```
 
 ### `win.uppercase_all(names []string)` / `win.lowercase_all(names []string)` &SimpleWindow
@@ -2293,8 +2292,8 @@ win.trim_all(['name', 'email'])
 Converts text values in multiple named controls to UPPERCASE or lowercase.
 
 ```v
-win.uppercase_all(['name', 'email'])
-win.lowercase_all(['name', 'email'])
+win.uppercase_all(['state_code', 'country_code'])
+win.lowercase_all(['email_address', 'username'])
 ```
 
 ### `win.clear_form()` / `win.reset_to_defaults()` &SimpleWindow
@@ -2311,7 +2310,7 @@ win.reset_to_defaults()
 Sets a status bar message temporarily and automatically restores the previous status text after `duration_ms`.
 
 ```v
-win.set_status_temporary('Hello World', 1000)
+win.set_status_temporary('Exporting file...', 2000)
 ```
 
 ### `win.play_sound(sound_name string)` &SimpleWindow
@@ -2319,7 +2318,7 @@ win.set_status_temporary('Hello World', 1000)
 Plays a native macOS system sound by name (e.g., `'Glass'`, `'Ping'`, `'Hero'`, `'Pop'`, `'Tink'`, `'Submarine'`).
 
 ```v
-win.play_sound('control_name')
+win.play_sound('Glass')
 ```
 
 ### `win.speak(text string)` &SimpleWindow
@@ -2327,7 +2326,7 @@ win.play_sound('control_name')
 Speaks text out loud using the macOS text-to-speech engine.
 
 ```v
-win.speak('Hello World')
+win.speak('Build completed successfully')
 ```
 
 ### `win.save_layout(app_name string)` / `win.restore_layout(app_name string)` / `win.auto_save_layout(app_name string)` &SimpleWindow
@@ -2335,9 +2334,9 @@ win.speak('Hello World')
 Saves and restores window position and size bounds automatically to JSON configuration. `auto_save_layout(app_name)` binds restoration on window startup and auto-saves bounds when the window is closed.
 
 ```v
-win.save_layout('control_name')
-win.restore_layout('control_name')
-win.auto_save_layout('control_name')
+win.save_layout('my_app')
+win.restore_layout('my_app')
+win.auto_save_layout('my_app')
 ```
 
 ### `win.open_url(url string)` &SimpleWindow
@@ -2353,7 +2352,7 @@ win.open_url('https://vlang.io')
 Copies the specified text to the macOS system clipboard.
 
 ```v
-win.copy_to_clipboard('Hello World')
+win.copy_to_clipboard('Copied text content')
 ```
 
 ---
@@ -3384,7 +3383,7 @@ wg.wait()
 Updates the entire set of rows displayed inside the list box. This is useful for search filters or dynamic updates.
 
 ```v
-win.update_list_items('control_name', ['Option 1', 'Option 2', 'Option 3'])
+win.update_list_items('user_list', ['Alice', 'Bob', 'Charlie'])
 ```
 
 ### `win.set_list_selected(name string, index int) &SimpleWindow`
@@ -3392,7 +3391,7 @@ win.update_list_items('control_name', ['Option 1', 'Option 2', 'Option 3'])
 Sets the selected row index in the list box.
 
 ```v
-win.set_list_selected('control_name', 0)
+win.set_list_selected('user_list', 0)
 ```
 
 ### `win.get_list_selected(name string) int`
@@ -3400,7 +3399,7 @@ win.set_list_selected('control_name', 0)
 Returns the 0-indexed selected row in the list box (or `-1` if no row is selected).
 
 ```v
-val := win.get_list_selected('control_name')
+selected_idx := win.get_list_selected('user_list')
 ```
 
 ### `win.set_image_path(name string, file_path string) &SimpleWindow`
@@ -3408,7 +3407,7 @@ val := win.get_list_selected('control_name')
 Updates the active image shown in the specified image view control.
 
 ```v
-win.set_image_path('control_name', '/path/to/file.txt')
+win.set_image_path('profile_img', 'assets/avatar.png')
 ```
 
 ---
@@ -3422,8 +3421,8 @@ Starts a recurring main-loop timer that triggers the callback function every `N`
 - **Timer Callbacks**: Attaches to `timer_name` trigger. Callback is executed on main V thread.
 
 ```v
-win.set_interval('control_name', 1000, fn (mut win &simplegui.SimpleWindow) {
-    println("Action triggered")
+win.set_interval('clock_timer', 1000, fn (mut win &simplegui.SimpleWindow) {
+    println('Periodic 1-second tick')
 })
 ```
 
@@ -3432,7 +3431,7 @@ win.set_interval('control_name', 1000, fn (mut win &simplegui.SimpleWindow) {
 Cancels and invalidates the active interval timer.
 
 ```v
-win.stop_interval('control_name')
+win.stop_interval('clock_timer')
 ```
 
 ### `win.run_after(ms int, callback VoidEventCallback) &SimpleWindow`
@@ -3440,8 +3439,8 @@ win.stop_interval('control_name')
 Schedules a one-shot delay, executing the callback once after `ms` milliseconds have elapsed.
 
 ```v
-win.run_after(1000, fn (mut win &simplegui.SimpleWindow) {
-    println("Action triggered")
+win.run_after(2000, fn (mut win &simplegui.SimpleWindow) {
+    println('Delayed action executed after 2 seconds')
 })
 ```
 
@@ -3454,7 +3453,7 @@ win.run_after(1000, fn (mut win &simplegui.SimpleWindow) {
 Reads the string value of any text input, textarea, label, color well, popup, or date picker (including list boxes, returning the text of the selected row).
 
 ```v
-val := win.get_text('control_name')
+name_val := win.get_text('username')
 ```
 
 ### `win.get(name string) string`
@@ -3462,7 +3461,7 @@ val := win.get_text('control_name')
 Beginner-friendly shorthand alias for `win.get_text(name)`.
 
 ```v
-val := win.get('control_name')
+name_val := win.get('username')
 ```
 
 ### `win.get_as[T](name string) T`
@@ -3470,7 +3469,9 @@ val := win.get('control_name')
 Helper method to fetch any control value in its native type. Supports fetching strings (`string`), booleans (`bool`), integers (`int`), and floats (`f64`).
 
 ```v
-val := win.get_as[T]('control_name')
+name_str := win.get_as[string]('username')
+user_age := win.get_as[int]('age_field')
+is_admin := win.get_as[bool]('admin_switch')
 ```
 
 ### `win.set_text(name string, text string) &SimpleWindow`
@@ -3478,7 +3479,7 @@ val := win.get_as[T]('control_name')
 Sets/updates the text content of any input, textarea, or label.
 
 ```v
-win.set_text('control_name', 'Hello World')
+win.set_text('username', 'Ada Lovelace')
 ```
 
 ### `win.set[T](name string, value T) &SimpleWindow`
@@ -3486,7 +3487,9 @@ win.set_text('control_name', 'Hello World')
 Beginner-friendly, generic shorthand method to set or update any control value (replaces the older non-generic `win.set`). Automatically routes to `set_text`, `set_bool`, `set_number_value`, or `set_float` based on the compile-time type of `T` (via type inference).
 
 ```v
-win.set[T]('control_name', data)
+win.set('username', 'Ada Lovelace')
+win.set('age_field', 36)
+win.set('admin_switch', true)
 ```
 
 ### `win.get_checked(name string) bool`
@@ -3494,8 +3497,8 @@ win.set[T]('control_name', data)
 Gets the toggle state of a checkbox.
 
 ```v
-if win.get_checked('control_name') {
-    // ...
+if win.get_checked('chk_agree') {
+    println('User agreed to terms')
 }
 ```
 
@@ -3504,7 +3507,7 @@ if win.get_checked('control_name') {
 Sets the toggle state of a checkbox.
 
 ```v
-win.set_checked('control_name', true)
+win.set_checked('chk_agree', true)
 ```
 
 ### `win.get_value_int(name string) int`
@@ -3512,7 +3515,7 @@ win.set_checked('control_name', true)
 Gets the integer value of a slider, progress bar, list box selected index, or number/stepper input.
 
 ```v
-val := win.get_value_int('control_name')
+volume := win.get_value_int('volume_slider')
 ```
 
 ### `win.set_value_int(name string, value int) &SimpleWindow`
@@ -3520,7 +3523,7 @@ val := win.get_value_int('control_name')
 Sets the integer value of a slider, progress bar, list box selected index, or number/stepper input.
 
 ```v
-win.set_value_int('control_name', 50)
+win.set_value_int('volume_slider', 80)
 ```
 
 ### `win.get_status() string`
@@ -3528,7 +3531,7 @@ win.set_value_int('control_name', 50)
 Reads the current text value of the window status footer.
 
 ```v
-val := win.get_status()
+status_text := win.get_status()
 ```
 
 ### `win.set_status(text string) &SimpleWindow`
@@ -3536,7 +3539,7 @@ val := win.get_status()
 Updates the text display of the window status footer.
 
 ```v
-win.set_status('Hello World')
+win.set_status('Ready')
 ```
 
 ### `win.status(text string) &SimpleWindow`
@@ -3544,7 +3547,7 @@ win.set_status('Hello World')
 Alias for `set_status(text)`, updating the window status footer.
 
 ```v
-win.status('Hello World')
+win.status('Processing task...')
 ```
 
 ### `win.clear(name string) &SimpleWindow`
@@ -3552,7 +3555,7 @@ win.status('Hello World')
 Clears the value of a specific named control. Text inputs and textareas are set to `""`, checkboxes to `false`, and numeric controls to `0`.
 
 ```v
-win.clear('control_name')
+win.clear('search_box')
 ```
 
 ### `win.clear_all() &SimpleWindow`
@@ -3601,8 +3604,8 @@ Attaches an event handler for button click events.
 - **Callback Signature**: `fn (mut win &SimpleWindow)`
 
 ```v
-win.on_click('control_name', fn (mut win &simplegui.SimpleWindow) {
-    println("Action triggered")
+win.on_click('btn_save', fn (mut win &simplegui.SimpleWindow) {
+    println('Save button clicked!')
 })
 ```
 
@@ -3613,8 +3616,8 @@ Attaches an event handler for input changes (inputs, checkboxes, sliders, dropdo
 - **Callback Signature**: `fn (mut win &simplegui.SimpleWindow, value string)`
 
 ```v
-win.on_change('control_name', fn (mut win &simplegui.SimpleWindow, val string) {
-    println(val)
+win.on_change('search_box', fn (mut win &simplegui.SimpleWindow, val string) {
+    println('Search term: ${val}')
 })
 ```
 
@@ -3623,8 +3626,8 @@ win.on_change('control_name', fn (mut win &simplegui.SimpleWindow, val string) {
 Attaches an event handler when the mouse pointer enters the bounding area of the control.
 
 ```v
-win.on_hover('control_name', fn (mut win &simplegui.SimpleWindow) {
-    println("Action triggered")
+win.on_hover('btn_submit', fn (mut win &simplegui.SimpleWindow) {
+    win.set_status('Hovering over Submit')
 })
 ```
 
@@ -3633,8 +3636,8 @@ win.on_hover('control_name', fn (mut win &simplegui.SimpleWindow) {
 Attaches an event handler when the mouse pointer exits the bounding area of the control.
 
 ```v
-win.on_hover_exit('control_name', fn (mut win &simplegui.SimpleWindow) {
-    println("Action triggered")
+win.on_hover_exit('btn_submit', fn (mut win &simplegui.SimpleWindow) {
+    win.set_status('Ready')
 })
 ```
 
@@ -3643,8 +3646,8 @@ win.on_hover_exit('control_name', fn (mut win &simplegui.SimpleWindow) {
 Attaches an event handler when a text field input control gains active focus.
 
 ```v
-win.on_focus('control_name', fn (mut win &simplegui.SimpleWindow) {
-    println("Action triggered")
+win.on_focus('username', fn (mut win &simplegui.SimpleWindow) {
+    println('Username input focused')
 })
 ```
 
@@ -3653,8 +3656,8 @@ win.on_focus('control_name', fn (mut win &simplegui.SimpleWindow) {
 Attaches an event handler when a text field input control loses focus.
 
 ```v
-win.on_blur('control_name', fn (mut win &simplegui.SimpleWindow) {
-    println("Action triggered")
+win.on_blur('username', fn (mut win &simplegui.SimpleWindow) {
+    println('Username input lost focus')
 })
 ```
 
@@ -3663,8 +3666,8 @@ win.on_blur('control_name', fn (mut win &simplegui.SimpleWindow) {
 Attaches an event handler triggered when the Enter/Return key is pressed inside a text input field.
 
 ```v
-win.on_enter('control_name', fn (mut win &simplegui.SimpleWindow) {
-    println("Action triggered")
+win.on_enter('search_box', fn (mut win &simplegui.SimpleWindow) {
+    println('Perform search for: ${win.get_text("search_box")}')
 })
 ```
 
@@ -3673,8 +3676,8 @@ win.on_enter('control_name', fn (mut win &simplegui.SimpleWindow) {
 Attaches a global window-wide keyboard shortcut event listener. The callback value receives the key string.
 
 ```v
-win.on_key('control_name', fn (mut win &simplegui.SimpleWindow, val string) {
-    println(val)
+win.on_key('Escape', fn (mut win &simplegui.SimpleWindow, key string) {
+    println('Escape key pressed: ${key}')
 })
 ```
 
@@ -3684,7 +3687,7 @@ Attaches an event handler executed right before the window is closed and termina
 
 ```v
 win.on_close(fn (mut win &simplegui.SimpleWindow) {
-    println("Action triggered")
+    println('Window is closing...')
 })
 ```
 
@@ -3695,7 +3698,9 @@ Attaches an event handler when the application window is resized by the user.
 - **Callback Signature**: `fn (mut win &simplegui.SimpleWindow, new_size string)` (where `new_size` has format `"widthxheight"`, e.g. `"640x480"`)
 
 ```v
-win.set_size(800, 600)
+win.on_resize(fn (mut win &simplegui.SimpleWindow, new_size string) {
+    println('Window resized to: ${new_size}')
+})
 ```
 
 ### `win.on_window_focus(callback VoidEventCallback) &SimpleWindow`
@@ -3704,7 +3709,7 @@ Attaches an event handler triggered when the application window gains focus (bec
 
 ```v
 win.on_window_focus(fn (mut win &simplegui.SimpleWindow) {
-    println("Action triggered")
+    println('Window gained focus')
 })
 ```
 
@@ -3714,7 +3719,7 @@ Attaches an event handler triggered when the application window loses focus (res
 
 ```v
 win.on_window_blur(fn (mut win &simplegui.SimpleWindow) {
-    println("Action triggered")
+    println('Window lost focus')
 })
 ```
 
@@ -3724,7 +3729,7 @@ Attaches an event handler triggered when the window is minimized / miniaturized 
 
 ```v
 win.on_window_minimize(fn (mut win &simplegui.SimpleWindow) {
-    println("Action triggered")
+    println('Window minimized')
 })
 ```
 
@@ -3734,7 +3739,7 @@ Attaches an event handler triggered when the window is restored / deminiaturized
 
 ```v
 win.on_window_restore(fn (mut win &simplegui.SimpleWindow) {
-    println("Action triggered")
+    println('Window restored')
 })
 ```
 
@@ -3745,8 +3750,8 @@ Attaches an event handler when files are dragged and dropped onto the window or 
 - **Callback Signature**: `fn (mut win &simplegui.SimpleWindow, files []string)`
 
 ```v
-win.on_file_drop(fn (mut win &simplegui.SimpleWindow) {
-    println("Action triggered")
+win.on_file_drop(fn (mut win &simplegui.SimpleWindow, files []string) {
+    println('Files dropped: ${files}')
 })
 ```
 
@@ -3757,8 +3762,8 @@ Attaches an event handler for wizard stepper step changes (`"change_step"`).
 - **Callback Signature**: `fn (mut win &simplegui.SimpleWindow, step string)`
 
 ```v
-win.on_change_step('control_name', fn (mut win &simplegui.SimpleWindow, val string) {
-    println(val)
+win.on_change_step('checkout_wizard', fn (mut win &simplegui.SimpleWindow, step string) {
+    println('Wizard step changed to: ${step}')
 })
 ```
 
@@ -3769,8 +3774,8 @@ Attaches an event handler for tag cloud chip clicks (`"click_tag"`).
 - **Callback Signature**: `fn (mut win &simplegui.SimpleWindow, tag string)`
 
 ```v
-win.on_click_tag('control_name', fn (mut win &simplegui.SimpleWindow, val string) {
-    println(val)
+win.on_click_tag('skills_tags', fn (mut win &simplegui.SimpleWindow, tag string) {
+    println('Tag clicked: ${tag}')
 })
 ```
 
@@ -3781,8 +3786,8 @@ Attaches an event handler for split button menu item selection (`"select_item"`)
 - **Callback Signature**: `fn (mut win &simplegui.SimpleWindow, item string)`
 
 ```v
-win.on_select_item('control_name', fn (mut win &simplegui.SimpleWindow, val string) {
-    println(val)
+win.on_select_item('save_split', fn (mut win &simplegui.SimpleWindow, item string) {
+    println('Split menu item selected: ${item}')
 })
 ```
 
@@ -3800,8 +3805,8 @@ Adds a custom drop-down menu item under the main macOS application menu bar (e.g
 - Passing `'-'` as `item_title` inserts a native separator line.
 
 ```v
-win.add_menu_item('control_name', 'Title', 'sample', fn (mut win &simplegui.SimpleWindow) {
-    println("Action triggered")
+win.add_menu_item('File', 'Save Workspace', 'cmd+s', fn (mut win &simplegui.SimpleWindow) {
+    win.set_status('Workspace saved!')
 })
 ```
 
@@ -3810,8 +3815,8 @@ win.add_menu_item('control_name', 'Title', 'sample', fn (mut win &simplegui.Simp
 Binds a native right-click Context Menu item directly to any control by its `name` handle (or `"window"` to bind it to the general window background). Clicking the triggered choice executes the callback function.
 
 ```v
-win.add_context_menu_item('control_name', 'Title', fn (mut win &simplegui.SimpleWindow) {
-    println("Action triggered")
+win.add_context_menu_item('btn_submit', 'Reset Button', fn (mut win &simplegui.SimpleWindow) {
+    win.set_text('btn_submit', 'Submit')
 })
 ```
 
@@ -3847,7 +3852,14 @@ win.add_menu('Demo', [
 Creates a structured right-click Context Menu on any control or the general `"window"`.
 
 ```v
-win.add_context_menu('control_name', data)
+win.add_context_menu('btn_submit', [
+    simplegui.MenuItem{
+        title: 'Reset Button Text'
+        callback: fn (mut w simplegui.SimpleWindow) {
+            w.set_text('btn_submit', 'Submit')
+        }
+    }
+])
 ```
 
 ---
@@ -3859,7 +3871,7 @@ win.add_context_menu('control_name', data)
 Adds a scrollable multi-column table view widget with column headers.
 
 ```v
-win.add_table('control_name', ['ID', 'Name', 'Role'])
+win.add_table('users_table', ['ID', 'Name', 'Role'])
 ```
 
 ### `win.set_table_rows(name string, rows [][]string) &SimpleWindow`
@@ -3867,7 +3879,10 @@ win.add_table('control_name', ['ID', 'Name', 'Role'])
 Updates the entire set of row cells displayed inside the table grid.
 
 ```v
-win.set_table_rows('control_name', ['item1', 'item2'])
+win.set_table_rows('users_table', [
+    ['101', 'Ada Lovelace', 'Admin'],
+    ['102', 'Bob Smith', 'Developer']
+])
 ```
 
 ### `win.load_table_from_structs[T](name string, items []T) &SimpleWindow`
@@ -3877,7 +3892,17 @@ Populates and renders a scrollable multi-column table widget automatically using
 Table rows are tracked automatically on the V side, enabling the incremental row-management, selection, and event helpers described in [Section 17](#17-ergonomic-helpers) (`add_table_row`, `remove_selected_table_rows`, `on_table_select`, `on_table_double_click`, and more).
 
 ```v
-win.load_table_from_structs[T]('control_name', data)
+struct UserRecord {
+    id   string
+    name string
+    role string
+}
+
+users := [
+    UserRecord{'101', 'Ada Lovelace', 'Admin'},
+    UserRecord{'102', 'Bob Smith', 'Developer'}
+]
+win.load_table_from_structs('users_table', users)
 ```
 
 ### `win.add_grid(name string, headers []string, initial_rows [][]string) &SimpleWindow`
@@ -3885,7 +3910,10 @@ win.load_table_from_structs[T]('control_name', data)
 Adds a native editable data grid for spreadsheet-style layouts. It supports inline editing, persistent selection, checkbox and button cell types, column resizing, filtering, and programmatic sorting.
 
 ```v
-win.add_grid('control_name', ['ID', 'Name', 'Role'], ['item1', 'item2'])
+win.add_grid('inventory_grid', ['ID', 'Item Name', 'Price'], [
+    ['1', 'Mechanical Keyboard', '$120.00'],
+    ['2', 'Ergonomic Mouse', '$65.00']
+])
 ```
 
 ### Grid row and column management
@@ -3999,7 +4027,7 @@ nodes := simplegui.tree_nodes_from_paths([
 Adds a scrollable, native hierarchal tree view control with a defined vertical height.
 
 ```v
-win.add_tree_view('control_name', 420)
+win.add_tree_view('file_tree', 300)
 ```
 
 ### `win.set_tree_nodes(name string, nodes []TreeNode) &SimpleWindow`
@@ -4007,7 +4035,11 @@ win.add_tree_view('control_name', 420)
 Builds and populates the tree hierarchy from a flat array of nodes. It automatically resolves parent-child relations and expands the nodes by default.
 
 ```v
-win.set_tree_nodes('control_name', data)
+nodes := [
+    simplegui.tree_root('root_src', 'src'),
+    simplegui.tree_child('child_main', 'root_src', 'main.v')
+]
+win.set_tree_nodes('file_tree', nodes)
 ```
 
 ### `win.get_tree_selected(name string) string`
@@ -4015,7 +4047,7 @@ win.set_tree_nodes('control_name', data)
 Returns the `id` of the currently selected tree view node, or `""` if no cell is selected.
 
 ```v
-val := win.get_tree_selected('control_name')
+selected_id := win.get_tree_selected('file_tree')
 ```
 
 ### `win.set_tree_selected(name string, node_id string) &SimpleWindow`
@@ -4023,7 +4055,7 @@ val := win.get_tree_selected('control_name')
 Programmatically expands parent items as needed, selects the specified node by its `node_id`, and scrolls it into view.
 
 ```v
-win.set_tree_selected('control_name', 'control_name')
+win.set_tree_selected('file_tree', 'child_main')
 ```
 
 ### `win.expand_tree(name string) &SimpleWindow` / `win.open_tree(name string) &SimpleWindow`
@@ -4031,8 +4063,8 @@ win.set_tree_selected('control_name', 'control_name')
 Expands all nodes in the target tree.
 
 ```v
-win.expand_tree('control_name')
-win.open_tree('control_name')
+win.expand_tree('file_tree')
+win.open_tree('file_tree')
 ```
 
 ### `win.collapse_tree(name string) &SimpleWindow` / `win.close_tree(name string) &SimpleWindow`
@@ -4040,8 +4072,8 @@ win.open_tree('control_name')
 Collapses all nodes in the target tree.
 
 ```v
-win.collapse_tree('control_name')
-win.close_tree('control_name')
+win.collapse_tree('file_tree')
+win.close_tree('file_tree')
 ```
 
 ### `win.expand_tree_node(name string, node_id string, expand_children bool) &SimpleWindow`
@@ -4049,7 +4081,7 @@ win.close_tree('control_name')
 Expands a specific node by id. If `expand_children` is `true`, expands the full subtree under that node.
 
 ```v
-win.expand_tree_node('control_name', 'control_name', true)
+win.expand_tree_node('file_tree', 'root_src', true)
 ```
 
 ### `win.collapse_tree_node(name string, node_id string, collapse_children bool) &SimpleWindow`
@@ -4057,7 +4089,7 @@ win.expand_tree_node('control_name', 'control_name', true)
 Collapses a specific node by id. If `collapse_children` is `true`, collapses all descendants too.
 
 ```v
-win.collapse_tree_node('control_name', 'control_name', true)
+win.collapse_tree_node('file_tree', 'root_src', true)
 ```
 
 ### `win.set_tree(name string, nodes []TreeNode) &SimpleWindow`
@@ -4065,7 +4097,7 @@ win.collapse_tree_node('control_name', 'control_name', true)
 Alias for `set_tree_nodes(...)`.
 
 ```v
-win.set_tree('control_name', data)
+win.set_tree('file_tree', nodes)
 ```
 
 ### `win.clear_tree(name string) &SimpleWindow`
@@ -4073,7 +4105,7 @@ win.set_tree('control_name', data)
 Clears all nodes and current selection in a single call.
 
 ```v
-win.clear_tree('control_name')
+win.clear_tree('file_tree')
 ```
 
 ### `win.clear_tree_selection(name string) &SimpleWindow`
@@ -4081,7 +4113,7 @@ win.clear_tree('control_name')
 Clears only the current selected node.
 
 ```v
-win.clear_tree_selection('control_name')
+win.clear_tree_selection('file_tree')
 ```
 
 ### `win.get_tree_nodes(name string) []TreeNode`
@@ -4089,7 +4121,7 @@ win.clear_tree_selection('control_name')
 Returns a copy of nodes currently registered for that tree in V-side state.
 
 ```v
-val := win.get_tree_nodes('control_name')
+tree_nodes := win.get_tree_nodes('file_tree')
 ```
 
 ### `win.has_tree_node(name string, node_id string) bool`
@@ -4097,8 +4129,8 @@ val := win.get_tree_nodes('control_name')
 Returns true if `node_id` exists in the tree.
 
 ```v
-if win.has_tree_node('control_name', 'control_name') {
-    // ...
+if win.has_tree_node('file_tree', 'root_src') {
+    println('Root node exists')
 }
 ```
 
@@ -4107,7 +4139,7 @@ if win.has_tree_node('control_name', 'control_name') {
 Returns the matching node when found, otherwise `none`.
 
 ```v
-if node := win.get_tree_node('my_tree', 'node_101') {
+if node := win.get_tree_node('file_tree', 'root_src') {
     println('Node found: ${node.text}')
 }
 ```
@@ -4117,7 +4149,7 @@ if node := win.get_tree_node('my_tree', 'node_101') {
 Adds a new node or updates an existing one with the same `id`.
 
 ```v
-win.add_tree_node('control_name', data)
+win.add_tree_node('file_tree', simplegui.tree_child('child_utils', 'root_src', 'utils.v'))
 ```
 
 ### `win.remove_tree_node(name string, node_id string, remove_children bool) &SimpleWindow`
@@ -4128,7 +4160,7 @@ Removes a node.
 - If `false`, reparents direct children to the removed node's parent.
 
 ```v
-win.remove_tree_node('control_name', 'control_name', true)
+win.remove_tree_node('file_tree', 'child_main', true)
 ```
 
 ### `win.set_tree_node_text(name string, node_id string, text string) &SimpleWindow`
@@ -4136,7 +4168,7 @@ win.remove_tree_node('control_name', 'control_name', true)
 Updates the visible label text of one node.
 
 ```v
-win.set_tree_node_text('control_name', 'control_name', 'Hello World')
+win.set_tree_node_text('file_tree', 'root_src', 'source_code')
 ```
 
 ### `win.set_tree_paths(name string, paths []string) &SimpleWindow`
@@ -4144,7 +4176,7 @@ win.set_tree_node_text('control_name', 'control_name', 'Hello World')
 Builds/replaces a tree from slash-separated path values.
 
 ```v
-win.set_tree_paths('control_name', ['item1', 'item2'])
+win.set_tree_paths('file_tree', ['src/main.v', 'src/utils.v', 'tests/test_app.v'])
 ```
 
 ### `win.set_tree_paths_with_separator(name string, paths []string, separator string) &SimpleWindow`
@@ -4152,10 +4184,8 @@ win.set_tree_paths('control_name', ['item1', 'item2'])
 Same as `set_tree_paths`, but with a custom path separator.
 
 ```v
-win.set_tree_paths_with_separator('control_name', ['item1', 'item2'], 'sample')
+win.set_tree_paths_with_separator('file_tree', ['src:main.v', 'src:utils.v'], ':')
 ```
-
----
 
 ---
 
@@ -4166,7 +4196,7 @@ win.set_tree_paths_with_separator('control_name', ['item1', 'item2'], 'sample')
 Serializes and returns a map containing all input control names matched to their current text values.
 
 ```v
-val := win.get_values()
+form_values := win.get_values()
 ```
 
 ### `win.set_values(values map[string]string) &SimpleWindow`
@@ -4174,7 +4204,10 @@ val := win.get_values()
 Sets/updates multiple control text values from a name-value map.
 
 ```v
-win.set_values({'key': 'value'})
+win.set_values({
+    'username': 'Ada',
+    'email': 'ada@vlang.io'
+})
 ```
 
 ### `win.inspect_controls() string`
@@ -4182,7 +4215,7 @@ win.set_values({'key': 'value'})
 Returns a comma-separated string containing the names of all currently registered controls.
 
 ```v
-val := win.inspect_controls()
+control_list := win.inspect_controls()
 ```
 
 ### `win.dump_values() map[string]string`
@@ -4190,7 +4223,7 @@ val := win.inspect_controls()
 Alias for `get_values()`, serializing all form inputs to a name-value string map.
 
 ```v
-val := win.dump_values()
+all_data := win.dump_values()
 ```
 
 ### `win.bind_to_struct[T](mut data T) &SimpleWindow`
@@ -4198,7 +4231,14 @@ val := win.dump_values()
 Queries all input control values and populates the matching field names on a mutable struct using compile-time reflection. Supports `string`, `int`, and `bool` fields.
 
 ```v
-win.bind_to_struct[T](data)
+struct UserForm {
+mut:
+    name  string
+    email string
+}
+
+mut user := UserForm{}
+win.bind_to_struct(mut user)
 ```
 
 ### `win.load_from_struct[T](data T) &SimpleWindow`
@@ -4206,7 +4246,13 @@ win.bind_to_struct[T](data)
 Populates GUI controls using matching field name values from the passed struct.
 
 ```v
-win.load_from_struct[T](data)
+struct UserForm {
+    name  string
+    email string
+}
+
+user := UserForm{name: 'Ada', email: 'ada@vlang.io'}
+win.load_from_struct(user)
 ```
 
 ---
@@ -4218,7 +4264,7 @@ win.load_from_struct[T](data)
 Inserts an empty spacing box of the specified height in the layout stack.
 
 ```v
-win.add_vertical_spacer(420)
+win.add_vertical_spacer(16)
 ```
 
 ### `win.add_horizontal_spacer(width int) &SimpleWindow`
@@ -4226,7 +4272,7 @@ win.add_vertical_spacer(420)
 Inserts an empty spacing box of the specified width in horizontal layout rows.
 
 ```v
-win.add_horizontal_spacer(640)
+win.add_horizontal_spacer(20)
 ```
 
 ### `win.add_separator() &SimpleWindow`
@@ -4246,7 +4292,7 @@ win.add_separator()
 Hides the main window and runs the application as a background macOS menu bar accessory with a dropdown status menu.
 
 ```v
-win.enable_status_bar('/path/to/file.txt')
+win.enable_status_bar('assets/tray_icon.png')
 ```
 
 ### `win.show_window() &SimpleWindow`
@@ -4263,7 +4309,7 @@ Safely queues a UI update callback to execute on the main event thread, bridging
 
 ```v
 win.run_on_main_thread(fn (mut win &simplegui.SimpleWindow) {
-    println("Action triggered")
+    win.set_status('Updated from background thread')
 })
 ```
 
@@ -4272,9 +4318,16 @@ win.run_on_main_thread(fn (mut win &simplegui.SimpleWindow) {
 Runs a time-consuming background or I/O task on a separate concurrent worker thread to keep the application window fully responsive. Upon completion, automatically dispatches the `on_complete` callback on the main thread for thread-safe UI updates.
 
 ```v
-res := win.run_async(fn (mut win &simplegui.SimpleWindow) {
-    println("Action triggered")
-})
+win.run_async(
+    fn () {
+        // Run background task on worker thread
+        time.sleep(2 * time.second)
+    },
+    fn (mut win &simplegui.SimpleWindow) {
+        // Main thread UI update
+        win.set_status('Async task completed!')
+    }
+)
 ```
 
 ---
@@ -4289,7 +4342,7 @@ Returns `true` if any input control (text input, checkbox, toggle, slider, numbe
 
 ```v
 if win.is_dirty() {
-    // ...
+    println('Form has unsaved changes')
 }
 ```
 
@@ -4298,8 +4351,8 @@ if win.is_dirty() {
 Returns `true` if the specific named control has changed compared to its baseline state.
 
 ```v
-if win.is_control_dirty('control_name') {
-    // ...
+if win.is_control_dirty('email_input') {
+    println('Email field was modified')
 }
 ```
 
