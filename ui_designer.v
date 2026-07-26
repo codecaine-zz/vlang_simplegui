@@ -27,11 +27,11 @@ fn main() {
 	win.add_label('workspace_intro', 'Design forms in a familiar RAD flow: pick a template, tune properties, auto-arrange multi-column grids, and preview live windows.')
 	win.set_control_font_size('workspace_intro', 11)
 
-	win.add_toolbar_item('tb_code', 'Copy V Code', 'Copy generated V code to clipboard',
+	win.add_toolbar_item('tb_code', 'Copy V Code', 'Click to copy generated V source code to your clipboard so you can paste and run it in V',
 		'doc.on.doc')
-	win.add_toolbar_item('tb_html', 'Copy HTML', 'Copy generated standalone HTML/CSS code to clipboard',
+	win.add_toolbar_item('tb_html', 'Copy HTML', 'Click to copy generated HTML and CSS code to save as a webpage or open in a browser',
 		'globe')
-	win.add_toolbar_item('tb_run', 'Test Run Form', 'Launch live interactive window preview',
+	win.add_toolbar_item('tb_run', 'Test Run Form', 'Click to launch an interactive live preview window to test your form design',
 		'play.circle.fill')
 
 	win.on_toolbar_click('tb_code', fn [state] (mut w simplegui.SimpleWindow) {

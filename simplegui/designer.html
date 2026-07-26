@@ -852,27 +852,27 @@
 			<span class="badge-rad">Delphi / VB Studio</span>
 		</div>
 		<div class="toolbar-actions">
-			<button class="btn btn-success" onclick="triggerRunForm()" title="Launch live interactive window preview">⚡ Run Live Form</button>
-			<button class="btn btn-primary" onclick="exportFormJSON()" title="Save JSON layout to clipboard">💾 Save JSON</button>
-			<button class="btn" onclick="copyVCode()" title="Copy V source code to clipboard">📋 Copy V</button>
-			<button class="btn" onclick="copyHTMLCode()" title="Copy standalone HTML5 & CSS webpage code to clipboard">🌐 Copy HTML</button>
-			<button class="btn" onclick="clearForm()" title="New blank form layout">📄 New</button>
+			<button class="btn btn-success" onclick="triggerRunForm()" title="Click to launch an interactive live preview window to test your form design">⚡ Run Live Form</button>
+			<button class="btn btn-primary" onclick="exportFormJSON()" title="Click to copy your form layout design as JSON data to your clipboard">💾 Save JSON</button>
+			<button class="btn" onclick="copyVCode()" title="Click to copy generated V source code to your clipboard">📋 Copy V</button>
+			<button class="btn" onclick="copyHTMLCode()" title="Click to copy generated HTML5 & CSS webpage code to your clipboard">🌐 Copy HTML</button>
+			<button class="btn" onclick="clearForm()" title="Click to clear the canvas and start a new blank form design">📄 New</button>
 			<span class="toolbar-divider"></span>
-			<button class="btn btn-icon" onclick="undo()" id="undoBtn" title="Undo (Cmd+Z)">↩️</button>
-			<button class="btn btn-icon" onclick="redo()" id="redoBtn" title="Redo (Cmd+Shift+Z)">↪️</button>
-			<button class="btn btn-icon" onclick="copySelectedControl()" title="Copy (Cmd+C)">📋</button>
-			<button class="btn btn-icon" onclick="pasteCopiedControl()" title="Paste (Cmd+V)">📥</button>
-			<button class="btn btn-icon" onclick="duplicateSelectedControl()" title="Duplicate (Cmd+D)">✨</button>
-			<button class="btn btn-icon" onclick="toggleLockSelected()" title="Lock / Unlock">🔒</button>
-			<button class="btn btn-icon" onclick="bringToFront()" title="Bring to Front">🔝</button>
-			<button class="btn btn-icon" onclick="sendToBack()" title="Send to Back">🔙</button>
-			<button class="btn" onclick="showSnapGridMenu()" id="snapBtn" title="Toggle Grid Snapping">📐 Snap: 8px</button>
-			<button class="btn" id="tabOrderBtn" onclick="toggleTabOrderMode()" title="Toggle interactive Tab Order sequence editor mode on canvas">🔢 Tab Order</button>
-			<button class="btn" onclick="autoSequenceTabOrder()" title="Auto-sequence tab focus order based on spatial position (Top-to-Bottom, Left-to-Right)">⚡ Auto Tab</button>
-			<button class="btn" id="liveHoverTestBtn" onclick="toggleLiveHoverMode()" title="Toggle interactive live hover & test mode directly on the canvas">⚡ Live Hover Mode</button>
-			<button class="btn" onclick="showDiagnosticsModal()" title="Audit form layout for overlaps, missing fields, or errors">🔍 Audit Form</button>
-			<button class="btn" onclick="showHotkeysModal()" title="Keyboard Shortcuts Cheat Sheet">⌨️ Hotkeys</button>
-			<button class="btn" onclick="showImportModal()" title="Import JSON layout">📥 Import</button>
+			<button class="btn btn-icon" onclick="undo()" id="undoBtn" title="Click to undo your last action (Cmd+Z / Ctrl+Z)">↩️</button>
+			<button class="btn btn-icon" onclick="redo()" id="redoBtn" title="Click to redo your last undone action (Cmd+Shift+Z / Ctrl+Y)">↪️</button>
+			<button class="btn btn-icon" onclick="copySelectedControl()" title="Click to copy the selected control to clipboard (Cmd+C / Ctrl+C)">📋</button>
+			<button class="btn btn-icon" onclick="pasteCopiedControl()" title="Click to paste the copied control onto the canvas (Cmd+V / Ctrl+V)">📥</button>
+			<button class="btn btn-icon" onclick="duplicateSelectedControl()" title="Click to make a duplicate copy of the selected control (Cmd+D / Ctrl+D)">✨</button>
+			<button class="btn btn-icon" onclick="toggleLockSelected()" title="Click to lock or unlock selected control so it cannot be accidentally moved">🔒</button>
+			<button class="btn btn-icon" onclick="bringToFront()" title="Click to bring selected control in front of other overlapping controls">🔝</button>
+			<button class="btn btn-icon" onclick="sendToBack()" title="Click to move selected control behind other overlapping controls">🔙</button>
+			<button class="btn" onclick="showSnapGridMenu()" id="snapBtn" title="Click to toggle auto-alignment grid snapping (4px, 8px, 16px)">📐 Snap: 8px</button>
+			<button class="btn" id="tabOrderBtn" onclick="toggleTabOrderMode()" title="Click to show tab sequence numbers on controls so you can set keyboard navigation order">🔢 Tab Order</button>
+			<button class="btn" onclick="autoSequenceTabOrder()" title="Click to automatically arrange keyboard tab order from top-left to bottom-right">⚡ Auto Tab</button>
+			<button class="btn" id="liveHoverTestBtn" onclick="toggleLiveHoverMode()" title="Click to test hover effects and button states live directly on the canvas">⚡ Live Hover Mode</button>
+			<button class="btn" onclick="showDiagnosticsModal()" title="Click to check your form design for layout overlaps, missing fields, or errors">🔍 Audit Form</button>
+			<button class="btn" onclick="showHotkeysModal()" title="Click to view all keyboard shortcuts for fast designing">⌨️ Hotkeys</button>
+			<button class="btn" onclick="showImportModal()" title="Click to import a saved JSON layout to load your form design">📥 Import</button>
 		</div>
 	</header>
 
@@ -904,23 +904,23 @@
 			<div class="palette-category">
 				<div class="palette-cat-header">🚀 Standard Controls</div>
 				<div class="palette-grid">
-					<div class="palette-item" draggable="true" onclick="spawnControl('button')" ondragstart="onDragStart(event, 'button')" title="Button: Clickable action button widget (win.add_button)">
+					<div class="palette-item" draggable="true" onclick="spawnControl('button')" ondragstart="onDragStart(event, 'button')" title="Button: Click or drag onto canvas to add a clickable button. Use it for user actions like submitting forms, saving data, or triggering events (win.add_button)">
 						<span class="palette-icon">🔘</span>
 						<span>Button</span>
 					</div>
-					<div class="palette-item" draggable="true" onclick="spawnControl('label')" ondragstart="onDragStart(event, 'label')" title="Label: Text title or caption label (win.add_label)">
+					<div class="palette-item" draggable="true" onclick="spawnControl('label')" ondragstart="onDragStart(event, 'label')" title="Label: Click or drag onto canvas to add static text. Use it for headings, titles, or instruction text (win.add_label)">
 						<span class="palette-icon">🏷️</span>
 						<span>Label</span>
 					</div>
-					<div class="palette-item" draggable="true" onclick="spawnControl('input')" ondragstart="onDragStart(event, 'input')" title="Input: Single-line text input field (win.add_input)">
+					<div class="palette-item" draggable="true" onclick="spawnControl('input')" ondragstart="onDragStart(event, 'input')" title="Input: Click or drag onto canvas to add a single-line text field. Use it for short user entries like names or emails (win.add_input)">
 						<span class="palette-icon">✏️</span>
 						<span>Input</span>
 					</div>
-					<div class="palette-item" draggable="true" onclick="spawnControl('password')" ondragstart="onDragStart(event, 'password')" title="Password: Masked password input field (win.add_password)">
+					<div class="palette-item" draggable="true" onclick="spawnControl('password')" ondragstart="onDragStart(event, 'password')" title="Password: Click or drag onto canvas to add a masked text field. Use it to securely hide secret password entries with dots (win.add_password)">
 						<span class="palette-icon">🔒</span>
 						<span>Password</span>
 					</div>
-					<div class="palette-item" draggable="true" onclick="spawnControl('textarea')" ondragstart="onDragStart(event, 'textarea')" title="Text Area: Multi-line text input area (win.add_textarea)">
+					<div class="palette-item" draggable="true" onclick="spawnControl('textarea')" ondragstart="onDragStart(event, 'textarea')" title="Text Area: Click or drag onto canvas to add a multi-line text box. Use it for long entries like comments or descriptions (win.add_textarea)">
 						<span class="palette-icon">📝</span>
 						<span>Text Area</span>
 					</div>
@@ -931,23 +931,23 @@
 			<div class="palette-category">
 				<div class="palette-cat-header">🎛️ Toggles & Options</div>
 				<div class="palette-grid">
-					<div class="palette-item" draggable="true" onclick="spawnControl('checkbox')" ondragstart="onDragStart(event, 'checkbox')" title="Checkbox: Boolean check box toggle (win.add_checkbox)">
+					<div class="palette-item" draggable="true" onclick="spawnControl('checkbox')" ondragstart="onDragStart(event, 'checkbox')" title="Checkbox: Click or drag onto canvas to add a checkable box. Use it for yes/no options like agreeing to terms (win.add_checkbox)">
 						<span class="palette-icon">☑️</span>
 						<span>Checkbox</span>
 					</div>
-					<div class="palette-item" draggable="true" onclick="spawnControl('switch')" ondragstart="onDragStart(event, 'switch')" title="Switch: Toggle switch slider (win.add_switch)">
+					<div class="palette-item" draggable="true" onclick="spawnControl('switch')" ondragstart="onDragStart(event, 'switch')" title="Switch: Click or drag onto canvas to add a sliding toggle switch. Use it for turning settings on or off (win.add_switch)">
 						<span class="palette-icon">🔀</span>
 						<span>Switch</span>
 					</div>
-					<div class="palette-item" draggable="true" onclick="spawnControl('radio')" ondragstart="onDragStart(event, 'radio')" title="Radio Button: Single option radio selector (win.add_checkbox)">
+					<div class="palette-item" draggable="true" onclick="spawnControl('radio')" ondragstart="onDragStart(event, 'radio')" title="Radio Button: Click or drag onto canvas to add an option dot. Use it when users must pick exactly one option from a group (win.add_radio)">
 						<span class="palette-icon">🔘</span>
 						<span>Radio Button</span>
 					</div>
-					<div class="palette-item" draggable="true" onclick="spawnControl('slider')" ondragstart="onDragStart(event, 'slider')" title="Slider: Horizontal range slider bar (win.add_slider)">
+					<div class="palette-item" draggable="true" onclick="spawnControl('slider')" ondragstart="onDragStart(event, 'slider')" title="Slider: Click or drag onto canvas to add a slider bar. Use it for selecting numeric values like volume or brightness (win.add_slider)">
 						<span class="palette-icon">🎚️</span>
 						<span>Slider</span>
 					</div>
-					<div class="palette-item" draggable="true" onclick="spawnControl('mode')" ondragstart="onDragStart(event, 'mode')" title="Mode Toggle: Theme/Mode toggle button (win.add_mode_control)">
+					<div class="palette-item" draggable="true" onclick="spawnControl('mode')" ondragstart="onDragStart(event, 'mode')" title="Mode Toggle: Click or drag onto canvas to add a theme switch button. Use it to toggle Light and Dark modes (win.add_mode_control)">
 						<span class="palette-icon">🌓</span>
 						<span>Mode Toggle</span>
 					</div>
@@ -958,31 +958,31 @@
 			<div class="palette-category">
 				<div class="palette-cat-header">📊 Pickers & Displays</div>
 				<div class="palette-grid">
-					<div class="palette-item" draggable="true" onclick="spawnControl('number')" ondragstart="onDragStart(event, 'number')" title="Number: Numeric stepper input (win.add_number)">
+					<div class="palette-item" draggable="true" onclick="spawnControl('number')" ondragstart="onDragStart(event, 'number')" title="Number: Click or drag onto canvas to add a number box with step arrows. Use it for numeric counts or quantities (win.add_number)">
 						<span class="palette-icon">🔢</span>
 						<span>Number</span>
 					</div>
-					<div class="palette-item" draggable="true" onclick="spawnControl('date')" ondragstart="onDragStart(event, 'date')" title="Date Picker: Calendar date selection picker (win.add_date_picker)">
+					<div class="palette-item" draggable="true" onclick="spawnControl('date')" ondragstart="onDragStart(event, 'date')" title="Date Picker: Click or drag onto canvas to add a date selector. Use it to pick dates from a popup calendar (win.add_date_picker)">
 						<span class="palette-icon">📅</span>
 						<span>Date Picker</span>
 					</div>
-					<div class="palette-item" draggable="true" onclick="spawnControl('color')" ondragstart="onDragStart(event, 'color')" title="Color Well: Native color picker swatch (win.add_color_well)">
+					<div class="palette-item" draggable="true" onclick="spawnControl('color')" ondragstart="onDragStart(event, 'color')" title="Color Well: Click or drag onto canvas to add a color swatch. Use it to pick custom colors from a palette (win.add_color_well)">
 						<span class="palette-icon">🎨</span>
 						<span>Color Well</span>
 					</div>
-					<div class="palette-item" draggable="true" onclick="spawnControl('progress')" ondragstart="onDragStart(event, 'progress')" title="Progress: Linear progress indicator bar (win.add_progress_indicator)">
+					<div class="palette-item" draggable="true" onclick="spawnControl('progress')" ondragstart="onDragStart(event, 'progress')" title="Progress: Click or drag onto canvas to add a progress bar. Use it to show task completion percentage (win.add_progress_indicator)">
 						<span class="palette-icon">📊</span>
 						<span>Progress</span>
 					</div>
-					<div class="palette-item" draggable="true" onclick="spawnControl('image')" ondragstart="onDragStart(event, 'image')" title="Image: Static image display frame (win.add_image)">
+					<div class="palette-item" draggable="true" onclick="spawnControl('image')" ondragstart="onDragStart(event, 'image')" title="Image: Click or drag onto canvas to add an image display frame. Use it for pictures, avatars, or logos (win.add_image)">
 						<span class="palette-icon">🖼️</span>
 						<span>Image</span>
 					</div>
-					<div class="palette-item" draggable="true" onclick="spawnControl('badge')" ondragstart="onDragStart(event, 'badge')" title="Badge: Status pill badge label (win.add_label)">
+					<div class="palette-item" draggable="true" onclick="spawnControl('badge')" ondragstart="onDragStart(event, 'badge')" title="Badge: Click or drag onto canvas to add a status pill tag. Use it to display labels like Active or Pending (win.add_label)">
 						<span class="palette-icon">🏷️</span>
 						<span>Badge</span>
 					</div>
-					<div class="palette-item" draggable="true" onclick="spawnControl('search')" ondragstart="onDragStart(event, 'search')" title="Search: Search input with magnifying glass (win.add_search_field)">
+					<div class="palette-item" draggable="true" onclick="spawnControl('search')" ondragstart="onDragStart(event, 'search')" title="Search: Click or drag onto canvas to add a search input box. Use it to filter items or search records (win.add_search_field)">
 						<span class="palette-icon">🔍</span>
 						<span>Search</span>
 					</div>
@@ -993,43 +993,43 @@
 			<div class="palette-category">
 				<div class="palette-cat-header">📝 Labeled Form Controls</div>
 				<div class="palette-grid">
-					<div class="palette-item" draggable="true" onclick="spawnControl('form_field')" ondragstart="onDragStart(event, 'form_field')" title="Form Field: Integrated Labeled Input field (win.add_form_field)">
+					<div class="palette-item" draggable="true" onclick="spawnControl('form_field')" ondragstart="onDragStart(event, 'form_field')" title="Form Field: Click or drag onto canvas to add a text input field complete with a title label above it (win.add_form_field)">
 						<span class="palette-icon">✏️</span>
 						<span>Form Field</span>
 					</div>
-					<div class="palette-item" draggable="true" onclick="spawnControl('form_textarea')" ondragstart="onDragStart(event, 'form_textarea')" title="Form Textarea: Integrated Labeled Multi-line Textarea (win.add_form_textarea)">
+					<div class="palette-item" draggable="true" onclick="spawnControl('form_textarea')" ondragstart="onDragStart(event, 'form_textarea')" title="Form Textarea: Click or drag onto canvas to add a multi-line text box with a title label above it (win.add_form_textarea)">
 						<span class="palette-icon">📝</span>
 						<span>Form Textarea</span>
 					</div>
-					<div class="palette-item" draggable="true" onclick="spawnControl('form_password')" ondragstart="onDragStart(event, 'form_password')" title="Form Password: Integrated Labeled Masked Password (win.add_form_password)">
+					<div class="palette-item" draggable="true" onclick="spawnControl('form_password')" ondragstart="onDragStart(event, 'form_password')" title="Form Password: Click or drag onto canvas to add a password input field with a title label above it (win.add_form_password)">
 						<span class="palette-icon">🔒</span>
 						<span>Form Password</span>
 					</div>
-					<div class="palette-item" draggable="true" onclick="spawnControl('form_number')" ondragstart="onDragStart(event, 'form_number')" title="Form Number: Integrated Labeled Numeric Stepper (win.add_form_number)">
+					<div class="palette-item" draggable="true" onclick="spawnControl('form_number')" ondragstart="onDragStart(event, 'form_number')" title="Form Number: Click or drag onto canvas to add a numeric input field with a title label above it (win.add_form_number)">
 						<span class="palette-icon">🔢</span>
 						<span>Form Number</span>
 					</div>
-					<div class="palette-item" draggable="true" onclick="spawnControl('form_slider')" ondragstart="onDragStart(event, 'form_slider')" title="Form Slider: Integrated Labeled Range Slider (win.add_form_slider)">
+					<div class="palette-item" draggable="true" onclick="spawnControl('form_slider')" ondragstart="onDragStart(event, 'form_slider')" title="Form Slider: Click or drag onto canvas to add a range slider bar with a title label above it (win.add_form_slider)">
 						<span class="palette-icon">🎚️</span>
 						<span>Form Slider</span>
 					</div>
-					<div class="palette-item" draggable="true" onclick="spawnControl('form_dropdown')" ondragstart="onDragStart(event, 'form_dropdown')" title="Form Dropdown: Integrated Labeled Dropdown Select (win.add_form_dropdown)">
+					<div class="palette-item" draggable="true" onclick="spawnControl('form_dropdown')" ondragstart="onDragStart(event, 'form_dropdown')" title="Form Dropdown: Click or drag onto canvas to add a dropdown select list with a title label above it (win.add_form_dropdown)">
 						<span class="palette-icon">🔽</span>
 						<span>Form Dropdown</span>
 					</div>
-					<div class="palette-item" draggable="true" onclick="spawnControl('form_date')" ondragstart="onDragStart(event, 'form_date')" title="Form Date: Integrated Labeled Date Picker (win.add_form_date_picker)">
+					<div class="palette-item" draggable="true" onclick="spawnControl('form_date')" ondragstart="onDragStart(event, 'form_date')" title="Form Date: Click or drag onto canvas to add a date picker calendar with a title label above it (win.add_form_date_picker)">
 						<span class="palette-icon">📅</span>
 						<span>Form Date</span>
 					</div>
-					<div class="palette-item" draggable="true" onclick="spawnControl('form_progress')" ondragstart="onDragStart(event, 'form_progress')" title="Form Progress: Integrated Labeled Progress Bar (win.add_form_progress)">
+					<div class="palette-item" draggable="true" onclick="spawnControl('form_progress')" ondragstart="onDragStart(event, 'form_progress')" title="Form Progress: Click or drag onto canvas to add a progress indicator bar with a title label above it (win.add_form_progress)">
 						<span class="palette-icon">📊</span>
 						<span>Form Progress</span>
 					</div>
-					<div class="palette-item" draggable="true" onclick="spawnControl('form_switch')" ondragstart="onDragStart(event, 'form_switch')" title="Form Switch: Integrated Labeled Toggle Switch (win.add_form_switch)">
+					<div class="palette-item" draggable="true" onclick="spawnControl('form_switch')" ondragstart="onDragStart(event, 'form_switch')" title="Form Switch: Click or drag onto canvas to add a toggle switch with a title label above it (win.add_form_switch)">
 						<span class="palette-icon">🔀</span>
 						<span>Form Switch</span>
 					</div>
-					<div class="palette-item" draggable="true" onclick="spawnControl('form_link')" ondragstart="onDragStart(event, 'form_link')" title="Form Link: Integrated Labeled Hyperlink Button (win.add_form_link)">
+					<div class="palette-item" draggable="true" onclick="spawnControl('form_link')" ondragstart="onDragStart(event, 'form_link')" title="Form Link: Click or drag onto canvas to add a web link button with a title label above it (win.add_form_link)">
 						<span class="palette-icon">🔗</span>
 						<span>Form Link</span>
 					</div>
@@ -1040,47 +1040,47 @@
 			<div class="palette-category">
 				<div class="palette-cat-header">⚡ Gauges, Cards & Widgets</div>
 				<div class="palette-grid">
-					<div class="palette-item" draggable="true" onclick="spawnControl('rating')" ondragstart="onDragStart(event, 'rating')" title="Star Rating: 5-Star interactive rating control (win.add_rating)">
+					<div class="palette-item" draggable="true" onclick="spawnControl('rating')" ondragstart="onDragStart(event, 'rating')" title="Star Rating: Click or drag onto canvas to add an interactive 5-star rating control for review scores (win.add_rating)">
 						<span class="palette-icon">⭐</span>
 						<span>Star Rating</span>
 					</div>
-					<div class="palette-item" draggable="true" onclick="spawnControl('stepper')" ondragstart="onDragStart(event, 'stepper')" title="Stepper: Compact numeric counter stepper (win.add_stepper)">
+					<div class="palette-item" draggable="true" onclick="spawnControl('stepper')" ondragstart="onDragStart(event, 'stepper')" title="Stepper: Click or drag onto canvas to add plus and minus buttons for stepping number values (win.add_stepper)">
 						<span class="palette-icon">➕</span>
 						<span>Stepper</span>
 					</div>
-					<div class="palette-item" draggable="true" onclick="spawnControl('tag')" ondragstart="onDragStart(event, 'tag')" title="Tag Field: Tokenized chip tag input field (win.add_token_field)">
+					<div class="palette-item" draggable="true" onclick="spawnControl('tag')" ondragstart="onDragStart(event, 'tag')" title="Tag Field: Click or drag onto canvas to add a chip tag field for entering multiple keyword tags (win.add_token_field)">
 						<span class="palette-icon">🏷️</span>
 						<span>Tag Field</span>
 					</div>
-					<div class="palette-item" draggable="true" onclick="spawnControl('path')" ondragstart="onDragStart(event, 'path')" title="Path Bar: macOS breadcrumb file path bar (win.add_path_control)">
+					<div class="palette-item" draggable="true" onclick="spawnControl('path')" ondragstart="onDragStart(event, 'path')" title="Path Bar: Click or drag onto canvas to add a breadcrumb path bar showing file directory locations (win.add_path_control)">
 						<span class="palette-icon">📁</span>
 						<span>Path Bar</span>
 					</div>
-					<div class="palette-item" draggable="true" onclick="spawnControl('drop_zone')" ondragstart="onDragStart(event, 'drop_zone')" title="Drop Zone: Drag & drop file target area (win.add_drop_zone)">
+					<div class="palette-item" draggable="true" onclick="spawnControl('drop_zone')" ondragstart="onDragStart(event, 'drop_zone')" title="Drop Zone: Click or drag onto canvas to add a file drop target area for user file uploads (win.add_drop_zone)">
 						<span class="palette-icon">📥</span>
 						<span>Drop Zone</span>
 					</div>
-					<div class="palette-item" draggable="true" onclick="spawnControl('circular_progress')" ondragstart="onDragStart(event, 'circular_progress')" title="Circular Progress: Radial percentage dial gauge (win.add_circular_progress)">
+					<div class="palette-item" draggable="true" onclick="spawnControl('circular_progress')" ondragstart="onDragStart(event, 'circular_progress')" title="Circular Progress: Click or drag onto canvas to add a circular dial showing percentage completion (win.add_circular_progress)">
 						<span class="palette-icon">⭕</span>
 						<span>Circular Progress</span>
 					</div>
-					<div class="palette-item" draggable="true" onclick="spawnControl('metric_meter')" ondragstart="onDragStart(event, 'metric_meter')" title="Metric Meter: Telemetry percentage bar gauge (win.add_metric_meter)">
+					<div class="palette-item" draggable="true" onclick="spawnControl('metric_meter')" ondragstart="onDragStart(event, 'metric_meter')" title="Metric Meter: Click or drag onto canvas to add a telemetry meter gauge for tracking system stats (win.add_metric_meter)">
 						<span class="palette-icon">🎛️</span>
 						<span>Metric Meter</span>
 					</div>
-					<div class="palette-item" draggable="true" onclick="spawnControl('status_indicator')" ondragstart="onDragStart(event, 'status_indicator')" title="Status Light: System/Server status indicator pill (win.add_status_indicator)">
+					<div class="palette-item" draggable="true" onclick="spawnControl('status_indicator')" ondragstart="onDragStart(event, 'status_indicator')" title="Status Light: Click or drag onto canvas to add a colored status dot indicating if a system is online or offline (win.add_status_indicator)">
 						<span class="palette-icon">🟢</span>
 						<span>Status Light</span>
 					</div>
-					<div class="palette-item" draggable="true" onclick="spawnControl('metric_card')" ondragstart="onDragStart(event, 'metric_card')" title="Metric Card: KPI Stat Card with trend badge (win.add_metric_card)">
+					<div class="palette-item" draggable="true" onclick="spawnControl('metric_card')" ondragstart="onDragStart(event, 'metric_card')" title="Metric Card: Click or drag onto canvas to add a KPI stat card with big numbers and trend indicators (win.add_metric_card)">
 						<span class="palette-icon">📈</span>
 						<span>Metric Card</span>
 					</div>
-					<div class="palette-item" draggable="true" onclick="spawnControl('alert_banner')" ondragstart="onDragStart(event, 'alert_banner')" title="Alert Banner: Callout notification alert strip (win.add_alert_banner)">
+					<div class="palette-item" draggable="true" onclick="spawnControl('alert_banner')" ondragstart="onDragStart(event, 'alert_banner')" title="Alert Banner: Click or drag onto canvas to add a notice bar for system alerts or messages (win.add_alert_banner)">
 						<span class="palette-icon">ℹ️</span>
 						<span>Alert Banner</span>
 					</div>
-					<div class="palette-item" draggable="true" onclick="spawnControl('code_view')" ondragstart="onDragStart(event, 'code_view')" title="Code View: Monospaced syntax highlighted code block (win.add_code_view)">
+					<div class="palette-item" draggable="true" onclick="spawnControl('code_view')" ondragstart="onDragStart(event, 'code_view')" title="Code View: Click or drag onto canvas to add a formatted box for displaying monospaced source code snippets (win.add_code_view)">
 						<span class="palette-icon">💻</span>
 						<span>Code View</span>
 					</div>
@@ -1091,15 +1091,15 @@
 			<div class="palette-category">
 				<div class="palette-cat-header">📦 Containers & Layout</div>
 				<div class="palette-grid">
-					<div class="palette-item" draggable="true" onclick="spawnControl('table')" ondragstart="onDragStart(event, 'table')" title="Data Grid: Multi-column data table grid (win.add_table)">
+					<div class="palette-item" draggable="true" onclick="spawnControl('table')" ondragstart="onDragStart(event, 'table')" title="Data Grid: Click or drag onto canvas to add a multi-column data table for rows of information (win.add_table)">
 						<span class="palette-icon">📋</span>
 						<span>Data Grid</span>
 					</div>
-					<div class="palette-item" draggable="true" onclick="spawnControl('panel')" ondragstart="onDragStart(event, 'panel')" title="Panel Box: Container group box panel (win.add_heading)">
+					<div class="palette-item" draggable="true" onclick="spawnControl('panel')" ondragstart="onDragStart(event, 'panel')" title="Panel Box: Click or drag onto canvas to add a container box to group related controls together (win.add_heading)">
 						<span class="palette-icon">📦</span>
 						<span>Panel Box</span>
 					</div>
-					<div class="palette-item" draggable="true" onclick="spawnControl('divider')" ondragstart="onDragStart(event, 'divider')" title="Separator: Horizontal line layout divider (win.add_vertical_spacer)">
+					<div class="palette-item" draggable="true" onclick="spawnControl('divider')" ondragstart="onDragStart(event, 'divider')" title="Separator: Click or drag onto canvas to add a line divider for separating form sections (win.add_vertical_spacer)">
 						<span class="palette-icon">➖</span>
 						<span>Separator</span>
 					</div>
@@ -1112,29 +1112,29 @@
 			<div class="canvas-toolbar">
 				<span id="canvasStats">Form: 840x540 | Controls: 0</span>
 				<div class="quick-align-bar">
-					<button class="btn" onclick="selectAllControls()">☑️ Select All</button>
-					<button class="btn" onclick="zoomCanvas(0.1)">🔍 In</button>
-					<button class="btn" onclick="zoomCanvas(-0.1)">🔍 Out</button>
-					<button class="btn" onclick="resetZoom()">🔍 100%</button>
-					<button class="btn" onclick="autoArrangeColumns(2)">📊 2-Cols</button>
-					<button class="btn" onclick="autoArrangeColumns(3)">📊 3-Cols</button>
-					<button class="btn" onclick="alignControls('left')">⬅️ Left</button>
-					<button class="btn" onclick="alignControls('center')">↔️ Center</button>
-					<button class="btn" onclick="alignControls('right')">➡️ Right</button>
-					<button class="btn" onclick="alignControls('top')">⬆️ Top</button>
-					<button class="btn" onclick="alignControls('middle')">↕️ Middle</button>
-					<button class="btn" onclick="alignControls('bottom')">⬇️ Bottom</button>
-					<button class="btn" onclick="distributeControls('horiz')">⬌ Dist H</button>
-					<button class="btn" onclick="distributeControls('vert')">⬍ Dist V</button>
-					<button class="btn" onclick="equalizeSize('width', 'first')">📐 Eq W</button>
-					<button class="btn" onclick="equalizeSize('height', 'first')">📐 Eq H</button>
-					<button class="btn" onclick="equalizeSize('width', 'widest')" title="Make all selected controls match the widest control (MS Access style)">↔️ Widest</button>
-					<button class="btn" onclick="equalizeSize('width', 'narrowest')" title="Make all selected controls match the narrowest control">↔️ Narrowest</button>
-					<button class="btn" onclick="equalizeSize('height', 'tallest')" title="Make all selected controls match the tallest control (MS Access style)">↕️ Tallest</button>
-					<button class="btn" onclick="equalizeSize('height', 'shortest')" title="Make all selected controls match the shortest control">↕️ Shortest</button>
-					<button class="btn" onclick="centerInForm('horiz')" title="Center selected control(s) horizontally inside form window">🎯 Center H Form</button>
-					<button class="btn" onclick="centerInForm('vert')" title="Center selected control(s) vertically inside form window">🎯 Center V Form</button>
-					<button class="btn" onclick="fitControlToContent()" title="Auto-size control to fit font size and text length">📏 Fit Text Size</button>
+					<button class="btn" onclick="selectAllControls()" title="Click to select all controls on the form canvas (Cmd+A / Ctrl+A)">☑️ Select All</button>
+					<button class="btn" onclick="zoomCanvas(0.1)" title="Click to zoom in on the canvas workspace">🔍 In</button>
+					<button class="btn" onclick="zoomCanvas(-0.1)" title="Click to zoom out on the canvas workspace">🔍 Out</button>
+					<button class="btn" onclick="resetZoom()" title="Click to reset canvas zoom back to 100% normal size">🔍 100%</button>
+					<button class="btn" onclick="autoArrangeColumns(2)" title="Click to automatically arrange controls into 2 balanced columns">📊 2-Cols</button>
+					<button class="btn" onclick="autoArrangeColumns(3)" title="Click to automatically arrange controls into 3 balanced columns">📊 3-Cols</button>
+					<button class="btn" onclick="alignControls('left')" title="Click to align left edges of all selected controls">⬅️ Left</button>
+					<button class="btn" onclick="alignControls('center')" title="Click to align horizontal center points of all selected controls">↔️ Center</button>
+					<button class="btn" onclick="alignControls('right')" title="Click to align right edges of all selected controls">➡️ Right</button>
+					<button class="btn" onclick="alignControls('top')" title="Click to align top edges of all selected controls to the top-most control">⬆️ Top</button>
+					<button class="btn" onclick="alignControls('middle')" title="Click to align vertical middle points of all selected controls">↕️ Middle</button>
+					<button class="btn" onclick="alignControls('bottom')" title="Click to align bottom edges of all selected controls to the bottom-most control">⬇️ Bottom</button>
+					<button class="btn" onclick="distributeControls('horiz')" title="Click to space selected controls evenly horizontally">⬌ Dist H</button>
+					<button class="btn" onclick="distributeControls('vert')" title="Click to space selected controls evenly vertically">⬍ Dist V</button>
+					<button class="btn" onclick="equalizeSize('width', 'first')" title="Click to make all selected controls equal width to the first control">📐 Eq W</button>
+					<button class="btn" onclick="equalizeSize('height', 'first')" title="Click to make all selected controls equal height to the first control">📐 Eq H</button>
+					<button class="btn" onclick="equalizeSize('width', 'widest')" title="Click to make all selected controls match the width of the widest control">↔️ Widest</button>
+					<button class="btn" onclick="equalizeSize('width', 'narrowest')" title="Click to make all selected controls match the width of the narrowest control">↔️ Narrowest</button>
+					<button class="btn" onclick="equalizeSize('height', 'tallest')" title="Click to make all selected controls match the height of the tallest control">↕️ Tallest</button>
+					<button class="btn" onclick="equalizeSize('height', 'shortest')" title="Click to make all selected controls match the height of the shortest control">↕️ Shortest</button>
+					<button class="btn" onclick="centerInForm('horiz')" title="Click to center selected control(s) horizontally inside form window">🎯 Center H Form</button>
+					<button class="btn" onclick="centerInForm('vert')" title="Click to center selected control(s) vertically inside form window">🎯 Center V Form</button>
+					<button class="btn" onclick="fitControlToContent()" title="Click to auto-fit control dimensions to fit its font size and caption text">📏 Fit Text Size</button>
 				</div>
 			</div>
 
@@ -1332,20 +1332,20 @@
 					<div class="prop-row">
 						<span class="prop-label">Quick Style Themes</span>
 						<div style="display:flex; gap:4px; flex-wrap:wrap;">
-							<button class="btn" style="padding:2px 6px; font-size:9px; background:#0284c7; color:#fff;" onclick="applyQuickStylePreset('primary')">Primary</button>
-							<button class="btn" style="padding:2px 6px; font-size:9px; background:#10b981; color:#fff;" onclick="applyQuickStylePreset('success')">Success</button>
-							<button class="btn" style="padding:2px 6px; font-size:9px; background:#f59e0b; color:#fff;" onclick="applyQuickStylePreset('warning')">Warning</button>
-							<button class="btn" style="padding:2px 6px; font-size:9px; background:#ef4444; color:#fff;" onclick="applyQuickStylePreset('danger')">Danger</button>
-							<button class="btn" style="padding:2px 6px; font-size:9px; background:#8b5cf6; color:#fff;" onclick="applyQuickStylePreset('violet')">Violet</button>
-							<button class="btn" style="padding:2px 6px; font-size:9px; background:#334155; color:#fff;" onclick="applyQuickStylePreset('slate')">Slate</button>
+							<button class="btn" style="padding:2px 6px; font-size:9px; background:#0284c7; color:#fff;" onclick="applyQuickStylePreset('primary')" title="Click to apply Primary Blue color theme to selected control">Primary</button>
+							<button class="btn" style="padding:2px 6px; font-size:9px; background:#10b981; color:#fff;" onclick="applyQuickStylePreset('success')" title="Click to apply Success Green color theme to selected control">Success</button>
+							<button class="btn" style="padding:2px 6px; font-size:9px; background:#f59e0b; color:#fff;" onclick="applyQuickStylePreset('warning')" title="Click to apply Warning Amber color theme to selected control">Warning</button>
+							<button class="btn" style="padding:2px 6px; font-size:9px; background:#ef4444; color:#fff;" onclick="applyQuickStylePreset('danger')" title="Click to apply Danger Red color theme to selected control">Danger</button>
+							<button class="btn" style="padding:2px 6px; font-size:9px; background:#8b5cf6; color:#fff;" onclick="applyQuickStylePreset('violet')" title="Click to apply Violet Purple color theme to selected control">Violet</button>
+							<button class="btn" style="padding:2px 6px; font-size:9px; background:#334155; color:#fff;" onclick="applyQuickStylePreset('slate')" title="Click to apply Slate Gray color theme to selected control">Slate</button>
 						</div>
 					</div>
 
 					<div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; margin-top:10px;">
-						<button class="btn" onclick="bringToFront()">🔝 Bring Front</button>
-						<button class="btn" onclick="sendToBack()">🔙 Send Back</button>
-						<button class="btn" onclick="toggleLockSelected()">🔒 Lock / Unlock</button>
-						<button class="btn" style="background:#ef4444; color:white;" onclick="deleteSelectedControl()">🗑️ Delete</button>
+						<button class="btn" onclick="bringToFront()" title="Click to bring selected control in front of overlapping controls">🔝 Bring Front</button>
+						<button class="btn" onclick="sendToBack()" title="Click to move selected control behind overlapping controls">🔙 Send Back</button>
+						<button class="btn" onclick="toggleLockSelected()" title="Click to lock or unlock selected control to prevent accidental movement">🔒 Lock / Unlock</button>
+						<button class="btn" style="background:#ef4444; color:white;" onclick="deleteSelectedControl()" title="Click to permanently delete selected control from canvas (Delete / Backspace)">🗑️ Delete</button>
 					</div>
 				</div>
 			</div>
@@ -1386,7 +1386,7 @@
 					<input type="text" class="prop-input" id="evtOnHoverExit" placeholder="e.g. on_btn_hover_exit" oninput="updateEventPlaceholder('onHoverExit', this.value)">
 				</div>
 
-				<button class="btn btn-primary" style="width: 100%; margin-top: 10px;" onclick="autoGenerateEvents()">⚡ Auto-Generate Event Names</button>
+				<button class="btn btn-primary" style="width: 100%; margin-top: 10px;" onclick="autoGenerateEvents()" title="Click to automatically generate standard event handler function names for form controls">⚡ Auto-Generate Event Names</button>
 			</div>
 
 			<!-- V Code Export Tab -->
@@ -1441,8 +1441,8 @@
 			<span style="font-weight:700; color:var(--accent);">📥 Import FormSpec JSON Layout</span>
 			<textarea class="code-area" id="importJsonText" placeholder="Paste FormSpec JSON structure here..." style="height:200px;"></textarea>
 			<div style="display:flex; justify-content:flex-end; gap:8px;">
-				<button class="btn" onclick="hideImportModal()">Cancel</button>
-				<button class="btn btn-primary" onclick="processImportJSON()">Load Layout</button>
+				<button class="btn" onclick="hideImportModal()" title="Click to cancel and close import dialog">Cancel</button>
+				<button class="btn btn-primary" onclick="processImportJSON()" title="Click to parse and load the pasted JSON layout into the designer">Load Layout</button>
 			</div>
 		</div>
 	</div>
@@ -1466,7 +1466,7 @@
 				<tr><td><span class="hotkey-key">Escape</span></td><td>Deselect all controls & close modals</td></tr>
 			</table>
 			<div style="display:flex; justify-content:flex-end;">
-				<button class="btn btn-primary" onclick="hideHotkeysModal()">Got it!</button>
+				<button class="btn btn-primary" onclick="hideHotkeysModal()" title="Click to close keyboard shortcuts dialog">Got it!</button>
 			</div>
 		</div>
 	</div>
@@ -1477,8 +1477,8 @@
 			<span style="font-weight:700; color:var(--accent); font-size:14px;">🔍 Form Layout Audit & Health Diagnostics</span>
 			<div id="diagnosticsSummary" style="font-size: 11px; max-height: 280px; overflow-y: auto; background: var(--bg-main); padding: 10px; border-radius: 6px; border: 1px solid var(--border-color); line-height: 1.5;"></div>
 			<div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
-				<button class="btn btn-success" onclick="autoFixLayoutIssues()">⚡ Auto-Fix Overlaps & Boundaries</button>
-				<button class="btn btn-primary" onclick="hideDiagnosticsModal()">Close</button>
+				<button class="btn btn-success" onclick="autoFixLayoutIssues()" title="Click to automatically resolve overlapping controls and layout boundary issues">⚡ Auto-Fix Overlaps & Boundaries</button>
+				<button class="btn btn-primary" onclick="hideDiagnosticsModal()" title="Click to close layout audit window">Close</button>
 			</div>
 		</div>
 	</div>
