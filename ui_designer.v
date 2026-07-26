@@ -49,7 +49,6 @@ fn main() {
 	})
 
 	win.on_toolbar_click('tb_run', fn [state] (mut w simplegui.SimpleWindow) {
-		w.toast('Launching live preview: ${state.spec.title}')
 		w.set_status('Launching live form preview for ${state.spec.title}.')
 		launch_preview_window(state.spec)
 	})
@@ -61,7 +60,6 @@ fn main() {
 			if spec.controls.len > 0 || spec.title.len > 0 {
 				state.spec = spec
 			}
-			w.toast('Launching live preview: ${state.spec.title}')
 			w.set_status('Launching live form preview for ${state.spec.title}.')
 			launch_preview_window(state.spec)
 		} else if value.starts_with('spec_update:') {
@@ -71,7 +69,6 @@ fn main() {
 				state.spec = spec
 			}
 		} else if value == 'run_form' {
-			w.toast('Launching live preview: ${state.spec.title}')
 			w.set_status('Launching live form preview for ${state.spec.title}.')
 			launch_preview_window(state.spec)
 		} else if value.starts_with('template:') {
@@ -111,7 +108,6 @@ fn main() {
 	capture_path := os.getenv('SIMPLEGUI_CAPTURE')
 	if capture_path != '' {
 		win.after(800, fn [state] (mut w simplegui.SimpleWindow) {
-			w.toast('Launching live preview for screenshot...')
 			launch_preview_window(state.spec)
 		})
 	}
@@ -418,7 +414,6 @@ fn launch_preview_window(spec simplegui.FormSpec) {
 				ctrl_text := c.text
 				h_name := h.trim_space()
 				prev_win.on_click(ctrl_id, fn [ctrl_text, h_name] (mut w simplegui.SimpleWindow) {
-					w.toast('Clicked: ${ctrl_text}')
 					w.set_status('Executed RAD handler `${h_name}` for ${ctrl_text}')
 				})
 			}
@@ -426,7 +421,6 @@ fn launch_preview_window(spec simplegui.FormSpec) {
 			btn_id := c.id
 			btn_text := c.text
 			prev_win.on_click(btn_id, fn [btn_text] (mut w simplegui.SimpleWindow) {
-				w.toast('Clicked: ${btn_text}')
 				w.set_status('Executed default click handler for: ${btn_text}')
 			})
 		} else if c.control_type == 'radio' {
@@ -442,7 +436,6 @@ fn launch_preview_window(spec simplegui.FormSpec) {
 				for r_id in all_radios {
 					w.set_checked(r_id, r_id == radio_id)
 				}
-				w.toast('Selected radio: ${radio_text}')
 				w.set_status('Radio option selected: ${radio_text}')
 			})
 		}
@@ -463,7 +456,6 @@ fn launch_preview_window(spec simplegui.FormSpec) {
 				h_name := h.trim_space()
 				prev_win.on_hover(ctrl_id, fn [ctrl_text, h_name] (mut w simplegui.SimpleWindow) {
 					w.set_status('Hovered: ${ctrl_text} (Handler: `${h_name}`)')
-					w.toast('Hover enter: ${ctrl_text}')
 				})
 			}
 		}
