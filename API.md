@@ -1369,9 +1369,17 @@ For common forms, these helpers reduce boilerplate and keep the API friendly for
 - `win.validate_struct[T]() bool` automatically validates form controls against struct field attributes (e.g. `@[required]`, `@[min_len: X]`, `@[max_len: Y]`, `@[email]`, `@[url]`, `@[alphanumeric]`, `@[min: A]`, `@[max: B]`) and displays visual inline errors on the window. Returns `true` if valid.
 
 ```v
-win.add_form_field('Name:', 'name', 'Ada')
-win.add_form_password('Password:', 'pwd', '')
-win.add_form_dropdown('Country:', 'country', ['USA', 'Canada', 'UK'], 'USA')
+// Form helpers (add_form_* / add_labeled_*)
+win.add_labeled_input('Name:', 'name', 'Ada Lovelace')
+win.add_labeled_textarea('Bio:', 'bio', 'Developer & Mathematician')
+win.add_labeled_password('Password:', 'pwd', '')
+win.add_labeled_checkbox('Subscribe:', 'newsletter', 'Weekly Digest', true)
+win.add_labeled_switch('Notifications:', 'notify', 'Enable Alerts', true)
+win.add_labeled_slider('Volume:', 'vol', 75)
+win.add_labeled_dropdown('Country:', 'country', ['USA', 'Canada', 'UK'], 'USA')
+win.add_labeled_number('Age:', 'age', 30)
+win.add_labeled_date_picker('Date:', 'event_date', '2026-07-26')
+win.add_labeled_progress('Sync Status:', 'sync_bar', 100)
 ```
 
 ### Nameless default control helpers
@@ -4499,16 +4507,30 @@ win.load_values_from_file('settings.json')!
 
 One-call label + control rows (no `begin_row`/`end_row` needed):
 
+- `win.add_labeled_input(label, name, value)` / `win.add_labeled_field(label, name, value)`
+- `win.add_labeled_textarea(label, name, value)`
+- `win.add_labeled_password(label, name, value)`
+- `win.add_labeled_checkbox(label, name, chk_text, checked)`
+- `win.add_labeled_switch(label, name, switch_label, checked)`
 - `win.add_labeled_slider(label, name, value)`
 - `win.add_labeled_dropdown(label, name, items, selected)`
 - `win.add_labeled_number(label, name, value)`
 - `win.add_labeled_date_picker(label, name, date)`
 - `win.add_labeled_progress(label, name, value)`
+- `win.add_labeled_file_picker(label, name, initial_path, button_title, folder_only)`
 
 ```v
+win.add_labeled_input('Username:', 'username', 'ada_lovelace')
+win.add_labeled_textarea('Bio:', 'bio_text', 'Developer & Mathematician')
+win.add_labeled_password('Password:', 'pwd_field', 'secret123')
+win.add_labeled_checkbox('Subscribe:', 'newsletter_chk', 'Receive weekly updates', true)
+win.add_labeled_switch('Notifications:', 'notify_switch', 'Enable Push Alerts', true)
 win.add_labeled_slider('Volume:', 'volume', 80)
-win.add_labeled_dropdown('Language:', 'lang', ['English', 'Spanish'], 'English')
+win.add_labeled_dropdown('Language:', 'lang', ['English', 'Spanish', 'French'], 'English')
 win.add_labeled_number('Age:', 'age', 30)
+win.add_labeled_date_picker('Birth Date:', 'dob', '1995-05-15')
+win.add_labeled_progress('Upload Progress:', 'upload_bar', 75)
+win.add_labeled_file_picker('Config File:', 'cfg_path', '/etc/app.conf', 'Browse...', false)
 ```
 
 ### Timer & Event Sugar

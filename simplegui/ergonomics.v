@@ -610,6 +610,40 @@ pub fn (win &SimpleWindow) load_values_from_file(path string) ! {
 // 6. Labeled Control Rows
 // ==========================================
 
+// add_labeled_input creates a label and text field side-by-side in one row.
+pub fn (win &SimpleWindow) add_labeled_input(label string, name string, value string) &SimpleWindow {
+	return win.add_form_field(label, name, value)
+}
+
+// add_labeled_field is an alias for add_labeled_input.
+pub fn (win &SimpleWindow) add_labeled_field(label string, name string, value string) &SimpleWindow {
+	return win.add_form_field(label, name, value)
+}
+
+// add_labeled_textarea creates a label and textarea side-by-side in one row.
+pub fn (win &SimpleWindow) add_labeled_textarea(label string, name string, value string) &SimpleWindow {
+	return win.add_form_textarea(label, name, value)
+}
+
+// add_labeled_password creates a label and password field side-by-side in one row.
+pub fn (win &SimpleWindow) add_labeled_password(label string, name string, value string) &SimpleWindow {
+	return win.add_form_password(label, name, value)
+}
+
+// add_labeled_checkbox creates a label and checkbox side-by-side in one row.
+pub fn (win &SimpleWindow) add_labeled_checkbox(label string, name string, chk_text string, checked bool) &SimpleWindow {
+	win.begin_row('row_' + name)
+	win.add_label(name + '_label', label)
+	win.add_checkbox(name, chk_text, checked)
+	win.end_row()
+	return win
+}
+
+// add_labeled_switch creates a label and toggle switch side-by-side in one row.
+pub fn (win &SimpleWindow) add_labeled_switch(label string, name string, switch_label string, checked bool) &SimpleWindow {
+	return win.add_form_switch(label, name, switch_label, checked)
+}
+
 // add_labeled_slider creates a label and slider side-by-side in one row.
 pub fn (win &SimpleWindow) add_labeled_slider(label string, name string, value int) &SimpleWindow {
 	win.begin_row('row_' + name)
