@@ -2239,10 +2239,12 @@ file_path := win.select_file()
 
 ### `win.select_file_with_extensions(extensions string) string`
 
-Launches the native macOS file picker panel filtered by specific file extension constraints (e.g. `'png,txt,pdf'`), returning the chosen file path (or empty if cancelled).
+Launches the native macOS file picker panel filtered by specific file extension constraints (e.g. `'png,txt,pdf'`), returning the chosen file path (or empty if cancelled). Also available as ergonomic alias `win.choose_file_ext(extensions)`.
 
 ```v
 img_path := win.select_file_with_extensions('png,jpg,jpeg')
+// Ergonomic alias:
+img_path := win.choose_file_ext('png,jpg,jpeg')
 ```
 
 ### `win.select_folder() string`
@@ -4398,6 +4400,7 @@ A set of high-level shortcuts designed to make everyday tasks one-liners. See `d
 win.info('Title', 'Message')
 if win.ask('Confirm', 'Proceed?') {
     path := win.choose_file()
+    img_path := win.choose_file_ext('png,jpg,jpeg')
 }
 ```
 
