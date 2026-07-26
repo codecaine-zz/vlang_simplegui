@@ -928,6 +928,11 @@ pub fn (mut sw SimpleStopwatch) restart() {
 	sw.sw.restart()
 }
 
+// stop stops measuring elapsed time.
+pub fn (mut sw SimpleStopwatch) stop() {
+	sw.sw.stop()
+}
+
 // start_stopwatch constructs and starts a new high-precision stopwatch.
 pub fn (win &SimpleWindow) start_stopwatch() &SimpleStopwatch {
 	return &SimpleStopwatch{

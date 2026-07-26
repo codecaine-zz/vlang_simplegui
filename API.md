@@ -3031,11 +3031,13 @@ ws.write_string('Hello Server')!
   - **Returned Type**: `SimpleStopwatch` supports:
     - `sw.elapsed_ms() int`: Returns elapsed duration in milliseconds.
     - `sw.elapsed_sec() f64`: Returns elapsed duration in seconds.
+    - `sw.stop()`: Stops measuring elapsed time.
     - `sw.restart()`: Resets and restarts the stopwatch in-place.
 
 ```v
 mut sw := win.start_stopwatch()
 // ... task ...
+sw.stop()
 elapsed_ms := sw.elapsed_ms()
 ```
 

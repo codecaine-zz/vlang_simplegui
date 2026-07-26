@@ -1185,6 +1185,10 @@ fn test_stdlib_apis() {
 	time.sleep(10 * time.millisecond)
 	assert sw.elapsed_ms() >= 10
 	assert sw.elapsed_sec() >= 0.01
+	sw.stop()
+	stopped_ms := sw.elapsed_ms()
+	time.sleep(10 * time.millisecond)
+	assert sw.elapsed_ms() == stopped_ms
 	sw.restart()
 	assert sw.elapsed_ms() < 5
 
