@@ -4915,7 +4915,7 @@ Compiles an interactive HTML5/CSS3/JavaScript visual design studio canvas contai
 - **🔒 Lock Control Position (Delphi/VB `Lock Controls`)**: Individual control position locking (`locked: true`) and global lock toggle with visual 🔒 lock badges to prevent accidental dragging or resizing.
 - **⚡ Component Selector Dropdown**: Top Object Inspector component dropdown listing all controls on form (`id: ControlType ("Caption")`) for instant selection and canvas highlighting.
 - **Object Inspector Property Search & Filter**: Live keyword search/filter bar (`filterControlProps`) to filter property fields (`color`, `width`, `text`, `hover`, etc.).
-- **Auto-Generated Event Callbacks & Code Stubs**: 1-click RAD event generator (`autoGenerateEvents`) populating `on_<id>_click`, `on_<id>_change`, `on_<id>_hover`, `on_<id>_hover_exit` and V function stubs.
+- **Auto-Generated Event Callbacks & Code Stubs**: 1-click RAD event generator (`autoGenerateEvents`) populating `on_<id>_click`, `on_<id>_change`, `on_<id>_dblclick`, `on_<id>_hover`, `on_<id>_hover_exit` and V function stubs across selected or all form controls.
 - **Undo (`Cmd+Z`) & Redo (`Cmd+Shift+Z`) Engine**: 40-step snapshot history stack for all canvas modifications.
 - **Clipboard Engine (`Cmd+C` / `Cmd+V` / `Cmd+D`)**: Full internal clipboard support for copying, pasting with offset, and duplicating single or multiple selected controls.
 - **Custom Right-Click Context Menu**: Right-click canvas controls for instant Cut, Copy, Paste, Duplicate, Delete, Lock/Unlock, Bring to Front, Send to Back, and Alignment actions.

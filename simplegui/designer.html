@@ -3902,20 +3902,23 @@
 		}
 
 		function autoGenerateEvents() {
-			if (selectedIndices.length === 0) return;
+			const targets = selectedIndices.length > 0
+				? selectedIndices.map(idx => formSpec.controls[idx])
+				: formSpec.controls;
+			if (targets.length === 0) return;
 			saveHistoryState();
-			selectedIndices.forEach(idx => {
-				const c = formSpec.controls[idx];
+			targets.forEach(c => {
 				c.event_handlers = c.event_handlers || {};
 				c.event_handlers["onClick"] = "on_" + c.id + "_click";
 				c.event_handlers["onChange"] = "on_" + c.id + "_change";
+				c.event_handlers["onDoubleClick"] = "on_" + c.id + "_dblclick";
 				c.event_handlers["onHover"] = "on_" + c.id + "_hover";
 				c.event_handlers["onHoverExit"] = "on_" + c.id + "_hover_exit";
 			});
 			populateInspector();
 			renderCode();
 			syncSpecToV();
-			document.getElementById("statusMsg").textContent = "Auto-generated click, change, and hover event placeholders.";
+			document.getElementById("statusMsg").textContent = "Auto-generated event handler method names for " + targets.length + " control(s).";
 		}
 
 		function deleteSelectedControl() {
