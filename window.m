@@ -18068,9 +18068,9 @@ int window_capture_screenshot(main__WindowInfo *info, const char *file_path) {
 
     [delegate.window displayIfNeeded];
 
-    NSWindowSharingType originalSharing = delegate.window.sharingType;
-    if (originalSharing == NSWindowSharingNone) {
-      delegate.window.sharingType = NSWindowSharingReadOnly;
+    if (delegate.window.sharingType == NSWindowSharingNone) {
+      // Content protection is active: WindowServer prevents screen capture.
+      return;
     }
 
     SG_CGWindowListCreateImageFunc pCGWindowListCreateImage = (SG_CGWindowListCreateImageFunc)dlsym(RTLD_DEFAULT, "CGWindowListCreateImage");
@@ -18083,10 +18083,6 @@ int window_capture_screenshot(main__WindowInfo *info, const char *file_path) {
           windowID,
           1 | 8
       );
-    }
-
-    if (originalSharing == NSWindowSharingNone) {
-      delegate.window.sharingType = originalSharing;
     }
 
     if (imageRef) {
