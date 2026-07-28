@@ -1,10 +1,12 @@
 # VPM Packaging Exclusions
+# Infrastructure / CI
 .git/
 .github/
-screenshots/
+.DS_Store
+
+# Build artifacts & binaries
 dist/
 bin/
-.DS_Store
 *.app/
 *.exe
 *.so
@@ -14,3 +16,15 @@ bin/
 build_app
 build_demos
 list_windows
+
+# Development-only directories (not needed in installed module)
+# Excluding these prevents VLS/v-analyzer from picking up `module main`
+# demo files, which cause struct name conflicts and break code completion.
+demos/
+examples/
+tests/
+scripts/
+tools/
+docs/
+screenshots/
+resources/
