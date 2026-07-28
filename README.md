@@ -195,7 +195,7 @@ v run .
 v test .
 ```
 
-To use SimpleGUI in your own project, either install via `vpm` or copy the [simplegui/](simplegui/) folder into your project root and `import simplegui`.
+To use SimpleGUI in your own project, install via `v install` (`v install --git https://github.com/codecaine-zz/vlang_simplegui`) and `import simplegui`.
 
 ## Quick start
 
@@ -1351,13 +1351,13 @@ v test .
 
 ## Project structure
 
-- [build.vsh](build.vsh) — macOS binary compilation and packaging script for `.app` bundle with icons
-- [build_demos.vsh](build_demos.vsh) — batch compilation script to package all demos concurrently with their premium icons
-- [main.v](main.v) — example app and demo entry point
+- [scripts/build.vsh](scripts/build.vsh) — macOS binary compilation and packaging script for `.app` bundle with icons
+- [scripts/build_demos.vsh](scripts/build_demos.vsh) — batch compilation script to package all demos concurrently with their premium icons
+- [demos/main.v](demos/main.v) — example app and demo entry point
 - [demos/starter_template.v](demos/starter_template.v) — minimal starter app for new developers
-- [simplegui/simplegui.v](simplegui/simplegui.v) — beginner-friendly wrapper API module
-- [simplegui/window.m](simplegui/window.m) — native macOS bridge implementation
-- [simplegui/window.h](simplegui/window.h) — bridge declarations used by V
+- [window.v](window.v) — core window API and Cocoa integration
+- [window.m](window.m) — native macOS bridge implementation
+- [window.h](window.h) — bridge declarations used by V
 - [simplegui_test.v](simplegui_test.v) — regression tests for the wrapper API
 - [demos/stack_style.v](demos/stack_style.v) — demo of clean, vertical form stacking
 - [demos/grid_style.v](demos/grid_style.v) — demo of side-by-side row-based grids

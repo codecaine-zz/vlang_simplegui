@@ -4841,7 +4841,7 @@ win.on_shortcut('cmd+shift+p', fn (mut win simplegui.SimpleWindow, key string) {
 
 ## 7. RAD Visual UI Designer & Code Generator API
 
-SimpleGUI includes a Delphi/VB/Lazarus-inspired **Visual UI Designer Engine** ([simplegui/designer.v](file:///Users/codecaine/vlang_simplegui/simplegui/designer.v)) and executable RAD Studio workspace ([ui_designer.v](file:///Users/codecaine/vlang_simplegui/ui_designer.v) and [demos/ui_designer.v](file:///Users/codecaine/vlang_simplegui/demos/ui_designer.v)).
+SimpleGUI includes a Delphi/VB/Lazarus-inspired **Visual UI Designer Engine** ([designer.v](file:///Users/codecaine/vlang_simplegui/designer.v)) and executable RAD Studio workspace ([ui_designer.v](file:///Users/codecaine/vlang_simplegui/ui_designer.v) and [demos/ui_designer.v](file:///Users/codecaine/vlang_simplegui/demos/ui_designer.v)).
 
 ### Structs
 

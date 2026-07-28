@@ -65,7 +65,13 @@ fn main() {
 	}
 
 	// 1. Resolve target entry file
-	entry_file := if additional_args.len > 0 { additional_args[0] } else { 'main.v' }
+	entry_file := if additional_args.len > 0 {
+		additional_args[0]
+	} else if os.exists('main.v') {
+		'main.v'
+	} else {
+		'demos/main.v'
+	}
 	if !os.exists(entry_file) {
 		eprintln('❌ Entry file not found: ${entry_file}')
 		exit(1)

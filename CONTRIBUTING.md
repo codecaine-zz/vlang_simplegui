@@ -16,19 +16,12 @@ Please treat all community members with respect, patience, and kindness.
 
 The codebase is organized into focused directories:
 
-- `simplegui/`: Core native GUI framework module, split into 7 focused domain files:
-  - `window.v`: Core window struct, lifecycle methods, and Cocoa C bindings.
-  - `controls.v`: Native UI control creation, getters, setters, and value accessors.
-  - `layout.v`: Container rows, grid layouts, flex boxes, and spacing helpers.
-  - `events.v`: Event listener registration, callbacks, and timer event dispatch.
-  - `theming.v`: Theme presets, dark mode toggling, and font/background colors.
-  - `dialogs.v`: Native modal dialogs, file pickers, alert popups, and toasts.
-  - `state.v`: Internal window state, control entries, and data structures.
+- `./`: Core native GUI framework module (`controls.v`, `window.v`, `window.m`, `window.h`, `dialogs.v`, etc.).
 - `scripts/`: Packaging and build scripts (`build.vsh`, `build_demos.vsh`, `capture_demos.vsh`).
 - `tools/`: Standalone applications and tools (`ui_designer.v`, `vlang_simple_gui_previewer.v`).
 - `tests/`: Modular test suites testing each component domain.
 - `docs/`: Framework documentation and textbooks (`API.md`).
-- `demos/`: Showcase applications and UI examples.
+- `demos/`: Showcase applications and UI examples (`demos/main.v`).
 
 ### 3. Building and Testing
 
@@ -44,7 +37,7 @@ v test tests/
 
 To build and run the main entry point:
 ```bash
-v run main.v
+v run demos/main.v
 ```
 
 ### 4. Code Formatting
