@@ -3027,7 +3027,7 @@ pub fn (win &SimpleWindow) status(text string) &SimpleWindow {
 }
 
 // run starts the application event loop and displays the main Cocoa window.
-pub fn (win &SimpleWindow) run() {
+pub fn (win &SimpleWindow) run() &SimpleWindow {
 	if win.window_info == unsafe { nil } {
 		unsafe {
 			mut w := &SimpleWindow(win)
@@ -3035,6 +3035,12 @@ pub fn (win &SimpleWindow) run() {
 		}
 	}
 	C.window_app_run(win.window_info)
+	return win
+}
+
+// start starts the application event loop and displays the main Cocoa window (alias for run).
+pub fn (win &SimpleWindow) start() &SimpleWindow {
+	return win.run()
 }
 
 // show_control shows the named control (fluent builder).
