@@ -1,5 +1,6 @@
 module simplegui
 
+// add_heading adds a heading label and separator line to the window layout.
 pub fn (win &SimpleWindow) add_heading(title string) &SimpleWindow {
 	heading_name := 'heading_${win.controls.len}'
 	win.add_label(heading_name, title)
@@ -7,7 +8,7 @@ pub fn (win &SimpleWindow) add_heading(title string) &SimpleWindow {
 	return win
 }
 
-// Value setters and getters calling the generic name-based C bridge
+// get_spacing returns the layout item spacing in pixels.
 pub fn (win &SimpleWindow) get_spacing() int {
 	return win.spacing
 }
@@ -71,7 +72,7 @@ pub fn (win &SimpleWindow) add_scroll_view(name string, height int) &SimpleWindo
 	return win
 }
 
-// set_focus sets the focus of the window or target control.
+// begin_row begins a horizontal row layout container.
 pub fn (win &SimpleWindow) begin_row(name string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_begin_row(win.window_info, name.str)
@@ -120,7 +121,7 @@ pub fn (win &SimpleWindow) end_flex_box() &SimpleWindow {
 	return win
 }
 
-// Dialogs & Popups
+// add_vertical_spacer adds a vertical spacer element of specified height to the window layout.
 pub fn (win &SimpleWindow) add_vertical_spacer(height int) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_add_vertical_spacer(win.window_info, height)
@@ -144,6 +145,7 @@ pub fn (win &SimpleWindow) add_separator() &SimpleWindow {
 	return win
 }
 
+// add_action_row adds a row of action buttons with associated callbacks.
 pub fn (win &SimpleWindow) add_action_row(actions map[string]VoidEventCallback) &SimpleWindow {
 	row_name := win.auto_name('action_row')
 	win.begin_row(row_name)
@@ -155,7 +157,7 @@ pub fn (win &SimpleWindow) add_action_row(actions map[string]VoidEventCallback) 
 	return win
 }
 
-// add_fields_row adds a fields row control to the window layout.
+// add_fields_row adds a row of form fields mapped by label and control name.
 pub fn (win &SimpleWindow) add_fields_row(fields map[string]string) &SimpleWindow {
 	row_name := win.auto_name('fields_row')
 	win.begin_row(row_name)
@@ -166,7 +168,7 @@ pub fn (win &SimpleWindow) add_fields_row(fields map[string]string) &SimpleWindo
 	return win
 }
 
-// add_form_from_struct dynamically generates a form in the window layout using the fields of struct T.
+// row creates a horizontal row container and invokes the callback for child elements.
 pub fn (win &SimpleWindow) row(name string, callback VoidEventCallback) &SimpleWindow {
 	win.begin_row(name)
 	unsafe {
@@ -177,7 +179,7 @@ pub fn (win &SimpleWindow) row(name string, callback VoidEventCallback) &SimpleW
 	return win
 }
 
-// Closure-based grid layout container
+// grid creates a grid layout container and invokes the callback for child elements.
 pub fn (win &SimpleWindow) grid(name string, columns int, spacing int, callback VoidEventCallback) &SimpleWindow {
 	win.begin_grid(name, columns, spacing)
 	unsafe {
@@ -188,7 +190,7 @@ pub fn (win &SimpleWindow) grid(name string, columns int, spacing int, callback 
 	return win
 }
 
-// Closure-based flexbox layout container
+// flex_box creates a flexbox layout container and invokes the callback for child elements.
 pub fn (win &SimpleWindow) flex_box(name string, direction string, justify string, align string, callback VoidEventCallback) &SimpleWindow {
 	win.begin_flex_box(name, direction, justify, align)
 	unsafe {
@@ -199,7 +201,7 @@ pub fn (win &SimpleWindow) flex_box(name string, direction string, justify strin
 	return win
 }
 
-// Theme represents a complete color scheme for SimpleWindow interface styling.
+// set_control_alignment sets the alignment of a named control ('left'|'center'|'right'|'top'|'bottom').
 pub fn (win &SimpleWindow) set_control_alignment(name string, alignment string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_set_control_alignment_by_name(win.window_info, name.str, alignment.str)
@@ -215,7 +217,7 @@ pub fn (win &SimpleWindow) set_control_alignment(name string, alignment string) 
 	return win
 }
 
-// get_control_alignment returns the alignment of a named control.
+// set_control_expand_fill configures whether a named control expands to fill available layout space.
 pub fn (win &SimpleWindow) set_control_expand_fill(name string, expand bool) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_set_control_expand_fill_by_name(win.window_info, name.str, if expand {
@@ -235,7 +237,7 @@ pub fn (win &SimpleWindow) set_control_expand_fill(name string, expand bool) &Si
 	return win
 }
 
-// get_control_expand_fill returns true if fill expansion is enabled for a named control.
+// align_left aligns the last created control to the left.
 pub fn (win &SimpleWindow) align_left() &SimpleWindow {
 	if win.last_control != '' {
 		win.set_control_alignment(win.last_control, 'left')
@@ -283,7 +285,7 @@ pub fn (win &SimpleWindow) expand_fill() &SimpleWindow {
 	return win
 }
 
-// Fluent event chaining modifiers (attaching to the last created control)
+// group creates a group box container and invokes the callback for child elements.
 pub fn (win &SimpleWindow) group(name string, title string, callback VoidEventCallback) &SimpleWindow {
 	win.add_group_box(name, title)
 	unsafe {
@@ -293,7 +295,7 @@ pub fn (win &SimpleWindow) group(name string, title string, callback VoidEventCa
 	return win
 }
 
-// Validation error clearing
+// play_sound plays a system sound by name.
 pub fn play_sound(sound_name string) {
 	C.window_play_system_sound(sound_name.str)
 }
@@ -307,7 +309,7 @@ pub fn (win &SimpleWindow) begin_split_view(name string, vertical bool) &SimpleW
 	return win
 }
 
-// split_view_next_pane performs split view next pane.
+// end_split_view ends the current split view layout container.
 pub fn (win &SimpleWindow) end_split_view() &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_end_split_view(win.window_info)
@@ -315,7 +317,7 @@ pub fn (win &SimpleWindow) end_split_view() &SimpleWindow {
 	return win
 }
 
-// add_collection_view adds a collection view control to the window layout.
+// begin_glass_box begins a glassmorphic container layout.
 pub fn (win &SimpleWindow) begin_glass_box(name string, material string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_begin_glass_box(win.window_info, name.str, material.str)

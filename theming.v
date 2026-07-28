@@ -1,5 +1,6 @@
 module simplegui
 
+// add_theme_menu adds a theme menu control to the window layout.
 pub fn (win &SimpleWindow) add_theme_menu(name string, selected string) &SimpleWindow {
 	mut real_name := name
 	if real_name == '' {
@@ -18,7 +19,7 @@ pub fn (win &SimpleWindow) add_theme_menu(name string, selected string) &SimpleW
 	return win
 }
 
-// add_color_well adds a color well control to the window layout.
+// set_background_color sets the background color of the window.
 pub fn (win &SimpleWindow) set_background_color(color string) &SimpleWindow {
 	unsafe {
 		mut w := &SimpleWindow(win)
@@ -104,7 +105,7 @@ pub fn (win &SimpleWindow) get_control_font_color(name string) string {
 	return ''
 }
 
-// set_control_width sets the width of the specified control.
+// list_themes returns a list of available built-in theme names.
 pub fn list_themes() []string {
 	return [
 		'Apple Light',
@@ -328,7 +329,7 @@ pub fn (win &SimpleWindow) set_theme(theme_name string) &SimpleWindow {
 	return win.apply_theme(t)
 }
 
-// last-control chaining modifiers
+// color sets the background color of the last created control.
 pub fn (win &SimpleWindow) color(hex_color string) &SimpleWindow {
 	if win.last_control != '' {
 		win.set_control_background_color(win.last_control, hex_color)
@@ -336,7 +337,7 @@ pub fn (win &SimpleWindow) color(hex_color string) &SimpleWindow {
 	return win
 }
 
-// font_color performs font color.
+// font_color sets the font color of the last created control.
 pub fn (win &SimpleWindow) font_color(hex_color string) &SimpleWindow {
 	if win.last_control != '' {
 		win.set_control_font_color(win.last_control, hex_color)
@@ -344,7 +345,7 @@ pub fn (win &SimpleWindow) font_color(hex_color string) &SimpleWindow {
 	return win
 }
 
-// bold performs bold.
+// is_system_dark_mode returns true if macOS system dark mode is active.
 pub fn (win &SimpleWindow) is_system_dark_mode() bool {
 	if win.window_info != unsafe { nil } {
 		return C.window_is_system_dark_mode(win.window_info) == 1

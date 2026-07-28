@@ -1,7 +1,9 @@
 module simplegui
 
+// ControlValidator represents a validation function signature for control string values.
 pub type ControlValidator = fn (value string) string
 
+// set_value updates the value of a control by name and dispatches a change event.
 pub fn (win &SimpleWindow) set_value(name string, value string) &SimpleWindow {
 	win.set_control_value(name, value)
 	unsafe {
@@ -11,7 +13,7 @@ pub fn (win &SimpleWindow) set_value(name string, value string) &SimpleWindow {
 	return win
 }
 
-// get_value retrieves the value of the window or target control.
+// on_key registers a keyboard shortcut event handler for the window.
 pub fn (win &SimpleWindow) on_key(key string, callback StringEventCallback) &SimpleWindow {
 	norm_key := normalize_key_shortcut(key)
 	unsafe {
@@ -26,7 +28,7 @@ pub fn (win &SimpleWindow) on_key(key string, callback StringEventCallback) &Sim
 	return win
 }
 
-// on_shortcut registers a global keyboard shortcut handler.
+// run_after executes a void callback after a specified duration in milliseconds.
 pub fn (win &SimpleWindow) run_after(ms int, callback VoidEventCallback) &SimpleWindow {
 	unsafe {
 		mut w := &SimpleWindow(win)
@@ -42,7 +44,7 @@ pub fn (win &SimpleWindow) run_after(ms int, callback VoidEventCallback) &Simple
 	return win
 }
 
-// toast performs toast.
+// on_click registers an event handler for click events on a control.
 pub fn (win &SimpleWindow) on_click(name string, callback VoidEventCallback) &SimpleWindow {
 	idx := win.find_handler(name, 'click')
 	mut handler := ControlEventHandler{
@@ -61,7 +63,7 @@ pub fn (win &SimpleWindow) on_click(name string, callback VoidEventCallback) &Si
 	return win
 }
 
-// on_change registers an event handler for on change events.
+// on_change registers an event handler for value change events on a control.
 pub fn (win &SimpleWindow) on_change(name string, callback StringEventCallback) &SimpleWindow {
 	idx := win.find_handler(name, 'change')
 	mut handler := ControlEventHandler{
@@ -80,7 +82,7 @@ pub fn (win &SimpleWindow) on_change(name string, callback StringEventCallback) 
 	return win
 }
 
-// on_column_click registers an event handler for column click events.
+// on_cell_button_click registers an event handler for table grid cell action buttons.
 pub fn (win &SimpleWindow) on_cell_button_click(name string, callback StringEventCallback) &SimpleWindow {
 	idx := win.find_handler(name, 'click_cell_button')
 	mut handler := ControlEventHandler{
@@ -137,7 +139,7 @@ pub fn (win &SimpleWindow) on_click_tag(name string, callback StringEventCallbac
 	return win
 }
 
-// on_select_item registers a callback for split button menu item selection.
+// on_any_event registers an observer callback that receives all dispatched events on the window.
 pub fn (win &SimpleWindow) on_any_event(callback AnyEventCallback) &SimpleWindow {
 	unsafe {
 		mut w := &SimpleWindow(win)
@@ -146,7 +148,7 @@ pub fn (win &SimpleWindow) on_any_event(callback AnyEventCallback) &SimpleWindow
 	return win
 }
 
-// dispatch_event performs dispatch event.
+// dispatch_event dispatches an event by name to registered handlers and observers.
 pub fn (win &SimpleWindow) dispatch_event(name string, event_name string, value string) bool {
 	if win.debug_mode {
 		println('[simplegui DEBUG] Dispatching Event: "${event_name}" on Control: "${name}" (Value: "${value}")')
@@ -203,7 +205,7 @@ pub fn (win &SimpleWindow) dispatch_event(name string, event_name string, value 
 	return false
 }
 
-// click performs click.
+// click programmatically triggers a click event on a named control.
 pub fn (win &SimpleWindow) click(name string) bool {
 	return win.dispatch_event(name, 'click', '')
 }
@@ -236,7 +238,7 @@ fn vlang_dispatch_event(win_ptr voidptr, name_str &u8, event_str &u8, value_str 
 	win.dispatch_event(name, event, value)
 }
 
-// begin_row begins a row container in the layout.
+// set_interval starts a recurring timer that triggers a callback every ms milliseconds.
 pub fn (win &SimpleWindow) set_interval(timer_name string, ms int, callback VoidEventCallback) &SimpleWindow {
 	unsafe {
 		mut w := &SimpleWindow(win)
@@ -252,7 +254,7 @@ pub fn (win &SimpleWindow) set_interval(timer_name string, ms int, callback Void
 	return win
 }
 
-// stop_interval performs stop interval.
+// stop_interval stops a recurring timer by name.
 pub fn (win &SimpleWindow) stop_interval(timer_name string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_stop_interval(win.window_info, timer_name.str)
@@ -260,7 +262,7 @@ pub fn (win &SimpleWindow) stop_interval(timer_name string) &SimpleWindow {
 	return win
 }
 
-// List Box and Image View Controls
+// on_hover registers an event handler for mouse hover enter events on a control.
 pub fn (win &SimpleWindow) on_hover(name string, callback VoidEventCallback) &SimpleWindow {
 	unsafe {
 		mut w := &SimpleWindow(win)
@@ -276,7 +278,7 @@ pub fn (win &SimpleWindow) on_hover(name string, callback VoidEventCallback) &Si
 	return win
 }
 
-// on_hover_exit registers an event handler for on hover exit events.
+// on_hover_exit registers an event handler for mouse hover exit events on a control.
 pub fn (win &SimpleWindow) on_hover_exit(name string, callback VoidEventCallback) &SimpleWindow {
 	unsafe {
 		mut w := &SimpleWindow(win)
@@ -292,7 +294,7 @@ pub fn (win &SimpleWindow) on_hover_exit(name string, callback VoidEventCallback
 	return win
 }
 
-// Window Resize Event Listener
+// add_menu_item adds a menu item to an application menu and registers its click callback.
 pub fn (win &SimpleWindow) add_menu_item(menu_name string, item_title string, shortcut string, callback VoidEventCallback) &SimpleWindow {
 	handler_name := 'menu_${menu_name}_${item_title}'
 	win.on_click(handler_name, callback)
@@ -303,7 +305,7 @@ pub fn (win &SimpleWindow) add_menu_item(menu_name string, item_title string, sh
 	return win
 }
 
-// add_context_menu_item adds a context menu item control to the window layout.
+// add_context_menu_item adds a context menu item to a control and registers its click callback.
 pub fn (win &SimpleWindow) add_context_menu_item(control_name string, item_title string, callback VoidEventCallback) &SimpleWindow {
 	handler_name := 'context_${control_name}_${item_title}'
 	win.on_click(handler_name, callback)
@@ -314,7 +316,7 @@ pub fn (win &SimpleWindow) add_context_menu_item(control_name string, item_title
 	return win
 }
 
-// add_menu adds a menu control to the window layout.
+// on_file_drop registers a callback invoked when files are drag-and-dropped onto the window.
 pub fn (win &SimpleWindow) on_file_drop(callback FileDropCallback) &SimpleWindow {
 	unsafe {
 		mut w := &SimpleWindow(win)
@@ -327,7 +329,7 @@ pub fn (win &SimpleWindow) on_file_drop(callback FileDropCallback) &SimpleWindow
 	return win
 }
 
-// add_vertical_spacer adds a vertical spacer control to the window layout.
+// add_dock_menu_item adds a menu item to the macOS application dock menu.
 pub fn (win &SimpleWindow) add_dock_menu_item(title string, callback VoidEventCallback) &SimpleWindow {
 	handler_name := 'dock_menu_${title.replace(' ', '_').to_lower()}'
 	win.on_click(handler_name, callback)
@@ -337,7 +339,7 @@ pub fn (win &SimpleWindow) add_dock_menu_item(title string, callback VoidEventCa
 	return win
 }
 
-// show_window performs show window.
+// onclick registers a click callback on the last created control.
 pub fn (win &SimpleWindow) onclick(callback VoidEventCallback) &SimpleWindow {
 	if win.last_control != '' {
 		win.on_click(win.last_control, callback)
@@ -345,7 +347,7 @@ pub fn (win &SimpleWindow) onclick(callback VoidEventCallback) &SimpleWindow {
 	return win
 }
 
-// onchange registers an event handler for onchange events.
+// onchange registers a change callback on the last created control.
 pub fn (win &SimpleWindow) onchange(callback StringEventCallback) &SimpleWindow {
 	if win.last_control != '' {
 		win.on_change(win.last_control, callback)
@@ -353,7 +355,7 @@ pub fn (win &SimpleWindow) onchange(callback StringEventCallback) &SimpleWindow 
 	return win
 }
 
-// onfocus registers an event handler for onfocus events.
+// onhover registers a hover enter callback on the last created control.
 pub fn (win &SimpleWindow) onhover(callback VoidEventCallback) &SimpleWindow {
 	if win.last_control != '' {
 		win.on_hover(win.last_control, callback)
@@ -361,12 +363,13 @@ pub fn (win &SimpleWindow) onhover(callback VoidEventCallback) &SimpleWindow {
 	return win
 }
 
-// onhover_exit registers an event handler for onhover exit events.
+// onhover_exit registers a hover exit callback on the last created control.
 pub fn (win &SimpleWindow) onhover_exit(callback VoidEventCallback) &SimpleWindow {
 	if win.last_control != '' {
 		win.on_hover_exit(win.last_control, callback)
 	}
 	return win
 }
+
 
 // Shorthand aliases for value access

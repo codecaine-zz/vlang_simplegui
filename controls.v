@@ -382,7 +382,7 @@ pub fn (win &SimpleWindow) add_slider(name string, value int) &SimpleWindow {
 	return win
 }
 
-// add_theme_menu adds a theme menu control to the window layout.
+// add_color_well adds a color well control to the window layout.
 pub fn (win &SimpleWindow) add_color_well(name string, color string) &SimpleWindow {
 	mut real_name := name
 	if real_name == '' {
