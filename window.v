@@ -2,7 +2,7 @@ module simplegui
 
 #include <Cocoa/Cocoa.h>
 
-#include "@VMODROOT/window.h"
+#include "window.h"
 
 #flag -framework Cocoa
 
@@ -12,7 +12,7 @@ module simplegui
 
 #flag -framework ApplicationServices
 
-#flag @VMODROOT/window.m
+#flag window.m
 
 fn C.window_app_init(&WindowParams) &WindowInfo
 
