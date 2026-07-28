@@ -1021,9 +1021,7 @@ fn C.window_get_content_min_size(&WindowInfo, &int, &int)
 
 fn C.window_get_content_max_size(&WindowInfo, &int, &int)
 
-// Tab Count
-fn C.window_get_tab_count(&WindowInfo) int
-
+// new_simple_window creates and initializes a new native SimpleWindow instance with the specified title, width, and height.
 pub fn new_simple_window(title string, width int, height int) &SimpleWindow {
 	mut win := &SimpleWindow{
 		width:                        width
@@ -1052,7 +1050,7 @@ pub fn new_simple_window(title string, width int, height int) &SimpleWindow {
 	return win
 }
 
-// ensure_window performs ensure window.
+// ensure_window initializes the native Cocoa window backend if not already created.
 fn (win &SimpleWindow) ensure_window() {
 	if win.window_info == unsafe { nil } {
 		params := WindowParams{
@@ -1080,7 +1078,7 @@ fn (win &SimpleWindow) ensure_window() {
 	}
 }
 
-// has_control performs has control.
+// normalize_key_shortcut converts key shortcut strings into canonical form ("cmd+shift+p").
 pub fn normalize_key_shortcut(input string) string {
 	if input == '' {
 		return ''
@@ -1134,7 +1132,7 @@ pub fn normalize_key_shortcut(input string) string {
 	return res.join('+')
 }
 
-// find_handler_by_filter performs find handler by filter.
+// textarea_goto_line scrolls the specified textarea control to the given line number and optionally focuses it.
 pub fn (win &SimpleWindow) textarea_goto_line(name string, line_number int, focus bool) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		do_focus := if focus { 1 } else { 0 }
@@ -1143,7 +1141,7 @@ pub fn (win &SimpleWindow) textarea_goto_line(name string, line_number int, focu
 	return win
 }
 
-// add_html_view adds a html view control to the window layout.
+// append_console appends formatted text log messages to a developer console widget.
 pub fn (win &SimpleWindow) append_console(name string, text string, level int) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_append_console_text(win.window_info, name.str, text.str, level)
@@ -1850,7 +1848,7 @@ pub fn (win &SimpleWindow) configure(callback fn (mut cfg WindowConfig)) &Simple
 	return win
 }
 
-// form performs form.
+// validate_not_empty validates that a string value is not empty, returning "Required" if empty.
 pub fn validate_not_empty(value string) string {
 	if value.trim_space() == '' {
 		return 'Required'
@@ -1858,7 +1856,7 @@ pub fn validate_not_empty(value string) string {
 	return ''
 }
 
-// High-level helpers for common beginner-friendly form building
+// set_debug_mode enables or disables verbose debug logging for window event dispatches.
 pub fn (win &SimpleWindow) set_debug_mode(enabled bool) &SimpleWindow {
 	unsafe {
 		mut w := &SimpleWindow(win)
@@ -1867,29 +1865,29 @@ pub fn (win &SimpleWindow) set_debug_mode(enabled bool) &SimpleWindow {
 	return win
 }
 
-// get_debug_mode retrieves the debug mode of the window or target control.
+// set_checkbox sets the checked state for the default checkbox control.
 pub fn (win &SimpleWindow) set_checkbox(checked bool) &SimpleWindow {
 	win.set_bool('default_checkbox', checked)
 	return win
 }
 
-// get_checkbox retrieves the checkbox of the window or target control.
+// get_checkbox returns the checked state of the default checkbox control.
 pub fn (win &SimpleWindow) get_checkbox() bool {
 	return win.get_bool('default_checkbox')
 }
 
-// Number Control Helper
+// set_number sets the integer value of the default number control.
 pub fn (win &SimpleWindow) set_number(value int) &SimpleWindow {
 	win.set_number_value('default_number', value)
 	return win
 }
 
-// get_number retrieves the number of the window or target control.
+// get_number returns the integer value of the default number control.
 pub fn (win &SimpleWindow) get_number() int {
 	return win.get_number_value('default_number')
 }
 
-// Button Control Helper
+// set_responsive_layout enables or disables automatic responsive control resizing.
 pub fn (win &SimpleWindow) set_responsive_layout(enabled bool) &SimpleWindow {
 	unsafe {
 		mut w := &SimpleWindow(win)
@@ -1901,7 +1899,7 @@ pub fn (win &SimpleWindow) set_responsive_layout(enabled bool) &SimpleWindow {
 	return win
 }
 
-// get_responsive_layout retrieves the responsive layout of the window or target control.
+// set_padding sets window edge content padding in pixels.
 pub fn (win &SimpleWindow) set_padding(padding int) &SimpleWindow {
 	unsafe {
 		mut w := &SimpleWindow(win)
@@ -1913,7 +1911,7 @@ pub fn (win &SimpleWindow) set_padding(padding int) &SimpleWindow {
 	return win
 }
 
-// get_padding retrieves the padding of the window or target control.
+// set_spacing sets vertical spacing between stacked controls in pixels.
 pub fn (win &SimpleWindow) set_spacing(spacing int) &SimpleWindow {
 	unsafe {
 		mut w := &SimpleWindow(win)
@@ -1925,7 +1923,7 @@ pub fn (win &SimpleWindow) set_spacing(spacing int) &SimpleWindow {
 	return win
 }
 
-// get_spacing retrieves the spacing of the window or target control.
+// set_default_button sets the primary action button triggered when pressing Enter.
 pub fn (win &SimpleWindow) set_default_button(name string) &SimpleWindow {
 	unsafe {
 		mut w := &SimpleWindow(win)
@@ -1937,7 +1935,7 @@ pub fn (win &SimpleWindow) set_default_button(name string) &SimpleWindow {
 	return win
 }
 
-// on_enter registers an event handler for on enter events.
+// on_shortcut registers a global keyboard shortcut event handler for the window.
 pub fn (win &SimpleWindow) on_shortcut(shortcut string, callback VoidEventCallback) &SimpleWindow {
 	norm_shortcut := normalize_key_shortcut(shortcut)
 	unsafe {
@@ -1952,7 +1950,7 @@ pub fn (win &SimpleWindow) on_shortcut(shortcut string, callback VoidEventCallba
 	return win
 }
 
-// on_close registers an event handler for on close events.
+// open_url opens a URL link in the user's default web browser.
 pub fn (win &SimpleWindow) open_url(url string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_open_url(win.window_info, url.str)
@@ -1960,7 +1958,7 @@ pub fn (win &SimpleWindow) open_url(url string) &SimpleWindow {
 	return win
 }
 
-// copy_to_clipboard performs copy to clipboard.
+// copy_to_clipboard copies a text string to the system clipboard.
 pub fn (win &SimpleWindow) copy_to_clipboard(text string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_copy_to_clipboard(win.window_info, text.str)
@@ -2132,7 +2130,7 @@ pub fn (win &SimpleWindow) get_maximizable() bool {
 	return win.maximizable
 }
 
-// close performs close.
+// close closes the window.
 pub fn (win &SimpleWindow) close() &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_close(win.window_info)
@@ -2140,12 +2138,12 @@ pub fn (win &SimpleWindow) close() &SimpleWindow {
 	return win
 }
 
-// close_window performs close window.
+// close_window closes the window.
 pub fn (win &SimpleWindow) close_window() &SimpleWindow {
 	return win.close()
 }
 
-// hide performs hide.
+// hide hides the window from view.
 pub fn (win &SimpleWindow) hide() &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_hide(win.window_info)
@@ -2153,12 +2151,12 @@ pub fn (win &SimpleWindow) hide() &SimpleWindow {
 	return win
 }
 
-// hide_window performs hide window.
+// hide_window hides the window from view.
 pub fn (win &SimpleWindow) hide_window() &SimpleWindow {
 	return win.hide()
 }
 
-// center performs center.
+// center centers the window on the active screen.
 pub fn (win &SimpleWindow) center() &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_center(win.window_info)
@@ -2166,12 +2164,12 @@ pub fn (win &SimpleWindow) center() &SimpleWindow {
 	return win
 }
 
-// center_window performs center window.
+// center_window centers the window on the active screen.
 pub fn (win &SimpleWindow) center_window() &SimpleWindow {
 	return win.center()
 }
 
-// align performs align.
+// align aligns the window to screen edges or positions ('top_left', 'top_right', 'bottom_left', 'bottom_right', 'center').
 pub fn (win &SimpleWindow) align(position string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_align(win.window_info, position.str)
@@ -2179,12 +2177,12 @@ pub fn (win &SimpleWindow) align(position string) &SimpleWindow {
 	return win
 }
 
-// align_window performs align window.
+// align_window aligns the window to screen edges or positions ('top_left', 'top_right', 'bottom_left', 'bottom_right', 'center').
 pub fn (win &SimpleWindow) align_window(position string) &SimpleWindow {
 	return win.align(position)
 }
 
-// set_size sets the size of the window or target control.
+// set_size sets the width and height dimensions of the window in pixels.
 pub fn (win &SimpleWindow) set_size(width int, height int) &SimpleWindow {
 	unsafe {
 		mut w := &SimpleWindow(win)
@@ -2197,7 +2195,7 @@ pub fn (win &SimpleWindow) set_size(width int, height int) &SimpleWindow {
 	return win
 }
 
-// resize performs resize.
+// get_width returns the current window width in pixels.
 pub fn (win &SimpleWindow) get_width() int {
 	if win.window_info != unsafe { nil } {
 		return C.window_get_width(win.window_info)
@@ -2205,7 +2203,7 @@ pub fn (win &SimpleWindow) get_width() int {
 	return win.width
 }
 
-// get_height retrieves the height of the window or target control.
+// get_height returns the current window height in pixels.
 pub fn (win &SimpleWindow) get_height() int {
 	if win.window_info != unsafe { nil } {
 		return C.window_get_height(win.window_info)
@@ -2213,7 +2211,7 @@ pub fn (win &SimpleWindow) get_height() int {
 	return win.height
 }
 
-// set_position sets the position of the window or target control.
+// set_position sets the (x, y) screen coordinates of the window in pixels.
 pub fn (win &SimpleWindow) set_position(x int, y int) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_set_position(win.window_info, x, y)
@@ -2221,7 +2219,7 @@ pub fn (win &SimpleWindow) set_position(x int, y int) &SimpleWindow {
 	return win
 }
 
-// get_x retrieves the x of the window or target control.
+// get_x returns the current x screen coordinate of the window.
 pub fn (win &SimpleWindow) get_x() int {
 	if win.window_info != unsafe { nil } {
 		return C.window_get_x(win.window_info)
@@ -2229,7 +2227,7 @@ pub fn (win &SimpleWindow) get_x() int {
 	return 0
 }
 
-// get_y retrieves the y of the window or target control.
+// get_y returns the current y screen coordinate of the window.
 pub fn (win &SimpleWindow) get_y() int {
 	if win.window_info != unsafe { nil } {
 		return C.window_get_y(win.window_info)
@@ -2237,7 +2235,7 @@ pub fn (win &SimpleWindow) get_y() int {
 	return 0
 }
 
-// set_opacity sets the opacity of the window or target control.
+// set_opacity sets the window opacity / transparency level (0.0 to 1.0).
 pub fn (win &SimpleWindow) set_opacity(opacity f64) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_set_opacity(win.window_info, opacity)
@@ -2245,7 +2243,7 @@ pub fn (win &SimpleWindow) set_opacity(opacity f64) &SimpleWindow {
 	return win
 }
 
-// get_opacity retrieves the opacity of the window or target control.
+// get_opacity returns the current window opacity level (0.0 to 1.0).
 pub fn (win &SimpleWindow) get_opacity() f64 {
 	if win.window_info != unsafe { nil } {
 		return C.window_get_opacity(win.window_info)
@@ -2253,7 +2251,7 @@ pub fn (win &SimpleWindow) get_opacity() f64 {
 	return 1.0
 }
 
-// toggle_fullscreen performs toggle fullscreen.
+// toggle_fullscreen toggles the window fullscreen state.
 pub fn (win &SimpleWindow) toggle_fullscreen() &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_toggle_fullscreen(win.window_info)
@@ -2261,7 +2259,7 @@ pub fn (win &SimpleWindow) toggle_fullscreen() &SimpleWindow {
 	return win
 }
 
-// minimize performs minimize.
+// minimize minimizes the window to the Dock.
 pub fn (win &SimpleWindow) minimize() &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_minimize(win.window_info)
@@ -2269,7 +2267,7 @@ pub fn (win &SimpleWindow) minimize() &SimpleWindow {
 	return win
 }
 
-// deminimize performs deminimize.
+// deminimize restores the window from the Dock.
 pub fn (win &SimpleWindow) deminimize() &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_deminimize(win.window_info)
@@ -2277,7 +2275,7 @@ pub fn (win &SimpleWindow) deminimize() &SimpleWindow {
 	return win
 }
 
-// maximize performs maximize.
+// maximize expands the window to occupy the visible screen.
 pub fn (win &SimpleWindow) maximize() &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_maximize(win.window_info)
@@ -2285,7 +2283,7 @@ pub fn (win &SimpleWindow) maximize() &SimpleWindow {
 	return win
 }
 
-// zoom performs zoom.
+// is_minimized returns true if the window is currently minimized.
 pub fn (win &SimpleWindow) is_minimized() bool {
 	if win.window_info != unsafe { nil } {
 		return C.window_is_minimized(win.window_info) == 1
@@ -2329,7 +2327,7 @@ pub fn (win &SimpleWindow) set_titlebar_visible(visible bool) &SimpleWindow {
 	return win
 }
 
-// request_attention performs request attention.
+// request_attention requests user attention by bouncing the app icon in the macOS Dock.
 pub fn (win &SimpleWindow) request_attention(critical bool) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_request_attention(win.window_info, if critical { 1 } else { 0 })
@@ -2337,7 +2335,7 @@ pub fn (win &SimpleWindow) request_attention(critical bool) &SimpleWindow {
 	return win
 }
 
-// bounce_dock performs bounce dock.
+// bounce_dock requests user attention by bouncing the app icon in the macOS Dock.
 pub fn (win &SimpleWindow) bounce_dock(critical bool) &SimpleWindow {
 	return win.request_attention(critical)
 }
@@ -3020,7 +3018,7 @@ pub fn (win &SimpleWindow) get_status() string {
 	return win.status_text
 }
 
-// status performs status.
+// status sets the status bar text of the window.
 pub fn (win &SimpleWindow) status(text string) &SimpleWindow {
 	win.set_status(text)
 	return win
@@ -3685,7 +3683,7 @@ fn vlang_main_thread_dispatcher(ctx voidptr) {
 	}
 }
 
-// run_on_main_thread performs run on main thread.
+// run_on_main_thread dispatches a callback execution asynchronously onto the macOS main UI thread.
 pub fn (win &SimpleWindow) run_on_main_thread(callback VoidEventCallback) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		data := &MainThreadCallback{
@@ -3697,7 +3695,7 @@ pub fn (win &SimpleWindow) run_on_main_thread(callback VoidEventCallback) &Simpl
 	return win
 }
 
-// run_on_main_thread_sync performs run on main thread and waits for completion.
+// run_on_main_thread_sync dispatches a callback execution onto the macOS main UI thread and waits synchronously for completion.
 pub fn (win &SimpleWindow) run_on_main_thread_sync(callback VoidEventCallback) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		data := &MainThreadCallback{
@@ -3709,7 +3707,7 @@ pub fn (win &SimpleWindow) run_on_main_thread_sync(callback VoidEventCallback) &
 	return win
 }
 
-// run_async performs run async.
+// run_async executes a background task on a separate thread and invokes on_complete on the main UI thread.
 pub fn (win &SimpleWindow) run_async(bg_task fn (), on_complete VoidEventCallback) &SimpleWindow {
 	unsafe {
 		mut w := &SimpleWindow(win)
@@ -3721,7 +3719,7 @@ pub fn (win &SimpleWindow) run_async(bg_task fn (), on_complete VoidEventCallbac
 	return win
 }
 
-// Closure-based row layout container
+// clear_error clears any validation error message displayed on a control.
 pub fn (win &SimpleWindow) clear_error(name string) &SimpleWindow {
 	unsafe {
 		mut w := &SimpleWindow(win)
@@ -3733,7 +3731,7 @@ pub fn (win &SimpleWindow) clear_error(name string) &SimpleWindow {
 	return win
 }
 
-// Starts a visual group box, executes the callback for child controls, and returns the window
+// clear_errors clears all active validation error messages across all controls.
 pub fn (win &SimpleWindow) clear_errors() &SimpleWindow {
 	unsafe {
 		mut w := &SimpleWindow(win)
@@ -3747,7 +3745,7 @@ pub fn (win &SimpleWindow) clear_errors() &SimpleWindow {
 	return win
 }
 
-// Change/Dirty state tracking helpers
+// set_status_temp temporarily displays a status message for a specified duration in milliseconds.
 pub fn (win &SimpleWindow) set_status_temp(message string, ms int) &SimpleWindow {
 	current_status := win.get_status()
 	win.set_status(message)
@@ -3757,13 +3755,13 @@ pub fn (win &SimpleWindow) set_status_temp(message string, ms int) &SimpleWindow
 	return win
 }
 
-// status_temp performs status temp.
+// notify delivers a macOS system notification banner.
 pub fn (win &SimpleWindow) notify(title string, message string) &SimpleWindow {
 	C.window_deliver_notification(title.str, message.str)
 	return win
 }
 
-// badge performs badge.
+// badge sets the badge count or text on the macOS Dock application icon.
 pub fn (win &SimpleWindow) badge(text string) &SimpleWindow {
 	C.window_set_dock_badge(text.str)
 	return win
@@ -3777,12 +3775,12 @@ pub fn (win &SimpleWindow) set_slider_range(name string, min_val f64, max_val f6
 	return win
 }
 
-// range performs range.
+// beep plays the system alert beep sound.
 pub fn beep() {
 	C.window_beep()
 }
 
-// enable_search_history performs enable search history.
+// enable_search_history enables search history autocompletion for a search field control.
 pub fn (win &SimpleWindow) enable_search_history(name string, autosave_name string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_enable_search_history(win.window_info, name.str, autosave_name.str)
@@ -3818,7 +3816,7 @@ pub fn (win &SimpleWindow) clear_dock_icon() &SimpleWindow {
 	return win
 }
 
-// play_sound performs play sound.
+// split_view_next_pane moves insertion to the next pane in a split view layout container.
 pub fn (win &SimpleWindow) split_view_next_pane() &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_split_view_next_pane(win.window_info)
@@ -3826,7 +3824,7 @@ pub fn (win &SimpleWindow) split_view_next_pane() &SimpleWindow {
 	return win
 }
 
-// end_split_view ends the current split view container layout.
+// set_collection_items populates items in a collection view.
 pub fn (win &SimpleWindow) set_collection_items(name string, items []string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		mut c_items := []&u8{}
@@ -3838,7 +3836,7 @@ pub fn (win &SimpleWindow) set_collection_items(name string, items []string) &Si
 	return win
 }
 
-// show_popover performs show popover.
+// show_popover displays a popover callout attached to an anchor control.
 pub fn (win &SimpleWindow) show_popover(anchor_name string, title string, message string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_show_popover(win.window_info, anchor_name.str, title.str, message.str)

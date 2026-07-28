@@ -223,7 +223,7 @@ mut:
 	cb  VoidEventCallback = unsafe { nil }
 }
 
-// vlang_main_thread_dispatcher performs vlang main thread dispatcher.
+// Theme represents a complete color scheme for SimpleWindow interface styling.
 pub struct Theme {
 pub:
 	name             string
