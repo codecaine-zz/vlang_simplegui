@@ -771,7 +771,7 @@ pub fn (win &SimpleWindow) add_circular_progress(name string, value int, min_val
 	return win
 }
 
-// set_circular_progress updates the value of a circular progress / gauge control.
+// add_breadcrumbs adds a breadcrumbs navigation bar control to the window layout.
 pub fn (win &SimpleWindow) add_breadcrumbs(name string, segments []string) &SimpleWindow {
 	mut real_name := name
 	if real_name == '' {
@@ -795,7 +795,7 @@ pub fn (win &SimpleWindow) add_breadcrumbs(name string, segments []string) &Simp
 	return win
 }
 
-// set_breadcrumbs updates the segments shown by a breadcrumb control.
+// add_property_grid adds an inspector property grid control to the window layout.
 pub fn (win &SimpleWindow) add_property_grid(name string, props map[string]string) &SimpleWindow {
 	mut real_name := name
 	if real_name == '' {
@@ -821,7 +821,7 @@ pub fn (win &SimpleWindow) add_property_grid(name string, props map[string]strin
 	return win
 }
 
-// set_property_grid_value updates a specific property key-value inside the property grid.
+// add_color_grid adds a color palette swatch grid control to the window layout.
 pub fn (win &SimpleWindow) add_color_grid(name string, colors []string) &SimpleWindow {
 	mut real_name := name
 	if real_name == '' {
@@ -845,7 +845,7 @@ pub fn (win &SimpleWindow) add_color_grid(name string, colors []string) &SimpleW
 	return win
 }
 
-// set_color_grid_selected selects a color swatch inside the grid by its hex value.
+// add_grid adds a multi-column table data grid control to the window layout.
 pub fn (mut win SimpleWindow) add_grid(name string, headers []string, initial_rows [][]string) &SimpleWindow {
 	mut real_name := name
 	if real_name == '' {
@@ -892,7 +892,7 @@ pub fn (mut win SimpleWindow) grid_add_row(name string, row_values []string) &Si
 	return &win
 }
 
-// grid_delete_row removes the row at index row_idx.
+// grid_add_column appends a column header to the grid.
 pub fn (mut win SimpleWindow) grid_add_column(name string, header string) &SimpleWindow {
 	mut rows := win.grid_rows[name]
 	for i in 0 .. rows.len {

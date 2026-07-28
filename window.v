@@ -1021,6 +1021,8 @@ fn C.window_get_content_min_size(&WindowInfo, &int, &int)
 
 fn C.window_get_content_max_size(&WindowInfo, &int, &int)
 
+fn C.window_get_tab_count(&WindowInfo) int
+
 // new_simple_window creates and initializes a new native SimpleWindow instance with the specified title, width, and height.
 pub fn new_simple_window(title string, width int, height int) &SimpleWindow {
 	mut win := &SimpleWindow{
@@ -3024,7 +3026,7 @@ pub fn (win &SimpleWindow) status(text string) &SimpleWindow {
 	return win
 }
 
-// Event registration
+// run starts the application event loop and displays the main Cocoa window.
 pub fn (win &SimpleWindow) run() {
 	if win.window_info == unsafe { nil } {
 		unsafe {
@@ -3045,7 +3047,7 @@ pub fn (win &SimpleWindow) hide_control(name string) &SimpleWindow {
 	return win.set_control_visible(name, false)
 }
 
-// toggle_control_enabled toggles the enabled state of the control and returns the new state.
+// update_list_items updates the list box items by name.
 pub fn (win &SimpleWindow) update_list_items(name string, items []string) &SimpleWindow {
 	unsafe {
 		mut w := &SimpleWindow(win)
