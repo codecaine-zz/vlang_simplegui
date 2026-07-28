@@ -719,6 +719,10 @@ fn C.window_save_frame(&WindowInfo) int
 
 fn C.window_restore_frame(&WindowInfo) int
 
+fn C.window_save_geometry(&WindowInfo, &u8) int
+
+fn C.window_restore_geometry(&WindowInfo, &u8) int
+
 fn C.window_capture_screenshot(&WindowInfo, &u8) int
 
 fn C.window_set_document_edited(&WindowInfo, int)
@@ -969,6 +973,7 @@ fn C.window_select_next_tab(&WindowInfo)
 fn C.window_select_previous_tab(&WindowInfo)
 
 fn C.window_set_sharing_type(&WindowInfo, &u8)
+fn C.window_get_sharing_type(&WindowInfo) int
 
 // Appearance Override
 fn C.window_set_window_appearance(&WindowInfo, &u8)
@@ -4393,6 +4398,79 @@ pub fn (win &SimpleWindow) set_sharing_type(sharing string) &SimpleWindow {
 		C.window_set_sharing_type(win.window_info, sharing.str)
 	}
 	return win
+}
+
+// set_content_protection prevents window contents from being captured by screen recordings or screen sharing when enabled.
+pub fn (win &SimpleWindow) set_content_protection(enabled bool) &SimpleWindow {
+	return win.set_sharing_type(if enabled { 'none' } else { 'read_write' })
+}
+
+// get_content_protection checks if content protection (screen sharing restriction) is currently active.
+pub fn (win &SimpleWindow) get_content_protection() bool {
+	if win.window_info != unsafe { nil } {
+		return C.window_get_sharing_type(win.window_info) == 1
+	}
+	return false
+}
+
+// unminimize restores a minimized window back from the Dock.
+pub fn (win &SimpleWindow) unminimize() &SimpleWindow {
+	return win.deminimize()
+}
+
+// unmaximize restores a maximized window back to normal size.
+pub fn (win &SimpleWindow) unmaximize() &SimpleWindow {
+	if win.is_maximized() {
+		return win.maximize()
+	}
+	return win
+}
+
+// save_geometry persists window position, width, height, and display frame under key.
+pub fn (win &SimpleWindow) save_geometry(key string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_save_geometry(win.window_info, key.str)
+	}
+	return win
+}
+
+// restore_geometry restores window position and size previously saved under key.
+pub fn (win &SimpleWindow) restore_geometry(key string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_restore_geometry(win.window_info, key.str)
+	}
+	return win
+}
+
+// request_user_attention alerts the user by bouncing the Dock icon on macOS or flashing the taskbar.
+pub fn (win &SimpleWindow) request_user_attention(critical bool) &SimpleWindow {
+	return win.bounce_dock(critical)
+}
+
+// save_screenshot captures current window contents and saves to PNG at filepath.
+pub fn (win &SimpleWindow) save_screenshot(filepath string) &SimpleWindow {
+	win.capture_screenshot(filepath)
+	return win
+}
+
+// on_close_requested registers a callback function that can veto or confirm window close by returning bool.
+pub fn (win &SimpleWindow) on_close_requested(callback CloseRequestedCallback) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.on_close_requested_fn = callback
+	}
+	return win
+}
+
+// can_close evaluates whether the window is permitted to close based on on_close_requested callback.
+pub fn (win &SimpleWindow) can_close() bool {
+	if win.on_close_requested_fn != unsafe { nil } {
+		unsafe {
+			mut w := &SimpleWindow(win)
+			return w.on_close_requested_fn(mut w)
+		}
+	}
+	return true
 }
 
 // ── Appearance Override ──────────────────────────────────────────────────────

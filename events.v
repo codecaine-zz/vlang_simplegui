@@ -238,6 +238,15 @@ fn vlang_dispatch_event(win_ptr voidptr, name_str &u8, event_str &u8, value_str 
 	win.dispatch_event(name, event, value)
 }
 
+@[export: 'vlang_dispatch_close_requested']
+fn vlang_dispatch_close_requested(win_ptr voidptr) bool {
+	if win_ptr == unsafe { nil } {
+		return true
+	}
+	mut win := unsafe { &SimpleWindow(win_ptr) }
+	return win.can_close()
+}
+
 // set_interval starts a recurring timer that triggers a callback every ms milliseconds.
 pub fn (win &SimpleWindow) set_interval(timer_name string, ms int, callback VoidEventCallback) &SimpleWindow {
 	unsafe {

@@ -2290,10 +2290,13 @@ fn hex_byte_val(s string) int {
 	return val
 }
 
-// restore restores the window from minimized state to standard layout.
+// restore restores the window from minimized or maximized state to standard layout.
 pub fn (win &SimpleWindow) restore() &SimpleWindow {
 	if win.is_minimized() {
 		win.deminimize()
+	}
+	if win.is_maximized() {
+		win.unmaximize()
 	}
 	return win
 }

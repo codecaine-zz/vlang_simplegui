@@ -5,6 +5,7 @@
 #import <objc/runtime.h>
 #import <string.h>
 #import <stdlib.h>
+#import <dlfcn.h>
 #import "window.h"
 
 typedef struct string {
@@ -191,6 +192,7 @@ static NSVisualEffectMaterial materialFromString(NSString *materialStr);
 @end
 
 extern BOOL vlang_dispatch_event(void *win_ptr, const char *name, const char *event, const char *value);
+extern BOOL vlang_dispatch_close_requested(void *win_ptr);
 
 @implementation FlippedStackView
 - (BOOL)isFlipped {
@@ -4885,6 +4887,11 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
 
 - (BOOL)windowShouldClose:(id)sender {
   (void)sender;
+  if (self.win_ptr) {
+    if (!vlang_dispatch_close_requested(self.win_ptr)) {
+      return NO;
+    }
+  }
   int visibleCount = 0;
   for (NSWindow *w in [NSApp windows]) {
     if ([w isVisible] && [w canBecomeKeyWindow]) {
@@ -18001,6 +18008,50 @@ int window_restore_frame(main__WindowInfo *info) {
   return restored ? 1 : 0;
 }
 
+int window_save_geometry(main__WindowInfo *info, const char *key) {
+  if (!key || strlen(key) == 0) return 0;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block BOOL saved = NO;
+  NSString *keyStr = nsstring(key);
+  void (^runBlock)(void) = ^{
+    if (delegate.window) {
+      NSString *frameStr = [delegate.window stringWithSavedFrame];
+      if (frameStr && frameStr.length > 0) {
+        NSString *userDefaultsKey = [NSString stringWithFormat:@"NSWindow Frame %@", keyStr];
+        [[NSUserDefaults standardUserDefaults] setObject:frameStr forKey:userDefaultsKey];
+        [[NSUserDefaults standardUserDefaults] synchronize];
+        [delegate.window saveFrameUsingName:keyStr];
+        saved = YES;
+      }
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return saved ? 1 : 0;
+}
+
+int window_restore_geometry(main__WindowInfo *info, const char *key) {
+  if (!key || strlen(key) == 0) return 0;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block BOOL restored = NO;
+  NSString *keyStr = nsstring(key);
+  void (^runBlock)(void) = ^{
+    if (delegate.window) {
+      NSString *userDefaultsKey = [NSString stringWithFormat:@"NSWindow Frame %@", keyStr];
+      NSString *savedStr = [[NSUserDefaults standardUserDefaults] stringForKey:userDefaultsKey];
+      if (savedStr && savedStr.length > 0) {
+        [delegate.window setFrameFromString:savedStr];
+        restored = YES;
+      } else {
+        restored = [delegate.window setFrameUsingName:keyStr];
+      }
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return restored ? 1 : 0;
+}
+
+typedef CGImageRef (*SG_CGWindowListCreateImageFunc)(CGRect screenBounds, uint32_t listOptions, uint32_t windowID, uint32_t imageOptions);
+
 int window_capture_screenshot(main__WindowInfo *info, const char *file_path) {
   if (!file_path || strlen(file_path) == 0) {
     return 0;
@@ -18015,21 +18066,70 @@ int window_capture_screenshot(main__WindowInfo *info, const char *file_path) {
       return;
     }
 
-    NSView *contentView = [delegate.window contentView];
-    if (!contentView) {
-      return;
+    [delegate.window displayIfNeeded];
+
+    NSWindowSharingType originalSharing = delegate.window.sharingType;
+    if (originalSharing == NSWindowSharingNone) {
+      delegate.window.sharingType = NSWindowSharingReadOnly;
     }
 
-    NSRect bounds = [contentView bounds];
-    NSBitmapImageRep *bitmapRep = [contentView bitmapImageRepForCachingDisplayInRect:bounds];
-    if (!bitmapRep) {
-      return;
+    SG_CGWindowListCreateImageFunc pCGWindowListCreateImage = (SG_CGWindowListCreateImageFunc)dlsym(RTLD_DEFAULT, "CGWindowListCreateImage");
+    CGImageRef imageRef = NULL;
+    if (pCGWindowListCreateImage) {
+      CGWindowID windowID = (CGWindowID)[delegate.window windowNumber];
+      imageRef = pCGWindowListCreateImage(
+          CGRectNull,
+          1,
+          windowID,
+          1 | 8
+      );
     }
 
-    [contentView cacheDisplayInRect:bounds toBitmapImageRep:bitmapRep];
-    NSData *pngData = [bitmapRep representationUsingType:NSBitmapImageFileTypePNG properties:@{}];
-    if (pngData) {
-      wrote = [pngData writeToFile:path atomically:YES];
+    if (originalSharing == NSWindowSharingNone) {
+      delegate.window.sharingType = originalSharing;
+    }
+
+    if (imageRef) {
+      NSBitmapImageRep *bitmapRep = [[NSBitmapImageRep alloc] initWithCGImage:imageRef];
+      CGImageRelease(imageRef);
+      if (bitmapRep) {
+        NSData *pngData = [bitmapRep representationUsingType:NSBitmapImageFileTypePNG properties:@{}];
+        if (pngData) {
+          wrote = [pngData writeToFile:path atomically:YES];
+        }
+      }
+    }
+
+    if (!wrote) {
+      NSView *contentView = [delegate.window contentView];
+      if (contentView) {
+        NSRect bounds = [contentView bounds];
+        NSBitmapImageRep *bitmapRep = [[NSBitmapImageRep alloc] initWithBitmapDataPlanes:NULL
+                                                            pixelsWide:(NSInteger)bounds.size.width
+                                                            pixelsHigh:(NSInteger)bounds.size.height
+                                                         bitsPerSample:8
+                                                       samplesPerPixel:4
+                                                              hasAlpha:YES
+                                                              isPlanar:NO
+                                                        colorSpaceName:NSCalibratedRGBColorSpace
+                                                          bytesPerRow:0
+                                                          bitsPerPixel:0];
+        if (bitmapRep) {
+          NSGraphicsContext *context = [NSGraphicsContext graphicsContextWithBitmapImageRep:bitmapRep];
+          [NSGraphicsContext saveGraphicsState];
+          [NSGraphicsContext setCurrentContext:context];
+          if (contentView.layer) {
+            [contentView.layer renderInContext:[context CGContext]];
+          } else {
+            [contentView cacheDisplayInRect:bounds toBitmapImageRep:bitmapRep];
+          }
+          [NSGraphicsContext restoreGraphicsState];
+          NSData *pngData = [bitmapRep representationUsingType:NSBitmapImageFileTypePNG properties:@{}];
+          if (pngData) {
+            wrote = [pngData writeToFile:path atomically:YES];
+          }
+        }
+      }
     }
   };
 
@@ -18332,6 +18432,19 @@ void window_set_sharing_type(main__WindowInfo *info, const char *sharing) {
     }
   };
   if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+int window_get_sharing_type(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block int result = 0;
+  void (^runBlock)(void) = ^{
+    if (!delegate.window) return;
+    if (delegate.window.sharingType == NSWindowSharingNone) {
+      result = 1;
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return result;
 }
 
 // ── Appearance Override ────────────────────────────────────────────────────

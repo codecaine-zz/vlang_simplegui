@@ -115,6 +115,7 @@ mut:
 	table_column_selection       map[string]bool
 	grid_rows                    map[string][][]string
 	grid_headers                 map[string][]string
+	on_close_requested_fn        CloseRequestedCallback = unsafe { nil }
 pub mut:
 	ws_client voidptr = unsafe { nil }
 }
@@ -143,6 +144,7 @@ pub mut:
 	expand_fill      bool
 }
 
+pub type CloseRequestedCallback = fn (mut win SimpleWindow) bool
 pub type AnyEventCallback = fn (mut win SimpleWindow, control_name string, event_name string, value string)
 
 struct ControlEventHandler {

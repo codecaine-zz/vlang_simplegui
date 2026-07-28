@@ -569,6 +569,8 @@ void window_set_frame_autosave_name(main__WindowInfo *info, const char *autosave
 const char *window_get_frame_autosave_name(main__WindowInfo *info);
 int window_save_frame(main__WindowInfo *info);
 int window_restore_frame(main__WindowInfo *info);
+int window_save_geometry(main__WindowInfo *info, const char *key);
+int window_restore_geometry(main__WindowInfo *info, const char *key);
 int window_capture_screenshot(main__WindowInfo *info, const char *file_path);
 void window_set_document_edited(main__WindowInfo *info, int edited);
 int window_is_document_edited(main__WindowInfo *info);
@@ -602,6 +604,7 @@ void window_toggle_tab_bar(main__WindowInfo *info);
 void window_select_next_tab(main__WindowInfo *info);
 void window_select_previous_tab(main__WindowInfo *info);
 void window_set_sharing_type(main__WindowInfo *info, const char *sharing);
+int window_get_sharing_type(main__WindowInfo *info);
 
 // Appearance Override
 void window_set_window_appearance(main__WindowInfo *info, const char *appearance_name);
