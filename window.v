@@ -1,5 +1,7 @@
 module simplegui
 
+#flag -I @VMODROOT
+
 #include <Cocoa/Cocoa.h>
 
 #include "window.h"
@@ -12,7 +14,7 @@ module simplegui
 
 #flag -framework ApplicationServices
 
-#flag window.m
+#flag @VMODROOT/window.m
 
 fn C.window_app_init(&WindowParams) &WindowInfo
 
