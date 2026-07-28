@@ -10,12 +10,10 @@ struct BindingExample {
 	wants_newsletter bool
 }
 
-
 struct CallbackState {
 mut:
 	called bool
 }
-
 
 struct TestProfile {
 	username string
@@ -23,13 +21,11 @@ struct TestProfile {
 	active   bool
 }
 
-
 struct EventChainState {
 mut:
 	clicked     bool
 	changed_val string
 }
-
 
 struct ProjectRow {
 	id        int
@@ -37,14 +33,11 @@ struct ProjectRow {
 	is_active bool
 }
 
-
 struct TestValidationStruct {
 	name  string @[min_len: '3'; required]
 	email string @[email; required]
 	age   int    @[max: '99'; min: '18']
 }
-
-
 
 fn test_event_callbacks_can_be_registered_and_dispatched() {
 	mut win := simplegui.SimpleWindow{}
@@ -58,7 +51,6 @@ fn test_event_callbacks_can_be_registered_and_dispatched() {
 	assert win.dispatch_event('default_button', 'click', '') == true
 	assert win.dispatch_event('missing', 'click', '') == false
 }
-
 
 fn test_file_drop_events_are_forwarded_to_window_handlers() {
 	mut win := simplegui.SimpleWindow{}
@@ -83,7 +75,6 @@ fn on_test_click(mut win simplegui.SimpleWindow) {
 	println('test click')
 }
 
-
 fn test_fluent_event_chaining() {
 	mut win := simplegui.new_simple_window('Test Window', 100, 100)
 	mut state := &EventChainState{}
@@ -104,7 +95,6 @@ fn test_fluent_event_chaining() {
 	assert state.clicked == true
 	assert state.changed_val == 'Grace'
 }
-
 
 fn test_table_event_helpers_are_available() {
 	mut win := simplegui.SimpleWindow{}

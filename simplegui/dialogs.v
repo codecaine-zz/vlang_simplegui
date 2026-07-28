@@ -1,6 +1,5 @@
 module simplegui
 
-
 pub fn (win &SimpleWindow) toast(message string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_show_toast(win.window_info, message.str)

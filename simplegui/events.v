@@ -1,8 +1,6 @@
 module simplegui
 
-
 pub type ControlValidator = fn (value string) string
-
 
 pub fn (win &SimpleWindow) set_value(name string, value string) &SimpleWindow {
 	win.set_control_value(name, value)
@@ -220,8 +218,8 @@ pub fn (win &SimpleWindow) click(name string) bool {
 	return win.dispatch_event(name, 'click', '')
 }
 
-// run performs run.
-
+// Cocoa event dispatcher to V
+@[export: 'vlang_dispatch_event']
 fn vlang_dispatch_event(win_ptr voidptr, name_str &u8, event_str &u8, value_str &u8) {
 	mut win := unsafe { &SimpleWindow(win_ptr) }
 	name := unsafe { name_str.vstring() }

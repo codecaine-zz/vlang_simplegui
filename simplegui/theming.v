@@ -1,6 +1,5 @@
 module simplegui
 
-
 pub fn (win &SimpleWindow) add_theme_menu(name string, selected string) &SimpleWindow {
 	mut real_name := name
 	if real_name == '' {

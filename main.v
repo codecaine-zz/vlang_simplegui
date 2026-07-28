@@ -38,8 +38,8 @@ fn main() {
 	gui.add_progress_indicator('progress', 35)
 
 	// Connect event handlers to functions.
-	gui.on_change('city', on_city_changed)
 	gui.on_change('name', on_name_changed)
+	gui.on_change('city', on_city_changed)
 	gui.on_click('run', on_run_clicked)
 	gui.on_click('clear', on_clear_clicked)
 	gui.on_change('toggle', on_toggle_changed)
@@ -72,12 +72,14 @@ fn main() {
 	gui.set_status('Ready for more controls')
 
 	// Read back values and print them to the terminal for demonstration.
-	println('name = ${gui.get_text('name')}')
-	println('city = ${gui.get_text('city')}')
-	println('notes = ${gui.get_text('notes')}')
-	println('ready = ${gui.get_checked('ready')}')
-	println('number = ${gui.get_value_int('number')}')
-	println('status = ${gui.get_status()}')
+	$if debug {
+		println('name = ${gui.get_text('name')}')
+		println('city = ${gui.get_text('city')}')
+		println('notes = ${gui.get_text('notes')}')
+		println('ready = ${gui.get_checked('ready')}')
+		println('number = ${gui.get_value_int('number')}')
+		println('status = ${gui.get_status()}')
+	}
 
 	// Show the window and start the app loop.
 	gui.run()
@@ -85,18 +87,24 @@ fn main() {
 
 // Event handler callbacks
 
-fn on_city_changed(mut win simplegui.SimpleWindow, value string) {
-	println('city changed -> ${value}')
-	win.set_status('City updated: ${value}')
-}
-
 fn on_name_changed(mut win simplegui.SimpleWindow, value string) {
-	println('name changed -> ${value}')
+	$if debug {
+		println('name changed -> ${value}')
+	}
 	win.set_status('Input updated: ${value}')
 }
 
+fn on_city_changed(mut win simplegui.SimpleWindow, value string) {
+	$if debug {
+		println('city changed -> ${value}')
+	}
+	win.set_status('City updated: ${value}')
+}
+
 fn on_run_clicked(mut win simplegui.SimpleWindow) {
-	println('run clicked')
+	$if debug {
+		println('run clicked')
+	}
 	if win.confirm('Confirmation', 'Do you want to append details to the notes?') {
 		prompt_msg := win.prompt('Custom Note', 'Enter a custom note to append:', 'Hello from V!')
 		name := win.get_text('name')
@@ -106,8 +114,7 @@ fn on_run_clicked(mut win simplegui.SimpleWindow) {
 		if input_val.len == 0 {
 			input_val = '<empty>'
 		}
-		combined := notes + '\nRead name: ' + input_val + ', city: ' + city + ' | Msg: ' +
-			prompt_msg
+		combined := '${notes}\nRead name: ${input_val}, city: ${city} | Msg: ${prompt_msg}'
 		win.set_text('notes', combined)
 		win.alert('Success', 'Notes updated successfully!')
 		win.set_status('Wrote input to the text area.')
@@ -117,7 +124,9 @@ fn on_run_clicked(mut win simplegui.SimpleWindow) {
 }
 
 fn on_clear_clicked(mut win simplegui.SimpleWindow) {
-	println('clear clicked')
+	$if debug {
+		println('clear clicked')
+	}
 	win.set_text('name', '')
 	win.set_text('city', '')
 	win.set_text('notes', '')
@@ -125,7 +134,9 @@ fn on_clear_clicked(mut win simplegui.SimpleWindow) {
 }
 
 fn on_toggle_changed(mut win simplegui.SimpleWindow, value string) {
-	println('toggle changed -> ${value}')
+	$if debug {
+		println('toggle changed -> ${value}')
+	}
 	enabled := value == 'true'
 	msg := if enabled { 'Advanced mode enabled.' } else { 'Advanced mode disabled.' }
 	win.set_status(msg)
@@ -135,38 +146,52 @@ fn on_toggle_changed(mut win simplegui.SimpleWindow, value string) {
 }
 
 fn on_slider_changed(mut win simplegui.SimpleWindow, value string) {
-	println('slider changed -> ${value}')
-	win.set_status('Slider set to ' + value)
+	$if debug {
+		println('slider changed -> ${value}')
+	}
+	win.set_status('Slider set to ${value}')
 }
 
 fn on_theme_changed(mut win simplegui.SimpleWindow, value string) {
-	println('theme changed -> ${value}')
+	$if debug {
+		println('theme changed -> ${value}')
+	}
 	win.set_theme(value)
-	win.set_status('Theme selected: ' + value)
+	win.set_status('Theme selected: ${value}')
 }
 
 fn on_number_changed(mut win simplegui.SimpleWindow, value string) {
-	println('number changed -> ${value}')
-	win.set_status('Number updated to ' + value)
+	$if debug {
+		println('number changed -> ${value}')
+	}
+	win.set_status('Number updated to ${value}')
 }
 
 fn on_color_changed(mut win simplegui.SimpleWindow, value string) {
-	println('color changed -> ${value}')
-	win.set_status('Color changed to ' + value)
+	$if debug {
+		println('color changed -> ${value}')
+	}
+	win.set_status('Color changed to ${value}')
 }
 
 fn on_date_changed(mut win simplegui.SimpleWindow, value string) {
-	println('date changed -> ${value}')
-	win.set_status('Date selected: ' + value)
+	$if debug {
+		println('date changed -> ${value}')
+	}
+	win.set_status('Date selected: ${value}')
 }
 
 fn on_mode_changed(mut win simplegui.SimpleWindow, value string) {
-	println('mode changed -> ${value}')
-	win.set_status('Mode changed to ' + value)
+	$if debug {
+		println('mode changed -> ${value}')
+	}
+	win.set_status('Mode changed to ${value}')
 }
 
 fn on_ready_changed(mut win simplegui.SimpleWindow, value string) {
-	println('ready changed -> ${value}')
+	$if debug {
+		println('ready changed -> ${value}')
+	}
 	checked := value == 'true'
 	win.set_status(if checked { 'Terms accepted.' } else { 'Terms not accepted.' })
 	progress_val := if checked { 70 } else { 35 }

@@ -4,18 +4,58 @@ import simplegui
 import os
 import time
 
+fn test_has_control_list_controls_and_safe_accessors() {
+	mut win := simplegui.new_simple_window('Ergonomics Test', 400, 300)
+	win.add_input('txt_name', 'Alice')
+	win.add_checkbox('chk_terms', 'Agree', true)
+	win.add_number('num_age', 30)
+
+	assert win.has_control('txt_name') == true
+	assert win.has_control('chk_terms') == true
+	assert win.has_control('num_age') == true
+	assert win.has_control('non_existent') == false
+
+	ctrls := win.list_controls()
+	assert 'txt_name' in ctrls
+	assert 'chk_terms' in ctrls
+	assert 'num_age' in ctrls
+
+	// Test safe optional accessors
+	name_opt := win.get_text_opt('txt_name') or { 'fallback' }
+	assert name_opt == 'Alice'
+
+	missing_text := win.get_text_opt('non_existent') or { 'missing' }
+	assert missing_text == 'missing'
+
+	chk_opt := win.get_checked_opt('chk_terms') or { false }
+	assert chk_opt == true
+
+	missing_chk := win.get_checked_opt('non_existent')
+	assert missing_chk == none
+
+	age_opt := win.get_value_int_opt('num_age') or { 0 }
+	assert age_opt == 30
+
+	missing_age := win.get_value_int_opt('non_existent')
+	assert missing_age == none
+
+	ctrl_entry := win.get_control_opt('txt_name') or { simplegui.ControlEntry{} }
+	assert ctrl_entry.name == 'txt_name'
+
+	missing_entry := win.get_control_opt('non_existent')
+	assert missing_entry == none
+}
+
 struct BindingExample {
 	username         string
 	age              int
 	wants_newsletter bool
 }
 
-
 struct CallbackState {
 mut:
 	called bool
 }
-
 
 struct TestProfile {
 	username string
@@ -23,13 +63,11 @@ struct TestProfile {
 	active   bool
 }
 
-
 struct EventChainState {
 mut:
 	clicked     bool
 	changed_val string
 }
-
 
 struct ProjectRow {
 	id        int
@@ -37,14 +75,11 @@ struct ProjectRow {
 	is_active bool
 }
 
-
 struct TestValidationStruct {
 	name  string @[min_len: '3'; required]
 	email string @[email; required]
 	age   int    @[max: '99'; min: '18']
 }
-
-
 
 fn test_control_discovery_helpers_are_available() {
 	mut win := simplegui.SimpleWindow{}
@@ -58,7 +93,6 @@ fn test_control_discovery_helpers_are_available() {
 	assert win.get_control_kind('name') == 'input'
 	assert win.get_control_kind('missing') == ''
 }
-
 
 fn test_tree_view_helpers_support_crud_and_paths() {
 	mut win := simplegui.SimpleWindow{}
@@ -119,7 +153,6 @@ fn test_tree_view_helpers_support_crud_and_paths() {
 	assert win.get_tree_nodes('org').len == 0
 }
 
-
 fn test_window_title_visibility_helpers_are_available() {
 	mut win := simplegui.SimpleWindow{}
 
@@ -130,7 +163,6 @@ fn test_window_title_visibility_helpers_are_available() {
 	assert win.get_titlebar_visible() == false
 	assert win.get_title_visible() == false
 }
-
 
 fn test_qol_helpers_support_struct_binding_and_tables() {
 	mut win := simplegui.SimpleWindow{}
@@ -164,7 +196,6 @@ fn test_qol_helpers_support_struct_binding_and_tables() {
 	win.show_window()
 	win.run_on_main_thread(fn (mut w simplegui.SimpleWindow) {})
 }
-
 
 fn test_batch_ergonomic_helpers_are_available() {
 	mut win := simplegui.SimpleWindow{}
@@ -226,7 +257,6 @@ fn test_batch_ergonomic_helpers_are_available() {
 	assert win.get_error('name') == 'Required'
 }
 
-
 fn test_ergonomic_helpers_are_available_and_resettable() {
 	mut win := simplegui.SimpleWindow{}
 	win.add_input('name', 'Ada')
@@ -276,7 +306,6 @@ fn test_ergonomic_helpers_are_available_and_resettable() {
 	assert win.dump_values()['name'] == 'Ada'
 }
 
-
 fn test_high_level_form_helpers_are_available() {
 	mut win := simplegui.SimpleWindow{}
 	win.add_heading('Profile')
@@ -300,7 +329,6 @@ fn test_high_level_form_helpers_are_available() {
 	assert win.get_value_int('age') == 42
 	assert win.dispatch_event('run', 'click', '') == true
 }
-
 
 fn test_config_form_and_validation_helpers_are_available() {
 	mut win := simplegui.new_simple_window('Test Window', 100, 100)
@@ -340,7 +368,6 @@ fn test_config_form_and_validation_helpers_are_available() {
 	assert errs['username'] == ''
 	assert win.get_error('email') == 'Required'
 }
-
 
 fn test_new_control_helpers_and_window_constraints() {
 	mut win := simplegui.new_simple_window('Test Window', 100, 100)
@@ -419,7 +446,6 @@ fn test_new_control_helpers_and_window_constraints() {
 	win.toggle_fullscreen()
 }
 
-
 fn test_consistent_nameless_helpers() {
 	mut win := simplegui.new_simple_window('Test Window', 100, 100)
 
@@ -446,7 +472,6 @@ fn test_consistent_nameless_helpers() {
 	assert win.get_number() == 456
 }
 
-
 fn test_form_generation_from_struct() {
 	mut win := simplegui.new_simple_window('Test Window', 100, 100)
 	p := TestProfile{
@@ -464,7 +489,6 @@ fn test_form_generation_from_struct() {
 	assert win.get_value_int('score') == 100
 	assert win.get_checked('active') == true
 }
-
 
 fn test_reset_form_does_not_clear_buttons_or_labels() {
 	mut win := simplegui.new_simple_window('Test Window', 100, 100)
@@ -487,7 +511,6 @@ fn test_reset_form_does_not_clear_buttons_or_labels() {
 	// Input was cleared
 	assert win.get_text('my_input') == ''
 }
-
 
 fn test_table_column_selection_helpers() {
 	mut win := simplegui.SimpleWindow{}
@@ -523,7 +546,6 @@ fn test_table_column_selection_helpers() {
 	assert win.get_table_selected_column('scores') == -1
 }
 
-
 fn test_grid_cache_count_sort_and_clear_helpers() {
 	mut win := simplegui.SimpleWindow{}
 	win.add_grid('g', ['A', 'B'], [
@@ -547,7 +569,6 @@ fn test_grid_cache_count_sort_and_clear_helpers() {
 	assert win.grid_get_row_count('g') == 0
 	assert win.grid_get_rows('g') == [][]string{}
 }
-
 
 fn test_batch_clear_fields_and_validators() {
 	mut win := simplegui.SimpleWindow{}
@@ -573,7 +594,6 @@ fn test_batch_clear_fields_and_validators() {
 	assert min3('ab') != ''
 	assert min3('abc') == ''
 }
-
 
 fn test_additional_ergonomics_helpers() {
 	mut win := simplegui.SimpleWindow{}
@@ -686,7 +706,6 @@ fn test_additional_ergonomics_helpers() {
 	os.rm(settings_path) or {}
 }
 
-
 fn test_new_ergonomic_features() {
 	mut win := simplegui.new_simple_window('Ergonomic Test', 100, 100)
 
@@ -780,7 +799,6 @@ fn test_new_ergonomic_features() {
 	})
 }
 
-
 fn test_animation_helpers() {
 	mut win := simplegui.SimpleWindow{}
 	win.add_input('test_input', 'value')
@@ -813,7 +831,6 @@ fn test_animation_helpers() {
 
 	assert true
 }
-
 
 fn test_new_ergonomic_helpers_added() {
 	mut win := simplegui.new_simple_window('New Ergonomic Helpers Test', 200, 200)
@@ -930,7 +947,6 @@ fn test_new_ergonomic_helpers_added() {
 	assert win.increment_progress('prog_bar', -70) == 0
 }
 
-
 fn test_developer_inspection_controls() {
 	mut win := simplegui.new_simple_window('Developer Inspection Controls Test', 800,
 		600)
@@ -966,7 +982,6 @@ fn test_developer_inspection_controls() {
 	assert win.has_control('env_1') == true
 	win.set_env_vars('env_1', ['PORT'], ['9090'])
 }
-
 
 fn test_reactive_bindings_and_data_qol() {
 	mut win := simplegui.SimpleWindow{}
@@ -1037,7 +1052,6 @@ fn test_reactive_bindings_and_data_qol() {
 	win.bind_char_counter('bio', 'bio_count', 20)
 	assert win.get_text('bio_count') == '5/20'
 }
-
 
 fn test_ergonomic_window_apis() {
 	mut win := simplegui.new_simple_window('Window Test', 640, 480)

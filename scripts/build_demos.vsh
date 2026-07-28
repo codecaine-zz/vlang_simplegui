@@ -112,7 +112,7 @@ fn main() {
 
 	// 1. Compile build.vsh once to build_app
 	println('🛠️ Compiling build.vsh helper tool...')
-	compile_helper_res := os.execute('v -o build_app build.vsh')
+	compile_helper_res := os.execute('v -o build_app scripts/build.vsh')
 	if compile_helper_res.exit_code != 0 {
 		eprintln('❌ Failed to compile build.vsh helper:\n${compile_helper_res.output}')
 		exit(1)

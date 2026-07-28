@@ -1,0 +1,16 @@
+# VPM Packaging Exclusions
+.git/
+.github/
+screenshots/
+dist/
+bin/
+.DS_Store
+*.app/
+*.exe
+*.so
+*.dylib
+*.dll
+*.db
+build_app
+build_demos
+list_windows

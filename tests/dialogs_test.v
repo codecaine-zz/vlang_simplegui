@@ -10,12 +10,10 @@ struct BindingExample {
 	wants_newsletter bool
 }
 
-
 struct CallbackState {
 mut:
 	called bool
 }
-
 
 struct TestProfile {
 	username string
@@ -23,13 +21,11 @@ struct TestProfile {
 	active   bool
 }
 
-
 struct EventChainState {
 mut:
 	clicked     bool
 	changed_val string
 }
-
 
 struct ProjectRow {
 	id        int
@@ -37,14 +33,11 @@ struct ProjectRow {
 	is_active bool
 }
 
-
 struct TestValidationStruct {
 	name  string @[min_len: '3'; required]
 	email string @[email; required]
 	age   int    @[max: '99'; min: '18']
 }
-
-
 
 fn test_control_font_customization_and_dialog_choices() {
 	mut win := simplegui.new_simple_window('Test Window', 100, 100)

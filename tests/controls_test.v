@@ -10,12 +10,10 @@ struct BindingExample {
 	wants_newsletter bool
 }
 
-
 struct CallbackState {
 mut:
 	called bool
 }
-
 
 struct TestProfile {
 	username string
@@ -23,13 +21,11 @@ struct TestProfile {
 	active   bool
 }
 
-
 struct EventChainState {
 mut:
 	clicked     bool
 	changed_val string
 }
-
 
 struct ProjectRow {
 	id        int
@@ -37,14 +33,11 @@ struct ProjectRow {
 	is_active bool
 }
 
-
 struct TestValidationStruct {
 	name  string @[min_len: '3'; required]
 	email string @[email; required]
 	age   int    @[max: '99'; min: '18']
 }
-
-
 
 fn test_named_controls_are_stored_and_accessible() {
 	mut win := simplegui.SimpleWindow{}
@@ -62,7 +55,6 @@ fn test_named_controls_are_stored_and_accessible() {
 	assert win.get_value('notes') == 'updated note'
 	assert win.get_bool('ready') == false
 }
-
 
 fn test_control_sizing_methods_store_values() {
 	mut win := simplegui.SimpleWindow{}
@@ -84,7 +76,6 @@ fn test_control_sizing_methods_store_values() {
 	assert win.get_control_font_size('run') == 16
 }
 
-
 fn test_grid_state_getters_and_setters_are_available() {
 	mut win := simplegui.SimpleWindow{}
 	win.add_grid('inventory', ['ID', 'Task'], [['1', 'Ship']])
@@ -104,7 +95,6 @@ fn test_grid_state_getters_and_setters_are_available() {
 	assert win.grid_get_cell_enabled('inventory', 0, 0) == false
 }
 
-
 fn test_grid_sort_api_is_available() {
 	mut win := simplegui.SimpleWindow{}
 	win.add_grid('inventory', ['ID', 'Task'], [['3', 'Ship'],
@@ -112,7 +102,6 @@ fn test_grid_sort_api_is_available() {
 
 	win.grid_sort_by_column('inventory', 0, true)
 }
-
 
 fn test_collection_view_selection_can_be_set_and_read_via_generic_value_api() {
 	mut win := simplegui.SimpleWindow{}
@@ -125,7 +114,6 @@ fn test_collection_view_selection_can_be_set_and_read_via_generic_value_api() {
 	win.set_value('gallery', '2')
 	assert win.get_value('gallery') == '2'
 }
-
 
 fn test_method_chaining() {
 	mut win := simplegui.new_simple_window('Test Window', 100, 100)
@@ -140,7 +128,6 @@ fn test_method_chaining() {
 	assert win.get_text('first') == 'Grace'
 	assert win.get_text('second') == 'Hopper'
 }
-
 
 fn test_additional_shorthand_controls_are_available() {
 	mut win := simplegui.new_simple_window('Test Window', 100, 100)
@@ -173,7 +160,6 @@ fn test_additional_shorthand_controls_are_available() {
 	assert win.has_control('default_image_button') == true
 	assert win.get_text('default_image_button') == 'Delete'
 }
-
 
 fn test_native_macos_control_wrappers_are_available() {
 	mut win := simplegui.new_simple_window('Test Window', 100, 100)
@@ -226,7 +212,6 @@ fn test_native_macos_control_wrappers_are_available() {
 	assert win.get_text('search') == 'demo'
 }
 
-
 fn test_collection_view_selection_is_read_writeable() {
 	mut win := simplegui.new_simple_window('Test Window', 100, 100)
 	win.add_collection_view('grid_collection', 120, 120)
@@ -239,7 +224,6 @@ fn test_collection_view_selection_is_read_writeable() {
 	assert win.get_text('grid_collection') == '0'
 }
 
-
 fn test_auto_naming() {
 	mut win := simplegui.new_simple_window('Test Window', 100, 100)
 
@@ -251,7 +235,6 @@ fn test_auto_naming() {
 	assert win.list_controls()[1].starts_with('auto_input_')
 }
 
-
 fn test_debug_mode() {
 	mut win := simplegui.new_simple_window('Test Window', 100, 100)
 	win.set_debug_mode(true)
@@ -261,7 +244,6 @@ fn test_debug_mode() {
 	win.dispatch_event('username', 'change', 'Grace')
 	assert win.get_status().contains('[DEBUG] change on "username"')
 }
-
 
 fn test_last_control_chaining_modifiers() {
 	mut win := simplegui.new_simple_window('Test Window', 100, 100)
@@ -282,7 +264,6 @@ fn test_last_control_chaining_modifiers() {
 	assert win.get_control_enabled('username') == true
 }
 
-
 fn test_validation_clear_errors() {
 	mut win := simplegui.new_simple_window('Test Window', 100, 100)
 	win.add_input('username', 'Ada')
@@ -294,7 +275,6 @@ fn test_validation_clear_errors() {
 	win.clear_errors()
 	assert win.get_error('username') == ''
 }
-
 
 fn test_dirty_state_tracking() {
 	mut win := simplegui.new_simple_window('Test Window', 100, 100)
@@ -329,7 +309,6 @@ fn test_dirty_state_tracking() {
 	assert win.is_dirty() == false
 }
 
-
 fn test_shorthand_get_set() {
 	mut win := simplegui.new_simple_window('Test Window', 100, 100)
 	win.add_input('username', 'Ada')
@@ -337,7 +316,6 @@ fn test_shorthand_get_set() {
 	win.set('username', 'Grace')
 	assert win.get('username') == 'Grace'
 }
-
 
 fn test_clear_error_individually() {
 	mut win := simplegui.new_simple_window('Test Window', 100, 100)
@@ -354,7 +332,6 @@ fn test_clear_error_individually() {
 	assert win.get_error('username') == ''
 	assert win.get_error('email') == 'Email invalid'
 }
-
 
 fn test_reflection_table_loading_and_styles() {
 	mut win := simplegui.new_simple_window('Test Window', 100, 100)
@@ -381,7 +358,6 @@ fn test_reflection_table_loading_and_styles() {
 	// Test file picker signature
 	_ = win.select_file_with_extensions('.txt, .png')
 }
-
 
 fn test_sys_apis() {
 	win := simplegui.SimpleWindow{}
@@ -536,7 +512,6 @@ fn test_sys_apis() {
 	assert win.file_exists(test_dir) == false
 }
 
-
 fn test_stdlib_apis() {
 	win := simplegui.SimpleWindow{}
 
@@ -624,7 +599,6 @@ fn test_stdlib_apis() {
 	assert rb.is_empty() == true
 }
 
-
 fn test_list_sort_move_and_search_binding() {
 	mut win := simplegui.SimpleWindow{}
 	win.add_list_box('fruits', ['banana', 'Cherry', 'apple'])
@@ -646,7 +620,6 @@ fn test_list_sort_move_and_search_binding() {
 	assert win.dispatch_event('search', 'change', '') == true
 	assert win.get_list_items('fruits') == ['apple', 'Cherry', 'banana']
 }
-
 
 fn test_table_sort_move_and_csv_roundtrip() {
 	mut win := simplegui.SimpleWindow{}
@@ -676,7 +649,6 @@ fn test_table_sort_move_and_csv_roundtrip() {
 	assert win.get_table_rows('inv') == rows_before
 	os.rm(path) or {}
 }
-
 
 fn test_rad_improvements() {
 	mut win := simplegui.new_simple_window('RAD Test', 100, 100)
@@ -745,7 +717,6 @@ fn test_rad_improvements() {
 	assert win.get_dirty_values()['first'] == 'new_a'
 }
 
-
 fn test_macos_native_controls() {
 	mut win := simplegui.new_simple_window('macOS native controls test', 100, 100)
 
@@ -783,7 +754,6 @@ fn test_macos_native_controls() {
 	win.clear_dock_icon()
 	simplegui.play_sound('Glass')
 }
-
 
 fn test_extra_native_controls() {
 	mut win := simplegui.new_simple_window('extra native controls test', 100, 100)
@@ -833,7 +803,6 @@ fn test_extra_native_controls() {
 	assert win.get_value_int('qty_stepper') == 25
 }
 
-
 fn test_native_macos_ui_additions() {
 	mut win := simplegui.new_simple_window('macOS UI additions test', 100, 100)
 
@@ -852,7 +821,6 @@ fn test_native_macos_ui_additions() {
 
 	assert true
 }
-
 
 fn test_developer_controls() {
 	mut win := simplegui.new_simple_window('Developer Controls Test', 100, 100)
@@ -939,7 +907,6 @@ fn test_developer_controls() {
 	win.grid_autosize_columns('my_grid')
 	win.grid_clear('my_grid')
 }
-
 
 fn test_new_extended_controls_api() {
 	mut win := simplegui.SimpleWindow{}
@@ -1043,7 +1010,6 @@ fn test_new_extended_controls_api() {
 	win.add_toolbar_item('tb_refresh', 'Refresh Data', 'Refresh active dataset', 'arrow.clockwise')
 }
 
-
 fn test_extended_stdlib_apis() {
 	win := simplegui.SimpleWindow{}
 
@@ -1139,7 +1105,6 @@ fn test_extended_stdlib_apis() {
 	assert win.rand_weighted_choice_ints(weighted_ints, int_weights) == 999
 }
 
-
 fn test_production_ready_stdlib_apis() {
 	win := simplegui.SimpleWindow{}
 
@@ -1171,7 +1136,6 @@ fn test_production_ready_stdlib_apis() {
 		map[string]string{}
 	}
 }
-
 
 fn test_additional_new_controls() {
 	mut win := simplegui.new_simple_window('New Controls Test', 200, 200)
@@ -1218,7 +1182,6 @@ fn test_additional_new_controls() {
 	assert win.get_color_palette_selected('palette') == '#00FF00'
 }
 
-
 fn test_even_more_new_controls() {
 	mut win := simplegui.new_simple_window('Even More Controls Test', 200, 200)
 
@@ -1262,7 +1225,6 @@ fn test_even_more_new_controls() {
 	assert win.get_code_view_text('snippet') == 'fn main() { println("Updated") }'
 }
 
-
 fn test_high_utility_controls() {
 	mut win := simplegui.new_simple_window('Test Utility Controls Suite', 800, 600)
 
@@ -1302,7 +1264,6 @@ fn test_high_utility_controls() {
 	win.set_key_value_card_data('card_1', ['Status', 'Uptime'], ['Healthy', '100%'])
 }
 
-
 fn test_new_interactive_widgets() {
 	mut win := simplegui.new_simple_window('New Interactive Widgets Test', 800, 600)
 
@@ -1337,7 +1298,6 @@ fn test_new_interactive_widgets() {
 	win.set_hotkey_badge_shortcut('hotkey', 'Cmd+S', 'Save')
 }
 
-
 fn test_key_shortcut_normalization_and_handling() {
 	// Test shortcut string normalization across representation styles
 	assert simplegui.normalize_key_shortcut('cmd+shift+p') == 'cmd+shift+p'
@@ -1360,7 +1320,6 @@ fn test_key_shortcut_normalization_and_handling() {
 	assert handled == true
 	assert win.get_text('status_lbl') == 'triggered'
 }
-
 
 fn test_workflow_text_and_data_extras() {
 	mut win := simplegui.SimpleWindow{}

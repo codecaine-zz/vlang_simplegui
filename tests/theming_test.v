@@ -10,12 +10,10 @@ struct BindingExample {
 	wants_newsletter bool
 }
 
-
 struct CallbackState {
 mut:
 	called bool
 }
-
 
 struct TestProfile {
 	username string
@@ -23,13 +21,11 @@ struct TestProfile {
 	active   bool
 }
 
-
 struct EventChainState {
 mut:
 	clicked     bool
 	changed_val string
 }
-
 
 struct ProjectRow {
 	id        int
@@ -37,14 +33,11 @@ struct ProjectRow {
 	is_active bool
 }
 
-
 struct TestValidationStruct {
 	name  string @[min_len: '3'; required]
 	email string @[email; required]
 	age   int    @[max: '99'; min: '18']
 }
-
-
 
 fn test_color_methods_store_values() {
 	mut win := simplegui.SimpleWindow{}
@@ -54,7 +47,6 @@ fn test_color_methods_store_values() {
 	assert win.get_background_color() == '#112233'
 	assert win.get_font_color() == 'white'
 }
-
 
 fn test_control_color_methods_store_values() {
 	mut win := simplegui.SimpleWindow{}
@@ -71,7 +63,6 @@ fn test_control_color_methods_store_values() {
 	assert win.get_control_background_color('run') == '#ffcc00'
 	assert win.get_control_font_color('run') == 'black'
 }
-
 
 fn test_theme_presets() {
 	themes := simplegui.list_themes()

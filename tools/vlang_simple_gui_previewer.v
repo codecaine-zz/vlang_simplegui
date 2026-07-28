@@ -12,7 +12,7 @@ pub mut:
 	current_file_path string
 	theme_name        string = 'nord'
 	is_dirty          bool
-	show_line_numbers bool   = true
+	show_line_numbers bool = true
 }
 
 fn main() {
@@ -127,7 +127,8 @@ fn main() {
 		.font_size(13)
 		.font_color('#eceff4')
 
-	win.add_label('code_stats', format_stats_header(state.selected_file, state.original_code, false))
+	win.add_label('code_stats', format_stats_header(state.selected_file, state.original_code,
+		false))
 		.bold(true)
 		.font_size(13)
 		.font_color('#81a1c1')
@@ -137,7 +138,11 @@ fn main() {
 	win.set_control_width('code_stats', 1040)
 
 	// Initial code display formatted with line numbers by default
-	initial_display_code := if state.show_line_numbers { add_line_numbers(state.original_code) } else { state.original_code }
+	initial_display_code := if state.show_line_numbers {
+		add_line_numbers(state.original_code)
+	} else {
+		state.original_code
+	}
 
 	// Main Split Studio Layout: Left File List (330px), Right Code Editor (1040px)
 	win.begin_row('main_studio_split')
@@ -156,6 +161,7 @@ fn main() {
 	// Navigation & Jump Row (Go To Line & Search Code - clean empty inputs)
 	win.begin_row('nav_row')
 	win.add_button('btn_line_numbers', '#️⃣ Line Numbers')
+
 	win.add_label('lbl_goto', '🎯 Jump Line:')
 		.bold(true)
 		.font_size(12)
@@ -185,13 +191,15 @@ fn main() {
 	win.end_row()
 
 	// Compiler Diagnostics & Output Log Console
+
 	win.add_label('lbl_console_title', '🛠️ Compiler Diagnostics & Execution Console Log:')
 		.bold(true)
 		.font_size(12)
 		.font_color('#bd93f9')
 
 	win.add_console('output_console', 120)
-	win.append_console('output_console', '🚀 SimpleGUI RAD Code Explorer ready. Select a file or click ▶ Live Run Window.', 1)
+	win.append_console('output_console', '🚀 SimpleGUI RAD Code Explorer ready. Select a file or click ▶ Live Run Window.',
+		1)
 
 	// Enable File & Folder Drag Drop support
 	win.on_file_drop(fn [mut state] (mut w simplegui.SimpleWindow, files []string) {
@@ -289,7 +297,8 @@ fn main() {
 	win.on_change('code_editor', fn [mut state] (mut w simplegui.SimpleWindow, value string) {
 		clean_code := strip_line_numbers(value)
 		state.is_dirty = (clean_code != strip_line_numbers(state.original_code))
-		w.set_text('code_stats', format_stats_header(state.selected_file, clean_code, state.is_dirty))
+		w.set_text('code_stats', format_stats_header(state.selected_file, clean_code,
+			state.is_dirty))
 	})
 
 	// Toolbar & Button Actions
@@ -347,7 +356,8 @@ fn main() {
 				resolved_name = tpl_items[idx]
 			}
 		}
-		if resolved_name == '' || resolved_name == '0' || resolved_name == 'Select Quick Template...' {
+		if resolved_name == '' || resolved_name == '0'
+			|| resolved_name == 'Select Quick Template...' {
 			return
 		}
 		snippet := get_template_snippet(resolved_name)
@@ -355,8 +365,10 @@ fn main() {
 			display_code := if state.show_line_numbers { add_line_numbers(snippet) } else { snippet }
 			w.set_text('code_editor', display_code)
 			state.is_dirty = (snippet != state.original_code)
-			w.set_text('code_stats', format_stats_header(state.selected_file, snippet, state.is_dirty))
-			w.append_console('output_console', '⚡ Loaded quick template snippet: ${resolved_name}', 1)
+			w.set_text('code_stats', format_stats_header(state.selected_file, snippet,
+				state.is_dirty))
+			w.append_console('output_console', '⚡ Loaded quick template snippet: ${resolved_name}',
+				1)
 			w.set_status('Loaded quick template snippet into editor: ${resolved_name}')
 		}
 	})
@@ -388,7 +400,8 @@ fn main() {
 		}
 		w.set_control_font_color('studio_heading', title_color)
 		w.set_control_font_color('studio_sub', sub_color)
-		w.append_console('output_console', '🎨 Studio workspace theme changed to ${chosen}.', 0)
+		w.append_console('output_console', '🎨 Studio workspace theme changed to ${chosen}.',
+			0)
 		w.set_status('Studio workspace theme updated to ${chosen}.')
 	})
 
@@ -446,11 +459,13 @@ fn toggle_line_numbers(mut state PreviewerState, mut w simplegui.SimpleWindow) {
 	current := w.get_text('code_editor')
 	if state.show_line_numbers {
 		w.set_text('code_editor', add_line_numbers(current))
-		w.append_console('output_console', '#️⃣ Enabled line numbers in code editor.', 1)
+		w.append_console('output_console', '#️⃣ Enabled line numbers in code editor.',
+			1)
 		w.set_status('Enabled line numbers in editor.')
 	} else {
 		w.set_text('code_editor', strip_line_numbers(current))
-		w.append_console('output_console', '#️⃣ Disabled line numbers in code editor.', 1)
+		w.append_console('output_console', '#️⃣ Disabled line numbers in code editor.',
+			1)
 		w.set_status('Disabled line numbers in editor.')
 	}
 }
@@ -464,7 +479,8 @@ fn jump_to_line_number(mut w simplegui.SimpleWindow, line_str string, focus bool
 	lines := raw_code.split_into_lines()
 
 	if line_num <= 0 || line_num > lines.len {
-		w.append_console('output_console', '⚠️ Line ${line_num} is out of bounds (1-${lines.len}).', 2)
+		w.append_console('output_console', '⚠️ Line ${line_num} is out of bounds (1-${lines.len}).',
+			2)
 		w.set_status('Out of bounds line number (1-${lines.len}).')
 		return
 	}
@@ -490,10 +506,12 @@ fn find_in_editor_code(mut w simplegui.SimpleWindow, query string, focus bool) {
 	}
 
 	if matches.len == 0 {
-		w.append_console('output_console', '🔍 Search for "${query}": 0 matches found.', 2)
+		w.append_console('output_console', '🔍 Search for "${query}": 0 matches found.',
+			2)
 		w.set_status('Search: 0 matches found for "${query}"')
 	} else {
-		w.append_console('output_console', '🔍 Search for "${query}": Found ${matches.len} matches on lines: ${matches}', 1)
+		w.append_console('output_console', '🔍 Search for "${query}": Found ${matches.len} matches on lines: ${matches}',
+			1)
 		first_line := matches[0]
 		target_text := lines[first_line - 1].trim_space()
 		w.set_status('🔍 Found ${matches.len} matches for "${query}". Line ${first_line}: ${target_text}')
@@ -523,13 +541,15 @@ fn refresh_current_folder(mut state PreviewerState, mut w simplegui.SimpleWindow
 	w.update_list_items('demo_list', state.v_files)
 	w.bind_search_to_list('search_demos', 'demo_list')
 	w.set_text('lbl_demo_count', '📚 Folder: ${os.file_name(state.current_dir)} (${state.v_files.len} Files)')
-	w.append_console('output_console', '🔄 Refreshed workspace folder: ${state.current_dir} (${state.v_files.len} files)', 1)
+	w.append_console('output_console', '🔄 Refreshed workspace folder: ${state.current_dir} (${state.v_files.len} files)',
+		1)
 	w.set_status('Refreshed folder list (${state.v_files.len} .v files found).')
 }
 
 fn change_workspace_folder(mut state PreviewerState, mut w simplegui.SimpleWindow, folder_path string) {
 	if !os.exists(folder_path) || !os.is_dir(folder_path) {
-		w.append_console('output_console', '❌ Invalid directory path: ${folder_path}', 3)
+		w.append_console('output_console', '❌ Invalid directory path: ${folder_path}',
+			3)
 		w.set_status('Invalid directory path: ${folder_path}')
 		return
 	}
@@ -541,7 +561,8 @@ fn change_workspace_folder(mut state PreviewerState, mut w simplegui.SimpleWindo
 		w.set_status('Folder loaded: ${folder_path} (No .v files found)')
 		w.set_text('lbl_demo_count', '📚 Folder: ${os.file_name(folder_path)} (0 Files)')
 		w.update_list_items('demo_list', []string{})
-		w.append_console('output_console', '📁 Opened folder: ${folder_path} (0 .v files)', 2)
+		w.append_console('output_console', '📁 Opened folder: ${folder_path} (0 .v files)',
+			2)
 		return
 	}
 
@@ -551,7 +572,8 @@ fn change_workspace_folder(mut state PreviewerState, mut w simplegui.SimpleWindo
 
 	// Auto load first file in selected folder
 	load_file_by_name(mut state, mut w, state.v_files[0])
-	w.append_console('output_console', '📁 Workspace changed to: ${folder_path} (${state.v_files.len} .v files)', 1)
+	w.append_console('output_console', '📁 Workspace changed to: ${folder_path} (${state.v_files.len} .v files)',
+		1)
 	w.set_status('Loaded folder: ${folder_path} (${state.v_files.len} .v files found)')
 }
 
@@ -575,7 +597,8 @@ fn create_new_file(mut state PreviewerState, mut w simplegui.SimpleWindow) {
 	w.set_text('lbl_demo_count', '📚 Folder: ${os.file_name(state.current_dir)} (${state.v_files.len} Files)')
 
 	load_file_by_name(mut state, mut w, base_name)
-	w.append_console('output_console', '📄 Created new V source file: ${base_name}', 4)
+	w.append_console('output_console', '📄 Created new V source file: ${base_name}',
+		4)
 	w.set_status('Created new V source file: ${base_name}')
 }
 
@@ -615,7 +638,8 @@ fn load_file_by_name(mut state PreviewerState, mut w simplegui.SimpleWindow, fil
 	file_path := os.join_path(state.current_dir, file_name)
 	if os.exists(file_path) {
 		content := os.read_file(file_path) or {
-			w.append_console('output_console', '❌ Error reading file: ${file_name}', 3)
+			w.append_console('output_console', '❌ Error reading file: ${file_name}',
+				3)
 			w.set_status('Error reading file: ${file_name}')
 			return
 		}
@@ -627,7 +651,8 @@ fn load_file_by_name(mut state PreviewerState, mut w simplegui.SimpleWindow, fil
 		display_code := if state.show_line_numbers { add_line_numbers(content) } else { content }
 		w.set_text('code_editor', display_code)
 		w.set_text('code_stats', format_stats_header(file_name, content, false))
-		w.append_console('output_console', '📄 Loaded file: ${file_name} (${content.len} bytes)', 0)
+		w.append_console('output_console', '📄 Loaded file: ${file_name} (${content.len} bytes)',
+			0)
 		w.set_status('Loaded V file: ${file_path} (${content.len} bytes)')
 	} else {
 		w.append_console('output_console', '❌ File not found at: ${file_path}', 3)
@@ -636,11 +661,17 @@ fn load_file_by_name(mut state PreviewerState, mut w simplegui.SimpleWindow, fil
 }
 
 fn reset_editor_code(mut state PreviewerState, mut w simplegui.SimpleWindow) {
-	display_code := if state.show_line_numbers { add_line_numbers(state.original_code) } else { state.original_code }
+	display_code := if state.show_line_numbers {
+		add_line_numbers(state.original_code)
+	} else {
+		state.original_code
+	}
 	w.set_text('code_editor', display_code)
 	state.is_dirty = false
-	w.set_text('code_stats', format_stats_header(state.selected_file, state.original_code, false))
-	w.append_console('output_console', '↺ Reverted code to original contents on disk.', 1)
+	w.set_text('code_stats', format_stats_header(state.selected_file, state.original_code,
+		false))
+	w.append_console('output_console', '↺ Reverted code to original contents on disk.',
+		1)
 	w.set_status('Reverted editor code to original file contents.')
 }
 
@@ -666,7 +697,8 @@ fn format_stats_header(file_name string, content string, is_dirty bool) string {
 fn copy_code_to_clipboard(mut w simplegui.SimpleWindow) {
 	raw_code := strip_line_numbers(w.get_text('code_editor'))
 	w.copy_to_clipboard(raw_code)
-	w.append_console('output_console', '📋 Copied clean V source code (${raw_code.len} chars) to system clipboard.', 1)
+	w.append_console('output_console', '📋 Copied clean V source code (${raw_code.len} chars) to system clipboard.',
+		1)
 	w.set_status('V source code (${raw_code.len} chars) successfully copied to system clipboard.')
 }
 
@@ -677,7 +709,8 @@ fn format_code_with_vfmt(mut w simplegui.SimpleWindow) {
 	}
 	tmp_path := os.join_path(os.temp_dir(), 'vfmt_temp.v')
 	os.write_file(tmp_path, raw_code) or {
-		w.append_console('output_console', '❌ Formatting error: Could not write temporary file.', 3)
+		w.append_console('output_console', '❌ Formatting error: Could not write temporary file.',
+			3)
 		w.set_status('Formatting error: Could not write temporary file for v fmt.')
 		return
 	}
@@ -690,7 +723,8 @@ fn format_code_with_vfmt(mut w simplegui.SimpleWindow) {
 		formatted := os.read_file(tmp_path) or { raw_code }
 		if formatted.trim_space().len > 0 {
 			w.set_text('code_editor', formatted)
-			w.append_console('output_console', '⚡ Code formatted cleanly with `v fmt`.', 4)
+			w.append_console('output_console', '⚡ Code formatted cleanly with `v fmt`.',
+				4)
 			w.set_status('Code formatted cleanly with `v fmt`.')
 		}
 	} else {
@@ -699,7 +733,8 @@ fn format_code_with_vfmt(mut w simplegui.SimpleWindow) {
 			w.append_console('output_console', '⚡ Code formatted with `v fmt`.', 4)
 			w.set_status('Code formatted cleanly with `v fmt`.')
 		} else {
-			w.append_console('output_console', '⚠️ v fmt warning/error: ${res.output.trim_space()}', 2)
+			w.append_console('output_console', '⚠️ v fmt warning/error: ${res.output.trim_space()}',
+				2)
 			w.set_status('v fmt notice: ${res.output.trim_space()}')
 		}
 	}
@@ -709,14 +744,16 @@ fn save_editor_code(mut state PreviewerState, mut w simplegui.SimpleWindow) {
 	raw_code := strip_line_numbers(w.get_text('code_editor'))
 	if state.current_file_path != '' && os.exists(state.current_file_path) {
 		os.write_file(state.current_file_path, raw_code) or {
-			w.append_console('output_console', '❌ Save error: Failed to write to ${state.current_file_path}', 3)
+			w.append_console('output_console', '❌ Save error: Failed to write to ${state.current_file_path}',
+				3)
 			w.set_status('Save error: Failed to write to file ${state.current_file_path}')
 			return
 		}
 		state.original_code = raw_code
 		state.is_dirty = false
 		w.set_text('code_stats', format_stats_header(state.selected_file, raw_code, false))
-		w.append_console('output_console', '💾 Saved file: ${state.current_file_path}', 4)
+		w.append_console('output_console', '💾 Saved file: ${state.current_file_path}',
+			4)
 		w.set_status('Saved updated code to: ${state.current_file_path}')
 	} else {
 		save_path := w.save_file_picker()
@@ -726,7 +763,8 @@ fn save_editor_code(mut state PreviewerState, mut w simplegui.SimpleWindow) {
 				real_path += '.v'
 			}
 			os.write_file(real_path, raw_code) or {
-				w.append_console('output_console', '❌ Save error: Failed to save to ${real_path}', 3)
+				w.append_console('output_console', '❌ Save error: Failed to save to ${real_path}',
+					3)
 				w.set_status('Save error: Failed to save file to ${real_path}')
 				return
 			}
@@ -734,7 +772,8 @@ fn save_editor_code(mut state PreviewerState, mut w simplegui.SimpleWindow) {
 			state.selected_file = os.file_name(real_path)
 			state.original_code = raw_code
 			state.is_dirty = false
-			w.set_text('code_stats', format_stats_header(state.selected_file, raw_code, false))
+			w.set_text('code_stats', format_stats_header(state.selected_file, raw_code,
+				false))
 			w.append_console('output_console', '💾 Saved file to: ${real_path}', 4)
 			w.set_status('Saved file to: ${real_path}')
 		}
@@ -744,7 +783,8 @@ fn save_editor_code(mut state PreviewerState, mut w simplegui.SimpleWindow) {
 fn run_live_demo(mut w simplegui.SimpleWindow, demo_name string) {
 	raw_code := strip_line_numbers(w.get_text('code_editor'))
 	if raw_code.trim_space().len == 0 {
-		w.append_console('output_console', '❌ Execution error: Code editor is empty.', 3)
+		w.append_console('output_console', '❌ Execution error: Code editor is empty.',
+			3)
 		w.set_status('Execution error: Code editor is empty.')
 		return
 	}
@@ -752,14 +792,16 @@ fn run_live_demo(mut w simplegui.SimpleWindow, demo_name string) {
 	tmp_runner_path := os.join_path(os.temp_dir(), 'simplegui_live_runner.v')
 	tmp_exe_path := os.join_path(os.temp_dir(), 'simplegui_live_runner_bin')
 	os.write_file(tmp_runner_path, raw_code) or {
-		w.append_console('output_console', '❌ Execution error: Could not write temporary runner file.', 3)
+		w.append_console('output_console', '❌ Execution error: Could not write temporary runner file.',
+			3)
 		w.set_status('Execution error: Could not create temporary execution runner file.')
 		return
 	}
 
 	w.start_spinner('live_spinner')
 	w.set_text('btn_run', '⏳ Compiling...')
-	w.append_console('output_console', '⚡ Compiling V source code for ${demo_name}...', 1)
+	w.append_console('output_console', '⚡ Compiling V source code for ${demo_name}...',
+		1)
 	w.set_status('⏳ Compiling and launching live window preview for ${demo_name}...')
 
 	w.after(30, fn [demo_name, tmp_runner_path, tmp_exe_path] (mut w2 simplegui.SimpleWindow) {
@@ -768,7 +810,8 @@ fn run_live_demo(mut w simplegui.SimpleWindow, demo_name string) {
 		if build_res.exit_code != 0 {
 			w2.stop_spinner('live_spinner')
 			w2.set_text('btn_run', '▶ Live Run Window')
-			w2.append_console('output_console', '❌ Compilation Failed for ${demo_name}:', 3)
+			w2.append_console('output_console', '❌ Compilation Failed for ${demo_name}:',
+				3)
 			for err_line in build_res.output.split_into_lines() {
 				if err_line.trim_space().len > 0 {
 					w2.append_console('output_console', '   ${err_line}', 3)
@@ -778,7 +821,8 @@ fn run_live_demo(mut w simplegui.SimpleWindow, demo_name string) {
 			return
 		}
 
-		w2.append_console('output_console', '✅ Compilation succeeded! Launching live preview window...', 4)
+		w2.append_console('output_console', '✅ Compilation succeeded! Launching live preview window...',
+			4)
 		w2.set_text('btn_run', '🚀 Running...')
 
 		// Execute compiled binary in background spawn thread

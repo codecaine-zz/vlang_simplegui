@@ -3,7 +3,7 @@ set -e
 
 echo "🚀 Building standalone macOS .app bundle for SimpleGUI RAD Code Explorer & Live Previewer..."
 
-TARGET_FILE="vlang_simple_gui_previewer.v"
+TARGET_FILE="tools/vlang_simple_gui_previewer.v"
 
 ICON_FILE="resources/developer.png"
 if [ ! -f "$ICON_FILE" ]; then
@@ -12,6 +12,6 @@ fi
 
 APP_NAME="V Code Previewer"
 
-v run build.vsh "$TARGET_FILE" --name "$APP_NAME" --icon "$ICON_FILE" --out dist
+v run scripts/build.vsh "$TARGET_FILE" --name "$APP_NAME" --icon "$ICON_FILE" --out dist
 
 echo "🎉 Build complete! Your standalone macOS application is ready at dist/${APP_NAME}.app"

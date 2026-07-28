@@ -2124,7 +2124,8 @@ pub fn (win &SimpleWindow) shake_on_error() &SimpleWindow {
 
 // set_fixed_size locks the window to a fixed width and height and disables resizability.
 pub fn (win &SimpleWindow) set_fixed_size(width int, height int) &SimpleWindow {
-	return win.set_size(width, height).set_min_size(width, height).set_max_size(width, height).set_resizable(false)
+	return win.set_size(width, height).set_min_size(width, height).set_max_size(width,
+		height).set_resizable(false)
 }
 
 // set_size_preset resizes the window based on standard preset names (e.g. 'compact', 'medium', 'large', 'hd', 'full_hd', 'dialog', 'login', 'settings', 'sidebar', 'splash', 'square').
@@ -2258,7 +2259,8 @@ pub fn (win &SimpleWindow) toggle_window_theme() &SimpleWindow {
 // is_dark_theme reports whether the window currently has a dark background color.
 pub fn (win &SimpleWindow) is_dark_theme() bool {
 	bg := win.background_color.to_lower().trim_space()
-	if bg in ['#1c1c1e', '#161618', '#281a24', '#0d1f18', '#211815', '#1e1e2e', '#2e3440', '#282a36', '#0d0d15', '#002b36', '#0d1117', '#0f172a', '#14532d', 'dark', 'black'] {
+	if bg in ['#1c1c1e', '#161618', '#281a24', '#0d1f18', '#211815', '#1e1e2e', '#2e3440', '#282a36',
+		'#0d0d15', '#002b36', '#0d1117', '#0f172a', '#14532d', 'dark', 'black'] {
 		return true
 	}
 	if bg.starts_with('#') && bg.len >= 7 {

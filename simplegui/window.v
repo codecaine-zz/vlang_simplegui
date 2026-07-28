@@ -1,6 +1,5 @@
 module simplegui
 
-
 #include <Cocoa/Cocoa.h>
 
 #include "@VMODROOT/simplegui/window.h"
@@ -14,7 +13,6 @@ module simplegui
 #flag -framework ApplicationServices
 
 #flag @VMODROOT/simplegui/window.m
-
 
 fn C.window_app_init(&WindowParams) &WindowInfo
 
@@ -492,7 +490,6 @@ fn C.window_set_titlebar_visible(&WindowInfo, int)
 
 fn C.window_request_attention(&WindowInfo, int)
 
-
 fn C.window_deliver_notification(&u8, &u8)
 
 fn C.window_set_dock_badge(&u8)
@@ -502,7 +499,6 @@ fn C.window_set_slider_range(&WindowInfo, &u8, f64, f64)
 fn C.window_add_link_control(&WindowInfo, &u8, &u8, &u8) voidptr
 
 fn C.window_beep()
-
 
 fn C.window_add_disclosure_control(&WindowInfo, &u8, &u8, int) voidptr
 
@@ -547,7 +543,6 @@ fn C.window_animate_size(&WindowInfo, int, int, int)
 fn C.window_animate_position(&WindowInfo, int, int, int)
 
 fn C.window_animate_bounds(&WindowInfo, int, int, int, int, int)
-
 
 fn C.window_add_toolbar_item(&WindowInfo, &u8, &u8, &u8, &u8)
 
@@ -659,7 +654,6 @@ fn C.window_add_toolbar_button(&WindowInfo, &u8, &u8, &u8)
 
 fn C.window_set_toolbar_visible(&WindowInfo, int)
 
-
 fn C.window_grid_get_row_values(&WindowInfo, &u8, int, &&u8, int) int
 
 fn C.window_set_checkbox_state(&WindowInfo, int)
@@ -669,7 +663,6 @@ fn C.window_set_input_text(&WindowInfo, &u8)
 fn C.window_set_number_value(&WindowInfo, int)
 
 fn C.window_set_text_area(&WindowInfo, &u8)
-
 
 fn C.window_set_subtitle(&WindowInfo, &u8)
 
@@ -694,7 +687,6 @@ fn C.window_set_aspect_ratio(&WindowInfo, f64, f64)
 fn C.window_reset_aspect_ratio(&WindowInfo)
 
 fn C.window_bounce_dock_icon(int)
-
 
 fn C.window_set_vibrancy(&WindowInfo, &u8)
 
@@ -760,13 +752,11 @@ fn C.window_order_front(&WindowInfo)
 
 fn C.window_order_back(&WindowInfo)
 
-
 fn C.window_add_rating_control(&WindowInfo, &u8, int, int) voidptr
 
 fn C.window_set_rating_value(&WindowInfo, &u8, int)
 
 fn C.window_get_rating_value(&WindowInfo, &u8) int
-
 
 fn C.window_add_range_slider_control(&WindowInfo, &u8, int, int, int, int) voidptr
 
@@ -775,7 +765,6 @@ fn C.window_set_range_slider_values(&WindowInfo, &u8, int, int)
 fn C.window_get_range_slider_low(&WindowInfo, &u8) int
 
 fn C.window_get_range_slider_high(&WindowInfo, &u8) int
-
 
 fn C.window_add_split_button_control(&WindowInfo, &u8, &u8, &&u8, int) voidptr
 
@@ -787,13 +776,11 @@ fn C.window_add_wizard_stepper_control(&WindowInfo, &u8, &&u8, int, int) voidptr
 
 fn C.window_set_wizard_stepper_step(&WindowInfo, &u8, int)
 
-
 fn C.window_add_gauge_control(&WindowInfo, &u8, &u8, int, int, int, &u8) voidptr
 
 fn C.window_set_gauge_value(&WindowInfo, &u8, int)
 
 fn C.window_get_gauge_value(&WindowInfo, &u8) int
-
 
 fn C.window_add_pagination_control(&WindowInfo, &u8, int, int) voidptr
 
@@ -801,13 +788,11 @@ fn C.window_set_pagination_page(&WindowInfo, &u8, int, int)
 
 fn C.window_get_pagination_page(&WindowInfo, &u8) int
 
-
 fn C.window_add_activity_feed_control(&WindowInfo, &u8, int) voidptr
 
 fn C.window_add_activity_feed_item(&WindowInfo, &u8, &u8, &u8, &u8)
 
 fn C.window_clear_activity_feed(&WindowInfo, &u8)
-
 
 fn C.window_add_markdown_view_control(&WindowInfo, &u8, &u8, int) voidptr
 
@@ -815,11 +800,9 @@ fn C.window_set_markdown_view_text(&WindowInfo, &u8, &u8)
 
 fn C.window_get_markdown_view_text(&WindowInfo, &u8) &u8
 
-
 fn C.window_add_sparkline_control(&WindowInfo, &u8, &f64, int, int) voidptr
 
 fn C.window_set_sparkline_data(&WindowInfo, &u8, &f64, int)
-
 
 fn C.window_add_pin_code_control(&WindowInfo, &u8, int) voidptr
 
@@ -827,24 +810,19 @@ fn C.window_set_pin_code_value(&WindowInfo, &u8, &u8)
 
 fn C.window_get_pin_code_value(&WindowInfo, &u8) &u8
 
-
 fn C.window_add_color_palette_control(&WindowInfo, &u8, &&u8, int, &u8) voidptr
 
 fn C.window_set_color_palette_selected(&WindowInfo, &u8, &u8)
 
 fn C.window_get_color_palette_selected(&WindowInfo, &u8) &u8
 
-
 fn C.window_add_timeline_control(&WindowInfo, &u8, int) voidptr
 
 fn C.window_add_timeline_item(&WindowInfo, &u8, &u8, &u8, &u8, &u8)
 
-
 fn C.window_add_metric_card_control(&WindowInfo, &u8, &u8, &u8, &u8, &u8) voidptr
 
-
 fn C.window_set_metric_card_value(&WindowInfo, &u8, &u8, &u8)
-
 
 fn C.window_add_tab_pills_control(&WindowInfo, &u8, &&u8, int, &u8) voidptr
 
@@ -852,19 +830,15 @@ fn C.window_set_tab_pills_active(&WindowInfo, &u8, &u8)
 
 fn C.window_get_tab_pills_active(&WindowInfo, &u8) &u8
 
-
 fn C.window_add_transfer_list_control(&WindowInfo, &u8, &&u8, int, &&u8, int, bool) voidptr
-
 
 fn C.window_add_audio_waveform_control(&WindowInfo, &u8, &f64, int, int) voidptr
 
 fn C.window_set_audio_waveform_data(&WindowInfo, &u8, &f64, int)
 
-
 fn C.window_add_rating_breakdown_control(&WindowInfo, &u8, f64, int, &f64, int) voidptr
 
 fn C.window_set_rating_breakdown_data(&WindowInfo, &u8, f64, int, &f64, int)
-
 
 fn C.window_add_code_view_control(&WindowInfo, &u8, &u8, &u8, int) voidptr
 
@@ -872,11 +846,9 @@ fn C.window_set_code_view_text(&WindowInfo, &u8, &u8)
 
 fn C.window_get_code_view_text(&WindowInfo, &u8) &u8
 
-
 fn C.window_add_alert_banner_control(&WindowInfo, &u8, &u8, &u8, &u8) voidptr
 
 fn C.window_set_alert_banner_value(&WindowInfo, &u8, &u8, &u8, &u8)
-
 
 fn C.window_add_step_tracker_control(&WindowInfo, &u8, &&u8, int, int) voidptr
 
@@ -884,13 +856,11 @@ fn C.window_set_step_tracker_step(&WindowInfo, &u8, int)
 
 fn C.window_get_step_tracker_step(&WindowInfo, &u8) int
 
-
 fn C.window_add_filter_chips_control(&WindowInfo, &u8, &&u8, int, &&u8, int, bool) voidptr
 
 fn C.window_set_filter_chips_selected(&WindowInfo, &u8, &&u8, int)
 
 fn C.window_get_filter_chips_selected(&WindowInfo, &u8) &u8
-
 
 fn C.window_add_file_picker_field_control(&WindowInfo, &u8, &u8, &u8, bool) voidptr
 
@@ -898,18 +868,15 @@ fn C.window_set_file_picker_path(&WindowInfo, &u8, &u8)
 
 fn C.window_get_file_picker_path(&WindowInfo, &u8) &u8
 
-
 fn C.window_add_radial_gauge_control(&WindowInfo, &u8, &u8, f64, f64, f64, &u8) voidptr
 
 fn C.window_set_radial_gauge_value(&WindowInfo, &u8, f64)
 
 fn C.window_get_radial_gauge_value(&WindowInfo, &u8) f64
 
-
 fn C.window_add_key_value_card_control(&WindowInfo, &u8, &u8, &&u8, &&u8, int) voidptr
 
 fn C.window_set_key_value_card_data(&WindowInfo, &u8, &&u8, &&u8, int)
-
 
 fn C.window_add_diff_view_control(&WindowInfo, &u8, &u8, &u8, int) voidptr
 
@@ -936,7 +903,6 @@ fn C.window_set_resource_monitor_metrics(&WindowInfo, &u8, int, int, int, int)
 fn C.window_add_env_vars_control(&WindowInfo, &u8, &u8, &&u8, &&u8, int) voidptr
 
 fn C.window_set_env_vars_data(&WindowInfo, &u8, &&u8, &&u8, int)
-
 
 fn C.window_add_badge_button_control(&WindowInfo, &u8, &u8, int, &u8) voidptr
 
@@ -989,7 +955,6 @@ fn C.window_set_status_dock_info(&WindowInfo, &u8, &u8, &u8, &u8)
 fn C.window_add_info_callout_control(&WindowInfo, &u8, &u8, &u8, &u8, &u8) voidptr
 
 fn C.window_set_info_callout_text(&WindowInfo, &u8, &u8, &u8)
-
 
 fn C.window_set_alpha(&WindowInfo, f64)
 
@@ -1084,7 +1049,6 @@ fn C.window_get_content_max_size(&WindowInfo, &int, &int)
 // Tab Count
 
 fn C.window_get_tab_count(&WindowInfo) int
-
 
 pub fn new_simple_window(title string, width int, height int) &SimpleWindow {
 	mut win := &SimpleWindow{
@@ -3290,11 +3254,7 @@ pub fn (win &SimpleWindow) run() {
 	C.window_app_run(win.window_info)
 }
 
-// Cocoa event dispatcher to V
-
-// vlang_dispatch_event performs vlang dispatch event.
-@[export: 'vlang_dispatch_event']
-
+// show_control shows the named control (fluent builder).
 pub fn (win &SimpleWindow) show_control(name string) &SimpleWindow {
 	return win.set_control_visible(name, true)
 }
@@ -3389,7 +3349,6 @@ pub fn tree_nodes_from_paths(paths []string, separator string) []TreeNode {
 
 	return nodes
 }
-
 
 fn clone_tree_nodes(nodes []TreeNode) []TreeNode {
 	mut copied := []TreeNode{cap: nodes.len}
@@ -3830,7 +3789,6 @@ pub fn (win &SimpleWindow) validate_struct[T]() bool {
 	return all_valid
 }
 
-
 fn normalize_table_rows(rows [][]string, cols_count int) [][]string {
 	if cols_count < 0 {
 		return rows.map(it.clone())
@@ -3852,7 +3810,6 @@ fn normalize_table_rows(rows [][]string, cols_count int) [][]string {
 	return normalized
 }
 
-
 fn table_infer_column_count(rows [][]string) int {
 	mut cols_count := 0
 	for row in rows {
@@ -3862,7 +3819,6 @@ fn table_infer_column_count(rows [][]string) int {
 	}
 	return cols_count
 }
-
 
 fn (win &SimpleWindow) table_column_count_for(name string, rows [][]string) int {
 	if cols := win.table_columns[name] {
@@ -3975,7 +3931,6 @@ pub fn (win &SimpleWindow) show_window() &SimpleWindow {
 	}
 	return win
 }
-
 
 fn vlang_main_thread_dispatcher(ctx voidptr) {
 	mut data := unsafe { &MainThreadCallback(ctx) }
@@ -4368,7 +4323,6 @@ pub fn (win &SimpleWindow) add_timeline_item(name string, title string, subtitle
 }
 
 // add_metric_card adds a KPI metric stats card widget.
-
 
 pub fn (win &SimpleWindow) add_metric_card(name string, title string, value string, change_badge string, subtitle string) &SimpleWindow {
 	mut real_name := name

@@ -1,0 +1,25 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build-and-test:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup V Language
+        uses: vlang/setup-v@v1
+        with:
+          check-latest: true
+
+      - name: Verify Code Formatting
+        run: v fmt -verify .
+
+      - name: Run Tests
+        run: v test .

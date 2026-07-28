@@ -10,12 +10,10 @@ struct BindingExample {
 	wants_newsletter bool
 }
 
-
 struct CallbackState {
 mut:
 	called bool
 }
-
 
 struct TestProfile {
 	username string
@@ -23,13 +21,11 @@ struct TestProfile {
 	active   bool
 }
 
-
 struct EventChainState {
 mut:
 	clicked     bool
 	changed_val string
 }
-
 
 struct ProjectRow {
 	id        int
@@ -37,14 +33,11 @@ struct ProjectRow {
 	is_active bool
 }
 
-
 struct TestValidationStruct {
 	name  string @[min_len: '3'; required]
 	email string @[email; required]
 	age   int    @[max: '99'; min: '18']
 }
-
-
 
 fn test_responsive_layout_api_is_available() {
 	mut win := simplegui.SimpleWindow{}
@@ -54,7 +47,6 @@ fn test_responsive_layout_api_is_available() {
 	win.set_responsive_layout(true)
 	assert win.get_responsive_layout() == true
 }
-
 
 fn test_layout_rows() {
 	mut win := simplegui.new_simple_window('Test Window', 100, 100)
@@ -69,7 +61,6 @@ fn test_layout_rows() {
 	assert win.has_control('ln_label') == true
 }
 
-
 fn test_row_closure_layout() {
 	mut win := simplegui.new_simple_window('Test Window', 100, 100)
 	win.row('settings', fn (mut w simplegui.SimpleWindow) {
@@ -83,7 +74,6 @@ fn test_row_closure_layout() {
 	assert win.get_value_int('db_port') == 3306
 }
 
-
 fn test_group_layout_nesting() {
 	mut win := simplegui.new_simple_window('Test Window', 100, 100)
 	win.group('profile', 'Profile Details', fn (mut w simplegui.SimpleWindow) {
@@ -96,7 +86,6 @@ fn test_group_layout_nesting() {
 	assert win.has_control('last_name') == true
 	assert win.get('first_name') == 'Ada'
 }
-
 
 fn test_table_row_management_helpers() {
 	mut win := simplegui.SimpleWindow{}
@@ -136,7 +125,6 @@ fn test_table_row_management_helpers() {
 	win.clear_table('inventory')
 	assert win.get_table_row_count('inventory') == 0
 }
-
 
 fn test_table_strict_apis_and_row_normalization() {
 	mut win := simplegui.SimpleWindow{}
@@ -188,7 +176,6 @@ fn test_table_strict_apis_and_row_normalization() {
 	assert win.get_table_column_average('inventory', 2) == 10.0
 	assert win.get_table_column_average_numeric('inventory', 2) == 15.0
 }
-
 
 fn test_advanced_layout_grid_flex_and_alignment() {
 	mut win := simplegui.SimpleWindow{}

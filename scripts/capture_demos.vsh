@@ -7,7 +7,7 @@ struct Candidate {
 }
 
 fn get_window_rect_for_pid(target_pid int, binary_name string) string {
-	res := os.execute('./list_windows')
+	res := os.execute('./tools/list_windows')
 	if res.exit_code != 0 {
 		return ''
 	}
@@ -60,13 +60,13 @@ fn get_window_rect_for_pid(target_pid int, binary_name string) string {
 fn main() {
 	// Compile list_windows tool
 	println('Compiling list_windows helper...')
-	clang_res := os.execute('clang -framework Cocoa -framework CoreGraphics list_windows.m -o list_windows')
+	clang_res := os.execute('clang -framework Cocoa -framework CoreGraphics tools/list_windows.m -o tools/list_windows')
 	if clang_res.exit_code != 0 {
 		eprintln('❌ Could not compile list_windows: ${clang_res.output}')
 		exit(1)
 	}
 
-	if !os.exists('list_windows') {
+	if !os.exists('tools/list_windows') {
 		eprintln('❌ Could not build list_windows tool')
 		exit(1)
 	}

@@ -1,11 +1,12 @@
 #!/usr/bin/env v
+
 import os
 
 fn main() {
 	println('🚀 Building standalone macOS .app bundle for SimpleGUI RAD Code Explorer & Live Previewer...')
 
 	// Check required entry point
-	target_file := 'vlang_simple_gui_previewer.v'
+	target_file := 'tools/vlang_simple_gui_previewer.v'
 
 	icon_file := if os.exists('resources/developer.png') {
 		'resources/developer.png'
@@ -22,7 +23,7 @@ fn main() {
 	println('  Icon:        ${icon_file}')
 	println('--------------------------------------------------')
 
-	cmd := 'v run build.vsh ${os.quoted_path(target_file)} --name ${os.quoted_path(app_name)} --icon ${os.quoted_path(icon_file)} --out dist'
+	cmd := 'v run scripts/build.vsh ${os.quoted_path(target_file)} --name ${os.quoted_path(app_name)} --icon ${os.quoted_path(icon_file)} --out dist'
 	println('Executing: ${cmd}')
 	res := os.execute(cmd)
 	println(res.output)

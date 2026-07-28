@@ -2,6 +2,7 @@
 
 Build real, native Cocoa desktop apps in [V](https://vlang.io) with a beginner-friendly API inspired by Delphi, VBA, and Python UI toolkits — no Objective-C required.
 
+[![CI](https://github.com/vlang/simplegui/actions/workflows/ci.yml/badge.svg)](https://github.com/vlang/simplegui/actions/workflows/ci.yml)
 ![Platform: macOS](https://img.shields.io/badge/platform-macOS-blue)
 ![Language: V](https://img.shields.io/badge/language-V-4f87c4)
 ![License: MIT](https://img.shields.io/badge/license-MIT-green)
@@ -14,6 +15,7 @@ Build real, native Cocoa desktop apps in [V](https://vlang.io) with a beginner-f
 - [Overview](#overview)
 - [📘 Beginner's Core Concepts Glossary](#-beginners-core-concepts--jargon-free-glossary)
 - [Features](#features)
+- [Platform Support Matrix](#platform-support-matrix)
 - [Installation](#installation)
 - [Quick start](#quick-start)
 - [Faster form building](#faster-form-building)
@@ -152,6 +154,15 @@ For app code, the grid helpers are intentionally ergonomic:
 - `grid_get_row()` / `grid_set_row()` and `grid_get_column()` / `grid_set_column()` cover the common spreadsheet-style operations.
 - `grid_get_selected_column()`, `grid_set_selected_column()`, and `grid_set_selected_cell()` make selection easy to drive from code.
 
+## Platform Support Matrix
+
+| OS / Architecture | Status | Backend / Renderer | Notes |
+|:---|:---|:---|:---|
+| **macOS (Apple Silicon arm64)** | Tier 1 (Full Support) | Native Cocoa / Objective-C Bridge | Zero external dependencies; uses system Cocoa framework. |
+| **macOS (Intel x86_64)** | Tier 1 (Full Support) | Native Cocoa / Objective-C Bridge | Full feature parity across all macOS releases (10.13+). |
+| **Linux (x86_64 / arm64)** | Roadmap / Planned | GTK4 / WebKit Bridge | Architecture abstraction layer under development. |
+| **Windows (x64)** | Roadmap / Planned | Win32 / Direct2D | Architecture abstraction layer under development. |
+
 ## Installation
 
 ### Requirements
@@ -161,6 +172,17 @@ For app code, the grid helpers are intentionally ergonomic:
 - Xcode Command Line Tools (`xcode-select --install`)
 
 ### Setup
+
+#### Option A: VPM Package Manager (Recommended)
+
+Install directly via `vpm`:
+```bash
+v install simplegui
+# Or install directly from the repository:
+v install https://github.com/codecaine-zz/vlang_simplegui
+```
+
+#### Option B: Clone & Local Project Embedding
 
 ```bash
 git clone https://github.com/codecaine-zz/vlang_simplegui.git
@@ -173,7 +195,7 @@ v run .
 v test .
 ```
 
-To use SimpleGUI in your own project, copy the [simplegui/](simplegui/) folder (including the native bridge files `window.h` and `window.m`) into your project root and `import simplegui`.
+To use SimpleGUI in your own project, either install via `vpm` or copy the [simplegui/](simplegui/) folder into your project root and `import simplegui`.
 
 ## Quick start
 

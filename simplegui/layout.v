@@ -1,6 +1,5 @@
 module simplegui
 
-
 pub fn (win &SimpleWindow) add_heading(title string) &SimpleWindow {
 	heading_name := 'heading_${win.controls.len}'
 	win.add_label(heading_name, title)
@@ -157,7 +156,6 @@ pub fn (win &SimpleWindow) add_separator() &SimpleWindow {
 	}
 	return win
 }
-
 
 pub fn (win &SimpleWindow) add_action_row(actions map[string]VoidEventCallback) &SimpleWindow {
 	row_name := win.auto_name('action_row')

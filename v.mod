@@ -1,7 +1,9 @@
 Module {
-	name: 'vlang_macos_native_window'
-	description: 'macos native window'
-	version: '0.0.0'
+	name: 'simplegui'
+	description: 'Native macOS Cocoa GUI library for V'
+	version: '0.5.0'
 	license: 'MIT'
+	repo_url: 'https://github.com/codecaine-zz/vlang_simplegui'
+	tags: ['gui', 'cocoa', 'macos', 'ui', 'desktop', 'native']
 	dependencies: []
 }

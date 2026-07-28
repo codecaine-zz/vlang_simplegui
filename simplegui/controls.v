@@ -3,7 +3,6 @@ module simplegui
 import strings
 import json
 
-
 pub fn (win &SimpleWindow) has_control(name string) bool {
 	return win.find_control(name) >= 0
 }
@@ -1474,6 +1473,39 @@ pub fn (win &SimpleWindow) set_value_int(name string, val int) &SimpleWindow {
 
 pub fn (win &SimpleWindow) get_value_int(name string) int {
 	return win.get_number_value(name)
+}
+
+// get_text_opt returns the text of a control as an Option, or none if the control does not exist.
+pub fn (win &SimpleWindow) get_text_opt(name string) ?string {
+	if !win.has_control(name) {
+		return none
+	}
+	return win.get_text(name)
+}
+
+// get_checked_opt returns the checked state of a control as an Option, or none if the control does not exist.
+pub fn (win &SimpleWindow) get_checked_opt(name string) ?bool {
+	if !win.has_control(name) {
+		return none
+	}
+	return win.get_checked(name)
+}
+
+// get_value_int_opt returns the integer value of a control as an Option, or none if the control does not exist.
+pub fn (win &SimpleWindow) get_value_int_opt(name string) ?int {
+	if !win.has_control(name) {
+		return none
+	}
+	return win.get_value_int(name)
+}
+
+// get_control_opt returns the ControlEntry as an Option, or none if the control does not exist.
+pub fn (win &SimpleWindow) get_control_opt(name string) ?ControlEntry {
+	idx := win.find_control(name)
+	if idx < 0 {
+		return none
+	}
+	return win.controls[idx]
 }
 
 // Input Control Helper

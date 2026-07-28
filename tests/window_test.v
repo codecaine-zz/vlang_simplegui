@@ -10,12 +10,10 @@ struct BindingExample {
 	wants_newsletter bool
 }
 
-
 struct CallbackState {
 mut:
 	called bool
 }
-
 
 struct TestProfile {
 	username string
@@ -23,13 +21,11 @@ struct TestProfile {
 	active   bool
 }
 
-
 struct EventChainState {
 mut:
 	clicked     bool
 	changed_val string
 }
-
 
 struct ProjectRow {
 	id        int
@@ -37,14 +33,11 @@ struct ProjectRow {
 	is_active bool
 }
 
-
 struct TestValidationStruct {
 	name  string @[min_len: '3'; required]
 	email string @[email; required]
 	age   int    @[max: '99'; min: '18']
 }
-
-
 
 fn test_status_updates_create_a_status_control() {
 	mut win := simplegui.SimpleWindow{}
@@ -55,7 +48,6 @@ fn test_status_updates_create_a_status_control() {
 	assert win.get_control_kind('status') == 'label'
 }
 
-
 fn test_window_always_on_top_state_is_stored() {
 	mut win := simplegui.SimpleWindow{}
 
@@ -65,7 +57,6 @@ fn test_window_always_on_top_state_is_stored() {
 	win.set_always_on_top(false)
 	assert win.get_always_on_top() == false
 }
-
 
 fn test_new_window_controls() {
 	win := simplegui.new_simple_window('Test Window Controls', 400, 300)
@@ -101,7 +92,6 @@ fn test_new_window_controls() {
 	assert win.get_has_shadow() == true
 	assert win.get_movable_by_window_background() == false
 }
-
 
 fn test_new_window_commands_and_controls() {
 	mut win := simplegui.SimpleWindow{}
@@ -144,7 +134,6 @@ fn test_new_window_commands_and_controls() {
 	assert win.get_control_kind('checkout_flow') == 'wizard_stepper'
 }
 
-
 fn test_new_useful_window_controls() {
 	mut win := simplegui.new_simple_window('New Useful Controls Test', 800, 600)
 
@@ -184,7 +173,6 @@ fn test_new_useful_window_controls() {
 	win.set_info_callout_text('callout_card', 'Critical Update', 'Version v1.5 includes security improvements.')
 }
 
-
 fn test_new_window_management_commands() {
 	mut win := simplegui.new_simple_window('Window Commands Test', 600, 400)
 	win.set_vibrancy('sidebar')
@@ -194,7 +182,6 @@ fn test_new_window_management_commands() {
 	win.center_on_active_screen()
 	win.set_level_type('normal')
 }
-
 
 fn test_comprehensive_window_control_apis() {
 	mut win := simplegui.new_simple_window('Comprehensive Window Control Test', 800, 500)
@@ -314,7 +301,6 @@ fn test_comprehensive_window_control_apis() {
 	win.shake_on_error()
 	win.center_and_focus()
 }
-
 
 fn test_new_window_control_apis() {
 	mut win := simplegui.new_simple_window('New APIs Test', 600, 400)

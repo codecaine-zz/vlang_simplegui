@@ -1,14 +1,10 @@
 module simplegui
 
-
 pub type StringEventCallback = fn (mut win SimpleWindow, value string)
-
 
 pub type VoidEventCallback = fn (mut win SimpleWindow)
 
-
 pub type FileDropCallback = fn (mut win SimpleWindow, files []string)
-
 
 pub struct MenuItem {
 pub:
@@ -16,7 +12,6 @@ pub:
 	shortcut string
 	callback VoidEventCallback = unsafe { nil }
 }
-
 
 pub struct WindowConfig {
 pub mut:
@@ -39,7 +34,6 @@ pub mut:
 	title_visible                bool
 }
 
-
 pub struct WindowParams {
 	title                        string
 	width                        int
@@ -59,14 +53,12 @@ pub struct WindowParams {
 	title_visible                int
 }
 
-
 pub struct WindowInfo {
 	app          voidptr
 	app_delegate voidptr
 }
 
 @[heap]
-
 pub struct SimpleWindow {
 mut:
 	window_info                  &WindowInfo = unsafe { nil }
@@ -127,9 +119,8 @@ pub mut:
 	ws_client voidptr = unsafe { nil }
 }
 
-
-struct ControlEntry {
-mut:
+pub struct ControlEntry {
+pub mut:
 	name             string
 	kind             string
 	label            string
@@ -152,9 +143,7 @@ mut:
 	expand_fill      bool
 }
 
-
 pub type AnyEventCallback = fn (mut win SimpleWindow, control_name string, event_name string, value string)
-
 
 struct ControlEventHandler {
 mut:
