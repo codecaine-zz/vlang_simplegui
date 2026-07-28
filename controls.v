@@ -2569,12 +2569,14 @@ pub fn (win &SimpleWindow) set_values(values map[string]string) &SimpleWindow {
 pub fn (win &SimpleWindow) bind_to_struct[T](mut data T) &SimpleWindow {
 	$for field in T.fields {
 		name := field.name
-		$if field.typ is string {
-			data.$(field.name) = win.get_text(name)
-		} $else $if field.typ is int {
-			data.$(field.name) = win.get_value_int(name)
-		} $else $if field.typ is bool {
-			data.$(field.name) = win.get_checked(name)
+		if win.has_control(name) {
+			$if field.typ is string {
+				data.$(field.name) = win.get_text(name)
+			} $else $if field.typ is int {
+				data.$(field.name) = win.get_value_int(name)
+			} $else $if field.typ is bool {
+				data.$(field.name) = win.get_checked(name)
+			}
 		}
 	}
 	return win
@@ -2584,12 +2586,14 @@ pub fn (win &SimpleWindow) bind_to_struct[T](mut data T) &SimpleWindow {
 pub fn (win &SimpleWindow) load_from_struct[T](data T) &SimpleWindow {
 	$for field in T.fields {
 		name := field.name
-		$if field.typ is string {
-			win.set_text(name, data.$(field.name))
-		} $else $if field.typ is int {
-			win.set_value_int(name, data.$(field.name))
-		} $else $if field.typ is bool {
-			win.set_checked(name, data.$(field.name))
+		if win.has_control(name) {
+			$if field.typ is string {
+				win.set_text(name, data.$(field.name))
+			} $else $if field.typ is int {
+				win.set_value_int(name, data.$(field.name))
+			} $else $if field.typ is bool {
+				win.set_checked(name, data.$(field.name))
+			}
 		}
 	}
 	return win

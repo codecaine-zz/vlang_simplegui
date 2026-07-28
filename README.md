@@ -310,17 +310,50 @@ These helpers usually make the code shorter and easier to read than manually sti
 
 ### 3. High-Level Reactive Control Bindings (`bind_*`)
 
-SimpleGUI provides 5 built-in `bind_*` convenience methods to handle common reactive UI patterns automatically without writing manual event listeners:
+SimpleGUI provides built-in `bind_*` convenience methods to handle common reactive UI patterns automatically without writing manual event listeners:
 
-- **`bind_checkbox_enables`**: Keeps a list of controls enabled while a checkbox/switch is checked, and disabled when unchecked.
+- **`bind_checkbox_enables`**: Keeps controls enabled while checked, disabled when unchecked.
   ```v
   win.bind_checkbox_enables('enable_sec', ['sec_pin', 'sec_phone'])
+  ```
+
+- **`bind_checkbox_disables`**: Keeps controls disabled while checked, enabled when unchecked.
+  ```v
+  win.bind_checkbox_disables('use_system_theme', ['custom_theme_select'])
+  ```
+
+- **`bind_checkbox_shows` / `bind_checkbox_hides`**: Shows or hides controls dynamically based on checkbox state.
+  ```v
+  win.bind_checkbox_shows('enable_advanced', ['adv_panel_1', 'adv_panel_2'])
+  ```
+
+- **`bind_inputs_to_button`**: Keeps an action button enabled ONLY when all specified required input fields have non-empty text.
+  ```v
+  win.bind_inputs_to_button(['username', 'email'], 'submit_btn')
   ```
 
 - **`bind_value_to_label`**: Dynamic control value mirroring (slider, stepper, input, dropdown) into a formatted text label.
   ```v
   win.bind_value_to_label('volume_slider', 'volume_label', 'Master Audio Volume: ', '%')
   // Renders label text as: "Master Audio Volume: 75%"
+  ```
+
+- **`bind_value_to_progress`**: Syncs slider/stepper/number values directly to a progress indicator bar.
+  ```v
+  win.bind_value_to_progress('volume_slider', 'vol_progress')
+  ```
+
+- **`bind_dropdown_to_label`**: Maps dropdown selection value to label text dynamically using a lookup map dictionary.
+  ```v
+  win.bind_dropdown_to_label('plan_select', 'price_label', {
+      'Free': 'Price: $0/mo'
+      'Pro':  'Price: $29/mo'
+  })
+  ```
+
+- **`bind_two_way`**: Bi-directionally synchronizes two controls (e.g. slider <-> number input) without infinite feedback loops.
+  ```v
+  win.bind_two_way('input_a', 'input_b')
   ```
 
 - **`bind_char_counter`**: Tracks character length of an input/textarea, updates `"used/max"` label, and triggers inline validation errors when limit is exceeded.

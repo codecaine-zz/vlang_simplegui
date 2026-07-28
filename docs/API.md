@@ -4255,6 +4255,97 @@ mut user := UserForm{}
 win.bind_to_struct(mut user)
 ```
 
+### `win.bind_value_to_label(source string, label string, prefix string, suffix string) &SimpleWindow`
+
+Mirrors a control's value (slider, stepper, input, dropdown) into a label whenever it changes, rendered as `prefix + value + suffix`. Evaluates immediately.
+
+```v
+win.bind_value_to_label('volume_slider', 'volume_label', 'Volume: ', '%')
+```
+
+### `win.bind_value_to_progress(source string, progress string) &SimpleWindow`
+
+Syncs an integer value control (slider, stepper, number input) directly to a progress indicator bar. Applied immediately and on change.
+
+```v
+win.bind_value_to_progress('volume_slider', 'vol_progress')
+```
+
+### `win.bind_dropdown_to_label(dropdown string, label string, mapping map[string]string) &SimpleWindow`
+
+Updates a label's text dynamically based on a lookup map dictionary of dropdown option values. Applied immediately and on change.
+
+```v
+win.bind_dropdown_to_label('plan_select', 'price_lbl', {
+    'Free': 'Price: $0/mo',
+    'Pro':  'Price: $29/mo'
+})
+```
+
+### `win.bind_checkbox_enables(checkbox string, names []string) &SimpleWindow`
+
+Keeps a group of controls enabled while the checkbox/switch is checked and disabled while unchecked. Applied immediately.
+
+```v
+win.bind_checkbox_enables('enable_sec', ['sec_pin', 'sec_phone'])
+```
+
+### `win.bind_checkbox_disables(checkbox string, names []string) &SimpleWindow`
+
+Keeps a group of controls disabled while the checkbox/switch is checked and enabled while unchecked. Applied immediately.
+
+```v
+win.bind_checkbox_disables('use_default', ['custom_config_input'])
+```
+
+### `win.bind_checkbox_shows(checkbox string, names []string) &SimpleWindow`
+
+Shows (unhides) a group of controls while the checkbox/switch is checked and hides them while unchecked. Applied immediately.
+
+```v
+win.bind_checkbox_shows('enable_adv', ['adv_panel_1', 'adv_panel_2'])
+```
+
+### `win.bind_checkbox_hides(checkbox string, names []string) &SimpleWindow`
+
+Hides a group of controls while the checkbox/switch is checked and shows them while unchecked. Applied immediately.
+
+```v
+win.bind_checkbox_hides('hide_preview', ['preview_box'])
+```
+
+### `win.bind_inputs_to_button(inputs []string, button string) &SimpleWindow`
+
+Disables an action button unless ALL specified input fields contain non-empty text. Evaluates and applies state immediately and on every keypress.
+
+```v
+win.bind_inputs_to_button(['username', 'email'], 'submit_btn')
+```
+
+### `win.bind_two_way(control_a string, control_b string) &SimpleWindow`
+
+Keeps two controls bi-directionally synchronized without infinite event feedback loops.
+
+```v
+win.bind_two_way('input_a', 'input_b')
+```
+
+### `win.bind_char_counter(input string, counter_label string, max int) &SimpleWindow`
+
+Tracks character length of an input/textarea, updates `"used/max"` label, and flags inline error validation when limit is exceeded.
+
+```v
+win.bind_char_counter('bio_input', 'bio_counter_lbl', 30)
+```
+
+### `win.bind_search_to_list(search_name string, list_name string) &SimpleWindow`
+
+Wires a search field to a list box so typing live-filters visible rows using case-insensitive substring matching.
+
+```v
+win.bind_search_to_list('contact_search', 'contacts_list')
+```
+
 ### `win.load_from_struct[T](data T) &SimpleWindow`
 
 Populates GUI controls using matching field name values from the passed struct.
@@ -4741,8 +4832,17 @@ win.copy_table_to_clipboard('data_table')
 
 - `win.confirm_then(title, question, callback VoidEventCallback) bool` shows a Yes/No dialog and runs the callback only when confirmed; returns `true` when the callback was executed.
 - `win.bind_value_to_label(source, label, prefix, suffix)` mirrors a control's value into a label whenever it changes, rendered as `prefix + value + suffix` (the current value is applied immediately).
-- `win.bind_checkbox_enables(checkbox, names []string)` keeps a group of controls enabled while the checkbox/switch is checked and disabled while unchecked (the current state is applied immediately).
+- `win.bind_value_to_progress(source, progress)` syncs an integer value control (slider, stepper, number input) directly to a progress indicator bar.
+- `win.bind_dropdown_to_label(dropdown, label, mapping map[string]string)` updates a label's text dynamically based on a lookup map dictionary of dropdown values.
+- `win.bind_checkbox_enables(checkbox, names []string)` keeps a group of controls enabled while checked and disabled while unchecked (applied immediately).
+- `win.bind_checkbox_disables(checkbox, names []string)` keeps a group of controls disabled while checked and enabled while unchecked (applied immediately).
+- `win.bind_checkbox_shows(checkbox, names []string)` shows (unhides) a group of controls while checked and hides them while unchecked (applied immediately).
+- `win.bind_checkbox_hides(checkbox, names []string)` hides a group of controls while checked and shows them while unchecked (applied immediately).
+- `win.bind_inputs_to_button(inputs []string, button string)` disables an action button unless ALL specified input fields contain non-empty text.
+- `win.bind_two_way(control_a, control_b)` keeps two controls bi-directionally synchronized without infinite event feedback loops.
 - `win.bind_char_counter(input, counter_label, max int)` keeps a label updated with `used/max` as the user types and flags the input with an inline error while over the limit.
+- `win.bind_search_to_list(search_name, list_name)` wires a search input to live-filter a list box using case-insensitive substring matching.
+- `win.bind_to_struct[T](mut data T)` populates struct fields from matching control names via compile-time reflection.
 - `win.countdown(label, seconds, callback VoidEventCallback)` counts a numeric label down to zero once per second, then stops its timer and invokes the callback.
 - `win.dedupe_list_items(name)` removes duplicate list items, keeping the first occurrence.
 - `win.reverse_list_items(name)` reverses the order of a list box's items.
@@ -4753,8 +4853,13 @@ win.copy_table_to_clipboard('data_table')
 
 ```v
 win.bind_value_to_label('volume_slider', 'vol_label', 'Volume: ', '%')
+win.bind_value_to_progress('volume_slider', 'vol_progress')
 win.bind_checkbox_enables('enable_adv', ['adv_setting_1', 'adv_setting_2'])
+win.bind_checkbox_shows('enable_sec', ['sec_panel'])
+win.bind_inputs_to_button(['username', 'email'], 'submit_btn')
+win.bind_two_way('input_a', 'input_b')
 win.bind_char_counter('bio_textarea', 'bio_counter', 280)
+win.bind_search_to_list('search_field', 'contacts_list')
 ```
 
 ### Workflow, Text & Data Extras

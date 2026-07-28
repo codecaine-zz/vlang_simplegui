@@ -2405,6 +2405,124 @@ pub fn (win &SimpleWindow) bind_char_counter(input string, counter_label string,
 	return win
 }
 
+// bind_checkbox_disables keeps a group of controls disabled while the checkbox
+// (or switch) is checked and enabled while unchecked. The current checkbox
+// state is applied immediately.
+pub fn (win &SimpleWindow) bind_checkbox_disables(checkbox string, names []string) &SimpleWindow {
+	checked := win.get_checked(checkbox)
+	for name in names {
+		win.set_control_enabled(name, !checked)
+	}
+	win.on_change(checkbox, fn [checkbox, names] (mut w SimpleWindow, value string) {
+		state := w.get_checked(checkbox)
+		for name in names {
+			w.set_control_enabled(name, !state)
+		}
+	})
+	return win
+}
+
+// bind_checkbox_shows shows (unhides) a group of controls while the checkbox
+// (or switch) is checked and hides them while unchecked. Applied immediately.
+pub fn (win &SimpleWindow) bind_checkbox_shows(checkbox string, names []string) &SimpleWindow {
+	checked := win.get_checked(checkbox)
+	for name in names {
+		win.set_control_visible(name, checked)
+	}
+	win.on_change(checkbox, fn [checkbox, names] (mut w SimpleWindow, value string) {
+		state := w.get_checked(checkbox)
+		for name in names {
+			w.set_control_visible(name, state)
+		}
+	})
+	return win
+}
+
+// bind_checkbox_hides hides a group of controls while the checkbox (or switch)
+// is checked and shows them while unchecked. Applied immediately.
+pub fn (win &SimpleWindow) bind_checkbox_hides(checkbox string, names []string) &SimpleWindow {
+	checked := win.get_checked(checkbox)
+	for name in names {
+		win.set_control_visible(name, !checked)
+	}
+	win.on_change(checkbox, fn [checkbox, names] (mut w SimpleWindow, value string) {
+		state := w.get_checked(checkbox)
+		for name in names {
+			w.set_control_visible(name, !state)
+		}
+	})
+	return win
+}
+
+// bind_inputs_to_button disables a button unless ALL specified input fields contain
+// non-empty text. Evaluates and applies state immediately and on every change.
+pub fn (win &SimpleWindow) bind_inputs_to_button(inputs []string, button string) &SimpleWindow {
+	mut initial_valid := true
+	for name in inputs {
+		if win.get_text(name).trim_space() == '' {
+			initial_valid = false
+			break
+		}
+	}
+	win.set_control_enabled(button, initial_valid)
+
+	for input_name in inputs {
+		win.on_change(input_name, fn [inputs, button] (mut w SimpleWindow, value string) {
+			mut valid := true
+			for name in inputs {
+				if w.get_text(name).trim_space() == '' {
+					valid = false
+					break
+				}
+			}
+			w.set_control_enabled(button, valid)
+		})
+	}
+	return win
+}
+
+// bind_value_to_progress syncs an integer value control (slider, stepper, number)
+// to a progress indicator bar. Applied immediately and on change.
+pub fn (win &SimpleWindow) bind_value_to_progress(source string, progress string) &SimpleWindow {
+	win.set_value_int(progress, win.get_value_int(source))
+	win.on_change(source, fn [progress] (mut w SimpleWindow, value string) {
+		w.set_value_int(progress, value.int())
+	})
+	return win
+}
+
+// bind_dropdown_to_label updates a label's text dynamically based on a lookup
+// map of dropdown option values. Applied immediately and on change.
+pub fn (win &SimpleWindow) bind_dropdown_to_label(dropdown string, label string, mapping map[string]string) &SimpleWindow {
+	val := win.get_value(dropdown)
+	if val in mapping {
+		win.set_text(label, mapping[val])
+	}
+	win.on_change(dropdown, fn [label, mapping] (mut w SimpleWindow, value string) {
+		if value in mapping {
+			w.set_text(label, mapping[value])
+		}
+	})
+	return win
+}
+
+// bind_two_way keeps two controls bi-directionally synchronized (e.g. slider and
+// number input) without infinite event feedback loops.
+pub fn (win &SimpleWindow) bind_two_way(control_a string, control_b string) &SimpleWindow {
+	win.set_text(control_b, win.get_text(control_a))
+	win.on_change(control_a, fn [control_b] (mut w SimpleWindow, value string) {
+		if w.get_text(control_b) != value {
+			w.set_text(control_b, value)
+		}
+	})
+	win.on_change(control_b, fn [control_a] (mut w SimpleWindow, value string) {
+		if w.get_text(control_a) != value {
+			w.set_text(control_a, value)
+		}
+	})
+	return win
+}
+
 // countdown counts a numeric label down to zero once per second, then stops
 // its timer and invokes the callback. The label text must hold just the number
 // of remaining seconds (e.g. set it to '10' before calling).
