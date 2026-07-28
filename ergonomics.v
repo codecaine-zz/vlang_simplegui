@@ -2541,7 +2541,6 @@ pub fn chain_validators(validators ...ControlValidator) ControlValidator {
 // ==========================================
 // 22. Workflow, Text & Data Extras
 // ==========================================
-
 struct DebounceState {
 mut:
 	value string

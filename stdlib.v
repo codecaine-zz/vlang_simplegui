@@ -639,7 +639,6 @@ pub fn (win &SimpleWindow) url_decode(text string) string {
 // ==========================================
 // 8. TOML Configuration Parser Wrapper (Chapter 13: toml)
 // ==========================================
-
 pub struct TOMLWrapperDoc {
 mut:
 	doc toml.Doc

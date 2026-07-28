@@ -2190,7 +2190,6 @@ pub fn toggle_dark_mode() {
 // ==========================================
 // Cross-Window Spy++ Application Registry & Remote Control
 // ==========================================
-
 struct WindowRegistry {
 mut:
 	windows map[string]&SimpleWindow

@@ -19,7 +19,6 @@ pub fn (win &SimpleWindow) add_theme_menu(name string, selected string) &SimpleW
 }
 
 // add_color_well adds a color well control to the window layout.
-
 pub fn (win &SimpleWindow) set_background_color(color string) &SimpleWindow {
 	unsafe {
 		mut w := &SimpleWindow(win)
@@ -32,13 +31,11 @@ pub fn (win &SimpleWindow) set_background_color(color string) &SimpleWindow {
 }
 
 // get_background_color retrieves the background color of the window or target control.
-
 pub fn (win &SimpleWindow) get_background_color() string {
 	return win.background_color
 }
 
 // set_font_color sets the font color of the window or target control.
-
 pub fn (win &SimpleWindow) set_font_color(color string) &SimpleWindow {
 	unsafe {
 		mut w := &SimpleWindow(win)
@@ -51,13 +48,11 @@ pub fn (win &SimpleWindow) set_font_color(color string) &SimpleWindow {
 }
 
 // get_font_color retrieves the font color of the window or target control.
-
 pub fn (win &SimpleWindow) get_font_color() string {
 	return win.font_color
 }
 
 // set_control_background_color sets the background color of the specified control.
-
 pub fn (win &SimpleWindow) set_control_background_color(name string, color string) &SimpleWindow {
 	idx := win.find_control(name)
 	if idx >= 0 {
@@ -75,7 +70,6 @@ pub fn (win &SimpleWindow) set_control_background_color(name string, color strin
 }
 
 // get_control_background_color returns the background color of the specified control.
-
 pub fn (win &SimpleWindow) get_control_background_color(name string) string {
 	idx := win.find_control(name)
 	if idx >= 0 {
@@ -85,7 +79,6 @@ pub fn (win &SimpleWindow) get_control_background_color(name string) string {
 }
 
 // set_control_font_color sets the font color of the specified control.
-
 pub fn (win &SimpleWindow) set_control_font_color(name string, color string) &SimpleWindow {
 	idx := win.find_control(name)
 	if idx >= 0 {
@@ -103,7 +96,6 @@ pub fn (win &SimpleWindow) set_control_font_color(name string, color string) &Si
 }
 
 // get_control_font_color returns the font color of the specified control.
-
 pub fn (win &SimpleWindow) get_control_font_color(name string) string {
 	idx := win.find_control(name)
 	if idx >= 0 {
@@ -113,7 +105,6 @@ pub fn (win &SimpleWindow) get_control_font_color(name string) string {
 }
 
 // set_control_width sets the width of the specified control.
-
 pub fn list_themes() []string {
 	return [
 		'Apple Light',
@@ -138,7 +129,6 @@ pub fn list_themes() []string {
 
 // get_theme returns the Theme configuration matching theme_name (case-insensitive, normalized).
 // Defaults to 'Apple Light' if the theme name is unknown.
-
 pub fn get_theme(theme_name string) Theme {
 	normalized := theme_name.to_lower().replace(' ', '_').replace('-', '_')
 	match normalized {
@@ -326,7 +316,6 @@ pub fn get_theme(theme_name string) Theme {
 }
 
 // apply_theme applies a Theme struct configuration to the window.
-
 pub fn (win &SimpleWindow) apply_theme(t Theme) &SimpleWindow {
 	win.set_background_color(t.background_color)
 	win.set_font_color(t.font_color)
@@ -334,14 +323,12 @@ pub fn (win &SimpleWindow) apply_theme(t Theme) &SimpleWindow {
 }
 
 // set_theme sets the window background and font colors based on built-in theme name or preset.
-
 pub fn (win &SimpleWindow) set_theme(theme_name string) &SimpleWindow {
 	t := get_theme(theme_name)
 	return win.apply_theme(t)
 }
 
 // last-control chaining modifiers
-
 pub fn (win &SimpleWindow) color(hex_color string) &SimpleWindow {
 	if win.last_control != '' {
 		win.set_control_background_color(win.last_control, hex_color)
@@ -350,7 +337,6 @@ pub fn (win &SimpleWindow) color(hex_color string) &SimpleWindow {
 }
 
 // font_color performs font color.
-
 pub fn (win &SimpleWindow) font_color(hex_color string) &SimpleWindow {
 	if win.last_control != '' {
 		win.set_control_font_color(win.last_control, hex_color)
@@ -359,7 +345,6 @@ pub fn (win &SimpleWindow) font_color(hex_color string) &SimpleWindow {
 }
 
 // bold performs bold.
-
 pub fn (win &SimpleWindow) is_system_dark_mode() bool {
 	if win.window_info != unsafe { nil } {
 		return C.window_is_system_dark_mode(win.window_info) == 1
