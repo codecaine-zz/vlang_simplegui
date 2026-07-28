@@ -308,7 +308,43 @@ Use the builder helpers when you want to move quickly:
 
 These helpers usually make the code shorter and easier to read than manually stitching together low-level layout calls.
 
-### 3. Best event pattern for most apps
+### 3. High-Level Reactive Control Bindings (`bind_*`)
+
+SimpleGUI provides 5 built-in `bind_*` convenience methods to handle common reactive UI patterns automatically without writing manual event listeners:
+
+- **`bind_checkbox_enables`**: Keeps a list of controls enabled while a checkbox/switch is checked, and disabled when unchecked.
+  ```v
+  win.bind_checkbox_enables('enable_sec', ['sec_pin', 'sec_phone'])
+  ```
+
+- **`bind_value_to_label`**: Dynamic control value mirroring (slider, stepper, input, dropdown) into a formatted text label.
+  ```v
+  win.bind_value_to_label('volume_slider', 'volume_label', 'Master Audio Volume: ', '%')
+  // Renders label text as: "Master Audio Volume: 75%"
+  ```
+
+- **`bind_char_counter`**: Tracks character length of an input/textarea, updates `"used/max"` label, and triggers inline validation errors when limit is exceeded.
+  ```v
+  win.bind_char_counter('bio_input', 'bio_counter_lbl', 30)
+  // Displays "12/30" and flags error "Maximum 30 characters" when exceeded.
+  ```
+
+- **`bind_search_to_list`**: Wires a search field to a list box so typing live-filters visible rows using case-insensitive substring matching.
+  ```v
+  win.bind_search_to_list('contact_search', 'contacts_list')
+  ```
+
+- **`bind_to_struct`**: Uses compile-time reflection (`$for field in T.fields`) to extract matching form values into a struct instance.
+  ```v
+  struct UserProfile {
+      username  string
+      bio_input string
+  }
+  mut profile := UserProfile{}
+  win.bind_to_struct(mut profile)
+  ```
+
+### 4. Best event pattern for most apps
 
 - Use `add_action(...)` for button presses.
 - Use `on_change(...)` for text, dropdown, checkbox, or slider updates.
@@ -748,6 +784,109 @@ fn on_reset_clicked(mut win &simplegui.SimpleWindow) {
     win.set_control_enabled('volume_slider', true)
 
     win.toast('Defaults restored')
+}
+```
+
+---
+
+### 11. High-Level Reactive Control Bindings (`demos/binding_demo.v`)
+
+Demonstrates all 5 high-level `bind_*` convenience methods in a single interactive application without writing manual event listeners.
+
+```v
+module main
+
+import simplegui
+
+struct UserProfile {
+	username      string
+	bio_input     string
+	sec_pin       string
+	enable_sec    bool
+	volume_slider int
+}
+
+fn main() {
+	mut win := simplegui.new_simple_window('SimpleGUI Reactive Bindings Showcase', 680, 750)
+		.set_theme('dracula')
+		.set_padding(18)
+		.set_spacing(12)
+
+	win.add_heading('SimpleGUI High-Level Control Bindings Demo')
+
+	// 1. bind_checkbox_enables: Keeps controls enabled when checked, disabled when unchecked.
+	win.group('sec_group', '1. Checkbox / Switch Conditional Enabling (bind_checkbox_enables)', fn (mut w simplegui.SimpleWindow) {
+		w.add_switch('enable_sec', 'Enable Two-Factor & PIN Security', false)
+		w.add_input('username', 'ada_lovelace')
+		w.add_input('sec_pin', '9482')
+			.placeholder('Enter Security PIN...')
+	})
+	win.bind_checkbox_enables('enable_sec', ['sec_pin'])
+
+	win.add_vertical_spacer(8)
+
+	// 2. bind_value_to_label: Dynamic control value mirroring formatted with prefix/suffix.
+	win.group('slider_group', '2. Dynamic Control Value Mirroring (bind_value_to_label)', fn (mut w simplegui.SimpleWindow) {
+		w.add_label('volume_label', 'Volume: 75%')
+		w.add_slider('volume_slider', 75)
+	})
+	win.bind_value_to_label('volume_slider', 'volume_label', 'Master Audio Volume: ', '%')
+
+	win.add_vertical_spacer(8)
+
+	// 3. bind_char_counter: Tracks text length, updates label, and flags inline error on limit overflow.
+	win.group('counter_group', '3. Character Counter & Validation (bind_char_counter)', fn (mut w simplegui.SimpleWindow) {
+		w.add_label('bio_counter_lbl', '0/30')
+		w.add_input('bio_input', 'SimpleGUI reactive UI!')
+			.placeholder('Write a short bio (max 30 chars)...')
+	})
+	win.bind_char_counter('bio_input', 'bio_counter_lbl', 30)
+
+	win.add_vertical_spacer(8)
+
+	// 4. bind_search_to_list: Live-filters list box rows using case-insensitive substring matching.
+	win.group('search_group', '4. Live Search Box Filtering (bind_search_to_list)', fn (mut w simplegui.SimpleWindow) {
+		w.add_search_field('contact_search', 'Filter contacts...')
+		w.add_list_box('contacts_list', [
+			'Ada Lovelace (Engineer)',
+			'Alan Turing (Cryptographer)',
+			'Grace Hopper (Computer Scientist)',
+			'John von Neumann (Mathematician)',
+			'Claude Shannon (Information Theory)',
+			'Margaret Hamilton (Software Lead)',
+			'Linus Torvalds (Kernel Architect)',
+			'Guido van Rossum (Python Creator)',
+		])
+	})
+	win.bind_search_to_list('contact_search', 'contacts_list')
+
+	win.add_vertical_spacer(8)
+
+	// 5. bind_to_struct: Extracts matching form values into struct via reflection.
+	win.group('struct_group', '5. Automatic Form Extraction via Struct Reflection (bind_to_struct)', fn (mut w simplegui.SimpleWindow) {
+		w.add_action_row({
+			'Export Struct Data': on_export_struct
+		})
+	})
+
+	win.set_status('Interactive Bindings Demo Ready.')
+	win.run()
+}
+
+fn on_export_struct(mut win simplegui.SimpleWindow) {
+	mut profile := UserProfile{}
+	win.bind_to_struct(mut profile)
+
+	sec_status := if profile.enable_sec { 'Enabled' } else { 'Disabled' }
+	msg := 'Extracted UserProfile Struct:\n' +
+		'• Username: ${profile.username}\n' +
+		'• Bio: ${profile.bio_input}\n' +
+		'• Security PIN: ${profile.sec_pin}\n' +
+		'• Security Switch: ${sec_status}\n' +
+		'• Volume Setting: ${profile.volume_slider}%'
+
+	win.alert('Struct Reflection Export', msg)
+	win.set_status('Extracted form state into struct via reflection.')
 }
 ```
 
