@@ -100,6 +100,63 @@ fn main() {
 	demo_maps['password_dashboard.v'] = DemoConfig{'Lockbox Security Dashboard', 'password_manager.png'}
 	demo_maps['pomodoro_timer_demo.v'] = DemoConfig{'Pomodoro Focus Studio', 'clock.png'}
 
+	// Newly added demo configurations
+	demo_maps['all_bindings_demo.v'] = DemoConfig{'All Data Bindings Demo', 'developer.png'}
+	demo_maps['animation_demo.v'] = DemoConfig{'Animation Showcase', 'drawing_board.png'}
+	demo_maps['batch_access_value_reset_demo.v'] = DemoConfig{'Batch Value & Reset Demo', 'utility.png'}
+	demo_maps['batch_control_operations_demo.v'] = DemoConfig{'Batch Control Operations', 'developer.png'}
+	demo_maps['binding_demo.v'] = DemoConfig{'Data Binding Demo', 'developer.png'}
+	demo_maps['bulk_data_binding_demo.v'] = DemoConfig{'Bulk Data Binding Demo', 'developer.png'}
+	demo_maps['bulk_setting_getting_demo.v'] = DemoConfig{'Bulk Setting & Getting Demo', 'utility.png'}
+	demo_maps['comprehensive_window_controls_demo.v'] = DemoConfig{'Comprehensive Window Controls', 'developer.png'}
+	demo_maps['context_menus_demo.v'] = DemoConfig{'Context Menus Demo', 'launcher.png'}
+	demo_maps['cursor_demo.v'] = DemoConfig{'Mouse Cursor Showcase', 'utility.png'}
+	demo_maps['datetime_picker_demo.v'] = DemoConfig{'Date & Time Picker Demo', 'calendar.png'}
+	demo_maps['developer_tools_showcase_demo.v'] = DemoConfig{'Developer Tools Showcase', 'developer.png'}
+	demo_maps['dialogs_file_panels_demo.v'] = DemoConfig{'Dialogs & File Panels Demo', 'file_manager.png'}
+	demo_maps['easy_api_demo.v'] = DemoConfig{'Easy API Showcase', 'launcher.png'}
+	demo_maps['editable_grid_showcase_demo.v'] = DemoConfig{'Editable Grid Showcase', 'spreadsheet.png'}
+	demo_maps['event_handling_demo.v'] = DemoConfig{'Event Handling Demo', 'log_viewer.png'}
+	demo_maps['ext_spy_calc_check.v'] = DemoConfig{'Spy Calculator Check', 'calculator.png'}
+	demo_maps['flexbox_demo.v'] = DemoConfig{'Flexbox Layout Showcase', 'design.png'}
+	demo_maps['form_color_theme_demo.v'] = DemoConfig{'Form Color & Theme Demo', 'color_picker.png'}
+	demo_maps['form_controls_demo.v'] = DemoConfig{'Form Controls Demo', 'form_builder.png'}
+	demo_maps['form_controls_methods_demo.v'] = DemoConfig{'Form Controls Methods Demo', 'form_builder.png'}
+	demo_maps['labeled_control_rows_demo.v'] = DemoConfig{'Labeled Control Rows Demo', 'form_builder.png'}
+	demo_maps['layout_advanced_grid_flex_demo.v'] = DemoConfig{'Layout: Advanced Grid & Flexbox', 'design.png'}
+	demo_maps['list_features_demo.v'] = DemoConfig{'List Features Demo', 'todo_list.png'}
+	demo_maps['list_table_toolkit_demo.v'] = DemoConfig{'List & Table Toolkit Demo', 'spreadsheet.png'}
+	demo_maps['macos_power_controls_demo.v'] = DemoConfig{'macOS Power Controls Demo', 'developer.png'}
+	demo_maps['main.v'] = DemoConfig{'Main SimpleGUI Showcase', 'launcher.png'}
+	demo_maps['more_controls_demo.v'] = DemoConfig{'More Controls Demo', 'design.png'}
+	demo_maps['multi-column_table_data_grid_demo.v'] = DemoConfig{'Multi-Column Table Data Grid', 'spreadsheet.png'}
+	demo_maps['new_controls_expanded_demo.v'] = DemoConfig{'New Controls Expanded Demo', 'design.png'}
+	demo_maps['new_controls_showcase.v'] = DemoConfig{'New Controls Showcase', 'design.png'}
+	demo_maps['new_controls_window_commands_demo.v'] = DemoConfig{'New Controls Window Commands', 'developer.png'}
+	demo_maps['new_demo.v'] = DemoConfig{'Quick Starter Demo', 'launcher.png'}
+	demo_maps['new_demo_1.v'] = DemoConfig{'Quick Starter Demo 1', 'launcher.png'}
+	demo_maps['new_demo_2.v'] = DemoConfig{'Quick Starter Demo 2', 'launcher.png'}
+	demo_maps['new_demo_3.v'] = DemoConfig{'Quick Starter Demo 3', 'launcher.png'}
+	demo_maps['new_window_methods_demo.v'] = DemoConfig{'New Window Methods Demo', 'developer.png'}
+	demo_maps['production_api_demo.v'] = DemoConfig{'Production API Demo', 'developer.png'}
+	demo_maps['save_restore_demo.v'] = DemoConfig{'Save & Restore State Demo', 'backup_utility.png'}
+	demo_maps['scroll_view_starter.v'] = DemoConfig{'Scroll View Starter', 'design.png'}
+	demo_maps['settings_persistence_demo.v'] = DemoConfig{'Settings Persistence Demo', 'password_manager.png'}
+	demo_maps['spy_plus_plus_demo.v'] = DemoConfig{'Spy++ Inspector Studio', 'dom_explorer.png'}
+	demo_maps['stdlib_extended_demo.v'] = DemoConfig{'Stdlib Extended Features Demo', 'system_monitor.png'}
+	demo_maps['stdlib_new_demo.v'] = DemoConfig{'Stdlib New Features Demo', 'system_monitor.png'}
+	demo_maps['sys_demo.v'] = DemoConfig{'System Diagnostics & Tools', 'system_monitor.png'}
+	demo_maps['sys_new_commands_demo.v'] = DemoConfig{'System New Commands Demo', 'terminal.png'}
+	demo_maps['sys_useful_calls_demo.v'] = DemoConfig{'System Useful Calls Demo', 'terminal.png'}
+	demo_maps['table_features_demo.v'] = DemoConfig{'Table Features Demo', 'spreadsheet.png'}
+	demo_maps['table_manager_demo.v'] = DemoConfig{'Table Manager Demo', 'spreadsheet.png'}
+	demo_maps['tight_labels_demo.v'] = DemoConfig{'Tight Labels Demo', 'design.png'}
+	demo_maps['todo_list_demo.v'] = DemoConfig{'Todo List Studio', 'todo_list.png'}
+	demo_maps['token_field_ergonomics_demo.v'] = DemoConfig{'Token Field Ergonomics Demo', 'form_builder.png'}
+	demo_maps['value_convenience_accessor_demo.v'] = DemoConfig{'Value Accessors Demo', 'utility.png'}
+	demo_maps['window_controls_demo.v'] = DemoConfig{'Window Controls Demo', 'launcher.png'}
+	demo_maps['windows_controls_demo.v'] = DemoConfig{'Windows Controls Demo', 'launcher.png'}
+
 	files := os.ls(demo_dir) or {
 		eprintln('❌ Failed to list demos: ${err}')
 		exit(1)
