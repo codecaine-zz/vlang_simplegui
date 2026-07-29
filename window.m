@@ -3533,10 +3533,12 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
 - (NSView *)makeProgressIndicatorWithName:(NSString *)name value:(int)value {
   NSProgressIndicator *progress = [[NSProgressIndicator alloc] initWithFrame:NSZeroRect];
   [progress setStyle:NSProgressIndicatorStyleBar];
+  [progress setControlSize:NSControlSizeRegular];
   [progress setMinValue:0];
   [progress setMaxValue:100];
   [progress setDoubleValue:(double)value];
   [progress setIndeterminate:NO];
+  [progress.heightAnchor constraintEqualToConstant:14.0].active = YES;
   [self makeStretchableView:progress minimumWidth:260];
   [progress setWantsLayer:YES];
   applyStyleToView(progress, self.currentBackgroundColor, self.currentFontColor);
@@ -5392,49 +5394,61 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
 
 // Badge View container
 - (NSView *)makeBadgeWithName:(NSString *)name text:(NSString *)text style:(NSString *)styleStr {
-  NSBox *box = [[NSBox alloc] initWithFrame:NSZeroRect];
-  [box setTranslatesAutoresizingMaskIntoConstraints:NO];
-  [box setBoxType:NSBoxCustom];
-  [box setBorderType:NSNoBorder];
-  [box setContentViewMargins:NSMakeSize(8, 4)];
-  [box setWantsLayer:YES];
-  box.layer.cornerRadius = 10.0;
-
+  NSView *container = [[NSView alloc] initWithFrame:NSZeroRect];
+  [container setTranslatesAutoresizingMaskIntoConstraints:NO];
+  [container setWantsLayer:YES];
+  container.layer.cornerRadius = 10.0;
+  container.layer.masksToBounds = YES;
   
   NSTextField *label = [NSTextField labelWithString:text];
-  [label setFont:[NSFont boldSystemFontOfSize:11.0]];
+  [label setFont:[NSFont systemFontOfSize:11.0 weight:NSFontWeightBold]];
+  [label setAlignment:NSTextAlignmentCenter];
+  [label setTranslatesAutoresizingMaskIntoConstraints:NO];
+  [label sizeToFit];
+  
+  CGFloat labelWidth = MAX(label.intrinsicContentSize.width, 30.0);
+  CGFloat labelHeight = MAX(label.intrinsicContentSize.height, 14.0);
   
   NSColor *bgColor = nil;
   NSColor *textColor = nil;
   
   NSString *style = [styleStr lowercaseString];
   if ([style isEqualToString:@"success"]) {
-    bgColor = [NSColor colorWithCalibratedRed:0.18 green:0.49 blue:0.20 alpha:0.15];
+    bgColor = [NSColor colorWithCalibratedRed:0.18 green:0.49 blue:0.20 alpha:0.35];
     textColor = [NSColor systemGreenColor];
-  } else if ([style isEqualToString:@"error"]) {
-    bgColor = [NSColor colorWithCalibratedRed:0.83 green:0.18 blue:0.18 alpha:0.15];
+  } else if ([style isEqualToString:@"error"] || [style isEqualToString:@"danger"]) {
+    bgColor = [NSColor colorWithCalibratedRed:0.83 green:0.18 blue:0.18 alpha:0.35];
     textColor = [NSColor systemRedColor];
   } else if ([style isEqualToString:@"warning"]) {
-    bgColor = [NSColor colorWithCalibratedRed:0.95 green:0.60 blue:0.00 alpha:0.15];
+    bgColor = [NSColor colorWithCalibratedRed:0.95 green:0.60 blue:0.00 alpha:0.35];
     textColor = [NSColor systemOrangeColor];
   } else if ([style isEqualToString:@"info"]) {
-    bgColor = [NSColor colorWithCalibratedRed:0.12 green:0.45 blue:0.74 alpha:0.15];
+    bgColor = [NSColor colorWithCalibratedRed:0.12 green:0.45 blue:0.74 alpha:0.35];
     textColor = [NSColor systemBlueColor];
   } else {
-    bgColor = [NSColor colorWithCalibratedWhite:0.5 alpha:0.15];
+    bgColor = [NSColor colorWithCalibratedWhite:0.5 alpha:0.35];
     textColor = [NSColor secondaryLabelColor];
   }
   
-  box.layer.backgroundColor = [bgColor CGColor];
+  container.layer.backgroundColor = [bgColor CGColor];
   [label setTextColor:textColor];
-  [box setContentView:label];
+  [container addSubview:label];
   
-  [box.widthAnchor constraintEqualToAnchor:label.widthAnchor constant:16].active = YES;
-  [box.heightAnchor constraintEqualToAnchor:label.heightAnchor constant:8].active = YES;
+  [NSLayoutConstraint activateConstraints:@[
+    [container.widthAnchor constraintEqualToConstant:labelWidth + 20.0],
+    [container.heightAnchor constraintEqualToConstant:labelHeight + 8.0],
+    [label.centerXAnchor constraintEqualToAnchor:container.centerXAnchor],
+    [label.centerYAnchor constraintEqualToAnchor:container.centerYAnchor]
+  ]];
   
-  self.controlsByName[[name lowercaseString]] = box;
-  [self addControlToLayout:box];
-  return box;
+  [container setContentHuggingPriority:NSLayoutPriorityRequired forOrientation:NSLayoutConstraintOrientationHorizontal];
+  [container setContentHuggingPriority:NSLayoutPriorityRequired forOrientation:NSLayoutConstraintOrientationVertical];
+  [container setContentCompressionResistancePriority:NSLayoutPriorityRequired forOrientation:NSLayoutConstraintOrientationHorizontal];
+  [container setContentCompressionResistancePriority:NSLayoutPriorityRequired forOrientation:NSLayoutConstraintOrientationVertical];
+
+  self.controlsByName[[name lowercaseString]] = container;
+  [self addControlToLayout:container];
+  return container;
 }
 
 // Icon Segments container
@@ -6157,7 +6171,8 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [bar setMaxValue:maxVal];
   [bar setDoubleValue:val];
   [bar setStyle:NSProgressIndicatorStyleBar];
-  [bar.heightAnchor constraintEqualToConstant:8.0].active = YES;
+  [bar setControlSize:NSControlSizeRegular];
+  [bar.heightAnchor constraintEqualToConstant:12.0].active = YES;
   [bar setIdentifier:@"102"];
   
   [vstack addArrangedSubview:hstack];

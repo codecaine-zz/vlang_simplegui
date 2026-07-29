@@ -21,7 +21,7 @@ fn main() {
 	// 1. Elevated Card with Shadow: System Telemetry & Cluster Metrics
 	// ----------------------------------------------------
 	win.card_with_title('card_telemetry', '📊 Cluster Telemetry & Node Health', fn (mut w simplegui.SimpleWindow) {
-		w.row('row_telemetry_status', fn (mut w simplegui.SimpleWindow) {
+		w.flex_box('row_telemetry_status', 'row', 'space_between', 'center', fn (mut w simplegui.SimpleWindow) {
 			w.add_status_indicator('ind_cluster', 'online', 'Kubernetes Cluster us-east-1 (128 Nodes Active)')
 			w.add_badge('badge_status', 'HEALTHY', 'success')
 		})
