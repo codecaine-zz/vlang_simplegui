@@ -2759,10 +2759,18 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [self addControlToLayout:grid];
   
   NSView *parentContainer = (self.containerStack && self.containerStack.count > 0) ? [self.containerStack lastObject] : self.mainStackView;
-  if (parentContainer) {
-    [grid.widthAnchor constraintEqualToAnchor:parentContainer.widthAnchor].active = YES;
+  if (parentContainer == self.mainStackView) {
+    double p = self.params.padding > 0 ? (double)self.params.padding : 20.0;
+    [grid.leadingAnchor constraintEqualToAnchor:self.mainStackView.leadingAnchor constant:p].active = YES;
+    [grid.trailingAnchor constraintEqualToAnchor:self.mainStackView.trailingAnchor constant:-p].active = YES;
+  } else if (parentContainer && [parentContainer isKindOfClass:[NSStackView class]]) {
+    NSStackView *parentStack = (NSStackView *)parentContainer;
+    NSEdgeInsets insets = parentStack.edgeInsets;
+    [grid.leadingAnchor constraintEqualToAnchor:parentStack.leadingAnchor constant:insets.left].active = YES;
+    [grid.trailingAnchor constraintEqualToAnchor:parentStack.trailingAnchor constant:-insets.right].active = YES;
   }
-  
+
+
   [self.containerStack addObject:grid];
   self.controlsByName[[name lowercaseString]] = grid;
 }
@@ -2828,10 +2836,16 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [self addControlToLayout:flex];
   
   NSView *parentContainer = (self.containerStack && self.containerStack.count > 0) ? [self.containerStack lastObject] : self.mainStackView;
-  if (parentContainer) {
-    [flex.widthAnchor constraintEqualToAnchor:parentContainer.widthAnchor].active = YES;
+  if (parentContainer == self.mainStackView) {
+    double p = self.params.padding > 0 ? (double)self.params.padding : 20.0;
+    [flex.leadingAnchor constraintEqualToAnchor:self.mainStackView.leadingAnchor constant:p].active = YES;
+    [flex.trailingAnchor constraintEqualToAnchor:self.mainStackView.trailingAnchor constant:-p].active = YES;
+  } else if (parentContainer && [parentContainer isKindOfClass:[NSStackView class]]) {
+    NSStackView *parentStack = (NSStackView *)parentContainer;
+    NSEdgeInsets insets = parentStack.edgeInsets;
+    [flex.widthAnchor constraintEqualToAnchor:parentStack.widthAnchor constant:-(insets.left + insets.right)].active = YES;
   }
-  
+
   [self.containerStack addObject:flex];
   self.controlsByName[[name lowercaseString]] = flex;
 }
@@ -2879,12 +2893,26 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   }
 
   [box setContentView:vbox];
+  [box.heightAnchor constraintEqualToAnchor:vbox.heightAnchor].active = YES;
+  [vbox.widthAnchor constraintEqualToAnchor:box.widthAnchor].active = YES;
   [self addControlToLayout:box];
 
   NSView *parentContainer = (self.containerStack && self.containerStack.count > 0) ? [self.containerStack lastObject] : self.mainStackView;
-  if (parentContainer) {
-    [box.widthAnchor constraintEqualToAnchor:parentContainer.widthAnchor].active = YES;
+  if (parentContainer == self.mainStackView) {
+    double p = self.params.padding > 0 ? (double)self.params.padding : 20.0;
+    [box.leadingAnchor constraintEqualToAnchor:self.mainStackView.leadingAnchor constant:p].active = YES;
+    [box.trailingAnchor constraintEqualToAnchor:self.mainStackView.trailingAnchor constant:-p].active = YES;
+  } else if (parentContainer && [parentContainer isKindOfClass:[NSStackView class]]) {
+    NSStackView *parentStack = (NSStackView *)parentContainer;
+    NSEdgeInsets insets = parentStack.edgeInsets;
+    [box.leadingAnchor constraintEqualToAnchor:parentStack.leadingAnchor constant:insets.left].active = YES;
+    [box.trailingAnchor constraintEqualToAnchor:parentStack.trailingAnchor constant:-insets.right].active = YES;
   }
+
+
+
+
+
 
   if (isContainer) {
     if (!self.containerStack) {
@@ -3182,7 +3210,8 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   ModernButton *button = [ModernButton buttonWithTitle:title target:self action:@selector(handleButtonClicked:)];
   [button setIdentifier:name];
   [button setBezelStyle:NSBezelStyleRounded];
-  [self makeStretchableView:button minimumWidth:120];
+  [button setTranslatesAutoresizingMaskIntoConstraints:NO];
+  [button setContentHuggingPriority:NSLayoutPriorityDefaultHigh forOrientation:NSLayoutConstraintOrientationHorizontal];
   [button.heightAnchor constraintGreaterThanOrEqualToConstant:30.0].active = YES;
   applyStyleToView(button, self.currentBackgroundColor, self.currentFontColor);
   
@@ -3190,6 +3219,7 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   [self addControlToLayout:button];
   return button;
 }
+
 
 - (NSView *)makeLinkWithName:(NSString *)name text:(NSString *)text url:(NSString *)urlStr {
   NSButton *button = [NSButton buttonWithTitle:text target:self action:@selector(handleLinkClicked:)];
@@ -5298,11 +5328,13 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
 // Badge View container
 - (NSView *)makeBadgeWithName:(NSString *)name text:(NSString *)text style:(NSString *)styleStr {
   NSBox *box = [[NSBox alloc] initWithFrame:NSZeroRect];
+  [box setTranslatesAutoresizingMaskIntoConstraints:NO];
   [box setBoxType:NSBoxCustom];
   [box setBorderType:NSNoBorder];
   [box setContentViewMargins:NSMakeSize(8, 4)];
   [box setWantsLayer:YES];
   box.layer.cornerRadius = 10.0;
+
   
   NSTextField *label = [NSTextField labelWithString:text];
   [label setFont:[NSFont boldSystemFontOfSize:11.0]];
