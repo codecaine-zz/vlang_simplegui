@@ -582,9 +582,9 @@ fn main() {
 
 ---
 
-### 5. Group Box Container Layout (`win.add_group_box` / `win.group`)
+### 5. Group Box Container & Card Styling (`win.group` / `win.group_config` / `win.card`)
 
-Best for visually grouping related form fields (e.g., Personal Info, Security Settings, Preferences) inside framed boxes with titles. Captions (`title`) and borders (`border`) are both optional.
+Best for visually grouping related form fields (e.g., Personal Info, Security Settings, Preferences) inside framed boxes or elevated card containers. Supports fine-grained styling: border stroke thickness (`border_width`), custom border colors (`border_color`), corner rounding (`corner_radius`), card fill colors (`bg_color`), inner padding (`padding`), drop shadows (`shadow`), and header title alignment/colors (`caption_alignment`, `caption_color`).
 
 ```v
 module main
@@ -592,27 +592,48 @@ module main
 import simplegui
 
 fn main() {
-    mut win := simplegui.new_simple_window('Group Box Starter', 560, 450)
-        .set_padding(18)
-        .add_heading('Account & Security Settings')
+    mut win := simplegui.new_simple_window('Group Box & Card Studio', 600, 680)
+        .configure(fn (mut cfg simplegui.WindowConfig) {
+            cfg.padding = 18
+            cfg.spacing = 12
+        })
+        .add_heading('Group Containers & Custom Cards')
 
-    // Group box 1: Personal Details (caption + border enabled)
+    // Standard group box with default theme styling
     win.group('profile_group', 'Personal Details', fn (mut w simplegui.SimpleWindow) {
         w.add_input('name', 'Ada Lovelace')
         w.add_input('email', 'ada@example.com')
     })
 
-    win.add_vertical_spacer(10)
-
-    // Group box 2: Security Credentials (borderless container with no caption header)
-    win.group_with_options('security_group', '', false, fn (mut w simplegui.SimpleWindow) {
+    // Custom Pill Card with Accent Border & Tint Background Fill
+    win.group_config('accent_card', simplegui.GroupConfig{
+        title: 'Security Credentials'
+        border: true
+        border_width: 2.0
+        border_color: '#3B82F6'
+        corner_radius: 18.0
+        bg_color: '#F0F6FF'
+        padding: 16
+        caption_color: '#1D4ED8'
+    }, fn (mut w simplegui.SimpleWindow) {
         w.add_switch('2fa_switch', 'Enable Two-Factor Authentication', true)
         w.add_password('pass', 'secret_password')
     })
 
-    // Dynamic runtime updates
-    win.set_group_border('profile_group', true)
-    win.set_group_caption('profile_group', 'Updated Profile Details')
+    // Borderless Elevated Card with Drop Shadow
+    win.card('shadow_card', fn (mut w simplegui.SimpleWindow) {
+        w.add_label('lbl_card', 'Elevated card container with drop shadow & custom padding.')
+        w.add_button('btn_action', 'Perform Action')
+    })
+
+    // Dynamic runtime style update
+    win.set_group_style('accent_card', simplegui.GroupConfig{
+        border: true
+        border_width: 2.5
+        border_color: '#10B981'
+        corner_radius: 24.0
+        bg_color: '#ECFDF5'
+    })
 
     win.run()
 }
@@ -1074,6 +1095,7 @@ v run .
 | [layout_horizontal_rows.v](demos/layout_horizontal_rows.v)                 | Side-by-side rows, spacers, action rows, and field rows                                      |
 | [layout_form_sections.v](demos/layout_form_sections.v)                     | Semantic forms, section blocks, and form control validation                                  |
 | [layout_group_boxes.v](demos/layout_group_boxes.v)                         | Visual panel containment boxes                                                               |
+| [group_box_card_styling_demo.v](demos/group_box_card_styling_demo.v)       | Custom group box borders, stroke thickness, corner radii, background fills, and drop shadows  |
 | [layout_tabs.v](demos/layout_tabs.v)                                       | Interactive native tabs switching between multi-view panels                                  |
 | [layout_scroll_view.v](demos/layout_scroll_view.v)                         | Scrollable panel constraints                                                                 |
 | [layout_struct_reflection.v](demos/layout_struct_reflection.v)             | Auto-generating forms from structs using compile-time reflection                             |

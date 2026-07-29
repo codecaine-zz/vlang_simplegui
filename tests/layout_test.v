@@ -240,8 +240,46 @@ fn test_group_box_options_border_and_caption() {
 	assert win.has_control('grp_3') == true
 	assert win.has_control('lbl_3') == true
 
+	// Group with rich custom config struct (custom borders, radius, colors, card styling)
+	win.group_config('grp_rich', simplegui.GroupConfig{
+		title: 'Rich Custom Group'
+		border: true
+		border_width: 2.5
+		border_color: '#3B82F6'
+		corner_radius: 16.0
+		bg_color: '#F8FAFC'
+		padding: 20
+		shadow: true
+		show_caption: true
+		caption_color: '#1E293B'
+		caption_alignment: 'center'
+	}, fn (mut w simplegui.SimpleWindow) {
+		w.add_label('lbl_rich', 'Rich Content')
+	})
+	assert win.has_control('grp_rich') == true
+	assert win.has_control('lbl_rich') == true
+
+	// Card container helpers
+	win.card('card_1', fn (mut w simplegui.SimpleWindow) {
+		w.add_label('lbl_card1', 'Card Item 1')
+	})
+	assert win.has_control('card_1') == true
+
+	win.card_with_title('card_2', 'User Profile Card', fn (mut w simplegui.SimpleWindow) {
+		w.add_label('lbl_card2', 'Card Item 2')
+	})
+	assert win.has_control('card_2') == true
+
 	// Dynamic setters
 	win.set_group_border('grp_1', false)
 	win.set_group_caption('grp_1', 'New Section Title')
+	win.set_group_style('grp_1', simplegui.GroupConfig{
+		border: true
+		border_width: 2.0
+		border_color: '#FF0000'
+		corner_radius: 8.0
+		bg_color: '#FFFFFF'
+		shadow: true
+	})
 }
 

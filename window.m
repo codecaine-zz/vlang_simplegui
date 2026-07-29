@@ -725,9 +725,11 @@ extern BOOL vlang_dispatch_close_requested(void *win_ptr);
 - (void)beginFlexBoxWithName:(NSString *)name direction:(NSString *)direction justify:(NSString *)justify align:(NSString *)align;
 - (void)endFlexBox;
 - (NSBox *)createGroupBoxWithName:(NSString *)name title:(NSString *)title showBorder:(BOOL)showBorder isContainer:(BOOL)isContainer;
+- (NSBox *)createGroupBoxWithName:(NSString *)name title:(NSString *)title showBorder:(BOOL)showBorder borderWidth:(CGFloat)borderWidth borderColor:(NSString *)borderColor cornerRadius:(CGFloat)cornerRadius bgColor:(NSString *)bgColor padding:(NSInteger)padding shadow:(BOOL)shadow showCaption:(BOOL)showCaption captionColor:(NSString *)captionColor captionAlignment:(NSString *)captionAlignment isContainer:(BOOL)isContainer;
 - (void)endGroupBox;
 - (void)setGroupBorder:(BOOL)showBorder forName:(NSString *)name;
 - (void)setGroupCaption:(NSString *)caption forName:(NSString *)name;
+- (void)setGroupStyleForName:(NSString *)name showBorder:(BOOL)showBorder borderWidth:(CGFloat)borderWidth borderColor:(NSString *)borderColor cornerRadius:(CGFloat)cornerRadius bgColor:(NSString *)bgColor shadow:(BOOL)shadow;
 - (void)setControlAlignment:(NSString *)alignment forName:(NSString *)name;
 - (void)setControlExpandFill:(BOOL)expand forName:(NSString *)name;
 
@@ -2857,37 +2859,71 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
 }
 
 - (NSBox *)createGroupBoxWithName:(NSString *)name title:(NSString *)title showBorder:(BOOL)showBorder isContainer:(BOOL)isContainer {
+  return [self createGroupBoxWithName:name title:title showBorder:showBorder borderWidth:1.0 borderColor:@"" cornerRadius:12.0 bgColor:@"" padding:12 shadow:NO showCaption:YES captionColor:@"" captionAlignment:@"left" isContainer:isContainer];
+}
+
+- (NSBox *)createGroupBoxWithName:(NSString *)name title:(NSString *)title showBorder:(BOOL)showBorder borderWidth:(CGFloat)borderWidth borderColor:(NSString *)borderColor cornerRadius:(CGFloat)cornerRadius bgColor:(NSString *)bgColor padding:(NSInteger)padding shadow:(BOOL)shadow showCaption:(BOOL)showCaption captionColor:(NSString *)captionColor captionAlignment:(NSString *)captionAlignment isContainer:(BOOL)isContainer {
   NSBox *box = [[NSBox alloc] initWithFrame:NSZeroRect];
   [box setBoxType:NSBoxCustom];
   [box setWantsLayer:YES];
   [box setTranslatesAutoresizingMaskIntoConstraints:NO];
 
+  CGFloat radius = (cornerRadius >= 0.0) ? cornerRadius : 12.0;
+  box.layer.cornerRadius = radius;
+
   if (showBorder) {
     [box setBorderType:NSLineBorder];
-    box.layer.borderWidth = 1.0;
-    box.layer.borderColor = [modernBorderColor() CGColor];
-    box.layer.cornerRadius = 12.0;
+    box.layer.borderWidth = (borderWidth > 0.0) ? borderWidth : 1.0;
+    if (borderColor && borderColor.length > 0) {
+      box.layer.borderColor = [colorFromHexString(borderColor) CGColor];
+    } else {
+      box.layer.borderColor = [modernBorderColor() CGColor];
+    }
   } else {
     [box setBorderType:NSNoBorder];
     box.layer.borderWidth = 0.0;
     box.layer.borderColor = [NSColor clearColor].CGColor;
-    box.layer.cornerRadius = 0.0;
   }
-  box.layer.backgroundColor = (self.currentBackgroundColor ?: modernCardColor()).CGColor;
+
+  if (bgColor && bgColor.length > 0) {
+    box.layer.backgroundColor = [colorFromHexString(bgColor) CGColor];
+  } else {
+    box.layer.backgroundColor = (self.currentBackgroundColor ?: modernCardColor()).CGColor;
+  }
+
+  if (shadow) {
+    box.shadow = [[NSShadow alloc] init];
+    box.layer.shadowColor = [NSColor.blackColor CGColor];
+    box.layer.shadowOpacity = 0.12f;
+    box.layer.shadowOffset = CGSizeMake(0, -2);
+    box.layer.shadowRadius = 8.0f;
+    box.layer.masksToBounds = NO;
+  }
 
   NSStackView *vbox = [[NSStackView alloc] init];
   [vbox setOrientation:NSUserInterfaceLayoutOrientationVertical];
   [vbox setAlignment:NSLayoutAttributeLeading];
   [vbox setDistribution:NSStackViewDistributionFill];
   [vbox setSpacing:10.0];
-  [vbox setEdgeInsets:NSEdgeInsetsMake(12.0, 12.0, 12.0, 12.0)];
+  CGFloat pad = (padding >= 0) ? (CGFloat)padding : 12.0;
+  [vbox setEdgeInsets:NSEdgeInsetsMake(pad, pad, pad, pad)];
   [vbox setTranslatesAutoresizingMaskIntoConstraints:NO];
 
-  if (title && title.length > 0) {
+  if (showCaption && title && title.length > 0) {
     NSTextField *captionLabel = [NSTextField labelWithString:title];
     [captionLabel setFont:[NSFont systemFontOfSize:12.0 weight:NSFontWeightBold]];
-    [captionLabel setTextColor:modernTextColor()];
-    [captionLabel setAlignment:NSTextAlignmentLeft];
+    if (captionColor && captionColor.length > 0) {
+      [captionLabel setTextColor:colorFromHexString(captionColor)];
+    } else {
+      [captionLabel setTextColor:modernTextColor()];
+    }
+    if ([captionAlignment isEqualToString:@"center"]) {
+      [captionLabel setAlignment:NSTextAlignmentCenter];
+    } else if ([captionAlignment isEqualToString:@"right"]) {
+      [captionLabel setAlignment:NSTextAlignmentRight];
+    } else {
+      [captionLabel setAlignment:NSTextAlignmentLeft];
+    }
     objc_setAssociatedObject(box, "groupCaptionLabel", captionLabel, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     [vbox addArrangedSubview:captionLabel];
   }
@@ -2908,11 +2944,6 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
     [box.leadingAnchor constraintEqualToAnchor:parentStack.leadingAnchor constant:insets.left].active = YES;
     [box.trailingAnchor constraintEqualToAnchor:parentStack.trailingAnchor constant:-insets.right].active = YES;
   }
-
-
-
-
-
 
   if (isContainer) {
     if (!self.containerStack) {
@@ -2945,6 +2976,40 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
       [box setBorderType:NSNoBorder];
       box.layer.borderWidth = 0.0;
       box.layer.borderColor = [NSColor clearColor].CGColor;
+    }
+  }
+}
+
+- (void)setGroupStyleForName:(NSString *)name showBorder:(BOOL)showBorder borderWidth:(CGFloat)borderWidth borderColor:(NSString *)borderColor cornerRadius:(CGFloat)cornerRadius bgColor:(NSString *)bgColor shadow:(BOOL)shadow {
+  NSView *view = self.controlsByName[[name lowercaseString]];
+  if (view && [view isKindOfClass:[NSBox class]]) {
+    NSBox *box = (NSBox *)view;
+    box.layer.cornerRadius = (cornerRadius >= 0.0) ? cornerRadius : 12.0;
+    if (showBorder) {
+      [box setBorderType:NSLineBorder];
+      box.layer.borderWidth = (borderWidth > 0.0) ? borderWidth : 1.0;
+      if (borderColor && borderColor.length > 0) {
+        box.layer.borderColor = [colorFromHexString(borderColor) CGColor];
+      } else {
+        box.layer.borderColor = [modernBorderColor() CGColor];
+      }
+    } else {
+      [box setBorderType:NSNoBorder];
+      box.layer.borderWidth = 0.0;
+      box.layer.borderColor = [NSColor clearColor].CGColor;
+    }
+    if (bgColor && bgColor.length > 0) {
+      box.layer.backgroundColor = [colorFromHexString(bgColor) CGColor];
+    }
+    if (shadow) {
+      box.shadow = [[NSShadow alloc] init];
+      box.layer.shadowColor = [NSColor.blackColor CGColor];
+      box.layer.shadowOpacity = 0.12f;
+      box.layer.shadowOffset = CGSizeMake(0, -2);
+      box.layer.shadowRadius = 8.0f;
+      box.layer.masksToBounds = NO;
+    } else {
+      box.shadow = nil;
     }
   }
 }
@@ -11337,10 +11402,36 @@ void *window_add_group_box_control_with_options(main__WindowInfo *info, const ch
   return (__bridge void *)box;
 }
 
+void *window_add_group_box_control_with_config(main__WindowInfo *info, const char *name, const char *title, int show_border, float border_width, const char *border_color, float corner_radius, const char *bg_color, int padding, int shadow, int show_caption, const char *caption_color, const char *caption_alignment) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSBox *box = nil;
+  void (^runBlock)(void) = ^{
+    box = [delegate createGroupBoxWithName:nsstring(name) title:nsstring(title) showBorder:(show_border != 0) borderWidth:(CGFloat)border_width borderColor:nsstring(border_color) cornerRadius:(CGFloat)corner_radius bgColor:nsstring(bg_color) padding:padding shadow:(shadow != 0) showCaption:(show_caption != 0) captionColor:nsstring(caption_color) captionAlignment:nsstring(caption_alignment) isContainer:NO];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return (__bridge void *)box;
+}
+
 void window_begin_group_box(main__WindowInfo *info, const char *name, const char *title, int show_border) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
   void (^runBlock)(void) = ^{
     [delegate createGroupBoxWithName:nsstring(name) title:nsstring(title) showBorder:(show_border != 0) isContainer:YES];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+void window_begin_group_box_with_config(main__WindowInfo *info, const char *name, const char *title, int show_border, float border_width, const char *border_color, float corner_radius, const char *bg_color, int padding, int shadow, int show_caption, const char *caption_color, const char *caption_alignment) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate createGroupBoxWithName:nsstring(name) title:nsstring(title) showBorder:(show_border != 0) borderWidth:(CGFloat)border_width borderColor:nsstring(border_color) cornerRadius:(CGFloat)corner_radius bgColor:nsstring(bg_color) padding:padding shadow:(shadow != 0) showCaption:(show_caption != 0) captionColor:nsstring(caption_color) captionAlignment:nsstring(caption_alignment) isContainer:YES];
   };
   if ([NSThread isMainThread]) {
     runBlock();
@@ -11373,6 +11464,13 @@ void window_set_group_caption(main__WindowInfo *info, const char *name, const ch
   NSString *cap = nsstring(caption);
   dispatch_async(dispatch_get_main_queue(), ^{
     [delegate setGroupCaption:cap forName:nsstring(name)];
+  });
+}
+
+void window_set_group_style(main__WindowInfo *info, const char *name, int show_border, float border_width, const char *border_color, float corner_radius, const char *bg_color, int shadow) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [delegate setGroupStyleForName:nsstring(name) showBorder:(show_border != 0) borderWidth:(CGFloat)border_width borderColor:nsstring(border_color) cornerRadius:(CGFloat)corner_radius bgColor:nsstring(bg_color) shadow:(shadow != 0)];
   });
 }
 

@@ -339,11 +339,58 @@ pub fn (win &SimpleWindow) expand_fill() &SimpleWindow {
 	return win
 }
 
-// GroupConfig defines configuration options for a group box container.
+// GroupConfig defines configuration options for a group box container or card.
 pub struct GroupConfig {
 pub mut:
-	title  string
-	border bool = true
+	title             string
+	border            bool   = true
+	border_width      f32    = 1.0
+	border_color      string
+	corner_radius     f32    = 12.0
+	bg_color          string
+	padding           int    = 12
+	shadow            bool
+	show_caption      bool   = true
+	caption_color     string
+	caption_alignment  string = 'left'
+}
+
+// add_group_box_with_config adds a group box control using a detailed GroupConfig struct.
+pub fn (win &SimpleWindow) add_group_box_with_config(name string, cfg GroupConfig) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('groupbox')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.upsert_control(real_name, 'groupbox', cfg.title, '', false, 0)
+	}
+	if win.window_info != unsafe { nil } {
+		b_val := if cfg.border { 1 } else { 0 }
+		s_val := if cfg.shadow { 1 } else { 0 }
+		sc_val := if cfg.show_caption { 1 } else { 0 }
+		C.window_add_group_box_control_with_config(win.window_info, real_name.str, cfg.title.str, b_val, cfg.border_width, cfg.border_color.str, cfg.corner_radius, cfg.bg_color.str, cfg.padding, s_val, sc_val, cfg.caption_color.str, cfg.caption_alignment.str)
+	}
+	return win
+}
+
+// begin_group_box_with_config begins a group box container layout using a detailed GroupConfig struct.
+pub fn (win &SimpleWindow) begin_group_box_with_config(name string, cfg GroupConfig) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('groupbox')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.upsert_control(real_name, 'groupbox', cfg.title, '', false, 0)
+	}
+	if win.window_info != unsafe { nil } {
+		b_val := if cfg.border { 1 } else { 0 }
+		s_val := if cfg.shadow { 1 } else { 0 }
+		sc_val := if cfg.show_caption { 1 } else { 0 }
+		C.window_begin_group_box_with_config(win.window_info, real_name.str, cfg.title.str, b_val, cfg.border_width, cfg.border_color.str, cfg.corner_radius, cfg.bg_color.str, cfg.padding, s_val, sc_val, cfg.caption_color.str, cfg.caption_alignment.str)
+	}
+	return win
 }
 
 // group creates a group box container and invokes the callback for child elements.
@@ -353,7 +400,15 @@ pub fn (win &SimpleWindow) group(name string, title string, callback VoidEventCa
 
 // group_with_options creates a group box container with optional caption (title) and border settings.
 pub fn (win &SimpleWindow) group_with_options(name string, title string, border bool, callback VoidEventCallback) &SimpleWindow {
-	win.begin_group_box_with_options(name, title, border)
+	return win.group_config(name, GroupConfig{
+		title: title
+		border: border
+	}, callback)
+}
+
+// group_config creates a group box container using a GroupConfig struct.
+pub fn (win &SimpleWindow) group_config(name string, cfg GroupConfig, callback VoidEventCallback) &SimpleWindow {
+	win.begin_group_box_with_config(name, cfg)
 	unsafe {
 		mut w := &SimpleWindow(win)
 		callback(mut w)
@@ -362,9 +417,35 @@ pub fn (win &SimpleWindow) group_with_options(name string, title string, border 
 	return win
 }
 
-// group_config creates a group box container using a GroupConfig struct.
-pub fn (win &SimpleWindow) group_config(name string, cfg GroupConfig, callback VoidEventCallback) &SimpleWindow {
-	return win.group_with_options(name, cfg.title, cfg.border, callback)
+// card creates a borderless card container layout with optional shadow and inner padding.
+pub fn (win &SimpleWindow) card(name string, callback VoidEventCallback) &SimpleWindow {
+	return win.group_config(name, GroupConfig{
+		border: false
+		show_caption: false
+		padding: 16
+		shadow: true
+	}, callback)
+}
+
+// card_with_title creates a styled card container with a header title.
+pub fn (win &SimpleWindow) card_with_title(name string, title string, callback VoidEventCallback) &SimpleWindow {
+	return win.group_config(name, GroupConfig{
+		title: title
+		border: true
+		corner_radius: 12.0
+		padding: 16
+		shadow: true
+	}, callback)
+}
+
+// set_group_style updates the visual style of an existing group box container.
+pub fn (win &SimpleWindow) set_group_style(name string, cfg GroupConfig) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		b_val := if cfg.border { 1 } else { 0 }
+		s_val := if cfg.shadow { 1 } else { 0 }
+		C.window_set_group_style(win.window_info, name.str, b_val, cfg.border_width, cfg.border_color.str, cfg.corner_radius, cfg.bg_color.str, s_val)
+	}
+	return win
 }
 
 

@@ -1322,17 +1322,78 @@ win.group_with_options('clean_panel', '', false, fn (mut win simplegui.SimpleWin
 
 ### `win.group_config(name string, cfg GroupConfig, callback VoidEventCallback) &SimpleWindow`
 
-Starts a group box container using a `GroupConfig` struct (`title` string, `border` bool).
+Starts a group box container using a rich `GroupConfig` struct with full control over border style, caption alignment, card background, corner radius, inner padding, and drop shadow.
 
 ```v
-win.group_config('sec_group', simplegui.GroupConfig{ title: 'Security', border: true }, fn (mut win simplegui.SimpleWindow) {
+pub struct GroupConfig {
+pub mut:
+    title             string
+    border            bool   = true
+    border_width      f32    = 1.0
+    border_color      string // Hex e.g. "#3B82F6"
+    corner_radius     f32    = 12.0
+    bg_color          string // Hex e.g. "#F8FAFC"
+    padding           int    = 12
+    shadow            bool
+    show_caption      bool   = true
+    caption_color     string // Hex e.g. "#1E293B"
+    caption_alignment string = 'left' // 'left', 'center', 'right'
+}
+
+win.group_config('sec_group', simplegui.GroupConfig{
+    title: 'Security & Access'
+    border: true
+    border_width: 2.0
+    border_color: '#3B82F6'
+    corner_radius: 16.0
+    bg_color: '#F8FAFC'
+    padding: 16
+    shadow: true
+    caption_color: '#1E293B'
+    caption_alignment: 'left'
+}, fn (mut win simplegui.SimpleWindow) {
     win.add_checkbox('enable_2fa', 'Enable 2FA', true)
+})
+```
+
+### `win.card(name string, callback VoidEventCallback) &SimpleWindow`
+
+Creates a borderless card container layout with elevated shadow and inner padding.
+
+```v
+win.card('user_card', fn (mut win simplegui.SimpleWindow) {
+    win.add_label('name', 'Alex Johnson')
+    win.add_label('role', 'System Administrator')
+})
+```
+
+### `win.card_with_title(name string, title string, callback VoidEventCallback) &SimpleWindow`
+
+Creates a styled card container layout with a title header, rounded corners, and elevated drop shadow.
+
+```v
+win.card_with_title('status_card', 'System Health Monitor', fn (mut win simplegui.SimpleWindow) {
+    win.add_progress_indicator('cpu_usage', 45)
 })
 ```
 
 ### `win.set_group_border(name string, border bool) &SimpleWindow`
 
 Dynamically enables or disables the border of an existing group box container.
+
+### `win.set_group_style(name string, cfg GroupConfig) &SimpleWindow`
+
+Dynamically updates the visual style (border, stroke thickness, border color, corner radius, background color, and drop shadow) of an existing group box container.
+
+```v
+win.set_group_style('status_card', simplegui.GroupConfig{
+    border: true
+    border_width: 2.0
+    border_color: '#10B981'
+    corner_radius: 20.0
+    bg_color: '#ECFDF5'
+})
+```
 
 ```v
 win.set_group_border('account_group', false)

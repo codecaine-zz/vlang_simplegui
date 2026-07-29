@@ -42,13 +42,19 @@ fn C.window_add_group_box_control(&WindowInfo, &u8, &u8) voidptr
 
 fn C.window_add_group_box_control_with_options(&WindowInfo, &u8, &u8, int) voidptr
 
+fn C.window_add_group_box_control_with_config(&WindowInfo, &u8, &u8, int, f32, &u8, f32, &u8, int, int, int, &u8, &u8) voidptr
+
 fn C.window_begin_group_box(&WindowInfo, &u8, &u8, int)
+
+fn C.window_begin_group_box_with_config(&WindowInfo, &u8, &u8, int, f32, &u8, f32, &u8, int, int, int, &u8, &u8)
 
 fn C.window_end_group_box(&WindowInfo)
 
 fn C.window_set_group_border(&WindowInfo, &u8, int)
 
 fn C.window_set_group_caption(&WindowInfo, &u8, &u8)
+
+fn C.window_set_group_style(&WindowInfo, &u8, int, f32, &u8, f32, &u8, int)
 
 fn C.window_add_tabs_control(&WindowInfo, &u8, &&u8, int) voidptr
 
