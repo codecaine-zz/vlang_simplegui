@@ -1253,17 +1253,21 @@ pub fn (win &SimpleWindow) set_system_dark_mode(enabled bool) &SimpleWindow {
 }
 
 // set_system_theme sets the macOS global appearance theme to "dark" or "light".
-// Returns an error for unsupported values.
+// Returns an error for unsupported values or if execution fails (e.g. missing Automation permissions).
 pub fn (win &SimpleWindow) set_system_theme(theme string) !&SimpleWindow {
 	mode := theme.trim_space().to_lower()
-	if mode == 'dark' {
-		return win.set_system_dark_mode(true)
+	if mode != 'dark' && mode != 'light' {
+		return error('Invalid theme "${theme}". Use "dark" or "light".')
 	}
-	if mode == 'light' {
-		return win.set_system_dark_mode(false)
+	enabled := if mode == 'dark' { 'true' } else { 'false' }
+	cmd := "osascript -e 'tell application \"System Events\" to tell appearance preferences to set dark mode to ${enabled}'"
+	res := os.execute(cmd)
+	if res.exit_code != 0 {
+		return error('Failed to set macOS system theme: ${res.output.trim_space()}')
 	}
-	return error('Invalid theme "${theme}". Use "dark" or "light".')
+	return win
 }
+
 
 // sleep_display turns off/puts displays to sleep immediately.
 pub fn (win &SimpleWindow) sleep_display() &SimpleWindow {

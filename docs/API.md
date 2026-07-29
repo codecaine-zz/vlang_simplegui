@@ -2516,8 +2516,10 @@ win.show_system_notification('Notification Title', 'Message content body')
 
 Notes:
 
-- Appearance and power calls are best-effort wrappers around macOS tools like `osascript`, `pmset`, and `CGSession`.
-- Depending on macOS privacy/security settings, your app may need Automation permissions (for `System Events`) to perform some actions.
+- Appearance and power calls are wrappers around macOS tools like `osascript`, `pmset`, and `CGSession`.
+- `win.set_system_theme('dark')` and `win.set_system_theme('light')` execute synchronous AppleScript (`osascript`) commands and return errors if execution fails.
+- **macOS Automation Permissions Required**: To control system appearance, your application (or terminal/IDE running the app) must be granted **System Events Automation permissions** in `System Settings -> Privacy & Security -> Automation -> [App Name] -> System Events`. If permission is denied, `set_system_theme` returns an error (`-1743 Not authorized to send Apple events to System Events`).
+
 
 ```v
 is_dark := win.is_dark_mode()
