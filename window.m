@@ -665,6 +665,9 @@ extern BOOL vlang_dispatch_close_requested(void *win_ptr);
 @interface FlippedView : NSView
 @end
 
+@interface SimpleToastView : NSView
+@end
+
 
 
 
@@ -1614,6 +1617,12 @@ static NSColor *colorFromHexString(NSString *hexString) {
 @implementation FlippedView
 - (BOOL)isFlipped {
   return YES;
+}
+@end
+
+@implementation SimpleToastView
+- (NSView *)hitTest:(NSPoint)point {
+  return nil;
 }
 @end
 
@@ -11337,23 +11346,74 @@ void window_run_after(main__WindowInfo *info, int ms, const char *handler_name) 
 
 void window_show_toast(main__WindowInfo *info, const char *message) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *msgText = nsstring(message);
   dispatch_async(dispatch_get_main_queue(), ^{
-    NSWindow *parentWindow = (delegate && delegate.window) ? delegate.window : nil;
-    NSAlert *alert = [[NSAlert alloc] init];
-    [alert setMessageText:@"Notice"];
-    [alert setInformativeText:nsstring(message)];
-    [alert addButtonWithTitle:@"OK"];
-    [alert setAlertStyle:NSAlertStyleInformational];
-    
-    if (parentWindow) {
-      [parentWindow addChildWindow:[alert window] ordered:NSWindowAbove];
+    if (!delegate || !delegate.window || !delegate.window.contentView) return;
+
+    NSView *contentView = delegate.window.contentView;
+    NSRect contentBounds = contentView.bounds;
+
+    SimpleToastView *toastView = [[SimpleToastView alloc] init];
+    toastView.wantsLayer = YES;
+    toastView.layer.cornerRadius = 14.0;
+    toastView.layer.backgroundColor = [NSColor colorWithCalibratedWhite:0.12 alpha:0.90].CGColor;
+    toastView.layer.borderColor = [NSColor colorWithCalibratedWhite:1.0 alpha:0.15].CGColor;
+    toastView.layer.borderWidth = 1.0;
+
+    toastView.layer.shadowColor = [NSColor blackColor].CGColor;
+    toastView.layer.shadowOffset = CGSizeMake(0, -3);
+    toastView.layer.shadowOpacity = 0.35;
+    toastView.layer.shadowRadius = 8.0;
+
+    NSTextField *label = [NSTextField labelWithString:msgText];
+    label.font = [NSFont systemFontOfSize:13.0 weight:NSFontWeightMedium];
+    label.textColor = [NSColor whiteColor];
+    label.alignment = NSTextAlignmentCenter;
+    label.lineBreakMode = NSLineBreakByTruncatingTail;
+    [label sizeToFit];
+
+    CGFloat horizontalPadding = 24.0;
+    CGFloat verticalPadding = 10.0;
+    CGFloat toastWidth = label.frame.size.width + (horizontalPadding * 2.0);
+    CGFloat toastHeight = label.frame.size.height + (verticalPadding * 2.0);
+
+    CGFloat maxToastWidth = contentBounds.size.width > 60 ? contentBounds.size.width * 0.85 : contentBounds.size.width;
+    if (toastWidth > maxToastWidth) {
+      toastWidth = maxToastWidth;
     }
-    [alert runModal];
-    if (parentWindow) {
-      [parentWindow removeChildWindow:[alert window]];
+
+    CGFloat toastX = (contentBounds.size.width - toastWidth) / 2.0;
+    CGFloat toastY;
+    if (contentView.isFlipped) {
+      toastY = contentBounds.size.height - toastHeight - 32.0;
+      if (toastY < 10.0) toastY = 10.0;
+    } else {
+      toastY = 32.0;
     }
+
+    toastView.frame = NSMakeRect(toastX, toastY, toastWidth, toastHeight);
+    label.frame = NSMakeRect(horizontalPadding, verticalPadding, toastWidth - (horizontalPadding * 2.0), label.frame.size.height);
+    [toastView addSubview:label];
+
+    toastView.alphaValue = 0.0;
+    [contentView addSubview:toastView positioned:NSWindowAbove relativeTo:nil];
+
+    [NSAnimationContext runAnimationGroup:^(NSAnimationContext *context) {
+      context.duration = 0.2;
+      toastView.animator.alphaValue = 1.0;
+    }];
+
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+      [NSAnimationContext runAnimationGroup:^(NSAnimationContext *context) {
+        context.duration = 0.3;
+        toastView.animator.alphaValue = 0.0;
+      } completionHandler:^{
+        [toastView removeFromSuperview];
+      }];
+    });
   });
 }
+
 
 void window_open_url(main__WindowInfo *info, const char *url) {
   dispatch_async(dispatch_get_main_queue(), ^{

@@ -3658,6 +3658,36 @@
 				}
 				sel.appendChild(opt);
 			});
+		function showToast(msg) {
+			let toast = document.getElementById("designerToastOverlay");
+			if (!toast) {
+				toast = document.createElement("div");
+				toast.id = "designerToastOverlay";
+				toast.style.position = "fixed";
+				toast.style.bottom = "24px";
+				toast.style.left = "50%";
+				toast.style.transform = "translateX(-50%)";
+				toast.style.backgroundColor = "rgba(20, 20, 25, 0.9)";
+				toast.style.color = "#ffffff";
+				toast.style.padding = "8px 18px";
+				toast.style.borderRadius = "20px";
+				toast.style.fontSize = "12px";
+				toast.style.fontWeight = "500";
+				toast.style.boxShadow = "0 4px 12px rgba(0,0,0,0.3)";
+				toast.style.zIndex = "9999";
+				toast.style.pointerEvents = "none";
+				toast.style.transition = "opacity 0.25s ease, transform 0.25s ease";
+				toast.style.opacity = "0";
+				document.body.appendChild(toast);
+			}
+			toast.textContent = msg;
+			toast.style.opacity = "1";
+			toast.style.transform = "translateX(-50%) translateY(0)";
+			if (toast.dismissTimer) clearTimeout(toast.dismissTimer);
+			toast.dismissTimer = setTimeout(() => {
+				toast.style.opacity = "0";
+				toast.style.transform = "translateX(-50%) translateY(10px)";
+			}, 2500);
 		}
 
 		function selectControlFromDropdown(valIndex) {
