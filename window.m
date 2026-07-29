@@ -724,6 +724,10 @@ extern BOOL vlang_dispatch_close_requested(void *win_ptr);
 - (void)endGrid;
 - (void)beginFlexBoxWithName:(NSString *)name direction:(NSString *)direction justify:(NSString *)justify align:(NSString *)align;
 - (void)endFlexBox;
+- (NSBox *)createGroupBoxWithName:(NSString *)name title:(NSString *)title showBorder:(BOOL)showBorder isContainer:(BOOL)isContainer;
+- (void)endGroupBox;
+- (void)setGroupBorder:(BOOL)showBorder forName:(NSString *)name;
+- (void)setGroupCaption:(NSString *)caption forName:(NSString *)name;
 - (void)setControlAlignment:(NSString *)alignment forName:(NSString *)name;
 - (void)setControlExpandFill:(BOOL)expand forName:(NSString *)name;
 
@@ -2837,6 +2841,115 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
     [self.containerStack removeLastObject];
   }
 }
+
+- (NSBox *)createGroupBoxWithName:(NSString *)name title:(NSString *)title showBorder:(BOOL)showBorder isContainer:(BOOL)isContainer {
+  NSBox *box = [[NSBox alloc] initWithFrame:NSZeroRect];
+  [box setBoxType:NSBoxCustom];
+  [box setWantsLayer:YES];
+  [box setTranslatesAutoresizingMaskIntoConstraints:NO];
+
+  if (showBorder) {
+    [box setBorderType:NSLineBorder];
+    box.layer.borderWidth = 1.0;
+    box.layer.borderColor = [modernBorderColor() CGColor];
+    box.layer.cornerRadius = 12.0;
+  } else {
+    [box setBorderType:NSNoBorder];
+    box.layer.borderWidth = 0.0;
+    box.layer.borderColor = [NSColor clearColor].CGColor;
+    box.layer.cornerRadius = 0.0;
+  }
+  box.layer.backgroundColor = (self.currentBackgroundColor ?: modernCardColor()).CGColor;
+
+  NSStackView *vbox = [[NSStackView alloc] init];
+  [vbox setOrientation:NSUserInterfaceLayoutOrientationVertical];
+  [vbox setAlignment:NSLayoutAttributeLeading];
+  [vbox setDistribution:NSStackViewDistributionFill];
+  [vbox setSpacing:10.0];
+  [vbox setEdgeInsets:NSEdgeInsetsMake(12.0, 12.0, 12.0, 12.0)];
+  [vbox setTranslatesAutoresizingMaskIntoConstraints:NO];
+
+  if (title && title.length > 0) {
+    NSTextField *captionLabel = [NSTextField labelWithString:title];
+    [captionLabel setFont:[NSFont systemFontOfSize:12.0 weight:NSFontWeightBold]];
+    [captionLabel setTextColor:modernTextColor()];
+    [captionLabel setAlignment:NSTextAlignmentLeft];
+    objc_setAssociatedObject(box, "groupCaptionLabel", captionLabel, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    [vbox addArrangedSubview:captionLabel];
+  }
+
+  [box setContentView:vbox];
+  [self addControlToLayout:box];
+
+  NSView *parentContainer = (self.containerStack && self.containerStack.count > 0) ? [self.containerStack lastObject] : self.mainStackView;
+  if (parentContainer) {
+    [box.widthAnchor constraintEqualToAnchor:parentContainer.widthAnchor].active = YES;
+  }
+
+  if (isContainer) {
+    if (!self.containerStack) {
+      self.containerStack = [NSMutableArray array];
+    }
+    [self.containerStack addObject:vbox];
+  }
+
+  NSString *key = [[name lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  self.controlsByName[key] = box;
+  return box;
+}
+
+- (void)endGroupBox {
+  if (self.containerStack && self.containerStack.count > 0) {
+    [self.containerStack removeLastObject];
+  }
+}
+
+- (void)setGroupBorder:(BOOL)showBorder forName:(NSString *)name {
+  NSView *view = self.controlsByName[[name lowercaseString]];
+  if (view && [view isKindOfClass:[NSBox class]]) {
+    NSBox *box = (NSBox *)view;
+    if (showBorder) {
+      [box setBorderType:NSLineBorder];
+      box.layer.borderWidth = 1.0;
+      box.layer.borderColor = [modernBorderColor() CGColor];
+      box.layer.cornerRadius = 12.0;
+    } else {
+      [box setBorderType:NSNoBorder];
+      box.layer.borderWidth = 0.0;
+      box.layer.borderColor = [NSColor clearColor].CGColor;
+    }
+  }
+}
+
+- (void)setGroupCaption:(NSString *)caption forName:(NSString *)name {
+  NSView *view = self.controlsByName[[name lowercaseString]];
+  if (view && [view isKindOfClass:[NSBox class]]) {
+    NSBox *box = (NSBox *)view;
+    NSTextField *captionLabel = objc_getAssociatedObject(box, "groupCaptionLabel");
+    if (caption && caption.length > 0) {
+      if (!captionLabel) {
+        captionLabel = [NSTextField labelWithString:caption];
+        [captionLabel setFont:[NSFont systemFontOfSize:12.0 weight:NSFontWeightBold]];
+        [captionLabel setTextColor:modernTextColor()];
+        objc_setAssociatedObject(box, "groupCaptionLabel", captionLabel, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+        NSView *content = [box contentView];
+        if ([content isKindOfClass:[NSStackView class]]) {
+          NSStackView *vbox = (NSStackView *)content;
+          [vbox insertArrangedSubview:captionLabel atIndex:0];
+        }
+      } else {
+        [captionLabel setStringValue:caption];
+        [captionLabel setHidden:NO];
+      }
+    } else {
+      if (captionLabel) {
+        [captionLabel setHidden:YES];
+      }
+    }
+  }
+}
+
 
 - (void)setControlAlignment:(NSString *)alignment forName:(NSString *)name {
   NSView *view = self.controlsByName[[name lowercaseString]];
@@ -11168,20 +11281,7 @@ void *window_add_group_box_control(main__WindowInfo *info, const char *name, con
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
   __block NSBox *box = nil;
   void (^runBlock)(void) = ^{
-    box = [[NSBox alloc] initWithFrame:NSZeroRect];
-    [box setTitle:nsstring(title)];
-    [box setBorderType:NSLineBorder];
-    [box setBoxType:NSBoxCustom];
-    [box setContentViewMargins:NSMakeSize(12, 12)];
-    [box setWantsLayer:YES];
-    box.layer.cornerRadius = 12.0;
-    box.layer.borderWidth = 1.0;
-    box.layer.borderColor = [modernBorderColor() CGColor];
-    box.layer.backgroundColor = (delegate.currentBackgroundColor ?: modernCardColor()).CGColor;
-    
-    [delegate addControlToLayout:box];
-    NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-    delegate.controlsByName[key] = box;
+    box = [delegate createGroupBoxWithName:nsstring(name) title:nsstring(title) showBorder:YES isContainer:NO];
   };
   if ([NSThread isMainThread]) {
     runBlock();
@@ -11190,6 +11290,60 @@ void *window_add_group_box_control(main__WindowInfo *info, const char *name, con
   }
   return (__bridge void *)box;
 }
+
+void *window_add_group_box_control_with_options(main__WindowInfo *info, const char *name, const char *title, int show_border) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  __block NSBox *box = nil;
+  void (^runBlock)(void) = ^{
+    box = [delegate createGroupBoxWithName:nsstring(name) title:nsstring(title) showBorder:(show_border != 0) isContainer:NO];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+  return (__bridge void *)box;
+}
+
+void window_begin_group_box(main__WindowInfo *info, const char *name, const char *title, int show_border) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate createGroupBoxWithName:nsstring(name) title:nsstring(title) showBorder:(show_border != 0) isContainer:YES];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+void window_end_group_box(main__WindowInfo *info) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  void (^runBlock)(void) = ^{
+    [delegate endGroupBox];
+  };
+  if ([NSThread isMainThread]) {
+    runBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), runBlock);
+  }
+}
+
+void window_set_group_border(main__WindowInfo *info, const char *name, int show_border) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [delegate setGroupBorder:(show_border != 0) forName:nsstring(name)];
+  });
+}
+
+void window_set_group_caption(main__WindowInfo *info, const char *name, const char *caption) {
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *cap = nsstring(caption);
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [delegate setGroupCaption:cap forName:nsstring(name)];
+  });
+}
+
 
 void *window_add_tabs_control(main__WindowInfo *info, const char *name, const char **titles, int titles_count) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;

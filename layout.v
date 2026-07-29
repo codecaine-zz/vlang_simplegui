@@ -15,6 +15,11 @@ pub fn (win &SimpleWindow) get_spacing() int {
 
 // add_group_box adds a group box control to the window layout.
 pub fn (win &SimpleWindow) add_group_box(name string, title string) &SimpleWindow {
+	return win.add_group_box_with_options(name, title, true)
+}
+
+// add_group_box_with_options adds a group box control with optional caption (title) and border settings.
+pub fn (win &SimpleWindow) add_group_box_with_options(name string, title string, border bool) &SimpleWindow {
 	mut real_name := name
 	if real_name == '' {
 		real_name = win.auto_name('groupbox')
@@ -24,10 +29,59 @@ pub fn (win &SimpleWindow) add_group_box(name string, title string) &SimpleWindo
 		w.upsert_control(real_name, 'groupbox', title, '', false, 0)
 	}
 	if win.window_info != unsafe { nil } {
-		C.window_add_group_box_control(win.window_info, real_name.str, title.str)
+		b_val := if border { 1 } else { 0 }
+		C.window_add_group_box_control_with_options(win.window_info, real_name.str, title.str, b_val)
 	}
 	return win
 }
+
+// begin_group_box begins a group box layout container.
+pub fn (win &SimpleWindow) begin_group_box(name string, title string) &SimpleWindow {
+	return win.begin_group_box_with_options(name, title, true)
+}
+
+// begin_group_box_with_options begins a group box container with optional caption and border settings.
+pub fn (win &SimpleWindow) begin_group_box_with_options(name string, title string, border bool) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('groupbox')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.upsert_control(real_name, 'groupbox', title, '', false, 0)
+	}
+	if win.window_info != unsafe { nil } {
+		b_val := if border { 1 } else { 0 }
+		C.window_begin_group_box(win.window_info, real_name.str, title.str, b_val)
+	}
+	return win
+}
+
+// end_group_box ends the current group box layout container.
+pub fn (win &SimpleWindow) end_group_box() &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_end_group_box(win.window_info)
+	}
+	return win
+}
+
+// set_group_border enables or disables the border of a group box container.
+pub fn (win &SimpleWindow) set_group_border(name string, border bool) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		b_val := if border { 1 } else { 0 }
+		C.window_set_group_border(win.window_info, name.str, b_val)
+	}
+	return win
+}
+
+// set_group_caption updates or sets the caption header title of a group box container.
+pub fn (win &SimpleWindow) set_group_caption(name string, caption string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_group_caption(win.window_info, name.str, caption.str)
+	}
+	return win
+}
+
 
 // add_tabs adds a tabs control to the window layout.
 pub fn (win &SimpleWindow) add_tabs(name string, titles []string) &SimpleWindow {
@@ -285,15 +339,34 @@ pub fn (win &SimpleWindow) expand_fill() &SimpleWindow {
 	return win
 }
 
+// GroupConfig defines configuration options for a group box container.
+pub struct GroupConfig {
+pub mut:
+	title  string
+	border bool = true
+}
+
 // group creates a group box container and invokes the callback for child elements.
 pub fn (win &SimpleWindow) group(name string, title string, callback VoidEventCallback) &SimpleWindow {
-	win.add_group_box(name, title)
+	return win.group_with_options(name, title, true, callback)
+}
+
+// group_with_options creates a group box container with optional caption (title) and border settings.
+pub fn (win &SimpleWindow) group_with_options(name string, title string, border bool, callback VoidEventCallback) &SimpleWindow {
+	win.begin_group_box_with_options(name, title, border)
 	unsafe {
 		mut w := &SimpleWindow(win)
 		callback(mut w)
 	}
+	win.end_group_box()
 	return win
 }
+
+// group_config creates a group box container using a GroupConfig struct.
+pub fn (win &SimpleWindow) group_config(name string, cfg GroupConfig, callback VoidEventCallback) &SimpleWindow {
+	return win.group_with_options(name, cfg.title, cfg.border, callback)
+}
+
 
 // play_sound plays a system sound by name.
 pub fn play_sound(sound_name string) {

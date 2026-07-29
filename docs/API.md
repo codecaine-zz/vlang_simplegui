@@ -1259,10 +1259,18 @@ win.add_fields_row({
 
 ### `win.add_group_box(name string, title string) &SimpleWindow`
 
-Adds a visual framed box container with an optional title label. Subsequent controls added will be nested inside this visual group.
+Adds a visual framed box container with an optional caption title label (`title`). Subsequent controls added will be nested inside this visual group.
 
 ```v
 win.add_group_box('user_info', 'User Profile')
+```
+
+### `win.add_group_box_with_options(name string, title string, border bool) &SimpleWindow`
+
+Adds a visual group box container with optional caption (pass `""` for no caption) and optional border (`border: true` or `false`).
+
+```v
+win.add_group_box_with_options('borderless_group', 'Section Title', false)
 ```
 
 ### `win.add_tabs(name string, titles []string) &SimpleWindow`
@@ -1294,12 +1302,48 @@ win.row('action_row', fn (mut win simplegui.SimpleWindow) {
 
 ### `win.group(name string, title string, callback VoidEventCallback) &SimpleWindow`
 
-Starts a visual group box container, executes the callback closure passing the window reference, allowing nested layout code.
+Starts a visual group box container, executes the callback closure passing the window reference, allowing nested layout code. The caption header `title` is optional (pass `""` for no title caption). Border is enabled by default.
 
 ```v
 win.group('account_group', 'Account Settings', fn (mut win simplegui.SimpleWindow) {
     win.add_input('username', 'Ada')
 })
+```
+
+### `win.group_with_options(name string, title string, border bool, callback VoidEventCallback) &SimpleWindow`
+
+Starts a visual group box container with explicit control over both caption (`title`) and border (`border` bool: `true` or `false`).
+
+```v
+win.group_with_options('clean_panel', '', false, fn (mut win simplegui.SimpleWindow) {
+    win.add_button('action_btn', 'Perform Action')
+})
+```
+
+### `win.group_config(name string, cfg GroupConfig, callback VoidEventCallback) &SimpleWindow`
+
+Starts a group box container using a `GroupConfig` struct (`title` string, `border` bool).
+
+```v
+win.group_config('sec_group', simplegui.GroupConfig{ title: 'Security', border: true }, fn (mut win simplegui.SimpleWindow) {
+    win.add_checkbox('enable_2fa', 'Enable 2FA', true)
+})
+```
+
+### `win.set_group_border(name string, border bool) &SimpleWindow`
+
+Dynamically enables or disables the border of an existing group box container.
+
+```v
+win.set_group_border('account_group', false)
+```
+
+### `win.set_group_caption(name string, caption string) &SimpleWindow`
+
+Dynamically sets, updates, or removes the caption header title of an existing group box container.
+
+```v
+win.set_group_caption('account_group', 'Updated Account Settings')
 ```
 
 ---

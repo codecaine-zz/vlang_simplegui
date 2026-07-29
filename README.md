@@ -584,7 +584,7 @@ fn main() {
 
 ### 5. Group Box Container Layout (`win.add_group_box` / `win.group`)
 
-Best for visually grouping related form fields (e.g., Personal Info, Security Settings, Preferences) inside framed boxes with titles.
+Best for visually grouping related form fields (e.g., Personal Info, Security Settings, Preferences) inside framed boxes with titles. Captions (`title`) and borders (`border`) are both optional.
 
 ```v
 module main
@@ -596,7 +596,7 @@ fn main() {
         .set_padding(18)
         .add_heading('Account & Security Settings')
 
-    // Group box 1: Personal Details
+    // Group box 1: Personal Details (caption + border enabled)
     win.group('profile_group', 'Personal Details', fn (mut w simplegui.SimpleWindow) {
         w.add_input('name', 'Ada Lovelace')
         w.add_input('email', 'ada@example.com')
@@ -604,11 +604,15 @@ fn main() {
 
     win.add_vertical_spacer(10)
 
-    // Group box 2: Security Credentials
-    win.group('security_group', 'Security & Authentication', fn (mut w simplegui.SimpleWindow) {
+    // Group box 2: Security Credentials (borderless container with no caption header)
+    win.group_with_options('security_group', '', false, fn (mut w simplegui.SimpleWindow) {
         w.add_switch('2fa_switch', 'Enable Two-Factor Authentication', true)
         w.add_password('pass', 'secret_password')
     })
+
+    // Dynamic runtime updates
+    win.set_group_border('profile_group', true)
+    win.set_group_caption('profile_group', 'Updated Profile Details')
 
     win.run()
 }

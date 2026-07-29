@@ -215,3 +215,33 @@ fn test_advanced_layout_grid_flex_and_alignment() {
 	win.set_control_expand_fill('last_name', true)
 	assert win.get_control_expand_fill('last_name') == true
 }
+
+fn test_group_box_options_border_and_caption() {
+	mut win := simplegui.SimpleWindow{}
+
+	// Group with title and default border
+	win.group('grp_1', 'Section 1', fn (mut w simplegui.SimpleWindow) {
+		w.add_input('inp_1', 'val1')
+	})
+	assert win.has_control('grp_1') == true
+	assert win.has_control('inp_1') == true
+
+	// Group with options: empty caption and no border
+	win.group_with_options('grp_2', '', false, fn (mut w simplegui.SimpleWindow) {
+		w.add_button('btn_2', 'Click')
+	})
+	assert win.has_control('grp_2') == true
+	assert win.has_control('btn_2') == true
+
+	// Group with config struct
+	win.group_config('grp_3', simplegui.GroupConfig{ title: 'Config Title', border: true }, fn (mut w simplegui.SimpleWindow) {
+		w.add_label('lbl_3', 'Label Text')
+	})
+	assert win.has_control('grp_3') == true
+	assert win.has_control('lbl_3') == true
+
+	// Dynamic setters
+	win.set_group_border('grp_1', false)
+	win.set_group_caption('grp_1', 'New Section Title')
+}
+
