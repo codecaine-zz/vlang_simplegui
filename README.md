@@ -2,7 +2,6 @@
 
 Build real, native Cocoa desktop apps in [V](https://vlang.io) with a beginner-friendly API inspired by Delphi, VBA, and Python UI toolkits — no Objective-C required.
 
-[![CI](https://github.com/vlang/simplegui/actions/workflows/ci.yml/badge.svg)](https://github.com/vlang/simplegui/actions/workflows/ci.yml)
 ![Platform: macOS](https://img.shields.io/badge/platform-macOS-blue)
 ![Language: V](https://img.shields.io/badge/language-V-4f87c4)
 ![License: MIT](https://img.shields.io/badge/license-MIT-green)
@@ -1769,6 +1768,8 @@ Screenshots are auto-generated using `v run capture_demos.vsh`.
 
 ### High-Fidelity App & Web Studios
 
+- **RAD Visual UI Designer Studio**: `v run ui_designer.v`
+  ![SimpleGUI RAD Visual UI Designer Studio](screenshots/ui_designer.png)
 - **RAD Code Explorer & Live Previewer Studio**: `v run vlang_simple_gui_previewer.v`
   ![SimpleGUI RAD Code Explorer & Live Previewer Studio](screenshots/vlang_simple_gui_previewer.png)
 - **Web HTML Studio**: `v run demos/web_studio_demo.v`
