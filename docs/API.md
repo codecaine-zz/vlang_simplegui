@@ -27,13 +27,13 @@ If you are new to programming or desktop app creation, here are simple definitio
 
 ## Table of contents
 
-- [📘 Beginner's Core Concepts Glossary](#-beginners-core-concepts--jargon-free-glossary)
-- [1. Window operations](#1-window-operations)
-- [2. Control layout and grid rows](#2-control-layout--grid-rows)
-- [3. Adding controls](#3-adding-controls)
-- [4. Control sizing and styling](#4-control-sizing--styling)
-- [5. Dialogs, popups, and file pickers](#5-dialogs-popups-and-file-pickers)
-- [6. Utilities and system actions](#6-utilities-and-system-actions)
+- [📘 Beginner's Core Concepts & Jargon-Free Glossary](#-beginners-core-concepts--jargon-free-glossary)
+- [1. Window Operations](#1-window-operations)
+- [2. Control Layout & Grid Rows](#2-control-layout--grid-rows)
+- [3. Adding Controls](#3-adding-controls)
+- [4. Control Sizing & Styling](#4-control-sizing--styling)
+- [5. Dialogs, Popups, & File Pickers](#5-dialogs-popups--file-pickers)
+- [6. Utilities & System Actions](#6-utilities--system-actions)
 - [6c. V Standard Library High-Level Wrappers](#6c-v-standard-library-high-level-wrappers)
 - [7. List Box & Image View Operations](#7-list-box--image-view-operations)
 - [8. Scheduled Timers & Delays](#8-scheduled-timers--delays)
@@ -5051,7 +5051,7 @@ win.on_shortcut('cmd+shift+p', fn (mut win simplegui.SimpleWindow, key string) {
 
 ---
 
-## 7. RAD Visual UI Designer & Code Generator API
+## 18. RAD Visual UI Designer & Code Generator API
 
 SimpleGUI includes a Delphi/VB/Lazarus-inspired **Visual UI Designer Engine** ([designer.v](file:///Users/codecaine/vlang_simplegui/designer.v)) and executable RAD Studio workspace ([ui_designer.v](file:///Users/codecaine/vlang_simplegui/ui_designer.v) and [demos/ui_designer.v](file:///Users/codecaine/vlang_simplegui/demos/ui_designer.v)).
 
