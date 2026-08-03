@@ -166,9 +166,17 @@ fn main() {
 
 		sql db {
 			insert p1 into Product
+		} or { panic('Failed to seed database: ' + err.msg()) }
+		sql db {
 			insert p2 into Product
+		} or { panic('Failed to seed database: ' + err.msg()) }
+		sql db {
 			insert p3 into Product
+		} or { panic('Failed to seed database: ' + err.msg()) }
+		sql db {
 			insert p4 into Product
+		} or { panic('Failed to seed database: ' + err.msg()) }
+		sql db {
 			insert p5 into Product
 		} or { panic('Failed to seed database: ' + err.msg()) }
 	}
