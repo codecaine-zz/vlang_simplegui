@@ -23,4 +23,4 @@ jobs:
           done
 
       - name: Run Tests
-        run: v test .
+        run: v test tests/
