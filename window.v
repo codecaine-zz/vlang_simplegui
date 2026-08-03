@@ -1057,6 +1057,10 @@ pub fn new_simple_window(title string, width int, height int) &SimpleWindow {
 		closable:                     true
 		has_shadow:                   true
 		movable_by_window_background: false
+		titlebar_visible:             true
+		title_visible:                true
+		movable:                      true
+		prevents_app_termination:     true
 	}
 	win.placeholders = map[string]string{}
 	win.tooltips = map[string]string{}
