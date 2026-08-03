@@ -15,6 +15,8 @@ jobs:
 
       - name: Setup V Language
         uses: vlang/setup-v@v1
+        with:
+          check-latest: true
 
       - name: Verify Code Formatting
         run: |
