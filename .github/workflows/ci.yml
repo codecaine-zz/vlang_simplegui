@@ -17,7 +17,13 @@ jobs:
         uses: vlang/setup-v@v1
 
       - name: Verify Code Formatting
-        run: v fmt -verify window.v controls.v layout.v dialogs.v events.v theming.v stdlib.v sys.v ergonomics.v designer.v state.v demos/*.v tests/*.v tools/*.v scripts/*.vsh examples/*.v
+        run: |
+          v fmt -verify *.v
+          v fmt -verify demos/*.v
+          v fmt -verify tests/*.v
+          v fmt -verify tools/*.v
+          v fmt -verify scripts/*.vsh
+          v fmt -verify examples/*.v
 
       - name: Run Tests
         run: v test .
