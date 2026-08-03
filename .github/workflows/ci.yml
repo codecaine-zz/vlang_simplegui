@@ -18,8 +18,9 @@ jobs:
 
       - name: Verify Code Formatting
         run: |
-          v fmt -w .
-          git diff
+          find . -type f \( -name "*.v" -o -name "*.vsh" \) -not -path "*/v/*" -not -path "*/vlang*" -not -path "*/.git/*" | while read -r f; do
+            v fmt -w "$f"
+          done
 
       - name: Run Tests
         run: v test .
