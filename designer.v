@@ -15,22 +15,22 @@ pub mut:
 	control_type     string // 'button', 'label', 'input', 'password', 'textarea', 'checkbox', 'switch', 'slider', 'mode', 'number', 'date', 'color', 'progress', 'image', 'table', 'panel', 'radio', 'divider', 'badge', 'search'
 	x                int
 	y                int
-	width            int    = 140
-	height           int    = 36
-	text             string = 'Control'
-	font_size        int    = 13
-	font_color       string = '#ffffff'
-	background_color string = '#1e293b'
+	width            int
+	height           int
+	text             string
+	font_size        int
+	font_color       string
+	background_color string
 	hover_color      string
 	hover_text_color string
 	cursor           string
 	placeholder      string
 	tooltip          string
 	min_val          int
-	max_val          int  = 100
-	value            int  = 50
-	enabled          bool = true
-	visible          bool = true
+	max_val          int
+	value            int
+	enabled          bool
+	visible          bool
 	checked          bool
 	locked           bool
 	tab_order        int
@@ -40,13 +40,13 @@ pub mut:
 // FormSpec represents the window form layout containing all design controls.
 pub struct FormSpec {
 pub mut:
-	title            string = 'Delphi/VB RAD Form Studio'
-	width            int    = 840
-	height           int    = 560
-	background_color string = '#0f172a'
-	font_color       string = '#f8fafc'
-	padding          int    = 20
-	spacing          int    = 12
+	title            string
+	width            int
+	height           int
+	background_color string
+	font_color       string
+	padding          int
+	spacing          int
 	controls         []ControlSpec
 }
 
