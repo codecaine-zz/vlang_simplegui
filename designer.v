@@ -684,6 +684,9 @@ pub fn get_default_form_spec() FormSpec {
 			},
 			ControlSpec{
 				id:               'btn_submit'
+				event_handlers:   {
+					'onClick': 'on_btn_submit_click'
+				}
 				control_type:     'button'
 				x:                24
 				y:                520
@@ -692,12 +695,12 @@ pub fn get_default_form_spec() FormSpec {
 				text:             '💾 Save Account'
 				font_size:        14
 				background_color: '#0284c7'
-				event_handlers:   {
-					'onClick': 'on_btn_submit_click'
-				}
 			},
 			ControlSpec{
 				id:               'btn_reset'
+				event_handlers:   {
+					'onClick': 'on_place_order_click'
+				}
 				control_type:     'button'
 				x:                216
 				y:                520
@@ -706,9 +709,6 @@ pub fn get_default_form_spec() FormSpec {
 				text:             '↺ Reset Form'
 				font_size:        14
 				background_color: '#334155'
-				event_handlers:   {
-					'onClick': 'on_place_order_click'
-				}
 			},
 		]
 	}
@@ -1181,20 +1181,20 @@ pub fn get_login_form_spec() FormSpec {
 				}
 			},
 			ControlSpec{
-				id:             'chk_remember'
-				control_type:   'checkbox'
-				x:              24
-				y:              168
-				width:          240
-				height:         24
-				text:           'Remember login session'
-				checked:        true
-				event_handlers: {
-					'onChange': 'on_remember_toggle'
-				}
+				id:           'chk_remember'
+				control_type: 'checkbox'
+				x:            24
+				y:            168
+				width:        240
+				height:       24
+				text:         'Remember login session'
+				checked:      true
 			},
 			ControlSpec{
-				id:               'btn_login'
+				id:               'btn_signin'
+				event_handlers:   {
+					'onClick': 'on_login_click'
+				}
 				control_type:     'button'
 				x:                24
 				y:                208
@@ -1204,9 +1204,6 @@ pub fn get_login_form_spec() FormSpec {
 				font_size:        14
 				font_color:       '#ffffff'
 				background_color: '#0284c7'
-				event_handlers:   {
-					'onClick': 'on_login_click'
-				}
 			},
 		]
 	}
@@ -1236,42 +1233,45 @@ pub fn get_dashboard_form_spec() FormSpec {
 			},
 			ControlSpec{
 				id:             'inp_kpi_target'
+				event_handlers: {
+					'onChange': 'on_target_change'
+				}
 				control_type:   'input'
 				x:              20
 				y:              60
 				width:          280
 				height:         34
 				text:           'Q3 ARR Target: $4.2M'
-				event_handlers: {
-					'onChange': 'on_target_change'
-				}
 			},
 			ControlSpec{
 				id:             'progress_revenue'
+				event_handlers: {
+					'onChange': 'on_progress_change'
+				}
 				control_type:   'progress'
 				x:              320
 				y:              60
 				width:          360
 				height:         34
 				value:          85
-				event_handlers: {
-					'onChange': 'on_progress_change'
-				}
 			},
 			ControlSpec{
 				id:             'slider_volatility'
+				event_handlers: {
+					'onChange': 'on_volatility_change'
+				}
 				control_type:   'slider'
 				x:              20
 				y:              110
 				width:          280
 				height:         30
 				value:          45
-				event_handlers: {
-					'onChange': 'on_volatility_change'
-				}
 			},
 			ControlSpec{
 				id:               'btn_refresh'
+				event_handlers:   {
+					'onClick': 'on_refresh_click'
+				}
 				control_type:     'button'
 				x:                320
 				y:                110
@@ -1281,9 +1281,6 @@ pub fn get_dashboard_form_spec() FormSpec {
 				font_size:        13
 				font_color:       '#ffffff'
 				background_color: '#10b981'
-				event_handlers:   {
-					'onClick': 'on_refresh_click'
-				}
 			},
 		]
 	}
