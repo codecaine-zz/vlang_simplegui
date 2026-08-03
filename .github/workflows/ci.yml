@@ -17,10 +17,7 @@ jobs:
         uses: vlang/setup-v@v1
 
       - name: Verify Code Formatting
-        run: |
-          v fmt -w *.v demos/*.v tests/*.v tools/*.v scripts/*.vsh
-          git diff --stat
-          git diff --exit-code
+        run: v fmt -verify $(find . -name ".git" -prune -o -name "vlang*" -prune -o \( -name "*.v" -o -name "*.vsh" \) -print)
 
       - name: Run Tests
         run: v test .
