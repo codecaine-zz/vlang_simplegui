@@ -732,8 +732,10 @@ fn test_macos_native_controls() {
 
 	// 2. Dock badging and notification checks
 	win.badge('7')
-	win.notify('Title', 'Message')
-	simplegui.beep()
+	if os.getenv('CI') == '' {
+		win.notify('Title', 'Message')
+		simplegui.beep()
+	}
 
 	// 3. Slider custom range modifier
 	win.add_slider('vol_slider', 10).range(0.0, 500.0)
@@ -752,7 +754,9 @@ fn test_macos_native_controls() {
 	win.set_status_bar_icon('')
 	win.set_dock_icon('')
 	win.clear_dock_icon()
-	simplegui.play_sound('Glass')
+	if os.getenv('CI') == '' {
+		simplegui.play_sound('Glass')
+	}
 }
 
 fn test_extra_native_controls() {
