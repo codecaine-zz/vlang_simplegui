@@ -35,4 +35,4 @@ jobs:
           ln -s "$PWD" ~/.vmodules/simplegui
 
       - name: Run Tests
-        run: v test tests/
+        run: VJOBS=1 v test tests/
