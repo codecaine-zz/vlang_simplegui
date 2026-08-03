@@ -18,12 +18,9 @@ jobs:
 
       - name: Verify Code Formatting
         run: |
-          v fmt -verify *.v
-          v fmt -verify demos/*.v
-          v fmt -verify tests/*.v
-          v fmt -verify tools/*.v
-          v fmt -verify scripts/*.vsh
-          v fmt -verify examples/*.v
+          for f in *.v demos/*.v tests/*.v tools/*.v scripts/*.vsh examples/*.v; do
+            v fmt -verify "$f" || exit 1
+          done
 
       - name: Run Tests
         run: v test .
