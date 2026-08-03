@@ -234,7 +234,8 @@ fn test_group_box_options_border_and_caption() {
 	assert win.has_control('btn_2') == true
 
 	// Group with config struct
-	win.group_config('grp_3', simplegui.GroupConfig{ title: 'Config Title', border: true }, fn (mut w simplegui.SimpleWindow) {
+	win.group_config('grp_3', simplegui.GroupConfig{ title: 'Config Title', border: true },
+		fn (mut w simplegui.SimpleWindow) {
 		w.add_label('lbl_3', 'Label Text')
 	})
 	assert win.has_control('grp_3') == true
@@ -242,16 +243,16 @@ fn test_group_box_options_border_and_caption() {
 
 	// Group with rich custom config struct (custom borders, radius, colors, card styling)
 	win.group_config('grp_rich', simplegui.GroupConfig{
-		title: 'Rich Custom Group'
-		border: true
-		border_width: 2.5
-		border_color: '#3B82F6'
-		corner_radius: 16.0
-		bg_color: '#F8FAFC'
-		padding: 20
-		shadow: true
-		show_caption: true
-		caption_color: '#1E293B'
+		title:             'Rich Custom Group'
+		border:            true
+		border_width:      2.5
+		border_color:      '#3B82F6'
+		corner_radius:     16.0
+		bg_color:          '#F8FAFC'
+		padding:           20
+		shadow:            true
+		show_caption:      true
+		caption_color:     '#1E293B'
 		caption_alignment: 'center'
 	}, fn (mut w simplegui.SimpleWindow) {
 		w.add_label('lbl_rich', 'Rich Content')
@@ -274,12 +275,11 @@ fn test_group_box_options_border_and_caption() {
 	win.set_group_border('grp_1', false)
 	win.set_group_caption('grp_1', 'New Section Title')
 	win.set_group_style('grp_1', simplegui.GroupConfig{
-		border: true
-		border_width: 2.0
-		border_color: '#FF0000'
+		border:        true
+		border_width:  2.0
+		border_color:  '#FF0000'
 		corner_radius: 8.0
-		bg_color: '#FFFFFF'
-		shadow: true
+		bg_color:      '#FFFFFF'
+		shadow:        true
 	})
 }
-

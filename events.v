@@ -380,5 +380,4 @@ pub fn (win &SimpleWindow) onhover_exit(callback VoidEventCallback) &SimpleWindo
 	return win
 }
 
-
 // Shorthand aliases for value access

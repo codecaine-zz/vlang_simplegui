@@ -17,7 +17,8 @@ struct FullProfile {
 }
 
 fn main() {
-	mut win := simplegui.new_simple_window('SimpleGUI — Complete Control Bindings Showcase (12 Bindings)', 740, 920)
+	mut win := simplegui.new_simple_window('SimpleGUI — Complete Control Bindings Showcase (12 Bindings)',
+		740, 920)
 		.set_theme('dracula')
 		.set_padding(18)
 		.set_spacing(10)
@@ -27,27 +28,32 @@ fn main() {
 	// =============================================================
 	// Section 1: Checkbox & Switch Visibility & Enabling Bindings
 	// =============================================================
-	win.group('sec_group_1', '1. Checkbox & Switch Logic (enables / disables / shows / hides)', fn (mut w simplegui.SimpleWindow) {
+	win.group('sec_group_1', '1. Checkbox & Switch Logic (enables / disables / shows / hides)',
+		fn (mut w simplegui.SimpleWindow) {
 		// 1.1 bind_checkbox_enables
-		w.add_switch('enable_pin', '1. Enable Security PIN Input (bind_checkbox_enables)', false)
+		w.add_switch('enable_pin', '1. Enable Security PIN Input (bind_checkbox_enables)',
+			false)
 		w.add_input('pin_code', '9482').placeholder('Enter PIN...')
 
 		w.add_separator()
 
 		// 1.2 bind_checkbox_disables
-		w.add_checkbox('use_defaults', '2. Use Default Configuration (bind_checkbox_disables custom setting)', false)
+		w.add_checkbox('use_defaults', '2. Use Default Configuration (bind_checkbox_disables custom setting)',
+			false)
 		w.add_input('custom_config', 'Port 8080').placeholder('Custom config...')
 
 		w.add_separator()
 
 		// 1.3 bind_checkbox_shows
-		w.add_checkbox('show_details', '3. Show Advanced Debug Panel (bind_checkbox_shows)', false)
+		w.add_checkbox('show_details', '3. Show Advanced Debug Panel (bind_checkbox_shows)',
+			false)
 		w.add_input('debug_info', 'Debug Logs: Active verbose tracing mode').placeholder('Debug details...')
 
 		w.add_separator()
 
 		// 1.4 bind_checkbox_hides
-		w.add_checkbox('hide_banner', '4. Hide Promotional Banner (bind_checkbox_hides)', false)
+		w.add_checkbox('hide_banner', '4. Hide Promotional Banner (bind_checkbox_hides)',
+			false)
 		w.add_label('promo_banner', '🔥 SPECIAL PROMO: Upgrade to Pro for 50% Off!')
 	})
 
@@ -62,7 +68,8 @@ fn main() {
 	// =============================================================
 	// Section 2: Form Completeness Validation (bind_inputs_to_button)
 	// =============================================================
-	win.group('sec_group_2', '2. Required Inputs Form Validation (bind_inputs_to_button)', fn (mut w simplegui.SimpleWindow) {
+	win.group('sec_group_2', '2. Required Inputs Form Validation (bind_inputs_to_button)',
+		fn (mut w simplegui.SimpleWindow) {
 		w.add_input('req_field_1', 'ada_lovelace').placeholder('Username (required)...')
 		w.add_input('req_field_2', 'ada@example.com').placeholder('Email address (required)...')
 		w.add_action_row({
@@ -110,6 +117,7 @@ fn main() {
 	win.group('sec_group_4', '4. Two-Way Control Synchronization (bind_two_way)', fn (mut w simplegui.SimpleWindow) {
 		w.add_input('sync_field_a', '9. Bi-directionally Synced Text')
 			.placeholder('Type in field A...')
+
 		w.add_input('sync_field_b', '9. Bi-directionally Synced Text')
 			.placeholder('Or type in field B...')
 	})
@@ -125,6 +133,7 @@ fn main() {
 	win.group('sec_group_5', '5. Character Counter & Search Box Filtering', fn (mut w simplegui.SimpleWindow) {
 		// 1.10 bind_char_counter
 		w.add_label('counter_lbl', '10. Bio Length: 0/25')
+
 		w.add_input('user_bio', 'SimpleGUI reactive!')
 			.placeholder('Bio (max 25 chars)...')
 
@@ -170,18 +179,12 @@ fn on_export_struct(mut win simplegui.SimpleWindow) {
 	mut data := FullProfile{}
 	win.bind_to_struct(mut data)
 
-	msg := 'Extracted FullProfile Struct:\n' +
-		'• Username (req_field_1): ${data.req_field_1}\n' +
-		'• Email (req_field_2): ${data.req_field_2}\n' +
-		'• User Bio: ${data.user_bio}\n' +
-		'• Security PIN: ${data.pin_code}\n' +
-		'• Custom Config: ${data.custom_config}\n' +
-		'• Volume Slider: ${data.slider_val}%\n' +
-		'• Selected Plan: ${data.plan_select}\n' +
-		'• Enable PIN Switch: ${data.enable_pin}\n' +
-		'• Use Defaults: ${data.use_defaults}\n' +
-		'• Show Details: ${data.show_details}\n' +
-		'• Hide Banner: ${data.hide_banner}'
+	msg := 'Extracted FullProfile Struct:\n' + '• Username (req_field_1): ${data.req_field_1}\n' +
+		'• Email (req_field_2): ${data.req_field_2}\n' + '• User Bio: ${data.user_bio}\n' +
+		'• Security PIN: ${data.pin_code}\n' + '• Custom Config: ${data.custom_config}\n' +
+		'• Volume Slider: ${data.slider_val}%\n' + '• Selected Plan: ${data.plan_select}\n' +
+		'• Enable PIN Switch: ${data.enable_pin}\n' + '• Use Defaults: ${data.use_defaults}\n' +
+		'• Show Details: ${data.show_details}\n' + '• Hide Banner: ${data.hide_banner}'
 
 	win.alert('12. bind_to_struct Reflection Export', msg)
 	win.set_status('Extracted all 12 bound controls into struct.')

@@ -15,14 +15,14 @@ fn main() {
 	// ---------------------------------------------------------------------
 	win.add_menu('File', [
 		simplegui.MenuItem{
-			title: 'New Task'
+			title:    'New Task'
 			shortcut: 'cmd+n'
 			callback: fn (mut w simplegui.SimpleWindow) {
 				w.set_status('File -> New Task selected.')
 			}
 		},
 		simplegui.MenuItem{
-			title: 'Open Config...'
+			title:    'Open Config...'
 			shortcut: 'cmd+o'
 			callback: fn (mut w simplegui.SimpleWindow) {
 				file := w.select_file()
@@ -32,7 +32,7 @@ fn main() {
 			}
 		},
 		simplegui.MenuItem{
-			title: 'Save Settings'
+			title:    'Save Settings'
 			shortcut: 'cmd+s'
 			callback: fn (mut w simplegui.SimpleWindow) {
 				w.toast('Settings saved to WIN.INI')
@@ -43,7 +43,7 @@ fn main() {
 			title: '-'
 		},
 		simplegui.MenuItem{
-			title: 'Exit'
+			title:    'Exit'
 			shortcut: 'cmd+q'
 			callback: fn (mut w simplegui.SimpleWindow) {
 				w.quit()
@@ -53,22 +53,22 @@ fn main() {
 
 	win.add_menu('Edit', [
 		simplegui.MenuItem{
-			title: 'Cut'
+			title:    'Cut'
 			shortcut: 'cmd+x'
 		},
 		simplegui.MenuItem{
-			title: 'Copy'
+			title:    'Copy'
 			shortcut: 'cmd+c'
 		},
 		simplegui.MenuItem{
-			title: 'Paste'
+			title:    'Paste'
 			shortcut: 'cmd+v'
 		},
 	])
 
 	win.add_menu('Help', [
 		simplegui.MenuItem{
-			title: 'About App...'
+			title:    'About App...'
 			callback: fn (mut w simplegui.SimpleWindow) {
 				w.alert('About Windows App', 'Retro Windows Desktop Utility v3.1\nBuilt with SimpleGUI in V.\n\nCopyright (C) 1995-2026')
 			}
@@ -85,9 +85,11 @@ fn main() {
 
 	win.begin_row('comm_row1')
 	win.add_label('lbl_port', 'Port: ')
-	win.add_dropdown('com_port', ['COM1 (0x3F8)', 'COM2 (0x2F8)', 'COM3 (0x3E8)', 'LPT1 (0x378)'], 'COM1 (0x3F8)')
+	win.add_dropdown('com_port', ['COM1 (0x3F8)', 'COM2 (0x2F8)', 'COM3 (0x3E8)', 'LPT1 (0x378)'],
+		'COM1 (0x3F8)')
 	win.add_label('lbl_baud', 'Baud Rate: ')
-	win.add_dropdown('baud_rate', ['1200', '2400', '4800', '9600', '19200', '38400', '57600', '115200'], '9600')
+	win.add_dropdown('baud_rate', ['1200', '2400', '4800', '9600', '19200', '38400', '57600',
+		'115200'], '9600')
 	win.end_row()
 
 	win.begin_row('comm_row2')

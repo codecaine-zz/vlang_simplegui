@@ -34,7 +34,8 @@ fn main() {
 	win.add_vertical_spacer(10)
 
 	// Example 3: Equal Distribution Chips (Row + Space-Around + Center)
-	win.group('grp_ex3', '3. Evenly Spaced Action Badges (row, space_around, center)', fn (mut w simplegui.SimpleWindow) {
+	win.group('grp_ex3', '3. Evenly Spaced Action Badges (row, space_around, center)',
+		fn (mut w simplegui.SimpleWindow) {
 		w.flex_box('flex_around_bar', 'row', 'space_around', 'center', fn (mut f simplegui.SimpleWindow) {
 			f.add_button('btn_tag1', '🏷️ Design')
 			f.add_button('btn_tag2', '🏷️ Frontend')
@@ -58,7 +59,9 @@ fn main() {
 	// Example 5: Vertical Stack Form (Column + Start + Stretch)
 	win.group('grp_ex5', '5. Vertical Stack Form (column, start, stretch)', fn (mut w simplegui.SimpleWindow) {
 		w.flex_box('flex_col_stack', 'column', 'start', 'stretch', fn (mut f simplegui.SimpleWindow) {
-			f.add_banner('banner_tip', 'Vertical flexbox containers align items top-to-bottom.', 'info')
+			f.add_banner('banner_tip', 'Vertical flexbox containers align items top-to-bottom.',
+				'info')
+
 			f.add_search_field('search_input', '')
 				.placeholder('Search components...')
 		})

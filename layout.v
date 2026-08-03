@@ -30,7 +30,8 @@ pub fn (win &SimpleWindow) add_group_box_with_options(name string, title string,
 	}
 	if win.window_info != unsafe { nil } {
 		b_val := if border { 1 } else { 0 }
-		C.window_add_group_box_control_with_options(win.window_info, real_name.str, title.str, b_val)
+		C.window_add_group_box_control_with_options(win.window_info, real_name.str, title.str,
+			b_val)
 	}
 	return win
 }
@@ -81,7 +82,6 @@ pub fn (win &SimpleWindow) set_group_caption(name string, caption string) &Simpl
 	}
 	return win
 }
-
 
 // add_tabs adds a tabs control to the window layout.
 pub fn (win &SimpleWindow) add_tabs(name string, titles []string) &SimpleWindow {
@@ -343,16 +343,16 @@ pub fn (win &SimpleWindow) expand_fill() &SimpleWindow {
 pub struct GroupConfig {
 pub mut:
 	title             string
-	border            bool   = true
-	border_width      f32    = 1.0
+	border            bool = true
+	border_width      f32  = 1.0
 	border_color      string
-	corner_radius     f32    = 12.0
+	corner_radius     f32 = 12.0
 	bg_color          string
-	padding           int    = 12
+	padding           int = 12
 	shadow            bool
-	show_caption      bool   = true
+	show_caption      bool = true
 	caption_color     string
-	caption_alignment  string = 'left'
+	caption_alignment string = 'left'
 }
 
 // add_group_box_with_config adds a group box control using a detailed GroupConfig struct.
@@ -369,7 +369,9 @@ pub fn (win &SimpleWindow) add_group_box_with_config(name string, cfg GroupConfi
 		b_val := if cfg.border { 1 } else { 0 }
 		s_val := if cfg.shadow { 1 } else { 0 }
 		sc_val := if cfg.show_caption { 1 } else { 0 }
-		C.window_add_group_box_control_with_config(win.window_info, real_name.str, cfg.title.str, b_val, cfg.border_width, cfg.border_color.str, cfg.corner_radius, cfg.bg_color.str, cfg.padding, s_val, sc_val, cfg.caption_color.str, cfg.caption_alignment.str)
+		C.window_add_group_box_control_with_config(win.window_info, real_name.str, cfg.title.str,
+			b_val, cfg.border_width, cfg.border_color.str, cfg.corner_radius, cfg.bg_color.str,
+			cfg.padding, s_val, sc_val, cfg.caption_color.str, cfg.caption_alignment.str)
 	}
 	return win
 }
@@ -388,7 +390,9 @@ pub fn (win &SimpleWindow) begin_group_box_with_config(name string, cfg GroupCon
 		b_val := if cfg.border { 1 } else { 0 }
 		s_val := if cfg.shadow { 1 } else { 0 }
 		sc_val := if cfg.show_caption { 1 } else { 0 }
-		C.window_begin_group_box_with_config(win.window_info, real_name.str, cfg.title.str, b_val, cfg.border_width, cfg.border_color.str, cfg.corner_radius, cfg.bg_color.str, cfg.padding, s_val, sc_val, cfg.caption_color.str, cfg.caption_alignment.str)
+		C.window_begin_group_box_with_config(win.window_info, real_name.str, cfg.title.str,
+			b_val, cfg.border_width, cfg.border_color.str, cfg.corner_radius, cfg.bg_color.str,
+			cfg.padding, s_val, sc_val, cfg.caption_color.str, cfg.caption_alignment.str)
 	}
 	return win
 }
@@ -401,7 +405,7 @@ pub fn (win &SimpleWindow) group(name string, title string, callback VoidEventCa
 // group_with_options creates a group box container with optional caption (title) and border settings.
 pub fn (win &SimpleWindow) group_with_options(name string, title string, border bool, callback VoidEventCallback) &SimpleWindow {
 	return win.group_config(name, GroupConfig{
-		title: title
+		title:  title
 		border: border
 	}, callback)
 }
@@ -420,21 +424,21 @@ pub fn (win &SimpleWindow) group_config(name string, cfg GroupConfig, callback V
 // card creates a borderless card container layout with optional shadow and inner padding.
 pub fn (win &SimpleWindow) card(name string, callback VoidEventCallback) &SimpleWindow {
 	return win.group_config(name, GroupConfig{
-		border: false
+		border:       false
 		show_caption: false
-		padding: 16
-		shadow: true
+		padding:      16
+		shadow:       true
 	}, callback)
 }
 
 // card_with_title creates a styled card container with a header title.
 pub fn (win &SimpleWindow) card_with_title(name string, title string, callback VoidEventCallback) &SimpleWindow {
 	return win.group_config(name, GroupConfig{
-		title: title
-		border: true
+		title:         title
+		border:        true
 		corner_radius: 12.0
-		padding: 16
-		shadow: true
+		padding:       16
+		shadow:        true
 	}, callback)
 }
 
@@ -443,11 +447,11 @@ pub fn (win &SimpleWindow) set_group_style(name string, cfg GroupConfig) &Simple
 	if win.window_info != unsafe { nil } {
 		b_val := if cfg.border { 1 } else { 0 }
 		s_val := if cfg.shadow { 1 } else { 0 }
-		C.window_set_group_style(win.window_info, name.str, b_val, cfg.border_width, cfg.border_color.str, cfg.corner_radius, cfg.bg_color.str, s_val)
+		C.window_set_group_style(win.window_info, name.str, b_val, cfg.border_width, cfg.border_color.str,
+			cfg.corner_radius, cfg.bg_color.str, s_val)
 	}
 	return win
 }
-
 
 // play_sound plays a system sound by name.
 pub fn play_sound(sound_name string) {

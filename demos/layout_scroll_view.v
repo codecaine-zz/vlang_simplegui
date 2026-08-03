@@ -20,6 +20,7 @@ fn main() {
 	win.add_vertical_spacer(8)
 
 	// Add scrollable text area container with a height constraint of 180 pixels
+
 	win.add_textarea('scroll_content', '[09:00:01] Initializing background task worker...\n[09:00:02] Connected to database server (127.0.0.1:5432)\n[09:00:03] Loaded 1,420 records into local cache.\n[09:00:05] Starting data transformation job #104...\n[09:00:08] Job #104 completed in 3.14s.\n[09:00:10] Waiting for incoming client connections...\n[09:00:15] Client Ada connected from 192.168.1.5.\n[09:00:20] Health check OK. 0 errors, 0 warnings.')
 		.height(180)
 

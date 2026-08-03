@@ -1268,7 +1268,6 @@ pub fn (win &SimpleWindow) set_system_theme(theme string) !&SimpleWindow {
 	return win
 }
 
-
 // sleep_display turns off/puts displays to sleep immediately.
 pub fn (win &SimpleWindow) sleep_display() &SimpleWindow {
 	win.exec_bg('pmset displaysleepnow')

@@ -5,18 +5,17 @@ import simplegui
 fn main() {
 	// 1. Initialize window using fluent method chaining & automatic layout memory
 	mut win := simplegui.new_simple_window('Ergonomic Window API Showcase', 760, 920)
+
 	win.set_padding(16)
 		.set_spacing(10)
 		.recenter()
 
 	win.add_heading('Ergonomic Window API Showcase')
-	win.add_banner('banner_info',
-		'This demo showcases SimpleGUI ergonomic APIs: window preset sizing, screen positioning, form validation, styled toasts, system audio/speech, layout memory, and window archetypes.',
+	win.add_banner('banner_info', 'This demo showcases SimpleGUI ergonomic APIs: window preset sizing, screen positioning, form validation, styled toasts, system audio/speech, layout memory, and window archetypes.',
 		'info')
 
 	// --- 1. Sizing Presets & Bounds ---
-	win.add_section_header('sec_size', '1. Window Sizing & Bounds Presets',
-		'Test set_size_preset(), set_fixed_size(), and get_size()')
+	win.add_section_header('sec_size', '1. Window Sizing & Bounds Presets', 'Test set_size_preset(), set_fixed_size(), and get_size()')
 
 	win.begin_row('row_size_buttons')
 	win.add_button('btn_size_compact', 'Compact (400x300)')
@@ -33,8 +32,7 @@ fn main() {
 	win.end_row()
 
 	// --- 2. Positioning & Placement Presets ---
-	win.add_section_header('sec_pos', '2. Screen Positioning & Placement',
-		'Test set_position_preset(), recenter(), and get_position()')
+	win.add_section_header('sec_pos', '2. Screen Positioning & Placement', 'Test set_position_preset(), recenter(), and get_position()')
 
 	win.begin_row('row_pos_buttons')
 	win.add_button('btn_pos_tl', 'Top-Left')
@@ -47,8 +45,7 @@ fn main() {
 	win.add_label('lbl_pos_info', 'Current Position: ${win.get_x()}, ${win.get_y()}')
 
 	// --- 3. Form Validation, Reset & String Transformers ---
-	win.add_section_header('sec_val', '3. Form Validation & String Transformers',
-		'Test validate_required(), trim_all(), uppercase_all(), and clear_form()')
+	win.add_section_header('sec_val', '3. Form Validation & String Transformers', 'Test validate_required(), trim_all(), uppercase_all(), and clear_form()')
 
 	win.begin_row('row_form_inputs')
 	win.add_input('user_name', '  ada lovelace  ')
@@ -92,8 +89,7 @@ fn main() {
 	win.end_row()
 
 	// --- 5. Theme & State Shortcuts ---
-	win.add_section_header('sec_theme', '5. Theme & Title State Shortcuts',
-		'Test set_dark_theme(), toggle_window_theme(), and layout save/restore')
+	win.add_section_header('sec_theme', '5. Theme & Title State Shortcuts', 'Test set_dark_theme(), toggle_window_theme(), and layout save/restore')
 
 	win.begin_row('row_theme_buttons')
 	win.add_button('btn_theme_dark', 'Dark Theme')
@@ -271,7 +267,8 @@ fn main() {
 	})
 
 	win.on_click('btn_temp_status', fn (mut w simplegui.SimpleWindow) {
-		w.set_status_temporary('⏳ Processing background task... (auto-resets in 3s)', 3000)
+		w.set_status_temporary('⏳ Processing background task... (auto-resets in 3s)',
+			3000)
 	})
 
 	// Theme & Layout handlers
@@ -318,7 +315,8 @@ fn main() {
 	win.on_click('btn_launch_dialog', fn (mut w simplegui.SimpleWindow) {
 		mut dlg := simplegui.new_simple_window('Dialog Archetype', 100, 100)
 		dlg.make_fixed_dialog('Sample Fixed Dialog', 420, 220)
-		dlg.add_banner('dlg_ban', 'This window was configured with .make_fixed_dialog()', 'info')
+		dlg.add_banner('dlg_ban', 'This window was configured with .make_fixed_dialog()',
+			'info')
 		dlg.add_action('dlg_ok', 'Close Dialog', fn (mut d simplegui.SimpleWindow) {
 			d.close()
 		})
@@ -332,7 +330,8 @@ fn main() {
 		splash.set_background_color('#1c1c1e')
 		splash.set_font_color('white')
 		splash.add_heading('SimpleGUI Splash Screen')
-		splash.add_banner('spl_ban', 'Borderless splash screen configured with .make_splash_screen()', 'success')
+		splash.add_banner('spl_ban', 'Borderless splash screen configured with .make_splash_screen()',
+			'success')
 		splash.add_action('spl_close', 'Dismiss Splash', fn (mut s simplegui.SimpleWindow) {
 			s.close()
 		})

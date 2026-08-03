@@ -145,6 +145,7 @@ pub mut:
 }
 
 pub type CloseRequestedCallback = fn (mut win SimpleWindow) bool
+
 pub type AnyEventCallback = fn (mut win SimpleWindow, control_name string, event_name string, value string)
 
 struct ControlEventHandler {

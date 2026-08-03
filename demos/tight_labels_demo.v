@@ -3,11 +3,13 @@ module main
 import simplegui
 
 fn main() {
-	mut win := simplegui.new_simple_window('Tight Text-to-Control Alignment Demo', 650, 480)
+	mut win := simplegui.new_simple_window('Tight Text-to-Control Alignment Demo', 650,
+		480)
 		.set_padding(20)
 		.set_spacing(12)
 
 	win.add_heading('Text-to-Control Tight Layouts')
+
 	win.add_label('desc', 'Demonstrating right-aligned grid labels and tight row layouts where text sits close to controls.')
 		.font_size(11)
 
@@ -31,7 +33,8 @@ fn main() {
 
 	// 2. Labeled Control Row Helpers (Tight Side-by-Side)
 	win.group('grp_labeled', 'Labeled Control Helpers (Side-by-Side)', fn (mut w simplegui.SimpleWindow) {
-		w.add_labeled_dropdown('Select Framework', 'framework_select', ['Vlang', 'Go', 'Rust'], 'Vlang')
+		w.add_labeled_dropdown('Select Framework', 'framework_select', ['Vlang', 'Go', 'Rust'],
+			'Vlang')
 		w.add_labeled_number('Max Threads', 'threads_num', 8)
 		w.add_labeled_slider('CPU Usage Limit', 'cpu_limit', 75)
 	})

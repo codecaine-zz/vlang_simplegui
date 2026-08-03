@@ -108,5 +108,4 @@ pub fn (win &SimpleWindow) alert_banner(title string, message string, style stri
 	return win.add_alert_banner('', title, message, style)
 }
 
-
 // set_alert_banner_value updates alert banner content and makes it visible.

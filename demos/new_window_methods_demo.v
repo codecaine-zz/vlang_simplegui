@@ -18,7 +18,8 @@ fn main() {
 
 	// 1. Content Protection
 	win.add_group_box('grp_protection', '🔒 Screen Content Protection (Anti-Capture)')
-	win.add_switch('sw_protection', 'Enable Content Protection (NSWindowSharingNone)', false)
+	win.add_switch('sw_protection', 'Enable Content Protection (NSWindowSharingNone)',
+		false)
 
 	// 2. Geometry Persistence
 	win.add_group_box('grp_geometry', '💾 Window Geometry Persistence')
@@ -40,7 +41,11 @@ fn main() {
 	win.on_change('sw_protection', fn (mut w simplegui.SimpleWindow, val string) {
 		enabled := val == 'true' || val == '1'
 		w.set_content_protection(enabled)
-		status := if w.get_content_protection() { 'Content Protection ENABLED' } else { 'Content Protection DISABLED' }
+		status := if w.get_content_protection() {
+			'Content Protection ENABLED'
+		} else {
+			'Content Protection DISABLED'
+		}
 		w.set_status(status)
 	})
 
