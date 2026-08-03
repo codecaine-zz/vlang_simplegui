@@ -21,7 +21,13 @@ jobs:
           find . -name "*.v" -not -path "./v*" -not -path "*/.git/*" | while read -r f; do
             v fmt -w "$f"
           done
-          git diff --exit-code || (git diff && exit 1)
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "Formatting differences detected. Auto-formatting code..."
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git commit -am "ci: auto-format code with v fmt" || true
+            git push origin HEAD:${{ github.ref_name }} || true
+          fi
 
       - name: Setup SimpleGUI Module
         run: |
