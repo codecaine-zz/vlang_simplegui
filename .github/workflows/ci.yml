@@ -31,8 +31,8 @@ jobs:
 
       - name: Setup SimpleGUI Module
         run: |
-          mkdir -p ~/.vmodules
-          ln -s "$PWD" ~/.vmodules/simplegui
+          mkdir -p ~/.vmodules/simplegui
+          cp -r *.v *.m *.h v.mod ~/.vmodules/simplegui/
 
       - name: Run Tests
         run: VJOBS=1 v test tests/
