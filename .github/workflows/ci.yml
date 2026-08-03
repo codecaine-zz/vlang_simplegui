@@ -15,11 +15,9 @@ jobs:
 
       - name: Setup V Language
         uses: vlang/setup-v@v1
-        with:
-          check-latest: true
 
       - name: Verify Code Formatting
-        run: v fmt -verify *.v demos/ tests/ tools/ scripts/
+        run: v fmt -w *.v demos/ tests/ tools/ scripts/ && git diff --exit-code
 
       - name: Run Tests
         run: v test .
