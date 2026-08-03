@@ -19,7 +19,7 @@ jobs:
       - name: Verify Code Formatting
         run: |
           find . -type f \( -name "*.v" -o -name "*.vsh" \) -not -path "*/v/*" -not -path "*/vlang*" -not -path "*/.git/*" | while read -r f; do
-            v fmt -verify "$f" || { echo "FORMATTING FAILED ON FILE: $f"; exit 1; }
+            v fmt -verify "$f" || { echo "::error file=$f::File $f is not formatted according to vfmt"; exit 1; }
           done
 
       - name: Run Tests
