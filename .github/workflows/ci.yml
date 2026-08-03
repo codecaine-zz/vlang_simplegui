@@ -21,6 +21,12 @@ jobs:
           find . -type f \( -name "*.v" -o -name "*.vsh" \) -not -path "*/v/*" -not -path "*/vlang*" -not -path "*/.git/*" | while read -r f; do
             v fmt -w "$f"
           done
+          git diff --exit-code
+
+      - name: Setup SimpleGUI Module
+        run: |
+          mkdir -p ~/.vmodules
+          ln -s "$PWD" ~/.vmodules/simplegui
 
       - name: Run Tests
-        run: v test tests/
+        run: v -I . test tests/
