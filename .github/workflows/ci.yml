@@ -17,7 +17,11 @@ jobs:
         uses: vlang/setup-v@v1
 
       - name: Verify Code Formatting
-        run: v fmt -verify $(find . -name "*.v" -not -path "./v*" -not -path "*/.git/*")
+        run: |
+          find . -name "*.v" -not -path "./v*" -not -path "*/.git/*" | while read -r f; do
+            v fmt -w "$f"
+          done
+          git diff --exit-code || (git diff && exit 1)
 
       - name: Setup SimpleGUI Module
         run: |
