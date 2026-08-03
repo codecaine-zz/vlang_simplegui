@@ -18,8 +18,6 @@ jobs:
 
       - name: Verify Code Formatting
         run: |
-          v fmt -w designer.v
-          git diff designer.v
           find . -type f \( -name "*.v" -o -name "*.vsh" \) -not -path "*/v/*" -not -path "*/vlang*" -not -path "*/.git/*" | while read -r f; do
             v fmt -verify "$f" || { echo "::error file=$f::File $f is not formatted according to vfmt"; exit 1; }
           done

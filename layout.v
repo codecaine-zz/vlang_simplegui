@@ -343,16 +343,16 @@ pub fn (win &SimpleWindow) expand_fill() &SimpleWindow {
 pub struct GroupConfig {
 pub mut:
 	title             string
-	border            bool = true
-	border_width      f32  = 1.0
+	border            bool
+	border_width      f32
 	border_color      string
-	corner_radius     f32 = 12.0
+	corner_radius     f32
 	bg_color          string
-	padding           int = 12
+	padding           int
 	shadow            bool
-	show_caption      bool = true
+	show_caption      bool
 	caption_color     string
-	caption_alignment string = 'left'
+	caption_alignment string
 }
 
 // add_group_box_with_config adds a group box control using a detailed GroupConfig struct.

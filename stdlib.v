@@ -96,10 +96,10 @@ pub:
 pub struct SimpleHttpRequestOptions {
 pub:
 	headers        map[string]string
-	user_agent     string = 'SimpleGUI/1.0'
+	user_agent     string
 	retries        int
-	retry_delay_ms int  = 100
-	expect_success bool = true
+	retry_delay_ms int
+	expect_success bool
 }
 
 fn build_simple_http_response(url string, res http.Response) SimpleHttpResponse {

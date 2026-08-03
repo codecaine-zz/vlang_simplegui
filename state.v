@@ -74,7 +74,7 @@ mut:
 	padding                      int
 	spacing                      int
 	always_on_top                bool
-	responsive_layout            bool = true
+	responsive_layout            bool
 	placeholders                 map[string]string
 	tooltips                     map[string]string
 	errors                       map[string]string
@@ -85,22 +85,22 @@ mut:
 	min_height                   int
 	max_width                    int
 	max_height                   int
-	resizable                    bool = true
-	minimizable                  bool = true
-	maximizable                  bool = true
-	closable                     bool = true
-	has_shadow                   bool = true
+	resizable                    bool
+	minimizable                  bool
+	maximizable                  bool
+	closable                     bool
+	has_shadow                   bool
 	movable_by_window_background bool
-	titlebar_visible             bool = true
-	title_visible                bool = true
+	titlebar_visible             bool
+	title_visible                bool
 	subtitle                     string
 	corner_radius                f64
 	vibrancy_material            string
-	window_level                 string = 'normal'
-	movable                      bool   = true
+	window_level                 string
+	movable                      bool
 	ignores_mouse_events         bool
 	hides_on_deactivate          bool
-	prevents_app_termination     bool = true
+	prevents_app_termination     bool
 	represented_filename         string
 	frame_autosave_name          string
 	document_edited              bool
@@ -133,8 +133,8 @@ pub mut:
 	width            int
 	height           int
 	font_size        int
-	visible          bool = true
-	enabled          bool = true
+	visible          bool
+	enabled          bool
 	initial_value    string
 	initial_checked  bool
 	initial_number   int
