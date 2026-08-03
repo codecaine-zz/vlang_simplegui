@@ -17,7 +17,7 @@ jobs:
         uses: vlang/setup-v@v1
 
       - name: Verify Code Formatting
-        run: v fmt -verify *.v tests/ demos/
+        run: v fmt -verify $(find . -maxdepth 2 -name "*.v" -not -path "*/v/*")
 
       - name: Setup SimpleGUI Module
         run: |
