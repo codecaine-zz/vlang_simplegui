@@ -18,7 +18,7 @@ jobs:
 
       - name: Verify Code Formatting
         run: |
-          for f in *.v demos/*.v tests/*.v tools/*.v scripts/*.vsh examples/*.v; do
+          find . -type f \( -name "*.v" -o -name "*.vsh" \) -not -path "*/v/*" -not -path "*/vlang*" -not -path "*/.git/*" | while read -r f; do
             v fmt -verify "$f" || { echo "FORMATTING FAILED ON FILE: $f"; exit 1; }
           done
 
