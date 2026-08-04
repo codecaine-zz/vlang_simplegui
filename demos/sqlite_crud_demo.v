@@ -5,7 +5,7 @@ import db.sqlite
 import os
 
 // 1. Database Model mapped to SQLite using V's ORM
-struct Product {
+struct SqliteProduct {
 mut:
 	id        int @[primary; sql: serial]
 	name      string
@@ -17,23 +17,23 @@ mut:
 }
 
 // 2. Application State holding database connection and active results
-struct AppState {
+struct SqliteAppState {
 mut:
 	db               sqlite.DB
 	db_path          string
-	products         []Product
+	products         []SqliteProduct
 	selected_row_idx int = -1
 	filter_query     string
 }
 
 // 3. Helper to fetch products from SQLite with optional fuzzy search filtering
-fn filter_and_format_rows(mut state AppState) [][]string {
+fn filter_and_format_rows(mut state SqliteAppState) [][]string {
 	pattern := '%' + state.filter_query + '%'
 
 	// Query database using V ORM. It automatically matches name OR category.
 	prods := sql state.db {
-		select from Product where name like pattern || category like pattern
-	} or { []Product{} }
+		select from SqliteProduct where name like pattern || category like pattern
+	} or { []SqliteProduct{} }
 
 	state.products = prods
 
@@ -53,7 +53,7 @@ fn filter_and_format_rows(mut state AppState) [][]string {
 }
 
 // 4. Synchronize selected product attributes to the editor form fields
-fn sync_selection_to_ui(mut win simplegui.SimpleWindow, mut state AppState) {
+fn sync_selection_to_ui(mut win simplegui.SimpleWindow, mut state SqliteAppState) {
 	if state.selected_row_idx >= 0 && state.selected_row_idx < state.products.len {
 		p := state.products[state.selected_row_idx]
 
@@ -88,9 +88,9 @@ fn sync_selection_to_ui(mut win simplegui.SimpleWindow, mut state AppState) {
 }
 
 // 5. Update database and file size statistics in the footer info bar
-fn sync_stats_to_ui(mut win simplegui.SimpleWindow, mut state AppState) {
+fn sync_stats_to_ui(mut win simplegui.SimpleWindow, mut state SqliteAppState) {
 	count_prods := sql state.db {
-		select count from Product
+		select count from SqliteProduct
 	} or { 0 }
 
 	size := os.file_size(state.db_path)
@@ -113,17 +113,17 @@ fn main() {
 
 	// Create table if it doesn't exist
 	sql db {
-		create table Product
+		create table SqliteProduct
 	} or { panic('Failed to initialize database tables: ' + err.msg()) }
 
 	// Seed default dataset if database is empty
 	initial_count := sql db {
-		select count from Product
+		select count from SqliteProduct
 	} or { 0 }
 
 	if initial_count == 0 {
 		println('SQLite table is empty. Seeding default products...')
-		p1 := Product{
+		p1 := SqliteProduct{
 			name:      'MacBook Pro M3'
 			category:  'Electronics'
 			stock:     45
@@ -131,7 +131,7 @@ fn main() {
 			in_stock:  true
 			date_recv: '2026-07-01'
 		}
-		p2 := Product{
+		p2 := SqliteProduct{
 			name:      'Ergonomic Desk Chair'
 			category:  'Furniture'
 			stock:     15
@@ -139,7 +139,7 @@ fn main() {
 			in_stock:  true
 			date_recv: '2026-06-15'
 		}
-		p3 := Product{
+		p3 := SqliteProduct{
 			name:      'Wireless Bluetooth Mouse'
 			category:  'Electronics'
 			stock:     120
@@ -147,7 +147,7 @@ fn main() {
 			in_stock:  true
 			date_recv: '2026-07-02'
 		}
-		p4 := Product{
+		p4 := SqliteProduct{
 			name:      'Classic Leather Notebook'
 			category:  'Books'
 			stock:     80
@@ -155,7 +155,7 @@ fn main() {
 			in_stock:  true
 			date_recv: '2026-06-30'
 		}
-		p5 := Product{
+		p5 := SqliteProduct{
 			name:      'Ultra-light Running Shoes'
 			category:  'Apparel'
 			stock:     0
@@ -165,23 +165,23 @@ fn main() {
 		}
 
 		sql db {
-			insert p1 into Product
+			insert p1 into SqliteProduct
 		} or { panic('Failed to seed database: ' + err.msg()) }
 		sql db {
-			insert p2 into Product
+			insert p2 into SqliteProduct
 		} or { panic('Failed to seed database: ' + err.msg()) }
 		sql db {
-			insert p3 into Product
+			insert p3 into SqliteProduct
 		} or { panic('Failed to seed database: ' + err.msg()) }
 		sql db {
-			insert p4 into Product
+			insert p4 into SqliteProduct
 		} or { panic('Failed to seed database: ' + err.msg()) }
 		sql db {
-			insert p5 into Product
+			insert p5 into SqliteProduct
 		} or { panic('Failed to seed database: ' + err.msg()) }
 	}
 
-	mut state := AppState{
+	mut state := SqliteAppState{
 		db:      db
 		db_path: db_path
 	}
@@ -227,7 +227,7 @@ fn main() {
 	win.begin_row('form_pane')
 
 	// Column 1: Record Details form
-	win.add_group_box('record_details_group', 'Product Details Form')
+	win.begin_group_box('record_details_group', 'Product Details Form')
 	win.begin_row('id_cat_row')
 	win.add_label('lbl_id', 'ID:').font_size(11).width(30)
 	win.add_input('id_input', 'AUTO-GENERATE').width(110)
@@ -258,9 +258,10 @@ fn main() {
 	win.add_label('lbl_date', 'Date:').font_size(11).width(40)
 	win.add_date_picker('date_recv_input', '2026-07-05').width(120)
 	win.end_row()
+	win.end_group_box()
 
 	// Column 2: CRUD Database Actions and Stats panel
-	win.add_group_box('actions_group', 'Database Operations')
+	win.begin_group_box('actions_group', 'Database Operations')
 
 	win.add_label('act_desc', 'Perform CRUD operations on the SQLite connection:')
 		.font_size(11)
@@ -284,6 +285,8 @@ fn main() {
 	win.add_label('db_stats_label', 'Loading database information...')
 		.font_size(10)
 		.font_color('#f8f8f2')
+
+	win.end_group_box()
 
 	win.end_row()
 
@@ -344,7 +347,7 @@ fn main() {
 
 		// Perform SQL Update using parameters to avoid syntax errors with float literals
 		sql state.db {
-			update Product set name = name, category = category, stock = stock, price = price,
+			update SqliteProduct set name = name, category = category, stock = stock, price = price,
 			in_stock = in_stock, date_recv = date_recv where id == prod_id
 		} or {
 			w.alert('Database Write Error', 'Failed to update record: ' + err.msg())
@@ -396,7 +399,7 @@ fn main() {
 		}
 
 		// Create struct (id is auto-incremented by database)
-		new_prod := Product{
+		new_prod := SqliteProduct{
 			name:      name
 			category:  category
 			stock:     stock
@@ -407,7 +410,7 @@ fn main() {
 
 		// SQL Insert using V's ORM
 		sql state.db {
-			insert new_prod into Product
+			insert new_prod into SqliteProduct
 		} or {
 			w.alert('Database Write Error', 'Failed to insert new record: ' + err.msg())
 			return
@@ -452,7 +455,7 @@ fn main() {
 		{
 			// SQL Delete using V's ORM
 			sql state.db {
-				delete from Product where id == prod_id
+				delete from SqliteProduct where id == prod_id
 			} or {
 				w.alert('Database Deletion Error', 'Failed to delete record: ' + err.msg())
 				return
