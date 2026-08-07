@@ -28,12 +28,15 @@ If you are new to programming or desktop app creation, here are simple definitio
 ## Table of contents
 
 - [📘 Beginner's Core Concepts & Jargon-Free Glossary](#-beginners-core-concepts--jargon-free-glossary)
+- [Quick Start](#quick-start)
+- [Common Patterns](#common-patterns)
 - [1. Window Operations](#1-window-operations)
 - [2. Control Layout & Grid Rows](#2-control-layout--grid-rows)
 - [3. Adding Controls](#3-adding-controls)
 - [4. Control Sizing & Styling](#4-control-sizing--styling)
 - [5. Dialogs, Popups, & File Pickers](#5-dialogs-popups--file-pickers)
 - [6. Utilities & System Actions](#6-utilities--system-actions)
+- [6b. Neutralino-Inspired System Calls & Platform API](#6b-neutralino-inspired-system-calls--platform-api)
 - [6c. V Standard Library High-Level Wrappers](#6c-v-standard-library-high-level-wrappers)
 - [7. List Box & Image View Operations](#7-list-box--image-view-operations)
 - [8. Scheduled Timers & Delays](#8-scheduled-timers--delays)
@@ -60,8 +63,8 @@ fn main() {
     simplegui.new_simple_window('Starter', 640, 420)
         .add_input('name', 'Ada')
         .add_button('save', 'Save')
-        .on_click('save', fn (mut win &simplegui.SimpleWindow) {
-            println('saved: ${win.get_text('name')}')
+        .on_click('save', fn (mut win simplegui.SimpleWindow) {
+            println("saved: ${win.get_text('name')}")
         })
         .run()
 }
@@ -77,24 +80,6 @@ fn main() {
 ---
 
 ## 1. Window Operations
-
-### Quick Start
-
-```v
-module main
-
-import simplegui
-
-fn main() {
-    simplegui.new_simple_window('Starter', 640, 420)
-        .add_input('name', 'Ada')
-        .add_button('save', 'Save')
-        .on_click('save', fn (mut win &simplegui.SimpleWindow) {
-            println("saved: ${win.get_text('name')}")
-        })
-        .run()
-}
-```
 
 ### Developer Helpers
 
@@ -339,7 +324,7 @@ Enables or disables the native zoom/maximize window titlebar button.
 win.set_maximizable(true)
 ```
 
-### `win.close()` / `win.close_window()` &SimpleWindow
+### `win.close()` / `win.close_window() &SimpleWindow`
 
 Programmatically closes the native window delegate.
 
@@ -347,7 +332,7 @@ Programmatically closes the native window delegate.
 win.close()
 ```
 
-### `win.hide()` / `win.hide_window()` &SimpleWindow
+### `win.hide()` / `win.hide_window() &SimpleWindow`
 
 Temporarily hides the window from view.
 
@@ -355,7 +340,7 @@ Temporarily hides the window from view.
 win.hide()
 ```
 
-### `win.center()` / `win.center_window()` &SimpleWindow
+### `win.center()` / `win.center_window() &SimpleWindow`
 
 Centers the window on the active display.
 
@@ -363,7 +348,7 @@ Centers the window on the active display.
 win.center()
 ```
 
-### `win.align(position string)` / `win.align_window(position string)` &SimpleWindow
+### `win.align(position string)` / `win.align_window(position string) &SimpleWindow`
 
 Repositions the window relative to the active display/screen visible frame.
 Supports flexible, case-insensitive placement names (e.g., `'top-left'`, `'top-center'`, `'top-right'`, `'middle-left'`, `'center'` or `'middle-center'`, `'middle-right'`, `'bottom-left'`, `'bottom-center'`, `'bottom-right'`).
@@ -372,7 +357,7 @@ Supports flexible, case-insensitive placement names (e.g., `'top-left'`, `'top-c
 win.align('top-right')
 ```
 
-### `win.set_size(width int, height int)` / `win.resize(width int, height int)` &SimpleWindow
+### `win.set_size(width int, height int)` / `win.resize(width int, height int) &SimpleWindow`
 
 Programmatically resizes the active window content area.
 
@@ -389,7 +374,7 @@ w := win.get_width()
 h := win.get_height()
 ```
 
-### `win.set_position(x int, y int)` &SimpleWindow
+### `win.set_position(x int, y int) &SimpleWindow`
 
 Repositions the top-left corner of the window on the desktop.
 
@@ -406,7 +391,7 @@ x := win.get_x()
 y := win.get_y()
 ```
 
-### `win.set_opacity(opacity f64)` &SimpleWindow
+### `win.set_opacity(opacity f64) &SimpleWindow`
 
 Applies window transparency / alpha opacity channel (range `0.0` to `1.0`).
 
@@ -422,7 +407,7 @@ Gets the current window translucency.
 alpha := win.get_opacity()
 ```
 
-### `win.set_titlebar_visible(visible bool)` &SimpleWindow
+### `win.set_titlebar_visible(visible bool) &SimpleWindow`
 
 Toggles titlebar visibility for custom clean-bordered or borderless overlay look.
 
@@ -448,7 +433,7 @@ win.set_cursor_size(1.5)
 scale := win.get_cursor_size()
 ```
 
-### `win.reset_cursor()` &SimpleWindow
+### `win.reset_cursor() &SimpleWindow`
 
 Restores the default arrow cursor and clears any custom cursor size or window-wide cursor override.
 
@@ -456,7 +441,7 @@ Restores the default arrow cursor and clears any custom cursor size or window-wi
 win.reset_cursor()
 ```
 
-### `win.push_cursor(cursor_name string)` &SimpleWindow / `win.pop_cursor()` &SimpleWindow
+### `win.push_cursor(cursor_name string)` &SimpleWindow / `win.pop_cursor() &SimpleWindow`
 
 Temporarily pushes a cursor onto the cursor stack and later restores the previous cursor with `pop_cursor()`.
 
@@ -466,7 +451,7 @@ win.push_cursor('closed_hand')
 win.pop_cursor()
 ```
 
-### `win.set_control_cursor(control_name string, cursor_name string)` &SimpleWindow
+### `win.set_control_cursor(control_name string, cursor_name string) &SimpleWindow`
 
 Assigns a cursor that is used while the mouse hovers over a specific named control. Pass `'default'` or an empty string to remove the override.
 
@@ -482,7 +467,7 @@ Returns the current global mouse location in screen coordinates.
 mx, my := win.get_mouse_location()
 ```
 
-### `win.move_cursor_to(x int, y int)` &SimpleWindow
+### `win.move_cursor_to(x int, y int) &SimpleWindow`
 
 Warps the mouse cursor to a new global screen position.
 
@@ -490,7 +475,7 @@ Warps the mouse cursor to a new global screen position.
 win.move_cursor_to(500, 300)
 ```
 
-### `win.toggle_fullscreen()` &SimpleWindow
+### `win.toggle_fullscreen() &SimpleWindow`
 
 Toggles native macOS full screen mode programmatically.
 
@@ -498,7 +483,7 @@ Toggles native macOS full screen mode programmatically.
 win.toggle_fullscreen()
 ```
 
-### `win.minimize()` &SimpleWindow
+### `win.minimize() &SimpleWindow`
 
 Minimizes the window to the dock.
 
@@ -506,7 +491,7 @@ Minimizes the window to the dock.
 win.minimize()
 ```
 
-### `win.deminimize()` &SimpleWindow
+### `win.deminimize() &SimpleWindow`
 
 Restores the window from the dock.
 
@@ -514,7 +499,7 @@ Restores the window from the dock.
 win.deminimize()
 ```
 
-### `win.maximize()` / `win.zoom()` &SimpleWindow
+### `win.maximize()` / `win.zoom() &SimpleWindow`
 
 Toggles native maximized/zoomed window scale.
 
@@ -542,7 +527,7 @@ if win.is_active() {
 }
 ```
 
-### `win.request_attention(critical bool)` / `win.bounce_dock(critical bool)` &SimpleWindow
+### `win.request_attention(critical bool)` / `win.bounce_dock(critical bool) &SimpleWindow`
 
 Bounces the application icon in the macOS Dock to catch the user's attention. If `critical` is true, the icon bounces repeatedly until the application is activated; otherwise, it bounces once.
 
@@ -637,7 +622,7 @@ Enables, disables, or queries whether the window can be moved by dragging.
 win.set_movable(true)
 ```
 
-### `win.set_window_level(level string)` &SimpleWindow
+### `win.set_window_level(level string) &SimpleWindow`
 
 Sets the window layer stacking level (`'normal'`, `'floating'`, `'modal'`, `'mainMenu'`, `'statusBar'`, `'screenSaver'`).
 
@@ -645,7 +630,7 @@ Sets the window layer stacking level (`'normal'`, `'floating'`, `'modal'`, `'mai
 win.set_window_level('floating')
 ```
 
-### `win.set_aspect_ratio(width_ratio f64, height_ratio f64)` &SimpleWindow / `win.reset_aspect_ratio()` &SimpleWindow
+### `win.set_aspect_ratio(width_ratio f64, height_ratio f64)` &SimpleWindow / `win.reset_aspect_ratio() &SimpleWindow`
 
 Locks or resets window resizing constraints to a fixed aspect ratio.
 
@@ -654,7 +639,7 @@ win.set_aspect_ratio(16.0, 9.0)
 win.reset_aspect_ratio()
 ```
 
-### `win.bounce_dock_icon(critical bool)` &SimpleWindow
+### `win.bounce_dock_icon(critical bool) &SimpleWindow`
 
 Triggers an attention bounce request on the application Dock icon (`critical` bounces continuously until activated).
 
@@ -662,7 +647,7 @@ Triggers an attention bounce request on the application Dock icon (`critical` bo
 win.bounce_dock_icon(false)
 ```
 
-### `win.set_fullscreen(enabled bool)` &SimpleWindow
+### `win.set_fullscreen(enabled bool) &SimpleWindow`
 
 Programmatically enables or disables full screen mode.
 
@@ -670,7 +655,7 @@ Programmatically enables or disables full screen mode.
 win.set_fullscreen(true)
 ```
 
-### `win.center_on_active_screen()` &SimpleWindow
+### `win.center_on_active_screen() &SimpleWindow`
 
 Centers the window on the active display currently containing the mouse cursor.
 
@@ -678,7 +663,7 @@ Centers the window on the active display currently containing the mouse cursor.
 win.center_on_active_screen()
 ```
 
-### `win.snap_to_edge(edge string)` &SimpleWindow
+### `win.snap_to_edge(edge string) &SimpleWindow`
 
 Snaps the window frame to screen boundary positions (`'top_left'`, `'top_right'`, `'bottom_left'`, `'bottom_right'`, `'top'`, `'bottom'`, `'left'`, `'right'`, `'center'`).
 
@@ -705,7 +690,7 @@ if win.has_aspect_ratio() {
 }
 ```
 
-### `win.set_vibrancy(material string)` &SimpleWindow
+### `win.set_vibrancy(material string) &SimpleWindow`
 
 Applies macOS translucent background vibrancy material (`'sidebar'`, `'header'`, `'titlebar'`, `'menu'`, `'hud'`, `'window'`).
 
@@ -722,7 +707,7 @@ win.set_corner_radius(12.0)
 r := win.get_corner_radius()
 ```
 
-### `win.set_background_blur(enabled bool)` &SimpleWindow
+### `win.set_background_blur(enabled bool) &SimpleWindow`
 
 Enables or disables desktop background blur effect behind the window.
 
@@ -730,7 +715,7 @@ Enables or disables desktop background blur effect behind the window.
 win.set_background_blur(true)
 ```
 
-### `win.get_window_level() string` / `win.set_level_type(level_type string)` &SimpleWindow
+### `win.get_window_level() string` / `win.set_level_type(level_type string) &SimpleWindow`
 
 Queries or sets the window z-level layer tier (`'normal'`, `'floating'`, `'modal'`, `'mainMenu'`, `'statusBar'`, `'screenSaver'`).
 
@@ -779,7 +764,7 @@ Displays or queries the unsaved changes dirty dot indicator inside the window cl
 win.set_document_edited(true)
 ```
 
-### `win.flash_frame(critical bool)` &SimpleWindow
+### `win.flash_frame(critical bool) &SimpleWindow`
 
 Flashes the window frame/titlebar to catch user attention.
 
@@ -787,7 +772,7 @@ Flashes the window frame/titlebar to catch user attention.
 win.flash_frame(true)
 ```
 
-### `win.fade_in(duration_ms int)` &SimpleWindow / `win.fade_out(duration_ms int)` &SimpleWindow
+### `win.fade_in(duration_ms int)` &SimpleWindow / `win.fade_out(duration_ms int) &SimpleWindow`
 
 Animates window opacity smoothly in or out over the specified duration in milliseconds.
 
@@ -796,7 +781,7 @@ win.fade_in(300)
 win.fade_out(300)
 ```
 
-### `win.order_front()` / `win.bring_to_front()` &SimpleWindow
+### `win.order_front()` / `win.bring_to_front() &SimpleWindow`
 
 Brings the window to the top of the desktop window stack and activates the app.
 
@@ -804,7 +789,7 @@ Brings the window to the top of the desktop window stack and activates the app.
 win.bring_to_front()
 ```
 
-### `win.order_back()` / `win.send_to_back()` &SimpleWindow
+### `win.order_back()` / `win.send_to_back() &SimpleWindow`
 
 Sends the window behind all other open application windows.
 
@@ -812,7 +797,7 @@ Sends the window behind all other open application windows.
 win.send_to_back()
 ```
 
-### `win.toggle_minimize()` / `win.toggle_maximize()` / `win.toggle_visibility()` &SimpleWindow
+### `win.toggle_minimize()` / `win.toggle_maximize()` / `win.toggle_visibility() &SimpleWindow`
 
 Convenience toggles for window minimized, maximized, and visibility states.
 
@@ -822,7 +807,7 @@ win.toggle_maximize()
 win.toggle_visibility()
 ```
 
-### `win.move_by(dx int, dy int)` &SimpleWindow / `win.resize_by(dw int, dh int)` &SimpleWindow
+### `win.move_by(dx int, dy int)` &SimpleWindow / `win.resize_by(dw int, dh int) &SimpleWindow`
 
 Shifts the window position or adjusts window size by relative deltas.
 
@@ -831,7 +816,7 @@ win.move_by(10, 20)
 win.resize_by(50, 50)
 ```
 
-### `win.get_center() (int, int)` / `win.set_center(center_x int, center_y int)` &SimpleWindow
+### `win.get_center() (int, int)` / `win.set_center(center_x int, center_y int) &SimpleWindow`
 
 Gets or sets the window center point in global screen coordinates.
 
@@ -840,7 +825,7 @@ cx, cy := win.get_center()
 win.set_center(400, 300)
 ```
 
-### `win.center_horizontally()` &SimpleWindow / `win.center_vertically()` &SimpleWindow
+### `win.center_horizontally()` &SimpleWindow / `win.center_vertically() &SimpleWindow`
 
 Centers the window on the active screen along one axis while preserving the other axis.
 
@@ -849,7 +834,7 @@ win.center_horizontally()
 win.center_vertically()
 ```
 
-### `win.fit_to_screen()` &SimpleWindow / `win.constrain_to_screen()` &SimpleWindow
+### `win.fit_to_screen()` &SimpleWindow / `win.constrain_to_screen() &SimpleWindow`
 
 Fits the window to the visible screen frame, or clamps existing bounds to keep it fully on-screen.
 
@@ -883,7 +868,7 @@ Enforces or queries maximum allowed window width and height resize constraints.
 win.set_max_size(1280, 800)
 ```
 
-### `win.set_collection_behavior(behavior string)` &SimpleWindow
+### `win.set_collection_behavior(behavior string) &SimpleWindow`
 
 Configures macOS virtual desktop / Spaces behavior (`'can_join_all_spaces'`, `'move_to_active_space'`, `'transient'`, `'full_screen_primary'`, `'full_screen_auxiliary'`).
 
@@ -891,7 +876,7 @@ Configures macOS virtual desktop / Spaces behavior (`'can_join_all_spaces'`, `'m
 win.set_collection_behavior('can_join_all_spaces')
 ```
 
-### `win.set_close_button_enabled(enabled bool)` &SimpleWindow / `win.set_minimize_button_enabled(enabled bool)` &SimpleWindow / `win.set_zoom_button_enabled(enabled bool)` &SimpleWindow
+### `win.set_close_button_enabled(enabled bool)` &SimpleWindow / `win.set_minimize_button_enabled(enabled bool)` &SimpleWindow / `win.set_zoom_button_enabled(enabled bool) &SimpleWindow`
 
 Enables or disables standard macOS titlebar traffic light control buttons (Close, Minimize, Zoom).
 
@@ -901,7 +886,7 @@ win.set_minimize_button_enabled(true)
 win.set_zoom_button_enabled(true)
 ```
 
-### `win.shake_window()` &SimpleWindow
+### `win.shake_window() &SimpleWindow`
 
 Triggers an animated horizontal window shake feedback effect (ideal for error or validation failure indication).
 
@@ -909,7 +894,7 @@ Triggers an animated horizontal window shake feedback effect (ideal for error or
 win.shake_window()
 ```
 
-### `win.set_fixed_size(width int, height int)` &SimpleWindow
+### `win.set_fixed_size(width int, height int) &SimpleWindow`
 
 Locks the window to fixed width and height dimensions and disables window resizing in a single call (`set_size(w, h)`, `set_min_size(w, h)`, `set_max_size(w, h)`, `set_resizable(false)`). Ideal for popups, login dialogs, and splash screens.
 
@@ -917,7 +902,7 @@ Locks the window to fixed width and height dimensions and disables window resizi
 win.set_fixed_size(400, 300)
 ```
 
-### `win.set_size_preset(preset string)` / `win.set_preset_size(preset string)` &SimpleWindow
+### `win.set_size_preset(preset string)` / `win.set_preset_size(preset string) &SimpleWindow`
 
 Resizes the window using standard human-readable dimension presets:
 - `'small'` or `'compact'`: 400 × 300
@@ -945,7 +930,7 @@ Retrieves the current window width and height as a 2-tuple `(width, height)`.
 w, h := win.get_size()
 ```
 
-### `win.set_minimum_size(width int, height int)` &SimpleWindow / `win.set_maximum_size(width int, height int)` &SimpleWindow
+### `win.set_minimum_size(width int, height int)` &SimpleWindow / `win.set_maximum_size(width int, height int) &SimpleWindow`
 
 Full-name ergonomic aliases for `set_min_size` and `set_max_size`.
 
@@ -971,7 +956,7 @@ Retrieves the current top-left screen coordinates of the window as an `(x, y)` 2
 x, y := win.get_position()
 ```
 
-### `win.set_position_preset(preset string)` / `win.set_corner_position(corner string)` &SimpleWindow
+### `win.set_position_preset(preset string)` / `win.set_corner_position(corner string) &SimpleWindow`
 
 Positions the window on screen based on standard corner or edge preset names (`'top-left'`, `'top-right'`, `'bottom-left'`, `'bottom-right'`, `'top-center'`, `'bottom-center'`, `'center'`, `'middle-left'`, `'middle-right'`).
 
@@ -979,7 +964,7 @@ Positions the window on screen based on standard corner or edge preset names (`'
 win.set_position_preset('top-right')
 ```
 
-### `win.recenter()` / `win.center_on_screen()` &SimpleWindow
+### `win.recenter()` / `win.center_on_screen() &SimpleWindow`
 
 Friendly aliases for `center()` and `center_on_active_screen()`.
 
@@ -987,7 +972,7 @@ Friendly aliases for `center()` and `center_on_active_screen()`.
 win.center()
 ```
 
-### `win.show()` &SimpleWindow
+### `win.show() &SimpleWindow`
 
 Unhides the window and brings it key to the front of the desktop screen stack (alias for `show_window()`).
 
@@ -995,7 +980,7 @@ Unhides the window and brings it key to the front of the desktop screen stack (a
 win.show()
 ```
 
-### `win.restore()` / `win.restore_window()` &SimpleWindow
+### `win.restore()` / `win.restore_window() &SimpleWindow`
 
 Restores the window from minimized state back to its standard desktop size and layout.
 
@@ -1003,7 +988,7 @@ Restores the window from minimized state back to its standard desktop size and l
 win.restore()
 ```
 
-### `win.set_window_title(title string)` &SimpleWindow
+### `win.set_window_title(title string) &SimpleWindow`
 
 Updates the window title text in the titlebar (friendly alias for `set_title(title)`).
 
@@ -1040,7 +1025,7 @@ win.toggle_window_theme()
 is_dark := win.is_dark_theme()
 ```
 
-### `win.trigger_shake()` / `win.flash_and_shake()` / `win.attention()` &SimpleWindow
+### `win.trigger_shake()` / `win.flash_and_shake()` / `win.attention() &SimpleWindow`
 
 Visual alert shortcuts: `trigger_shake()` performs a horizontal shake animation, `flash_and_shake()` flashes the window frame and shakes the window for error feedback, and `attention()` triggers a macOS Dock bounce request.
 
@@ -1049,7 +1034,7 @@ win.flash_and_shake()
 win.attention()
 ```
 
-### `win.make_fixed_dialog(title string, width int, height int)` &SimpleWindow
+### `win.make_fixed_dialog(title string, width int, height int) &SimpleWindow`
 
 Configures the window as a fixed-size dialog in one step: sets title, locks size, centers on screen, and disables minimize/maximize buttons.
 
@@ -1057,7 +1042,7 @@ Configures the window as a fixed-size dialog in one step: sets title, locks size
 win.make_fixed_dialog('Confirm', 400, 220)
 ```
 
-### `win.make_splash_screen(width int, height int)` &SimpleWindow
+### `win.make_splash_screen(width int, height int) &SimpleWindow`
 
 Configures the window as a borderless centered splash screen (frameless, fixed size, centered, stay-on-top).
 
@@ -1065,7 +1050,7 @@ Configures the window as a borderless centered splash screen (frameless, fixed s
 win.make_splash_screen(500, 300)
 ```
 
-### `win.make_utility_panel()` &SimpleWindow
+### `win.make_utility_panel() &SimpleWindow`
 
 Configures the window as a floating tool panel (always-on-top, HUD vibrancy material, auto-hides on app blur).
 
@@ -1742,7 +1727,7 @@ win.add_spinner('loading_spinner', true)
 
 Adds a modern breadcrumb path control.
 
-- **Features**: Displays folder tracks beautifully using standard macOS system icons. If `editable` is set to true (default), users can click on links or double-click to invoke standard file dialogues, or drag files direct into the field to populate it.
+- **Features**: Displays folder tracks beautifully using standard macOS system icons. If `editable` is set to true (default), users can click on links or double-click to invoke standard file dialogs, or drag files directly into the field to populate it.
 - **Accessing**: Retrieve or update path text directly using the standard `win.get_text(name)` vs `win.set_text(name, path)`.
 
 ```v
@@ -2369,7 +2354,7 @@ Launches the native macOS file save panel, returning the target path (or empty i
 target_path := win.save_file_picker()
 ```
 
-### `win.toast(message string)` &SimpleWindow
+### `win.toast(message string) &SimpleWindow`
 
 Shows a self-dismissing native overlay toast notification containing the message text.
 
@@ -2377,7 +2362,7 @@ Shows a self-dismissing native overlay toast notification containing the message
 win.toast('Changes saved!')
 ```
 
-### `win.toast_info(message string)` / `win.toast_success(message string)` / `win.toast_warn(message string)` / `win.toast_error(message string)` &SimpleWindow
+### `win.toast_info(message string)` / `win.toast_success(message string)` / `win.toast_warn(message string)` / `win.toast_error(message string) &SimpleWindow`
 
 Icon-prefixed styled toast notifications (`ℹ️`, `✅`, `⚠️`, `❌`).
 
@@ -2396,7 +2381,7 @@ Validates that every named control in `names` has a non-empty string value. If a
 valid, missing := win.validate_required(['username', 'email'])
 ```
 
-### `win.trim_all(names []string)` &SimpleWindow
+### `win.trim_all(names []string) &SimpleWindow`
 
 Trims leading and trailing whitespace from multiple named text inputs or textareas in a single call.
 
@@ -2404,7 +2389,7 @@ Trims leading and trailing whitespace from multiple named text inputs or textare
 win.trim_all(['username', 'email', 'notes'])
 ```
 
-### `win.uppercase_all(names []string)` / `win.lowercase_all(names []string)` &SimpleWindow
+### `win.uppercase_all(names []string)` / `win.lowercase_all(names []string) &SimpleWindow`
 
 Converts text values in multiple named controls to UPPERCASE or lowercase.
 
@@ -2413,7 +2398,7 @@ win.uppercase_all(['state_code', 'country_code'])
 win.lowercase_all(['email_address', 'username'])
 ```
 
-### `win.clear_form()` / `win.reset_to_defaults()` &SimpleWindow
+### `win.clear_form()` / `win.reset_to_defaults() &SimpleWindow`
 
 Resets all text inputs, textareas, checkboxes, sliders, and number fields across the window to default blank state in one call.
 
@@ -2422,7 +2407,7 @@ win.clear_form()
 win.reset_to_defaults()
 ```
 
-### `win.set_status_temporary(message string, duration_ms int)` &SimpleWindow
+### `win.set_status_temporary(message string, duration_ms int) &SimpleWindow`
 
 Sets a status bar message temporarily and automatically restores the previous status text after `duration_ms`.
 
@@ -2430,7 +2415,7 @@ Sets a status bar message temporarily and automatically restores the previous st
 win.set_status_temporary('Exporting file...', 2000)
 ```
 
-### `win.play_sound(sound_name string)` &SimpleWindow
+### `win.play_sound(sound_name string) &SimpleWindow`
 
 Plays a native macOS system sound by name (e.g., `'Glass'`, `'Ping'`, `'Hero'`, `'Pop'`, `'Tink'`, `'Submarine'`).
 
@@ -2438,7 +2423,7 @@ Plays a native macOS system sound by name (e.g., `'Glass'`, `'Ping'`, `'Hero'`, 
 win.play_sound('Glass')
 ```
 
-### `win.speak(text string)` &SimpleWindow
+### `win.speak(text string) &SimpleWindow`
 
 Speaks text out loud using the macOS text-to-speech engine.
 
@@ -2446,7 +2431,7 @@ Speaks text out loud using the macOS text-to-speech engine.
 win.speak('Build completed successfully')
 ```
 
-### `win.save_layout(app_name string)` / `win.restore_layout(app_name string)` / `win.auto_save_layout(app_name string)` &SimpleWindow
+### `win.save_layout(app_name string)` / `win.restore_layout(app_name string)` / `win.auto_save_layout(app_name string) &SimpleWindow`
 
 Saves and restores window position and size bounds automatically to JSON configuration. `auto_save_layout(app_name)` binds restoration on window startup and auto-saves bounds when the window is closed.
 
@@ -2456,7 +2441,7 @@ win.restore_layout('my_app')
 win.auto_save_layout('my_app')
 ```
 
-### `win.open_url(url string)` &SimpleWindow
+### `win.open_url(url string) &SimpleWindow`
 
 Opens a web URL in the user's default web browser.
 
@@ -2464,7 +2449,7 @@ Opens a web URL in the user's default web browser.
 win.open_url('https://vlang.io')
 ```
 
-### `win.copy_to_clipboard(text string)` &SimpleWindow
+### `win.copy_to_clipboard(text string) &SimpleWindow`
 
 Copies the specified text to the macOS system clipboard.
 
@@ -2476,7 +2461,7 @@ win.copy_to_clipboard('Copied text content')
 
 ## 6. Utilities & System Actions
 
-### 6b. Neutralino-Inspired System Calls & Platform API
+## 6b. Neutralino-Inspired System Calls & Platform API
 
 To simplify system integrations and mirror key features from NeutralinoJS, `simplegui` includes fluent-style wrappers around the V standard library's `os` and core system actions. These methods extend `SimpleWindow` and are readily available inside event handlers.
 
@@ -3542,7 +3527,7 @@ Starts a recurring main-loop timer that triggers the callback function every `N`
 - **Timer Callbacks**: Attaches to `timer_name` trigger. Callback is executed on main V thread.
 
 ```v
-win.set_interval('clock_timer', 1000, fn (mut win &simplegui.SimpleWindow) {
+win.set_interval('clock_timer', 1000, fn (mut win simplegui.SimpleWindow) {
     println('Periodic 1-second tick')
 })
 ```
@@ -3560,7 +3545,7 @@ win.stop_interval('clock_timer')
 Schedules a one-shot delay, executing the callback once after `ms` milliseconds have elapsed.
 
 ```v
-win.run_after(2000, fn (mut win &simplegui.SimpleWindow) {
+win.run_after(2000, fn (mut win simplegui.SimpleWindow) {
     println('Delayed action executed after 2 seconds')
 })
 ```
@@ -3725,7 +3710,7 @@ Attaches an event handler for button click events.
 - **Callback Signature**: `fn (mut win &SimpleWindow)`
 
 ```v
-win.on_click('btn_save', fn (mut win &simplegui.SimpleWindow) {
+win.on_click('btn_save', fn (mut win simplegui.SimpleWindow) {
     println('Save button clicked!')
 })
 ```
@@ -3734,10 +3719,10 @@ win.on_click('btn_save', fn (mut win &simplegui.SimpleWindow) {
 
 Attaches an event handler for input changes (inputs, checkboxes, sliders, dropdowns, segmented controls, list boxes).
 
-- **Callback Signature**: `fn (mut win &simplegui.SimpleWindow, value string)`
+- **Callback Signature**: `fn (mut win simplegui.SimpleWindow, value string)`
 
 ```v
-win.on_change('search_box', fn (mut win &simplegui.SimpleWindow, val string) {
+win.on_change('search_box', fn (mut win simplegui.SimpleWindow, val string) {
     println('Search term: ${val}')
 })
 ```
@@ -3747,7 +3732,7 @@ win.on_change('search_box', fn (mut win &simplegui.SimpleWindow, val string) {
 Attaches an event handler when the mouse pointer enters the bounding area of the control.
 
 ```v
-win.on_hover('btn_submit', fn (mut win &simplegui.SimpleWindow) {
+win.on_hover('btn_submit', fn (mut win simplegui.SimpleWindow) {
     win.set_status('Hovering over Submit')
 })
 ```
@@ -3757,7 +3742,7 @@ win.on_hover('btn_submit', fn (mut win &simplegui.SimpleWindow) {
 Attaches an event handler when the mouse pointer exits the bounding area of the control.
 
 ```v
-win.on_hover_exit('btn_submit', fn (mut win &simplegui.SimpleWindow) {
+win.on_hover_exit('btn_submit', fn (mut win simplegui.SimpleWindow) {
     win.set_status('Ready')
 })
 ```
@@ -3767,7 +3752,7 @@ win.on_hover_exit('btn_submit', fn (mut win &simplegui.SimpleWindow) {
 Attaches an event handler when a text field input control gains active focus.
 
 ```v
-win.on_focus('username', fn (mut win &simplegui.SimpleWindow) {
+win.on_focus('username', fn (mut win simplegui.SimpleWindow) {
     println('Username input focused')
 })
 ```
@@ -3777,7 +3762,7 @@ win.on_focus('username', fn (mut win &simplegui.SimpleWindow) {
 Attaches an event handler when a text field input control loses focus.
 
 ```v
-win.on_blur('username', fn (mut win &simplegui.SimpleWindow) {
+win.on_blur('username', fn (mut win simplegui.SimpleWindow) {
     println('Username input lost focus')
 })
 ```
@@ -3787,7 +3772,7 @@ win.on_blur('username', fn (mut win &simplegui.SimpleWindow) {
 Attaches an event handler triggered when the Enter/Return key is pressed inside a text input field.
 
 ```v
-win.on_enter('search_box', fn (mut win &simplegui.SimpleWindow) {
+win.on_enter('search_box', fn (mut win simplegui.SimpleWindow) {
     println('Perform search for: ${win.get_text("search_box")}')
 })
 ```
@@ -3797,7 +3782,7 @@ win.on_enter('search_box', fn (mut win &simplegui.SimpleWindow) {
 Attaches a global window-wide keyboard shortcut event listener. The callback value receives the key string.
 
 ```v
-win.on_key('Escape', fn (mut win &simplegui.SimpleWindow, key string) {
+win.on_key('Escape', fn (mut win simplegui.SimpleWindow, key string) {
     println('Escape key pressed: ${key}')
 })
 ```
@@ -3807,7 +3792,7 @@ win.on_key('Escape', fn (mut win &simplegui.SimpleWindow, key string) {
 Attaches an event handler executed right before the window is closed and terminated.
 
 ```v
-win.on_close(fn (mut win &simplegui.SimpleWindow) {
+win.on_close(fn (mut win simplegui.SimpleWindow) {
     println('Window is closing...')
 })
 ```
@@ -3816,10 +3801,10 @@ win.on_close(fn (mut win &simplegui.SimpleWindow) {
 
 Attaches an event handler when the application window is resized by the user.
 
-- **Callback Signature**: `fn (mut win &simplegui.SimpleWindow, new_size string)` (where `new_size` has format `"widthxheight"`, e.g. `"640x480"`)
+- **Callback Signature**: `fn (mut win simplegui.SimpleWindow, new_size string)` (where `new_size` has format `"widthxheight"`, e.g. `"640x480"`)
 
 ```v
-win.on_resize(fn (mut win &simplegui.SimpleWindow, new_size string) {
+win.on_resize(fn (mut win simplegui.SimpleWindow, new_size string) {
     println('Window resized to: ${new_size}')
 })
 ```
@@ -3829,7 +3814,7 @@ win.on_resize(fn (mut win &simplegui.SimpleWindow, new_size string) {
 Attaches an event handler triggered when the application window gains focus (becomes key).
 
 ```v
-win.on_window_focus(fn (mut win &simplegui.SimpleWindow) {
+win.on_window_focus(fn (mut win simplegui.SimpleWindow) {
     println('Window gained focus')
 })
 ```
@@ -3839,7 +3824,7 @@ win.on_window_focus(fn (mut win &simplegui.SimpleWindow) {
 Attaches an event handler triggered when the application window loses focus (resigns key).
 
 ```v
-win.on_window_blur(fn (mut win &simplegui.SimpleWindow) {
+win.on_window_blur(fn (mut win simplegui.SimpleWindow) {
     println('Window lost focus')
 })
 ```
@@ -3849,7 +3834,7 @@ win.on_window_blur(fn (mut win &simplegui.SimpleWindow) {
 Attaches an event handler triggered when the window is minimized / miniaturized to the macOS Dock.
 
 ```v
-win.on_window_minimize(fn (mut win &simplegui.SimpleWindow) {
+win.on_window_minimize(fn (mut win simplegui.SimpleWindow) {
     println('Window minimized')
 })
 ```
@@ -3859,7 +3844,7 @@ win.on_window_minimize(fn (mut win &simplegui.SimpleWindow) {
 Attaches an event handler triggered when the window is restored / deminiaturized from the macOS Dock.
 
 ```v
-win.on_window_restore(fn (mut win &simplegui.SimpleWindow) {
+win.on_window_restore(fn (mut win simplegui.SimpleWindow) {
     println('Window restored')
 })
 ```
@@ -3868,10 +3853,10 @@ win.on_window_restore(fn (mut win &simplegui.SimpleWindow) {
 
 Attaches an event handler when files are dragged and dropped onto the window or onto a drop zone control.
 
-- **Callback Signature**: `fn (mut win &simplegui.SimpleWindow, files []string)`
+- **Callback Signature**: `fn (mut win simplegui.SimpleWindow, files []string)`
 
 ```v
-win.on_file_drop(fn (mut win &simplegui.SimpleWindow, files []string) {
+win.on_file_drop(fn (mut win simplegui.SimpleWindow, files []string) {
     println('Files dropped: ${files}')
 })
 ```
@@ -3880,10 +3865,10 @@ win.on_file_drop(fn (mut win &simplegui.SimpleWindow, files []string) {
 
 Attaches an event handler for wizard stepper step changes (`"change_step"`).
 
-- **Callback Signature**: `fn (mut win &simplegui.SimpleWindow, step string)`
+- **Callback Signature**: `fn (mut win simplegui.SimpleWindow, step string)`
 
 ```v
-win.on_change_step('checkout_wizard', fn (mut win &simplegui.SimpleWindow, step string) {
+win.on_change_step('checkout_wizard', fn (mut win simplegui.SimpleWindow, step string) {
     println('Wizard step changed to: ${step}')
 })
 ```
@@ -3892,10 +3877,10 @@ win.on_change_step('checkout_wizard', fn (mut win &simplegui.SimpleWindow, step 
 
 Attaches an event handler for tag cloud chip clicks (`"click_tag"`).
 
-- **Callback Signature**: `fn (mut win &simplegui.SimpleWindow, tag string)`
+- **Callback Signature**: `fn (mut win simplegui.SimpleWindow, tag string)`
 
 ```v
-win.on_click_tag('skills_tags', fn (mut win &simplegui.SimpleWindow, tag string) {
+win.on_click_tag('skills_tags', fn (mut win simplegui.SimpleWindow, tag string) {
     println('Tag clicked: ${tag}')
 })
 ```
@@ -3904,10 +3889,10 @@ win.on_click_tag('skills_tags', fn (mut win &simplegui.SimpleWindow, tag string)
 
 Attaches an event handler for split button menu item selection (`"select_item"`).
 
-- **Callback Signature**: `fn (mut win &simplegui.SimpleWindow, item string)`
+- **Callback Signature**: `fn (mut win simplegui.SimpleWindow, item string)`
 
 ```v
-win.on_select_item('save_split', fn (mut win &simplegui.SimpleWindow, item string) {
+win.on_select_item('save_split', fn (mut win simplegui.SimpleWindow, item string) {
     println('Split menu item selected: ${item}')
 })
 ```
@@ -3926,7 +3911,7 @@ Adds a custom drop-down menu item under the main macOS application menu bar (e.g
 - Passing `'-'` as `item_title` inserts a native separator line.
 
 ```v
-win.add_menu_item('File', 'Save Workspace', 'cmd+s', fn (mut win &simplegui.SimpleWindow) {
+win.add_menu_item('File', 'Save Workspace', 'cmd+s', fn (mut win simplegui.SimpleWindow) {
     win.set_status('Workspace saved!')
 })
 ```
@@ -3936,7 +3921,7 @@ win.add_menu_item('File', 'Save Workspace', 'cmd+s', fn (mut win &simplegui.Simp
 Binds a native right-click Context Menu item directly to any control by its `name` handle (or `"window"` to bind it to the general window background). Clicking the triggered choice executes the callback function.
 
 ```v
-win.add_context_menu_item('btn_submit', 'Reset Button', fn (mut win &simplegui.SimpleWindow) {
+win.add_context_menu_item('btn_submit', 'Reset Button', fn (mut win simplegui.SimpleWindow) {
     win.set_text('btn_submit', 'Submit')
 })
 ```
@@ -3945,7 +3930,7 @@ win.add_context_menu_item('btn_submit', 'Reset Button', fn (mut win &simplegui.S
 
 Creates a structured drop-down menu bar hierarchy. Supports native separators when `MenuItem.title` is `"-"`.
 
-```v ignore
+```v
 win.add_menu('Demo', [
     simplegui.MenuItem{
         title:    'Show Snapshot'
@@ -4145,7 +4130,7 @@ nodes := simplegui.tree_nodes_from_paths([
 
 ### `win.add_tree_view(name string, height int) &SimpleWindow`
 
-Adds a scrollable, native hierarchal tree view control with a defined vertical height.
+Adds a scrollable, native hierarchical tree view control with a defined vertical height.
 
 ```v
 win.add_tree_view('file_tree', 300)
@@ -4520,7 +4505,7 @@ win.show_window()
 Safely queues a UI update callback to execute on the main event thread, bridging background execution threads.
 
 ```v
-win.run_on_main_thread(fn (mut win &simplegui.SimpleWindow) {
+win.run_on_main_thread(fn (mut win simplegui.SimpleWindow) {
     win.set_status('Updated from background thread')
 })
 ```
@@ -4535,7 +4520,7 @@ win.run_async(
         // Run background task on worker thread
         time.sleep(2 * time.second)
     },
-    fn (mut win &simplegui.SimpleWindow) {
+    fn (mut win simplegui.SimpleWindow) {
         // Main thread UI update
         win.set_status('Async task completed!')
     }
