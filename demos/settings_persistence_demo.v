@@ -1,6 +1,6 @@
 module main
 
-import json
+import x.json2 as json
 import simplegui
 
 // Struct for typed settings persistence
@@ -56,7 +56,7 @@ fn main() {
 			return
 		}
 
-		cfg := json.decode(AppSettings, content) or {
+		cfg := json.decode[AppSettings](content) or {
 			win.set_status('Failed to parse settings JSON: ${err}')
 			return
 		}
