@@ -1,7 +1,7 @@
 module simplegui
 
 import os
-import json
+import json2
 import time
 import net
 import net.http
@@ -2371,7 +2371,7 @@ pub fn sys_list_external_apps() []ExternalAppInfo {
 		if json_str.len == 0 || json_str == '[]' {
 			return []ExternalAppInfo{}
 		}
-		res := json.decode([]ExternalAppInfo, json_str) or { return []ExternalAppInfo{} }
+		res := json2.decode[[]ExternalAppInfo](json_str) or { return []ExternalAppInfo{} }
 		return res
 	}
 }
@@ -2384,7 +2384,7 @@ pub fn sys_spy_external_app(pid int) []ExternalControlInfo {
 		if json_str.len == 0 || json_str == '[]' {
 			return []ExternalControlInfo{}
 		}
-		res := json.decode([]ExternalControlInfo, json_str) or { return []ExternalControlInfo{} }
+		res := json2.decode[[]ExternalControlInfo](json_str) or { return []ExternalControlInfo{} }
 		return res
 	}
 }

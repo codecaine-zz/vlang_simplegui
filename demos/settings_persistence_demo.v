@@ -1,6 +1,6 @@
 module main
 
-import x.json2 as json
+import json2
 import simplegui
 
 // Struct for typed settings persistence
@@ -38,12 +38,12 @@ fn main() {
 
 	// --- Event Handlers ---
 
-	// Option A (Recommended): Type-safe Struct Persistence via V's json module
+	// Option A (Recommended): Type-safe Struct Persistence via V's json2 module
 	win.on_click('btn_save_struct', fn (mut win simplegui.SimpleWindow) {
 		mut cfg := AppSettings{}
 		win.bind_to_struct(mut cfg)
 
-		json_str := json.encode(cfg)
+		json_str := json2.encode(cfg)
 		win.write_file('app_settings.json', json_str)
 		win.set_status('Saved typed settings via struct to app_settings.json')
 	})
@@ -56,7 +56,7 @@ fn main() {
 			return
 		}
 
-		cfg := json.decode[AppSettings](content) or {
+		cfg := json2.decode[AppSettings](content) or {
 			win.set_status('Failed to parse settings JSON: ${err}')
 			return
 		}

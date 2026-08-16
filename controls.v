@@ -1,7 +1,7 @@
 module simplegui
 
 import strings
-import json
+import json2
 
 // has_control returns true if a control with the specified name exists in the window.
 pub fn (win &SimpleWindow) has_control(name string) bool {
@@ -2085,7 +2085,7 @@ pub fn (win &SimpleWindow) spy_tree() string {
 // spy_json returns a structured JSON string snapshot of the window and all its controls.
 pub fn (win &SimpleWindow) spy_json() string {
 	ctrls := win.spy_controls()
-	return json.encode(ctrls)
+	return json2.encode(ctrls)
 }
 
 // spy_dump returns a key-value summary map of all control states.

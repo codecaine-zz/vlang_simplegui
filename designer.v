@@ -1,6 +1,6 @@
 module simplegui
 
-import json
+import json2
 import strings
 
 // -----------------------------------------------------------------------------
@@ -59,12 +59,12 @@ pub mut:
 
 // Encodes FormSpec to JSON layout
 pub fn (f FormSpec) to_json() string {
-	return json.encode(f)
+	return json2.encode(f)
 }
 
 // Decodes FormSpec from JSON layout
 pub fn form_spec_from_json(js string) FormSpec {
-	return json.decode(FormSpec, js) or { FormSpec{} }
+	return json2.decode[FormSpec](js) or { FormSpec{} }
 }
 
 fn write_single_control_v_code(mut sb strings.Builder, c ControlSpec) {
@@ -1478,7 +1478,7 @@ pub fn get_checkout_form_spec() FormSpec {
 
 // Compiles full interactive HTML/CSS/JS Delphi & VB RAD Studio web interface
 pub fn compile_designer_html(spec FormSpec) string {
-	spec_json := json.encode(spec)
+	spec_json := json2.encode(spec)
 	html := $embed_file('designer.html').to_string()
 	return html.replace('__SPEC_JSON__', spec_json)
 }

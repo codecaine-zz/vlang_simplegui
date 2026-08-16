@@ -1,7 +1,7 @@
 module simplegui
 
 import os
-import json
+import json2
 import strconv
 import time
 import encoding.csv
@@ -584,7 +584,7 @@ pub fn (win &SimpleWindow) on_list_double_click(name string, callback StringEven
 // save_values_to_file saves every control value to a JSON file for later restoration.
 pub fn (win &SimpleWindow) save_values_to_file(path string) ! {
 	values := win.dump_values()
-	os.write_file(path, json.encode(values))!
+	os.write_file(path, json2.encode(values))!
 }
 
 // load_values_from_file restores previously saved control values from a JSON file.
@@ -1458,28 +1458,28 @@ pub fn (win &SimpleWindow) get_table_column_average_numeric(name string, column 
 // save_table_to_json exports all table rows to a JSON file.
 pub fn (win &SimpleWindow) save_table_to_json(name string, path string) ! {
 	rows := win.get_table_rows(name)
-	content := json.encode(rows)
+	content := json2.encode(rows)
 	os.write_file(path, content)!
 }
 
 // load_table_from_json replaces a table's rows with the contents of a JSON file.
 pub fn (win &SimpleWindow) load_table_from_json(name string, path string) ! {
 	content := os.read_file(path)!
-	rows := json.decode([][]string, content)!
+	rows := json2.decode[[][]string](content)!
 	win.set_table_rows(name, rows)
 }
 
 // save_list_to_json exports all list items to a JSON file.
 pub fn (win &SimpleWindow) save_list_to_json(name string, path string) ! {
 	items := win.get_list_items(name)
-	content := json.encode(items)
+	content := json2.encode(items)
 	os.write_file(path, content)!
 }
 
 // load_list_from_json replaces a list's items with the contents of a JSON file.
 pub fn (win &SimpleWindow) load_list_from_json(name string, path string) ! {
 	content := os.read_file(path)!
-	items := json.decode([]string, content)!
+	items := json2.decode[[]string](content)!
 	win.update_list_items(name, items)
 }
 
@@ -2927,7 +2927,7 @@ pub fn (win &SimpleWindow) save_layout(app_name string) &SimpleWindow {
 		'width':  w.str()
 		'height': h.str()
 	}
-	encoded := json.encode(m)
+	encoded := json2.encode(m)
 	os.write_file(path, encoded) or {}
 	return win
 }
@@ -2939,7 +2939,7 @@ pub fn (win &SimpleWindow) restore_layout(app_name string) &SimpleWindow {
 		return win
 	}
 	content := os.read_file(path) or { return win }
-	m := json.decode(map[string]string, content) or { return win }
+	m := json2.decode[map[string]string](content) or { return win }
 	w := m['width'] or { '' }.int()
 	h := m['height'] or { '' }.int()
 	x := m['x'] or { '' }.int()
