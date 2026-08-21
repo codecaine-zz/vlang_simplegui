@@ -1494,3 +1494,27 @@ fn test_workflow_text_and_data_extras() {
 	ext_apps := simplegui.sys_list_external_apps()
 	assert ext_apps.len >= 0
 }
+
+fn test_new_macos_native_controls() {
+	mut win := simplegui.new_simple_window('Native macOS Controls Test', 600, 400)
+	
+	// NSBrowser
+	win.add_browser_view('col_browser', 200)
+	assert win.has_control('col_browser')
+	win.set_browser_column_items('col_browser', 0, ['Documents', 'Downloads', 'Applications'])
+	win.set_browser_column_items('col_browser', 1, ['SimpleGUI', 'ProjectA', 'ProjectB'])
+	assert win.get_browser_selected_row('col_browser', 0) == -1
+	assert win.get_browser_path('col_browser') == ''
+
+	// Quick Look & File Preview
+	win.preview_file('/tmp')
+	win.quick_look('/tmp')
+
+	// Font Panel
+	win.show_font_picker('col_browser')
+	win.font_picker()
+
+	// Share Sheet
+	win.show_share_sheet(['https://vlang.io'], 'col_browser')
+	win.share('https://github.com/codecaine/vlang_simplegui')
+}

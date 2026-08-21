@@ -551,6 +551,17 @@ void window_set_status_dock_info(main__WindowInfo *info, const char *name, const
 void *window_add_info_callout_control(main__WindowInfo *info, const char *name, const char *title, const char *message, const char *style_type, const char *button_text);
 void window_set_info_callout_text(main__WindowInfo *info, const char *name, const char *title, const char *message);
 
+// Native macOS Sharing & System Panels
+void window_show_share_sheet(main__WindowInfo *info, const char **items, int count, const char *anchor_control);
+void window_show_font_picker(main__WindowInfo *info, const char *target_control);
+void window_preview_file(main__WindowInfo *info, const char *file_path);
+
+// Native Column Browser Control (NSBrowser)
+void *window_add_browser_control(main__WindowInfo *info, const char *name, int height);
+void window_set_browser_column_items(main__WindowInfo *info, const char *name, int column, const char **items, int count);
+int window_get_browser_selected_row(main__WindowInfo *info, const char *name, int column);
+const char *window_get_browser_path(main__WindowInfo *info, const char *name);
+
 // Comprehensive Window Control APIs
 void window_set_vibrancy(main__WindowInfo *info, const char *material);
 void window_set_corner_radius(main__WindowInfo *info, double radius);

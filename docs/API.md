@@ -2878,6 +2878,23 @@ Adds a macOS menu bar status item / tray icon (`NSStatusItem`) in the system men
 win.add_tray_icon('app_status', 'bolt.fill', 'SimpleGUI')
 ```
 
+#### `win.add_browser_view(name string, height int) &SimpleWindow`
+Adds a native macOS cascading multi-column browser control (`NSBrowser`) for hierarchical column-based navigation (like Finder Column View).
+- **Nameless Shorthand**: `win.browser_view(height int)`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `height`: Browser height in pixels.
+- **Column Data & Accessors**:
+  - `win.set_browser_column_items(name string, column int, items []string)`: Populates a column with string items.
+  - `win.get_browser_selected_row(name string, column int) int`: Gets selected row index (-1 if none).
+  - `win.get_browser_path(name string) string`: Gets the active hierarchical path string.
+
+```v
+win.add_browser_view('finder_browser', 220)
+win.set_browser_column_items('finder_browser', 0, ['Documents', 'Downloads', 'Applications', 'Projects'])
+win.set_browser_column_items('finder_browser', 1, ['SimpleGUI', 'V-Core', 'Demos'])
+```
+
 ---
 
 ### 3.11 High-Level Form Row Helpers & Struct Reflection
@@ -3331,6 +3348,38 @@ Launches the native macOS file save panel, returning the target path (or empty i
 
 ```v
 target_path := win.save_file_picker()
+```
+
+### `win.show_share_sheet(items []string, anchor_control string) &SimpleWindow` / `win.share(item string) &SimpleWindow`
+
+Displays the native macOS System Share Sheet / Popover (`NSSharingServicePicker`) containing system sharing actions (AirDrop, Messages, Mail, Notes, Reminders, Copy Link, etc.) anchored to a control or window.
+
+- **Parameters**:
+  - `items`: Array of URLs (e.g. `'https://vlang.io'`), local file paths (e.g. `'/Users/ada/report.pdf'`), or plain text strings.
+  - `anchor_control`: Name of the control to anchor the popover to, or `""` for window content.
+
+```v
+win.show_share_sheet(['https://github.com/codecaine/vlang_simplegui', 'Check out SimpleGUI for V!'], 'btn_share')
+
+// Convenience shorthand:
+win.share('https://github.com/codecaine/vlang_simplegui')
+```
+
+### `win.show_font_picker(target_control string) &SimpleWindow` / `win.font_picker() &SimpleWindow`
+
+Launches the native macOS System Font Panel (`NSFontPanel` / `NSFontManager`) for interactive typography, family, weight, and font size selection.
+
+```v
+win.show_font_picker('code_view')
+```
+
+### `win.preview_file(file_path string) &SimpleWindow` / `win.quick_look(file_path string) &SimpleWindow`
+
+Launches native macOS Quick Look / Finder file preview for local documents, PDFs, images, media, or archives without launching an external app.
+
+```v
+win.preview_file('/Users/ada/Documents/report.pdf')
+win.quick_look('/Users/ada/Pictures/preview.png')
 ```
 
 ### `win.toast(message string) &SimpleWindow`

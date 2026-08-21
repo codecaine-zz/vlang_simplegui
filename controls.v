@@ -4807,5 +4807,103 @@ pub fn (win &SimpleWindow) set_control_cursor(name string, cursor_name string) &
 	return win
 }
 
-// get_mouse_location returns the current mouse position in global screen
-// coordinates (bottom-left origin, matching window position APIs).
+// show_share_sheet displays the native macOS system share sheet / popover (NSSharingServicePicker)
+// anchored to the specified control or window.
+pub fn (win &SimpleWindow) show_share_sheet(items []string, anchor_control string) &SimpleWindow {
+	if win.window_info != unsafe { nil } && items.len > 0 {
+		mut c_items := []&u8{cap: items.len}
+		for item in items {
+			c_items << item.str
+		}
+		C.window_show_share_sheet(win.window_info, c_items.data, items.len, anchor_control.str)
+	}
+	return win
+}
+
+// share is a convenience helper that presents the macOS system share sheet for a single URL, text, or file path.
+pub fn (win &SimpleWindow) share(item string) &SimpleWindow {
+	return win.show_share_sheet([item], '')
+}
+
+// show_font_picker opens the native macOS system Font Panel (NSFontPanel / NSFontManager).
+pub fn (win &SimpleWindow) show_font_picker(target_control string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_show_font_picker(win.window_info, target_control.str)
+	}
+	return win
+}
+
+// font_picker is a shorthand helper to open the native macOS font panel.
+pub fn (win &SimpleWindow) font_picker() &SimpleWindow {
+	return win.show_font_picker('')
+}
+
+// preview_file opens Quick Look preview for the specified local file path or URL.
+pub fn (win &SimpleWindow) preview_file(file_path string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_preview_file(win.window_info, file_path.str)
+	}
+	return win
+}
+
+// quick_look is an alias for preview_file.
+pub fn (win &SimpleWindow) quick_look(file_path string) &SimpleWindow {
+	return win.preview_file(file_path)
+}
+
+// add_browser_view adds a native macOS multi-column cascading browser control (NSBrowser).
+pub fn (win &SimpleWindow) add_browser_view(name string, height int) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('browser_view')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name:   real_name
+			kind:   'browser'
+			value:  ''
+			number: height
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_browser_control(win.window_info, real_name.str, height)
+	}
+	return win
+}
+
+// browser_view adds an auto-named native multi-column browser control.
+pub fn (win &SimpleWindow) browser_view(height int) &SimpleWindow {
+	return win.add_browser_view('', height)
+}
+
+// set_browser_column_items updates the list of string items for a specific column in an NSBrowser control.
+pub fn (win &SimpleWindow) set_browser_column_items(name string, column int, items []string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		mut c_items := []&u8{cap: items.len}
+		for item in items {
+			c_items << item.str
+		}
+		C.window_set_browser_column_items(win.window_info, name.str, column, c_items.data, items.len)
+	}
+	return win
+}
+
+// get_browser_selected_row retrieves the selected row index in the specified column of an NSBrowser control.
+pub fn (win &SimpleWindow) get_browser_selected_row(name string, column int) int {
+	if win.window_info != unsafe { nil } {
+		return C.window_get_browser_selected_row(win.window_info, name.str, column)
+	}
+	return -1
+}
+
+// get_browser_path retrieves the current selected path in an NSBrowser control.
+pub fn (win &SimpleWindow) get_browser_path(name string) string {
+	if win.window_info != unsafe { nil } {
+		res := C.window_get_browser_path(win.window_info, name.str)
+		if res != unsafe { nil } {
+			return unsafe { cstring_to_vstring(res) }
+		}
+	}
+	return ''
+}

@@ -19219,6 +19219,188 @@ void window_move_cursor_to(main__WindowInfo *info, int x, int y) {
   if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
 }
 
+// Native macOS Share Sheet (NSSharingServicePicker)
+void window_show_share_sheet(main__WindowInfo *info, const char **items, int count, const char *anchor_control) {
+  if (!info || !info->app_delegate || count <= 0) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSMutableArray *shareItems = [NSMutableArray array];
+  for (int i = 0; i < count; i++) {
+    if (!items[i]) continue;
+    NSString *s = nsstring(items[i]);
+    if ([s hasPrefix:@"http://"] || [s hasPrefix:@"https://"]) {
+      NSURL *u = [NSURL URLWithString:s];
+      if (u) { [shareItems addObject:u]; continue; }
+    } else if ([s hasPrefix:@"file://"]) {
+      NSURL *u = [NSURL URLWithString:s];
+      if (u) { [shareItems addObject:u]; continue; }
+    } else if ([[NSFileManager defaultManager] fileExistsAtPath:s]) {
+      NSURL *u = [NSURL fileURLWithPath:s];
+      if (u) { [shareItems addObject:u]; continue; }
+    }
+    [shareItems addObject:s];
+  }
+  if (shareItems.count == 0) return;
+
+  NSString *anchorKey = [[nsstring(anchor_control) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+
+  void (^runBlock)(void) = ^{
+    NSView *targetView = nil;
+    if (anchorKey.length > 0) {
+      targetView = delegate.controlsByName[anchorKey];
+    }
+    if (!targetView) {
+      targetView = delegate.window.contentView;
+    }
+    if (!targetView) return;
+
+    NSSharingServicePicker *picker = [[NSSharingServicePicker alloc] initWithItems:shareItems];
+    [picker showRelativeToRect:targetView.bounds ofView:targetView preferredEdge:NSRectEdgeMaxY];
+  };
+
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_async(dispatch_get_main_queue(), runBlock); }
+}
+
+// Native macOS Font Panel Picker (NSFontPanel / NSFontManager)
+void window_show_font_picker(main__WindowInfo *info, const char *target_control) {
+  if (!info || !info->app_delegate) return;
+  void (^runBlock)(void) = ^{
+    NSFontManager *fontManager = [NSFontManager sharedFontManager];
+    [fontManager orderFrontFontPanel:nil];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_async(dispatch_get_main_queue(), runBlock); }
+}
+
+// Native Quick Look / File Preview
+void window_preview_file(main__WindowInfo *info, const char *file_path) {
+  if (!file_path || strlen(file_path) == 0) return;
+  NSString *path = nsstring(file_path);
+  void (^runBlock)(void) = ^{
+    NSURL *fileURL = nil;
+    if ([path hasPrefix:@"file://"]) {
+      fileURL = [NSURL URLWithString:path];
+    } else {
+      fileURL = [NSURL fileURLWithPath:path];
+    }
+    if (fileURL) {
+      [[NSWorkspace sharedWorkspace] activateFileViewerSelectingURLs:@[fileURL]];
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_async(dispatch_get_main_queue(), runBlock); }
+}
+
+// Native NSBrowser (Column Browser Control)
+@interface SimpleBrowserDelegate : NSObject <NSBrowserDelegate>
+@property (nonatomic, strong) NSMutableDictionary<NSNumber *, NSArray<NSString *> *> *columnData;
+@property (nonatomic, copy) NSString *controlName;
+@end
+
+@implementation SimpleBrowserDelegate
+- (NSInteger)browser:(NSBrowser *)sender numberOfRowsInColumn:(NSInteger)column {
+  NSArray *items = self.columnData[@(column)];
+  return items ? items.count : 0;
+}
+
+- (void)browser:(NSBrowser *)sender willDisplayCell:(id)cell atRow:(NSInteger)row column:(NSInteger)column {
+  NSArray *items = self.columnData[@(column)];
+  if (items && row < items.count) {
+    [cell setStringValue:items[row]];
+    [cell setLeaf:NO];
+  }
+}
+@end
+
+void *window_add_browser_control(main__WindowInfo *info, const char *name, int height) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *nameStr = nsstring(name);
+  __block NSBrowser *browser = nil;
+  
+  void (^runBlock)(void) = ^{
+    browser = [[NSBrowser alloc] initWithFrame:NSZeroRect];
+    [browser setIdentifier:nameStr];
+    [browser setMaxVisibleColumns:3];
+    [browser setMinColumnWidth:120];
+    [browser setHasHorizontalScroller:YES];
+    [browser setAllowsMultipleSelection:NO];
+    [browser setAllowsEmptySelection:YES];
+    [browser setTakesTitleFromPreviousColumn:NO];
+    
+    SimpleBrowserDelegate *bDelegate = [[SimpleBrowserDelegate alloc] init];
+    bDelegate.columnData = [NSMutableDictionary dictionary];
+    bDelegate.controlName = [nameStr lowercaseString];
+    [browser setDelegate:bDelegate];
+    objc_setAssociatedObject(browser, "SimpleBrowserDelegate", bDelegate, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    
+    [browser setTranslatesAutoresizingMaskIntoConstraints:NO];
+    CGFloat h = height > 0 ? (CGFloat)height : 180.0;
+    [browser.heightAnchor constraintEqualToConstant:h].active = YES;
+    [browser.widthAnchor constraintGreaterThanOrEqualToConstant:280.0].active = YES;
+    
+    delegate.controlsByName[[nameStr lowercaseString]] = browser;
+    [delegate addControlToLayout:browser];
+  };
+  
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)browser;
+}
+
+void window_set_browser_column_items(main__WindowInfo *info, const char *name, int column, const char **items, int count) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  
+  NSMutableArray *arr = [NSMutableArray array];
+  for (int i = 0; i < count; i++) {
+    [arr addObject:nsstring(items[i])];
+  }
+  
+  void (^runBlock)(void) = ^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[NSBrowser class]]) {
+      NSBrowser *b = (NSBrowser *)v;
+      SimpleBrowserDelegate *bDelegate = objc_getAssociatedObject(b, "SimpleBrowserDelegate");
+      if (bDelegate) {
+        bDelegate.columnData[@(column)] = arr;
+        [b loadColumnZero];
+        [b reloadColumn:column];
+      }
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+int window_get_browser_selected_row(main__WindowInfo *info, const char *name, int column) {
+  if (!info || !info->app_delegate) return -1;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  __block int row = -1;
+  void (^runBlock)(void) = ^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[NSBrowser class]]) {
+      NSBrowser *b = (NSBrowser *)v;
+      row = (int)[b selectedRowInColumn:column];
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return row;
+}
+
+const char *window_get_browser_path(main__WindowInfo *info, const char *name) {
+  if (!info || !info->app_delegate) return "";
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  __block NSString *res = @"";
+  void (^runBlock)(void) = ^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[NSBrowser class]]) {
+      NSBrowser *b = (NSBrowser *)v;
+      res = [b path];
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return [res UTF8String] ? [res UTF8String] : "";
+}
+
 
 
 

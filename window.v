@@ -956,6 +956,20 @@ fn C.window_add_info_callout_control(&WindowInfo, &u8, &u8, &u8, &u8, &u8) voidp
 
 fn C.window_set_info_callout_text(&WindowInfo, &u8, &u8, &u8)
 
+fn C.window_show_share_sheet(&WindowInfo, &&u8, int, &u8)
+
+fn C.window_show_font_picker(&WindowInfo, &u8)
+
+fn C.window_preview_file(&WindowInfo, &u8)
+
+fn C.window_add_browser_control(&WindowInfo, &u8, int) voidptr
+
+fn C.window_set_browser_column_items(&WindowInfo, &u8, int, &&u8, int)
+
+fn C.window_get_browser_selected_row(&WindowInfo, &u8, int) int
+
+fn C.window_get_browser_path(&WindowInfo, &u8) &u8
+
 fn C.window_set_alpha(&WindowInfo, f64)
 
 fn C.window_get_alpha(&WindowInfo) f64
