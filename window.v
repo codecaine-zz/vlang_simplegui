@@ -3506,13 +3506,13 @@ pub fn (win &SimpleWindow) validate_struct[T]() bool {
 					break
 				}
 			} else if attr.starts_with('min_len:') {
-				min_len := attr.all_after('min_len:').trim_space().int()
+				min_len := attr.all_after('min_len:').trim_space().trim('\'"').int()
 				if val.len < min_len {
 					err_msg = 'Must be at least ${min_len} characters'
 					break
 				}
 			} else if attr.starts_with('max_len:') {
-				max_len := attr.all_after('max_len:').trim_space().int()
+				max_len := attr.all_after('max_len:').trim_space().trim('\'"').int()
 				if val.len > max_len {
 					err_msg = 'Must be at most ${max_len} characters'
 					break
@@ -3543,7 +3543,7 @@ pub fn (win &SimpleWindow) validate_struct[T]() bool {
 				}
 			} else if attr.starts_with('min:') {
 				$if field.typ is int {
-					min_val := attr.all_after('min:').trim_space().int()
+					min_val := attr.all_after('min:').trim_space().trim('\'"').int()
 					int_val := win.get_value_int(name)
 					if int_val < min_val {
 						err_msg = 'Must be at least ${min_val}'
@@ -3552,7 +3552,7 @@ pub fn (win &SimpleWindow) validate_struct[T]() bool {
 				}
 			} else if attr.starts_with('max:') {
 				$if field.typ is int {
-					max_val := attr.all_after('max:').trim_space().int()
+					max_val := attr.all_after('max:').trim_space().trim('\'"').int()
 					int_val := win.get_value_int(name)
 					if int_val > max_val {
 						err_msg = 'Must be at most ${max_val}'

@@ -620,7 +620,11 @@ pub fn (mut sp SimpleProcess) read() string {
 	if sp.proc == unsafe { nil } {
 		return ''
 	}
-	return sp.proc.stdout_read()
+	out := sp.proc.stdout_read()
+	if out == '' {
+		return sp.proc.stdout_slurp()
+	}
+	return out
 }
 
 // stop suspends the process using a POSIX SIGSTOP signal.

@@ -33,7 +33,27 @@ If you are new to programming or desktop app creation, here are simple definitio
 - [1. Window Operations](#1-window-operations)
 - [2. Control Layout & Grid Rows](#2-control-layout--grid-rows)
 - [3. Adding Controls](#3-adding-controls)
+  - [3.1 Text & Input Controls](#31-text--input-controls)
+  - [3.2 Labels, Headings & Static Typography](#32-labels-headings--static-typography)
+  - [3.3 Buttons & Interactive Triggers](#33-buttons--interactive-triggers)
+  - [3.4 Selection, Toggles & Multi-Option Selectors](#34-selection-toggles--multi-option-selectors)
+  - [3.5 Numbers, Steppers, Knobs & Sliders](#35-numbers-steppers-knobs--sliders)
+  - [3.6 Progress Indicators, Meters, Gauges & Ratings](#36-progress-indicators-meters-gauges--ratings)
+  - [3.7 Date, Time, Color & File Pickers](#37-date-time-color--file-pickers)
+  - [3.8 Rich Media, Markdown, Code & Terminal Views](#38-rich-media-markdown-code--terminal-views)
+  - [3.9 Cards, Status Indicators, Badges & Feeds](#39-cards-status-indicators-badges--feeds)
+  - [3.10 Navigation, Workflow & Collapsible Containers](#310-navigation-workflow--collapsible-containers)
+  - [3.11 High-Level Form Row Helpers & Struct Reflection](#311-high-level-form-row-helpers--struct-reflection)
+  - [3.12 Nameless Default Control Helpers](#312-nameless-default-control-helpers)
 - [4. Control Sizing & Styling](#4-control-sizing--styling)
+  - [4.1 Dimensions & Layout Constraints](#41-dimensions--layout-constraints)
+  - [4.2 Typography & Fonts](#42-typography--fonts)
+  - [4.3 Colors & Theming Overrides](#43-colors--theming-overrides)
+  - [4.4 Visibility & Interactivity](#44-visibility--interactivity)
+  - [4.5 Placeholders, Tooltips & Default Button](#45-placeholders-tooltips--default-button)
+  - [4.6 Validation & Inline Error States](#46-validation--inline-error-states)
+  - [4.7 Inspection, Diagnostics & Spy++ Controls API](#47-inspection-diagnostics--spy-controls-api)
+  - [4.8 Complete Fluent Chaining Reference Table](#48-complete-fluent-chaining-reference-table)
 - [5. Dialogs, Popups, & File Pickers](#5-dialogs-popups--file-pickers)
 - [6. Utilities & System Actions](#6-utilities--system-actions)
 - [6b. Neutralino-Inspired System Calls & Platform API](#6b-neutralino-inspired-system-calls--platform-api)
@@ -1396,881 +1416,1840 @@ win.set_group_caption('account_group', 'Updated Account Settings')
 
 ## 3. Adding Controls
 
-Each control requires a `name` handle to get/set its value or listen to events. If you pass an empty string `""` as the `name`, a unique control name (e.g. `'auto_input_1'`) will be auto-generated under the hood.
+Each control in SimpleGUI is identified by a unique `name` handle used to retrieve/set its value, modify its appearance, or listen for user interaction events. If you pass an empty string `""` as the `name`, a unique handle (e.g. `'auto_input_1'`) will automatically be generated.
 
-### High-level form helpers
+### Control Lifecycle & Architecture
+- **Registration**: Calling `win.add_<control>(...)` creates an internal `ControlEntry` tracking record and immediately instantiates the corresponding native macOS Cocoa (`AppKit`) control in the window hierarchy.
+- **Fluent Chaining**: Control creation methods return `&SimpleWindow`, allowing chained modifier calls (e.g. `.width(240).tooltip('Help').bold(true).onclick(...)`) directly on the last created control.
+- **Theme Reactivity**: Controls automatically inherit theme luminance (light vs dark surfaces) from `win.set_theme(...)` or custom palette colors.
+- **Thread Safety**: All control creation and state updates must run on the main thread (or dispatched via `win.run_on_main_thread(...)` / `win.run_async(...)`).
 
-For common forms, these helpers reduce boilerplate and keep the API friendly for beginners:
+---
 
-- `win.add_form_field(label string, name string, value string) &SimpleWindow` creates a label plus input in a row.
-- `win.add_form_textarea(label string, name string, value string) &SimpleWindow` creates a label plus textarea in a row.
-- `win.add_form_password(label string, name string, value string) &SimpleWindow` creates a label plus password field in a row.
-- `win.add_form_slider(label string, name string, value int) &SimpleWindow` creates a label plus slider in a row.
-- `win.add_form_number(label string, name string, value int) &SimpleWindow` creates a label plus stepper number field in a row. While the field is focused, pressing Up/Down arrows increments/decrements the integer value by 1 by default.
-- `win.add_form_dropdown(label string, name string, items []string, selected string) &SimpleWindow` creates a label plus dropdown selection in a row.
-- `win.add_form_date_picker(label string, name string, date string) &SimpleWindow` creates a label plus date picker in a row.
-- `win.add_form_progress(label string, name string, value int) &SimpleWindow` creates a label plus progress indicator in a row.
-- `win.add_form_switch(label string, name string, switch_label string, checked bool) &SimpleWindow` creates a label plus switch toggle in a row.
-- `win.add_form_link(label string, name string, link_text string, url string) &SimpleWindow` creates a label plus hyperlink text button in a row.
-- `win.add_toggle(name string, label string, checked bool) &SimpleWindow` creates a checkbox.
-- `win.add_number_field(name string, value int) &SimpleWindow` creates a numeric input.
-- `win.add_action(name string, title string, callback VoidEventCallback) &SimpleWindow` creates a button and wires its click handler.
-- `win.add_heading(title string) &SimpleWindow` inserts a large, prominent title label followed by a separator line.
-- `win.add_breadcrumbs(name string, segments []string) &SimpleWindow` creates a breadcrumb/path navigator control.
-- `win.set_breadcrumbs(name string, segments []string) &SimpleWindow` updates the visible breadcrumb segments.
-- `win.add_shortcut_recorder(name string) &SimpleWindow` creates a shortcut capture field for keyboard combinations.
-- `win.add_chart(name string, chart_type string, height int) &SimpleWindow` creates a line or area chart control.
-- `win.set_chart_data(name string, values []f64) &SimpleWindow` updates the points shown in a chart.
-- `win.add_circular_progress(name string, value int, min_val int, max_val int) &SimpleWindow` creates a circular progress gauge.
-- `win.set_circular_progress(name string, value int) &SimpleWindow` updates the circular progress value.
-- `win.add_property_grid(name string, props map[string]string) &SimpleWindow` creates a property inspector grid with key/value rows.
-- `win.set_property_grid_value(name string, key string, value string) &SimpleWindow` updates a property grid entry.
-- `win.add_color_grid(name string, colors []string) &SimpleWindow` creates a grid of selectable color swatches.
-- `win.set_color_grid_selected(name string, color string) &SimpleWindow` selects a color swatch by hex value.
-- `win.add_grid(name string, headers []string, initial_rows [][]string) &SimpleWindow` creates an editable spreadsheet-style grid.
-- `win.grid_add_row(name string, row_values []string) &SimpleWindow`, `win.grid_delete_row(name string, row_idx int) &SimpleWindow`, `win.grid_add_column(name string, header string) &SimpleWindow`, and `win.grid_delete_column(name string, col_idx int) &SimpleWindow` manage grid rows and columns.
-- `win.add_console(name string, height int) &SimpleWindow`, `win.append_console(name string, text string, level int) &SimpleWindow`, and `win.clear_console(name string) &SimpleWindow` create and manage a developer-style log console.
-- `win.add_gauge(name string, title string, value int, min_val int, max_val int, unit string) &SimpleWindow`, `win.set_gauge_value(name string, value int) &SimpleWindow`, and `win.get_gauge_value(name string) int` create and manage a visual progress/level gauge.
-- `win.add_pagination(name string, total_pages int, current_page int) &SimpleWindow`, `win.set_pagination_page(name string, page int, total_pages int) &SimpleWindow`, and `win.get_pagination_page(name string) int` create and manage a page navigation bar widget.
-- `win.add_activity_feed(name string, height int) &SimpleWindow`, `win.add_activity_feed_item(name string, timestamp string, message string, level string) &SimpleWindow`, and `win.clear_activity_feed(name string) &SimpleWindow` create and manage an activity log feed view.
-- `win.add_markdown_view(name string, markdown_text string, height int) &SimpleWindow`, `win.set_markdown_view_text(name string, markdown_text string) &SimpleWindow`, and `win.get_markdown_view_text(name string) string` render formatted Markdown text.
-- `win.add_sparkline(name string, values []f64, height int) &SimpleWindow` and `win.set_sparkline_data(name string, values []f64) &SimpleWindow` create and update inline trend line charts.
-- `win.add_pin_code(name string, digits int) &SimpleWindow`, `win.set_pin_code_value(name string, code string) &SimpleWindow`, and `win.get_pin_code_value(name string) string` create digit verification PIN/OTP input fields.
-- `win.add_color_palette(name string, hex_colors []string, selected string) &SimpleWindow`, `win.set_color_palette_selected(name string, hex_color string) &SimpleWindow`, and `win.get_color_palette_selected(name string) string` create swatch color palette selectors.
-- `win.add_timeline(name string, height int) &SimpleWindow` and `win.add_timeline_item(name string, title string, subtitle string, time_str string, status string) &SimpleWindow` create and manage vertical milestone event timelines.
-- `win.add_metric_card(name string, title string, value string, change_badge string, subtitle string) &SimpleWindow` and `win.set_metric_card_value(name string, value string, change_badge string) &SimpleWindow` display KPI stats cards with trend badges.
-- `win.add_tab_pills(name string, items []string, selected string) &SimpleWindow`, `win.set_tab_pills_active(name string, selected string) &SimpleWindow`, and `win.get_tab_pills_active(name string) string` create pill-styled segmented tab bars.
-- `win.add_transfer_list(name string, available []string, selected []string) &SimpleWindow` and `win.add_transfer_list_opts(name string, available []string, selected []string, multi_select bool) &SimpleWindow` create a dual-column item transfer list picker with single-select or multi-select capabilities.
+### Quick Navigation: Control Categories
 
-- `win.add_audio_waveform(name string, amplitudes []f64, height int) &SimpleWindow` and `win.set_audio_waveform_data(name string, amplitudes []f64) &SimpleWindow` render sound level amplitude waveforms.
-- `win.add_rating_breakdown(name string, avg_score f64, total_reviews int, star_percentages []f64) &SimpleWindow` and `win.set_rating_breakdown_data(name string, avg_score f64, total_reviews int, star_percentages []f64) &SimpleWindow` display review rating scores and star percentage bars.
-- `win.add_code_view(name string, lang string, code_text string, height int) &SimpleWindow`, `win.set_code_view_text(name string, code_text string) &SimpleWindow`, and `win.get_code_view_text(name string) string` render dark monospaced code snippet blocks.
-- `win.add_alert_banner(name string, title string, message string, style string) &SimpleWindow` and `win.set_alert_banner_value(...)` create dismissible notification banners with status icons.
-- `win.add_step_tracker(name string, steps []string, current_step int) &SimpleWindow`, `win.set_step_tracker_step(...)`, and `win.get_step_tracker_step(...)` create horizontal workflow process trackers.
-- `win.add_filter_chips(name string, chips []string, selected []string, multi_select bool) &SimpleWindow`, `win.set_filter_chips_selected(...)`, and `win.get_filter_chips_selected(...)` create interactive filter chip tag groups.
-- `win.add_file_picker_field(name string, initial_path string, button_title string, folder_only bool) &SimpleWindow`, `win.set_file_picker_path(...)`, and `win.get_file_picker_path(...)` create path input fields with native Cocoa `NSOpenPanel` file chooser dialog buttons.
-- `win.add_radial_gauge(name string, title string, value f64, min_val f64, max_val f64, unit string) &SimpleWindow`, `win.set_radial_gauge_value(...)`, and `win.get_radial_gauge_value(...)` render semi-circular dial speedometer meters.
-- `win.add_key_value_card(name string, title string, keys []string, values []string) &SimpleWindow` and `win.set_key_value_card_data(...)` render key-value summary cards.
-- `win.add_form_from_struct[T](default_data T) &SimpleWindow` automatically generates input/checkbox/numeric fields side-by-side and vertically from a V struct using compile-time reflection.
+- [3.1 Text & Input Controls](#31-text--input-controls) — Single-line text, passwords, textareas, search fields, PIN codes, command palettes, token fields, and tag inputs.
+- [3.2 Labels, Headings & Static Typography](#32-labels-headings--static-typography) — Descriptive labels, section headers, prominent headings, and hotkey badges.
+- [3.3 Buttons & Interactive Triggers](#33-buttons--interactive-triggers) — Push buttons, SF Symbol image buttons, help buttons, split popup buttons, and action badges.
+- [3.4 Selection, Toggles & Multi-Option Selectors](#34-selection-toggles--multi-option-selectors) — Checkboxes, switches, radio groups, dropdowns, pull-down menus, combo boxes, segmented controls, tab pills, and transfer lists.
+- [3.5 Numbers, Steppers, Knobs & Sliders](#35-numbers-steppers-knobs--sliders) — Number steppers, linear sliders, vertical sliders, dual-thumb range sliders, and rotary circular knobs.
+- [3.6 Progress Indicators, Meters, Gauges & Ratings](#36-progress-indicators-meters-gauges--ratings) — Progress bars, circular progress gauges, radial speedometers, capacity level indicators, star ratings, and review breakdowns.
+- [3.7 Date, Time, Color & File Pickers](#37-date-time-color--file-pickers) — Calendar date pickers, time selectors, color wells, swatch palettes, file pickers, and path navigators.
+- [3.8 Rich Media, Markdown, Code & Terminal Views](#38-rich-media-markdown-code--terminal-views) — Images, WebKit HTML views, Markdown previewers, syntax-highlighted code editors, diff viewers, and terminal log consoles.
+- [3.9 Cards, Status Indicators, Badges & Feeds](#39-cards-status-indicators-badges--feeds) — KPI stat cards, metric meters, key-value cards, avatar profile tiles, alert banners, callouts, status LED dots, and activity feeds.
+- [3.10 Navigation, Workflow & Collapsible Containers](#310-navigation-workflow--collapsible-containers) — Breadcrumbs, wizard steppers, pagination bars, disclosure accordions, and property inspector grids.
+- [3.11 High-Level Form Row Helpers & Struct Reflection](#311-high-level-form-row-helpers--struct-reflection) — Label+input paired rows and compile-time struct data binding.
+- [3.12 Nameless Default Control Helpers](#312-nameless-default-control-helpers) — Quick prototyping shortcuts without explicit control names.
 
-- `win.configure(callback fn (mut cfg WindowConfig)) &SimpleWindow` applies a small fluent configuration block for window title, dimensions, spacing, colors, and resize behavior.
-- `win.form(title string, callback VoidEventCallback) &SimpleWindow` and `win.section(title string, callback VoidEventCallback) &SimpleWindow` create grouped form containers with a lightweight builder feel.
-- `win.validate_controls(validators map[string]ControlValidator) map[string]string` validates named controls and stores inline errors, while `simplegui.validate_not_empty(value string) string` provides a ready-made required-field validator.
-- `win.validate_struct[T]() bool` automatically validates form controls against struct field attributes (e.g. `@[required]`, `@[min_len: X]`, `@[max_len: Y]`, `@[email]`, `@[url]`, `@[alphanumeric]`, `@[min: A]`, `@[max: B]`) and displays visual inline errors on the window. Returns `true` if valid.
+---
 
-```v
-// Form helpers (add_form_* / add_labeled_*)
-win.add_labeled_input('Name:', 'name', 'Ada Lovelace')
-win.add_labeled_textarea('Bio:', 'bio', 'Developer & Mathematician')
-win.add_labeled_password('Password:', 'pwd', '')
-win.add_labeled_checkbox('Subscribe:', 'newsletter', 'Weekly Digest', true)
-win.add_labeled_switch('Notifications:', 'notify', 'Enable Alerts', true)
-win.add_labeled_slider('Volume:', 'vol', 75)
-win.add_labeled_dropdown('Country:', 'country', ['USA', 'Canada', 'UK'], 'USA')
-win.add_labeled_number('Age:', 'age', 30)
-win.add_labeled_date_picker('Date:', 'event_date', '2026-07-26')
-win.add_labeled_progress('Sync Status:', 'sync_bar', 100)
-```
+### 3.1 Text & Input Controls
 
-### Nameless default control helpers
-
-If your application only needs a single control of a specific type (or you do not want to manage control names), you can use nameless helpers which default to pre-configured keys (`'default_input'`, `'default_textarea'`, `'default_checkbox'`, `'default_number'`, `'default_button'`):
-
-- `win.input(value string) &SimpleWindow`
-- `win.set_input(value string) &SimpleWindow` / `win.get_input() string`
-- `win.textarea(text string) &SimpleWindow`
-- `win.set_textarea(text string) &SimpleWindow` / `win.get_textarea() string`
-- `win.checkbox(title string, checked bool) &SimpleWindow`
-- `win.set_checkbox(checked bool) &SimpleWindow` / `win.get_checkbox() bool`
-- `win.number(value int) &SimpleWindow`
-- `win.set_number(value int) &SimpleWindow` / `win.get_number() int`
-- `win.button(title string) &SimpleWindow`
-- `win.set_button(title string) &SimpleWindow`
-- `win.dropdown(items []string, selected string) &SimpleWindow`
-- `win.segmented(items []string, selected string) &SimpleWindow`
-- `win.radio_group(items []string, selected string) &SimpleWindow`
-- `win.toggle_switch(label string, checked bool) &SimpleWindow`
-- `win.search_field(placeholder string) &SimpleWindow`
-- `win.combo_box(items []string, selected string) &SimpleWindow`
-- `win.rating(value int) &SimpleWindow`
-- `win.spinner(active bool) &SimpleWindow`
-- `win.path_control(path string) &SimpleWindow`
-- `win.token_field(value string) &SimpleWindow`
-
-```v
-win.input('Ada')
-val := win.get_input()
-win.button('Click Me')
-```
-
-### `win.add_label(name string, text string) &SimpleWindow`
-
-Adds a read-only text description label.
-
-```v
-win.add_label('lbl_welcome', 'Welcome to SimpleGUI')
-```
-
-### `win.add_input(name string, value string) &SimpleWindow`
-
-Adds a single-line text input field.
+#### `win.add_input(name string, value string) &SimpleWindow`
+Adds a single-line native macOS text input field (`NSTextField`).
+- **Nameless Shorthand**: `win.input(value string) &SimpleWindow` (key: `'default_input'`)
+- **Parameters**:
+  - `name`: Unique control identifier. Pass `""` for auto-generated name.
+  - `value`: Initial text string.
+- **Getters & Setters**: `win.get_text(name)`, `win.set_text(name, val)`, `win.get(name)`, `win.set(name, val)`
+- **Events**: `.on_change(name, cb)` / `.onchange(cb)`, `.on_enter(name, cb)` / `.onenter(cb)`, `.on_focus(name, cb)` / `.onfocus(cb)`, `.on_blur(name, cb)` / `.onblur(cb)`
 
 ```v
 win.add_input('username', 'ada_lovelace')
+   .width(260)
+   .placeholder('Enter username...')
+   .tooltip('Your unique system handle')
+   .onchange(fn (mut win simplegui.SimpleWindow, val string) {
+       println('Username updated: ${val}')
+   })
+   .onenter(fn (mut win simplegui.SimpleWindow) {
+       println('User pressed Enter!')
+   })
 ```
 
-### `win.add_password(name string, value string) &SimpleWindow`
-
-Adds a secure password entry field.
-
-```v
-win.add_password('pwd', 'secret123')
-```
-
-### `win.add_textarea(name string, value string) &SimpleWindow`
-
-Adds a scrollable, multi-line rich text area.
-
-```v
-win.add_textarea('notes', 'Type your bio here...')
-```
-
-### `win.add_html_view(name string, html string) &SimpleWindow`
-
-Adds a lightweight HTML preview panel using WebKit.
-
-```v
-win.add_html_view('html_panel', '<h1>Welcome</h1><p>HTML preview content</p>')
-```
-
-### `win.add_drop_zone(name string, label string) &SimpleWindow`
-
-Adds a drag-and-drop target for file paths and other dropped content.
-
-```v
-win.add_drop_zone('file_drop', 'Drop files or folders here')
-```
-
-### `win.add_checkbox(name string, label string, checked bool) &SimpleWindow`
-
-Adds a toggle checkbox.
-
-```v
-win.add_checkbox('chk_agree', 'Accept Terms & Conditions', true)
-```
-
-### `win.add_button(name string, title string) &SimpleWindow`
-
-Adds a clickable push button.
-
-```v
-win.add_button('btn_submit', 'Submit Form')
-```
-
-### `win.add_number(name string, value int) &SimpleWindow`
-
-Adds a numeric input field bound to an increment/decrement stepper.
-
-- **Keyboard behavior**: when focused, `Up` increases and `Down` decreases the value by the step size (default `1`).
-
-```v
-win.add_number('num_qty', 10)
-```
-
-### `win.add_slider(name string, value int) &SimpleWindow`
-
-Adds a horizontal slider control (range `0` to `100`).
-
-```v
-win.add_slider('sld_vol', 75)
-```
-
-### `win.add_theme_menu(name string, selected string) &SimpleWindow`
-
-Adds a standard popup dropdown menu selection for active theme (options: `Light`, `Dark`, `System`).
-
-```v
-win.add_theme_menu('theme_select', 'Dark')
-```
-
-### `win.add_color_well(name string, color_hex string) &SimpleWindow`
-
-Adds a native macOS color well block. Clicking it launches the macOS Color Picker.
-
-```v
-win.add_color_well('color_picker', '#007aff')
-```
-
-### `win.add_date_picker(name string, date string) &SimpleWindow`
-
-Adds a calendar date picker input (input format: `yyyy-mm-dd`).
-
-```v
-win.add_date_picker('dob', '2026-07-25')
-```
-
-### `win.add_mode_control(name string, selected string) &SimpleWindow`
-
-Adds a segmented control choice selector (choices: `Simple`, `Advanced`, `Expert`).
-
-```v
-win.add_mode_control('mode_select', 'Advanced')
-```
-
-### `win.add_progress_indicator(name string, value int) &SimpleWindow`
-
-Adds a horizontal progress bar loader (range `0` to `100`).
-
-```v
-win.add_progress_indicator('progress_bar', 45)
-```
-
-### `win.add_list_box(name string, items []string) &SimpleWindow`
-
-Adds a scrollable table list box control displaying the array items. Selection changes trigger change events.
-
-```v
-win.add_list_box('user_list', ['Alice', 'Bob', 'Charlie'])
-```
-
-### `win.add_image(name string, file_path string) &SimpleWindow`
-
-Adds an image box displaying a local PNG or JPEG file. Custom widths/heights can resize it.
-
-```v
-win.add_image('logo_img', 'assets/logo.png')
-```
-
-### `win.add_dropdown(name string, items []string, selected string) &SimpleWindow`
-
-Adds a generic popup dropdown choice selector with custom `items`. The selected item can be got/set using `win.get_text()` or `win.set_text()`.
-
-```v
-win.add_dropdown('country_select', ['USA', 'Canada', 'UK'], 'USA')
-```
-
-### `win.add_segmented_control(name string, items []string, selected string) &SimpleWindow`
-
-Adds a generic segmented control choice selector containing custom `items`. Choice updates can be set/got via label strings (`win.get_text()`) or 0-indexed segment positions (`win.get_value_int()`).
-
-```v
-win.add_segmented_control('tab_switch', ['Day', 'Week', 'Month'], 'Day')
-```
-
-### `win.add_radio_group(name string, items []string, selected string) &SimpleWindow`
-
-Adds a vertical radio button group layout. Choice updates can be retrieved/set via label strings (`win.get_text()`) or 0-indexed positions (`win.get_value_int()`).
-
-```v
-win.add_radio_group('plan_choice', ['Free', 'Pro', 'Enterprise'], 'Pro')
-```
-
-### `win.add_switch(name string, label string, checked bool) &SimpleWindow`
-
-Adds a native horizontal toggle switch. Its active state can be got/set using `win.get_bool()` or `win.set_bool()`.
-
-```v
-win.add_switch('notifications_switch', 'Enable Notifications', true)
-```
-
-### `win.add_search_field(name string, placeholder string) &SimpleWindow`
-
-Adds a native magnifying glass search bar textfield.
-
-```v
-win.add_search_field('search_box', 'Search documentation...')
-```
-
-### `win.add_combo_box(name string, items []string, selected string) &SimpleWindow`
-
-Adds an editable combobox dropdown choice selector containing custom `items`. Users can both type freeform choices and choose from suggestions list. The input text can be get/set using `win.get_text()` or `win.set_text()`.
-
-```v
-win.add_combo_box('font_combo', ['Arial', 'Helvetica', 'Times New Roman'], 'Helvetica')
-```
-
-### `win.add_level_indicator(name string, style int, min_val int, max_val int, value int) &SimpleWindow`
-
-Adds a versatile native macOS level and capacity gauge indicator.
-
-- **Styles**:
-  - `0`: Relevancy indicator
-  - `1`: Continuous capacity meter
-  - `2`: Discrete capacity meter (ticks block)
-  - `3`: Star Rating selector
-
-```v
-win.add_level_indicator('battery_meter', 1, 0, 100, 75)
-```
-
-### `win.add_rating(name string, value int) &SimpleWindow`
-
-Convenient shorthand wrapper for `add_level_indicator` that creates an interactive 5-star rating control (min = 0, max = 5, style = 3). Users can click stars directly to change values, which triggers and registers change event callbacks.
-
-```v
-win.add_rating('star_rating', 4)
-```
-
-### `win.add_spinner(name string, active bool) &SimpleWindow`
-
-Adds an indeterminate activity loading spinner.
-
+#### `win.add_password(name string, value string) &SimpleWindow`
+Adds a secure masked password entry field (`NSSecureTextField`). Bullets hide entered characters.
 - **Parameters**:
-  - `active`: If true, the spinner immediately visible and plays its spinning animation loop. If false, the animation stops and the control hides.
-- **Toggling**: You can turn the animation on or off programmatically using `win.set_bool(name, true/false)`.
+  - `name`: Unique identifier.
+  - `value`: Initial password text.
+- **Getters & Setters**: `win.get_text(name)`, `win.set_text(name, val)`
+- **Events**: `.on_change(name, cb)`, `.on_enter(name, cb)`, `.on_focus(name, cb)`, `.on_blur(name, cb)`
 
 ```v
-win.add_spinner('loading_spinner', true)
+win.add_password('user_password', '')
+   .width(260)
+   .placeholder('Enter master password')
 ```
 
-### `win.add_path_control(name string, path string) &SimpleWindow`
-
-Adds a modern breadcrumb path control.
-
-- **Features**: Displays folder tracks beautifully using standard macOS system icons. If `editable` is set to true (default), users can click on links or double-click to invoke standard file dialogs, or drag files directly into the field to populate it.
-- **Accessing**: Retrieve or update path text directly using the standard `win.get_text(name)` vs `win.set_text(name, path)`.
+#### `win.add_textarea(name string, value string) &SimpleWindow`
+Adds a scrollable multi-line rich text area (`NSTextView` enclosed in `NSScrollView`).
+- **Nameless Shorthand**: `win.textarea(text string) &SimpleWindow` (key: `'default_textarea'`)
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `value`: Initial multi-line text content.
+- **Getters & Setters**: `win.get_text(name)`, `win.set_text(name, text)`
+- **Events**: `.on_change(name, cb)`, `.on_focus(name, cb)`, `.on_blur(name, cb)`
 
 ```v
-win.add_path_control('doc_path', '/Users/ada/Documents/report.pdf')
+win.add_textarea('user_bio', 'Mathematician and writer, known for her work on Charles Babbage\'s early mechanical general-purpose computer.')
+   .height(100)
+   .font_size(13)
 ```
 
-### `win.add_token_field(name string, value string) &SimpleWindow`
-
-Adds a token bubble tags editor input field.
-
-- **Features**: Converts typical text phrases into tag chips or tag buttons when users press comma.
-- **Reading**: Standard `win.get_text()` returns a clean comma-separated sequence.
+#### `win.add_search_field(name string, placeholder string) &SimpleWindow`
+Adds a native macOS search field (`NSSearchField`) with a magnifying glass icon, placeholder text, and built-in clear (x) button.
+- **Nameless Shorthand**: `win.search_field(placeholder string) &SimpleWindow` (key: `'default_search'`)
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `placeholder`: Hint text shown when field is empty.
+- **Getters & Setters**: `win.get_text(name)`, `win.set_text(name, val)`
+- **Events**: `.on_change(name, cb)`, `.on_enter(name, cb)`
 
 ```v
-win.add_token_field('tags_field', 'vlang, macos, gui')
+win.add_search_field('doc_search', 'Search documentation, functions, modules...')
+   .width(320)
+   .onchange(fn (mut win simplegui.SimpleWindow, query string) {
+       win.set_status('Searching for: ${query}')
+   })
 ```
 
-### `win.add_stepper(name string, min_val int, max_val int, step int, value int) &SimpleWindow`
+#### `win.add_pin_code(name string, digits int) &SimpleWindow`
+Adds a multi-box digit verification PIN/OTP (One-Time Password) code input control.
+- **Nameless Shorthand**: `win.pin_code(digits int) &SimpleWindow`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `digits`: Number of digit boxes (e.g. 4 or 6).
+- **Getters & Setters**: `win.get_pin_code_value(name) string`, `win.set_pin_code_value(name, code string)`
+- **Events**: `.on_change(name, cb)` fires when all digits are completed or modified.
 
+```v
+win.add_pin_code('auth_2fa', 6)
+   .onchange(fn (mut win simplegui.SimpleWindow, code string) {
+       if code.len == 6 {
+           println('Verifying 6-digit OTP code: ${code}')
+       }
+   })
+```
+
+#### `win.add_command_palette(name string, placeholder string, shortcut_hint string) &SimpleWindow`
+Adds a quick-action command palette bar with a prompt input and visual shortcut hint badge.
+- **Nameless Shorthand**: `win.command_palette(placeholder, shortcut_hint)`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `placeholder`: Search placeholder prompt (e.g. `'Type a command or search...'`).
+  - `shortcut_hint`: Key hint displayed on the right (e.g. `'⌘K'`).
+- **Getters & Setters**: `win.get_text(name)`, `win.set_text(name, text)`
+- **Events**: `.on_change(name, cb)`, `.on_enter(name, cb)`
+
+```v
+win.add_command_palette('cmd_pal', 'Type a command or search...', '⌘K')
+   .width(400)
+```
+
+#### `win.add_token_field(name string, value string) &SimpleWindow`
+Adds a token bubble tags editor input field (`NSTokenField`). Converts comma-separated text into interactive tag tokens.
+- **Nameless Shorthand**: `win.token_field(value string) &SimpleWindow`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `value`: Initial comma-separated tokens (e.g. `'gui, macos, native'`).
+- **Getters & Setters**: `win.get_text(name) string`, `win.set_text(name, text string)`
+- **Ergonomic Helpers**: `win.add_token(name, token string)`
+
+```v
+win.add_token_field('tags_editor', 'vlang, macos, native')
+   .width(300)
+```
+
+#### `win.add_tag_input_field(name string, tags []string) &SimpleWindow`
+Adds an interactive tag input field with removable pill tokens and inline addition.
+- **Nameless Shorthand**: `win.tag_input_field(tags []string)`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `tags`: Array of initial tag labels.
+- **Getters & Setters**: `win.set_tag_input_tags(name, tags []string)`, `win.get_text(name)`
+
+```v
+win.add_tag_input_field('project_tags', ['Release', 'v1.0', 'Desktop'])
+```
+
+---
+
+### 3.2 Labels, Headings & Static Typography
+
+#### `win.add_label(name string, text string) &SimpleWindow`
+Adds a read-only text description label (`NSTextField` in non-editable, non-selectable mode).
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `text`: Label text string.
+- **Getters & Setters**: `win.get_text(name)`, `win.set_text(name, text)`
+- **Modifiers**: `.font_size(size)`, `.bold(true)`, `.font_color('#hex')`
+
+```v
+win.add_label('lbl_info', 'Enter your account credentials below:')
+   .font_size(13)
+   .font_color('#8e8e93')
+```
+
+#### `win.add_heading(title string) &SimpleWindow`
+Inserts a large prominent heading title followed by a clean visual divider line.
+- **Parameters**:
+  - `title`: Heading title text.
+
+```v
+win.add_heading('Account Settings')
+```
+
+#### `win.add_section_header(name string, title string, subtitle string) &SimpleWindow`
+Adds a styled section header widget featuring a bold title, optional subtitle, and full-width separator line.
+- **Nameless Shorthand**: `win.section_header(title string, subtitle string)`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `title`: Primary section title text.
+  - `subtitle`: Secondary descriptive text.
+
+```v
+win.add_section_header('sec_network', 'Network Configuration', 'Configure HTTP proxy and DNS resolvers')
+```
+
+#### `win.add_hotkey_badge(name string, shortcut_str string, description string) &SimpleWindow`
+Adds a styled keyboard shortcut badge display item pairing a key combination with an explanatory label.
+- **Nameless Shorthand**: `win.hotkey_badge(shortcut_str string, description string)`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `shortcut_str`: Shortcut representation (e.g. `'⌘ + Shift + P'`).
+  - `description`: Action description (e.g. `'Open Command Palette'`).
+
+```v
+win.add_hotkey_badge('hk_save', '⌘ + S', 'Save current document')
+```
+
+---
+
+### 3.3 Buttons & Interactive Triggers
+
+#### `win.add_button(name string, title string) &SimpleWindow`
+Adds a standard clickable macOS push button (`NSButton`).
+- **Nameless Shorthand**: `win.button(title string) &SimpleWindow` (key: `'default_button'`)
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `title`: Button title label.
+- **Getters & Setters**: `win.get_text(name)`, `win.set_text(name, new_title)`
+- **Events**: `.on_click(name, cb)` / `.onclick(cb)`
+- **Ergonomics**: `win.set_default_button(name)` marks button for Enter-key default triggering.
+
+```v
+win.add_button('btn_save', 'Save Document')
+   .width(140)
+   .onclick(fn (mut win simplegui.SimpleWindow) {
+       win.set_status('Document saved successfully!')
+   })
+win.set_default_button('btn_save')
+```
+
+#### `win.add_image_button(name string, symbol string, title string) &SimpleWindow`
+Adds a push button decorated with a native SF Symbol icon (macOS 11+) and title. Pass `""` for `title` to create a compact icon-only button.
+- **Nameless Shorthand**: `win.image_button(symbol string, title string)`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `symbol`: SF Symbol icon name (e.g. `'trash'`, `'gearshape'`, `'square.and.arrow.up'`, `'folder'`).
+  - `title`: Button label text, or `""` for icon-only.
+- **Events**: `.on_click(name, cb)` / `.onclick(cb)`
+
+```v
+win.add_image_button('btn_export', 'square.and.arrow.up', 'Export Report')
+   .onclick(fn (mut win simplegui.SimpleWindow) {
+       win.toast_success('Report exported!')
+   })
+```
+
+#### `win.add_help_button(name string) &SimpleWindow`
+Adds the round native macOS "?" help button (`NSBezelStyleHelpButton`).
+- **Nameless Shorthand**: `win.help_button()`
+- **Parameters**:
+  - `name`: Unique identifier.
+- **Events**: `.on_click(name, cb)` / `.onclick(cb)`
+
+```v
+win.add_help_button('btn_help')
+   .onclick(fn (mut win simplegui.SimpleWindow) {
+       win.alert('Documentation', 'Visit https://github.com/codecaine/vlang_simplegui for details.')
+   })
+```
+
+#### `win.add_split_button(name string, title string, menu_items []string) &SimpleWindow`
+Adds a primary action button paired with a secondary drop-down popup menu.
+- **Nameless Shorthand**: `win.split_button(title string, menu_items []string)`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `title`: Main button text.
+  - `menu_items`: Array of popup menu choices.
+- **Events**:
+  - Main button click: `.on_click(name, cb)` / `.onclick(cb)`
+  - Popup item selected: `.on_select_item(name, cb)` / `.on_change(name, cb)`
+
+```v
+win.add_split_button('btn_save_split', 'Save', ['Save As...', 'Export PDF', 'Upload to Cloud'])
+   .onclick(fn (mut win simplegui.SimpleWindow) {
+       println('Primary Save clicked')
+   })
+win.on_select_item('btn_save_split', fn (mut win simplegui.SimpleWindow, item string) {
+    println('Selected menu option: ${item}')
+})
+```
+
+#### `win.add_badge_button(name string, title string, count int, badge_color string) &SimpleWindow`
+Adds an action button decorated with a numeric counter badge pill.
+- **Nameless Shorthand**: `win.badge_button(title string, count int, badge_color string)`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `title`: Button title label.
+  - `count`: Badge counter integer.
+  - `badge_color`: Badge background color hex (e.g. `'#ff3b30'`).
+- **Getters & Setters**: `win.set_badge_button_count(name, count int)`
+- **Events**: `.on_click(name, cb)` / `.onclick(cb)`
+
+```v
+win.add_badge_button('btn_inbox', 'Notifications', 5, '#ff3b30')
+   .onclick(fn (mut win simplegui.SimpleWindow) {
+       win.set_badge_button_count('btn_inbox', 0)
+   })
+```
+
+#### `win.add_quick_action_bar(name string, labels []string, symbols []string) &SimpleWindow`
+Adds a horizontal toolbar of quick-action icon buttons with labels.
+- **Nameless Shorthand**: `win.quick_action_bar(labels []string, symbols []string)`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `labels`: Array of button text labels.
+  - `symbols`: Array of corresponding SF Symbol icon names.
+- **Events**: `.on_click(name, cb)` / `.on_change(name, cb)` with clicked action label.
+
+```v
+win.add_quick_action_bar('action_bar', ['Cut', 'Copy', 'Paste'], ['scissors', 'doc.on.doc', 'doc.on.clipboard'])
+```
+
+#### `win.add_link(name string, text string, url string) &SimpleWindow`
+Adds a clickable hyperlink text button that opens the URL in the system browser or fires custom clicks.
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `text`: Display link text.
+  - `url`: Target web URL string.
+
+```v
+win.add_link('lnk_repo', 'Visit SimpleGUI on GitHub', 'https://github.com/codecaine/vlang_simplegui')
+```
+
+---
+
+### 3.4 Selection, Toggles & Multi-Option Selectors
+
+#### `win.add_checkbox(name string, label string, checked bool) &SimpleWindow`
+Adds a native macOS toggle checkbox (`NSButton` with switch/checkbox button type).
+- **Nameless Shorthand**: `win.checkbox(title string, checked bool) &SimpleWindow`
+- **Alias**: `win.add_toggle(name, label, checked)`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `label`: Label text beside checkbox.
+  - `checked`: Initial toggle boolean state.
+- **Getters & Setters**: `win.get_checked(name) bool`, `win.set_checked(name, checked bool)`, `win.get_bool(name)`, `win.set_bool(name, checked)`
+- **Events**: `.on_change(name, cb)` / `.onchange(cb)` (receives `'true'` or `'false'`)
+
+```v
+win.add_checkbox('chk_terms', 'I agree to the Terms of Service', false)
+   .onchange(fn (mut win simplegui.SimpleWindow, val string) {
+       is_agreed := val == 'true'
+       win.set_control_enabled('btn_submit', is_agreed)
+   })
+```
+
+#### `win.add_switch(name string, label string, checked bool) &SimpleWindow`
+Adds a modern macOS horizontal toggle switch (`NSSwitch`).
+- **Nameless Shorthand**: `win.toggle_switch(label string, checked bool) &SimpleWindow`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `label`: Title label beside the toggle switch.
+  - `checked`: Initial toggle boolean state.
+- **Getters & Setters**: `win.get_bool(name) bool`, `win.set_bool(name, checked bool)`, `win.get_checked(name)`, `win.set_checked(name, checked)`
+- **Events**: `.on_change(name, cb)` / `.onchange(cb)` (receives `'true'` or `'false'`)
+
+```v
+win.add_switch('sw_dark_mode', 'Dark Mode Surface', true)
+   .onchange(fn (mut win simplegui.SimpleWindow, val string) {
+       win.set_dark_theme(val == 'true')
+   })
+```
+
+#### `win.add_radio(name string, label string, checked bool) &SimpleWindow`
+Adds a standalone radio button control.
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `label`: Radio option text label.
+  - `checked`: Initial selection boolean state.
+- **Getters & Setters**: `win.get_checked(name)`, `win.set_checked(name, checked)`
+
+```v
+win.add_radio('rad_opt1', 'Option 1: Standard', true)
+```
+
+#### `win.add_radio_group(name string, items []string, selected string) &SimpleWindow`
+Adds a grouped vertical radio button group layout with mutually exclusive selection.
+- **Nameless Shorthand**: `win.radio_group(items []string, selected string) &SimpleWindow`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `items`: Array of option labels.
+  - `selected`: Selected option string.
+- **Getters & Setters**: `win.get_text(name) string`, `win.set_text(name, val string)`, `win.get_value_int(name) int` (0-based index)
+- **Events**: `.on_change(name, cb)` / `.onchange(cb)` (receives selected item text)
+
+```v
+win.add_radio_group('plan_tier', ['Free Tier', 'Pro Tier ($19/mo)', 'Enterprise ($99/mo)'], 'Pro Tier ($19/mo)')
+   .onchange(fn (mut win simplegui.SimpleWindow, val string) {
+       println('Plan selected: ${val}')
+   })
+```
+
+#### `win.add_dropdown(name string, items []string, selected string) &SimpleWindow`
+Adds a standard popup dropdown choice selector (`NSPopUpButton`).
+- **Nameless Shorthand**: `win.dropdown(items []string, selected string) &SimpleWindow`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `items`: Array of menu options.
+  - `selected`: Initial selected option string.
+- **Getters & Setters**: `win.get_text(name) string`, `win.set_text(name, val string)`
+- **Events**: `.on_change(name, cb)` / `.onchange(cb)` (receives selected option text)
+
+```v
+win.add_dropdown('country_picker', ['United States', 'Canada', 'United Kingdom', 'Germany', 'Japan'], 'United States')
+   .onchange(fn (mut win simplegui.SimpleWindow, country string) {
+       println('Selected country: ${country}')
+   })
+```
+
+#### `win.add_pull_down(name string, title string, items []string) &SimpleWindow`
+Adds a native pull-down menu button (`NSPopUpButton` with `pullsDown = true`). Unlike a dropdown, the button always shows `title` and acts as a compact action menu.
+- **Nameless Shorthand**: `win.pull_down(title string, items []string) &SimpleWindow`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `title`: Fixed button title.
+  - `items`: Array of action menu options.
+- **Events**: `.on_change(name, cb)` / `.onchange(cb)` (receives chosen action item text)
+
+```v
+win.add_pull_down('export_menu', 'Export...', ['PDF Document', 'PNG Image', 'JSON Data', 'CSV Spreadsheet'])
+   .onchange(fn (mut win simplegui.SimpleWindow, format string) {
+       println('Exporting as: ${format}')
+   })
+```
+
+#### `win.add_combo_box(name string, items []string, selected string) &SimpleWindow`
+Adds an editable combobox input field (`NSComboBox`) allowing both freeform text entry and selection from a dropdown list.
+- **Nameless Shorthand**: `win.combo_box(items []string, selected string) &SimpleWindow`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `items`: List of suggestions.
+  - `selected`: Initial input text or selected suggestion.
+- **Getters & Setters**: `win.get_text(name)`, `win.set_text(name, text)`
+- **Events**: `.on_change(name, cb)` / `.onchange(cb)`
+
+```v
+win.add_combo_box('font_family', ['Inter', 'SF Pro', 'Helvetica Neue', 'Menlo', 'Fira Code'], 'SF Pro')
+```
+
+#### `win.add_theme_menu(name string, selected string) &SimpleWindow`
+Adds a standard popup dropdown menu pre-populated with theme options (`'Light'`, `'Dark'`, `'System'`).
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `selected`: Selected theme name.
+
+```v
+win.add_theme_menu('theme_sel', 'Dark')
+```
+
+#### `win.add_segmented_control(name string, items []string, selected string) &SimpleWindow`
+Adds a native horizontal segmented button control (`NSSegmentedControl`).
+- **Nameless Shorthand**: `win.segmented(items []string, selected string) &SimpleWindow`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `items`: Array of segment labels.
+  - `selected`: Selected segment label.
+- **Getters & Setters**: `win.get_text(name) string`, `win.get_value_int(name) int` (0-based index), `win.set_text(name, label)`
+- **Events**: `.on_change(name, cb)` / `.onchange(cb)`
+
+```v
+win.add_segmented_control('view_mode', ['Overview', 'Analytics', 'Settings'], 'Overview')
+   .onchange(fn (mut win simplegui.SimpleWindow, segment string) {
+       println('Switched view to: ${segment}')
+   })
+```
+
+#### `win.add_mode_control(name string, selected string) &SimpleWindow`
+Adds a segmented control pre-populated with common mode choices (`'Simple'`, `'Advanced'`, `'Expert'`).
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `selected`: Initial selected mode.
+
+```v
+win.add_mode_control('app_mode', 'Simple')
+```
+
+#### `win.add_icon_segments(name string, symbols []string, selected string) &SimpleWindow`
+Adds an SF Symbol-powered segmented button bar for switching modes or views with native macOS icons.
+- **Nameless Shorthand**: `win.icon_segments(symbols []string, selected string)`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `symbols`: Array of SF Symbol icon names (e.g. `['square.grid.2x2', 'list.bullet', 'tablecells']`).
+  - `selected`: Selected symbol name.
+- **Events**: `.on_change(name, cb)`
+
+```v
+win.add_icon_segments('layout_view', ['square.grid.2x2', 'list.bullet'], 'square.grid.2x2')
+```
+
+#### `win.add_tab_pills(name string, items []string, selected string) &SimpleWindow`
+Adds a modern pill-styled segmented tab bar widget.
+- **Nameless Shorthand**: `win.tab_pills(items []string, selected string)`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `items`: Array of pill tab labels.
+  - `selected`: Active tab label.
+- **Getters & Setters**: `win.get_tab_pills_active(name) string`, `win.set_tab_pills_active(name, selected string)`
+- **Events**: `.on_change(name, cb)`
+
+```v
+win.add_tab_pills('category_pills', ['All', 'Favorites', 'Recent', 'Archived'], 'All')
+```
+
+#### `win.add_pill_toggle(name string, options []string, selected_index int) &SimpleWindow`
+Adds a rounded pill segment option toggle bar.
+- **Nameless Shorthand**: `win.pill_toggle(options []string, selected_index int)`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `options`: Array of option titles.
+  - `selected_index`: 0-based selected index.
+- **Getters & Setters**: `win.set_pill_toggle_selected(name, index int)`
+
+```v
+win.add_pill_toggle('filter_mode', ['Daily', 'Weekly', 'Monthly', 'Annual'], 0)
+```
+
+#### `win.add_filter_chips(name string, chips []string, selected []string, multi_select bool) &SimpleWindow`
+Adds an interactive filter chip tag group with single-select or multi-select capabilities.
+- **Nameless Shorthand**: `win.filter_chips(chips []string, selected []string, multi_select bool)`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `chips`: All available chip tag labels.
+  - `selected`: Initially selected chips array.
+  - `multi_select`: `true` to allow multiple active chips; `false` for single choice.
+- **Getters & Setters**: `win.get_filter_chips_selected(name) string` (comma-separated), `win.set_filter_chips_selected(name, selected []string)`
+- **Events**: `.on_change(name, cb)`
+
+```v
+win.add_filter_chips('role_filters', ['Admin', 'Developer', 'Designer', 'Manager'], ['Developer'], true)
+```
+
+#### `win.add_tag_cloud(name string, tags []string) &SimpleWindow`
+Adds an interactive tag chips list widget. Clicking tags triggers event callbacks.
+- **Nameless Shorthand**: `win.tag_cloud(tags []string)`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `tags`: Array of tag string labels.
+- **Getters & Setters**: `win.set_tag_cloud_tags(name, tags []string)`
+- **Events**: `.on_click_tag(name, cb)` (receives clicked tag text)
+
+```v
+win.add_tag_cloud('tech_tags', ['VLang', 'macOS', 'AppKit', 'Native', 'GUI'])
+win.on_click_tag('tech_tags', fn (mut win simplegui.SimpleWindow, tag string) {
+    println('Clicked tag: ${tag}')
+})
+```
+
+#### `win.add_transfer_list(name string, available []string, selected []string) &SimpleWindow`
+Adds a dual-column item transfer list picker (single-select transfer by default).
+- **Nameless Shorthand**: `win.transfer_list(available []string, selected []string)`
+- **Variant**: `win.add_transfer_list_opts(name, available, selected, multi_select bool)`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `available`: Array of items in the left available column.
+  - `selected`: Array of items in the right chosen column.
+  - `multi_select`: Whether multiple items can be moved at once.
+
+```v
+win.add_transfer_list('perm_transfer', ['Read', 'Write', 'Execute', 'Delete', 'Admin'], ['Read'])
+```
+
+---
+
+### 3.5 Numbers, Steppers, Knobs & Sliders
+
+#### `win.add_number(name string, value int) &SimpleWindow`
+Adds a numeric input field bound to an increment/decrement stepper. Pressing `Up`/`Down` arrows increments/decrements the value by 1.
+- **Nameless Shorthand**: `win.number(value int) &SimpleWindow` (key: `'default_number'`)
+- **Alias**: `win.add_number_field(name, value)`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `value`: Initial integer value.
+- **Getters & Setters**: `win.get_value_int(name) int`, `win.set_value_int(name, val int)`, `win.get_number_value(name)`, `win.set_number_value(name, val)`
+- **Events**: `.on_change(name, cb)` / `.onchange(cb)`
+
+```v
+win.add_number('item_qty', 5)
+   .width(120)
+   .onchange(fn (mut win simplegui.SimpleWindow, val string) {
+       println('Quantity: ${val}')
+   })
+```
+
+#### `win.add_stepper(name string, min_val int, max_val int, step int, value int) &SimpleWindow`
 Adds a standalone native up/down arrow stepper (`NSStepper`) with a live value label beside it.
-
-- **Parameters**: `min_val`/`max_val` bound the value, `step` is the increment per click (values <= 0 default to 1).
-- **Accessing**: Use `win.get_value_int(name)` / `win.set_value_int(name, value)`; user clicks fire `change` events with the numeric value.
-- **Range**: Adjust bounds later with `win.set_slider_range(name, min, max)` or the chainable `.range(min, max)`.
-
-```v
-win.add_stepper('font_size_stepper', 8, 72, 1, 14)
-```
-
-### `win.add_help_button(name string) &SimpleWindow`
-
-Adds the round native macOS "?" help button (`NSBezelStyleHelpButton`). Attach behavior with `.onclick()` — typically opening documentation or a popover-style dialog.
+- **Nameless Shorthand**: `win.stepper(min_val, max_val, step, value)`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `min_val`: Minimum allowed integer value.
+  - `max_val`: Maximum allowed integer value.
+  - `step`: Increment per click (defaults to 1 if <= 0).
+  - `value`: Initial integer value.
+- **Getters & Setters**: `win.get_value_int(name) int`, `win.set_value_int(name, val int)`
+- **Events**: `.on_change(name, cb)` / `.onchange(cb)`
 
 ```v
-win.add_help_button('help_btn')
+win.add_stepper('font_stepper', 8, 72, 2, 16)
 ```
 
-### `win.add_knob(name string, value int) &SimpleWindow`
+#### `win.add_slider(name string, value int) &SimpleWindow`
+Adds a horizontal continuous slider control (`NSSlider`, range 0 to 100 by default).
+- **Nameless Shorthand**: `win.slider(value int) &SimpleWindow` (key: `'default_slider'`)
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `value`: Initial integer slider position.
+- **Getters & Setters**: `win.get_value_int(name) int`, `win.set_value_int(name, val int)`
+- **Range Configuration**: `win.set_slider_range(name, min, max)` or chainable `.range(min, max)`
+- **Events**: `.on_change(name, cb)` / `.onchange(cb)`
 
-Adds a circular rotary slider knob (`NSSliderTypeCircular`) with a live value label.
+```v
+win.add_slider('volume_slider', 75)
+   .width(220)
+   .onchange(fn (mut win simplegui.SimpleWindow, val string) {
+       win.set_status('Volume: ${val}%')
+   })
+```
 
-- **Range**: Defaults to 0–100; chain `.range(min, max)` to customize.
-- **Accessing**: Same numeric accessors and `change` events as a linear slider.
+#### `win.add_vertical_slider(name string, value int, min_val int, max_val int, height int) &SimpleWindow`
+Adds a standalone native vertical `NSSlider` control with a live numeric indicator label.
+- **Nameless Shorthand**: `win.vertical_slider(value, min_val, max_val, height)`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `value`: Initial integer value.
+  - `min_val`: Minimum boundary value.
+  - `max_val`: Maximum boundary value.
+  - `height`: Vertical height in pixels.
+- **Getters & Setters**: `win.get_vertical_slider(name) int`, `win.set_vertical_slider(name, val int)`
+- **Events**: `.on_change(name, cb)`
+
+```v
+win.add_vertical_slider('eq_bass', 50, 0, 100, 180)
+```
+
+#### `win.add_range_slider(name string, min_val int, max_val int, low_val int, high_val int) &SimpleWindow`
+Adds a dual-thumb range selector slider widget for minimum and maximum boundary selection.
+- **Nameless Shorthand**: `win.range_slider(min_val, max_val, low_val, high_val)`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `min_val` / `max_val`: Scale boundaries.
+  - `low_val` / `high_val`: Initial lower and upper thumb handle positions.
+- **Getters & Setters**: `win.get_range_slider_low(name) int`, `win.get_range_slider_high(name) int`, `win.set_range_slider_values(name, low int, high int)`
+- **Events**: `.on_change(name, cb)` (receives `'low:high'` format, e.g. `'20:80'`)
+
+```v
+win.add_range_slider('price_filter', 0, 1000, 150, 600)
+   .onchange(fn (mut win simplegui.SimpleWindow, range_str string) {
+       println('Selected price range: ${range_str}')
+   })
+```
+
+#### `win.add_knob(name string, value int) &SimpleWindow`
+Adds a circular rotary slider knob (`NSSliderTypeCircular`) with a live value indicator label. Range defaults to 0–100.
+- **Nameless Shorthand**: `win.knob(value int) &SimpleWindow`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `value`: Initial rotary position integer.
+- **Getters & Setters**: `win.get_value_int(name) int`, `win.set_value_int(name, val int)`
+- **Events**: `.on_change(name, cb)` / `.onchange(cb)`
 
 ```v
 win.add_knob('gain_knob', 50)
 ```
 
-### `win.add_pull_down(name string, title string, items []string) &SimpleWindow`
+---
 
-Adds a native pull-down menu button (`NSPopUpButton` in pulls-down mode). Unlike `add_dropdown`, the button always displays `title` and acts as a compact action menu.
+### 3.6 Progress Indicators, Meters, Gauges & Ratings
 
-- **Events**: Choosing an item fires a `change` event whose value is the chosen item's text.
-
-```v
-win.add_pull_down('export_menu', 'Export Format', ['PDF', 'PNG', 'SVG'])
-```
-
-### `win.add_image_button(name string, symbol string, title string) &SimpleWindow`
-
-Adds a push button decorated with a native SF Symbol image (macOS 11+), e.g. `'trash'`, `'gearshape'`, `'square.and.arrow.up'`.
-
-- **Icon-only**: Pass an empty `title` for a compact icon-only button.
-- **Events**: Fires standard `click` events (`.onclick()`).
+#### `win.add_progress_indicator(name string, value int) &SimpleWindow`
+Adds a horizontal deterministic progress bar loader (`NSProgressIndicator`, range 0 to 100).
+- **Nameless Shorthand**: `win.progress_indicator(value int) &SimpleWindow` (key: `'default_progress_indicator'`)
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `value`: Initial progress percentage (0–100).
+- **Getters & Setters**: `win.get_value_int(name) int`, `win.set_value_int(name, val int)`
 
 ```v
-win.add_image_button('trash_btn', 'trash', 'Delete Item')
+win.add_progress_indicator('sync_progress', 45)
+   .width(280)
 ```
 
-### `win.add_stat_card(name string, title string, value string, trend string, trend_style string)` / `win.stat_card(title string, value string, trend string, trend_style string) &SimpleWindow`
-
-Adds a dashboard metric stat card displaying an uppercase title, large metric value, and trend indicator (e.g. `+18.4%`).
-
-- **Parameters**: `trend_style` accepts `"success"`, `"error"`, `"warning"`, or `"info"` for custom status coloring.
-- **Updating**: Use `win.set_stat_card(name, value, trend, trend_style)` or `win.set_value(name, value)` to update live metrics programmatically.
+#### `win.add_circular_progress(name string, value int, min_val int, max_val int) &SimpleWindow`
+Adds a circular progress ring gauge indicator.
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `value`: Initial progress value.
+  - `min_val` / `max_val`: Progress bounds.
+- **Getters & Setters**: `win.set_circular_progress(name, value int)`
 
 ```v
-win.add_stat_card('revenue_card', 'Total Revenue', '$45,230', '+12.5%', 'success')
-win.stat_card('Total Revenue', '$45,230', '+12.5%', 'success')
+win.add_circular_progress('cpu_circle', 68, 0, 100)
 ```
 
-### `win.add_banner(name string, text string, style string)` / `win.banner(text string, style string) &SimpleWindow`
-
-Adds an alert message banner strip across the layout. Acceptable `style` values are `"info"`, `"success"`, `"warning"`, or `"error"`.
+#### `win.add_gauge(name string, title string, value int, min_val int, max_val int, unit string) &SimpleWindow`
+Adds a visual progress/level gauge widget displaying a title, percentage bar, and formatted unit reading.
+- **Nameless Shorthand**: `win.gauge(title, value, min_val, max_val, unit)`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `title`: Header caption label.
+  - `value`: Current gauge integer value.
+  - `min_val` / `max_val`: Scale range.
+  - `unit`: Unit string suffix (e.g. `'%'`, `'MB/s'`, `'°C'`).
+- **Getters & Setters**: `win.get_gauge_value(name) int`, `win.set_gauge_value(name, val int)`
 
 ```v
-win.add_banner('alert_banner', 'System maintenance scheduled at midnight', 'warning')
-win.banner('System maintenance scheduled at midnight', 'warning')
+win.add_gauge('cpu_gauge', 'CPU Load', 42, 0, 100, '%')
 ```
 
-### `win.add_star_rating(name string, value int, max_stars int)` / `win.star_rating(value int, max_stars int) &SimpleWindow`
-
-Adds an interactive star rating selector control (★ ★ ★ ★ ☆) with custom `max_stars`.
-
-- **Parameters**: `value` sets initial rating; `max_stars` sets total star count (defaults to 5).
-- **Accessing**: Use `win.get_star_rating_value(name)` / `win.set_star_rating_value(name, val)`.
-- **Events**: Star clicks fire `change` events with the numeric rating string.
+#### `win.add_radial_gauge(name string, title string, value f64, min_val f64, max_val f64, unit string) &SimpleWindow`
+Adds a semi-circular dial speedometer meter with gradient arc and digital value readout.
+- **Nameless Shorthand**: `win.radial_gauge(title, value, min_val, max_val, unit)`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `title`: Dial title string.
+  - `value`: Current reading (`f64`).
+  - `min_val` / `max_val`: Boundary scale limits.
+  - `unit`: Unit string (e.g. `'km/h'`, `'RPM'`, `'PSI'`).
+- **Getters & Setters**: `win.get_radial_gauge_value(name) f64`, `win.set_radial_gauge_value(name, val f64)`
 
 ```v
-win.add_star_rating('product_rating', 4, 5)
-win.star_rating(4, 5)
+win.add_radial_gauge('speed_dial', 'Speed', 85.5, 0.0, 200.0, 'km/h')
 ```
 
-### `win.add_range_slider(name string, min_val int, max_val int, low_val int, high_val int)` / `win.range_slider(min_val int, max_val int, low_val int, high_val int) &SimpleWindow`
-
-Adds a dual-thumb range selector slider widget for minimum and maximum boundaries.
-
-- **Parameters**: `min_val` and `max_val` bound the slider scale; `low_val` and `high_val` specify current active range handles.
-- **Accessing**: Use `win.get_range_slider_low(name)` / `win.get_range_slider_high(name)` / `win.set_range_slider_values(name, low, high)`.
-- **Events**: Handle adjustments fire `change` events formatted as `"low:high"`.
+#### `win.add_metric_meter(name string, title string, value int, min_val int, max_val int, unit string) &SimpleWindow`
+Adds a resource meter card widget displaying a title, percentage fill bar, and right-aligned numeric reading.
+- **Nameless Shorthand**: `win.metric_meter(title, value, min_val, max_val, unit)`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `title`: Metric meter title.
+  - `value`: Current fill value.
+  - `min_val` / `max_val`: Scale bounds.
+  - `unit`: Value suffix.
+- **Getters & Setters**: `win.get_metric_meter(name) int`, `win.set_metric_meter(name, val int)`
 
 ```v
-win.add_range_slider('price_range', 0, 1000, 150, 600)
-win.range_slider(0, 1000, 150, 600)
+win.add_metric_meter('ram_usage', 'RAM Usage', 64, 0, 100, '%')
 ```
 
-### `win.add_split_button(name string, title string, menu_items []string)` / `win.split_button(title string, menu_items []string) &SimpleWindow`
-
-Adds a primary action button paired with a secondary dropdown popup menu.
-
-- **Parameters**: `title` sets main button text; `menu_items` specifies popup menu options.
-- **Events**: Main button click fires `click` events (`.on_click()`). Menu item selection fires `"select_item"` (`.on_select_item()`) and `"change"` (`.on_change()`).
+#### `win.add_level_indicator(name string, style int, min_val int, max_val int, value int) &SimpleWindow`
+Adds a versatile native macOS level and capacity gauge indicator (`NSLevelIndicator`).
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `style`: Indicator style:
+    - `0`: Relevancy indicator
+    - `1`: Continuous capacity meter
+    - `2`: Discrete capacity meter (tick blocks)
+    - `3`: Star Rating selector
+  - `min_val` / `max_val`: Value bounds.
+  - `value`: Initial integer value.
+- **Getters & Setters**: `win.get_value_int(name)`, `win.set_value_int(name, val)`
 
 ```v
-win.add_split_button('save_split', 'Save File', ['Save As...', 'Export PDF'])
-win.split_button('Save File', ['Save As...', 'Export PDF'])
+win.add_level_indicator('battery_meter', 1, 0, 100, 80)
 ```
 
-### `win.add_tag_cloud(name string, tags []string)` / `win.tag_cloud(tags []string) &SimpleWindow`
-
-Adds an interactive tag chips list widget.
-
-- **Parameters**: `tags` array contains active tag string labels.
-- **Updating**: `win.set_tag_cloud_tags(name, tags)` updates the chip list.
-- **Events**: Tag chip clicks fire `"click_tag"` (`.on_click_tag()`) events with the tag text.
+#### `win.add_spinner(name string, active bool) &SimpleWindow`
+Adds an indeterminate activity loading spinner (`NSProgressIndicator` in spinning style).
+- **Nameless Shorthand**: `win.spinner(active bool) &SimpleWindow`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `active`: If `true`, spinner spins and is visible; if `false`, animation stops and spinner hides.
+- **Getters & Setters**: `win.get_bool(name) bool`, `win.set_bool(name, active bool)`
 
 ```v
-win.add_tag_cloud('skills_tags', ['V', 'Cocoa', 'GUI', 'macOS'])
-win.tag_cloud(['V', 'Cocoa', 'GUI', 'macOS'])
+win.add_spinner('loading_spinner', true)
 ```
 
-### `win.add_wizard_stepper(name string, steps []string, current_step int)` / `win.wizard_stepper(steps []string, current_step int) &SimpleWindow`
-
-Adds a multi-step process indicator bar showing active, completed, and pending step states.
-
-- **Parameters**: `steps` list of step titles; `current_step` 0-based active step index.
-- **Updating**: `win.set_wizard_stepper_step(name, step)` updates active step index.
-- **Events**: Step clicks fire `"change_step"` (`.on_change_step()`) events with the new step index string.
+#### `win.add_rating(name string, value int) &SimpleWindow` / `win.add_star_rating(name string, value int, max_stars int) &SimpleWindow`
+Adds an interactive 5-star (or custom `max_stars`) rating selector control. Clicking stars updates the score.
+- **Nameless Shorthand**: `win.rating(value int)`, `win.star_rating(value, max_stars)`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `value`: Initial active star rating.
+  - `max_stars`: Total star count (defaults to 5 in `add_rating`).
+- **Getters & Setters**: `win.get_star_rating_value(name) int`, `win.set_star_rating_value(name, val int)`, `win.get_value_int(name)`
+- **Events**: `.on_change(name, cb)` / `.onchange(cb)` (receives rating integer as string)
 
 ```v
-win.add_wizard_stepper('checkout_wizard', ['Cart', 'Shipping', 'Payment', 'Review'], 1)
-win.wizard_stepper(['Cart', 'Shipping', 'Payment', 'Review'], 1)
+win.add_rating('app_feedback', 4)
+   .onchange(fn (mut win simplegui.SimpleWindow, rating_str string) {
+       println('User rated: ${rating_str} stars')
+   })
 ```
 
-### `win.add_section_header(name string, title string, subtitle string)` / `win.section_header(title string, subtitle string) &SimpleWindow`
-
-Adds a section header layout widget featuring a bold section title, optional subtitle, and a full-width divider line.
+#### `win.add_rating_breakdown(name string, avg_score f64, total_reviews int, star_percentages []f64) &SimpleWindow`
+Displays review rating scores and star percentage breakdown bars (5★ down to 1★).
+- **Nameless Shorthand**: `win.rating_breakdown(avg_score, total_reviews, star_percentages)`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `avg_score`: Average review rating (e.g. `4.8`).
+  - `total_reviews`: Total number of ratings count.
+  - `star_percentages`: 5-element float array for 5★, 4★, 3★, 2★, 1★ percentage bars.
+- **Getters & Setters**: `win.set_rating_breakdown_data(name, avg_score, total_reviews, star_percentages)`
 
 ```v
-win.add_section_header('sec_hdr', 'Security Settings', 'Manage passwords and 2FA authentication')
-win.section_header('Security Settings', 'Manage passwords and 2FA authentication')
+win.add_rating_breakdown('product_reviews', 4.8, 1250, [75.0, 18.0, 4.0, 2.0, 1.0])
 ```
 
-### `win.add_vertical_slider(name string, value int, min_val int, max_val int, height int)` / `win.vertical_slider(value int, min_val int, max_val int, height int) &SimpleWindow`
-
-Adds a standalone native vertical `NSSlider` control with a live numeric value indicator label.
-
-- **Accessing**: Use `win.get_vertical_slider(name)` / `win.set_vertical_slider(name, value)` to read or update numeric slider values.
-- **Events**: User interactions fire `change` events with the new integer value.
+#### `win.add_segment_distribution_bar(name string, labels []string, values []f64, hex_colors []string, height int) &SimpleWindow`
+Adds a multi-segment horizontal distribution bar chart (like disk storage breakdown in macOS Settings).
+- **Nameless Shorthand**: `win.segment_distribution_bar(labels, values, hex_colors, height)`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `labels`: Array of segment category names.
+  - `values`: Array of segment proportional values.
+  - `hex_colors`: Array of segment hex colors.
+  - `height`: Bar height in pixels.
 
 ```v
-win.add_vertical_slider('eq_bass', 50, 0, 100, 200)
-win.vertical_slider(50, 0, 100, 200)
+win.add_segment_distribution_bar('storage_bar', ['Apps', 'Documents', 'System', 'Free'], [45.0, 30.0, 15.0, 10.0], ['#007aff', '#ff9500', '#5856d6', '#8e8e93'], 24)
 ```
 
-### `win.add_chip_group(name string, chips []string, selected string)` / `win.chip_group(chips []string, selected string) &SimpleWindow`
+---
 
-Adds a modern segmented tag/chip pill selection bar (`NSSegmentedControl`) for easy item or category selection.
+### 3.7 Date, Time, Color & File Pickers
 
-- **Accessing**: Retrieve or update the active chip using `win.get_chip_selected(name)` / `win.set_chip_selected(name, chip)`.
-- **Events**: Segment selection fires `change` events with the selected chip's text string.
+#### `win.add_date_picker(name string, date string) &SimpleWindow`
+Adds a calendar date picker input (`NSDatePicker` in textual date mode).
+- **Nameless Shorthand**: `win.date_picker(date string) &SimpleWindow`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `date`: Initial date string formatted as `yyyy-mm-dd` (e.g. `'2026-08-21'`).
+- **Getters & Setters**: `win.get_text(name) string`, `win.set_text(name, date string)`
+- **Events**: `.on_change(name, cb)` / `.onchange(cb)`
 
 ```v
-win.add_chip_group('filter_chips', ['All', 'Active', 'Completed'], 'Active')
-win.chip_group(['All', 'Active', 'Completed'], 'Active')
+win.add_date_picker('event_date', '2026-08-21')
+   .onchange(fn (mut win simplegui.SimpleWindow, date string) {
+       println('Selected date: ${date}')
+   })
 ```
 
-### `win.add_badge(name string, text string, style string)` / `win.badge_pill(text string, style string) &SimpleWindow`
-
-Adds a pill-shaped status badge label with styled background tint and text color.
-
-- **Parameters**: `style` accepts `"success"`, `"error"`, `"warning"`, `"info"`, or `"neutral"`.
-- **Accessing**: Use `win.get_badge(name)` and `win.set_badge(name, text, style)` to retrieve or update badge content dynamically.
-
-```v
-win.add_badge('status_badge', 'ONLINE', 'success')
-win.badge_pill('ONLINE', 'success')
-```
-
-### `win.add_icon_segments(name string, symbols []string, selected string)` / `win.icon_segments(symbols []string, selected string) &SimpleWindow`
-
-Adds an SF Symbol-powered segmented button bar for switching modes or views with native icons.
-
-```v
-win.add_icon_segments('view_mode', ['square.grid.2x2', 'list.bullet'], 'list.bullet')
-win.icon_segments(['square.grid.2x2', 'list.bullet'], 'list.bullet')
-```
-
-### `win.add_status_indicator(name string, label string, status string)` / `win.status_indicator(label string, status string) &SimpleWindow`
-
-Adds an LED status indicator light dot alongside a text title.
-
-- **Parameters**: `status` accepts `"active"` / `"online"` (emerald green LED), `"warning"` / `"busy"` (orange LED), `"error"` / `"offline"` (red LED), or `"idle"` (gray LED).
-- **Accessing**: Use `win.get_status_indicator(name)` and `win.set_status_indicator(name, status)` to read or update state dynamically.
-
-```v
-win.add_status_indicator('server_status', 'Database Server', 'online')
-win.status_indicator('Database Server', 'online')
-```
-
-### `win.add_metric_meter(name string, title string, value int, min_val int, max_val int, unit string)` / `win.metric_meter(title string, value int, min_val int, max_val int, unit string) &SimpleWindow`
-
-Adds a resource meter card widget displaying a title, percentage fill bar, and right-aligned numeric reading (e.g. `48%` or `28 MB/s`).
-
-- **Accessing**: Use `win.get_metric_meter(name)` and `win.set_metric_meter(name, value)` to read or update meter progress dynamically.
-
-```v
-win.add_metric_meter('cpu_meter', 'CPU Usage', 42, 0, 100, '%')
-win.metric_meter('CPU Usage', 42, 0, 100, '%')
-```
-
-### `win.add_avatar_card(name string, title string, subtitle string, status string)` / `win.avatar_card(title string, subtitle string, status string) &SimpleWindow`
-
-Adds a user/profile avatar tile widget featuring a round initial badge, title text, subtitle, and live status pill.
-
-- **Accessing**: Use `win.set_avatar_card(name, title, subtitle, status)` to update operator profile cards dynamically.
-
-```v
-win.add_avatar_card('user_card', 'Ada Lovelace', 'Lead Engineer', 'active')
-win.avatar_card('Ada Lovelace', 'Lead Engineer', 'active')
-```
-
-### `win.add_time_picker(name string, time string)` / `win.time_picker(time string) &SimpleWindow`
-
+#### `win.add_time_picker(name string, time string) &SimpleWindow`
 Adds a standalone native Cocoa clock/time selector (`NSDatePicker` with hour/minute/second stepper).
-
-- **Accessing**: Use `win.get_time_picker(name)` and `win.set_time_picker(name, time)` to read or update the selected time string (e.g. `"14:30:00"`).
-
-```v
-win.add_time_picker('alarm_time', '14:30:00')
-win.time_picker('14:30:00')
-```
-
-### `win.add_tray_icon(name string, symbol string, title string)` / `win.tray_icon(symbol string, title string) &SimpleWindow`
-
-Adds a macOS system menu bar status item / tray icon (`NSStatusItem`) in the top menu bar.
-
-- **Accessing**: Use `win.set_tray_icon(name, symbol, title)` to update the status bar icon or title dynamically.
+- **Nameless Shorthand**: `win.time_picker(time string) &SimpleWindow`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `time`: Time string formatted as `HH:MM:SS` (e.g. `'14:30:00'`).
+- **Getters & Setters**: `win.get_time_picker(name) string`, `win.set_time_picker(name, time string)`
+- **Events**: `.on_change(name, cb)`
 
 ```v
-win.add_tray_icon('app_tray', 'gearshape', 'SimpleGUI Helper')
-win.tray_icon('gearshape', 'SimpleGUI Helper')
+win.add_time_picker('scheduled_time', '09:00:00')
 ```
 
-### `win.add_collapsible_section(name string, title string, expanded bool)` / `win.collapsible_section(title string, expanded bool) &SimpleWindow`
-
-Adds a collapsible accordion container section header featuring an interactive disclosure triangle toggle.
-
-- **Accessing**: Use `win.set_collapsible_section_expanded(name, expanded)` to programmatically expand or collapse the section header.
+#### `win.add_date_time_picker(name string, datetime string) &SimpleWindow`
+Adds a combined date and time picker input control.
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `datetime`: Formatted timestamp (e.g. `'2026-08-21 14:30:00'`).
+- **Getters & Setters**: `win.get_text(name)`, `win.set_text(name, datetime)`
 
 ```v
-win.add_collapsible_section('adv_opts', 'Advanced Options', false)
-win.collapsible_section('Advanced Options', false)
+win.add_date_time_picker('meeting_slot', '2026-08-21 14:30:00')
 ```
 
-### `win.add_code_editor(name string, code string, height int)` / `win.code_editor(code string, height int) &SimpleWindow`
+#### `win.add_color_well(name string, color string) &SimpleWindow`
+Adds a native macOS color well block (`NSColorWell`). Clicking it launches the system Color Picker.
+- **Nameless Shorthand**: `win.color_well(color string) &SimpleWindow`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `color`: Hex color string (e.g. `'#007aff'`).
+- **Getters & Setters**: `win.get_text(name) string`, `win.set_text(name, hex string)`
+- **Events**: `.on_change(name, cb)` / `.onchange(cb)`
 
+```v
+win.add_color_well('accent_picker', '#007aff')
+   .onchange(fn (mut win simplegui.SimpleWindow, hex string) {
+       println('Chosen color: ${hex}')
+   })
+```
+
+#### `win.add_color_palette(name string, hex_colors []string, selected string) &SimpleWindow`
+Adds a swatch color palette picker widget with round color swatches.
+- **Nameless Shorthand**: `win.color_palette(hex_colors []string, selected string)`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `hex_colors`: Array of swatch hex colors.
+  - `selected`: Initially selected hex string.
+- **Getters & Setters**: `win.get_color_palette_selected(name) string`, `win.set_color_palette_selected(name, hex string)`
+- **Events**: `.on_change(name, cb)`
+
+```v
+win.add_color_palette('theme_palette', ['#007aff', '#34c759', '#ff9500', '#ff3b30', '#af52de'], '#007aff')
+```
+
+#### `win.add_color_grid(name string, colors []string) &SimpleWindow` / `win.add_color_swatch_panel(...)`
+Adds a grid of selectable color swatch squares.
+- **Getters & Setters**: `win.set_color_grid_selected(name, hex string)`
+
+```v
+win.add_color_grid('palette_grid', ['#1c1c1e', '#2c2c2e', '#3a3a3c', '#48484a', '#636366'])
+```
+
+#### `win.add_file_picker_field(name string, initial_path string, button_title string, folder_only bool) &SimpleWindow`
+Adds a text path field coupled with a native macOS Cocoa `NSOpenPanel` file/directory chooser button.
+- **Nameless Shorthand**: `win.file_picker_field(initial_path, button_title, folder_only)`
+- **Alias**: `win.add_labeled_file_picker(label, name, initial_path, button_title, folder_only)`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `initial_path`: Default path string.
+  - `button_title`: Browse button title (e.g. `'Browse...'`).
+  - `folder_only`: `true` to select directories; `false` to select files.
+- **Getters & Setters**: `win.get_file_picker_path(name) string`, `win.set_file_picker_path(name, path string)`
+- **Events**: `.on_change(name, cb)`
+
+```v
+win.add_file_picker_field('backup_dir', '/Users/ada/Backups', 'Select Folder...', true)
+```
+
+#### `win.add_path_control(name string, path string) &SimpleWindow`
+Adds a modern breadcrumb folder track path control (`NSPathControl`) with system file icons and double-click navigation.
+- **Nameless Shorthand**: `win.path_control(path string) &SimpleWindow`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `path`: Target file or directory path.
+- **Getters & Setters**: `win.get_text(name)`, `win.set_text(name, path)`
+
+```v
+win.add_path_control('active_doc_path', '/Users/ada/Projects/SimpleGUI/main.v')
+```
+
+#### `win.add_drop_zone(name string, label string) &SimpleWindow`
+Adds a drag-and-drop target zone for accepting dropped files, folders, and documents.
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `label`: Instructions label text inside the dashed drop zone.
+- **Events**: `win.on_file_drop(cb)` (receives array of dropped file path strings `[]string`)
+
+```v
+win.add_drop_zone('upload_dropzone', 'Drag & drop image files here')
+win.on_file_drop(fn (mut win simplegui.SimpleWindow, files []string) {
+    for f in files {
+        println('Received file: ${f}')
+    }
+})
+```
+
+---
+
+### 3.8 Rich Media, Markdown, Code & Terminal Views
+
+#### `win.add_image(name string, file_path string) &SimpleWindow`
+Adds an image view box (`NSImageView`) displaying a local PNG or JPEG file.
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `file_path`: Path to the image file on disk.
+- **Getters & Setters**: `win.set_image_path(name, path string)`
+
+```v
+win.add_image('app_logo', 'assets/logo.png')
+   .width(120)
+   .height(120)
+```
+
+#### `win.add_html_view(name string, html string) &SimpleWindow`
+Adds a high-performance WebKit browser view (`WKWebView`) rendering HTML/CSS content.
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `html`: HTML string payload.
+- **Getters & Setters**: `win.set_html(name, html string)`
+
+```v
+win.add_html_view('html_preview', '<div style="font-family: -apple-system; padding: 12px;"><h2 style="color: #007aff;">WebKit HTML Panel</h2><p>Embedded rich web content in SimpleGUI.</p></div>')
+   .height(180)
+```
+
+#### `win.add_markdown_view(name string, markdown_text string, height int) &SimpleWindow`
+Adds a styled Markdown view widget rendering formatted headers, bold/italic text, code blocks, and bullet lists.
+- **Nameless Shorthand**: `win.markdown_view(markdown_text string, height int)`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `markdown_text`: Initial markdown string.
+  - `height`: View height in pixels.
+- **Getters & Setters**: `win.get_markdown_view_text(name) string`, `win.set_markdown_view_text(name, md string)`
+
+```v
+win.add_markdown_view('doc_preview', '# SimpleGUI\n\n- Native macOS **Cocoa** widgets\n- High performance `V` bridge\n- Ergonomic API', 200)
+```
+
+#### `win.add_code_view(name string, lang string, code_text string, height int) &SimpleWindow`
+Adds a dark monospaced code snippet viewer widget with line background styling.
+- **Nameless Shorthand**: `win.code_view(lang, code_text, height)`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `lang`: Language identifier (e.g. `'v'`, `'c'`, `'json'`, `'python'`).
+  - `code_text`: Source code text.
+  - `height`: Container height in pixels.
+- **Getters & Setters**: `win.get_code_view_text(name) string`, `win.set_code_view_text(name, code string)`
+
+```v
+win.add_code_view('v_sample', 'v', 'module main\n\nfn main() {\n    println("Hello SimpleGUI")\n}', 140)
+```
+
+#### `win.add_code_editor(name string, code string, height int) &SimpleWindow`
 Adds an integrated dark-themed monospaced code editor container view.
-
-- **Accessing**: Use `win.get_code_editor(name)` and `win.set_code_editor(name, code)` to read or update text source code dynamically.
+- **Nameless Shorthand**: `win.code_editor(code string, height int)`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `code`: Initial editable source code.
+  - `height`: Editor height in pixels.
+- **Getters & Setters**: `win.get_code_editor(name) string`, `win.set_code_editor(name, code string)`
 
 ```v
-win.add_code_editor('code_in', 'module main\n\nfn main() {\n\tprintln("Hello")\n}', 240)
-win.code_editor('module main\n\nfn main() {\n\tprintln("Hello")\n}', 240)
+win.add_code_editor('editor', 'fn compute() int {\n    return 42\n}', 220)
 ```
 
-### `win.add_timeline_view(name string, height int)` / `win.timeline_view(height int) &SimpleWindow`
-
-Adds an activity feed timeline stream widget for displaying real-time event logs with colored status indicators.
-
-- **Accessing**: Append event entries using `win.add_timeline_entry(name, time, title, detail, style)` or clear with `win.clear_timeline(name)`. `style` accepts `"success"`, `"warning"`, `"error"`, or `"info"`.
+#### `win.add_diff_view(name string, old_text string, new_text string, height int) &SimpleWindow`
+Adds a side-by-side or line-by-line visual diff comparison view widget with colored addition (+) and deletion (-) markers.
+- **Nameless Shorthand**: `win.diff_view(old_text, new_text, height)`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `old_text`: Original baseline text.
+  - `new_text`: Updated text to compare against.
+  - `height`: Height in pixels.
+- **Getters & Setters**: `win.set_diff_view(name, old_text, new_text)`
 
 ```v
-win.add_timeline_view('log_timeline', 200)
-win.timeline_view(200)
+win.add_diff_view('git_diff', 'let count = 10;', 'mut count := 20', 160)
 ```
 
-### `win.add_toolbar_item(name string, label string, tooltip string, symbol string)` & `win.on_toolbar_click(name, callback)`
-
-Adds a native macOS titlebar `NSToolbar` button with an SF Symbol icon and label, and wires click event handling.
+#### `win.add_terminal_view(name string, prompt_text string, height int) &SimpleWindow`
+Adds an interactive dark-themed terminal view widget for logging CLI output and shell activity.
+- **Nameless Shorthand**: `win.terminal_view(prompt_text, height)`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `prompt_text`: Initial prompt banner text.
+  - `height`: Height in pixels.
+- **Appenders**: `win.append_terminal_line(name string, line string, line_type int)` (0=prompt, 1=stdout, 2=stderr, 3=success)
 
 ```v
-win.add_toolbar_item('tb_reload', 'Reload', 'Refresh data', 'arrow.clockwise')
+win.add_terminal_view('term', 'SimpleGUI Shell v1.0', 180)
+win.append_terminal_line('term', 'Compiling main.v...', 0)
+win.append_terminal_line('term', 'Build complete (0 warnings).', 3)
+```
+
+#### `win.add_console(name string, height int) &SimpleWindow`
+Adds a developer-style scrollable logging console with automatic color-coding by severity level.
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `height`: Console height in pixels.
+- **Appenders & Clearers**:
+  - `win.append_console(name string, text string, level int)`:
+    - `0`: Normal / Log (Default text color)
+    - `1`: Info (System Blue)
+    - `2`: Warning (System Yellow / Orange)
+    - `3`: Error (System Red)
+    - `4`: Success (System Green)
+  - `win.clear_console(name string)`
+
+```v
+win.add_console('dev_log', 150)
+win.append_console('dev_log', 'App initialized.', 0)
+win.append_console('dev_log', 'Connecting to database...', 1)
+win.append_console('dev_log', 'Connection established.', 4)
+```
+
+#### `win.add_json_tree(name string, json_str string, height int) &SimpleWindow`
+Adds an interactive collapsible JSON tree inspector widget with syntax formatting.
+- **Nameless Shorthand**: `win.json_tree(json_str string, height int)`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `json_str`: Valid JSON string payload.
+  - `height`: Container height in pixels.
+- **Getters & Setters**: `win.set_json_tree(name, json_str string)`
+
+```v
+win.add_json_tree('json_viewer', '{"status": "ok", "user": {"id": 101, "name": "Ada"}}', 180)
+```
+
+#### `win.add_audio_waveform(name string, amplitudes []f64, height int) &SimpleWindow`
+Adds an audio sound level amplitude waveform visualizer widget.
+- **Nameless Shorthand**: `win.audio_waveform(amplitudes []f64, height int)`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `amplitudes`: Array of float amplitude levels (0.0 to 1.0).
+  - `height`: Waveform height in pixels.
+- **Getters & Setters**: `win.set_audio_waveform_data(name, amplitudes []f64)`
+
+```v
+win.add_audio_waveform('audio_meter', [0.1, 0.4, 0.8, 0.6, 0.9, 0.3, 0.5, 0.7], 60)
+```
+
+---
+
+### 3.9 Cards, Status Indicators, Badges & Feeds
+
+#### `win.add_stat_card(name string, title string, value string, trend string, trend_style string) &SimpleWindow`
+Adds a dashboard metric stat card displaying an uppercase title, large metric value, and colored trend indicator pill.
+- **Nameless Shorthand**: `win.stat_card(title, value, trend, trend_style)`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `title`: Header caption (e.g. `'TOTAL REVENUE'`).
+  - `value`: Main display metric string (e.g. `'$45,230'`).
+  - `trend`: Trend pill string (e.g. `'+12.5%'`).
+  - `trend_style`: Color preset: `'success'` (green), `'error'` (red), `'warning'` (orange), `'info'` (blue).
+- **Getters & Setters**: `win.set_stat_card(name, value, trend, trend_style)`
+
+```v
+win.add_stat_card('stat_sales', 'TOTAL SALES', '$128,450', '+18.4% vs last month', 'success')
+```
+
+#### `win.add_metric_card(name string, title string, value string, change_badge string, subtitle string) &SimpleWindow`
+Displays a KPI statistics card with title, large value, trend change badge, and footer subtitle.
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `title`: Header title text.
+  - `value`: Main stat value.
+  - `change_badge`: Trend badge text (e.g. `'+4.2%'`).
+  - `subtitle`: Small footer subtitle (e.g. `'30-day average'`).
+- **Getters & Setters**: `win.set_metric_card_value(name, value, change_badge)`
+
+```v
+win.add_metric_card('kpi_active_users', 'Active Users', '14,892', '+8.1%', 'Daily active operators')
+```
+
+#### `win.add_key_value_card(name string, title string, keys []string, values []string) &SimpleWindow`
+Adds a structured summary card displaying key-value data rows.
+- **Nameless Shorthand**: `win.key_value_card(title, keys, values)`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `title`: Card title header.
+  - `keys`: Array of property keys.
+  - `values`: Array of matching property values.
+- **Getters & Setters**: `win.set_key_value_card_data(name, keys, values)`
+
+```v
+win.add_key_value_card('sys_spec', 'Hardware Overview', ['Model', 'Chip', 'Memory', 'OS'], ['MacBook Pro', 'Apple M2 Max', '32 GB', 'macOS 15.0'])
+```
+
+#### `win.add_avatar_card(name string, title string, subtitle string, status string) &SimpleWindow`
+Adds a user/profile avatar tile widget featuring a round initial badge, title text, subtitle, and live status pill.
+- **Nameless Shorthand**: `win.avatar_card(title, subtitle, status)`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `title`: User display name.
+  - `subtitle`: Role or organization.
+  - `status`: Status string (`'active'`, `'busy'`, `'offline'`).
+- **Getters & Setters**: `win.set_avatar_card(name, title, subtitle, status)`
+
+```v
+win.add_avatar_card('user_profile', 'Ada Lovelace', 'Lead Systems Architect', 'active')
+```
+
+#### `win.add_http_request_card(name string, method string, url string, status_code int, response_time_ms int) &SimpleWindow`
+Adds an HTTP request inspector card widget displaying HTTP method badge, URL endpoint, status code, and latency.
+- **Nameless Shorthand**: `win.http_request_card(method, url, status_code, response_time_ms)`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `method`: HTTP method (`'GET'`, `'POST'`, `'PUT'`, `'DELETE'`).
+  - `url`: Request URL string.
+  - `status_code`: HTTP response status code (e.g. `200`, `404`).
+  - `response_time_ms`: Request duration in milliseconds.
+
+```v
+win.add_http_request_card('http_log', 'GET', 'https://api.vlang.io/v1/packages', 200, 48)
+```
+
+#### `win.add_resource_monitor(name string, cpu_pct int, mem_pct int, disk_pct int, net_kbps int) &SimpleWindow`
+Adds a multi-gauge resource monitor dashboard widget for CPU, RAM, Disk, and Network telemetry.
+- **Nameless Shorthand**: `win.resource_monitor(cpu_pct, mem_pct, disk_pct, net_kbps)`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `cpu_pct` / `mem_pct` / `disk_pct`: Percentages (0–100).
+  - `net_kbps`: Current network throughput in KB/s.
+- **Getters & Setters**: `win.set_resource_monitor(name, cpu, mem, disk, net)`
+
+```v
+win.add_resource_monitor('res_mon', 24, 48, 62, 1240)
+```
+
+#### `win.add_env_vars(name string, title string, keys []string, values []string) &SimpleWindow`
+Adds a collapsible environment variables summary card widget.
+- **Nameless Shorthand**: `win.env_vars(title, keys, values)`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `title`: Header title.
+  - `keys`: Array of environment variable names.
+  - `values`: Array of corresponding environment variable values.
+
+```v
+win.add_env_vars('env_card', 'Environment Variables', ['PATH', 'SHELL', 'USER'], ['/usr/bin:/bin', '/bin/zsh', 'ada'])
+```
+
+#### `win.add_banner(name string, text string, style string) &SimpleWindow`
+Adds an alert message banner strip across the window layout.
+- **Nameless Shorthand**: `win.banner(text string, style string)`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `text`: Message body text.
+  - `style`: Visual style preset: `'info'`, `'success'`, `'warning'`, or `'error'`.
+
+```v
+win.add_banner('maint_banner', 'System maintenance is scheduled for midnight UTC.', 'warning')
+```
+
+#### `win.add_alert_banner(name string, title string, message string, style string) &SimpleWindow`
+Adds a dismissible notification banner with an icon, title, message, and close (x) button.
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `title`: Alert title.
+  - `message`: Alert message text.
+  - `style`: Severity style: `'info'`, `'success'`, `'warning'`, `'error'`.
+
+```v
+win.add_alert_banner('sec_alert', 'Security Update Available', 'Version 2.4 contains critical patches.', 'info')
+```
+
+#### `win.add_status_banner(name string, title string, message string, style_type string) &SimpleWindow`
+Adds a styled status alert strip.
+- **Nameless Shorthand**: `win.status_banner(title, message, style_type)`
+- **Getters & Setters**: `win.set_status_banner(name, title, message, style_type)`
+
+```v
+win.add_status_banner('db_status', 'Database Connected', 'Latency: 1.2ms to primary replica', 'success')
+```
+
+#### `win.add_info_callout(name string, title string, message string, style_type string, button_text string) &SimpleWindow`
+Adds an actionable info callout card with a title, message, and action button.
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `title`: Callout title.
+  - `message`: Callout description.
+  - `style_type`: Style preset (`'info'`, `'warning'`, `'success'`, `'error'`).
+  - `button_text`: Action button label.
+
+```v
+win.add_info_callout('trial_callout', 'Pro Trial Active', 'Your trial expires in 7 days.', 'warning', 'Upgrade Now')
+```
+
+#### `win.add_status_indicator(name string, label string, status string) &SimpleWindow`
+Adds an LED status indicator light dot alongside a text title.
+- **Nameless Shorthand**: `win.status_indicator(label string, status string)`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `label`: Label text beside LED.
+  - `status`: Indicator state:
+    - `'active'` / `'online'`: Emerald green LED
+    - `'warning'` / `'busy'`: Orange LED
+    - `'error'` / `'offline'`: Crimson red LED
+    - `'idle'`: Slate gray LED
+- **Getters & Setters**: `win.get_status_indicator(name) string`, `win.set_status_indicator(name, status string)`
+
+```v
+win.add_status_indicator('db_led', 'Database Cluster', 'online')
+```
+
+#### `win.add_badge(name string, text string, style string) &SimpleWindow`
+Adds a pill-shaped status badge label with styled background tint and text color.
+- **Nameless Shorthand**: `win.badge_pill(text string, style string)`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `text`: Badge text.
+  - `style`: Badge style preset: `'success'`, `'error'`, `'warning'`, `'info'`, `'neutral'`.
+- **Getters & Setters**: `win.get_badge(name) string`, `win.set_badge(name, text string, style string)`
+
+```v
+win.add_badge('prod_badge', 'PRODUCTION', 'success')
+```
+
+#### `win.add_status_dock(name string, status_text string, dot_color string, count_text string) &SimpleWindow`
+Adds a status dock footer widget with status message, LED dot color, and item count badge.
+- **Nameless Shorthand**: `win.status_dock(status_text, dot_color, count_text)`
+- **Getters & Setters**: `win.set_status_dock_info(name, status_text, dot_color, count_text)`
+
+```v
+win.add_status_dock('footer_dock', 'Sync complete', '#34c759', '14 items')
+```
+
+#### `win.add_activity_feed(name string, height int) &SimpleWindow`
+Adds a scrollable activity log feed view widget.
+- **Nameless Shorthand**: `win.activity_feed(height int)`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `height`: Feed height in pixels.
+- **Appenders & Clearers**:
+  - `win.add_activity_feed_item(name, timestamp, message, level)`
+  - `win.clear_activity_feed(name)`
+
+```v
+win.add_activity_feed('audit_feed', 180)
+win.add_activity_feed_item('audit_feed', '10:14:22', 'User ada logged in from 127.0.0.1', 'info')
+win.add_activity_feed_item('audit_feed', '10:15:01', 'Schema migration executed', 'success')
+```
+
+#### `win.add_timeline(name string, height int) &SimpleWindow` / `win.add_timeline_view(...)`
+Adds a vertical milestone timeline event list widget.
+- **Nameless Shorthand**: `win.timeline(height int)`, `win.timeline_view(height int)`
+- **Appenders & Clearers**:
+  - `win.add_timeline_item(name, title, subtitle, time_str, status)`
+  - `win.add_timeline_entry(name, time_str, title, detail, style)`
+  - `win.clear_timeline(name)`
+
+```v
+win.add_timeline('order_timeline', 200)
+win.add_timeline_item('order_timeline', 'Order Placed', 'Payment confirmed via Apple Pay', '09:30 AM', 'completed')
+win.add_timeline_item('order_timeline', 'In Transit', 'Out for delivery with carrier', '02:15 PM', 'active')
+```
+
+#### `win.add_chart(name string, chart_type string, height int) &SimpleWindow`
+Adds a native line or area trend chart control.
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `chart_type`: Chart style: `'line'` or `'area'`.
+  - `height`: Chart height in pixels.
+- **Getters & Setters**: `win.set_chart_data(name, values []f64)`
+
+```v
+win.add_chart('traffic_chart', 'area', 160)
+win.set_chart_data('traffic_chart', [12.0, 18.5, 24.0, 32.0, 28.5, 45.0, 52.0])
+```
+
+#### `win.add_sparkline(name string, values []f64, height int) &SimpleWindow`
+Adds a compact inline sparkline trend chart.
+- **Nameless Shorthand**: `win.sparkline(values []f64, height int)`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `values`: Initial data points array.
+  - `height`: Sparkline height in pixels.
+- **Getters & Setters**: `win.set_sparkline_data(name, values []f64)`
+
+```v
+win.add_sparkline('trend_spark', [10.0, 14.0, 12.0, 18.0, 24.0, 22.0, 30.0], 36)
+```
+
+---
+
+### 3.10 Navigation, Workflow & Collapsible Containers
+
+#### `win.add_breadcrumbs(name string, segments []string) &SimpleWindow`
+Adds an interactive breadcrumb trail path navigator control.
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `segments`: Array of breadcrumb segment labels (e.g. `['Home', 'Settings', 'Security']`).
+- **Getters & Setters**: `win.set_breadcrumbs(name, segments []string)`
+- **Events**: `.on_change(name, cb)` (receives clicked segment text)
+
+```v
+win.add_breadcrumbs('nav_crumbs', ['Dashboard', 'Projects', 'SimpleGUI', 'API.md'])
+   .onchange(fn (mut win simplegui.SimpleWindow, segment string) {
+       println('Navigated to: ${segment}')
+   })
+```
+
+#### `win.add_step_tracker(name string, steps []string, current_step int) &SimpleWindow` / `win.add_wizard_stepper(...)`
+Adds a horizontal workflow process step indicator bar showing completed, active, and pending steps.
+- **Nameless Shorthand**: `win.step_tracker(steps, current_step)`, `win.wizard_stepper(steps, current_step)`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `steps`: Array of step titles (e.g. `['Cart', 'Shipping', 'Payment', 'Confirmation']`).
+  - `current_step`: 0-based active step index.
+- **Getters & Setters**: `win.get_step_tracker_step(name) int`, `win.set_step_tracker_step(name, step int)` / `win.set_wizard_stepper_step(name, step int)`
+- **Events**: `.on_change_step(name, cb)` / `.on_change(name, cb)`
+
+```v
+win.add_step_tracker('checkout_flow', ['Account', 'Billing', 'Verification', 'Finish'], 1)
+   .onchange(fn (mut win simplegui.SimpleWindow, step_idx string) {
+       println('Step changed to: ${step_idx}')
+   })
+```
+
+#### `win.add_pagination(name string, total_pages int, current_page int) &SimpleWindow`
+Adds a page navigation bar widget with Previous/Next buttons and page numbers.
+- **Nameless Shorthand**: `win.pagination(total_pages, current_page)`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `total_pages`: Total number of pages.
+  - `current_page`: 1-based active page number.
+- **Getters & Setters**: `win.get_pagination_page(name) int`, `win.set_pagination_page(name, page int, total_pages int)`
+- **Events**: `.on_change(name, cb)` (receives new page number string)
+
+```v
+win.add_pagination('table_pager', 10, 1)
+   .onchange(fn (mut win simplegui.SimpleWindow, page string) {
+       println('Loading page ${page}...')
+   })
+```
+
+#### `win.add_disclosure(name string, title string, open bool) &SimpleWindow`
+Adds an interactive disclosure triangle toggle (`NSButton` with disclosure style) that can reveal or hide nested content.
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `title`: Disclosure header title.
+  - `open`: Initial expanded/collapsed state.
+- **Getters & Setters**: `win.get_bool(name) bool`, `win.set_bool(name, open bool)`
+- **Events**: `.on_change(name, cb)`
+
+```v
+win.add_disclosure('disc_advanced', 'Advanced Diagnostic Settings', false)
+   .onchange(fn (mut win simplegui.SimpleWindow, state string) {
+       is_open := state == 'true'
+       win.set_control_visible('diag_panel', is_open)
+   })
+```
+
+#### `win.add_collapsible_section(name string, title string, expanded bool) &SimpleWindow`
+Adds a styled collapsible accordion section header featuring an interactive chevron toggle.
+- **Nameless Shorthand**: `win.collapsible_section(title, expanded)`
+- **Getters & Setters**: `win.set_collapsible_section_expanded(name, expanded bool)`
+
+```v
+win.add_collapsible_section('sec_advanced', 'Advanced Encryption Settings', false)
+```
+
+#### `win.add_accordion_group(name string, section_titles []string, expanded_index int) &SimpleWindow`
+Adds a multi-section accordion group container widget.
+- **Nameless Shorthand**: `win.accordion_group(section_titles, expanded_index)`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `section_titles`: Array of section header titles.
+  - `expanded_index`: 0-based index of initially expanded section.
+- **Getters & Setters**: `win.set_accordion_expanded(name, index int, expanded bool)`
+
+```v
+win.add_accordion_group('faq_accordion', ['What is SimpleGUI?', 'How does native rendering work?', 'Is it thread-safe?'], 0)
+```
+
+#### `win.add_property_grid(name string, props map[string]string) &SimpleWindow`
+Adds a two-column property inspector grid with key-value rows.
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `props`: Initial map of property names to values.
+- **Getters & Setters**: `win.set_property_grid_value(name, key string, val string)`
+
+```v
+win.add_property_grid('obj_inspector', {
+    'Class':     'SimpleWindow'
+    'Width':     '640'
+    'Height':    '480'
+    'Vibrancy':  'sidebar'
+    'Resizable': 'true'
+})
+```
+
+#### `win.add_toolbar_item(name string, label string, tooltip string, symbol string) &SimpleWindow`
+Adds a native macOS window titlebar `NSToolbar` item with an SF Symbol icon, label text, and hover tooltip.
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `label`: Title label under icon.
+  - `tooltip`: Tooltip string.
+  - `symbol`: SF Symbol icon name (e.g. `'arrow.clockwise'`, `'plus'`, `'trash'`).
+- **Events**: `win.on_toolbar_click(name, cb)`
+
+```v
+win.add_toolbar_item('tb_refresh', 'Refresh', 'Reload workspace data', 'arrow.clockwise')
+win.on_toolbar_click('tb_refresh', fn (mut win simplegui.SimpleWindow) {
+    win.toast('Workspace refreshed!')
+})
+```
+
+#### `win.add_tray_icon(name string, symbol string, title string) &SimpleWindow`
+Adds a macOS menu bar status item / tray icon (`NSStatusItem`) in the system menu bar.
+- **Nameless Shorthand**: `win.tray_icon(symbol, title)`
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `symbol`: SF Symbol name.
+  - `title`: Status bar text title.
+- **Getters & Setters**: `win.set_tray_icon(name, symbol, title)`
+
+```v
+win.add_tray_icon('app_status', 'bolt.fill', 'SimpleGUI')
+```
+
+---
+
+### 3.11 High-Level Form Row Helpers & Struct Reflection
+
+These helpers lay out a label and control side-by-side in a horizontal row container, saving boilerplate layout code:
+
+| Helper Method | Description |
+| :--- | :--- |
+| `win.add_form_field(label, name, value)` / `win.add_labeled_input(...)` | Label + text input |
+| `win.add_form_password(label, name, value)` / `win.add_labeled_password(...)` | Label + password field |
+| `win.add_form_textarea(label, name, value)` / `win.add_labeled_textarea(...)` | Label + multi-line textarea |
+| `win.add_form_slider(label, name, value)` / `win.add_labeled_slider(...)` | Label + horizontal slider |
+| `win.add_form_number(label, name, value)` / `win.add_labeled_number(...)` | Label + numeric stepper input |
+| `win.add_form_dropdown(label, name, items, selected)` / `win.add_labeled_dropdown(...)` | Label + popup dropdown selection |
+| `win.add_form_date_picker(label, name, date)` / `win.add_labeled_date_picker(...)` | Label + calendar date picker |
+| `win.add_form_date_time_picker(label, name, datetime)` | Label + date-time picker |
+| `win.add_form_progress(label, name, value)` / `win.add_labeled_progress(...)` | Label + progress indicator bar |
+| `win.add_form_switch(label, name, switch_label, checked)` / `win.add_labeled_switch(...)` | Label + toggle switch |
+| `win.add_labeled_checkbox(label, name, chk_text, checked)` | Label + checkbox |
+| `win.add_form_link(label, name, link_text, url)` | Label + hyperlink text button |
+| `win.add_labeled_file_picker(label, name, initial_path, button_title, folder_only)` | Label + file path input & browse button |
+| `win.add_action(name, title, callback)` | Push button with wired click callback |
+
+```v
+// Concise form layout with labeled helpers
+win.add_labeled_input('Full Name:', 'user_name', 'Ada Lovelace')
+win.add_labeled_password('Password:', 'user_pwd', '')
+win.add_labeled_dropdown('Role:', 'user_role', ['Admin', 'Developer', 'Viewer'], 'Developer')
+win.add_labeled_switch('Two-Factor Auth:', 'user_2fa', 'Require OTP on login', true)
+win.add_labeled_slider('Security Level:', 'sec_lvl', 80)
+win.add_labeled_date_picker('Expiration:', 'exp_date', '2027-01-01')
+win.add_action('btn_submit', 'Save Profile', fn (mut win simplegui.SimpleWindow) {
+    println('Saved user: ${win.get_text("user_name")}')
+})
+```
+
+#### Compile-Time Struct Form Generation (`add_form_from_struct[T]`)
+Automatically generates complete form fields with labels from any V struct using compile-time reflection:
+
+```v
+struct UserProfile {
+pub mut:
+    name       string @[required]
+    email      string @[email]
+    age        int    @[min: 18; max: 120]
+    newsletter bool
+}
+
+win.add_form_from_struct(UserProfile{
+    name:       'Ada Lovelace'
+    email:      'ada@vlang.io'
+    age:        36
+    newsletter: true
+})
+```
+
+---
+
+### 3.12 Nameless Default Control Helpers
+
+When building simple dialogs or single-control utility tools where you do not need to invent control names, use nameless helpers. They automatically assign sensible default keys (`'default_input'`, `'default_button'`, etc.):
+
+```v
+win.input('Ada Lovelace')
+println(win.get_input())
+
+win.textarea('Notes content')
+println(win.get_textarea())
+
+win.checkbox('Accept terms', true)
+println(win.get_checkbox())
+
+win.number(42)
+println(win.get_number())
+
+win.button('Submit')
+win.set_button('Submit Form')
 ```
 
 ---
 
 ## 4. Control Sizing & Styling
 
-Customize individual control dimensions and appearance by their registered name.
+Customize individual control dimensions, layout constraints, typography, colors, alignment, error indicators, and interactive states by their registered control handle.
 
-### `win.set_control_width(name string, width int) &SimpleWindow`
+### 4.1 Dimensions & Layout Constraints
 
-Overwrites the control's Auto Layout width constraint.
+#### `win.set_control_width(name string, width int) &SimpleWindow` / `win.get_control_width(name string) int`
+Sets or retrieves the Auto Layout width constraint of the specified control in pixels. Pass `0` or use default sizing for intrinsic system sizing.
+- **Fluent Modifier**: `.width(w int) &SimpleWindow`
 
 ```v
-win.set_control_width('btn_save', 200)
+win.set_control_width('username', 260)
+w := win.get_control_width('username')
 ```
 
-### `win.set_control_height(name string, height int) &SimpleWindow`
-
-Overwrites the control's Auto Layout height constraint.
+#### `win.set_control_height(name string, height int) &SimpleWindow` / `win.get_control_height(name string) int`
+Sets or retrieves the Auto Layout height constraint of the specified control in pixels.
+- **Fluent Modifier**: `.height(h int) &SimpleWindow`
 
 ```v
-win.set_control_height('txt_bio', 120)
+win.set_control_height('user_bio', 120)
+h := win.get_control_height('user_bio')
 ```
 
-### `win.set_control_font_size(name string, size int) &SimpleWindow`
-
-Changes the control's font size (handles labels, text fields, textareas, and buttons).
+#### `win.set_control_alignment(name string, alignment string) &SimpleWindow` / `win.get_control_alignment(name string) string`
+Sets or queries the alignment of a control within its container row or column.
+- **Accepted Values**: `'left'`, `'center'`, `'right'`, `'top'`, `'bottom'`
+- **Fluent Modifiers**: `.align_left()`, `.align_center()`, `.align_right()`, `.align_top()`, `.align_bottom()`
 
 ```v
-win.set_control_font_size('lbl_title', 18)
+win.set_control_alignment('btn_submit', 'right')
 ```
 
-### `win.set_control_font_bold(name string, bold bool) &SimpleWindow`
-
-Configures the control's font to Bold weight (supports labels, text fields, textareas, and buttons).
+#### `win.set_control_expand_fill(name string, expand bool) &SimpleWindow` / `win.get_control_expand_fill(name string) bool`
+Configures a control to stretch and fill all remaining horizontal or vertical space in its layout container.
+- **Fluent Modifier**: `.expand_fill() &SimpleWindow`
 
 ```v
-win.set_control_font_bold('lbl_title', true)
+win.add_input('search_query', '').expand_fill()
 ```
 
-### `win.set_control_font_name(name string, font_name string) &SimpleWindow`
+---
 
-Sets a custom font family/name (e.g. `"Courier"`, `"Helvetica"`, or `"Arial"`) for the control. Falls back to system font if unavailable.
+### 4.2 Typography & Fonts
+
+#### `win.set_control_font_size(name string, size int) &SimpleWindow` / `win.get_control_font_size(name string) int`
+Sets or queries the font size in points for labels, text fields, textareas, and buttons.
+- **Fluent Modifier**: `.font_size(size int) &SimpleWindow`
 
 ```v
-win.set_control_font_name('code_view', 'Courier')
+win.set_control_font_size('lbl_header', 18)
+sz := win.get_control_font_size('lbl_header')
 ```
 
-### `win.set_control_background_color(name string, hex_color string) &SimpleWindow`
-
-Sets a custom background color for the individual control.
-
-- **Notes**: The explicit color is remembered — a later `set_control_font_color()` call will not reset it. Applying a theme afterwards restyles the control with theme colors, so re-apply overrides after `set_theme()` if needed.
+#### `win.set_control_font_bold(name string, bold bool) &SimpleWindow`
+Applies Bold weight to the control's font typography.
+- **Fluent Modifier**: `.bold(bold bool) &SimpleWindow`
 
 ```v
-win.set_control_background_color('btn_accent', '#007aff')
+win.set_control_font_bold('lbl_header', true)
 ```
 
-### `win.set_control_font_color(name string, hex_color string) &SimpleWindow`
-
-Sets a custom text font color for the individual control.
-
-- **Notes**: Setting only the font color preserves any explicitly set background color (and vice versa).
+#### `win.set_control_font_name(name string, font_name string) &SimpleWindow`
+Applies a specific font family name (e.g. `'Courier'`, `'SF Pro'`, `'Helvetica'`, `'Menlo'`, `'Fira Code'`) directly to the control. Falls back to system font if unavailable.
+- **Fluent Modifier**: `.font_name(font_name string) &SimpleWindow`
 
 ```v
-win.set_control_font_color('btn_accent', '#ffffff')
+win.set_control_font_name('code_block', 'Menlo')
 ```
 
-### `win.set_control_visible(name string, visible bool) &SimpleWindow`
+---
 
-Toggles whether the control is shown on screen.
+### 4.3 Colors & Theming Overrides
 
-- **Notes**: Hidden controls will automatically collapse within `NSStackView` layouts, dynamically shifting surrounding elements.
+#### `win.set_control_background_color(name string, hex_color string) &SimpleWindow` / `win.get_control_background_color(name string) string`
+Sets or queries the custom background hex color (`#RRGGBB` or `#RGB`) for an individual control.
+- **Fluent Modifier**: `.color(hex_color string) &SimpleWindow`
+- **Behavior**: Setting background color preserves any previously configured font text color.
 
 ```v
-win.set_control_visible('adv_options', false)
+win.set_control_background_color('btn_primary', '#007aff')
+bg := win.get_control_background_color('btn_primary')
 ```
 
-### `win.get_control_visible(name string) bool`
-
-Checks if the control is currently visible.
+#### `win.set_control_font_color(name string, hex_color string) &SimpleWindow` / `win.get_control_font_color(name string) string`
+Sets or queries the custom text font hex color for an individual control.
+- **Fluent Modifier**: `.font_color(hex_color string) &SimpleWindow`
+- **Behavior**: Setting font color preserves any previously configured background color.
 
 ```v
-if win.get_control_visible('adv_options') {
-    println('Advanced options visible')
+win.set_control_font_color('btn_primary', '#ffffff')
+fg := win.get_control_font_color('btn_primary')
+```
+
+---
+
+### 4.4 Visibility & Interactivity
+
+#### `win.set_control_visible(name string, visible bool) &SimpleWindow` / `win.get_control_visible(name string) bool`
+Shows or hides the specified control. Hidden controls automatically collapse inside layout stacks (`NSStackView`), smoothly shifting surrounding elements.
+- **Fluent Modifier**: `.visible(visible bool) &SimpleWindow`
+- **Ergonomic Helpers**: `win.show_control(name)`, `win.hide_control(name)`, `win.toggle_control_visible(name) bool`, `win.show_controls(names []string)`, `win.hide_controls(names []string)`
+
+```v
+win.set_control_visible('advanced_settings_group', false)
+if win.get_control_visible('advanced_settings_group') {
+    println('Advanced panel is visible')
 }
 ```
 
-### `win.set_control_enabled(name string, enabled bool) &SimpleWindow`
-
-Enables/disables user interaction on the control. Disabled controls will render greyed out.
-
-```v
-win.set_control_enabled('btn_submit', true)
-```
-
-### `win.get_control_enabled(name string) bool`
-
-Checks if the control is currently enabled.
+#### `win.set_control_enabled(name string, enabled bool) &SimpleWindow` / `win.get_control_enabled(name string) bool`
+Enables or disables user interaction on the control. Disabled controls render greyed out according to macOS standard appearance.
+- **Fluent Modifier**: `.enabled(enabled bool) &SimpleWindow`
+- **Ergonomic Helpers**: `win.enable_control(name)`, `win.disable_control(name)`, `win.toggle_control_enabled(name) bool`, `win.enable_controls(names []string)`, `win.disable_controls(names []string)`, `win.enable_all_controls()`, `win.disable_all_controls()`
 
 ```v
-if win.get_control_enabled('btn_submit') {
-    println('Submit button enabled')
+win.set_control_enabled('btn_save', false)
+if win.get_control_enabled('btn_save') {
+    println('Save button is interactive')
 }
 ```
 
-### `win.get_control_background_color(name string) string`
-
-Gets the custom background HEX color string of the specified control, or an empty string if none is set.
-
-```v
-bg := win.get_control_background_color('btn_submit')
-```
-
-### `win.get_control_font_color(name string) string`
-
-Gets the custom font HEX color string of the specified control, or an empty string if none is set.
+#### `win.set_focus(name string) &SimpleWindow`
+Programmatically transfers keyboard input focus to the specified control.
 
 ```v
-fg := win.get_control_font_color('btn_submit')
+win.set_focus('username_input')
 ```
 
-### `win.get_control_width(name string) int`
-
-Gets the custom layout width constraint of the specified control, or `0` if not explicitly constrained.
+#### `win.set_control_cursor(name string, cursor_name string) &SimpleWindow`
+Assigns a custom mouse hover cursor icon while hovering over the control (e.g. `'pointing_hand'`, `'ibeam'`, `'crosshair'`, `'open_hand'`). Pass `''` or `'default'` to restore default cursor.
 
 ```v
-w := win.get_control_width('btn_submit')
+win.set_control_cursor('btn_action', 'pointing_hand')
 ```
 
-### `win.get_control_height(name string) int`
+---
 
-Gets the custom layout height constraint of the specified control, or `0` if not explicitly constrained.
+### 4.5 Placeholders, Tooltips & Default Button
 
-```v
-h := win.get_control_height('btn_submit')
-```
-
-### `win.get_control_font_size(name string) int`
-
-Gets the custom font size of the specified control, or `0` if not explicitly configured.
-
-```v
-sz := win.get_control_font_size('btn_submit')
-```
-
-### `win.set_placeholder(name string, text string) &SimpleWindow`
-
-Sets placeholder text for text-based controls such as inputs and password fields.
+#### `win.set_placeholder(name string, text string) &SimpleWindow` / `win.get_placeholder(name string) string`
+Sets or retrieves placeholder hint text displayed in empty text fields, search fields, or comboboxes.
+- **Fluent Modifier**: `.placeholder(text string) &SimpleWindow`
 
 ```v
 win.set_placeholder('email_input', 'user@domain.com')
 ```
 
-### `win.set_error(name string, text string) &SimpleWindow`
-
-Applies validation/error feedback to a control and highlights it visually.
-
-```v
-win.set_error('email_input', 'Invalid email format')
-```
-
-### `win.clear_errors() &SimpleWindow`
-
-Clears all active visual validation error states and error messages across all controls at once.
+#### `win.set_tooltip(name string, text string) &SimpleWindow` / `win.get_tooltip(name string) string`
+Attaches a hover tooltip popup to any control.
+- **Fluent Modifier**: `.tooltip(text string) &SimpleWindow`
 
 ```v
-win.clear_errors()
+win.set_tooltip('btn_backup', 'Create a full encrypted snapshot (⌘B)')
 ```
 
-### `win.clear_error(name string) &SimpleWindow`
+#### `win.set_default_button(name string) &SimpleWindow`
+Marks a button as the default action for the window. When the user presses the `Return` / `Enter` key, this button is automatically triggered.
 
-Clears the visual validation error state and error message for a specific named control.
+```v
+win.set_default_button('btn_submit')
+```
+
+---
+
+### 4.6 Validation & Inline Error States
+
+#### `win.set_error(name string, text string) &SimpleWindow` / `win.get_error(name string) string`
+Applies an error validation highlight to the control and displays the associated inline error tooltip/message.
+- **Fluent Modifier**: `.error(text string) &SimpleWindow`
+
+```v
+win.set_error('email_input', 'Please enter a valid email address')
+err := win.get_error('email_input')
+```
+
+#### `win.clear_error(name string) &SimpleWindow` / `win.clear_errors() &SimpleWindow`
+Clears the active error highlight from a specific named control, or clears all errors across the entire window at once.
 
 ```v
 win.clear_error('email_input')
+win.clear_errors()
 ```
 
-### `win.get_error(name string) string`
-
-Gets the validation error text currently associated with the specified control, or an empty string if there is no error.
+#### `win.validate_controls(validators map[string]ControlValidator) map[string]string`
+Validates a map of controls using custom validator callbacks `fn (value string) string` (returning empty string `""` if valid, or error message). Automatically sets inline errors on invalid controls and clears errors on valid ones.
 
 ```v
-err_text := win.get_error('email_input')
+errors := win.validate_controls({
+    'username': fn (val string) string {
+        if val.trim_space().len < 3 {
+            return 'Username must be at least 3 characters'
+        }
+        return ''
+    }
+    'email': fn (val string) string {
+        if !val.contains('@') {
+            return 'Invalid email format'
+        }
+        return ''
+    }
+})
 ```
 
-### `win.set_tooltip(name string, text string) &SimpleWindow`
+---
 
-Sets a hover tooltip for any control.
+### 4.7 Inspection, Diagnostics & Spy++ Controls API
+
+#### `win.spy_control(name string) ?ControlInfo`
+Inspects and returns a snapshot struct of all metadata for a single control:
+- **`ControlInfo` fields**: `name`, `kind`, `label`, `value`, `checked`, `number`, `enabled`, `visible`, `width`, `height`, `placeholder`, `error_text`, `tooltip`, `background_color`, `font_color`, `font_size`.
 
 ```v
-win.set_tooltip('btn_save', 'Click to save changes (Cmd+S)')
+if info := win.spy_control('btn_save') {
+    println('Control: ${info.name}, Kind: ${info.kind}, Enabled: ${info.enabled}')
+}
 ```
 
-### `win.set_default_button(name string) &SimpleWindow`
-
-Marks a button as the default Enter-key action for the window.
+#### `win.spy_controls() []ControlInfo` / `win.spy_tree() string` / `win.spy_json() string` / `win.spy_dump() map[string]string`
+Full-window inspection tools for diagnostics and automated testing:
+- `win.spy_controls()`: Returns array of `ControlInfo` for every registered control.
+- `win.spy_tree()`: Returns a visual ASCII tree hierarchy of all controls with their status and values.
+- `win.spy_json()`: Returns a structured JSON string of all controls.
+- `win.spy_dump()`: Returns a key-value summary map of all control states.
 
 ```v
-win.set_default_button('btn_save')
+println(win.spy_tree())
 ```
 
-### `win.set_html(name string, html string) &SimpleWindow`
-
-Updates the content shown inside an HTML preview panel.
+#### `win.find_controls(query string) []ControlInfo`
+Searches for all controls matching a query string in their name, kind, or label.
 
 ```v
-win.set_html('html_view', '<h2>Updated Title</h2><p>Live preview text</p>')
+buttons := win.find_controls('button')
 ```
 
-### Fluent Chaining Modifiers (Last-Control Helpers)
-
-You can chain these modifiers directly onto control creation methods to style or customize the last created control without referencing its name/ID string:
-
-- **`.width(w int) &SimpleWindow`**: Sets the last control's Auto Layout width constraint.
-- **`.height(h int) &SimpleWindow`**: Sets the last control's Auto Layout height constraint.
-- **`.font_size(size int) &SimpleWindow`**: Changes the last control's font text size.
-- **`.bold(b bool) &SimpleWindow`**: Sets the last control's font weight to Bold.
-- **`.font_name(font_name string) &SimpleWindow`**: Applies a custom font family (e.g. `"Courier"`) directly to the last control.
-- **`.color(hex_color string) &SimpleWindow`**: Sets a custom background color for the last control.
-- **`.font_color(hex_color string) &SimpleWindow`**: Sets a custom font color for the last control.
-- **`.placeholder(text string) &SimpleWindow`**: Sets placeholder text for the last text-based control.
-- **`.error(text string) &SimpleWindow`**: Highlights the last control with validation/error text.
-- **`.tooltip(text string) &SimpleWindow`**: Attaches a hover tooltip to the last control.
-- **`.visible(visible bool) &SimpleWindow`**: Toggles visibility of the last control.
-- **`.enabled(enabled bool) &SimpleWindow`**: Enables or disables user interaction on the last control.
-- **`.onclick(callback VoidEventCallback) &SimpleWindow`**: Attaches a click handler to the last created control.
-- **`.onchange(callback StringEventCallback) &SimpleWindow`**: Attaches a change handler to the last created control.
-- **`.onenter(callback VoidEventCallback) &SimpleWindow`**: Attaches an enter-key handler to the last created control.
-- **`.onfocus(callback VoidEventCallback) &SimpleWindow`**: Attaches a focus handler to the last created control.
-- **`.onblur(callback VoidEventCallback) &SimpleWindow`**: Attaches a blur handler to the last created control.
-- **`.onhover(callback VoidEventCallback) &SimpleWindow`**: Attaches a hover-enter handler to the last created control.
-- **`.onhover_exit(callback VoidEventCallback) &SimpleWindow`**: Attaches a hover-exit handler to the last created control.
+#### `win.highlight_control(name string, duration_ms int) &SimpleWindow` / `win.flash_control(name string) &SimpleWindow`
+Visual diagnostic helpers that highlight a control with a colored outline on screen for `duration_ms` or flash it 3 times.
 
 ```v
-win.add_input('email', '')
-   .width(240)
-   .placeholder('user@domain.com')
-   .tooltip('Enter primary email address')
-   .bold(true)
+win.highlight_control('invalid_field', 2000)
+win.flash_control('btn_submit')
+```
+
+---
+
+### 4.8 Complete Fluent Chaining Reference Table
+
+All modifier methods return `&SimpleWindow` and attach directly to the last registered control:
+
+| Modifier Method | Target / Effect | Example |
+| :--- | :--- | :--- |
+| `.width(w int)` | Sets Auto Layout width constraint | `.width(260)` |
+| `.height(h int)` | Sets Auto Layout height constraint | `.height(120)` |
+| `.font_size(size int)` | Changes typography font point size | `.font_size(14)` |
+| `.bold(bold bool)` | Sets bold font weight | `.bold(true)` |
+| `.font_name(name string)` | Sets custom font family name | `.font_name('Menlo')` |
+| `.color(hex string)` | Sets custom background hex color | `.color('#007aff')` |
+| `.font_color(hex string)` | Sets custom font text hex color | `.font_color('#ffffff')` |
+| `.placeholder(text string)` | Sets placeholder prompt text | `.placeholder('Enter email...')` |
+| `.tooltip(text string)` | Attaches hover tooltip popup | `.tooltip('Press ⌘S to save')` |
+| `.error(text string)` | Flags control with inline error | `.error('Required field')` |
+| `.visible(vis bool)` | Toggles control visibility | `.visible(true)` |
+| `.enabled(en bool)` | Toggles control interactivity | `.enabled(true)` |
+| `.align_left()` | Aligns control to left within container | `.align_left()` |
+| `.align_center()` | Centers control horizontally | `.align_center()` |
+| `.align_right()` | Aligns control to right | `.align_right()` |
+| `.expand_fill()` | Stretches control to fill available space | `.expand_fill()` |
+| `.onclick(cb)` | Attaches click event callback `fn (mut win SimpleWindow)` | `.onclick(fn (mut w simplegui.SimpleWindow) { ... })` |
+| `.onchange(cb)` | Attaches change event callback `fn (mut win SimpleWindow, val string)` | `.onchange(fn (mut w simplegui.SimpleWindow, v string) { ... })` |
+| `.onenter(cb)` | Attaches Enter-key callback in text fields | `.onenter(fn (mut w simplegui.SimpleWindow) { ... })` |
+| `.onfocus(cb)` | Attaches focus gained callback | `.onfocus(fn (mut w simplegui.SimpleWindow) { ... })` |
+| `.onblur(cb)` | Attaches focus lost callback | `.onblur(fn (mut w simplegui.SimpleWindow) { ... })` |
+| `.onhover(cb)` | Attaches mouse hover-enter callback | `.onhover(fn (mut w simplegui.SimpleWindow) { ... })` |
+| `.onhover_exit(cb)` | Attaches mouse hover-exit callback | `.onhover_exit(fn (mut w simplegui.SimpleWindow) { ... })` |
+
+```v
+// Real-world fluent chaining demonstration
+win.add_input('user_email', '')
+   .width(280)
+   .placeholder('alex.johnson@example.com')
+   .tooltip('We will send your verification token to this address')
+   .font_size(13)
+   .onchange(fn (mut win simplegui.SimpleWindow, email string) {
+       if email.contains('@') {
+           win.clear_error('user_email')
+       }
+   })
+   .onenter(fn (mut win simplegui.SimpleWindow) {
+       win.set_focus('user_password')
+   })
 ```
 
 ---
