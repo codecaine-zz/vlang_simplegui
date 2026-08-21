@@ -970,6 +970,36 @@ fn C.window_get_browser_selected_row(&WindowInfo, &u8, int) int
 
 fn C.window_get_browser_path(&WindowInfo, &u8) &u8
 
+fn C.window_add_hero_banner_control(&WindowInfo, &u8, &u8, &u8, &u8, &u8) voidptr
+
+fn C.window_add_activity_rings_control(&WindowInfo, &u8, &f64, &&u8, int, int) voidptr
+
+fn C.window_set_activity_rings_values(&WindowInfo, &u8, &f64, int)
+
+fn C.window_add_segmented_progress_control(&WindowInfo, &u8, &&u8, &f64, &&u8, int, int) voidptr
+
+fn C.window_add_feedback_mood_control(&WindowInfo, &u8, int) voidptr
+
+fn C.window_set_feedback_mood(&WindowInfo, &u8, int)
+
+fn C.window_get_feedback_mood(&WindowInfo, &u8) int
+
+fn C.window_add_kanban_board_control(&WindowInfo, &u8, &&u8, int, int) voidptr
+
+fn C.window_kanban_add_card(&WindowInfo, &u8, int, &u8, &u8, &u8)
+
+fn C.window_clear_kanban_board(&WindowInfo, &u8)
+
+fn C.window_add_date_range_picker_control(&WindowInfo, &u8, &u8, &u8) voidptr
+
+fn C.window_get_date_range_start(&WindowInfo, &u8) &u8
+
+fn C.window_get_date_range_end(&WindowInfo, &u8) &u8
+
+fn C.window_set_date_range(&WindowInfo, &u8, &u8, &u8)
+
+fn C.window_add_stat_grid_control(&WindowInfo, &u8, &&u8, &&u8, &&u8, &&u8, int) voidptr
+
 fn C.window_set_alpha(&WindowInfo, f64)
 
 fn C.window_get_alpha(&WindowInfo) f64

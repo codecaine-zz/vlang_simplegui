@@ -2940,9 +2940,11 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
     [box.trailingAnchor constraintEqualToAnchor:self.mainStackView.trailingAnchor constant:-p].active = YES;
   } else if (parentContainer && [parentContainer isKindOfClass:[NSStackView class]]) {
     NSStackView *parentStack = (NSStackView *)parentContainer;
-    NSEdgeInsets insets = parentStack.edgeInsets;
-    [box.leadingAnchor constraintEqualToAnchor:parentStack.leadingAnchor constant:insets.left].active = YES;
-    [box.trailingAnchor constraintEqualToAnchor:parentStack.trailingAnchor constant:-insets.right].active = YES;
+    if (parentStack.orientation == NSUserInterfaceLayoutOrientationVertical) {
+      NSEdgeInsets insets = parentStack.edgeInsets;
+      [box.leadingAnchor constraintEqualToAnchor:parentStack.leadingAnchor constant:insets.left].active = YES;
+      [box.trailingAnchor constraintEqualToAnchor:parentStack.trailingAnchor constant:-insets.right].active = YES;
+    }
   }
 
   if (isContainer) {
@@ -19400,6 +19402,718 @@ const char *window_get_browser_path(main__WindowInfo *info, const char *name) {
   if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
   return [res UTF8String] ? [res UTF8String] : "";
 }
+
+// -------------------------------------------------------------
+// 1. Activity Rings View (Multi-ring concentric circular gauge)
+// -------------------------------------------------------------
+@interface ActivityRingsView : NSView
+@property (nonatomic, strong) NSMutableArray<NSNumber *> *percentages;
+@property (nonatomic, strong) NSMutableArray<NSColor *> *ringColors;
+@end
+
+@implementation ActivityRingsView
+- (instancetype)initWithFrame:(NSRect)frame {
+  if (self = [super initWithFrame:frame]) {
+    _percentages = [NSMutableArray array];
+    _ringColors = [NSMutableArray array];
+  }
+  return self;
+}
+
+- (void)drawRect:(NSRect)dirtyRect {
+  [super drawRect:dirtyRect];
+  CGFloat size = MIN(self.bounds.size.width, self.bounds.size.height);
+  NSPoint center = NSMakePoint(self.bounds.size.width / 2.0, self.bounds.size.height / 2.0);
+  int count = (int)self.percentages.count;
+  if (count == 0) return;
+  
+  CGFloat ringThickness = MAX(4.0, (size / 2.0 - 10.0) / (count * 1.6));
+  CGFloat spacing = 4.0;
+  
+  for (int i = 0; i < count; i++) {
+    CGFloat radius = (size / 2.0 - 10.0) - i * (ringThickness + spacing);
+    if (radius <= 0) break;
+    
+    NSColor *col = (i < self.ringColors.count) ? self.ringColors[i] : [NSColor systemBlueColor];
+    NSColor *trackCol = [col colorWithAlphaComponent:0.18];
+    
+    // Background track
+    NSBezierPath *trackPath = [NSBezierPath bezierPath];
+    [trackPath appendBezierPathWithArcWithCenter:center radius:radius startAngle:0 endAngle:360];
+    [trackPath setLineWidth:ringThickness];
+    [trackCol setStroke];
+    [trackPath stroke];
+    
+    // Foreground progress
+    double pct = [self.percentages[i] doubleValue];
+    if (pct > 0.0) {
+      if (pct > 1.0) pct = pct / 100.0;
+      if (pct > 1.0) pct = 1.0;
+      CGFloat endAngle = 90.0 - (pct * 360.0);
+      NSBezierPath *progPath = [NSBezierPath bezierPath];
+      [progPath appendBezierPathWithArcWithCenter:center radius:radius startAngle:90.0 endAngle:endAngle clockwise:YES];
+      [progPath setLineWidth:ringThickness];
+      [progPath setLineCapStyle:NSLineCapStyleRound];
+      [col setStroke];
+      [progPath stroke];
+    }
+  }
+}
+@end
+
+void *window_add_activity_rings_control(main__WindowInfo *info, const char *name, const double *percentages, const char **hex_colors, int count, int size) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *nameStr = nsstring(name);
+  CGFloat s = size > 0 ? (CGFloat)size : 140.0;
+  __block ActivityRingsView *view = nil;
+  
+  NSMutableArray<NSNumber *> *pcts = [NSMutableArray array];
+  NSMutableArray<NSColor *> *cols = [NSMutableArray array];
+  for (int i = 0; i < count; i++) {
+    [pcts addObject:@(percentages ? percentages[i] : 0.0)];
+    NSString *hex = (hex_colors && hex_colors[i]) ? nsstring(hex_colors[i]) : @"#007aff";
+    [cols addObject:colorFromHexString(hex)];
+  }
+  
+  void (^runBlock)(void) = ^{
+    view = [[ActivityRingsView alloc] initWithFrame:NSMakeRect(0, 0, s, s)];
+    [view setIdentifier:nameStr];
+    view.percentages = pcts;
+    view.ringColors = cols;
+    [view setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [view.widthAnchor constraintEqualToConstant:s].active = YES;
+    [view.heightAnchor constraintEqualToConstant:s].active = YES;
+    
+    delegate.controlsByName[[nameStr lowercaseString]] = view;
+    [delegate addControlToLayout:view];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)view;
+}
+
+void window_set_activity_rings_values(main__WindowInfo *info, const char *name, const double *percentages, int count) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  NSMutableArray<NSNumber *> *pcts = [NSMutableArray array];
+  for (int i = 0; i < count; i++) {
+    [pcts addObject:@(percentages ? percentages[i] : 0.0)];
+  }
+  void (^runBlock)(void) = ^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[ActivityRingsView class]]) {
+      ActivityRingsView *r = (ActivityRingsView *)v;
+      r.percentages = pcts;
+      [r setNeedsDisplay:YES];
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+// -------------------------------------------------------------
+// 2. Hero Banner View
+// -------------------------------------------------------------
+void *window_add_hero_banner_control(main__WindowInfo *info, const char *name, const char *title, const char *subtitle, const char *button_text, const char *gradient_style) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *nameStr = nsstring(name);
+  NSString *titleStr = nsstring(title);
+  NSString *subStr = nsstring(subtitle);
+  NSString *btnStr = nsstring(button_text);
+  
+  __block NSBox *box = nil;
+  void (^runBlock)(void) = ^{
+    box = [[NSBox alloc] initWithFrame:NSZeroRect];
+    [box setIdentifier:nameStr];
+    [box setBoxType:NSBoxCustom];
+    [box setCornerRadius:10.0];
+    [box setBorderWidth:1.0];
+    [box setBorderColor:[NSColor separatorColor]];
+    [box setFillColor:[[NSColor controlAccentColor] colorWithAlphaComponent:0.08]];
+    [box setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [box.heightAnchor constraintGreaterThanOrEqualToConstant:80.0].active = YES;
+    
+    NSStackView *hStack = [[NSStackView alloc] initWithFrame:NSZeroRect];
+    [hStack setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+    [hStack setAlignment:NSLayoutAttributeCenterY];
+    [hStack setSpacing:16.0];
+    [hStack setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [hStack setEdgeInsets:NSEdgeInsetsMake(12, 16, 12, 16)];
+    
+    NSStackView *vText = [[NSStackView alloc] initWithFrame:NSZeroRect];
+    [vText setOrientation:NSUserInterfaceLayoutOrientationVertical];
+    [vText setAlignment:NSLayoutAttributeLeading];
+    [vText setSpacing:4.0];
+    
+    NSTextField *tLbl = [NSTextField labelWithString:titleStr];
+    [tLbl setFont:[NSFont systemFontOfSize:16 weight:NSFontWeightBold]];
+    [vText addArrangedSubview:tLbl];
+    
+    if (subStr.length > 0) {
+      NSTextField *sLbl = [NSTextField labelWithString:subStr];
+      [sLbl setFont:[NSFont systemFontOfSize:12]];
+      [sLbl setTextColor:[NSColor secondaryLabelColor]];
+      [vText addArrangedSubview:sLbl];
+    }
+    
+    [hStack addArrangedSubview:vText];
+    
+    if (btnStr.length > 0) {
+      NSButton *btn = [NSButton buttonWithTitle:btnStr target:delegate action:@selector(handleButtonClicked:)];
+      [btn setIdentifier:[NSString stringWithFormat:@"%@_action", nameStr]];
+      [btn setBezelStyle:NSBezelStyleRounded];
+      [hStack addArrangedSubview:btn];
+    }
+    
+    [box setContentView:hStack];
+    [hStack.leadingAnchor constraintEqualToAnchor:box.leadingAnchor constant:12].active = YES;
+    [hStack.trailingAnchor constraintEqualToAnchor:box.trailingAnchor constant:-12].active = YES;
+    [hStack.topAnchor constraintEqualToAnchor:box.topAnchor constant:8].active = YES;
+    [hStack.bottomAnchor constraintEqualToAnchor:box.bottomAnchor constant:-8].active = YES;
+    
+    delegate.controlsByName[[nameStr lowercaseString]] = box;
+    [delegate addControlToLayout:box];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)box;
+}
+
+// -------------------------------------------------------------
+// 3. Segmented Progress Bar View
+// -------------------------------------------------------------
+@interface SegmentedProgressBarView : NSView
+@property (nonatomic, strong) NSArray<NSString *> *labels;
+@property (nonatomic, strong) NSArray<NSNumber *> *values;
+@property (nonatomic, strong) NSArray<NSColor *> *colors;
+@end
+
+@implementation SegmentedProgressBarView
+- (void)drawRect:(NSRect)dirtyRect {
+  [super drawRect:dirtyRect];
+  NSRect bounds = self.bounds;
+  CGFloat barHeight = bounds.size.height > 24.0 ? 12.0 : bounds.size.height;
+  NSRect barRect = NSMakeRect(0, bounds.size.height - barHeight, bounds.size.width, barHeight);
+  
+  NSBezierPath *bg = [NSBezierPath bezierPathWithRoundedRect:barRect xRadius:barHeight/2.0 yRadius:barHeight/2.0];
+  [[NSColor colorWithWhite:0.5 alpha:0.15] setFill];
+  [bg fill];
+  [bg addClip];
+  
+  double total = 0.0;
+  for (NSNumber *num in self.values) {
+    total += [num doubleValue];
+  }
+  if (total <= 0.0) return;
+  
+  CGFloat currentX = 0.0;
+  for (int i = 0; i < self.values.count; i++) {
+    double v = [self.values[i] doubleValue];
+    if (v <= 0) continue;
+    CGFloat segWidth = (CGFloat)(v / total) * barRect.size.width;
+    NSRect segRect = NSMakeRect(currentX, barRect.origin.y, segWidth, barHeight);
+    NSColor *col = (i < self.colors.count) ? self.colors[i] : [NSColor systemBlueColor];
+    [col setFill];
+    NSRectFill(segRect);
+    currentX += segWidth;
+  }
+}
+@end
+
+void *window_add_segmented_progress_control(main__WindowInfo *info, const char *name, const char **labels, const double *values, const char **hex_colors, int count, int height) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *nameStr = nsstring(name);
+  CGFloat h = height > 0 ? (CGFloat)height : 28.0;
+  
+  NSMutableArray *lbls = [NSMutableArray array];
+  NSMutableArray *vals = [NSMutableArray array];
+  NSMutableArray *cols = [NSMutableArray array];
+  for (int i = 0; i < count; i++) {
+    [lbls addObject:(labels && labels[i]) ? nsstring(labels[i]) : @""];
+    [vals addObject:@(values ? values[i] : 0.0)];
+    [cols addObject:(hex_colors && hex_colors[i]) ? colorFromHexString(nsstring(hex_colors[i])) : [NSColor systemBlueColor]];
+  }
+  
+  __block NSStackView *container = nil;
+  void (^runBlock)(void) = ^{
+    container = [[NSStackView alloc] initWithFrame:NSZeroRect];
+    [container setOrientation:NSUserInterfaceLayoutOrientationVertical];
+    [container setAlignment:NSLayoutAttributeLeading];
+    [container setSpacing:4.0];
+    [container setTranslatesAutoresizingMaskIntoConstraints:NO];
+    
+    SegmentedProgressBarView *bar = [[SegmentedProgressBarView alloc] initWithFrame:NSZeroRect];
+    bar.labels = lbls;
+    bar.values = vals;
+    bar.colors = cols;
+    [bar setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [bar.heightAnchor constraintEqualToConstant:h].active = YES;
+    [bar.widthAnchor constraintGreaterThanOrEqualToConstant:200.0].active = YES;
+    [container addArrangedSubview:bar];
+    
+    // Legend Row
+    NSStackView *legend = [[NSStackView alloc] initWithFrame:NSZeroRect];
+    [legend setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+    [legend setSpacing:12.0];
+    for (int i = 0; i < count; i++) {
+      NSString *l = lbls[i];
+      if (l.length == 0) continue;
+      NSTextField *tf = [NSTextField labelWithString:[NSString stringWithFormat:@"● %@", l]];
+      [tf setFont:[NSFont systemFontOfSize:10]];
+      [tf setTextColor:cols[i]];
+      [legend addArrangedSubview:tf];
+    }
+    [container addArrangedSubview:legend];
+    
+    delegate.controlsByName[[nameStr lowercaseString]] = container;
+    [delegate addControlToLayout:container];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)container;
+}
+
+// -------------------------------------------------------------
+// 4. Feedback Mood Selector View (😡 🙁 😐 🙂 🤩)
+// -------------------------------------------------------------
+void *window_add_feedback_mood_control(main__WindowInfo *info, const char *name, int selected_mood) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *nameStr = nsstring(name);
+  NSArray *emojis = @[@"😡", @"🙁", @"😐", @"🙂", @"🤩"];
+  
+  __block NSSegmentedControl *seg = nil;
+  void (^runBlock)(void) = ^{
+    seg = [[NSSegmentedControl alloc] initWithFrame:NSZeroRect];
+    [seg setIdentifier:nameStr];
+    [seg setSegmentCount:emojis.count];
+    [seg setTrackingMode:NSSegmentSwitchTrackingSelectOne];
+    for (int i = 0; i < emojis.count; i++) {
+      [seg setLabel:emojis[i] forSegment:i];
+      [seg setWidth:36.0 forSegment:i];
+    }
+    if (selected_mood >= 1 && selected_mood <= 5) {
+      [seg setSelectedSegment:selected_mood - 1];
+    }
+    [seg setTarget:delegate];
+    [seg setAction:@selector(handleSegmentedChanged:)];
+    [seg setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [seg.heightAnchor constraintEqualToConstant:32.0].active = YES;
+    
+    delegate.controlsByName[[nameStr lowercaseString]] = seg;
+    [delegate addControlToLayout:seg];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)seg;
+}
+
+void window_set_feedback_mood(main__WindowInfo *info, const char *name, int selected_mood) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  void (^runBlock)(void) = ^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[NSSegmentedControl class]]) {
+      NSSegmentedControl *seg = (NSSegmentedControl *)v;
+      if (selected_mood >= 1 && selected_mood <= 5) {
+        [seg setSelectedSegment:selected_mood - 1];
+      }
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+int window_get_feedback_mood(main__WindowInfo *info, const char *name) {
+  if (!info || !info->app_delegate) return 0;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  __block int res = 0;
+  void (^runBlock)(void) = ^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[NSSegmentedControl class]]) {
+      NSSegmentedControl *seg = (NSSegmentedControl *)v;
+      NSInteger s = [seg selectedSegment];
+      if (s >= 0) res = (int)(s + 1);
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return res;
+}
+
+// -------------------------------------------------------------
+// 5. Kanban Board Control
+// -------------------------------------------------------------
+void *window_add_kanban_board_control(main__WindowInfo *info, const char *name, const char **columns, int col_count, int height) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *nameStr = nsstring(name);
+  CGFloat h = height > 0 ? (CGFloat)height : 220.0;
+  
+  NSMutableArray *cols = [NSMutableArray array];
+  for (int i = 0; i < col_count; i++) {
+    [cols addObject:(columns && columns[i]) ? nsstring(columns[i]) : [NSString stringWithFormat:@"Col %d", i+1]];
+  }
+  
+  __block NSStackView *boardStack = nil;
+  void (^runBlock)(void) = ^{
+    boardStack = [[NSStackView alloc] initWithFrame:NSZeroRect];
+    [boardStack setIdentifier:nameStr];
+    [boardStack setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+    [boardStack setDistribution:NSStackViewDistributionFillEqually];
+    [boardStack setAlignment:NSLayoutAttributeTop];
+    [boardStack setSpacing:12.0];
+    [boardStack setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [boardStack.heightAnchor constraintEqualToConstant:h].active = YES;
+    [boardStack.widthAnchor constraintGreaterThanOrEqualToConstant:320.0].active = YES;
+    
+    for (int i = 0; i < cols.count; i++) {
+      NSBox *colBox = [[NSBox alloc] initWithFrame:NSZeroRect];
+      [colBox setBoxType:NSBoxCustom];
+      [colBox setCornerRadius:8.0];
+      [colBox setBorderWidth:1.0];
+      [colBox setBorderColor:[NSColor separatorColor]];
+      [colBox setFillColor:[[NSColor controlBackgroundColor] colorWithAlphaComponent:0.4]];
+      
+      NSStackView *colStack = [[NSStackView alloc] initWithFrame:NSZeroRect];
+      [colStack setOrientation:NSUserInterfaceLayoutOrientationVertical];
+      [colStack setAlignment:NSLayoutAttributeLeading];
+      [colStack setSpacing:8.0];
+      [colStack setTranslatesAutoresizingMaskIntoConstraints:NO];
+      [colStack setEdgeInsets:NSEdgeInsetsMake(8, 8, 8, 8)];
+      
+      NSTextField *hdr = [NSTextField labelWithString:cols[i]];
+      [hdr setFont:[NSFont systemFontOfSize:12 weight:NSFontWeightBold]];
+      [colStack addArrangedSubview:hdr];
+      
+      NSScrollView *sv = [[NSScrollView alloc] initWithFrame:NSZeroRect];
+      [sv setHasVerticalScroller:YES];
+      [sv setDrawsBackground:NO];
+      [sv setTranslatesAutoresizingMaskIntoConstraints:NO];
+      [sv.heightAnchor constraintEqualToConstant:h - 40].active = YES;
+      
+      NSStackView *cardsContainer = [[NSStackView alloc] initWithFrame:NSZeroRect];
+      [cardsContainer setIdentifier:[NSString stringWithFormat:@"%@_col_%d", nameStr, i]];
+      [cardsContainer setOrientation:NSUserInterfaceLayoutOrientationVertical];
+      [cardsContainer setAlignment:NSLayoutAttributeLeading];
+      [cardsContainer setSpacing:6.0];
+      [cardsContainer setTranslatesAutoresizingMaskIntoConstraints:NO];
+      
+      [sv setDocumentView:cardsContainer];
+      [cardsContainer.widthAnchor constraintEqualToAnchor:sv.widthAnchor constant:-10].active = YES;
+      
+      [colStack addArrangedSubview:sv];
+      [colBox setContentView:colStack];
+      [boardStack addArrangedSubview:colBox];
+    }
+    
+    delegate.controlsByName[[nameStr lowercaseString]] = boardStack;
+    [delegate addControlToLayout:boardStack];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)boardStack;
+}
+
+void window_kanban_add_card(main__WindowInfo *info, const char *name, int col_idx, const char *card_title, const char *card_subtitle, const char *tag) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *nameStr = nsstring(name);
+  NSString *titleStr = nsstring(card_title);
+  NSString *subStr = nsstring(card_subtitle);
+  NSString *tagStr = nsstring(tag);
+  
+  void (^runBlock)(void) = ^{
+    NSView *board = delegate.controlsByName[[nameStr lowercaseString]];
+    if (!board) return;
+    
+    NSString *colId = [NSString stringWithFormat:@"%@_col_%d", nameStr, col_idx];
+    NSStackView *cardsContainer = nil;
+    for (NSView *sub in board.subviews) {
+      if ([sub isKindOfClass:[NSBox class]]) {
+        NSBox *b = (NSBox *)sub;
+        NSStackView *cs = (NSStackView *)b.contentView;
+        for (NSView *csub in cs.subviews) {
+          if ([csub isKindOfClass:[NSScrollView class]]) {
+            NSScrollView *sv = (NSScrollView *)csub;
+            if ([[sv.documentView identifier] isEqualToString:colId]) {
+              cardsContainer = (NSStackView *)sv.documentView;
+              break;
+            }
+          }
+        }
+      }
+      if (cardsContainer) break;
+    }
+    if (!cardsContainer) return;
+    
+    NSBox *card = [[NSBox alloc] initWithFrame:NSZeroRect];
+    [card setBoxType:NSBoxCustom];
+    [card setCornerRadius:6.0];
+    [card setBorderWidth:1.0];
+    [card setBorderColor:[NSColor separatorColor]];
+    [card setFillColor:[NSColor controlBackgroundColor]];
+    [card setTranslatesAutoresizingMaskIntoConstraints:NO];
+    
+    NSStackView *cv = [[NSStackView alloc] initWithFrame:NSZeroRect];
+    [cv setOrientation:NSUserInterfaceLayoutOrientationVertical];
+    [cv setAlignment:NSLayoutAttributeLeading];
+    [cv setSpacing:2.0];
+    [cv setEdgeInsets:NSEdgeInsetsMake(6, 8, 6, 8)];
+    
+    NSTextField *tLbl = [NSTextField labelWithString:titleStr];
+    [tLbl setFont:[NSFont systemFontOfSize:12 weight:NSFontWeightMedium]];
+    [cv addArrangedSubview:tLbl];
+    
+    if (subStr.length > 0) {
+      NSTextField *sLbl = [NSTextField labelWithString:subStr];
+      [sLbl setFont:[NSFont systemFontOfSize:10]];
+      [sLbl setTextColor:[NSColor secondaryLabelColor]];
+      [cv addArrangedSubview:sLbl];
+    }
+    
+    if (tagStr.length > 0) {
+      NSTextField *tgLbl = [NSTextField labelWithString:[NSString stringWithFormat:@"#%@", tagStr]];
+      [tgLbl setFont:[NSFont systemFontOfSize:9 weight:NSFontWeightBold]];
+      [tgLbl setTextColor:[NSColor systemBlueColor]];
+      [cv addArrangedSubview:tgLbl];
+    }
+    
+    [card setContentView:cv];
+    [cardsContainer addArrangedSubview:card];
+    [card.widthAnchor constraintEqualToAnchor:cardsContainer.widthAnchor].active = YES;
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+void window_clear_kanban_board(main__WindowInfo *info, const char *name) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *nameStr = nsstring(name);
+  void (^runBlock)(void) = ^{
+    NSView *board = delegate.controlsByName[[nameStr lowercaseString]];
+    if (!board) return;
+    for (NSView *sub in board.subviews) {
+      if ([sub isKindOfClass:[NSBox class]]) {
+        NSBox *b = (NSBox *)sub;
+        NSStackView *cs = (NSStackView *)b.contentView;
+        for (NSView *csub in cs.subviews) {
+          if ([csub isKindOfClass:[NSScrollView class]]) {
+            NSScrollView *sv = (NSScrollView *)csub;
+            if ([sv.documentView isKindOfClass:[NSStackView class]]) {
+              NSStackView *cv = (NSStackView *)sv.documentView;
+              for (NSView *c in [cv.arrangedSubviews copy]) {
+                [cv removeArrangedSubview:c];
+                [c removeFromSuperview];
+              }
+            }
+          }
+        }
+      }
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+// -------------------------------------------------------------
+// 6. Date Range Picker Control
+// -------------------------------------------------------------
+void *window_add_date_range_picker_control(main__WindowInfo *info, const char *name, const char *start_date, const char *end_date) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *nameStr = nsstring(name);
+  NSString *sDate = nsstring(start_date);
+  NSString *eDate = nsstring(end_date);
+  
+  __block NSStackView *stack = nil;
+  void (^runBlock)(void) = ^{
+    stack = [[NSStackView alloc] initWithFrame:NSZeroRect];
+    [stack setIdentifier:nameStr];
+    [stack setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+    [stack setAlignment:NSLayoutAttributeCenterY];
+    [stack setSpacing:8.0];
+    [stack setTranslatesAutoresizingMaskIntoConstraints:NO];
+    
+    NSTextField *lFrom = [NSTextField labelWithString:@"From:"];
+    [lFrom setFont:[NSFont systemFontOfSize:11 weight:NSFontWeightMedium]];
+    [stack addArrangedSubview:lFrom];
+    
+    NSDatePicker *dp1 = [[NSDatePicker alloc] initWithFrame:NSZeroRect];
+    [dp1 setIdentifier:[NSString stringWithFormat:@"%@_start", nameStr]];
+    [dp1 setDatePickerStyle:NSTextFieldAndStepperDatePickerStyle];
+    [dp1 setDatePickerElements:NSDatePickerElementFlagYearMonthDay];
+    if (sDate.length > 0) {
+      NSDateFormatter *fmt = [[NSDateFormatter alloc] init];
+      [fmt setDateFormat:@"yyyy-MM-dd"];
+      NSDate *d = [fmt dateFromString:sDate];
+      if (d) [dp1 setDateValue:d];
+    }
+    [stack addArrangedSubview:dp1];
+    
+    NSTextField *lTo = [NSTextField labelWithString:@"To:"];
+    [lTo setFont:[NSFont systemFontOfSize:11 weight:NSFontWeightMedium]];
+    [stack addArrangedSubview:lTo];
+    
+    NSDatePicker *dp2 = [[NSDatePicker alloc] initWithFrame:NSZeroRect];
+    [dp2 setIdentifier:[NSString stringWithFormat:@"%@_end", nameStr]];
+    [dp2 setDatePickerStyle:NSTextFieldAndStepperDatePickerStyle];
+    [dp2 setDatePickerElements:NSDatePickerElementFlagYearMonthDay];
+    if (eDate.length > 0) {
+      NSDateFormatter *fmt = [[NSDateFormatter alloc] init];
+      [fmt setDateFormat:@"yyyy-MM-dd"];
+      NSDate *d = [fmt dateFromString:eDate];
+      if (d) [dp2 setDateValue:d];
+    }
+    [stack addArrangedSubview:dp2];
+    
+    delegate.controlsByName[[nameStr lowercaseString]] = stack;
+    [delegate addControlToLayout:stack];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)stack;
+}
+
+const char *window_get_date_range_start(main__WindowInfo *info, const char *name) {
+  if (!info || !info->app_delegate) return "";
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *nameStr = nsstring(name);
+  __block NSString *res = @"";
+  void (^runBlock)(void) = ^{
+    NSView *v = delegate.controlsByName[[nameStr lowercaseString]];
+    if ([v isKindOfClass:[NSStackView class]]) {
+      for (NSView *sub in [(NSStackView *)v arrangedSubviews]) {
+        if ([sub isKindOfClass:[NSDatePicker class]] && [[sub identifier] hasSuffix:@"_start"]) {
+          NSDateFormatter *fmt = [[NSDateFormatter alloc] init];
+          [fmt setDateFormat:@"yyyy-MM-dd"];
+          res = [fmt stringFromDate:[(NSDatePicker *)sub dateValue]];
+          break;
+        }
+      }
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return [res UTF8String] ? [res UTF8String] : "";
+}
+
+const char *window_get_date_range_end(main__WindowInfo *info, const char *name) {
+  if (!info || !info->app_delegate) return "";
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *nameStr = nsstring(name);
+  __block NSString *res = @"";
+  void (^runBlock)(void) = ^{
+    NSView *v = delegate.controlsByName[[nameStr lowercaseString]];
+    if ([v isKindOfClass:[NSStackView class]]) {
+      for (NSView *sub in [(NSStackView *)v arrangedSubviews]) {
+        if ([sub isKindOfClass:[NSDatePicker class]] && [[sub identifier] hasSuffix:@"_end"]) {
+          NSDateFormatter *fmt = [[NSDateFormatter alloc] init];
+          [fmt setDateFormat:@"yyyy-MM-dd"];
+          res = [fmt stringFromDate:[(NSDatePicker *)sub dateValue]];
+          break;
+        }
+      }
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return [res UTF8String] ? [res UTF8String] : "";
+}
+
+void window_set_date_range(main__WindowInfo *info, const char *name, const char *start_date, const char *end_date) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *nameStr = nsstring(name);
+  NSString *sDate = nsstring(start_date);
+  NSString *eDate = nsstring(end_date);
+  void (^runBlock)(void) = ^{
+    NSView *v = delegate.controlsByName[[nameStr lowercaseString]];
+    if ([v isKindOfClass:[NSStackView class]]) {
+      NSDateFormatter *fmt = [[NSDateFormatter alloc] init];
+      [fmt setDateFormat:@"yyyy-MM-dd"];
+      for (NSView *sub in [(NSStackView *)v arrangedSubviews]) {
+        if ([sub isKindOfClass:[NSDatePicker class]]) {
+          NSDatePicker *dp = (NSDatePicker *)sub;
+          if ([[dp identifier] hasSuffix:@"_start"] && sDate.length > 0) {
+            NSDate *d = [fmt dateFromString:sDate];
+            if (d) [dp setDateValue:d];
+          } else if ([[dp identifier] hasSuffix:@"_end"] && eDate.length > 0) {
+            NSDate *d = [fmt dateFromString:eDate];
+            if (d) [dp setDateValue:d];
+          }
+        }
+      }
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+// -------------------------------------------------------------
+// 7. Stat Grid Control (2x2 or 1x4 KPI Cards Grid)
+// -------------------------------------------------------------
+void *window_add_stat_grid_control(main__WindowInfo *info, const char *name, const char **titles, const char **values, const char **trends, const char **trend_styles, int count) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *nameStr = nsstring(name);
+  
+  __block NSStackView *gridStack = nil;
+  void (^runBlock)(void) = ^{
+    gridStack = [[NSStackView alloc] initWithFrame:NSZeroRect];
+    [gridStack setIdentifier:nameStr];
+    [gridStack setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+    [gridStack setDistribution:NSStackViewDistributionFillEqually];
+    [gridStack setSpacing:10.0];
+    [gridStack setTranslatesAutoresizingMaskIntoConstraints:NO];
+    
+    for (int i = 0; i < count; i++) {
+      NSString *t = (titles && titles[i]) ? nsstring(titles[i]) : @"";
+      NSString *v = (values && values[i]) ? nsstring(values[i]) : @"";
+      NSString *tr = (trends && trends[i]) ? nsstring(trends[i]) : @"";
+      NSString *ts = (trend_styles && trend_styles[i]) ? nsstring(trend_styles[i]) : @"info";
+      
+      NSBox *card = [[NSBox alloc] initWithFrame:NSZeroRect];
+      [card setBoxType:NSBoxCustom];
+      [card setCornerRadius:8.0];
+      [card setBorderWidth:1.0];
+      [card setBorderColor:[NSColor separatorColor]];
+      [card setFillColor:[NSColor controlBackgroundColor]];
+      
+      NSStackView *cv = [[NSStackView alloc] initWithFrame:NSZeroRect];
+      [cv setOrientation:NSUserInterfaceLayoutOrientationVertical];
+      [cv setAlignment:NSLayoutAttributeLeading];
+      [cv setSpacing:4.0];
+      [cv setEdgeInsets:NSEdgeInsetsMake(10, 12, 10, 12)];
+      
+      NSTextField *tLbl = [NSTextField labelWithString:t];
+      [tLbl setFont:[NSFont systemFontOfSize:11 weight:NSFontWeightMedium]];
+      [tLbl setTextColor:[NSColor secondaryLabelColor]];
+      [cv addArrangedSubview:tLbl];
+      
+      NSTextField *vLbl = [NSTextField labelWithString:v];
+      [vLbl setFont:[NSFont systemFontOfSize:18 weight:NSFontWeightBold]];
+      [cv addArrangedSubview:vLbl];
+      
+      if (tr.length > 0) {
+        NSTextField *trLbl = [NSTextField labelWithString:tr];
+        [trLbl setFont:[NSFont systemFontOfSize:10 weight:NSFontWeightMedium]];
+        if ([ts isEqualToString:@"success"]) {
+          [trLbl setTextColor:[NSColor systemGreenColor]];
+        } else if ([ts isEqualToString:@"error"]) {
+          [trLbl setTextColor:[NSColor systemRedColor]];
+        } else if ([ts isEqualToString:@"warning"]) {
+          [trLbl setTextColor:[NSColor systemOrangeColor]];
+        } else {
+          [trLbl setTextColor:[NSColor systemBlueColor]];
+        }
+        [cv addArrangedSubview:trLbl];
+      }
+      
+      [card setContentView:cv];
+      [gridStack addArrangedSubview:card];
+    }
+    
+    delegate.controlsByName[[nameStr lowercaseString]] = gridStack;
+    [delegate addControlToLayout:gridStack];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)gridStack;
+}
+
 
 
 

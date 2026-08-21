@@ -2895,6 +2895,75 @@ win.set_browser_column_items('finder_browser', 0, ['Documents', 'Downloads', 'Ap
 win.set_browser_column_items('finder_browser', 1, ['SimpleGUI', 'V-Core', 'Demos'])
 ```
 
+#### `win.add_hero_banner(name string, title string, subtitle string, button_text string, gradient_style string) &SimpleWindow`
+Adds a modern onboarding hero card banner with rounded corners, high-contrast title, subtitle, and primary call-to-action button.
+- **Nameless Shorthand**: `win.hero_banner(title, subtitle, button_text, gradient_style)`
+
+```v
+win.add_hero_banner('welcome_banner', '🚀 Welcome to SimpleGUI 2.0', 'High-performance native macOS desktop GUI apps in pure V.', 'Get Started', 'indigo')
+```
+
+#### `win.add_activity_rings(name string, percentages []f64, hex_colors []string, size int) &SimpleWindow`
+Adds Apple Watch / Fitness style concentric circular gauge progress rings.
+- **Nameless Shorthand**: `win.activity_rings(percentages, hex_colors, size)`
+- **Getters & Setters**: `win.set_activity_rings_values(name, percentages []f64)`
+
+```v
+win.add_activity_rings('sys_load', [0.85, 0.60, 0.40], ['#ff3b30', '#34c759', '#007aff'], 140)
+win.set_activity_rings_values('sys_load', [0.90, 0.65, 0.45])
+```
+
+#### `win.add_segmented_progress(name string, labels []string, values []f64, hex_colors []string, height int) &SimpleWindow`
+Adds a multi-segment color-coded distribution progress bar (e.g. test results or disk quota) with automatic legend.
+- **Nameless Shorthand**: `win.segmented_progress(labels, values, hex_colors, height)`
+
+```v
+win.add_segmented_progress('test_results', ['Passed (48)', 'Failed (2)', 'Skipped (5)'], [48.0, 2.0, 5.0], ['#34c759', '#ff3b30', '#ff9500'], 24)
+```
+
+#### `win.add_feedback_mood(name string, selected_mood int) &SimpleWindow`
+Adds a 5-emoji sentiment satisfaction rater (😡, 🙁, 😐, 🙂, 🤩).
+- **Nameless Shorthand**: `win.feedback_mood(selected_mood)`
+- **Getters & Setters**: `win.get_feedback_mood(name) int` (1–5), `win.set_feedback_mood(name, mood int)`
+- **Events**: `.on_change(name, cb)` / `.onchange(cb)`
+
+```v
+win.add_feedback_mood('user_rating', 5)
+   .onchange(fn (mut w simplegui.SimpleWindow, val string) {
+       println('User rated: ${w.get_feedback_mood('user_rating')}/5')
+   })
+```
+
+#### `win.add_kanban_board(name string, columns []string, height int) &SimpleWindow`
+Adds an interactive multi-column task pipeline board with scrollable card stacks.
+- **Nameless Shorthand**: `win.kanban_board(columns, height)`
+- **Card Operations**:
+  - `win.kanban_add_card(name string, col_idx int, card_title string, card_subtitle string, tag string)`
+  - `win.clear_kanban_board(name string)`
+
+```v
+win.add_kanban_board('sprint_board', ['To Do', 'In Progress', 'Done'], 220)
+win.kanban_add_card('sprint_board', 0, 'Implement Dark Mode', 'Add system tint support', 'ui')
+win.kanban_add_card('sprint_board', 1, 'Core Cocoa Bridge', 'Objective-C bindings', 'core')
+```
+
+#### `win.add_date_range_picker(name string, start_date string, end_date string) &SimpleWindow`
+Adds a paired start date and end date calendar picker with standard formatting (`YYYY-MM-DD`).
+- **Nameless Shorthand**: `win.date_range_picker(start_date, end_date)`
+- **Getters & Setters**: `win.get_date_range_start(name) string`, `win.get_date_range_end(name) string`, `win.set_date_range(name, start string, end string)`
+
+```v
+win.add_date_range_picker('q3_range', '2026-07-01', '2026-09-30')
+```
+
+#### `win.add_stat_grid(name string, titles []string, values []string, trends []string, trend_styles []string) &SimpleWindow`
+Adds a multi-card dashboard summary KPI grid with bold metrics and colored trend pills.
+- **Nameless Shorthand**: `win.stat_grid(titles, values, trends, trend_styles)`
+
+```v
+win.add_stat_grid('kpis', ['Revenue', 'Active Users', 'Uptime'], ['$128.4K', '12,450', '99.99%'], ['+14.2%', '+8.1%', 'Optimal'], ['success', 'success', 'info'])
+```
+
 ---
 
 ### 3.11 High-Level Form Row Helpers & Struct Reflection

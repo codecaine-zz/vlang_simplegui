@@ -4907,3 +4907,287 @@ pub fn (win &SimpleWindow) get_browser_path(name string) string {
 	}
 	return ''
 }
+
+// add_activity_rings adds Apple Watch / Fitness style concentric circular activity gauge rings.
+pub fn (win &SimpleWindow) add_activity_rings(name string, percentages []f64, hex_colors []string, size int) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('activity_rings')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name:   real_name
+			kind:   'activity_rings'
+			value:  ''
+			number: size
+		}
+	}
+	if win.window_info != unsafe { nil } && percentages.len > 0 {
+		mut c_cols := []&u8{cap: hex_colors.len}
+		for c in hex_colors {
+			c_cols << c.str
+		}
+		C.window_add_activity_rings_control(win.window_info, real_name.str, percentages.data, c_cols.data, percentages.len, size)
+	}
+	return win
+}
+
+// activity_rings adds an auto-named concentric activity rings gauge.
+pub fn (win &SimpleWindow) activity_rings(percentages []f64, hex_colors []string, size int) &SimpleWindow {
+	return win.add_activity_rings('', percentages, hex_colors, size)
+}
+
+// set_activity_rings_values updates the progress percentage values of an activity rings control.
+pub fn (win &SimpleWindow) set_activity_rings_values(name string, percentages []f64) &SimpleWindow {
+	if win.window_info != unsafe { nil } && percentages.len > 0 {
+		C.window_set_activity_rings_values(win.window_info, name.str, percentages.data, percentages.len)
+	}
+	return win
+}
+
+// add_hero_banner adds a modern onboarding or feature hero card with title, subtitle, and CTA button.
+pub fn (win &SimpleWindow) add_hero_banner(name string, title string, subtitle string, button_text string, gradient_style string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('hero_banner')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name:  real_name
+			kind:  'hero_banner'
+			label: title
+			value: subtitle
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_hero_banner_control(win.window_info, real_name.str, title.str, subtitle.str, button_text.str, gradient_style.str)
+	}
+	return win
+}
+
+// hero_banner adds an auto-named hero banner card.
+pub fn (win &SimpleWindow) hero_banner(title string, subtitle string, button_text string, gradient_style string) &SimpleWindow {
+	return win.add_hero_banner('', title, subtitle, button_text, gradient_style)
+}
+
+// add_segmented_progress adds a multi-segment color-coded progress bar (e.g. test suite results or disk quota).
+pub fn (win &SimpleWindow) add_segmented_progress(name string, labels []string, values []f64, hex_colors []string, height int) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('segmented_progress')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name:   real_name
+			kind:   'segmented_progress'
+			value:  ''
+			number: height
+		}
+	}
+	if win.window_info != unsafe { nil } && values.len > 0 {
+		mut c_lbls := []&u8{cap: labels.len}
+		for l in labels {
+			c_lbls << l.str
+		}
+		mut c_cols := []&u8{cap: hex_colors.len}
+		for c in hex_colors {
+			c_cols << c.str
+		}
+		C.window_add_segmented_progress_control(win.window_info, real_name.str, c_lbls.data, values.data, c_cols.data, values.len, height)
+	}
+	return win
+}
+
+// segmented_progress adds an auto-named segmented progress bar.
+pub fn (win &SimpleWindow) segmented_progress(labels []string, values []f64, hex_colors []string, height int) &SimpleWindow {
+	return win.add_segmented_progress('', labels, values, hex_colors, height)
+}
+
+// add_feedback_mood adds a 5-emoji sentiment feedback selector (😡, 🙁, 😐, 🙂, 🤩).
+pub fn (win &SimpleWindow) add_feedback_mood(name string, selected_mood int) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('feedback_mood')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name:   real_name
+			kind:   'feedback_mood'
+			value:  selected_mood.str()
+			number: selected_mood
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_feedback_mood_control(win.window_info, real_name.str, selected_mood)
+	}
+	return win
+}
+
+// feedback_mood adds an auto-named 5-emoji sentiment selector.
+pub fn (win &SimpleWindow) feedback_mood(selected_mood int) &SimpleWindow {
+	return win.add_feedback_mood('', selected_mood)
+}
+
+// set_feedback_mood sets the active mood rating (1 to 5).
+pub fn (win &SimpleWindow) set_feedback_mood(name string, selected_mood int) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_feedback_mood(win.window_info, name.str, selected_mood)
+	}
+	return win
+}
+
+// get_feedback_mood gets the current mood rating (1 to 5, or 0 if none).
+pub fn (win &SimpleWindow) get_feedback_mood(name string) int {
+	if win.window_info != unsafe { nil } {
+		return C.window_get_feedback_mood(win.window_info, name.str)
+	}
+	return 0
+}
+
+// add_kanban_board adds an interactive multi-column task board with scrollable card stacks.
+pub fn (win &SimpleWindow) add_kanban_board(name string, columns []string, height int) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('kanban_board')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name:   real_name
+			kind:   'kanban_board'
+			value:  ''
+			number: height
+		}
+	}
+	if win.window_info != unsafe { nil } && columns.len > 0 {
+		mut c_cols := []&u8{cap: columns.len}
+		for col in columns {
+			c_cols << col.str
+		}
+		C.window_add_kanban_board_control(win.window_info, real_name.str, c_cols.data, columns.len, height)
+	}
+	return win
+}
+
+// kanban_board adds an auto-named kanban board.
+pub fn (win &SimpleWindow) kanban_board(columns []string, height int) &SimpleWindow {
+	return win.add_kanban_board('', columns, height)
+}
+
+// kanban_add_card inserts a card into a column of a kanban board.
+pub fn (win &SimpleWindow) kanban_add_card(name string, col_idx int, card_title string, card_subtitle string, tag string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_kanban_add_card(win.window_info, name.str, col_idx, card_title.str, card_subtitle.str, tag.str)
+	}
+	return win
+}
+
+// clear_kanban_board removes all cards from all columns of a kanban board.
+pub fn (win &SimpleWindow) clear_kanban_board(name string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_clear_kanban_board(win.window_info, name.str)
+	}
+	return win
+}
+
+// add_date_range_picker adds a start and end date calendar picker pair.
+pub fn (win &SimpleWindow) add_date_range_picker(name string, start_date string, end_date string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('date_range_picker')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name:  real_name
+			kind:  'date_range_picker'
+			label: start_date
+			value: end_date
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_date_range_picker_control(win.window_info, real_name.str, start_date.str, end_date.str)
+	}
+	return win
+}
+
+// date_range_picker adds an auto-named date range picker.
+pub fn (win &SimpleWindow) date_range_picker(start_date string, end_date string) &SimpleWindow {
+	return win.add_date_range_picker('', start_date, end_date)
+}
+
+// get_date_range_start gets the selected start date string (YYYY-MM-DD).
+pub fn (win &SimpleWindow) get_date_range_start(name string) string {
+	if win.window_info != unsafe { nil } {
+		res := C.window_get_date_range_start(win.window_info, name.str)
+		if res != unsafe { nil } {
+			return unsafe { cstring_to_vstring(res) }
+		}
+	}
+	return ''
+}
+
+// get_date_range_end gets the selected end date string (YYYY-MM-DD).
+pub fn (win &SimpleWindow) get_date_range_end(name string) string {
+	if win.window_info != unsafe { nil } {
+		res := C.window_get_date_range_end(win.window_info, name.str)
+		if res != unsafe { nil } {
+			return unsafe { cstring_to_vstring(res) }
+		}
+	}
+	return ''
+}
+
+// set_date_range sets start and end dates (YYYY-MM-DD).
+pub fn (win &SimpleWindow) set_date_range(name string, start_date string, end_date string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_date_range(win.window_info, name.str, start_date.str, end_date.str)
+	}
+	return win
+}
+
+// add_stat_grid adds a multi-card KPI dashboard grid with titles, big values, and colored trend pills.
+pub fn (win &SimpleWindow) add_stat_grid(name string, titles []string, values []string, trends []string, trend_styles []string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('stat_grid')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name:   real_name
+			kind:   'stat_grid'
+			value:  ''
+			number: titles.len
+		}
+	}
+	if win.window_info != unsafe { nil } && titles.len > 0 {
+		mut c_titles := []&u8{cap: titles.len}
+		for t in titles {
+			c_titles << t.str
+		}
+		mut c_vals := []&u8{cap: values.len}
+		for v in values {
+			c_vals << v.str
+		}
+		mut c_trends := []&u8{cap: trends.len}
+		for tr in trends {
+			c_trends << tr.str
+		}
+		mut c_styles := []&u8{cap: trend_styles.len}
+		for ts in trend_styles {
+			c_styles << ts.str
+		}
+		C.window_add_stat_grid_control(win.window_info, real_name.str, c_titles.data, c_vals.data, c_trends.data, c_styles.data, titles.len)
+	}
+	return win
+}
+
+// stat_grid adds an auto-named KPI stat grid.
+pub fn (win &SimpleWindow) stat_grid(titles []string, values []string, trends []string, trend_styles []string) &SimpleWindow {
+	return win.add_stat_grid('', titles, values, trends, trend_styles)
+}

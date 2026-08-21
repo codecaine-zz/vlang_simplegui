@@ -562,6 +562,23 @@ void window_set_browser_column_items(main__WindowInfo *info, const char *name, i
 int window_get_browser_selected_row(main__WindowInfo *info, const char *name, int column);
 const char *window_get_browser_path(main__WindowInfo *info, const char *name);
 
+// Modern Productivity & Visual Analytics Controls
+void *window_add_hero_banner_control(main__WindowInfo *info, const char *name, const char *title, const char *subtitle, const char *button_text, const char *gradient_style);
+void *window_add_activity_rings_control(main__WindowInfo *info, const char *name, const double *percentages, const char **hex_colors, int count, int size);
+void window_set_activity_rings_values(main__WindowInfo *info, const char *name, const double *percentages, int count);
+void *window_add_segmented_progress_control(main__WindowInfo *info, const char *name, const char **labels, const double *values, const char **hex_colors, int count, int height);
+void *window_add_feedback_mood_control(main__WindowInfo *info, const char *name, int selected_mood);
+void window_set_feedback_mood(main__WindowInfo *info, const char *name, int selected_mood);
+int window_get_feedback_mood(main__WindowInfo *info, const char *name);
+void *window_add_kanban_board_control(main__WindowInfo *info, const char *name, const char **columns, int col_count, int height);
+void window_kanban_add_card(main__WindowInfo *info, const char *name, int col_idx, const char *card_title, const char *card_subtitle, const char *tag);
+void window_clear_kanban_board(main__WindowInfo *info, const char *name);
+void *window_add_date_range_picker_control(main__WindowInfo *info, const char *name, const char *start_date, const char *end_date);
+const char *window_get_date_range_start(main__WindowInfo *info, const char *name);
+const char *window_get_date_range_end(main__WindowInfo *info, const char *name);
+void window_set_date_range(main__WindowInfo *info, const char *name, const char *start_date, const char *end_date);
+void *window_add_stat_grid_control(main__WindowInfo *info, const char *name, const char **titles, const char **values, const char **trends, const char **trend_styles, int count);
+
 // Comprehensive Window Control APIs
 void window_set_vibrancy(main__WindowInfo *info, const char *material);
 void window_set_corner_radius(main__WindowInfo *info, double radius);

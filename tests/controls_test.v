@@ -1518,3 +1518,47 @@ fn test_new_macos_native_controls() {
 	win.show_share_sheet(['https://vlang.io'], 'col_browser')
 	win.share('https://github.com/codecaine/vlang_simplegui')
 }
+
+fn test_modern_productivity_and_analytics_controls() {
+	mut win := simplegui.new_simple_window('Modern Controls Test', 800, 600)
+
+	// 1. Activity Rings
+	win.add_activity_rings('rings1', [0.75, 0.50, 0.90], ['#ff3b30', '#34c759', '#007aff'], 140)
+	assert win.has_control('rings1')
+	win.set_activity_rings_values('rings1', [0.80, 0.60, 0.95])
+
+	// 2. Hero Banner
+	win.add_hero_banner('banner1', 'Welcome to SimpleGUI', 'The fastest native desktop GUI library for V', 'Get Started', 'indigo')
+	assert win.has_control('banner1')
+
+	// 3. Segmented Progress
+	win.add_segmented_progress('seg_prog', ['Passed (45)', 'Failed (3)', 'Skipped (2)'], [45.0, 3.0, 2.0], ['#34c759', '#ff3b30', '#ff9500'], 28)
+	assert win.has_control('seg_prog')
+
+	// 4. Feedback Mood
+	win.add_feedback_mood('mood1', 4)
+	assert win.has_control('mood1')
+	assert win.get_feedback_mood('mood1') == 4
+	win.set_feedback_mood('mood1', 5)
+	assert win.get_feedback_mood('mood1') == 5
+
+	// 5. Kanban Board
+	win.add_kanban_board('kboard', ['To Do', 'In Progress', 'Done'], 200)
+	assert win.has_control('kboard')
+	win.kanban_add_card('kboard', 0, 'Design API', 'Review modern widgets', 'design')
+	win.kanban_add_card('kboard', 1, 'Implement NSViews', 'Objective-C bridging', 'core')
+	win.clear_kanban_board('kboard')
+
+	// 6. Date Range Picker
+	win.add_date_range_picker('dr_picker', '2026-01-01', '2026-12-31')
+	assert win.has_control('dr_picker')
+	assert win.get_date_range_start('dr_picker') == '2026-01-01'
+	assert win.get_date_range_end('dr_picker') == '2026-12-31'
+	win.set_date_range('dr_picker', '2026-06-01', '2026-06-30')
+	assert win.get_date_range_start('dr_picker') == '2026-06-01'
+	assert win.get_date_range_end('dr_picker') == '2026-06-30'
+
+	// 7. Stat Grid
+	win.add_stat_grid('kpi_grid', ['Revenue', 'Active Users', 'Uptime', 'Error Rate'], ['$128.5K', '14,200', '99.98%', '0.02%'], ['+14.2%', '+8.5%', 'Optimal', '-0.01%'], ['success', 'success', 'info', 'success'])
+	assert win.has_control('kpi_grid')
+}
