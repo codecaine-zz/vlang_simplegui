@@ -1753,7 +1753,8 @@ fn main() {
 
 ### 10. Ergonomics, Settings Persistence & Async Execution
 
-- **Settings Persistence**: `win.save_values_to_file("settings.json")!`, `win.load_values_from_file("settings.json")!`
+- **Settings & App State Persistence**: `win.save_app_state("preset_1")!`, `win.load_app_state("preset_1")`, `win.enable_app_autosave()`, `win.save_values_to_file("settings.json")!`, `win.load_values_from_file("settings.json")!` (automatically persists to the recommended macOS user application storage `~/Library/Application Support/<app_name>/`, ensuring full functionality when moved to `/Applications`)
+- **Storage Path Resolvers**: `win.get_app_storage_dir()`, `win.get_app_storage_path(filename)`, `win.resolve_storage_path(path)`
 - **Form Dirty Tracking**: `win.is_dirty()`, `win.is_control_dirty(name)`, `win.commit_changes()`, `win.confirm_discard_changes()`
 - **Live Search Filtering**: `win.bind_search_to_list(search_name, list_name)`
 - **Async Execution**: `win.run_async(bg_task_fn, on_complete_cb)`, `win.run_on_main_thread(cb)`, `win.run_on_main_thread_sync(cb)`

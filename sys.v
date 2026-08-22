@@ -167,11 +167,27 @@ pub fn (win &SimpleWindow) is_dir(path string) bool {
 
 // read_file_opt reads file contents, returning a standard V Result string.
 // Forces robust error propagation and aligns with V's Option & Result practices.
+// If the path is relative and not found in current working directory, checks the recommended app storage location.
 pub fn (win &SimpleWindow) read_file_opt(path string) !string {
-	if !os.exists(path) {
-		return error('File does not exist: ' + path)
+	mut target_path := path
+	if !os.exists(target_path) {
+		if !path.starts_with('/') && !path.starts_with('~') {
+			resolved := win.resolve_storage_path(path)
+			if os.exists(resolved) {
+				target_path = resolved
+			} else {
+				return error('File does not exist: ' + path)
+			}
+		} else if path.starts_with('~') {
+			target_path = path.replace('~', os.home_dir())
+			if !os.exists(target_path) {
+				return error('File does not exist: ' + target_path)
+			}
+		} else {
+			return error('File does not exist: ' + path)
+		}
 	}
-	content := os.read_file(path) or { return error(err.msg()) }
+	content := os.read_file(target_path) or { return error(err.msg()) }
 	return content
 }
 
@@ -182,8 +198,18 @@ pub fn (win &SimpleWindow) read_file(path string) string {
 }
 
 // write_file_opt writes dynamic content to a file, returning a Result flag.
+// Automatically ensures parent directory exists and expands ~ paths.
 pub fn (win &SimpleWindow) write_file_opt(path string, content string) !&SimpleWindow {
-	os.write_file(path, content) or { return error(err.msg()) }
+	target_path := if path.starts_with('~') {
+		path.replace('~', os.home_dir())
+	} else {
+		path
+	}
+	dir := os.dir(target_path)
+	if dir != '' && !os.exists(dir) {
+		os.mkdir_all(dir) or {}
+	}
+	os.write_file(target_path, content) or { return error(err.msg()) }
 	return win
 }
 
@@ -2021,13 +2047,112 @@ pub fn (win &SimpleWindow) get_listening_ports() []int {
 	return ports
 }
 
-// get_app_data_dir returns the user application support directory path for app_name.
-pub fn (win &SimpleWindow) get_app_data_dir(app_name string) string {
-	dir := os.join_path(os.home_dir(), 'Library', 'Application Support', app_name)
+// get_app_name infers a clean, filesystem-safe application identifier from window title, bundle ID, or binary name.
+pub fn (win &SimpleWindow) get_app_name() string {
+	if win.title.trim_space() != '' {
+		mut clean := ''
+		for c in win.title.trim_space() {
+			if c.is_alnum() || c == `_` || c == `-` {
+				clean += c.ascii_str()
+			} else if c == ` ` {
+				clean += '_'
+			}
+		}
+		clean = clean.trim('_')
+		if clean != '' {
+			return clean
+		}
+	}
+	bundle := win.get_app_bundle_id()
+	if bundle != '' && bundle != 'unknown' {
+		parts := bundle.split('.')
+		if parts.len > 0 && parts.last() != '' {
+			return parts.last()
+		}
+		return bundle
+	}
+	exe := os.file_name(os.executable()).all_before_last('.')
+	if exe != '' && exe != 'v' && exe != 'main' {
+		return exe
+	}
+	return 'simplegui_app'
+}
+
+// get_app_storage_dir returns the recommended user storage directory path for the app (~/Library/Application Support/<app_name> on macOS).
+// Automatically creates the directory if it does not exist.
+pub fn (win &SimpleWindow) get_app_storage_dir(app_name ...string) string {
+	target_app := if app_name.len > 0 && app_name[0].trim_space() != '' {
+		app_name[0].trim_space()
+	} else {
+		win.get_app_name()
+	}
+	base := os.config_dir() or {
+		os.join_path(os.home_dir(), 'Library', 'Application Support')
+	}
+	dir := os.join_path(base, target_app)
 	if !os.exists(dir) {
 		os.mkdir_all(dir) or {}
 	}
 	return dir
+}
+
+// get_app_cache_dir returns the recommended cache directory path for the app (~/Library/Caches/<app_name> on macOS).
+// Automatically creates the directory if it does not exist.
+pub fn (win &SimpleWindow) get_app_cache_dir(app_name ...string) string {
+	target_app := if app_name.len > 0 && app_name[0].trim_space() != '' {
+		app_name[0].trim_space()
+	} else {
+		win.get_app_name()
+	}
+	base := os.cache_dir()
+	dir := os.join_path(base, target_app)
+	if !os.exists(dir) {
+		os.mkdir_all(dir) or {}
+	}
+	return dir
+}
+
+// get_app_storage_path returns the full path for a file inside the recommended user storage directory.
+// Automatically creates any required parent subdirectories.
+pub fn (win &SimpleWindow) get_app_storage_path(filename string, app_name ...string) string {
+	if filename.starts_with('/') {
+		dir := os.dir(filename)
+		if !os.exists(dir) {
+			os.mkdir_all(dir) or {}
+		}
+		return filename
+	}
+	if filename.starts_with('~') {
+		expanded := filename.replace('~', os.home_dir())
+		dir := os.dir(expanded)
+		if !os.exists(dir) {
+			os.mkdir_all(dir) or {}
+		}
+		return expanded
+	}
+	storage_dir := win.get_app_storage_dir(...app_name)
+	target := os.join_path(storage_dir, filename)
+	dir := os.dir(target)
+	if !os.exists(dir) {
+		os.mkdir_all(dir) or {}
+	}
+	return target
+}
+
+// resolve_storage_path resolves a path to an absolute path:
+// - Absolute paths (starting with / or ~) have ~ expanded to home directory.
+// - Relative filenames/paths automatically resolve into the recommended user application storage directory (~/Library/Application Support/<app_name>/).
+// This ensures that apps moved to /Applications or installed globally persist their state properly.
+pub fn (win &SimpleWindow) resolve_storage_path(path string, app_name ...string) string {
+	return win.get_app_storage_path(path, ...app_name)
+}
+
+// get_app_data_dir returns the user application support directory path for app_name.
+pub fn (win &SimpleWindow) get_app_data_dir(app_name string) string {
+	if app_name != '' {
+		return win.get_app_storage_dir(app_name)
+	}
+	return win.get_app_storage_dir()
 }
 
 // get_user_downloads_dir returns absolute path to Downloads folder.

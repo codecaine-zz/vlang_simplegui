@@ -3833,15 +3833,21 @@ arch := win.get_cpu_architecture()
   - `'config'`: User config folder.
   - `'data'`: User data folder.
   - `'app'`: App executable folder.
-- `win.get_app_data_dir(app_name string) string`: Resolves the application support directory path (`~/Library/Application Support/<app_name>`).
+- `win.get_app_name() string`: Infers a clean, filesystem-safe application identifier from window title, bundle ID, or binary name.
+- `win.get_app_storage_dir(app_name ...string) string`: Resolves and creates the recommended user application support storage directory (`~/Library/Application Support/<app_name>` on macOS, `~/.config/<app_name>` on Linux).
+- `win.get_app_cache_dir(app_name ...string) string`: Resolves and creates the recommended user cache directory (`~/Library/Caches/<app_name>`).
+- `win.get_app_storage_path(filename string, app_name ...string) string`: Resolves a full path inside the recommended application support folder, ensuring parent directories exist.
+- `win.resolve_storage_path(path string, app_name ...string) string`: Resolves relative paths into the recommended store location and expands `~` paths.
+- `win.get_app_data_dir(app_name string) string`: Alias/helper for resolving application support directory.
 - `win.get_user_downloads_dir() string`: Returns absolute path to the user's Downloads folder.
 - `win.get_user_documents_dir() string`: Returns absolute path to the user's Documents folder.
 - `win.get_user_desktop_dir() string`: Returns absolute path to the user's Desktop folder.
 
 ```v
+storage_dir := win.get_app_storage_dir()           // ~/Library/Application Support/MyApp
+state_path := win.get_app_storage_path('data.db')  // ~/Library/Application Support/MyApp/data.db
 home := win.get_system_path('home')
 downloads := win.get_user_downloads_dir()
-app_data := win.get_app_data_dir('MyApp')
 ```
 
 ### Filesystem IO Utilities (`NL_FILESYSTEM`)
@@ -5832,12 +5838,28 @@ win.on_list_double_click('my_list', fn (mut win simplegui.SimpleWindow, idx stri
 })
 ```
 
-### Settings Persistence
+### Settings & App State Persistence
 
-- `win.save_values_to_file(path string) !` writes every control value to a JSON file.
-- `win.load_values_from_file(path string) !` restores control values from a JSON file (unknown control names are skipped safely).
+SimpleGUI automatically uses the recommended macOS storage location (`~/Library/Application Support/<app_name>/`) for state files, ensuring applications function seamlessly even when moved to `/Applications` or launched from custom locations without write access to the working directory.
+
+- `win.save_values_to_file(path string) !`: Writes every control value to a JSON file. Relative paths automatically resolve into the recommended application support directory.
+- `win.load_values_from_file(path string) !`: Restores control values from a JSON file (checks both local working directory and recommended storage location).
+- `win.save_app_state(state_name ...string) !`: Saves entire form/window state to the recommended application support folder (`<state_name or "app_state">.json`).
+- `win.load_app_state(state_name ...string) bool`: Restores entire form/window state from the recommended store location. Returns true on success.
+- `win.save_state(filename ...string) !` / `win.load_state(filename ...string) bool`: Convenience shortcuts for app state persistence.
+- `win.has_saved_state(state_name ...string) bool`: Checks if a saved state file exists.
+- `win.clear_app_state(state_name ...string) bool`: Deletes the saved state file.
+- `win.enable_app_autosave(interval_ms ...int) &SimpleWindow`: Automatically saves app state to recommended storage every `interval_ms` (defaults to 5000ms).
 
 ```v
+// Recommended: automatic user application support persistence
+win.save_app_state('preset_1')!
+win.load_app_state('preset_1')
+
+// One-call autosave
+win.enable_app_autosave(5000)
+
+// Relative path persistence automatically resolves to recommended storage
 win.save_values_to_file('settings.json')!
 win.load_values_from_file('settings.json')!
 ```

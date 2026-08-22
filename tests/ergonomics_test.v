@@ -728,9 +728,9 @@ fn test_new_ergonomic_features() {
 
 	// 2. Generic set/get_as
 	win.set('pwd', 'new_password')
-	win.set('sld', 80)
-	win.set('swh', false)
-	win.set('nbr', 42)
+	win.set('sld', '80')
+	win.set('swh', 'false')
+	win.set('nbr', '42')
 
 	assert win.get_as[string]('pwd') == 'new_password'
 	assert win.get_as[int]('sld') == 80
@@ -749,7 +749,7 @@ fn test_new_ergonomic_features() {
 
 	win.set('name', 'Ada')
 	win.set('email', 'ada@example.com')
-	win.set('age', 28)
+	win.set('age', '28')
 
 	assert win.validate_struct[TestValidationStruct]() == true
 	assert win.get_error('name') == ''
@@ -1175,4 +1175,75 @@ fn test_ergonomic_window_apis() {
 
 	form_win.save_layout('unit_test_app')
 	form_win.restore_layout('unit_test_app')
+}
+
+fn test_recommended_storage_and_app_state() {
+	mut win := simplegui.new_simple_window('Storage Studio Test App', 500, 400)
+	
+	// Test app name deduction
+	app_name := win.get_app_name()
+	assert app_name.len > 0
+	assert app_name == 'Storage_Studio_Test_App'
+
+	// Test storage and cache directories
+	storage_dir := win.get_app_storage_dir()
+	assert storage_dir.len > 0
+	assert storage_dir.contains('Storage_Studio_Test_App')
+	assert os.exists(storage_dir) == true
+
+	cache_dir := win.get_app_cache_dir()
+	assert cache_dir.len > 0
+	assert os.exists(cache_dir) == true
+
+	// Test storage path resolution
+	state_path := win.get_app_storage_path('test_state.json')
+	assert state_path.starts_with(storage_dir)
+	assert state_path.ends_with('test_state.json')
+
+	resolved_rel := win.resolve_storage_path('relative_data.json')
+	assert resolved_rel.starts_with(storage_dir)
+
+	// Test form state persistence to recommended store location
+	win.add_input('txt_user', 'AntigravityUser')
+	win.add_checkbox('chk_notifications', 'Enable Notifications', true)
+	win.add_slider('sld_volume', 85)
+
+	// Save app state
+	win.save_app_state('test_preset') or {
+		assert false, 'save_app_state failed: ${err}'
+	}
+	assert win.has_saved_state('test_preset') == true
+
+	// Clear controls
+	win.set_text('txt_user', 'ClearedUser')
+	win.set_checked('chk_notifications', false)
+	win.set_value_int('sld_volume', 10)
+
+	// Restore app state
+	loaded := win.load_app_state('test_preset')
+	assert loaded == true
+	assert win.get_text('txt_user') == 'AntigravityUser'
+	assert win.is_checked('chk_notifications') == true
+	assert win.get_value_int('sld_volume') == 85
+
+	// Test relative path save_values_to_file / load_values_from_file
+	win.save_values_to_file('rel_save_test.json') or {
+		assert false, 'save_values_to_file relative path failed: ${err}'
+	}
+	win.set_text('txt_user', 'AnotherUser')
+	win.load_values_from_file('rel_save_test.json') or {
+		assert false, 'load_values_from_file relative path failed: ${err}'
+	}
+	assert win.get_text('txt_user') == 'AntigravityUser'
+
+	// Test clear_app_state
+	cleared := win.clear_app_state('test_preset')
+	assert cleared == true
+	assert win.has_saved_state('test_preset') == false
+
+	// Clean up relative test file
+	rel_path := win.get_app_storage_path('rel_save_test.json')
+	if os.exists(rel_path) {
+		os.rm(rel_path) or {}
+	}
 }

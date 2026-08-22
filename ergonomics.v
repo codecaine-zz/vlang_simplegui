@@ -582,15 +582,29 @@ pub fn (win &SimpleWindow) on_list_double_click(name string, callback StringEven
 // ==========================================
 
 // save_values_to_file saves every control value to a JSON file for later restoration.
+// If a relative path is passed (e.g. "settings.json"), it automatically resolves to the
+// recommended user storage location (~/Library/Application Support/<app>/ on macOS),
+// ensuring the application works properly when moved to /Applications or installed globally.
 pub fn (win &SimpleWindow) save_values_to_file(path string) ! {
+	target_path := win.resolve_storage_path(path)
 	values := win.dump_values()
-	os.write_file(path, json2.encode(values))!
+	os.write_file(target_path, json2.encode(values))!
 }
 
 // load_values_from_file restores previously saved control values from a JSON file.
 // Values for controls that no longer exist are silently skipped.
+// If a relative path is passed, it checks both the local directory and the recommended
+// user storage location (~/Library/Application Support/<app>/ on macOS).
 pub fn (win &SimpleWindow) load_values_from_file(path string) ! {
-	content := os.read_file(path)!
+	mut target_path := path
+	if !path.starts_with('/') && !path.starts_with('~') {
+		if !os.exists(path) {
+			target_path = win.resolve_storage_path(path)
+		}
+	} else if path.starts_with('~') {
+		target_path = path.replace('~', os.home_dir())
+	}
+	content := os.read_file(target_path)!
 	values := json_decode_map(content)
 	for name, val in values {
 		if win.has_control(name) {
@@ -604,6 +618,104 @@ pub fn (win &SimpleWindow) load_values_from_file(path string) ! {
 			}
 		}
 	}
+}
+
+// save_app_state persists all window control values to the recommended user application storage location.
+// Default state file is "app_state.json" or specified custom name (e.g. "preset_1").
+pub fn (win &SimpleWindow) save_app_state(state_name ...string) ! {
+	target_name := if state_name.len > 0 && state_name[0].trim_space() != '' {
+		mut s := state_name[0].trim_space()
+		if !s.ends_with('.json') {
+			s += '.json'
+		}
+		s
+	} else {
+		'app_state.json'
+	}
+	path := win.get_app_storage_path(target_name)
+	win.save_values_to_file(path)!
+}
+
+// load_app_state restores all window control values from the recommended user application storage location.
+// Returns true when state was loaded successfully, or false if the state file does not exist or failed to parse.
+pub fn (win &SimpleWindow) load_app_state(state_name ...string) bool {
+	target_name := if state_name.len > 0 && state_name[0].trim_space() != '' {
+		mut s := state_name[0].trim_space()
+		if !s.ends_with('.json') {
+			s += '.json'
+		}
+		s
+	} else {
+		'app_state.json'
+	}
+	path := win.get_app_storage_path(target_name)
+	if !os.exists(path) {
+		return false
+	}
+	win.load_values_from_file(path) or { return false }
+	return true
+}
+
+// save_state is a convenience method that saves current form/control values to the recommended store location.
+pub fn (win &SimpleWindow) save_state(filename ...string) ! {
+	win.save_app_state(...filename)!
+}
+
+// load_state is a convenience method that restores form/control values from the recommended store location.
+pub fn (win &SimpleWindow) load_state(filename ...string) bool {
+	return win.load_app_state(...filename)
+}
+
+// has_saved_state checks if a persisted state file exists in the recommended application storage directory.
+pub fn (win &SimpleWindow) has_saved_state(state_name ...string) bool {
+	target_name := if state_name.len > 0 && state_name[0].trim_space() != '' {
+		mut s := state_name[0].trim_space()
+		if !s.ends_with('.json') {
+			s += '.json'
+		}
+		s
+	} else {
+		'app_state.json'
+	}
+	path := win.get_app_storage_path(target_name)
+	return os.exists(path)
+}
+
+// clear_app_state removes a persisted state file from the recommended storage location.
+pub fn (win &SimpleWindow) clear_app_state(state_name ...string) bool {
+	target_name := if state_name.len > 0 && state_name[0].trim_space() != '' {
+		mut s := state_name[0].trim_space()
+		if !s.ends_with('.json') {
+			s += '.json'
+		}
+		s
+	} else {
+		'app_state.json'
+	}
+	path := win.get_app_storage_path(target_name)
+	if os.exists(path) {
+		os.rm(path) or { return false }
+		return true
+	}
+	return false
+}
+
+// enable_app_autosave periodically saves application state into the recommended application support directory.
+// Default interval is 5000ms.
+pub fn (win &SimpleWindow) enable_app_autosave(interval_ms ...int) &SimpleWindow {
+	interval := if interval_ms.len > 0 && interval_ms[0] > 0 {
+		interval_ms[0]
+	} else {
+		5000
+	}
+	return win.set_interval('autosave_app_state', interval, fn (mut w SimpleWindow) {
+		w.save_app_state() or {}
+	})
+}
+
+// is_checked returns true if a checkbox, switch, or toggle is checked. Alias for get_checked.
+pub fn (win &SimpleWindow) is_checked(name string) bool {
+	return win.get_checked(name)
 }
 
 // ==========================================
@@ -1107,17 +1219,28 @@ pub fn (win &SimpleWindow) move_table_row(name string, from int, to int) &Simple
 }
 
 // save_table_to_csv exports every table row to a CSV file.
+// If a relative path is passed, it resolves to the recommended user application storage location.
 pub fn (win &SimpleWindow) save_table_to_csv(name string, path string) ! {
+	target_path := win.resolve_storage_path(path)
 	mut writer := csv.new_writer()
 	for row in win.get_table_rows(name) {
 		writer.write(row)!
 	}
-	os.write_file(path, writer.str())!
+	os.write_file(target_path, writer.str())!
 }
 
 // load_table_from_csv replaces a table's rows with the contents of a CSV file.
+// Checks relative path and recommended storage location.
 pub fn (win &SimpleWindow) load_table_from_csv(name string, path string) ! {
-	content := os.read_file(path)!
+	mut target_path := path
+	if !path.starts_with('/') && !path.starts_with('~') {
+		if !os.exists(path) {
+			target_path = win.resolve_storage_path(path)
+		}
+	} else if path.starts_with('~') {
+		target_path = path.replace('~', os.home_dir())
+	}
+	content := os.read_file(target_path)!
 	mut reader := csv.new_reader(content)
 	mut rows := [][]string{}
 	for {
@@ -1290,14 +1413,25 @@ pub fn (win &SimpleWindow) get_table_column_values(name string, column int) []st
 }
 
 // save_list_to_file writes every list box item to a plain text file, one item per line.
+// If a relative path is passed, it resolves to the recommended user application storage location.
 pub fn (win &SimpleWindow) save_list_to_file(name string, path string) ! {
+	target_path := win.resolve_storage_path(path)
 	items := win.get_list_items(name)
-	os.write_file(path, items.join('\n'))!
+	os.write_file(target_path, items.join('\n'))!
 }
 
 // load_list_from_file replaces a list box's items with lines from a plain text file.
+// Checks relative path and recommended storage location.
 pub fn (win &SimpleWindow) load_list_from_file(name string, path string) ! {
-	content := os.read_file(path)!
+	mut target_path := path
+	if !path.starts_with('/') && !path.starts_with('~') {
+		if !os.exists(path) {
+			target_path = win.resolve_storage_path(path)
+		}
+	} else if path.starts_with('~') {
+		target_path = path.replace('~', os.home_dir())
+	}
+	content := os.read_file(target_path)!
 	mut items := []string{}
 	for line in content.split_into_lines() {
 		trimmed := line.trim_right('\r\n')
@@ -1456,29 +1590,51 @@ pub fn (win &SimpleWindow) get_table_column_average_numeric(name string, column 
 // ==========================================
 
 // save_table_to_json exports all table rows to a JSON file.
+// If a relative path is passed, it resolves to the recommended user application storage location.
 pub fn (win &SimpleWindow) save_table_to_json(name string, path string) ! {
+	target_path := win.resolve_storage_path(path)
 	rows := win.get_table_rows(name)
 	content := json2.encode(rows)
-	os.write_file(path, content)!
+	os.write_file(target_path, content)!
 }
 
 // load_table_from_json replaces a table's rows with the contents of a JSON file.
+// Checks relative path and recommended storage location.
 pub fn (win &SimpleWindow) load_table_from_json(name string, path string) ! {
-	content := os.read_file(path)!
+	mut target_path := path
+	if !path.starts_with('/') && !path.starts_with('~') {
+		if !os.exists(path) {
+			target_path = win.resolve_storage_path(path)
+		}
+	} else if path.starts_with('~') {
+		target_path = path.replace('~', os.home_dir())
+	}
+	content := os.read_file(target_path)!
 	rows := json2.decode[[][]string](content)!
 	win.set_table_rows(name, rows)
 }
 
 // save_list_to_json exports all list items to a JSON file.
+// If a relative path is passed, it resolves to the recommended user application storage location.
 pub fn (win &SimpleWindow) save_list_to_json(name string, path string) ! {
+	target_path := win.resolve_storage_path(path)
 	items := win.get_list_items(name)
 	content := json2.encode(items)
-	os.write_file(path, content)!
+	os.write_file(target_path, content)!
 }
 
 // load_list_from_json replaces a list's items with the contents of a JSON file.
+// Checks relative path and recommended storage location.
 pub fn (win &SimpleWindow) load_list_from_json(name string, path string) ! {
-	content := os.read_file(path)!
+	mut target_path := path
+	if !path.starts_with('/') && !path.starts_with('~') {
+		if !os.exists(path) {
+			target_path = win.resolve_storage_path(path)
+		}
+	} else if path.starts_with('~') {
+		target_path = path.replace('~', os.home_dir())
+	}
+	content := os.read_file(target_path)!
 	items := json2.decode[[]string](content)!
 	win.update_list_items(name, items)
 }
@@ -2801,11 +2957,20 @@ pub fn (win &SimpleWindow) enable_autosave(path string, interval_ms int) &Simple
 
 // load_values_if_exists restores control values from a JSON file when it
 // exists, returning true when values were loaded.
+// Checks both relative path and recommended user storage location.
 pub fn (win &SimpleWindow) load_values_if_exists(path string) bool {
-	if !os.exists(path) {
+	mut target_path := path
+	if !path.starts_with('/') && !path.starts_with('~') {
+		if !os.exists(path) {
+			target_path = win.resolve_storage_path(path)
+		}
+	} else if path.starts_with('~') {
+		target_path = path.replace('~', os.home_dir())
+	}
+	if !os.exists(target_path) {
 		return false
 	}
-	win.load_values_from_file(path) or { return false }
+	win.load_values_from_file(target_path) or { return false }
 	return true
 }
 
@@ -2917,9 +3082,10 @@ pub fn (win &SimpleWindow) speak(text string) &SimpleWindow {
 	return win.say(text)
 }
 
-// save_layout saves window dimensions (w, h) and screen position (x, y) to path.
+// save_layout saves window dimensions (w, h) and screen position (x, y) to the recommended user application storage location.
 pub fn (win &SimpleWindow) save_layout(app_name string) &SimpleWindow {
-	path := os.join_path(os.home_dir(), '.${app_name}_layout.json')
+	resolved_app := if app_name.trim_space() != '' { app_name.trim_space() } else { win.get_app_name() }
+	path := win.get_app_storage_path('layout.json', resolved_app)
 	x, y, w, h := win.get_bounds()
 	m := {
 		'x':      x.str()
@@ -2932,11 +3098,17 @@ pub fn (win &SimpleWindow) save_layout(app_name string) &SimpleWindow {
 	return win
 }
 
-// restore_layout restores window position and size from saved layout.
+// restore_layout restores window position and size from saved layout in the recommended user application storage location.
 pub fn (win &SimpleWindow) restore_layout(app_name string) &SimpleWindow {
-	path := os.join_path(os.home_dir(), '.${app_name}_layout.json')
+	resolved_app := if app_name.trim_space() != '' { app_name.trim_space() } else { win.get_app_name() }
+	mut path := win.get_app_storage_path('layout.json', resolved_app)
 	if !os.exists(path) {
-		return win
+		legacy_path := os.join_path(os.home_dir(), '.${resolved_app}_layout.json')
+		if os.exists(legacy_path) {
+			path = legacy_path
+		} else {
+			return win
+		}
 	}
 	content := os.read_file(path) or { return win }
 	m := json2.decode[map[string]string](content) or { return win }
