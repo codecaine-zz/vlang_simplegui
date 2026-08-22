@@ -27,6 +27,9 @@ Native macOS GUI applications built with **SimpleGUI** for V, providing high-per
 | **📦 Ouch Studio Pro** | [`applications/ouch_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/ouch_studio.v) | Ultra-fast universal archive & compression workbench powered by `ouch`: lossless/high-density packaging across `.tar.zst`, `.tar.gz`, `.zip`, `.7z`, `.tar.xz`, `.tar.bz2`, compression tuning (`--fast`, `--slow`, default), `.gitignore` & hidden file filtering, multi-threaded worker, full directory extraction, and tree hierarchy explorer (`ouch list --tree`). |
 | **📝 Sed Studio Pro** | [`applications/sed_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/sed_studio.v) | POSIX/BSD `sed` stream editor & regex transformation workbench: dual-pane live interactive scratchpad, in-place disk file editing (`-i ''`), character/line counters, backup preservation (`.bak`), extended regex (`-E`), quiet/suppress print (`-n`), and 15 built-in production transformation recipes. |
 | **🌐 IFConfig Studio Pro** | [`applications/ifconfig_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/ifconfig_studio.v) | Comprehensive native macOS IP intelligence & network diagnostics studio powered by `curl`, `ifconfig.me`, and `ipinfo.io`: dual-stack Public IPv4 & IPv6 detection, rich geolocation (City, Country, GPS coordinates, ASN, ISP, Timezone), 1-click Apple & Google Maps launcher, remote IP/domain inspector, local interface & hardware MAC scanner, anycast DNS ping latency benchmark, DNS record resolver (`dig`), and raw JSON/Curl generator. |
+| **🧮 Qalc Studio Pro** | [`applications/qalc_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/qalc_studio.v) | Advanced symbolic mathematics & universal unit converter powered by `qalc` (`libqalculate`): arbitrary precision (up to 100 digits), symbolic equation solver, calculus derivatives & integrals, matrix determinants & inverses, base conversions (hex/bin/oct/roman), live currency conversion, and 30+ math/physics formulas. |
+| **⚡ Numbat Studio Pro** | [`applications/numbat_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/numbat_studio.v) | Scientific & physical dimensional analysis studio powered by `numbat`: statically-typed physical expressions, automatic dimension validation, multi-line physics derivation IDE, fundamental physical constants database (c, hbar, G, k_B, eps_0), and 25+ real-world physics recipes. |
+| **📐 Kalker Studio Pro** | [`applications/kalker_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/kalker_studio.v) | Pure mathematics, natural calculus syntax & complex analysis studio powered by `kalker`: natural calculus syntax (∫, √, f'(x)), complex arithmetic, polar conversions, matrix & vector algebra (dot/cross products), engineering mode, and theorem recipes. |
 | **🚀 Media & Data Studio Hub** | [`applications/media_studio_hub.v`](file:///Users/codecaine/vlang_simplegui/applications/media_studio_hub.v) | Master workstation with system environment diagnostics, instant one-click quick tools (Discord <10MB, TikTok 9:16, Loudnorm, Favicon, Remove White BG, 2-Pass GIF, WebP), and sub-app launchers. |
 
 ---
@@ -66,7 +69,7 @@ Native macOS GUI applications built with **SimpleGUI** for V, providing high-per
 Ensure all underlying CLI tools are installed on macOS via Homebrew:
 
 ```bash
-brew install ripgrep fd sd ffmpeg imagemagick gawk subfinder yt-dlp wget2 pandoc
+brew install ripgrep fd sd ffmpeg imagemagick gawk subfinder yt-dlp wget2 pandoc ouch libqalculate numbat kalker
 ```
 
 ---
@@ -115,4 +118,13 @@ v run applications/imagemagick_studio.v
 
 # 14. IFConfig Studio Pro (IP & Network Intelligence)
 v run applications/ifconfig_studio.v
+
+# 15. Qalc Studio Pro (Symbolic Math & Unit Converter)
+v run applications/qalc_studio.v
+
+# 16. Numbat Studio Pro (Scientific & Dimensional Analysis)
+v run applications/numbat_studio.v
+
+# 17. Kalker Studio Pro (Pure Math & Natural Calculus)
+v run applications/kalker_studio.v
 ```

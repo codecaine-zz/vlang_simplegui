@@ -57,6 +57,9 @@ fn main() {
 	has_find, _ := check_bin('find', ['/usr/bin/find', '/bin/find', '/opt/homebrew/bin/gfind'])
 	has_ouch, _ := check_bin('ouch', ['/opt/homebrew/bin/ouch', '/usr/local/bin/ouch', '/usr/bin/ouch'])
 	has_sed, _ := check_bin('sed', ['/usr/bin/sed', '/bin/sed', '/opt/homebrew/bin/gsed'])
+	has_qalc, _ := check_bin('qalc', ['/opt/homebrew/bin/qalc', '/usr/local/bin/qalc', '/usr/bin/qalc'])
+	has_numbat, _ := check_bin('numbat', ['/opt/homebrew/bin/numbat', '/usr/local/bin/numbat'])
+	has_kalker, _ := check_bin('kalker', ['/opt/homebrew/bin/kalker', '/usr/local/bin/kalker'])
 
 	win.begin_group_box('grp_env', '⚡ System Environment Status')
 	win.begin_row('row_env_1')
@@ -80,11 +83,14 @@ fn main() {
 	win.add_label('lbl_stat_ytdlp', if has_ytdlp { '✅ yt-dlp' } else { '❌ yt-dlp' })
 	win.add_label('lbl_stat_wget2', if has_wget2 { '✅ Wget2' } else { '❌ Wget2' })
 	win.add_label('lbl_stat_pandoc', if has_pandoc { '✅ Pandoc' } else { '❌ Pandoc' })
+	win.add_label('lbl_stat_qalc', if has_qalc { '✅ qalc' } else { '❌ qalc' })
+	win.add_label('lbl_stat_numbat', if has_numbat { '✅ numbat' } else { '❌ numbat' })
+	win.add_label('lbl_stat_kalker', if has_kalker { '✅ kalker' } else { '❌ kalker' })
 	win.end_row()
 	win.end_group_box()
 
 	// -------------------------------------------------------------
-	// Dedicated Studio Workstations (Organized in 2 Category Rows)
+	// Dedicated Studio Workstations (Organized in 3 Category Rows)
 	// -------------------------------------------------------------
 	win.begin_group_box('grp_launchers', '🚀 Dedicated Studio Workstations')
 	
@@ -113,6 +119,13 @@ fn main() {
 	win.add_button('btn_launch_ytdlp', '⬇️ yt-dlp')
 	win.add_button('btn_launch_wget2', '⚡ Wget2')
 	win.add_button('btn_launch_pandoc', '📄 Pandoc')
+	win.end_row()
+
+	// Row 3: Mathematics, Science & Computation Workstations
+	win.begin_row('row_apps_math')
+	win.add_button('btn_launch_qalc', '🧮 Qalc Studio (Symbolic & Units)')
+	win.add_button('btn_launch_numbat', '⚡ Numbat Studio (Physical Units)')
+	win.add_button('btn_launch_kalker', '📐 Kalker Studio (Calculus & Math)')
 	win.end_row()
 	win.end_group_box()
 
@@ -274,6 +287,36 @@ fn main() {
 			simplegui.exec_safe('v', ['run', app_path])
 		}()
 		w.toast('IFConfig Studio Pro launched!')
+	})
+
+	// Launch Qalc Studio
+	win.on_click('btn_launch_qalc', fn (mut w simplegui.SimpleWindow) {
+		app_path := os.join_path(os.dir(@FILE), 'qalc_studio.v')
+		w.append_console('hub_log', '🧮 Launching Qalc Studio Pro in background...\n', 1)
+		go fn [app_path] () {
+			simplegui.exec_safe('v', ['run', app_path])
+		}()
+		w.toast('Qalc Studio Pro launched!')
+	})
+
+	// Launch Numbat Studio
+	win.on_click('btn_launch_numbat', fn (mut w simplegui.SimpleWindow) {
+		app_path := os.join_path(os.dir(@FILE), 'numbat_studio.v')
+		w.append_console('hub_log', '⚡ Launching Numbat Studio Pro in background...\n', 1)
+		go fn [app_path] () {
+			simplegui.exec_safe('v', ['run', app_path])
+		}()
+		w.toast('Numbat Studio Pro launched!')
+	})
+
+	// Launch Kalker Studio
+	win.on_click('btn_launch_kalker', fn (mut w simplegui.SimpleWindow) {
+		app_path := os.join_path(os.dir(@FILE), 'kalker_studio.v')
+		w.append_console('hub_log', '📐 Launching Kalker Studio Pro in background...\n', 1)
+		go fn [app_path] () {
+			simplegui.exec_safe('v', ['run', app_path])
+		}()
+		w.toast('Kalker Studio Pro launched!')
 	})
 
 	// Launch FFmpeg Studio
