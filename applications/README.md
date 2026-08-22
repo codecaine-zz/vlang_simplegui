@@ -23,6 +23,7 @@ Native macOS GUI applications built with **SimpleGUI** for V, providing high-per
 | **🗣️ Say Studio Pro** | [`applications/say_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/say_studio.v) | Native macOS speech synthesizer & voiceover generator powered by `say`: real-time text-to-speech, system voice browser (Samantha, Alex, Daniel, Fred, Victoria, Zarvox, Trinoids, Whisper...), rate tuner (WPM), voiceover preset templates (narration, podcast, emergency, sci-fi robot, PA broadcast, countdown), audio file exporter (.m4a AAC, .aiff, .wav, .caf), and clipboard script integration. |
 | **📂 Find Studio Pro** | [`applications/find_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/find_studio.v) | Advanced filesystem explorer & inode search workbench powered by POSIX/BSD `find`: glob/regex matching, multi-pattern names, entry type filters (files, directories, symlinks, sockets, pipes), size filters (0-byte empty to >1GB), age/modification filters (-mtime, -mmin), max-depth limiters, directory exclusions (`.git, node_modules, target`), permission auditors (+111 executable, +002 world-writable), and 10 built-in recipes. |
 | **⚡ Task Manager Pro** | [`applications/task_manager.v`](file:///Users/codecaine/vlang_simplegui/applications/task_manager.v) | macOS process manager & hardware telemetry monitor: real-time process data grid (PID, Name, CPU %, Memory RSS, State, User, Command Path), hardware stats cards (CPU cores, Apple Unified Memory, load averages), filtering by scope (GUI apps, high CPU, high memory, root daemons), multi-column sorting, process lifecycle signals (SIGKILL -9, SIGTERM -15, SIGSTOP, SIGCONT), live socket/descriptor inspector (`lsof`), and automatic background refresh. |
+| **📦 Ouch Studio Pro** | [`applications/ouch_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/ouch_studio.v) | Ultra-fast universal archive & compression workbench powered by `ouch`: lossless/high-density packaging across `.tar.zst`, `.tar.gz`, `.zip`, `.7z`, `.tar.xz`, `.tar.bz2`, compression tuning (`--fast`, `--slow`, default), `.gitignore` & hidden file filtering, multi-threaded worker, full directory extraction, and tree hierarchy explorer (`ouch list --tree`). |
 | **🚀 Media & Data Studio Hub** | [`applications/media_studio_hub.v`](file:///Users/codecaine/vlang_simplegui/applications/media_studio_hub.v) | Master workstation with system environment diagnostics, instant one-click quick tools (Discord <10MB, TikTok 9:16, Loudnorm, Favicon, Remove White BG, 2-Pass GIF, WebP), and sub-app launchers. |
 
 ---
@@ -30,7 +31,7 @@ Native macOS GUI applications built with **SimpleGUI** for V, providing high-per
 ## 🎨 Theme Engine & Persistence (Save State)
 
 - **Default Theme**: **Apple Light** (`#f6f6f7` canvas, `#1d1d1f` text, `#0071e3` Apple Blue accent).
-- **Persistent State Across Apps**: When you select any theme in any application, your choice is instantly saved to `~/.config/simplegui/theme.txt`. All 16 studio applications automatically load and apply your saved theme upon launch!
+- **Persistent State Across Apps**: When you select any theme in any application, your choice is instantly saved to `~/.config/simplegui/theme.txt`. All 17 studio applications automatically load and apply your saved theme upon launch!
 
 ### Available 18 Curated Themes
 

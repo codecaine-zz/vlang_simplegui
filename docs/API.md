@@ -6518,10 +6518,11 @@ safe_name := simplegui.sanitize_filename('../../etc/passwd; evil')
 
 ## 20. Production Workstation Applications Suite
 
-SimpleGUI includes 16 production-grade desktop workstation applications located in [`applications/`](file:///Users/codecaine/vlang_simplegui/applications/):
+SimpleGUI includes 17 production-grade desktop workstation applications located in [`applications/`](file:///Users/codecaine/vlang_simplegui/applications/):
 
 | Application | Source File | Key Features |
 | :--- | :--- | :--- |
+| **📦 Ouch Studio Pro** | [`applications/ouch_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/ouch_studio.v) | Ultra-fast universal archive & compression workbench: `.tar.zst`, `.tar.gz`, `.zip`, `.7z`, `--fast`/`--slow`, tree inspector. |
 | **⚡ Task Manager Pro** | [`applications/task_manager.v`](file:///Users/codecaine/vlang_simplegui/applications/task_manager.v) | Process monitor & system telemetry: live process grid, resource stat cards, signals, and socket inspector. |
 | **📂 Find Studio Pro** | [`applications/find_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/find_studio.v) | Filesystem search & inode explorer, type filters, size filters, age, depth, and 10 recipes. |
 | **🗣️ Say Studio Pro** | [`applications/say_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/say_studio.v) | Speech synthesizer, voice browser, rate tuner, voiceover presets, audio exporter (.m4a/.aiff/.wav). |

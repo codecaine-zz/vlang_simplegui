@@ -53,6 +53,7 @@ fn main() {
 	has_tr, tr_path := check_bin('tr', ['/usr/bin/tr', '/bin/tr', '/opt/homebrew/bin/gtr'])
 	has_say, say_path := check_bin('say', ['/usr/bin/say', '/bin/say'])
 	has_find, find_path := check_bin('find', ['/usr/bin/find', '/bin/find', '/opt/homebrew/bin/gfind'])
+	has_ouch, ouch_path := check_bin('ouch', ['/opt/homebrew/bin/ouch', '/usr/local/bin/ouch', '/usr/bin/ouch'])
 
 	win.begin_group_box('grp_env', '⚡ System Environment Status')
 	win.begin_row('row_env_1')
@@ -68,6 +69,8 @@ fn main() {
 	win.add_label('lbl_stat_tr', tr_status)
 	say_status := if has_say { '✅ say: ' + say_path } else { '❌ say: Missing' }
 	win.add_label('lbl_stat_say', say_status)
+	ouch_status := if has_ouch { '✅ ouch: ' + ouch_path } else { '❌ ouch: Missing' }
+	win.add_label('lbl_stat_ouch', ouch_status)
 	win.end_row()
 
 	win.begin_row('row_env_2')
@@ -98,6 +101,7 @@ fn main() {
 	win.begin_group_box('grp_launchers', '🚀 Dedicated Studio Workstations')
 	win.begin_row('row_apps')
 	win.add_button('btn_launch_taskman', '⚡ Task Manager')
+	win.add_button('btn_launch_ouch', '📦 ouch')
 	win.add_button('btn_launch_ffmpeg', '🎬 FFmpeg')
 	win.add_button('btn_launch_magick', '🎨 ImageMagick')
 	win.add_button('btn_launch_gawk', '⚡ GAWK')
@@ -243,6 +247,16 @@ fn main() {
 			simplegui.exec_safe('v', ['run', app_path])
 		}()
 		w.toast('Task Manager Pro launched!')
+	})
+
+	// Launch Ouch Studio
+	win.on_click('btn_launch_ouch', fn (mut w simplegui.SimpleWindow) {
+		app_path := os.join_path(os.dir(@FILE), 'ouch_studio.v')
+		w.append_console('hub_log', '📦 Launching Ouch Studio Pro in background...\n', 1)
+		go fn [app_path] () {
+			simplegui.exec_safe('v', ['run', app_path])
+		}()
+		w.toast('Ouch Studio Pro launched!')
 	})
 
 	// Launch Subfinder Studio
