@@ -337,6 +337,8 @@ fn main() {
 	mut batch_size := 6
 	mut target_filter := ''
 	mut out_dir_arg := 'bin'
+	mut install_deps_flag := false
+	mut check_deps_flag := false
 
 	mut i := 1
 	for i < os.args.len {
@@ -345,6 +347,10 @@ fn main() {
 			is_prod = true
 		} else if arg == '--raw' || arg == '--bin-only' {
 			bin_only = true
+		} else if arg in ['--install-deps', '-i', '--deps'] {
+			install_deps_flag = true
+		} else if arg in ['--check-deps', '-c'] {
+			check_deps_flag = true
 		} else if arg == '-j' || arg == '--jobs' || arg == '-b' || arg == '--batch' {
 			if i + 1 < os.args.len {
 				i++
@@ -367,6 +373,19 @@ fn main() {
 			target_filter = arg
 		}
 		i++
+	}
+
+	if install_deps_flag || check_deps_flag {
+		dep_script := os.join_path(os.getwd(), 'scripts', 'install_deps.vsh')
+		if os.exists(dep_script) {
+			mode_opt := if check_deps_flag { '--check' } else { '--all' }
+			println('🔍 Checking Homebrew dependencies before build...')
+			exit_code := os.system('v run ${os.quoted_path(dep_script)} ${mode_opt}')
+			if exit_code != 0 && !check_deps_flag {
+				eprintln('⚠️ Dependency installation encountered errors.')
+			}
+			println('')
+		}
 	}
 
 	cwd := os.getwd()

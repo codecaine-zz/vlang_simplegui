@@ -86,7 +86,20 @@ Native macOS GUI applications built with **SimpleGUI** for V, providing high-per
 
 ## ⚡ Prerequisites & Homebrew Installation
 
-Ensure all underlying CLI engines and utilities are installed on macOS via [Homebrew](https://brew.sh):
+You can automatically detect and install **only the packages that are missing** using the dedicated V script:
+
+```bash
+# Check status and automatically install missing Homebrew formulae
+./install_deps.vsh
+
+# Or inspect missing dependencies without installing (status check)
+./install_deps.vsh --check
+
+# Check/install dependencies for a specific studio app only
+./install_deps.vsh --app jq_studio
+```
+
+Alternatively, install all formulae manually via [Homebrew](https://brew.sh):
 
 ```bash
 brew install ripgrep fd sd gawk ouch ffmpeg imagemagick pandoc wget2 yt-dlp subfinder jq libqalculate numbat kalker nmap exiftool tesseract graphviz
