@@ -1944,11 +1944,22 @@ Screenshots are auto-generated using `v run capture_demos.vsh`.
 
 ## Production Workstations & Studio Applications
 
-SimpleGUI includes 19 complete, native desktop workstation applications in [`applications/`](applications/) designed for engineering workflows, text & code editing, universal archiving & compression, stream editing, system monitoring, filesystem discovery, data analysis, speech synthesis, and media transformation:
+SimpleGUI includes 22 complete, native desktop workstation applications in [`applications/`](applications/) designed for engineering workflows, symbolic math, physical dimensional analysis, calculus, network intelligence, text & code editing, universal archiving & compression, stream editing, system monitoring, filesystem discovery, data analysis, speech synthesis, and media transformation:
+
+### 📦 Prerequisites & Homebrew Installation:
+```bash
+brew install ripgrep fd sd gawk ouch ffmpeg imagemagick pandoc wget2 yt-dlp subfinder jq libqalculate numbat kalker
+```
+
+### 🚀 Workstations Catalog:
 
 | Application | Command | Focus Area |
 | :--- | :--- | :--- |
 | **🚀 Media & Data Studio Hub** | `v run applications/media_studio_hub.v` | Unified workstation hub with environment diagnostics and quick-launch actions |
+| **🌐 IFConfig Studio Pro** | `v run applications/ifconfig_studio.v` | Dual-stack IPv4/IPv6 detection, geolocation, ASN, reverse DNS, and network diagnostics |
+| **🧮 Qalc Studio Pro** | `v run applications/qalc_studio.v` | Symbolic algebra, arbitrary precision, equation solving, calculus, matrices, and unit/currency converter |
+| **⚡ Numbat Studio Pro** | `v run applications/numbat_studio.v` | Statically-typed physical units, dimensional analysis, multi-line physics IDE, and constants catalog |
+| **📐 Kalker Studio Pro** | `v run applications/kalker_studio.v` | Pure math, natural calculus syntax (∫, √, f'(x)), complex numbers, and vector/matrix algebra |
 | **📝 Text Editor Pro** | `v run applications/text_editor.v` | Code & document editor: multi-font typography, search/replace, JSON prettifier, Base64, transforms |
 | **📝 Sed Studio Pro** | `v run applications/sed_studio.v` | Stream editor & regex scratchpad: live dual-pane transform, in-place file editing, 15 recipes |
 | **📦 Ouch Studio Pro** | `v run applications/ouch_studio.v` | Ultra-fast archive & compression workbench: `.tar.zst`, `.tar.gz`, `.zip`, `.7z`, `--fast`/`--slow`, tree inspector |

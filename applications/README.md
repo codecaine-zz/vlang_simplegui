@@ -64,13 +64,35 @@ Native macOS GUI applications built with **SimpleGUI** for V, providing high-per
 
 ---
 
-## ⚡ Prerequisites
+## ⚡ Prerequisites & Homebrew Installation
 
-Ensure all underlying CLI tools are installed on macOS via Homebrew:
+Ensure all underlying CLI engines and utilities are installed on macOS via [Homebrew](https://brew.sh):
 
+### 🚀 Install All Tools in One Command:
 ```bash
-brew install ripgrep fd sd ffmpeg imagemagick gawk subfinder yt-dlp wget2 pandoc ouch libqalculate numbat kalker
+brew install ripgrep fd sd gawk ouch ffmpeg imagemagick pandoc wget2 yt-dlp subfinder jq libqalculate numbat kalker
 ```
+
+### 📦 Tools Breakdown by Category:
+
+| Category | Homebrew Package | CLI Tool | Application |
+| :--- | :--- | :--- | :--- |
+| **🔍 Search & Files** | `ripgrep` | `rg` | [`applications/rg_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/rg_studio.v) |
+| | `fd` | `fd` | [`applications/fd_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/fd_studio.v) |
+| | `sd` | `sd` | [`applications/sd_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/sd_studio.v) |
+| | `gawk` | `gawk` | [`applications/gawk_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/gawk_studio.v) |
+| | `ouch` | `ouch` | [`applications/ouch_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/ouch_studio.v) |
+| **🎬 Media & Documents** | `ffmpeg` | `ffmpeg`, `ffprobe` | [`applications/ffmpeg_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/ffmpeg_studio.v) |
+| | `imagemagick` | `magick`, `identify` | [`applications/imagemagick_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/imagemagick_studio.v) |
+| | `pandoc` | `pandoc` | [`applications/pandoc_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/pandoc_studio.v) |
+| | `yt-dlp` | `yt-dlp` | [`applications/yt_dlp_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/yt_dlp_studio.v) |
+| **🌐 Network & Web** | `wget2` | `wget2` | [`applications/wget2_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/wget2_studio.v) |
+| | `subfinder` | `subfinder` | [`applications/subfinder_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/subfinder_studio.v) |
+| | `jq` | `jq` | [`applications/ifconfig_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/ifconfig_studio.v) |
+| **🧮 Science & Mathematics**| `libqalculate` | `qalc` | [`applications/qalc_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/qalc_studio.v) |
+| | `numbat` | `numbat` | [`applications/numbat_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/numbat_studio.v) |
+| | `kalker` | `kalker` | [`applications/kalker_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/kalker_studio.v) |
+| **🖥️ Native macOS Tools** | *(Built-in)* | `say`, `find`, `sed`, `cut`, `tr`, `ps`, `top`, `lsof`, `curl` | [`say_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/say_studio.v), [`find_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/find_studio.v), [`sed_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/sed_studio.v), [`cut_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/cut_studio.v), [`tr_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/tr_studio.v), [`task_manager.v`](file:///Users/codecaine/vlang_simplegui/applications/task_manager.v), [`text_editor.v`](file:///Users/codecaine/vlang_simplegui/applications/text_editor.v) |
 
 ---
 
