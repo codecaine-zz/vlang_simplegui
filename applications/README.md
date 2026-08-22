@@ -4,10 +4,11 @@ Native macOS GUI applications built with **SimpleGUI** for V, providing high-per
 
 ---
 
-## 📦 Complete Applications Suite (45 Workstations)
+## 📦 Complete Applications Suite (46 Workstations)
 
 | Application | Source File | Description |
 | :--- | :--- | :--- |
+| **📦 App Bundler Studio Pro** | [`applications/app_bundler_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/app_bundler_studio.v) | Visual macOS `.app` bundle packager & `.icns` generator: turn any Mach-O binary or CLI tool into a native macOS `.app` bundle with Retina icons, Info.plist config, ad-hoc codesigning, and quarantine scrubber. |
 | **🧩 JQ Studio Pro** | [`applications/jq_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/jq_studio.v) | Interactive JSON query, formatting & filter workbench powered by `jq`: live query evaluations, 12 built-in transformation recipes, key/path inspection, minifier/prettifier, and error diagnostics. |
 | **🚀 API Studio Pro** | [`applications/api_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/api_studio.v) | Full-featured REST API testing client powered by `curl`: HTTP method selector (GET, POST, PUT, PATCH, DELETE, HEAD), request headers/body editors, latency telemetry (DNS/TLS/TTFB), and 1-click `curl` command exporter. |
 | **🛡️ Nmap Studio Pro** | [`applications/nmap_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/nmap_studio.v) | High-speed port scanner & network discovery workbench powered by `nmap`: quick scan (-F), service versioning (-sV), OS detection (-O), aggressive timing (-T4), vulnerability scripts, and open port reports. |
@@ -51,6 +52,13 @@ Native macOS GUI applications built with **SimpleGUI** for V, providing high-per
 | **📈 Graph Studio Pro** | [`applications/graph_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/graph_studio.v) | High-precision scientific plotting & visualization studio in pure V: 2D continuous function grapher, multi-series data visualizer, bar charts, scatter plots, and network topology graph visualizer. |
 | **💻 Programmer Calculator** | [`applications/programmer_calculator.v`](file:///Users/codecaine/vlang_simplegui/applications/programmer_calculator.v) | Advanced multi-radix computer science calculator in pure V: simultaneous Hex, Dec, Oct, Bin displays, interactive 64-bit grid, IEEE-754 floating point inspector, Endianness converters, and bitwise logic. |
 | **🚀 Media & Data Studio Hub** | [`applications/media_studio_hub.v`](file:///Users/codecaine/vlang_simplegui/applications/media_studio_hub.v) | Master workstation with system environment diagnostics, instant one-click quick tools (Discord <10MB, TikTok 9:16, Loudnorm, Favicon, Remove White BG, 2-Pass GIF, WebP), and sub-app launchers. |
+
+---
+
+## 📸 Applications Showcase
+
+### 📦 App Bundler Studio Pro
+![App Bundler Studio Pro](../screenshots/app_bundler_studio.png)
 
 ---
 
