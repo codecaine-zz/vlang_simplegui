@@ -123,6 +123,7 @@ fn main() {
 
 	// Row 3: Mathematics, Science & Computation Workstations
 	win.begin_row('row_apps_math')
+	win.add_button('btn_launch_graph', '📈 Graph Studio Pro')
 	win.add_button('btn_launch_stats', '📊 Statistics Studio Pro')
 	win.add_button('btn_launch_qalc', '🧮 Qalc Studio')
 	win.add_button('btn_launch_numbat', '⚡ Numbat Studio')
@@ -328,6 +329,16 @@ fn main() {
 			simplegui.exec_safe('v', ['run', app_path])
 		}()
 		w.toast('Statistics Studio Pro launched!')
+	})
+
+	// Launch Graph Studio
+	win.on_click('btn_launch_graph', fn (mut w simplegui.SimpleWindow) {
+		app_path := os.join_path(os.dir(@FILE), 'graph_studio.v')
+		w.append_console('hub_log', '📈 Launching Graph Studio Pro in background...\n', 1)
+		go fn [app_path] () {
+			simplegui.exec_safe('v', ['run', app_path])
+		}()
+		w.toast('Graph Studio Pro launched!')
 	})
 
 	// Launch FFmpeg Studio

@@ -89,7 +89,8 @@ brew install ripgrep fd sd gawk ouch ffmpeg imagemagick pandoc wget2 yt-dlp subf
 | **🌐 Network & Web** | `wget2` | `wget2` | [`applications/wget2_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/wget2_studio.v) |
 | | `subfinder` | `subfinder` | [`applications/subfinder_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/subfinder_studio.v) |
 | | `jq` | `jq` | [`applications/ifconfig_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/ifconfig_studio.v) |
-| **🧮 Science & Mathematics**| *(Native V)* | Pure Algorithm | [`applications/statistics_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/statistics_studio.v) |
+| **🧮 Science & Mathematics**| *(Native V)* | Pure Algorithm | [`applications/graph_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/graph_studio.v) |
+| | *(Native V)* | Pure Algorithm | [`applications/statistics_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/statistics_studio.v) |
 | | `libqalculate` | `qalc` | [`applications/qalc_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/qalc_studio.v) |
 | | `numbat` | `numbat` | [`applications/numbat_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/numbat_studio.v) |
 | | `kalker` | `kalker` | [`applications/kalker_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/kalker_studio.v) |
@@ -153,4 +154,7 @@ v run applications/kalker_studio.v
 
 # 18. Statistics Studio Pro (Descriptive Stats, Hypothesis Testing, OLS Regression)
 v run applications/statistics_studio.v
+
+# 19. Graph Studio Pro (2D Function Plotter, Series Visualizer, Network Topology)
+v run applications/graph_studio.v
 ```
