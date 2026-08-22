@@ -1944,7 +1944,7 @@ Screenshots are auto-generated using `v run capture_demos.vsh`.
 
 ## Production Workstations & Studio Applications
 
-SimpleGUI includes 24 complete, native desktop workstation applications in [`applications/`](applications/) designed for engineering workflows, 2D function plotting & network graph topology, symbolic math, physical dimensional analysis, calculus, statistics & data science, network intelligence, text & code editing, universal archiving & compression, stream editing, system monitoring, filesystem discovery, data analysis, speech synthesis, and media transformation:
+SimpleGUI includes 25 complete, native desktop workstation applications in [`applications/`](applications/) designed for engineering workflows, low-level binary & bitwise register engineering, 2D function plotting & network graph topology, symbolic math, physical dimensional analysis, calculus, statistics & data science, network intelligence, text & code editing, universal archiving & compression, stream editing, system monitoring, filesystem discovery, data analysis, speech synthesis, and media transformation:
 
 ### 📦 Prerequisites & Homebrew Installation:
 ```bash
@@ -1956,6 +1956,7 @@ brew install ripgrep fd sd gawk ouch ffmpeg imagemagick pandoc wget2 yt-dlp subf
 | Application | Command | Focus Area |
 | :--- | :--- | :--- |
 | **🚀 Media & Data Studio Hub** | `v run applications/media_studio_hub.v` | Unified workstation hub with environment diagnostics and quick-launch actions |
+| **🧮 Programmer's Calculator Pro** | `v run applications/programmer_calculator.v` | Synchronized multi-radix (HEX/DEC/OCT/BIN), 64-bit interactive bit-flipper matrix, IEEE-754 float/double inspector, endianness byte-swaps, and bitwise ops |
 | **📈 Graph Studio Pro** | `v run applications/graph_studio.v` | 2D mathematical curve plotter ($f(x)$), live Cocoa area/line charts, moving average smoothing, network graph topology (|V|, |E|, degree centrality, adjacency matrix), and Mermaid export |
 | **📊 Statistics Studio Pro** | `v run applications/statistics_studio.v` | Descriptive statistics (mean, median, IQR, skewness, kurtosis, CI), Welch t-test, Paired t-test, ANOVA, OLS regression, distributions (Normal, Student-t, Binomial, Poisson), and outlier filters |
 | **🌐 IFConfig Studio Pro** | `v run applications/ifconfig_studio.v` | Dual-stack IPv4/IPv6 detection, geolocation, ASN, reverse DNS, and network diagnostics |
