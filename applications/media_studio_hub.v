@@ -18,10 +18,10 @@ fn check_bin(name string, fallbacks []string) (bool, string) {
 fn main() {
 	println('Starting SimpleGUI - Media & Data Studio Hub (Async Non-Blocking Engine)...')
 
-	mut win := simplegui.new_simple_window('🚀 SimpleGUI - Media & Data Studio Hub', 1060, 890)
+	mut win := simplegui.new_simple_window('🚀 SimpleGUI - Media & Data Studio Hub', 1180, 980)
 	win.restore_saved_theme()
 	win.set_spacing(6)
-	win.set_padding(12)
+	win.set_padding(14)
 
 	// -------------------------------------------------------------
 	// Top Header Section
@@ -34,10 +34,10 @@ fn main() {
 	win.set_control_width('dd_hub_theme', 160)
 	win.end_row()
 
-	win.add_label('lbl_sub', 'Unified macOS Pro Engineering Suite for Media, Data, Text & CLI Utilities')
+	win.add_label('lbl_sub', 'Unified macOS Native Engineering Suite for Media, Security, Data, DevOps & Computing (45 Workstations)')
 
 	// -------------------------------------------------------------
-	// System Diagnostics
+	// System Diagnostics Bar
 	// -------------------------------------------------------------
 	has_ffmpeg, ffmpeg_path := check_bin('ffmpeg', ['/opt/homebrew/bin/ffmpeg', '/opt/homebrew/opt/ffmpeg-full/bin/ffmpeg', '/usr/local/bin/ffmpeg'])
 	has_ffprobe, ffprobe_path := check_bin('ffprobe', ['/opt/homebrew/bin/ffprobe', '/opt/homebrew/opt/ffmpeg-full/bin/ffprobe', '/usr/local/bin/ffprobe'])
@@ -61,7 +61,7 @@ fn main() {
 	has_numbat, _ := check_bin('numbat', ['/opt/homebrew/bin/numbat', '/usr/local/bin/numbat'])
 	has_kalker, _ := check_bin('kalker', ['/opt/homebrew/bin/kalker', '/usr/local/bin/kalker'])
 
-	win.begin_group_box('grp_env', '⚡ System Environment Status')
+	win.begin_group_box('grp_env', '⚡ Core CLI Engines & macOS Subsystems Status')
 	win.begin_row('row_env_1')
 	win.add_label('lbl_stat_ffmpeg', if has_ffmpeg { '✅ FFmpeg' } else { '❌ FFmpeg' })
 	win.add_label('lbl_stat_ffprobe', if has_ffprobe { '✅ FFprobe' } else { '❌ FFprobe' })
@@ -72,9 +72,6 @@ fn main() {
 	win.add_label('lbl_stat_find', if has_find { '✅ find' } else { '❌ find' })
 	win.add_label('lbl_stat_cut', if has_cut { '✅ cut' } else { '❌ cut' })
 	win.add_label('lbl_stat_tr', if has_tr { '✅ tr' } else { '❌ tr' })
-	win.end_row()
-
-	win.begin_row('row_env_2')
 	win.add_label('lbl_stat_rg', if has_rg { '✅ ripgrep' } else { '❌ ripgrep' })
 	win.add_label('lbl_stat_fd', if has_fd { '✅ FD' } else { '❌ FD' })
 	win.add_label('lbl_stat_sed', if has_sed { '✅ sed' } else { '❌ sed' })
@@ -90,46 +87,77 @@ fn main() {
 	win.end_group_box()
 
 	// -------------------------------------------------------------
-	// Dedicated Studio Workstations (Organized in 3 Category Rows)
+	// Dedicated Studio Workstations (5 Categorized Workstation Blocks)
 	// -------------------------------------------------------------
-	win.begin_group_box('grp_launchers', '🚀 Dedicated Studio Workstations')
+	win.begin_group_box('grp_launchers', '🚀 Dedicated Studio Workstations (Click to Launch Independent Workspace)')
 	
-	// Row 1: Code, Files & System Utilities
-	win.begin_row('row_apps_sys')
+	// Category 1: Files, Search & Text Processing
+	win.begin_row('row_apps_1')
+	win.add_label('lbl_cat_1', '📁 Files & Text:')
 	win.add_button('btn_launch_editor', '📝 Text Editor')
 	win.add_button('btn_launch_taskman', '⚡ Task Manager')
-	win.add_button('btn_launch_ouch', '📦 ouch')
-	win.add_button('btn_launch_sed', '📝 sed')
-	win.add_button('btn_launch_cut', '✂️ cut')
-	win.add_button('btn_launch_tr', '🔄 tr')
-	win.add_button('btn_launch_rg', '🔍 ripgrep')
-	win.add_button('btn_launch_fd', '⚡ FD')
-	win.add_button('btn_launch_find', '📂 find')
-	win.add_button('btn_launch_ifconfig', '🌐 IFConfig')
+	win.add_button('btn_launch_ouch', '📦 Ouch Archives')
+	win.add_button('btn_launch_sed', '📝 Sed Studio')
+	win.add_button('btn_launch_cut', '✂️ Cut Studio')
+	win.add_button('btn_launch_tr', '🔄 TR Studio')
+	win.add_button('btn_launch_rg', '🔍 Ripgrep')
+	win.add_button('btn_launch_fd', '⚡ FD Finder')
+	win.add_button('btn_launch_find', '📂 Find Inodes')
 	win.end_row()
 
-	// Row 2: Media, Web & Publishing Workstations
-	win.begin_row('row_apps_media')
-	win.add_button('btn_launch_ffmpeg', '🎬 FFmpeg')
+	// Category 2: Media, Creative & Publishing
+	win.begin_row('row_apps_2')
+	win.add_label('lbl_cat_2', '🎬 Media & Creative:')
+	win.add_button('btn_launch_ffmpeg', '🎬 FFmpeg Studio')
 	win.add_button('btn_launch_magick', '🎨 ImageMagick')
-	win.add_button('btn_launch_gawk', '⚡ GAWK')
-	win.add_button('btn_launch_sd', '🔍 SD')
-	win.add_button('btn_launch_say', '🗣️ Say')
-	win.add_button('btn_launch_subfinder', '🌐 Subfinder')
-	win.add_button('btn_launch_ytdlp', '⬇️ yt-dlp')
-	win.add_button('btn_launch_wget2', '⚡ Wget2')
-	win.add_button('btn_launch_pandoc', '📄 Pandoc')
+	win.add_button('btn_launch_ytdlp', '⬇️ yt-dlp Archiver')
+	win.add_button('btn_launch_audiotag', '🎵 Audio Tag Studio')
+	win.add_button('btn_launch_ocr', '👁️ Tesseract OCR')
+	win.add_button('btn_launch_exif', '🔍 ExifTool Studio')
+	win.add_button('btn_launch_say', '🗣️ Say Voiceover')
+	win.add_button('btn_launch_pandoc', '📄 Pandoc Docs')
 	win.end_row()
 
-	// Row 3: Mathematics, Science & Computation Workstations
-	win.begin_row('row_apps_math')
+	// Category 3: Data Engineering & Querying
+	win.begin_row('row_apps_3')
+	win.add_label('lbl_cat_3', '📊 Data & Query:')
+	win.add_button('btn_launch_jq', '🧩 JQ Studio')
+	win.add_button('btn_launch_convert', '🔄 Format Converter')
+	win.add_button('btn_launch_sqlite', '🗄️ SQLite Studio')
+	win.add_button('btn_launch_regex', '🎯 Regex Studio')
+	win.add_button('btn_launch_gawk', '⚡ GAWK Engine')
+	win.add_button('btn_launch_sd', '🔍 SD Replace')
+	win.add_button('btn_launch_dot', '📊 Graphviz Studio')
+	win.end_row()
+
+	// Category 4: Security, Network & DevOps
+	win.begin_row('row_apps_4')
+	win.add_label('lbl_cat_4', '🛡️ Security & DevOps:')
+	win.add_button('btn_launch_api', '🚀 API Studio')
+	win.add_button('btn_launch_nmap', '🛡️ Nmap Scanner')
+	win.add_button('btn_launch_dns', '🌐 DNS & SSL')
+	win.add_button('btn_launch_recon', '🕵️ Recon Studio')
+	win.add_button('btn_launch_subfinder', '🌐 Subfinder')
+	win.add_button('btn_launch_ifconfig', '🌐 IFConfig IP')
+	win.add_button('btn_launch_crypto', '🔐 Crypto & Hash')
+	win.add_button('btn_launch_brew', '🍺 Homebrew')
+	win.add_button('btn_launch_docker', '🐳 Docker')
+	win.add_button('btn_launch_disk', '💾 Disk Space')
+	win.add_button('btn_launch_launchd', '⏰ Launchd & Cron')
+	win.end_row()
+
+	// Category 5: Mathematics, Science & Computation
+	win.begin_row('row_apps_5')
+	win.add_label('lbl_cat_5', '🔬 Math & Science:')
 	win.add_button('btn_launch_progcalc', '🧮 Prog Calc Pro')
 	win.add_button('btn_launch_graph', '📈 Graph Studio Pro')
-	win.add_button('btn_launch_stats', '📊 Statistics Studio Pro')
-	win.add_button('btn_launch_qalc', '🧮 Qalc Studio')
-	win.add_button('btn_launch_numbat', '⚡ Numbat Studio')
-	win.add_button('btn_launch_kalker', '📐 Kalker Studio')
+	win.add_button('btn_launch_stats', '📊 Statistics Studio')
+	win.add_button('btn_launch_qalc', '🧮 Qalc Symbolic')
+	win.add_button('btn_launch_numbat', '⚡ Numbat Physics')
+	win.add_button('btn_launch_kalker', '📐 Kalker Calculus')
+	win.add_button('btn_launch_wget2', '⚡ Wget2 Accelerator')
 	win.end_row()
+
 	win.end_group_box()
 
 	// -------------------------------------------------------------
@@ -440,6 +468,176 @@ fn main() {
 			simplegui.exec_safe('v', ['run', app_path])
 		}()
 		w.toast('Pandoc Studio Pro launched!')
+	})
+
+	// Launch API Studio
+	win.on_click('btn_launch_api', fn (mut w simplegui.SimpleWindow) {
+		app_path := os.join_path(os.dir(@FILE), 'api_studio.v')
+		w.append_console('hub_log', '🚀 Launching API Studio Pro in background...\n', 1)
+		go fn [app_path] () {
+			simplegui.exec_safe('v', ['run', app_path])
+		}()
+		w.toast('API Studio Pro launched!')
+	})
+
+	// Launch Nmap Studio
+	win.on_click('btn_launch_nmap', fn (mut w simplegui.SimpleWindow) {
+		app_path := os.join_path(os.dir(@FILE), 'nmap_studio.v')
+		w.append_console('hub_log', '🛡️ Launching Nmap Studio Pro in background...\n', 1)
+		go fn [app_path] () {
+			simplegui.exec_safe('v', ['run', app_path])
+		}()
+		w.toast('Nmap Studio Pro launched!')
+	})
+
+	// Launch DNS & SSL Studio
+	win.on_click('btn_launch_dns', fn (mut w simplegui.SimpleWindow) {
+		app_path := os.join_path(os.dir(@FILE), 'dns_studio.v')
+		w.append_console('hub_log', '🌐 Launching DNS & SSL Studio Pro in background...\n', 1)
+		go fn [app_path] () {
+			simplegui.exec_safe('v', ['run', app_path])
+		}()
+		w.toast('DNS & SSL Studio Pro launched!')
+	})
+
+	// Launch Recon Studio
+	win.on_click('btn_launch_recon', fn (mut w simplegui.SimpleWindow) {
+		app_path := os.join_path(os.dir(@FILE), 'recon_studio.v')
+		w.append_console('hub_log', '🕵️ Launching Recon Studio Pro in background...\n', 1)
+		go fn [app_path] () {
+			simplegui.exec_safe('v', ['run', app_path])
+		}()
+		w.toast('Recon Studio Pro launched!')
+	})
+
+	// Launch Crypto Studio
+	win.on_click('btn_launch_crypto', fn (mut w simplegui.SimpleWindow) {
+		app_path := os.join_path(os.dir(@FILE), 'crypto_studio.v')
+		w.append_console('hub_log', '🔐 Launching Crypto & Hash Studio Pro in background...\n', 1)
+		go fn [app_path] () {
+			simplegui.exec_safe('v', ['run', app_path])
+		}()
+		w.toast('Crypto & Hash Studio Pro launched!')
+	})
+
+	// Launch JQ Studio
+	win.on_click('btn_launch_jq', fn (mut w simplegui.SimpleWindow) {
+		app_path := os.join_path(os.dir(@FILE), 'jq_studio.v')
+		w.append_console('hub_log', '🧩 Launching JQ Studio Pro in background...\n', 1)
+		go fn [app_path] () {
+			simplegui.exec_safe('v', ['run', app_path])
+		}()
+		w.toast('JQ Studio Pro launched!')
+	})
+
+	// Launch Format Converter
+	win.on_click('btn_launch_convert', fn (mut w simplegui.SimpleWindow) {
+		app_path := os.join_path(os.dir(@FILE), 'dataconvert_studio.v')
+		w.append_console('hub_log', '🔄 Launching Format Converter Studio in background...\n', 1)
+		go fn [app_path] () {
+			simplegui.exec_safe('v', ['run', app_path])
+		}()
+		w.toast('Format Converter Studio launched!')
+	})
+
+	// Launch SQLite Studio
+	win.on_click('btn_launch_sqlite', fn (mut w simplegui.SimpleWindow) {
+		app_path := os.join_path(os.dir(@FILE), 'sqlite_studio.v')
+		w.append_console('hub_log', '🗄️ Launching SQLite Studio Pro in background...\n', 1)
+		go fn [app_path] () {
+			simplegui.exec_safe('v', ['run', app_path])
+		}()
+		w.toast('SQLite Studio Pro launched!')
+	})
+
+	// Launch Regex Studio
+	win.on_click('btn_launch_regex', fn (mut w simplegui.SimpleWindow) {
+		app_path := os.join_path(os.dir(@FILE), 'regex_studio.v')
+		w.append_console('hub_log', '🎯 Launching Regex Studio Pro in background...\n', 1)
+		go fn [app_path] () {
+			simplegui.exec_safe('v', ['run', app_path])
+		}()
+		w.toast('Regex Studio Pro launched!')
+	})
+
+	// Launch ExifTool Studio
+	win.on_click('btn_launch_exif', fn (mut w simplegui.SimpleWindow) {
+		app_path := os.join_path(os.dir(@FILE), 'exif_studio.v')
+		w.append_console('hub_log', '🔍 Launching ExifTool Studio Pro in background...\n', 1)
+		go fn [app_path] () {
+			simplegui.exec_safe('v', ['run', app_path])
+		}()
+		w.toast('ExifTool Studio Pro launched!')
+	})
+
+	// Launch Tesseract OCR
+	win.on_click('btn_launch_ocr', fn (mut w simplegui.SimpleWindow) {
+		app_path := os.join_path(os.dir(@FILE), 'ocr_studio.v')
+		w.append_console('hub_log', '👁️ Launching Tesseract OCR Studio in background...\n', 1)
+		go fn [app_path] () {
+			simplegui.exec_safe('v', ['run', app_path])
+		}()
+		w.toast('Tesseract OCR Studio launched!')
+	})
+
+	// Launch Audio Tag Studio
+	win.on_click('btn_launch_audiotag', fn (mut w simplegui.SimpleWindow) {
+		app_path := os.join_path(os.dir(@FILE), 'audiotag_studio.v')
+		w.append_console('hub_log', '🎵 Launching Audio Tag Studio in background...\n', 1)
+		go fn [app_path] () {
+			simplegui.exec_safe('v', ['run', app_path])
+		}()
+		w.toast('Audio Tag Studio launched!')
+	})
+
+	// Launch Graphviz Studio
+	win.on_click('btn_launch_dot', fn (mut w simplegui.SimpleWindow) {
+		app_path := os.join_path(os.dir(@FILE), 'dot_studio.v')
+		w.append_console('hub_log', '📊 Launching Graphviz Studio in background...\n', 1)
+		go fn [app_path] () {
+			simplegui.exec_safe('v', ['run', app_path])
+		}()
+		w.toast('Graphviz Studio launched!')
+	})
+
+	// Launch Homebrew Studio
+	win.on_click('btn_launch_brew', fn (mut w simplegui.SimpleWindow) {
+		app_path := os.join_path(os.dir(@FILE), 'brew_studio.v')
+		w.append_console('hub_log', '🍺 Launching Homebrew Studio in background...\n', 1)
+		go fn [app_path] () {
+			simplegui.exec_safe('v', ['run', app_path])
+		}()
+		w.toast('Homebrew Studio launched!')
+	})
+
+	// Launch Docker Studio
+	win.on_click('btn_launch_docker', fn (mut w simplegui.SimpleWindow) {
+		app_path := os.join_path(os.dir(@FILE), 'docker_studio.v')
+		w.append_console('hub_log', '🐳 Launching Docker Studio in background...\n', 1)
+		go fn [app_path] () {
+			simplegui.exec_safe('v', ['run', app_path])
+		}()
+		w.toast('Docker Studio launched!')
+	})
+
+	// Launch Disk Space Studio
+	win.on_click('btn_launch_disk', fn (mut w simplegui.SimpleWindow) {
+		app_path := os.join_path(os.dir(@FILE), 'disk_studio.v')
+		w.append_console('hub_log', '💾 Launching Disk Space Studio in background...\n', 1)
+		go fn [app_path] () {
+			simplegui.exec_safe('v', ['run', app_path])
+		}()
+		w.toast('Disk Space Studio launched!')
+	})
+
+	// Launch Launchd & Cron Studio
+	win.on_click('btn_launch_launchd', fn (mut w simplegui.SimpleWindow) {
+		app_path := os.join_path(os.dir(@FILE), 'launchd_studio.v')
+		w.append_console('hub_log', '⏰ Launching Launchd & Cron Studio in background...\n', 1)
+		go fn [app_path] () {
+			simplegui.exec_safe('v', ['run', app_path])
+		}()
+		w.toast('Launchd & Cron Studio launched!')
 	})
 
 	// Browse File

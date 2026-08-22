@@ -98,7 +98,7 @@ fn main() {
 			simplegui.play_sound('Ping')
 		})
 		w.add_button('fill', 'Fill Progress').onclick(fn (mut w simplegui.SimpleWindow) {
-			w.set('progress', 100)
+			w.set_value_int('progress', 100)
 			w.info('Done', 'Progress bar filled to 100%!')
 		})
 	})
@@ -128,7 +128,7 @@ fn main() {
 				time.sleep(2000 * time.millisecond)
 			}, fn (mut win simplegui.SimpleWindow) {
 				win.enable_all_controls()
-				win.set('progress', 100)
+				win.set_value_int('progress', 100)
 				win.status('Computation finished!')
 				win.notify('Task Complete', 'Background computation finished successfully!')
 				win.info('Finished', 'Background task completed successfully!')

@@ -2817,19 +2817,9 @@ pub fn (win &SimpleWindow) get(name string) string {
 	return win.get_text(name)
 }
 
-// set dynamically sets the value of a control based on the type of the value passed.
-pub fn (win &SimpleWindow) set[T](name string, value T) &SimpleWindow {
-	$if T is string {
-		return win.set_text(name, value)
-	} $else $if T is bool {
-		return win.set_bool(name, value)
-	} $else $if T is int {
-		return win.set_number_value(name, value)
-	} $else $if T is f64 {
-		return win.set_float(name, value)
-	} $else {
-		return win.set_text(name, value.str())
-	}
+// set dynamically sets the text/value of a control.
+pub fn (win &SimpleWindow) set(name string, value string) &SimpleWindow {
+	return win.set_text(name, value)
 }
 
 // get_as retrieves and casts the value of a control to the target type T.
