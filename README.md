@@ -24,6 +24,8 @@ Build real, native Cocoa desktop apps in [V](https://vlang.io) with a beginner-f
 - [Compiling & packaging as a macOS app](#compiling--packaging-as-a-macos-app)
 - [Capturing demo screenshots](#capturing-demo-screenshots)
 - [Demos](#demos)
+- [Production Workstations & Studio Applications](#production-workstations--studio-applications)
+- [Security & Command Injection Prevention](#security--command-injection-prevention)
 - [Testing](#testing)
 - [Project structure](#project-structure)
 - [Documentation](#documentation)
@@ -73,10 +75,14 @@ If you are new to programming or desktop app creation, here are simple definitio
   - **Standard Controls**: Labels, text inputs, password fields, scrollable text areas, push buttons, checkboxes, radio groups, dropdowns, segmented controls, search fields, sliders, steppers, progress bars, and image boxes.
   - **Rich macOS Widgets**: `NSComboBox` (editable combo box with suggestions), `NSLevelIndicator` & Star Ratings, `NSTokenField` (bubble tag editor), `NSPathControl` (interactive breadcrumb path navigator), and Activity Loading Spinners.
   - **Developer & Dashboard Controls**: Breadcrumb bars, keyboard shortcut recorders, line & area charts, circular progress gauges, property inspector grids, color swatches/wells, editable spreadsheet-style grids, tree views, code editors, timeline event feeds, badges, avatar cards, stat cards, notice banners, split buttons, tag clouds, wizard steppers, status indicators, metric meters, system tray status items, collapsible sections, titlebar toolbar items, WebKit HTML preview panels, and drag-and-drop file drop zones.
-- **17 Production Built-in Themes**:
-  - Light & Dark macOS Aqua system themes (`Apple Light`, `Apple Dark`).
-  - Pro & Custom Dark Mode themes: `Midnight Space Gray`, `Apple Sunset`, `Sonoma Emerald`, `Ventura Amber`, `Soft Pastel`, `Catppuccin Mocha`, `Nord`, `Dracula`, `Cyberpunk`, `Solarized Light`, `Solarized Dark`, `GitHub Dark`, `GitHub Light`, `Navy Blue`, and `Forest Green`.
+- **18 Curated Production Themes & Save State**:
+  - Light & Dark system palettes: `Apple Light` (Default), `Apple Dark`, `Deep Space OLED`, `Tokyo Night`, `Nord Arctic`, `Dracula Vampire`, `Cyberpunk Neon`, `Catppuccin Mocha`, `Monokai Pro`, `Gruvbox Dark`, `Cobalt Blue`, `Emerald Forest`, `Sunset Dusk`, `GitHub Dark`, `GitHub Light`, `Solarized Dark`, `Solarized Light`, and `Warm Paper & Ink`.
+  - **Cross-App Theme State Persistence**: User theme choices persist automatically to `~/.config/simplegui/theme.txt` and synchronize seamlessly across all applications on startup.
   - **Theme-driven control styling**: buttons, dropdowns, inputs, and date pickers restyle from the applied theme's background — a light theme renders light controls even when macOS is in system Dark Mode (and vice versa).
+- **Centralized Command Injection Prevention & Safe Execution**:
+  - POSIX single-quote escaping for arguments and inputs (`simplegui.quote_arg`, `simplegui.quote_path`).
+  - Safe shell isolation executors (`simplegui.exec_safe`, `simplegui.exec_safe_stdin`) neutralizing command breakout (`;`, `&&`, `|`, `` ` ``, `$()`, `>`, `<`).
+  - Path traversal and metacharacter sanitization (`simplegui.sanitize_filename`).
 - **Form Automation & Validation Engine**:
   - Auto-generate complete forms from V structs using compile-time reflection (`win.add_form_from_struct[T]()`).
   - Struct field attribute validation (`win.validate_struct[T]()`) supporting `@[required]`, `@[min_len]`, `@[max_len]`, `@[email]`, `@[url]`, `@[alphanumeric]`, `@[min]`, `@[max]`.
@@ -1933,6 +1939,58 @@ Screenshots are auto-generated using `v run capture_demos.vsh`.
   - **Masked Input Fields**: `win.add_masked_input` / `win.masked_input` with automated formatting rules.
   - **Inline Editable Labels**: `win.add_inline_editable_label` / `win.editable_label` with click-to-edit interactions.
   - **Vertical Navigation Rails**: `win.add_nav_rail` / `win.nav_rail` with icons and notification badges.
+
+---
+
+## Production Workstations & Studio Applications
+
+SimpleGUI includes 16 complete, native desktop workstation applications in [`applications/`](applications/) designed for engineering workflows, system monitoring, filesystem discovery, data analysis, speech synthesis, and media transformation:
+
+| Application | Command | Focus Area |
+| :--- | :--- | :--- |
+| **🚀 Media & Data Studio Hub** | `v run applications/media_studio_hub.v` | Unified workstation hub with environment diagnostics and quick-launch actions |
+| **⚡ Task Manager Pro** | `v run applications/task_manager.v` | Process monitor & system telemetry: live process grid, resource stat cards, signals, and socket inspector |
+| **📂 Find Studio Pro** | `v run applications/find_studio.v` | Filesystem search & inode explorer: type filters, size filters, age, depth, and 10 recipes |
+| **🗣️ Say Studio Pro** | `v run applications/say_studio.v` | Speech synthesizer, voiceover presets, WPM tuner, and audio file exporter (.m4a/.aiff/.wav) |
+| **🔄 TR Studio Pro** | `v run applications/tr_studio.v` | Stream translation, character deletion, repeat squeezing, and 10 cleansing recipes |
+| **✂️ Cut Studio Pro** | `v run applications/cut_studio.v` | Column slicing, field extraction, custom delimiters, byte slicing, and 9 recipes |
+| **🔍 RG Studio Pro** | `v run applications/rg_studio.v` | Fast ripgrep code search workbench, file type filters, globs, and context lines |
+| **⚡ FD Studio Pro** | `v run applications/fd_studio.v` | High-speed filesystem search, large file detection, recent modification filters |
+| **🔍 SD Studio Pro** | `v run applications/sd_studio.v` | Regex search & replace, capture groups ($1), in-place folder batch processing |
+| **⚡ GAWK Studio Pro** | `v run applications/gawk_studio.v` | AWK script workbench with 40+ one-liner recipes and multi-GB file streaming |
+| **📄 Pandoc Studio Pro** | `v run applications/pandoc_studio.v` | Universal document converter: Markdown, HTML5, LaTeX, Word docx, EPUB, PDF |
+| **⚡ Wget2 Studio Pro** | `v run applications/wget2_studio.v` | 16-thread download accelerator, offline website mirroring, and scraper |
+| **🎬 yt-dlp Studio Pro** | `v run applications/yt_dlp_studio.v` | 4K UHD video downloader, MP3/FLAC extractor, subtitle/cookie embedding |
+| **🎬 FFmpeg Studio Pro** | `v run applications/ffmpeg_studio.v` | Transcoder, social size limits (Discord <10MB, Reels 9:16), EBU R128 loudnorm, HD GIF |
+| **🎨 ImageMagick Studio Pro** | `v run applications/imagemagick_studio.v` | WebP/AVIF optimizer, multi-resolution favicon generator, white BG remover |
+| **🌐 Subfinder Studio Pro** | `v run applications/subfinder_studio.v` | Passive subdomain reconnaissance and active DNS asset mapping |
+
+All applications support dynamic runtime theme switching across all 18 curated palettes with automatic state persistence to `~/.config/simplegui/theme.txt`.
+
+---
+
+## Security & Command Injection Prevention
+
+SimpleGUI features a centralized security module (`security.v`) providing POSIX-compliant argument quoting and safe subshell execution primitives to eliminate command breakout vulnerabilities:
+
+```v
+import simplegui
+
+// 1. Strictly quote arguments for safe subshell execution
+safe_arg := simplegui.quote_arg('user_input; rm -rf /')
+// Output: '\'user_input; rm -rf /\''
+
+// 2. Safely execute CLI binaries without shell breakout risk
+res := simplegui.exec_safe('rg', ['-n', '-e', user_pattern, target_dir])
+
+// 3. Safely pipe stdin from a file
+stream_res := simplegui.exec_safe_stdin('tr', ['-d', '\r'], input_file)
+
+// 4. Sanitize user-provided filenames to prevent path traversal
+clean_name := simplegui.sanitize_filename('../../secret.txt')
+```
+
+---
 
 ## Contributing
 

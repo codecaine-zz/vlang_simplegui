@@ -1,5 +1,7 @@
 module simplegui
 
+import os
+
 // add_theme_menu adds a theme menu control to the window layout.
 pub fn (win &SimpleWindow) add_theme_menu(name string, selected string) &SimpleWindow {
 	mut real_name := name
@@ -110,21 +112,22 @@ pub fn list_themes() []string {
 	return [
 		'Apple Light',
 		'Apple Dark',
-		'Midnight Space Gray',
-		'Apple Sunset',
-		'Sonoma Emerald',
-		'Ventura Amber',
-		'Soft Pastel',
+		'Deep Space OLED',
+		'Tokyo Night',
+		'Nord Arctic',
+		'Dracula Vampire',
+		'Cyberpunk Neon',
 		'Catppuccin Mocha',
-		'Nord',
-		'Dracula',
-		'Cyberpunk',
-		'Solarized Light',
-		'Solarized Dark',
+		'Monokai Pro',
+		'Gruvbox Dark',
+		'Cobalt Blue',
+		'Emerald Forest',
+		'Sunset Dusk',
 		'GitHub Dark',
 		'GitHub Light',
-		'Navy Blue',
-		'Forest Green',
+		'Solarized Dark',
+		'Solarized Light',
+		'Warm Paper & Ink',
 	]
 }
 
@@ -133,74 +136,74 @@ pub fn list_themes() []string {
 pub fn get_theme(theme_name string) Theme {
 	normalized := theme_name.to_lower().replace(' ', '_').replace('-', '_')
 	match normalized {
-		'apple_light', 'light' {
+		'apple_light', 'light', 'macos_light' {
 			return Theme{
 				name:             'Apple Light'
-				background_color: '#ffffff'
-				font_color:       '#1c1c1e'
-				accent_color:     '#007aff'
-				description:      'Clean macOS Aqua system light interface'
+				background_color: '#f6f6f7'
+				font_color:       '#1d1d1f'
+				accent_color:     '#0071e3'
+				description:      'Clean Apple macOS Aqua studio interface'
 				is_dark:          false
 			}
 		}
-		'apple_dark', 'dark' {
+		'apple_dark', 'dark', 'macos_dark' {
 			return Theme{
 				name:             'Apple Dark'
 				background_color: '#1c1c1e'
-				font_color:       '#f2f2f7'
+				font_color:       '#f5f5f7'
 				accent_color:     '#0a84ff'
-				description:      'Vibrant macOS Dark Mode surface'
+				description:      'Refined Apple macOS Pro Dark Titanium surface'
 				is_dark:          true
 			}
 		}
-		'midnight_space_gray', 'midnight', 'space_gray' {
+		'deep_space_oled', 'deep_space', 'oled', 'midnight', 'space_gray', 'midnight_space_gray' {
 			return Theme{
-				name:             'Midnight Space Gray'
-				background_color: '#161618'
-				font_color:       '#ebebf5'
-				accent_color:     '#0a84ff'
-				description:      'Pro dark titanium space gray theme'
+				name:             'Deep Space OLED'
+				background_color: '#090a0f'
+				font_color:       '#e2e8f0'
+				accent_color:     '#6366f1'
+				description:      'Ultra-deep pitch OLED dark theme with electric indigo accents'
 				is_dark:          true
 			}
 		}
-		'apple_sunset', 'sunset', 'mojave' {
+		'tokyo_night', 'tokyo', 'tokyo_night_storm' {
 			return Theme{
-				name:             'Apple Sunset'
-				background_color: '#281a24'
-				font_color:       '#fdf7f4'
-				accent_color:     '#ff6b00'
-				description:      'Warm macOS twilight sunset aesthetics'
+				name:             'Tokyo Night'
+				background_color: '#1a1b26'
+				font_color:       '#c0caf5'
+				accent_color:     '#7aa2f7'
+				description:      'Iconic Japanese twilight deep indigo theme'
 				is_dark:          true
 			}
 		}
-		'sonoma_emerald', 'sonoma', 'emerald' {
+		'nord_arctic', 'nord' {
 			return Theme{
-				name:             'Sonoma Emerald'
-				background_color: '#0d1f18'
-				font_color:       '#f0fdf4'
-				accent_color:     '#30d158'
-				description:      'macOS Sonoma dark forest glass palette'
+				name:             'Nord Arctic'
+				background_color: '#2e3440'
+				font_color:       '#eceff4'
+				accent_color:     '#88c0d0'
+				description:      'Arctic polar night slate with frosty cyan contrast'
 				is_dark:          true
 			}
 		}
-		'ventura_amber', 'ventura', 'amber' {
+		'dracula_vampire', 'dracula' {
 			return Theme{
-				name:             'Ventura Amber'
-				background_color: '#211815'
-				font_color:       '#fff8f0'
-				accent_color:     '#ff9500'
-				description:      'macOS Ventura golden sunset dark hues'
+				name:             'Dracula Vampire'
+				background_color: '#282a36'
+				font_color:       '#f8f8f2'
+				accent_color:     '#bd93f9'
+				description:      'High-contrast gothic slate purple developer theme'
 				is_dark:          true
 			}
 		}
-		'soft_pastel', 'pastel', 'cupcake' {
+		'cyberpunk_neon', 'cyberpunk', 'neon', 'synthwave' {
 			return Theme{
-				name:             'Soft Pastel'
-				background_color: '#faf6f0'
-				font_color:       '#2d2b2a'
-				accent_color:     '#e07a5f'
-				description:      'Apple Studio warm soft pastel light palette'
-				is_dark:          false
+				name:             'Cyberpunk Neon'
+				background_color: '#120e24'
+				font_color:       '#00f0ff'
+				accent_color:     '#ff007f'
+				description:      'Electric midnight purple with hot cyan text and neon pink accents'
+				is_dark:          true
 			}
 		}
 		'catppuccin_mocha', 'catppuccin', 'mocha' {
@@ -208,68 +211,68 @@ pub fn get_theme(theme_name string) Theme {
 				name:             'Catppuccin Mocha'
 				background_color: '#1e1e2e'
 				font_color:       '#cdd6f4'
-				accent_color:     '#cba6f7'
-				description:      'Soothing lavender catppuccin dark mode'
+				accent_color:     '#f5c2e7'
+				description:      'Soothing modern lavender pastel dark mode'
 				is_dark:          true
 			}
 		}
-		'nord' {
+		'monokai_pro', 'monokai' {
 			return Theme{
-				name:             'Nord'
-				background_color: '#2e3440'
-				font_color:       '#eceff4'
-				accent_color:     '#88c0d0'
-				description:      'Arctic frost nord developer theme'
+				name:             'Monokai Pro'
+				background_color: '#2d2a2e'
+				font_color:       '#fcfcfa'
+				accent_color:     '#ffd866'
+				description:      'Warm dark charcoal with radiant Monokai yellow/gold accents'
 				is_dark:          true
 			}
 		}
-		'dracula' {
+		'gruvbox_dark', 'gruvbox' {
 			return Theme{
-				name:             'Dracula'
-				background_color: '#282a36'
-				font_color:       '#f8f8f2'
-				accent_color:     '#bd93f9'
-				description:      'High-contrast vampire purple theme'
+				name:             'Gruvbox Dark'
+				background_color: '#282828'
+				font_color:       '#ebdbb2'
+				accent_color:     '#fe8019'
+				description:      'Warm retro earthy dark canvas with burnt orange accents'
 				is_dark:          true
 			}
 		}
-		'cyberpunk', 'neon' {
+		'cobalt_blue', 'cobalt', 'navy_blue', 'navy' {
 			return Theme{
-				name:             'Cyberpunk'
-				background_color: '#0d0d15'
-				font_color:       '#00f5d4'
-				accent_color:     '#ff007f'
-				description:      'Neon glow dark contrast palette'
+				name:             'Cobalt Blue'
+				background_color: '#0a192f'
+				font_color:       '#ccd6f6'
+				accent_color:     '#64ffda'
+				description:      'Deep submarine oceanic navy with glowing aqua teal accents'
 				is_dark:          true
 			}
 		}
-		'solarized_light' {
+		'emerald_forest', 'emerald', 'forest_green', 'forest', 'sonoma_emerald', 'sonoma' {
 			return Theme{
-				name:             'Solarized Light'
-				background_color: '#fdf6e3'
-				font_color:       '#657b83'
-				accent_color:     '#268bd2'
-				description:      'Precision engineered light theme'
-				is_dark:          false
-			}
-		}
-		'solarized_dark' {
-			return Theme{
-				name:             'Solarized Dark'
-				background_color: '#002b36'
-				font_color:       '#839496'
-				accent_color:     '#2aa198'
-				description:      'Precision engineered dark theme'
+				name:             'Emerald Forest'
+				background_color: '#062319'
+				font_color:       '#ecfdf5'
+				accent_color:     '#10b981'
+				description:      'Deep evergreen botanical pine with vivid emerald accents'
 				is_dark:          true
 			}
 		}
-		'github_dark' {
+		'sunset_dusk', 'sunset', 'apple_sunset', 'ventura_amber', 'ventura', 'amber' {
+			return Theme{
+				name:             'Sunset Dusk'
+				background_color: '#231123'
+				font_color:       '#fff1f2'
+				accent_color:     '#f43f5e'
+				description:      'Rich twilight velvet plum with warm sunset coral accents'
+				is_dark:          true
+			}
+		}
+		'github_dark', 'github_dimmed' {
 			return Theme{
 				name:             'GitHub Dark'
-				background_color: '#0d1117'
-				font_color:       '#c9d1d9'
-				accent_color:     '#58a6ff'
-				description:      'Official GitHub dark interface palette'
+				background_color: '#22272e'
+				font_color:       '#adbac7'
+				accent_color:     '#539bf5'
+				description:      'Official GitHub Dark Dimmed developer canvas'
 				is_dark:          true
 			}
 		}
@@ -277,49 +280,102 @@ pub fn get_theme(theme_name string) Theme {
 			return Theme{
 				name:             'GitHub Light'
 				background_color: '#ffffff'
-				font_color:       '#24292f'
+				font_color:       '#1f2328'
 				accent_color:     '#0969da'
-				description:      'Clean GitHub light canvas palette'
+				description:      'Crisp high-contrast GitHub light interface'
 				is_dark:          false
 			}
 		}
-		'navy_blue', 'navy' {
+		'solarized_dark' {
 			return Theme{
-				name:             'Navy Blue'
-				background_color: '#0f172a'
-				font_color:       '#f8fafc'
-				accent_color:     '#38bdf8'
-				description:      'Deep navy slate interface'
+				name:             'Solarized Dark'
+				background_color: '#002b36'
+				font_color:       '#93a1a1'
+				accent_color:     '#268bd2'
+				description:      'Precision engineered scientific teal dark theme'
 				is_dark:          true
 			}
 		}
-		'forest_green', 'forest' {
+		'solarized_light' {
 			return Theme{
-				name:             'Forest Green'
-				background_color: '#14532d'
-				font_color:       '#f0fdf4'
-				accent_color:     '#4ade80'
-				description:      'Rich emerald green dark theme'
-				is_dark:          true
+				name:             'Solarized Light'
+				background_color: '#fdf6e3'
+				font_color:       '#586e75'
+				accent_color:     '#b58900'
+				description:      'Warm linen parchment precision light palette'
+				is_dark:          false
+			}
+		}
+		'warm_paper_&_ink', 'warm_paper', 'paper', 'soft_pastel', 'pastel' {
+			return Theme{
+				name:             'Warm Paper & Ink'
+				background_color: '#fbf8f2'
+				font_color:       '#18181b'
+				accent_color:     '#78716c'
+				description:      'Tactile Japanese fine washi paper with deep sumi ink text'
+				is_dark:          false
 			}
 		}
 		else {
 			return Theme{
 				name:             'Apple Light'
 				background_color: '#f6f6f7'
-				font_color:       '#1c1c1e'
-				accent_color:     '#007aff'
-				description:      'Clean macOS Aqua system light interface'
+				font_color:       '#1d1d1f'
+				accent_color:     '#0071e3'
+				description:      'Clean Apple macOS Aqua studio interface'
 				is_dark:          false
 			}
 		}
 	}
 }
 
-// apply_theme applies a Theme struct configuration to the window.
+// get_theme_config_path returns the file path used to persist the active window theme.
+fn get_theme_config_path() string {
+	base := os.config_dir() or { os.join_path(os.home_dir(), '.config') }
+	return os.join_path(base, 'simplegui', 'theme.txt')
+}
+
+// get_saved_theme retrieves the persisted theme preference, defaulting to 'Apple Light'.
+pub fn get_saved_theme() string {
+	path := get_theme_config_path()
+	if os.exists(path) {
+		val := os.read_file(path) or { '' }.trim_space()
+		if val != '' {
+			return val
+		}
+	}
+	return 'Apple Light'
+}
+
+// save_theme persists the active theme preference to disk.
+pub fn save_theme(theme_name string) bool {
+	path := get_theme_config_path()
+	dir := os.dir(path)
+	if !os.exists(dir) {
+		os.mkdir_all(dir) or { return false }
+	}
+	os.write_file(path, theme_name.trim_space()) or { return false }
+	return true
+}
+
+// save_theme persists the chosen theme for the window and saves it to user preferences.
+pub fn (win &SimpleWindow) save_theme(theme_name string) &SimpleWindow {
+	save_theme(theme_name)
+	return win
+}
+
+// restore_saved_theme loads and applies the persisted theme preference (defaults to Apple Light).
+pub fn (win &SimpleWindow) restore_saved_theme() string {
+	theme := get_saved_theme()
+	win.set_theme(theme)
+	return theme
+}
+
+// apply_theme applies a Theme struct configuration to the window and persists the selection.
 pub fn (win &SimpleWindow) apply_theme(t Theme) &SimpleWindow {
 	win.set_background_color(t.background_color)
 	win.set_font_color(t.font_color)
+	save_theme(t.name)
 	return win
 }
 

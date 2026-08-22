@@ -2511,7 +2511,23 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
     if (doc) {
       if ([doc isKindOfClass:[NSTextView class]]) {
         [(NSTextView *)doc setTextColor:fontColor];
-        [(NSTextView *)doc setBackgroundColor:backgroundColor ?: [NSColor textBackgroundColor]];
+        if (backgroundColor) {
+          CGFloat r=0, g=0, b=0, a=0;
+          NSColor *srgb = [backgroundColor colorUsingColorSpace:[NSColorSpace sRGBColorSpace]];
+          if (srgb) {
+            [srgb getRed:&r green:&g blue:&b alpha:&a];
+            double lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+            NSColor *textBg = nil;
+            if (lum < 0.5) {
+              textBg = [NSColor colorWithSRGBRed:MAX(0.0, r - 0.02) green:MAX(0.0, g - 0.02) blue:MAX(0.0, b - 0.02) alpha:0.95];
+            } else {
+              textBg = [NSColor colorWithSRGBRed:1.0 green:1.0 blue:1.0 alpha:0.95];
+            }
+            [(NSTextView *)doc setBackgroundColor:textBg];
+          }
+        } else {
+          [(NSTextView *)doc setBackgroundColor:[NSColor textBackgroundColor]];
+        }
         [(NSTextView *)doc setDrawsBackground:YES];
       } else if ([doc isKindOfClass:[NSTableView class]]) {
         NSTableView *tv = (NSTableView *)doc;
@@ -2527,6 +2543,27 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
     }
   } else if ([view isKindOfClass:[NSBox class]]) {
     NSBox *box = (NSBox *)view;
+    if (box.wantsLayer && box.layer && backgroundColor) {
+      CGFloat r=0, g=0, b=0, a=0;
+      NSColor *srgb = [backgroundColor colorUsingColorSpace:[NSColorSpace sRGBColorSpace]];
+      if (srgb) {
+        [srgb getRed:&r green:&g blue:&b alpha:&a];
+        double lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        NSColor *cardBg = nil;
+        NSColor *cardBorder = nil;
+        if (lum < 0.5) {
+          cardBg = [NSColor colorWithSRGBRed:MIN(1.0, r + 0.05) green:MIN(1.0, g + 0.05) blue:MIN(1.0, b + 0.06) alpha:0.75];
+          cardBorder = [NSColor colorWithSRGBRed:MIN(1.0, r + 0.16) green:MIN(1.0, g + 0.16) blue:MIN(1.0, b + 0.18) alpha:0.4];
+        } else {
+          cardBg = [NSColor colorWithSRGBRed:MAX(0.0, r - 0.04) green:MAX(0.0, g - 0.04) blue:MAX(0.0, b - 0.04) alpha:0.85];
+          cardBorder = [NSColor colorWithSRGBRed:MAX(0.0, r - 0.2) green:MAX(0.0, g - 0.2) blue:MAX(0.0, b - 0.2) alpha:0.35];
+        }
+        box.layer.backgroundColor = cardBg.CGColor;
+        if (box.layer.borderWidth > 0.0) {
+          box.layer.borderColor = cardBorder.CGColor;
+        }
+      }
+    }
     if (box.contentView) {
       [self applyColorsRecursively:box.contentView backgroundColor:backgroundColor fontColor:fontColor];
     }
@@ -18437,22 +18474,12 @@ int window_capture_screenshot(main__WindowInfo *info, const char *file_path) {
       return;
     }
 
-    SG_CGWindowListCreateImageFunc pCGWindowListCreateImage = (SG_CGWindowListCreateImageFunc)dlsym(RTLD_DEFAULT, "CGWindowListCreateImage");
-    CGImageRef imageRef = NULL;
-    if (pCGWindowListCreateImage) {
-      CGWindowID windowID = (CGWindowID)[delegate.window windowNumber];
-      imageRef = pCGWindowListCreateImage(
-          CGRectNull,
-          1,
-          windowID,
-          1 | 8
-      );
-    }
-
-    if (imageRef) {
-      NSBitmapImageRep *bitmapRep = [[NSBitmapImageRep alloc] initWithCGImage:imageRef];
-      CGImageRelease(imageRef);
+    NSView *contentView = [delegate.window contentView];
+    if (contentView) {
+      NSRect bounds = [contentView bounds];
+      NSBitmapImageRep *bitmapRep = [contentView bitmapImageRepForCachingDisplayInRect:bounds];
       if (bitmapRep) {
+        [contentView cacheDisplayInRect:bounds toBitmapImageRep:bitmapRep];
         NSData *pngData = [bitmapRep representationUsingType:NSBitmapImageFileTypePNG properties:@{}];
         if (pngData) {
           wrote = [pngData writeToFile:path atomically:YES];
@@ -18461,32 +18488,23 @@ int window_capture_screenshot(main__WindowInfo *info, const char *file_path) {
     }
 
     if (!wrote) {
-      NSView *contentView = [delegate.window contentView];
-      if (contentView) {
-        NSRect bounds = [contentView bounds];
-        NSBitmapImageRep *bitmapRep = [[NSBitmapImageRep alloc] initWithBitmapDataPlanes:NULL
-                                                            pixelsWide:(NSInteger)bounds.size.width
-                                                            pixelsHigh:(NSInteger)bounds.size.height
-                                                         bitsPerSample:8
-                                                       samplesPerPixel:4
-                                                              hasAlpha:YES
-                                                              isPlanar:NO
-                                                        colorSpaceName:NSCalibratedRGBColorSpace
-                                                          bytesPerRow:0
-                                                          bitsPerPixel:0];
-        if (bitmapRep) {
-          NSGraphicsContext *context = [NSGraphicsContext graphicsContextWithBitmapImageRep:bitmapRep];
-          [NSGraphicsContext saveGraphicsState];
-          [NSGraphicsContext setCurrentContext:context];
-          if (contentView.layer) {
-            [contentView.layer renderInContext:[context CGContext]];
-          } else {
-            [contentView cacheDisplayInRect:bounds toBitmapImageRep:bitmapRep];
-          }
-          [NSGraphicsContext restoreGraphicsState];
-          NSData *pngData = [bitmapRep representationUsingType:NSBitmapImageFileTypePNG properties:@{}];
-          if (pngData) {
-            wrote = [pngData writeToFile:path atomically:YES];
+      SG_CGWindowListCreateImageFunc pCGWindowListCreateImage = (SG_CGWindowListCreateImageFunc)dlsym(RTLD_DEFAULT, "CGWindowListCreateImage");
+      if (pCGWindowListCreateImage) {
+        CGWindowID windowID = (CGWindowID)[delegate.window windowNumber];
+        CGImageRef imageRef = pCGWindowListCreateImage(
+            CGRectNull,
+            1, // kCGWindowListOptionIncludingWindow
+            windowID,
+            0  // kCGWindowImageDefault
+        );
+        if (imageRef) {
+          NSBitmapImageRep *bitmapRep = [[NSBitmapImageRep alloc] initWithCGImage:imageRef];
+          CGImageRelease(imageRef);
+          if (bitmapRep) {
+            NSData *pngData = [bitmapRep representationUsingType:NSBitmapImageFileTypePNG properties:@{}];
+            if (pngData) {
+              wrote = [pngData writeToFile:path atomically:YES];
+            }
           }
         }
       }

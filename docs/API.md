@@ -71,6 +71,8 @@ If you are new to programming or desktop app creation, here are simple definitio
 - [16. Form Change & Dirty Tracking](#16-form-change--dirty-tracking)
 - [17. Ergonomic Helpers](#17-ergonomic-helpers)
 - [18. RAD Visual UI Designer & Code Generator API](#18-rad-visual-ui-designer--code-generator-api)
+- [19. Security, Sanitization & Safe Subshell Execution API](#19-security-sanitization--safe-subshell-execution-api)
+- [20. Production Workstation Applications Suite](#20-production-workstation-applications-suite)
 
 ## Quick start
 
@@ -247,13 +249,63 @@ win.apply_theme(theme)
 
 Looks up a built-in production theme by name (or alias) and applies its background and font styling to the window and controls.
 
-- **Values**: Accepts any built-in theme name (e.g. `'Apple Light'`, `'Apple Dark'`, `'Midnight Space Gray'`, `'Apple Sunset'`, `'Sonoma Emerald'`, `'Ventura Amber'`, `'Soft Pastel'`, `'Catppuccin'`, `'Nord'`, `'Dracula'`, `'Cyberpunk'`, `'Solarized Light'`, `'Solarized Dark'`, `'GitHub Dark'`, `'GitHub Light'`, `'Navy Blue'`, `'Forest Green'`).
+- **Values**: Accepts any of the 18 built-in production theme names:
+  - `Apple Light` (Default)
+  - `Apple Dark`
+  - `Deep Space OLED`
+  - `Tokyo Night`
+  - `Nord Arctic`
+  - `Dracula Vampire`
+  - `Cyberpunk Neon`
+  - `Catppuccin Mocha`
+  - `Monokai Pro`
+  - `Gruvbox Dark`
+  - `Cobalt Blue`
+  - `Emerald Forest`
+  - `Sunset Dusk`
+  - `GitHub Dark`
+  - `GitHub Light`
+  - `Solarized Dark`
+  - `Solarized Light`
+  - `Warm Paper & Ink`
 - **Control styling**: applying a theme restyles every control — buttons, dropdowns, text inputs, textareas, and date pickers derive their light/dark surface colors from the theme's background luminance, not from the macOS system appearance. A light theme therefore renders light controls even on a Mac running system Dark Mode (and vice versa).
 - **Window appearance**: the window's `NSAppearance` (Aqua / Dark Aqua) is switched automatically to match the theme background, so native bezels, menus, and scrollers stay consistent.
 - **Explicit overrides**: per-control colors set with `win.set_control_background_color()` / `win.set_control_font_color()` complement the theme — setting one property never resets the other. Applying a new theme restyles all controls, so re-apply per-control overrides after `set_theme()` when switching palettes at runtime (see [demos/form_color_theme_demo.v](demos/form_color_theme_demo.v)).
 
 ```v
-win.set_theme('Apple Dark')
+win.set_theme('Apple Light')
+```
+
+### `win.save_theme(theme_name string) &SimpleWindow`
+
+Persists the chosen theme name to user configuration at `~/.config/simplegui/theme.txt`.
+
+```v
+win.save_theme('Catppuccin Mocha')
+```
+
+### `win.restore_saved_theme() string`
+
+Reads the user's persisted theme preference (falling back to `'Apple Light'`) and applies it to the window. Returns the restored theme name.
+
+```v
+active_theme := win.restore_saved_theme()
+```
+
+### `simplegui.get_saved_theme() string`
+
+Retrieves the currently saved theme name from disk without applying it to a window. Defaults to `'Apple Light'`.
+
+```v
+saved := simplegui.get_saved_theme()
+```
+
+### `simplegui.save_theme(theme_name string) bool`
+
+Direct standalone helper to persist a theme preference to `~/.config/simplegui/theme.txt`.
+
+```v
+simplegui.save_theme('Tokyo Night')
 ```
 
 ### `win.set_padding(padding int) &SimpleWindow`
@@ -6405,6 +6457,88 @@ nav_items := [
 ]
 win.add_nav_rail('rail', nav_items)
 ```
+
+---
+
+## 19. Security, Sanitization & Safe Subshell Execution API
+
+SimpleGUI provides a centralized POSIX-compliant argument quoting and safe execution module (`security.v`) to eliminate subshell command breakout, parameter injection, and directory traversal vulnerabilities when integrating with CLI utilities, media encoders, and system tools.
+
+### `simplegui.quote_arg(s string) string`
+
+Wraps an argument in strict POSIX single quotes (`'...'`), escaping any existing single quotes as `'\''`. Guarantees that the argument is evaluated by the shell as a single literal parameter, neutralizing subshell metacharacters (`;`, `&&`, `||`, `|`, `` ` ``, `$()`, `>`, `<`, `\n`, etc.).
+
+```v
+import simplegui
+
+safe_pattern := simplegui.quote_arg('test; rm -rf /')
+// Produces: '\'test; rm -rf /\''
+```
+
+### `simplegui.quote_path(path string) string`
+
+Sanitizes file and directory paths by stripping dangerous null-bytes (`\0`) and applying strict POSIX single-quote escaping.
+
+```v
+safe_path := simplegui.quote_path('/Users/codecaine/My Documents/file.mp4')
+// Produces: '\'/Users/codecaine/My Documents/file.mp4\''
+```
+
+### `simplegui.exec_safe(bin string, args []string) os.Result`
+
+Executes a command securely. The executable path and every argument in the `args` array are individually quoted with `quote_arg` before subshell handoff.
+
+```v
+// Execute ripgrep with arbitrary user input without fear of injection
+res := simplegui.exec_safe('rg', ['-n', '-e', user_search_query, target_directory])
+if res.exit_code == 0 {
+    println(res.output)
+}
+```
+
+### `simplegui.exec_safe_stdin(bin string, args []string, input_file string) os.Result`
+
+Executes a stream or filter tool (like `tr`, `sd`, `gawk`) while piping standard input from `input_file`. Both the binary, all arguments, and the input file path are strictly quoted.
+
+```v
+// Execute tr securely with input redirected from a file
+res := simplegui.exec_safe_stdin('tr', ['-d', '\r'], '/tmp/input_data.txt')
+```
+
+### `simplegui.sanitize_filename(name string) string`
+
+Strips directory traversal sequences (`..`, `/`, `\`) and dangerous shell metacharacters from user-provided filenames to prevent filesystem escapement.
+
+```v
+safe_name := simplegui.sanitize_filename('../../etc/passwd; evil')
+// Produces: '.._.._etc_passwd_ evil'
+```
+
+---
+
+## 20. Production Workstation Applications Suite
+
+SimpleGUI includes 16 production-grade desktop workstation applications located in [`applications/`](file:///Users/codecaine/vlang_simplegui/applications/):
+
+| Application | Source File | Key Features |
+| :--- | :--- | :--- |
+| **⚡ Task Manager Pro** | [`applications/task_manager.v`](file:///Users/codecaine/vlang_simplegui/applications/task_manager.v) | Process monitor & system telemetry: live process grid, resource stat cards, signals, and socket inspector. |
+| **📂 Find Studio Pro** | [`applications/find_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/find_studio.v) | Filesystem search & inode explorer, type filters, size filters, age, depth, and 10 recipes. |
+| **🗣️ Say Studio Pro** | [`applications/say_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/say_studio.v) | Speech synthesizer, voice browser, rate tuner, voiceover presets, audio exporter (.m4a/.aiff/.wav). |
+| **🔄 TR Studio Pro** | [`applications/tr_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/tr_studio.v) | Stream translation, deletion (`-d`), repeat squeeze (`-s`), 10 cleansing recipes, dual-pane editor. |
+| **✂️ Cut Studio Pro** | [`applications/cut_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/cut_studio.v) | Column slicing, field extraction (`-f`), delimiter selectors (comma, tab, colon, pipe, custom), 9 recipes. |
+| **🔍 RG Studio Pro** | [`applications/rg_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/rg_studio.v) | ripgrep code search workbench, type filters (`-t`), globs (`-g`), context lines (`-C`), 8 recipes. |
+| **⚡ FD Studio Pro** | [`applications/fd_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/fd_studio.v) | Fast filesystem indexer, multi-extension filters, large file detection (>100MB), recent modification filters. |
+| **🔍 SD Studio Pro** | [`applications/sd_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/sd_studio.v) | Regex find/replace workbench, capture groups (`$1`), in-place multi-file folder batch replacement. |
+| **⚡ GAWK Studio Pro** | [`applications/gawk_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/gawk_studio.v) | AWK scripting workbench, 40+ built-in one-liner recipes, CSV/Log parser, multi-gigabyte disk file streamer. |
+| **📄 Pandoc Studio Pro** | [`applications/pandoc_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/pandoc_studio.v) | Document publishing studio: Markdown, HTML5, LaTeX, Typst, Word .docx, EPUB, PPTX, syntax styling. |
+| **⚡ Wget2 Studio Pro** | [`applications/wget2_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/wget2_studio.v) | Multi-threaded download accelerator (16 threads), website offline mirror (`--mirror`), extension scrapers. |
+| **🎬 yt-dlp Studio Pro** | [`applications/yt_dlp_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/yt_dlp_studio.v) | 4K UHD / 1080p / 720p downloader, audio extractors (MP3 320k, FLAC), cookie authentication, section downloader. |
+| **🎬 FFmpeg Studio Pro** | [`applications/ffmpeg_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/ffmpeg_studio.v) | Transcoding, social presets (Discord <10MB, Reels 9:16), EBU R128 loudnorm, HD GIF generator, batch queue. |
+| **🎨 ImageMagick Studio Pro** | [`applications/imagemagick_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/imagemagick_studio.v) | WebP/AVIF compression, multi-size favicon generator, white background removal, batch image optimizer. |
+| **🌐 Subfinder Studio Pro** | [`applications/subfinder_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/subfinder_studio.v) | Passive subdomain recon, active DNS validation, multi-source OSINT querying, rate-limiting. |
+| **🚀 Media & Data Studio Hub** | [`applications/media_studio_hub.v`](file:///Users/codecaine/vlang_simplegui/applications/media_studio_hub.v) | Master workstation hub with environment diagnostics, quick actions, and unified sub-application launchers. |
+
 
 
 

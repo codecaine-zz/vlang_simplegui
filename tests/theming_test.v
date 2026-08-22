@@ -66,11 +66,12 @@ fn test_control_color_methods_store_values() {
 
 fn test_theme_presets() {
 	themes := simplegui.list_themes()
-	assert themes.len >= 17
+	assert themes.len >= 18
 	assert 'Apple Light' in themes
 	assert 'Apple Dark' in themes
-	assert 'Midnight Space Gray' in themes
-	assert 'Sonoma Emerald' in themes
+	assert 'Deep Space OLED' in themes
+	assert 'Tokyo Night' in themes
+	assert 'Emerald Forest' in themes
 
 	// Test Dracula preset
 	mut win := simplegui.new_simple_window('Test Window', 100, 100)
@@ -80,20 +81,24 @@ fn test_theme_presets() {
 
 	// Test Apple Light preset
 	win.set_theme('Apple Light')
-	assert win.get_background_color() == '#ffffff'
-	assert win.get_font_color() == '#1c1c1e'
+	assert win.get_background_color() == '#f6f6f7'
+	assert win.get_font_color() == '#1d1d1f'
 
 	// Test Apple Dark preset
 	win.set_theme('apple-dark')
 	assert win.get_background_color() == '#1c1c1e'
-	assert win.get_font_color() == '#f2f2f7'
+	assert win.get_font_color() == '#f5f5f7'
 
 	// Test Theme struct and apply_theme
-	t_sonoma := simplegui.get_theme('Sonoma Emerald')
-	assert t_sonoma.name == 'Sonoma Emerald'
-	assert t_sonoma.is_dark == true
-	assert t_sonoma.accent_color == '#30d158'
-	win.apply_theme(t_sonoma)
-	assert win.get_background_color() == '#0d1f18'
-	assert win.get_font_color() == '#f0fdf4'
+	t_emerald := simplegui.get_theme('Emerald Forest')
+	assert t_emerald.name == 'Emerald Forest'
+	assert t_emerald.is_dark == true
+	assert t_emerald.accent_color == '#10b981'
+	win.apply_theme(t_emerald)
+	assert win.get_background_color() == '#062319'
+	assert win.get_font_color() == '#ecfdf5'
+
+	// Test save/restore state
+	saved := simplegui.get_saved_theme()
+	assert saved != ''
 }
