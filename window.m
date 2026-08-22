@@ -12043,14 +12043,19 @@ void window_set_control_text(void *control, const char *text) {
     [(NSStepper *)view setDoubleValue:[nsText doubleValue]];
   } else if ([view isKindOfClass:[NSBox class]]) {
     NSBox *box = (NSBox *)view;
-    NSView *content = [box contentView];
-    if ([content isKindOfClass:[NSTextField class]] && content.tag == 201) {
-      [(NSTextField *)content setStringValue:nsText];
-    } else if ([content isKindOfClass:[NSStackView class]]) {
-      NSStackView *stack = (NSStackView *)content;
-      for (NSView *subview in stack.arrangedSubviews) {
-        if (subview.tag == 101 && [subview isKindOfClass:[NSTextField class]]) {
-          [(NSTextField *)subview setStringValue:nsText];
+    NSTextField *vLbl = objc_getAssociatedObject(box, "metricValLabel");
+    if (vLbl) {
+      [vLbl setStringValue:nsText];
+    } else {
+      NSView *content = [box contentView];
+      if ([content isKindOfClass:[NSTextField class]] && content.tag == 201) {
+        [(NSTextField *)content setStringValue:nsText];
+      } else if ([content isKindOfClass:[NSStackView class]]) {
+        NSStackView *stack = (NSStackView *)content;
+        for (NSView *subview in stack.arrangedSubviews) {
+          if (subview.tag == 101 && [subview isKindOfClass:[NSTextField class]]) {
+            [(NSTextField *)subview setStringValue:nsText];
+          }
         }
       }
     }

@@ -99,6 +99,7 @@ fn main() {
 	win.add_button('btn_launch_rg', '🔍 ripgrep')
 	win.add_button('btn_launch_fd', '⚡ FD')
 	win.add_button('btn_launch_find', '📂 find')
+	win.add_button('btn_launch_ifconfig', '🌐 IFConfig')
 	win.end_row()
 
 	// Row 2: Media, Web & Publishing Workstations
@@ -263,6 +264,16 @@ fn main() {
 			simplegui.exec_safe('v', ['run', app_path])
 		}()
 		w.toast('Find Studio Pro launched!')
+	})
+
+	// Launch IFConfig Studio
+	win.on_click('btn_launch_ifconfig', fn (mut w simplegui.SimpleWindow) {
+		app_path := os.join_path(os.dir(@FILE), 'ifconfig_studio.v')
+		w.append_console('hub_log', '🌐 Launching IFConfig Studio Pro in background...\n', 1)
+		go fn [app_path] () {
+			simplegui.exec_safe('v', ['run', app_path])
+		}()
+		w.toast('IFConfig Studio Pro launched!')
 	})
 
 	// Launch FFmpeg Studio

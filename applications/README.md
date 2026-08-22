@@ -26,6 +26,7 @@ Native macOS GUI applications built with **SimpleGUI** for V, providing high-per
 | **⚡ Task Manager Pro** | [`applications/task_manager.v`](file:///Users/codecaine/vlang_simplegui/applications/task_manager.v) | macOS process manager & hardware telemetry monitor: real-time process data grid (PID, Name, CPU %, Memory RSS, State, User, Command Path), hardware stats cards (CPU cores, Apple Unified Memory, load averages), filtering by scope (GUI apps, high CPU, high memory, root daemons), multi-column sorting, process lifecycle signals (SIGKILL -9, SIGTERM -15, SIGSTOP, SIGCONT), live socket/descriptor inspector (`lsof`), and automatic background refresh. |
 | **📦 Ouch Studio Pro** | [`applications/ouch_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/ouch_studio.v) | Ultra-fast universal archive & compression workbench powered by `ouch`: lossless/high-density packaging across `.tar.zst`, `.tar.gz`, `.zip`, `.7z`, `.tar.xz`, `.tar.bz2`, compression tuning (`--fast`, `--slow`, default), `.gitignore` & hidden file filtering, multi-threaded worker, full directory extraction, and tree hierarchy explorer (`ouch list --tree`). |
 | **📝 Sed Studio Pro** | [`applications/sed_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/sed_studio.v) | POSIX/BSD `sed` stream editor & regex transformation workbench: dual-pane live interactive scratchpad, in-place disk file editing (`-i ''`), character/line counters, backup preservation (`.bak`), extended regex (`-E`), quiet/suppress print (`-n`), and 15 built-in production transformation recipes. |
+| **🌐 IFConfig Studio Pro** | [`applications/ifconfig_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/ifconfig_studio.v) | Comprehensive native macOS IP intelligence & network diagnostics studio powered by `curl`, `ifconfig.me`, and `ipinfo.io`: dual-stack Public IPv4 & IPv6 detection, rich geolocation (City, Country, GPS coordinates, ASN, ISP, Timezone), 1-click Apple & Google Maps launcher, remote IP/domain inspector, local interface & hardware MAC scanner, anycast DNS ping latency benchmark, DNS record resolver (`dig`), and raw JSON/Curl generator. |
 | **🚀 Media & Data Studio Hub** | [`applications/media_studio_hub.v`](file:///Users/codecaine/vlang_simplegui/applications/media_studio_hub.v) | Master workstation with system environment diagnostics, instant one-click quick tools (Discord <10MB, TikTok 9:16, Loudnorm, Favicon, Remove White BG, 2-Pass GIF, WebP), and sub-app launchers. |
 
 ---
@@ -111,4 +112,7 @@ v run applications/ffmpeg_studio.v
 
 # 13. ImageMagick Studio Pro
 v run applications/imagemagick_studio.v
+
+# 14. IFConfig Studio Pro (IP & Network Intelligence)
+v run applications/ifconfig_studio.v
 ```

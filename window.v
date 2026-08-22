@@ -4172,7 +4172,7 @@ pub fn (win &SimpleWindow) metric_card(title string, value string, change_badge 
 	return win.add_metric_card('', title, value, change_badge, subtitle)
 }
 
-// set_metric_card_value updates metric card numeric value and change badge.
+// set_rating_breakdown_data updates rating breakdown chart data.
 pub fn (win &SimpleWindow) set_rating_breakdown_data(name string, avg_score f64, total_reviews int, star_percentages []f64) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_set_rating_breakdown_data(win.window_info, name.str, avg_score, total_reviews,
