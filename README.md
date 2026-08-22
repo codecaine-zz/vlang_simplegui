@@ -1944,11 +1944,13 @@ Screenshots are auto-generated using `v run capture_demos.vsh`.
 
 ## Production Workstations & Studio Applications
 
-SimpleGUI includes 17 complete, native desktop workstation applications in [`applications/`](applications/) designed for engineering workflows, universal archiving & compression, system monitoring, filesystem discovery, data analysis, speech synthesis, and media transformation:
+SimpleGUI includes 19 complete, native desktop workstation applications in [`applications/`](applications/) designed for engineering workflows, text & code editing, universal archiving & compression, stream editing, system monitoring, filesystem discovery, data analysis, speech synthesis, and media transformation:
 
 | Application | Command | Focus Area |
 | :--- | :--- | :--- |
 | **🚀 Media & Data Studio Hub** | `v run applications/media_studio_hub.v` | Unified workstation hub with environment diagnostics and quick-launch actions |
+| **📝 Text Editor Pro** | `v run applications/text_editor.v` | Code & document editor: multi-font typography, search/replace, JSON prettifier, Base64, transforms |
+| **📝 Sed Studio Pro** | `v run applications/sed_studio.v` | Stream editor & regex scratchpad: live dual-pane transform, in-place file editing, 15 recipes |
 | **📦 Ouch Studio Pro** | `v run applications/ouch_studio.v` | Ultra-fast archive & compression workbench: `.tar.zst`, `.tar.gz`, `.zip`, `.7z`, `--fast`/`--slow`, tree inspector |
 | **⚡ Task Manager Pro** | `v run applications/task_manager.v` | Process monitor & system telemetry: live process grid, resource stat cards, signals, and socket inspector |
 | **📂 Find Studio Pro** | `v run applications/find_studio.v` | Filesystem search & inode explorer: type filters, size filters, age, depth, and 10 recipes |

@@ -6518,10 +6518,12 @@ safe_name := simplegui.sanitize_filename('../../etc/passwd; evil')
 
 ## 20. Production Workstation Applications Suite
 
-SimpleGUI includes 17 production-grade desktop workstation applications located in [`applications/`](file:///Users/codecaine/vlang_simplegui/applications/):
+SimpleGUI includes 19 production-grade desktop workstation applications located in [`applications/`](file:///Users/codecaine/vlang_simplegui/applications/):
 
 | Application | Source File | Key Features |
 | :--- | :--- | :--- |
+| **📝 Text Editor Pro** | [`applications/text_editor.v`](file:///Users/codecaine/vlang_simplegui/applications/text_editor.v) | Code & document editor: multi-font typography, search/replace, JSON prettifier, Base64, transforms. |
+| **📝 Sed Studio Pro** | [`applications/sed_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/sed_studio.v) | Stream editor & regex scratchpad: live dual-pane transform, in-place file editing, 15 recipes. |
 | **📦 Ouch Studio Pro** | [`applications/ouch_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/ouch_studio.v) | Ultra-fast universal archive & compression workbench: `.tar.zst`, `.tar.gz`, `.zip`, `.7z`, `--fast`/`--slow`, tree inspector. |
 | **⚡ Task Manager Pro** | [`applications/task_manager.v`](file:///Users/codecaine/vlang_simplegui/applications/task_manager.v) | Process monitor & system telemetry: live process grid, resource stat cards, signals, and socket inspector. |
 | **📂 Find Studio Pro** | [`applications/find_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/find_studio.v) | Filesystem search & inode explorer, type filters, size filters, age, depth, and 10 recipes. |
