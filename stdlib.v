@@ -1,5 +1,6 @@
 module simplegui
 
+import os
 import net.http
 import regex
 import compress.gzip
@@ -2868,4 +2869,255 @@ pub fn json_pretty_print(json_str string) string {
 // json_pretty_print delegates to standalone json_pretty_print.
 pub fn (win &SimpleWindow) json_pretty_print(json_str string) string {
 	return json_pretty_print(json_str)
+}
+
+// json_pretty is an alias for json_pretty_print.
+pub fn json_pretty(json_str string) string {
+	return json_pretty_print(json_str)
+}
+
+// json_pretty delegates to standalone json_pretty.
+pub fn (win &SimpleWindow) json_pretty(json_str string) string {
+	return json_pretty_print(json_str)
+}
+
+// json_get_string extracts a top-level string property from a raw JSON string.
+pub fn json_get_string(raw_json string, key string, fallback string) string {
+	obj := json2.decode[json2.Any](raw_json) or { return fallback }
+	if obj is map[string]json2.Any {
+		m := obj as map[string]json2.Any
+		if key in m {
+			val := m[key] or { return fallback }
+			if val is string {
+				return val as string
+			}
+			return val.str()
+		}
+	}
+	return fallback
+}
+
+// json_get_string delegates to standalone json_get_string.
+pub fn (win &SimpleWindow) json_get_string(raw_json string, key string, fallback string) string {
+	return json_get_string(raw_json, key, fallback)
+}
+
+// json_get_int extracts a top-level integer property from a raw JSON string.
+pub fn json_get_int(raw_json string, key string, fallback int) int {
+	obj := json2.decode[json2.Any](raw_json) or { return fallback }
+	if obj is map[string]json2.Any {
+		m := obj as map[string]json2.Any
+		if key in m {
+			val := m[key] or { return fallback }
+			if val is int {
+				return val as int
+			} else if val is i64 {
+				return int(val as i64)
+			} else if val is f64 {
+				return int(val as f64)
+			}
+			return val.str().int()
+		}
+	}
+	return fallback
+}
+
+// json_get_int delegates to standalone json_get_int.
+pub fn (win &SimpleWindow) json_get_int(raw_json string, key string, fallback int) int {
+	return json_get_int(raw_json, key, fallback)
+}
+
+// json_get_bool extracts a top-level boolean property from a raw JSON string.
+pub fn json_get_bool(raw_json string, key string, fallback bool) bool {
+	obj := json2.decode[json2.Any](raw_json) or { return fallback }
+	if obj is map[string]json2.Any {
+		m := obj as map[string]json2.Any
+		if key in m {
+			val := m[key] or { return fallback }
+			if val is bool {
+				return val as bool
+			}
+			s := val.str().to_lower()
+			return s == 'true' || s == '1' || s == 'yes'
+		}
+	}
+	return fallback
+}
+
+// json_get_bool delegates to standalone json_get_bool.
+pub fn (win &SimpleWindow) json_get_bool(raw_json string, key string, fallback bool) bool {
+	return json_get_bool(raw_json, key, fallback)
+}
+
+// ==========================================
+// 50. Validation Engine & URL Parsing
+// ==========================================
+
+// is_valid_email verifies whether a string matches standard email syntax.
+pub fn is_valid_email(email string) bool {
+	mut q := regex.regex_opt(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$') or { return false }
+	return q.matches_string(email.trim_space())
+}
+
+// is_valid_email delegates to standalone is_valid_email.
+pub fn (win &SimpleWindow) is_valid_email(email string) bool {
+	return is_valid_email(email)
+}
+
+// is_valid_url checks whether a string is a valid HTTP/HTTPS URL.
+pub fn is_valid_url(url_str string) bool {
+	return url_str.starts_with('http://') || url_str.starts_with('https://')
+}
+
+// is_valid_url delegates to standalone is_valid_url.
+pub fn (win &SimpleWindow) is_valid_url(url_str string) bool {
+	return is_valid_url(url_str)
+}
+
+// is_valid_ip checks if a string is a valid IPv4 address.
+pub fn is_valid_ip(ip_str string) bool {
+	parts := ip_str.split('.')
+	if parts.len != 4 {
+		return false
+	}
+	for p in parts {
+		n := p.int()
+		if p.len == 0 || n < 0 || n > 255 || (p.len > 1 && p.starts_with('0')) {
+			return false
+		}
+	}
+	return true
+}
+
+// is_valid_ip delegates to standalone is_valid_ip.
+pub fn (win &SimpleWindow) is_valid_ip(ip_str string) bool {
+	return is_valid_ip(ip_str)
+}
+
+// is_valid_phone checks if a string is a valid phone number.
+pub fn is_valid_phone(phone string) bool {
+	clean := phone.replace(' ', '').replace('-', '').replace('(', '').replace(')', '').replace('+', '')
+	return clean.len >= 7 && clean.len <= 15 && clean.int() > 0
+}
+
+// is_valid_phone delegates to standalone is_valid_phone.
+pub fn (win &SimpleWindow) is_valid_phone(phone string) bool {
+	return is_valid_phone(phone)
+}
+
+// is_valid_alphanumeric checks if text contains only letters and numbers.
+pub fn is_valid_alphanumeric(text string) bool {
+	mut q := regex.regex_opt(r'^[a-zA-Z0-9]+$') or { return false }
+	return q.matches_string(text)
+}
+
+// is_valid_alphanumeric delegates to standalone is_valid_alphanumeric.
+pub fn (win &SimpleWindow) is_valid_alphanumeric(text string) bool {
+	return is_valid_alphanumeric(text)
+}
+
+// validate_numeric_range checks if a number is within [min, max].
+pub fn validate_numeric_range(val f64, min f64, max f64) bool {
+	return val >= min && val <= max
+}
+
+// validate_numeric_range delegates to standalone validate_numeric_range.
+pub fn (win &SimpleWindow) validate_numeric_range(val f64, min f64, max f64) bool {
+	return validate_numeric_range(val, min, max)
+}
+
+// validate_length checks if string length is within [min_len, max_len].
+pub fn validate_length(text string, min_len int, max_len int) bool {
+	return text.len >= min_len && text.len <= max_len
+}
+
+// validate_length delegates to standalone validate_length.
+pub fn (win &SimpleWindow) validate_length(text string, min_len int, max_len int) bool {
+	return validate_length(text, min_len, max_len)
+}
+
+// parse_url parses an absolute or relative URL string into a SimpleURL.
+pub fn parse_url(url_str string) !SimpleURL {
+	return url_parse(url_str)
+}
+
+// parse_url delegates to standalone parse_url.
+pub fn (win &SimpleWindow) parse_url(url_str string) !SimpleURL {
+	return parse_url(url_str)
+}
+
+// http_download downloads a remote URL directly to a local destination file.
+pub fn (win &SimpleWindow) http_download(url string, dest_file string) !&SimpleWindow {
+	content := http_get(url)
+	if content.len == 0 {
+		return error('Failed to download content from ${url}')
+	}
+	dir := os.dir(dest_file)
+	if dir.len > 0 && !os.exists(dir) {
+		os.mkdir_all(dir)!
+	}
+	os.write_file(dest_file, content)!
+	return win
+}
+
+// ==========================================
+// 51. String Distance & Similarity Algorithms
+// ==========================================
+
+// levenshtein_distance computes the edit distance between two strings.
+pub fn levenshtein_distance(a string, b string) int {
+	if a == b { return 0 }
+	if a.len == 0 { return b.len }
+	if b.len == 0 { return a.len }
+
+	mut d := [][]int{len: a.len + 1, init: []int{len: b.len + 1, init: 0}}
+	for i in 0 .. a.len + 1 { d[i][0] = i }
+	for j in 0 .. b.len + 1 { d[0][j] = j }
+
+	for i in 1 .. a.len + 1 {
+		for j in 1 .. b.len + 1 {
+			cost := if a[i - 1] == b[j - 1] { 0 } else { 1 }
+			d[i][j] = math.min(math.min(d[i - 1][j] + 1, d[i][j - 1] + 1), d[i - 1][j - 1] + cost)
+		}
+	}
+	return d[a.len][b.len]
+}
+
+// levenshtein_distance delegates to standalone levenshtein_distance.
+pub fn (win &SimpleWindow) levenshtein_distance(a string, b string) int {
+	return levenshtein_distance(a, b)
+}
+
+// similarity_ratio calculates a float similarity between 0.0 (unrelated) and 1.0 (identical).
+pub fn similarity_ratio(a string, b string) f64 {
+	if a == b { return 1.0 }
+	max_len := math.max(a.len, b.len)
+	if max_len == 0 { return 1.0 }
+	dist := levenshtein_distance(a, b)
+	return 1.0 - (f64(dist) / f64(max_len))
+}
+
+// similarity_ratio delegates to standalone similarity_ratio.
+pub fn (win &SimpleWindow) similarity_ratio(a string, b string) f64 {
+	return similarity_ratio(a, b)
+}
+
+// lorem_words generates placeholder words.
+pub fn lorem_words(count int) string {
+	sample := ['lorem', 'ipsum', 'dolor', 'sit', 'amet', 'consectetur', 'adipiscing', 'elit', 'sed', 'do', 'eiusmod', 'tempor', 'incididunt', 'ut', 'labore', 'et', 'dolore', 'magna', 'aliqua']
+	mut out := []string{}
+	for i in 0 .. count {
+		out << sample[i % sample.len]
+	}
+	return out.join(' ')
+}
+
+// lorem_words delegates to standalone lorem_words.
+pub fn (win &SimpleWindow) lorem_words(count int) string {
+	return lorem_words(count)
+}
+
+// new_ring_buffer is an alias for new_ringbuffer.
+pub fn new_ring_buffer[T](capacity int) SimpleRingBuffer[T] {
+	return new_ringbuffer[T](capacity)
 }

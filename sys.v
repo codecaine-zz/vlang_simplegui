@@ -2575,3 +2575,270 @@ pub fn sys_set_external_app_visible(pid int, visible bool) bool {
 	res := os.execute(cmd)
 	return res.exit_code == 0
 }
+
+// clear_clipboard clears the system clipboard.
+pub fn (win &SimpleWindow) clear_clipboard() &SimpleWindow {
+	return win.copy_to_clipboard('')
+}
+
+// get_user_home_dir returns the current user's home directory.
+pub fn get_user_home_dir() string {
+	return os.home_dir()
+}
+
+// get_app_config_dir returns the standard directory for application configuration files.
+pub fn get_app_config_dir(app_name string) string {
+	$if macos {
+		return os.join_path(os.home_dir(), 'Library', 'Application Support', app_name)
+	} $else $if windows {
+		app_data := os.getenv('APPDATA')
+		if app_data.len > 0 {
+			return os.join_path(app_data, app_name)
+		}
+		return os.join_path(os.home_dir(), 'AppData', 'Roaming', app_name)
+	} $else {
+		xdg := os.getenv('XDG_CONFIG_HOME')
+		if xdg.len > 0 {
+			return os.join_path(xdg, app_name)
+		}
+		return os.join_path(os.home_dir(), '.config', app_name)
+	}
+}
+
+// get_app_config_file returns the full file path for an app's configuration file.
+pub fn get_app_config_file(app_name string, filename string) string {
+	return os.join_path(get_app_config_dir(app_name), filename)
+}
+
+// get_app_state_dir returns the standard directory for runtime state files.
+pub fn get_app_state_dir(app_name string) string {
+	$if macos {
+		return os.join_path(os.home_dir(), 'Library', 'Application Support', app_name, 'State')
+	} $else $if windows {
+		return os.join_path(get_app_data_dir(app_name), 'State')
+	} $else {
+		xdg := os.getenv('XDG_STATE_HOME')
+		if xdg.len > 0 {
+			return os.join_path(xdg, app_name)
+		}
+		return os.join_path(os.home_dir(), '.local', 'state', app_name)
+	}
+}
+
+// get_app_state_file returns the full file path for an app state file.
+pub fn get_app_state_file(app_name string, filename string) string {
+	return os.join_path(get_app_state_dir(app_name), filename)
+}
+
+// get_app_cache_dir returns the standard directory for cache files.
+pub fn get_app_cache_dir(app_name string) string {
+	$if macos {
+		return os.join_path(os.home_dir(), 'Library', 'Caches', app_name)
+	} $else $if windows {
+		return os.join_path(get_app_data_dir(app_name), 'Cache')
+	} $else {
+		xdg := os.getenv('XDG_CACHE_HOME')
+		if xdg.len > 0 {
+			return os.join_path(xdg, app_name)
+		}
+		return os.join_path(os.home_dir(), '.cache', app_name)
+	}
+}
+
+// get_app_cache_file returns the full file path for an app cache file.
+pub fn get_app_cache_file(app_name string, filename string) string {
+	return os.join_path(get_app_cache_dir(app_name), filename)
+}
+
+// get_app_log_dir returns the standard directory for application logs.
+pub fn get_app_log_dir(app_name string) string {
+	$if macos {
+		return os.join_path(os.home_dir(), 'Library', 'Logs', app_name)
+	} $else $if windows {
+		return os.join_path(get_app_data_dir(app_name), 'Logs')
+	} $else {
+		return os.join_path(get_app_state_dir(app_name), 'logs')
+	}
+}
+
+// get_app_log_file returns the full file path for an app log file.
+pub fn get_app_log_file(app_name string, filename string) string {
+	return os.join_path(get_app_log_dir(app_name), filename)
+}
+
+// get_app_runtime_dir returns the runtime directory for temporary PID or socket files.
+pub fn get_app_runtime_dir(app_name string) string {
+	return os.join_path(os.temp_dir(), app_name)
+}
+
+// resolve_user_path expands '~' to user's home directory.
+pub fn resolve_user_path(raw_path string) string {
+	if raw_path.starts_with('~/') {
+		return os.join_path(os.home_dir(), raw_path[2..])
+	}
+	return raw_path
+}
+
+// expand_user_path expands '~' to user's home directory.
+pub fn expand_user_path(raw_path string) string {
+	return resolve_user_path(raw_path)
+}
+
+// get_app_config_file returns the full path for a config file.
+pub fn (win &SimpleWindow) get_app_config_file(filename string) string {
+	return get_app_config_file(win.title, filename)
+}
+
+// get_app_state_dir returns the state directory for this app.
+pub fn (win &SimpleWindow) get_app_state_dir() string {
+	return get_app_state_dir(win.title)
+}
+
+// get_app_state_file returns the full path for a state file.
+pub fn (win &SimpleWindow) get_app_state_file(filename string) string {
+	return get_app_state_file(win.title, filename)
+}
+
+// get_app_cache_file returns the full path for a cache file.
+pub fn (win &SimpleWindow) get_app_cache_file(filename string) string {
+	return get_app_cache_file(win.title, filename)
+}
+
+// get_app_log_dir returns the log directory for this app.
+pub fn (win &SimpleWindow) get_app_log_dir() string {
+	return get_app_log_dir(win.title)
+}
+
+// get_app_log_file returns the full path for a log file.
+pub fn (win &SimpleWindow) get_app_log_file(filename string) string {
+	return get_app_log_file(win.title, filename)
+}
+
+// get_app_runtime_dir returns the runtime directory for this app.
+pub fn (win &SimpleWindow) get_app_runtime_dir() string {
+	return get_app_runtime_dir(win.title)
+}
+
+// resolve_user_path expands '~' to home directory.
+pub fn (win &SimpleWindow) resolve_user_path(raw_path string) string {
+	return resolve_user_path(raw_path)
+}
+
+// expand_user_path expands '~' to home directory.
+pub fn (win &SimpleWindow) expand_user_path(raw_path string) string {
+	return resolve_user_path(raw_path)
+}
+
+// ExecResult contains detailed results for process execution with retries or timeouts.
+pub struct ExecResult {
+pub:
+	output      string
+	exit_code   int
+	duration_ms i64
+	timed_out   bool
+	attempts    int
+}
+
+// parallel_exec executes multiple commands concurrently using background threads.
+pub fn (win &SimpleWindow) parallel_exec(commands []string) []ExecResult {
+	mut results := []ExecResult{len: commands.len}
+	mut threads := []thread ExecResult{}
+
+	for cmd in commands {
+		threads << spawn fn (c string) ExecResult {
+			start := time.now()
+			res := os.execute(c)
+			return ExecResult{
+				output: res.output.trim_space()
+				exit_code: res.exit_code
+				duration_ms: time.since(start).milliseconds()
+				timed_out: false
+				attempts: 1
+			}
+		}(cmd)
+	}
+
+	for i, t in threads {
+		results[i] = t.wait()
+	}
+	return results
+}
+
+// has_command checks whether an executable binary exists in the system PATH.
+pub fn (win &SimpleWindow) has_command(cmd_name string) bool {
+	return win.find_executable(cmd_name).len > 0
+}
+
+// get_command_path returns absolute path to executable binary in system PATH.
+pub fn (win &SimpleWindow) get_command_path(cmd_name string) string {
+	return win.find_executable(cmd_name)
+}
+
+// get_ip_address returns the local IPv4 address.
+pub fn (win &SimpleWindow) get_ip_address() string {
+	return win.get_local_ip()
+}
+
+// get_public_ip fetches the public IP address via external HTTP resolver.
+pub fn (win &SimpleWindow) get_public_ip() string {
+	res := http.get('https://api.ipify.org') or { return '' }
+	return res.body.trim_space()
+}
+
+// sys_beep plays terminal/system bell beep.
+pub fn sys_beep() {
+	print('\x07')
+	os.flush()
+}
+
+// sys_beep_cross plays system bell beep.
+pub fn sys_beep_cross() {
+	sys_beep()
+}
+
+// linux_font_candidates returns candidate paths for system TTF/OTF fonts on Linux.
+pub fn linux_font_candidates() []string {
+	return [
+		'/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+		'/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf',
+		'/usr/share/fonts/truetype/ubuntu/Ubuntu-R.ttf',
+		'/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf',
+		'/usr/share/fonts/TTF/DejaVuSans.ttf',
+	]
+}
+
+// macos_font_candidates returns candidate paths for system TTF/OTF fonts on macOS.
+pub fn macos_font_candidates() []string {
+	return [
+		'/System/Library/Fonts/Supplemental/Arial.ttf',
+		'/System/Library/Fonts/Supplemental/Helvetica.ttf',
+		'/System/Library/Fonts/Supplemental/Times New Roman.ttf',
+		'/System/Library/Fonts/Supplemental/Courier New.ttf',
+		'/System/Library/Fonts/Supplemental/Georgia.ttf',
+		'/System/Library/Fonts/Supplemental/Verdana.ttf',
+		'/System/Library/Fonts/Monaco.ttf',
+		'/Library/Fonts/Arial.ttf',
+	]
+}
+
+// resolve_window_font_path resolves custom or system font path.
+pub fn resolve_window_font_path() string {
+	custom := os.getenv('SIMPLEGUI_FONT_PATH')
+	if custom.len > 0 && os.exists(custom) {
+		return custom
+	}
+	$if macos {
+		for candidate in macos_font_candidates() {
+			if os.exists(candidate) {
+				return candidate
+			}
+		}
+	} $else $if linux {
+		for candidate in linux_font_candidates() {
+			if os.exists(candidate) {
+				return candidate
+			}
+		}
+	}
+	return ''
+}
