@@ -10,22 +10,23 @@
 2. [CLI Flags & Argument Parsing](#2-cli-flags--argument-parsing)
 3. [Console UI & RAD Components](#3-console-ui--rad-components)
 4. [Interactive Prompts, Menus & Input Validation](#4-interactive-prompts-menus--input-validation)
-5. [Structured Multi-Level Logging & File Logging](#5-structured-multi-level-logging--file-logging)
-6. [Benchmark & Execution Timing](#6-benchmark--execution-timing)
-7. [Reactive State Store & File Persistence](#7-reactive-state-store--file-persistence)
-8. [Safe Process Execution & Subprocess Control](#8-safe-process-execution--subprocess-control)
-9. [Hardware Telemetry & Resource Probing](#9-hardware-telemetry--resource-probing)
-10. [Standard OS Directory Resolution & File System](#10-standard-os-directory-resolution--file-system)
-11. [Network, Wi-Fi & TCP Port Diagnostics](#11-network-wi-fi--tcp-port-diagnostics)
-12. [Desktop Notifications, Speech & Audio Utilities](#12-desktop-notifications-speech--audio-utilities)
-13. [System Clipboard & Headless OS Native Dialogs](#13-system-clipboard--headless-os-native-dialogs)
-14. [HTTP Client & REST APIs](#14-http-client--rest-apis)
-15. [Cryptography, Hashing & Random Utilities](#15-cryptography-hashing--random-utilities)
-16. [Encodings, Data Formats & Serialization](#16-encodings-data-formats--serialization)
-17. [Validation Engine](#17-validation-engine)
-18. [Generic Collections, Queues & String Metrics](#18-generic-collections-queues--string-metrics)
-19. [Statistical Math Calculations](#19-statistical-math-calculations)
-20. [Standalone Package Functions (1-Liners)](#20-standalone-package-functions-1-liners)
+5. [Multi-Step Task Pipeline Runner](#5-multi-step-task-pipeline-runner)
+6. [Structured Multi-Level Logging & File Logging](#6-structured-multi-level-logging--file-logging)
+7. [Benchmark & Execution Timing](#7-benchmark--execution-timing)
+8. [Reactive State Store & File Persistence](#8-reactive-state-store--file-persistence)
+9. [Safe Process Execution & Subprocess Control](#9-safe-process-execution--subprocess-control)
+10. [Hardware Telemetry & Resource Probing](#10-hardware-telemetry--resource-probing)
+11. [Standard OS Directory Resolution & File System](#11-standard-os-directory-resolution--file-system)
+12. [Network, Wi-Fi & TCP Port Diagnostics](#12-network-wi-fi--tcp-port-diagnostics)
+13. [Desktop Notifications, Speech & Audio Utilities](#13-desktop-notifications-speech--audio-utilities)
+14. [System Clipboard & Headless OS Native Dialogs](#14-system-clipboard--headless-os-native-dialogs)
+15. [HTTP Client & REST APIs](#15-http-client--rest-apis)
+16. [Cryptography, Hashing & Random Utilities](#16-cryptography-hashing--random-utilities)
+17. [Encodings, Data Formats & Serialization](#17-encodings-data-formats--serialization)
+18. [Validation Engine](#18-validation-engine)
+19. [Generic Collections, Queues & String Metrics](#19-generic-collections-queues--string-metrics)
+20. [Statistical Math Calculations](#20-statistical-math-calculations)
+21. [Standalone Package Functions (1-Liners)](#21-standalone-package-functions-1-liners)
 
 ---
 
@@ -177,6 +178,127 @@ for i in 1 .. 101 {
 app.spinner('Synchronizing repository submodules...', 1500)
 ```
 
+### Unicode Sparklines
+
+Render inline high-density trend visualizations using Unicode block elements (` ▂▃▄▅▆▇█`):
+
+```v
+latencies := [12.0, 15.0, 45.0, 90.0, 120.0, 80.0, 30.0, 14.0]
+spark := app.sparkline(latencies)
+app.info('Latency Trend (last 8 ticks): ${spark}')
+// Output: Latency Trend (last 8 ticks):  ▂▄▆█▆▂ 
+```
+
+### Horizontal Bar Charts
+
+Visualize distributions, resource utilization, or benchmark comparative results:
+
+```v
+app.bar_chart('Resource Allocation (%)', {
+	'CPU Core 0': 42.5
+	'CPU Core 1': 89.0
+	'Memory':     64.2
+	'Disk /':     23.8
+}, 30) // 30-character max bar width
+```
+
+### Meter Gauges
+
+Display single-metric gauges with automatic green/yellow/red threshold badges:
+
+```v
+app.gauge('PostgreSQL Connection Pool', 48.0, 50.0, 'conns')
+// Output: PostgreSQL Connection Pool: [████████████████████░░] 48.0/50.0 conns (96.0%) [CRITICAL]
+
+app.gauge('Storage Capacity', 34.2, 100.0, 'GB')
+// Output: Storage Capacity: [██████░░░░░░░░░░░░░░] 34.2/100.0 GB (34.2%) [OK]
+```
+
+### Hierarchical Tree Visualizer
+
+Render nested dependency graphs, filesystem trees, or structured schemas with Unicode branch glyphs (`├──`, `└──`, `│   `):
+
+```v
+mut root := simplecli.new_tree_node('production-cluster')
+mut db := root.add_child('postgres-db')
+db.add_child('replica-01 (read-only)')
+db.add_child('replica-02 (standby)')
+root.add_child('redis-cache')
+mut api := root.add_child('api-gateway')
+api.add_child('auth-service')
+api.add_child('payment-service')
+
+app.tree(root)
+```
+
+### Colorized Line Diff Viewer
+
+Generate and display unified line-by-line diffs with line numbering and colored change annotations:
+
+```v
+old_config := 'port: 8080\nworkers: 4\nenv: staging'
+new_config := 'port: 8080\nworkers: 8\nenv: production\ntls: true'
+
+// Output colorized line diff to console:
+app.diff(old_config, new_config)
+
+// Or retrieve formatted diff string:
+diff_text := app.diff_text(old_config, new_config)
+```
+
+### Status Badges & Alert Callout Boxes
+
+```v
+// Inverted/bracketed status badges
+prod_badge := app.badge('ENV', 'PRODUCTION', .warn)
+app.println('${prod_badge} Initializing migration sequence...')
+
+// Styled GitHub-like alert boxes (.info, .success, .warning, .caution, .tip, .note)
+app.alert(.info, 'Configuration Loaded', 'Loaded 42 rules from settings.json.')
+app.alert(.warning, 'High Memory Threshold', 'Memory utilization exceeded 85%.')
+app.alert(.caution, 'Destructive Action', 'Dropping database table `audit_logs`.')
+app.alert(.tip, 'Pro Tip', 'Pass `--silent` to disable interactive output.')
+```
+
+### Task Checklist Items
+
+Format structured task execution checklists:
+
+```v
+app.task_item('Compile C sources', .done, 140)     // ✓ Compile C sources (140 ms)
+app.task_item('Run static analysis', .running, 0)   // ⏳ Run static analysis...
+app.task_item('Deploy image to registry', .pending, 0) // ○ Deploy image to registry
+app.task_item('Run smoke tests', .failed, 55)       // ✖ Run smoke tests [FAILED] (55 ms)
+app.task_item('Upload optional symbols', .skipped, 0) // ↷ Upload optional symbols [SKIPPED]
+```
+
+### Table Data Format Exporters & Markdown Rendering
+
+Convert table data structures to standard formats or render Markdown inside the terminal:
+
+```v
+headers := ['ID', 'Name', 'Role']
+rows := [
+	['1', 'Alice, VP', 'Admin'],
+	['2', 'Bob', 'Developer'],
+]
+
+// Convert to CSV string:
+csv_data := app.table_to_csv(headers, rows)
+
+// Convert to Markdown table:
+md_table := app.table_to_markdown(headers, rows)
+
+// Convert to JSON array of objects:
+json_data := app.table_to_json(headers, rows)
+
+// Syntax-highlight JSON with ANSI colors in terminal:
+app.println(app.json_highlight('{"status": "healthy", "uptime_sec": 86400, "debug": false}'))
+
+// Render Markdown document to terminal with styled headings and lists:
+app.render_markdown('# Release Notes\n## Improvements\n* Faster CLI startup\n* Zero-window RAD components\n> Ready for production.')
+```
+
 ---
 
 ## 4. Interactive Prompts, Menus & Input Validation
@@ -185,37 +307,33 @@ app.spinner('Synchronizing repository submodules...', 1500)
 
 ```v
 // Plain string prompt
-username := app.prompt('Enter admin username: ')
+username := app.prompt('Enter admin username: ', 'admin')
 
-// Prompt with a default fallback value if user presses Enter
-region := app.prompt_default('Select cloud region', 'us-east-1')
-
-// Hidden / masked password prompt (suppresses terminal echo)
+// Hidden / masked password prompt
 api_token := app.prompt_password('Enter secret API access token: ')
 
 // Validated email prompt (re-prompts until a valid email syntax is entered)
-email := app.prompt_email('Enter alert recipient email: ')
+email := app.prompt_email('Enter alert recipient email: ', 'dev@domain.com')
 
 // Validated URL prompt (re-prompts until a valid http/https URL is entered)
-webhook := app.prompt_url('Enter Slack Webhook URL: ')
+webhook := app.prompt_url('Enter Slack Webhook URL: ', 'https://hooks.slack.com/...')
 
 // Constrained numeric prompt between min and max bounds
-threads := app.prompt_number('Worker thread concurrency (1-64): ', 1.0, 64.0)
+threads := app.prompt_number('Worker thread concurrency', 8, 1, 64)
 
 // Yes/No confirmation prompt (returns bool)
 proceed := app.confirm('Do you want to apply migrations to production?', false)
 ```
 
-### Single & Multi-Select Menus
+### Single, Multi-Select & Fuzzy Search Menus
 
 ```v
 // Single selection menu with index and value return
-choice, index := app.select('Choose build target environment:', [
+choice := app.select('Choose build target environment:', [
 	'Local Development',
 	'Staging Integration',
 	'Production Release',
 ])
-app.info('Selected environment: ${choice} (index ${index})')
 
 // Multi-select menu with comma-separated numbers (e.g. "1, 3")
 selected := app.multi_select('Select deployment components to verify:', [
@@ -224,12 +342,93 @@ selected := app.multi_select('Select deployment components to verify:', [
 	'Kafka Event Streams',
 	'Elasticsearch Index',
 ])
-app.info('Components to check: ${selected.join(", ")}')
+
+// Interactive Fuzzy Selector with query typing and similarity ranking
+branch := app.fuzzy_select('Search and checkout Git branch:', [
+	'main',
+	'feature/rad-components',
+	'feature/graphql-api',
+	'bugfix/state-persistence',
+])
+```
+
+### Interactive Form / Wizard Builder
+
+Collect multi-field configuration forms inside a stylish framed console wizard:
+
+```v
+form_data := app.form('Deploy Microservice Wizard', [
+	simplecli.FormField{
+		key: 'name'
+		label: 'Service Name'
+		kind: .text
+		required: true
+	},
+	simplecli.FormField{
+		key: 'port'
+		label: 'Listen Port'
+		kind: .number
+		default_val: '8080'
+	},
+	simplecli.FormField{
+		key: 'secret'
+		label: 'Master API Key'
+		kind: .password
+		required: true
+	},
+])
+
+service_name := form_data['name']
+listen_port  := form_data['port']
+```
+
+### Path & Directory Validation Prompt
+
+Prompt for user file paths with automatic `~` expansion and existence mode checks (`.any`, `.must_exist`, `.file`, `.directory`):
+
+```v
+cert_path := app.prompt_path('Enter path to TLS certificate:', '~/.config/certs/app.pem', .file)
+target_dir := app.prompt_path('Enter deployment directory:', '/var/www/app', .directory)
 ```
 
 ---
 
-## 5. Structured Multi-Level Logging & File Logging
+## 5. Multi-Step Task Pipeline Runner
+
+Execute multi-stage automation workflows with live step spinners, precise step timers, and summary reporting:
+
+```v
+mut pipeline := app.new_pipeline('Production Release Pipeline')
+
+pipeline.add_step('Clean temporary build artifacts', fn () bool {
+	return os.rmdir_all('/tmp/build') or { true }
+})
+
+pipeline.add_step('Compile native binaries', fn () bool {
+	// Execute build step
+	time.sleep(200 * time.millisecond)
+	return true
+})
+
+pipeline.add_step('Run security vulnerability scan', fn () bool {
+	// Execute vulnerability scan
+	time.sleep(150 * time.millisecond)
+	return true
+})
+
+pipeline.add_step('Deploy container image to registry', fn () bool {
+	// Push artifacts
+	time.sleep(300 * time.millisecond)
+	return true
+})
+
+// Run pipeline: displays live checkmarks, spinners, and duration summary
+success := pipeline.run()
+```
+
+---
+
+## 6. Structured Multi-Level Logging & File Logging
 
 `simplecli` provides structured logging with timestamps, level tags, ANSI colors, and automatic file log streaming:
 
@@ -256,7 +455,7 @@ app.error('Failed to connect to secondary database node')
 
 ---
 
-## 6. Benchmark & Execution Timing
+## 7. Benchmark & Execution Timing
 
 Track execution duration with microsecond/millisecond precision:
 
@@ -276,7 +475,7 @@ app.info('Task completed in ${elapsed_ms} ms (${elapsed_s:.3f} s)')
 
 ---
 
-## 7. Reactive State Store & File Persistence
+## 8. Reactive State Store & File Persistence
 
 Store key-value runtime configuration and persist it to JSON state files:
 
@@ -296,7 +495,7 @@ app.load_state(state_path)!
 
 ---
 
-## 8. Safe Process Execution & Subprocess Control
+## 9. Safe Process Execution & Subprocess Control
 
 Execute system commands safely with strict argument quoting, timeouts, retries, and parallel background threads:
 
@@ -366,7 +565,7 @@ clean_name := simplecli.sanitize_filename('../../../etc/passwd') // returns '___
 
 ---
 
-## 9. Hardware Telemetry & Resource Probing
+## 10. Hardware Telemetry & Resource Probing
 
 Monitor CPU, Memory, Swap, Load Averages, Battery, and Disk utilization:
 
@@ -405,7 +604,7 @@ accent := app.get_system_accent_color() // e.g. "blue"
 
 ---
 
-## 10. Standard OS Directory Resolution & File System
+## 11. Standard OS Directory Resolution & File System
 
 ### Standard OS Directories
 
@@ -572,7 +771,7 @@ if meta := app.get_file_metadata('/tmp/source_data.csv') {
 
 ---
 
-## 11. Network, Wi-Fi & TCP Port Diagnostics
+## 12. Network, Wi-Fi & TCP Port Diagnostics
 
 Inspect local network interfaces, public IPs, Wi-Fi connectivity, DNS servers, and open listening ports:
 
@@ -602,7 +801,7 @@ listening_ports := app.get_listening_ports() // e.g. [22, 80, 443, 5432, 8080]
 
 ---
 
-## 12. Desktop Notifications, Speech & Audio Utilities
+## 13. Desktop Notifications, Speech & Audio Utilities
 
 ```v
 // Desktop notification
@@ -629,7 +828,7 @@ app.unmute_audio()
 
 ---
 
-## 13. System Clipboard & Headless OS Native Dialogs
+## 14. System Clipboard & Headless OS Native Dialogs
 
 Interact with system clipboard and trigger native OS dialogs without GUI libraries:
 
@@ -650,7 +849,7 @@ selected_folder := app.osascript_folder_picker('Choose backup target folder')
 
 ---
 
-## 14. HTTP Client & REST APIs
+## 15. HTTP Client & REST APIs
 
 Synchronous and flexible HTTP operations with URL parsing and file streaming:
 
@@ -673,7 +872,7 @@ app.http_download('https://example.com/assets.zip', '/tmp/assets.zip')!
 
 ---
 
-## 15. Cryptography, Hashing & Random Utilities
+## 16. Cryptography, Hashing & Random Utilities
 
 ### Hashing & Authentication
 
@@ -717,7 +916,7 @@ rand_flt := app.rand_f64()                // Random float 0.0 - 1.0
 
 ---
 
-## 16. Encodings, Data Formats & Serialization
+## 17. Encodings, Data Formats & Serialization
 
 ### Encodings
 
@@ -764,7 +963,7 @@ sample_text := app.lorem_words(10)
 
 ---
 
-## 17. Validation Engine
+## 18. Validation Engine
 
 Validate inputs and values with built-in boolean validators:
 
@@ -793,7 +992,7 @@ len_valid := app.validate_length('secretpass', 8, 32)   // true
 
 ---
 
-## 18. Generic Collections, Queues & String Metrics
+## 19. Generic Collections, Queues & String Metrics
 
 ### Generic Stack (`SimpleStack[T]`)
 
@@ -862,7 +1061,7 @@ ratio := app.similarity_ratio('deploy', 'deploying') // ~0.667
 
 ---
 
-## 19. Statistical Math Calculations
+## 20. Statistical Math Calculations
 
 Calculate descriptive statistics across numeric arrays:
 
@@ -881,7 +1080,7 @@ max_val   := app.stats_max(latencies)             // Maximum
 
 ---
 
-## 20. Standalone Package Functions (1-Liners)
+## 21. Standalone Package Functions (1-Liners)
 
 Every method available on `&SimpleCli` is also exported as a standalone package-level function in `simplecli` for direct one-liner scripting without instantiating an app instance:
 
