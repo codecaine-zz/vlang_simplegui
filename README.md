@@ -1944,7 +1944,7 @@ Screenshots are auto-generated using `v run capture_demos.vsh`.
 
 ## Production Workstations & Studio Applications
 
-SimpleGUI includes 22 complete, native desktop workstation applications in [`applications/`](applications/) designed for engineering workflows, symbolic math, physical dimensional analysis, calculus, network intelligence, text & code editing, universal archiving & compression, stream editing, system monitoring, filesystem discovery, data analysis, speech synthesis, and media transformation:
+SimpleGUI includes 23 complete, native desktop workstation applications in [`applications/`](applications/) designed for engineering workflows, symbolic math, physical dimensional analysis, calculus, statistics & data science, network intelligence, text & code editing, universal archiving & compression, stream editing, system monitoring, filesystem discovery, data analysis, speech synthesis, and media transformation:
 
 ### 📦 Prerequisites & Homebrew Installation:
 ```bash
@@ -1956,6 +1956,7 @@ brew install ripgrep fd sd gawk ouch ffmpeg imagemagick pandoc wget2 yt-dlp subf
 | Application | Command | Focus Area |
 | :--- | :--- | :--- |
 | **🚀 Media & Data Studio Hub** | `v run applications/media_studio_hub.v` | Unified workstation hub with environment diagnostics and quick-launch actions |
+| **📊 Statistics Studio Pro** | `v run applications/statistics_studio.v` | Descriptive statistics (mean, median, IQR, skewness, kurtosis, CI), Welch t-test, Paired t-test, ANOVA, OLS regression, distributions (Normal, Student-t, Binomial, Poisson), and outlier filters |
 | **🌐 IFConfig Studio Pro** | `v run applications/ifconfig_studio.v` | Dual-stack IPv4/IPv6 detection, geolocation, ASN, reverse DNS, and network diagnostics |
 | **🧮 Qalc Studio Pro** | `v run applications/qalc_studio.v` | Symbolic algebra, arbitrary precision, equation solving, calculus, matrices, and unit/currency converter |
 | **⚡ Numbat Studio Pro** | `v run applications/numbat_studio.v` | Statically-typed physical units, dimensional analysis, multi-line physics IDE, and constants catalog |
