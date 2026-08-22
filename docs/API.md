@@ -227,13 +227,13 @@ themes := simplegui.list_themes()
 
 ### `simplegui.get_theme(theme_name string) Theme`
 
-Retrieves a `Theme` struct configuration matching `theme_name`. Normalization allows flexible lookup (case-insensitive, space/hyphen/underscore tolerant). Unknown names fall back to `Apple Light`.
+Retrieves a `Theme` struct configuration matching `theme_name`. Normalization allows flexible lookup (case-insensitive, space/hyphen/underscore tolerant). Unknown names fall back to `GitHub Dark`.
 
 - **`Theme` fields**: `name string`, `background_color string`, `font_color string`, `accent_color string`, `description string`, `is_dark bool`.
-- **Aliases**: short forms work too, e.g. `'light'` → Apple Light, `'dark'` → Apple Dark, `'nord'`, `'dracula'`, `'catppuccin'`.
+- **Aliases**: short forms work too, e.g. `'default'` → GitHub Dark, `'light'` → Apple Light, `'dark'` → Apple Dark, `'nord'`, `'dracula'`, `'catppuccin'`.
 
 ```v
-theme := simplegui.get_theme('Apple Dark')
+theme := simplegui.get_theme('GitHub Dark')
 ```
 
 ### `win.apply_theme(t Theme) &SimpleWindow`
@@ -250,8 +250,9 @@ win.apply_theme(theme)
 Looks up a built-in production theme by name (or alias) and applies its background and font styling to the window and controls.
 
 - **Values**: Accepts any of the 18 built-in production theme names:
-  - `Apple Light` (Default)
+  - `GitHub Dark` (Default)
   - `Apple Dark`
+  - `Apple Light`
   - `Deep Space OLED`
   - `Tokyo Night`
   - `Nord Arctic`
@@ -263,7 +264,6 @@ Looks up a built-in production theme by name (or alias) and applies its backgrou
   - `Cobalt Blue`
   - `Emerald Forest`
   - `Sunset Dusk`
-  - `GitHub Dark`
   - `GitHub Light`
   - `Solarized Dark`
   - `Solarized Light`
@@ -273,7 +273,7 @@ Looks up a built-in production theme by name (or alias) and applies its backgrou
 - **Explicit overrides**: per-control colors set with `win.set_control_background_color()` / `win.set_control_font_color()` complement the theme — setting one property never resets the other. Applying a new theme restyles all controls, so re-apply per-control overrides after `set_theme()` when switching palettes at runtime (see [demos/form_color_theme_demo.v](demos/form_color_theme_demo.v)).
 
 ```v
-win.set_theme('Apple Light')
+win.set_theme('GitHub Dark')
 ```
 
 ### `win.save_theme(theme_name string) &SimpleWindow`
@@ -286,7 +286,7 @@ win.save_theme('Catppuccin Mocha')
 
 ### `win.restore_saved_theme() string`
 
-Reads the user's persisted theme preference (falling back to `'Apple Light'`) and applies it to the window. Returns the restored theme name.
+Reads the user's persisted theme preference (falling back to `'GitHub Dark'`) and applies it to the window. Returns the restored theme name.
 
 ```v
 active_theme := win.restore_saved_theme()
@@ -294,7 +294,7 @@ active_theme := win.restore_saved_theme()
 
 ### `simplegui.get_saved_theme() string`
 
-Retrieves the currently saved theme name from disk without applying it to a window. Defaults to `'Apple Light'`.
+Retrieves the currently saved theme name from disk without applying it to a window. Defaults to `'GitHub Dark'`.
 
 ```v
 saved := simplegui.get_saved_theme()

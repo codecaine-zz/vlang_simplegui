@@ -110,8 +110,9 @@ pub fn (win &SimpleWindow) get_control_font_color(name string) string {
 // list_themes returns a list of available built-in theme names.
 pub fn list_themes() []string {
 	return [
-		'Apple Light',
+		'GitHub Dark',
 		'Apple Dark',
+		'Apple Light',
 		'Deep Space OLED',
 		'Tokyo Night',
 		'Nord Arctic',
@@ -123,7 +124,6 @@ pub fn list_themes() []string {
 		'Cobalt Blue',
 		'Emerald Forest',
 		'Sunset Dusk',
-		'GitHub Dark',
 		'GitHub Light',
 		'Solarized Dark',
 		'Solarized Light',
@@ -132,11 +132,11 @@ pub fn list_themes() []string {
 }
 
 // get_theme returns the Theme configuration matching theme_name (case-insensitive, normalized).
-// Defaults to 'Apple Light' if the theme name is unknown.
+// Defaults to 'GitHub Dark' if the theme name is unknown.
 pub fn get_theme(theme_name string) Theme {
 	normalized := theme_name.to_lower().replace(' ', '_').replace('-', '_')
 	match normalized {
-		'apple_light', 'light', 'macos_light' {
+		'apple_light', 'macos_light' {
 			return Theme{
 				name:             'Apple Light'
 				background_color: '#f6f6f7'
@@ -266,13 +266,13 @@ pub fn get_theme(theme_name string) Theme {
 				is_dark:          true
 			}
 		}
-		'github_dark', 'github_dimmed' {
+		'default', 'github_dark', 'github_dimmed', 'github' {
 			return Theme{
 				name:             'GitHub Dark'
 				background_color: '#22272e'
 				font_color:       '#adbac7'
 				accent_color:     '#539bf5'
-				description:      'Official GitHub Dark Dimmed developer canvas'
+				description:      'Official GitHub Dark Dimmed developer canvas (Default)'
 				is_dark:          true
 			}
 		}
@@ -318,12 +318,12 @@ pub fn get_theme(theme_name string) Theme {
 		}
 		else {
 			return Theme{
-				name:             'Apple Light'
-				background_color: '#f6f6f7'
-				font_color:       '#1d1d1f'
-				accent_color:     '#0071e3'
-				description:      'Clean Apple macOS Aqua studio interface'
-				is_dark:          false
+				name:             'GitHub Dark'
+				background_color: '#22272e'
+				font_color:       '#adbac7'
+				accent_color:     '#539bf5'
+				description:      'Official GitHub Dark Dimmed developer canvas (Default)'
+				is_dark:          true
 			}
 		}
 	}
@@ -335,7 +335,7 @@ fn get_theme_config_path() string {
 	return os.join_path(base, 'simplegui', 'theme.txt')
 }
 
-// get_saved_theme retrieves the persisted theme preference, defaulting to 'Apple Light'.
+// get_saved_theme retrieves the persisted theme preference, defaulting to 'GitHub Dark'.
 pub fn get_saved_theme() string {
 	path := get_theme_config_path()
 	if os.exists(path) {
@@ -344,7 +344,7 @@ pub fn get_saved_theme() string {
 			return val
 		}
 	}
-	return 'Apple Light'
+	return 'GitHub Dark'
 }
 
 // save_theme persists the active theme preference to disk.
@@ -364,7 +364,7 @@ pub fn (win &SimpleWindow) save_theme(theme_name string) &SimpleWindow {
 	return win
 }
 
-// restore_saved_theme loads and applies the persisted theme preference (defaults to Apple Light).
+// restore_saved_theme loads and applies the persisted theme preference (defaults to GitHub Dark).
 pub fn (win &SimpleWindow) restore_saved_theme() string {
 	theme := get_saved_theme()
 	win.set_theme(theme)

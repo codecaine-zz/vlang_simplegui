@@ -30,14 +30,15 @@ Native macOS GUI applications built with **SimpleGUI** for V, providing high-per
 
 ## 🎨 Theme Engine & Persistence (Save State)
 
-- **Default Theme**: **Apple Light** (`#f6f6f7` canvas, `#1d1d1f` text, `#0071e3` Apple Blue accent).
+- **Default Theme**: **GitHub Dark** (`#22272e` canvas, `#adbac7` text, `#539bf5` GitHub Blue accent).
 - **Persistent State Across Apps**: When you select any theme in any application, your choice is instantly saved to `~/.config/simplegui/theme.txt`. All 17 studio applications automatically load and apply your saved theme upon launch!
 
 ### Available 18 Curated Themes
 
 | Theme Name | Background | Text Color | Accent | Signature Personality |
 | :--- | :--- | :--- | :--- | :--- |
-| **🍏 Apple Light** | `#f6f6f7` | `#1d1d1f` | `#0071e3` | Clean Apple macOS Aqua studio interface (Default) |
+| **🐙 GitHub Dark** | `#22272e` | `#adbac7` | `#539bf5` | Official GitHub Dark Dimmed developer canvas (Default) |
+| **🍏 Apple Light** | `#f6f6f7` | `#1d1d1f` | `#0071e3` | Clean Apple macOS Aqua studio interface |
 | **🌙 Apple Dark** | `#1c1c1e` | `#f5f5f7` | `#0a84ff` | Refined Apple macOS Pro Dark Titanium surface |
 | **🌌 Deep Space OLED** | `#090a0f` | `#e2e8f0` | `#6366f1` | Ultra-deep pitch OLED dark theme with electric indigo |
 | **🏮 Tokyo Night** | `#1a1b26` | `#c0caf5` | `#7aa2f7` | Iconic Japanese twilight deep indigo theme |
@@ -50,7 +51,6 @@ Native macOS GUI applications built with **SimpleGUI** for V, providing high-per
 | **🌊 Cobalt Blue** | `#0a192f` | `#ccd6f6` | `#64ffda` | Deep submarine oceanic navy with glowing aqua teal |
 | **🌲 Emerald Forest** | `#062319` | `#ecfdf5` | `#10b981` | Deep evergreen botanical pine with vivid emerald |
 | **🌅 Sunset Dusk** | `#231123` | `#fff1f2` | `#f43f5e` | Rich twilight velvet plum with warm sunset coral |
-| **🐙 GitHub Dark** | `#22272e` | `#adbac7` | `#539bf5` | Official GitHub Dark Dimmed developer canvas |
 | **📄 GitHub Light** | `#ffffff` | `#1f2328` | `#0969da` | Crisp high-contrast GitHub light interface |
 | **🌘 Solarized Dark** | `#002b36` | `#93a1a1` | `#268bd2` | Precision engineered scientific teal dark theme |
 | **☀️ Solarized Light**| `#fdf6e3` | `#586e75` | `#b58900` | Warm linen parchment precision light palette |

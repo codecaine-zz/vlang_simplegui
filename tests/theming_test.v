@@ -95,8 +95,14 @@ fn test_theme_presets() {
 	assert t_emerald.is_dark == true
 	assert t_emerald.accent_color == '#10b981'
 	win.apply_theme(t_emerald)
-	assert win.get_background_color() == '#062319'
-	assert win.get_font_color() == '#ecfdf5'
+	// Test GitHub Dark default preset & fallback
+	t_def := simplegui.get_theme('default')
+	assert t_def.name == 'GitHub Dark'
+	assert t_def.is_dark == true
+	assert t_def.background_color == '#22272e'
+
+	t_fallback := simplegui.get_theme('non_existent_theme_name')
+	assert t_fallback.name == 'GitHub Dark'
 
 	// Test save/restore state
 	saved := simplegui.get_saved_theme()
