@@ -2961,3 +2961,70 @@ pub fn (win &SimpleWindow) auto_save_layout(app_name string) &SimpleWindow {
 	})
 	return win
 }
+
+// donut adds an auto-named circular donut / radial gauge chart.
+pub fn (win &SimpleWindow) donut(title string, percentage f64) &SimpleWindow {
+	return win.add_donut_chart('', title, percentage)
+}
+
+// code_box adds an auto-named code studio container.
+pub fn (win &SimpleWindow) code_box(filename string, language string, code string) &SimpleWindow {
+	return win.add_code_studio('', filename, language, code)
+}
+
+// score_card adds an auto-named rating score card.
+pub fn (win &SimpleWindow) score_card(title string, score f64, reviews int, breakdown []f64) &SimpleWindow {
+	return win.add_score_card('', title, score, reviews, breakdown)
+}
+
+// floating_toolbar adds an auto-named capsule floating toolbar.
+pub fn (win &SimpleWindow) floating_toolbar(title string, actions []string) &SimpleWindow {
+	return win.add_floating_toolbar('', title, actions)
+}
+
+// user_profile adds an auto-named user profile card.
+pub fn (win &SimpleWindow) user_profile(avatar_path string, name_text string, handle string, role string, bio string) &SimpleWindow {
+	return win.add_user_profile_card('', avatar_path, name_text, handle, role, bio, true, '[Connect]')
+}
+
+// product_card adds an auto-named product showcase card.
+pub fn (win &SimpleWindow) product_card(image_path string, title string, price string) &SimpleWindow {
+	return win.add_product_card('', image_path, title, '', price, 'POPULAR', '[Buy Now]')
+}
+
+// gallery adds an auto-named interactive image gallery.
+pub fn (win &SimpleWindow) gallery(images []string) &SimpleWindow {
+	mut captions := []string{len: images.len, init: ''}
+	return win.add_image_gallery('', images, captions, 0)
+}
+
+// app_tile adds an auto-named 3D app launcher tile.
+pub fn (win &SimpleWindow) app_tile(icon_path string, title string, status string) &SimpleWindow {
+	return win.add_app_launcher_tile('', icon_path, title, '', status)
+}
+
+// media_player adds an auto-named audio/media player card.
+pub fn (win &SimpleWindow) media_player(cover_path string, title string, artist string) &SimpleWindow {
+	return win.add_media_player('', cover_path, title, artist, 240, 0, false)
+}
+
+// heatmap adds an auto-named GitHub-style contribution heatmap.
+pub fn (win &SimpleWindow) heatmap(title string, weeks int, matrix [][]int) &SimpleWindow {
+	return win.add_activity_heatmap('', title, weeks, matrix)
+}
+
+// masked_input adds an auto-named masked input field.
+pub fn (win &SimpleWindow) masked_input(mask string, value string) &SimpleWindow {
+	return win.add_masked_input('', mask, value)
+}
+
+// editable_label adds an auto-named inline editable label.
+pub fn (win &SimpleWindow) editable_label(text string) &SimpleWindow {
+	return win.add_inline_editable_label('', text)
+}
+
+// nav_rail adds an auto-named navigation rail.
+pub fn (win &SimpleWindow) nav_rail(items []SidebarItem) &SimpleWindow {
+	return win.add_nav_rail('', items)
+}
+

@@ -1000,6 +1000,50 @@ fn C.window_set_date_range(&WindowInfo, &u8, &u8, &u8)
 
 fn C.window_add_stat_grid_control(&WindowInfo, &u8, &&u8, &&u8, &&u8, &&u8, int) voidptr
 
+fn C.window_add_donut_chart_control(&WindowInfo, &u8, &u8, f64) voidptr
+fn C.window_set_donut_percentage(&WindowInfo, &u8, f64)
+
+fn C.window_add_code_studio_control(&WindowInfo, &u8, &u8, &u8, &u8) voidptr
+fn C.window_set_code_studio(&WindowInfo, &u8, &u8, &u8, &u8)
+
+fn C.window_add_score_card_control(&WindowInfo, &u8, &u8, f64, int, &f64, int) voidptr
+
+fn C.window_add_floating_toolbar_control(&WindowInfo, &u8, &u8, &&u8, int) voidptr
+
+fn C.window_add_user_profile_card_control(&WindowInfo, &u8, &u8, &u8, &u8, &u8, &u8, int, &u8) voidptr
+fn C.window_set_user_online_status(&WindowInfo, &u8, int)
+
+fn C.window_add_product_card_control(&WindowInfo, &u8, &u8, &u8, &u8, &u8, &u8, &u8) voidptr
+
+fn C.window_add_image_gallery_control(&WindowInfo, &u8, &&u8, &&u8, int, int) voidptr
+fn C.window_next_gallery_image(&WindowInfo, &u8)
+fn C.window_prev_gallery_image(&WindowInfo, &u8)
+fn C.window_set_gallery_index(&WindowInfo, &u8, int)
+fn C.window_get_gallery_index(&WindowInfo, &u8) int
+
+fn C.window_add_app_launcher_tile_control(&WindowInfo, &u8, &u8, &u8, &u8, &u8) voidptr
+
+fn C.window_add_media_player_control(&WindowInfo, &u8, &u8, &u8, &u8, int, int, int) voidptr
+fn C.window_set_media_player_audio_file(&WindowInfo, &u8, &u8)
+fn C.window_toggle_media_player(&WindowInfo, &u8)
+fn C.window_set_media_player_progress(&WindowInfo, &u8, int)
+fn C.window_get_media_player_playing(&WindowInfo, &u8) int
+
+fn C.window_add_activity_heatmap_control(&WindowInfo, &u8, &u8, int, &int, int, int) voidptr
+
+fn C.window_add_masked_input_control(&WindowInfo, &u8, &u8, &u8) voidptr
+fn C.window_get_masked_input_value(&WindowInfo, &u8) &u8
+fn C.window_set_masked_input_value(&WindowInfo, &u8, &u8)
+
+fn C.window_add_inline_editable_label_control(&WindowInfo, &u8, &u8) voidptr
+fn C.window_get_inline_editable_label(&WindowInfo, &u8) &u8
+fn C.window_set_inline_editable_label(&WindowInfo, &u8, &u8)
+
+fn C.window_add_nav_rail_control(&WindowInfo, &u8, &&u8, &&u8, &&u8, &&u8, &int, int) voidptr
+fn C.window_get_nav_rail_selected(&WindowInfo, &u8) &u8
+fn C.window_set_nav_rail_selected(&WindowInfo, &u8, &u8)
+
+
 fn C.window_set_alpha(&WindowInfo, f64)
 
 fn C.window_get_alpha(&WindowInfo) f64

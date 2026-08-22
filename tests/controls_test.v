@@ -1562,3 +1562,104 @@ fn test_modern_productivity_and_analytics_controls() {
 	win.add_stat_grid('kpi_grid', ['Revenue', 'Active Users', 'Uptime', 'Error Rate'], ['$128.5K', '14,200', '99.98%', '0.02%'], ['+14.2%', '+8.5%', 'Optimal', '-0.01%'], ['success', 'success', 'info', 'success'])
 	assert win.has_control('kpi_grid')
 }
+
+fn test_simple_gg_ideals_super_controls() {
+	mut win := simplegui.new_simple_window('Super Controls Test', 900, 700)
+
+	// 1. Donut Chart / Radial Gauge
+	win.add_donut_chart('cpu_donut', 'CPU Load', 74.5)
+	assert win.has_control('cpu_donut')
+	win.set_donut_percentage('cpu_donut', 82.0)
+	win.donut('RAM Usage', 64.0)
+
+	// 2. Code Studio
+	code_snippet := 'fn main() {\n    println("Hello SimpleGUI")\n}'
+	win.add_code_studio('dev_studio', 'main.v', 'v', code_snippet)
+	assert win.has_control('dev_studio')
+	win.set_code_studio('dev_studio', 'app.v', 'v', 'fn main() { println("Updated") }')
+	win.code_box('query.sql', 'sql', 'SELECT * FROM users;')
+
+	// 3. Score Card
+	win.add_score_card('dev_satisfaction', 'Satisfaction', 4.95, 3840, [92.0, 6.0, 1.2, 0.5, 0.3])
+	assert win.has_control('dev_satisfaction')
+	win.score_card('Product Rating', 4.8, 1200, [85.0, 10.0, 3.0, 1.5, 0.5])
+
+	// 4. Floating Action Toolbar
+	win.add_floating_toolbar('hero_bar', 'DevStudio Pro', ['Overview', 'Deploy', 'Logs', 'Settings'])
+	assert win.has_control('hero_bar')
+	win.floating_toolbar('Tools', ['Build', 'Run', 'Test'])
+}
+
+fn test_simple_gg_ideals_image_and_media_controls() {
+	mut win := simplegui.new_simple_window('Media Controls Test', 900, 700)
+
+	// 1. User Profile Card
+	win.add_user_profile_card('prof_ada', '', 'Ada Lovelace', '@ada', 'Systems Architect', 'Pioneer of computing algorithms.', true, '[Connect]')
+	assert win.has_control('prof_ada')
+	win.set_user_online_status('prof_ada', false)
+	win.user_profile('', 'Alex Chen', '@alex', 'Senior SRE', 'Cloud infrastructure lead.')
+
+	// 2. Product Card
+	win.add_product_card('prod_key', '', 'Custom Mechanical Keyboard', 'Walnut finish with RGB backlighting', '$189.00', 'BESTSELLER', '[Buy Now]')
+	assert win.has_control('prod_key')
+	win.product_card('', 'Developer Keypad', '$79.00')
+
+	// 3. Image Gallery
+	win.add_image_gallery('gallery_main', ['img1.jpg', 'img2.jpg', 'img3.jpg'], ['First Slide', 'Second Slide', 'Third Slide'], 0)
+	assert win.has_control('gallery_main')
+	win.next_gallery_image('gallery_main')
+	win.prev_gallery_image('gallery_main')
+	win.set_gallery_index('gallery_main', 2)
+	assert win.get_gallery_index('gallery_main') == 2
+	win.gallery(['photo1.png', 'photo2.png'])
+
+	// 4. App Launcher Tile
+	win.add_app_launcher_tile('tile_db', '', 'Cyber DB Engine', 'High-speed Key-Value Store', 'ONLINE')
+	assert win.has_control('tile_db')
+	win.app_tile('', 'DevStudio CLI', 'READY')
+
+	// 5. Media Player Card
+	win.add_media_player('lofi_player', '', 'Lo-Fi Beats', 'Cybernetic Waves', 240, 78, true)
+	assert win.has_control('lofi_player')
+	win.toggle_media_player('lofi_player')
+	win.set_media_player_progress('lofi_player', 120)
+	win.media_player('', 'Chill Synthwave', 'Synth Artist')
+}
+
+fn test_simple_gg_ideals_ui_suite_and_ergonomics() {
+	mut win := simplegui.new_simple_window('UI Suite Test', 900, 700)
+
+	// 1. Activity Contribution Heatmap
+	mut matrix := [][]int{len: 7, init: []int{len: 26, init: 0}}
+	matrix[1][3] = 4
+	matrix[2][8] = 2
+	matrix[5][20] = 3
+	win.add_activity_heatmap('gh_heatmap', 'Developer Contributions (26 Weeks)', 26, matrix)
+	assert win.has_control('gh_heatmap')
+	win.heatmap('Annual Activity', 12, matrix)
+
+	// 2. Masked Input
+	win.add_masked_input('phone_in', '(###) ###-####', '5551234567')
+	assert win.has_control('phone_in')
+	win.set_masked_input('phone_in', '5559876543')
+	assert win.get_masked_input('phone_in') == '5559876543'
+	win.masked_input('###.###.###.###', '192168001001')
+
+	// 3. Inline Editable Label
+	win.add_inline_editable_label('proj_name', 'Cybernetic Cloud Cluster')
+	assert win.has_control('proj_name')
+	win.set_inline_editable_label('proj_name', 'DevStudio Production')
+	assert win.get_inline_editable_label('proj_name') == 'DevStudio Production'
+	win.editable_label('Project Alpha')
+
+	// 4. Nav Rail
+	nav_items := [
+		simplegui.SidebarItem{ id: 'dash', title: 'Dashboard', icon: '⊞', is_active: true },
+		simplegui.SidebarItem{ id: 'cluster', title: 'Cluster', icon: '☁', badge: '12' },
+		simplegui.SidebarItem{ id: 'settings', title: 'Settings', icon: '⚙' },
+	]
+	win.add_nav_rail('app_rail', nav_items)
+	assert win.has_control('app_rail')
+	win.nav_rail(nav_items)
+}
+

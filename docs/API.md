@@ -6250,4 +6250,161 @@ v_code := simplegui.generate_v_code(spec)
 html_code := simplegui.generate_html_code(spec)
 ```
 
+---
+
+## 💎 Modern Super Controls & Ergonomic UI Suite (Hardware & RAD Ideals)
+
+### 1. Donut Chart / Radial Progress Gauge
+#### `win.add_donut_chart(name string, title string, percentage f64) &SimpleWindow`
+Adds a circular radial progress gauge chart with an outer ring track, inner filled progress arc, centered percentage value text, and title.
+- **Nameless Shorthand**: `win.donut(title string, percentage f64)`
+- **Runtime Mutators**: `win.set_donut_percentage(name string, percentage f64)`
+
+```v
+win.add_donut_chart('cpu_load', 'CPU Load', 78.5)
+win.set_donut_percentage('cpu_load', 92.0)
+win.donut('RAM Allocation', 64.0)
+```
+
+### 2. Code Studio Container
+#### `win.add_code_studio(name string, filename string, language string, code string) &SimpleWindow`
+Adds a macOS-styled code container with traffic light window buttons (red, yellow, green), monospaced line numbers, filename header, and language identifier badge.
+- **Nameless Shorthand**: `win.code_box(filename string, language string, code string)`
+- **Runtime Mutators**: `win.set_code_studio(name string, filename string, language string, code string)`
+
+```v
+win.add_code_studio('editor', 'main.v', 'v', 'fn main() {\n    println("Hello SimpleGUI")\n}')
+win.code_box('query.sql', 'sql', 'SELECT * FROM users WHERE active = 1;')
+```
+
+### 3. Review Score Card
+#### `win.add_score_card(name string, title string, score f64, reviews int, breakdown []f64) &SimpleWindow`
+Adds an executive rating scorecard with average score header, star rating, total review count, and 5-tier star distribution progress bars (5★ down to 1★).
+- **Nameless Shorthand**: `win.score_card(title string, score f64, reviews int, breakdown []f64)`
+
+```v
+win.add_score_card('satisfaction', 'Dev Satisfaction', 4.95, 3840, [92.0, 6.0, 1.2, 0.5, 0.3])
+win.score_card('Product Rating', 4.8, 1200, [85.0, 10.0, 3.0, 1.5, 0.5])
+```
+
+### 4. Floating Action Toolbar
+#### `win.add_floating_toolbar(name string, title string, actions []string) &SimpleWindow`
+Adds a capsule-shaped floating action toolbar with brand pill and interactive action buttons.
+- **Nameless Shorthand**: `win.floating_toolbar(title string, actions []string)`
+
+```v
+win.add_floating_toolbar('hero_bar', 'DevStudio Pro', ['Overview', 'Deploy', 'Logs', 'Settings'])
+win.floating_toolbar('Quick Actions', ['Build', 'Run', 'Debug'])
+```
+
+### 5. Developer & User Profile Card
+#### `win.add_user_profile_card(name string, avatar_path string, name_text string, handle string, role string, bio string, is_online bool, action_label string) &SimpleWindow`
+Adds a profile card with circular avatar, active green/gray online presence dot, handle, role, multi-line bio, and action button.
+- **Nameless Shorthand**: `win.user_profile(avatar_path, name_text, handle, role, bio)`
+- **Runtime Mutators**: `win.set_user_online_status(name string, is_online bool)`
+
+```v
+win.add_user_profile_card('prof_ada', 'resources/developer.png', 'Ada Lovelace', '@ada', 'Lead Architect', 'Pioneer of algorithms.', true, '⚡ Connect')
+win.set_user_online_status('prof_ada', false)
+win.user_profile('resources/developer.png', 'Alex Chen', '@alex', 'SRE', 'Cloud Engineer')
+```
+
+### 6. Product Showcase Card
+#### `win.add_product_card(name string, image_path string, title string, description string, price string, badge string, action_label string) &SimpleWindow`
+Adds an e-commerce / SaaS showcase card with hero preview image, badge tag (e.g. 'BESTSELLER'), formatted price, description, and CTA action button.
+- **Nameless Shorthand**: `win.product_card(image_path string, title string, price string)`
+
+```v
+win.add_product_card('workstation', 'resources/docker_monitor.png', 'DevStation Pro', '128GB Unified Memory M4', '$3,499.00', 'POPULAR', '🛒 Buy Now')
+win.product_card('resources/terminal.png', 'DevKeypad', '$79.00')
+```
+
+### 7. Carousel Image Gallery
+#### `win.add_image_gallery(name string, images []string, captions []string, initial_idx int) &SimpleWindow`
+Adds an interactive multi-image carousel with slide previews, navigation arrows (`◀` / `▶`), counter badge, and caption bar.
+- **Nameless Shorthand**: `win.gallery(images []string)`
+- **Navigation Methods**:
+  - `win.next_gallery_image(name string)`
+  - `win.prev_gallery_image(name string)`
+  - `win.set_gallery_index(name string, index int)`
+  - `win.get_gallery_index(name string) int`
+
+```v
+win.add_image_gallery('gallery', ['slide1.png', 'slide2.png'], ['Slide 1', 'Slide 2'], 0)
+win.next_gallery_image('gallery')
+```
+
+### 8. 3D App Launcher Tile
+#### `win.add_app_launcher_tile(name string, icon_path string, title string, subtitle string, status string) &SimpleWindow`
+Adds an application launcher tile featuring an app icon, title, subtitle/category, and colored status pill.
+- **Nameless Shorthand**: `win.app_tile(icon_path string, title string, status string)`
+
+```v
+win.add_app_launcher_tile('tile_db', 'resources/database.png', 'CyberDB Cloud', 'Ultra low-latency cache', 'ONLINE')
+win.app_tile('resources/terminal.png', 'Terminal CLI', 'READY')
+```
+
+### 9. Hi-Fi Audio Media Player
+#### `win.add_media_player(name string, cover_path string, title string, artist string, duration_sec int, elapsed_sec int, is_playing bool) &SimpleWindow`
+Adds an audio / media playback card with album artwork, track title, artist info, progress scrubber slider, time stamps, and interactive play/pause button.
+- **Nameless Shorthand**: `win.media_player(cover_path string, title string, artist string)`
+- **Playback Controls**:
+  - `win.toggle_media_player(name string)`
+  - `win.set_media_player_progress(name string, elapsed_sec int)`
+  - `win.get_media_player_playing(name string) bool`
+
+```v
+win.add_media_player('player', 'resources/music_streamer.png', 'Lo-Fi Coding Beats', 'Synth Artist', 240, 68, true)
+win.toggle_media_player('player')
+```
+
+### 10. Activity Contribution Heatmap
+#### `win.add_activity_heatmap(name string, title string, weeks int, matrix [][]int) &SimpleWindow`
+Adds a GitHub-style 7xN contribution grid matrix with color-coded intensity levels (0=empty, 1=low, 2=medium, 3=high, 4=max) and legend.
+- **Nameless Shorthand**: `win.heatmap(title string, weeks int, matrix [][]int)`
+
+```v
+mut matrix := [][]int{len: 7, init: []int{len: 26, init: 0}}
+matrix[1][3] = 4
+win.add_activity_heatmap('contributions', 'Developer Contributions (26 Weeks)', 26, matrix)
+win.heatmap('Annual Activity', 12, matrix)
+```
+
+### 11. Masked Input Field
+#### `win.add_masked_input(name string, mask string, value string) &SimpleWindow`
+Adds an input field enforcing formatting patterns like telephone `(###) ###-####`, IP `###.###.###.###`, or dates `####-##-##`.
+- **Nameless Shorthand**: `win.masked_input(mask string, value string)`
+- **Getters & Setters**: `win.get_masked_input(name string) string`, `win.set_masked_input(name string, value string)`
+
+```v
+win.add_masked_input('phone', '(###) ###-####', '5551234567')
+println(win.get_masked_input('phone'))
+```
+
+### 12. Inline Editable Label
+#### `win.add_inline_editable_label(name string, text string) &SimpleWindow`
+Adds an interactive title/label that seamlessly turns into an editable text field when clicked or when the edit icon is pressed.
+- **Nameless Shorthand**: `win.editable_label(text string)`
+- **Getters & Setters**: `win.get_inline_editable_label(name string) string`, `win.set_inline_editable_label(name string, text string)`
+
+```v
+win.add_inline_editable_label('proj_title', 'Production Cluster Alpha')
+win.set_inline_editable_label('proj_title', 'Production Cluster Beta')
+```
+
+### 13. Modern Navigation Rail
+#### `win.add_nav_rail(name string, items []SidebarItem) &SimpleWindow`
+Adds a slim modern vertical navigation rail with item icons, titles, badge counts, and active selection state.
+- **Nameless Shorthand**: `win.nav_rail(items []SidebarItem)`
+
+```v
+nav_items := [
+    simplegui.SidebarItem{ id: 'dash', title: 'Dashboard', icon: '⊞', is_active: true },
+    simplegui.SidebarItem{ id: 'clusters', title: 'Clusters', icon: '☁', badge: '12' },
+    simplegui.SidebarItem{ id: 'settings', title: 'Settings', icon: '⚙' },
+]
+win.add_nav_rail('rail', nav_items)
+```
+
+
 

@@ -579,6 +579,51 @@ const char *window_get_date_range_end(main__WindowInfo *info, const char *name);
 void window_set_date_range(main__WindowInfo *info, const char *name, const char *start_date, const char *end_date);
 void *window_add_stat_grid_control(main__WindowInfo *info, const char *name, const char **titles, const char **values, const char **trends, const char **trend_styles, int count);
 
+// Modern Super Controls & Image Controls (simple_gg suite)
+void *window_add_donut_chart_control(main__WindowInfo *info, const char *name, const char *title, double percentage);
+void window_set_donut_percentage(main__WindowInfo *info, const char *name, double percentage);
+
+void *window_add_code_studio_control(main__WindowInfo *info, const char *name, const char *filename, const char *language, const char *code);
+void window_set_code_studio(main__WindowInfo *info, const char *name, const char *filename, const char *language, const char *code);
+
+void *window_add_score_card_control(main__WindowInfo *info, const char *name, const char *title, double score, int reviews, const double *breakdown, int breakdown_count);
+
+void *window_add_floating_toolbar_control(main__WindowInfo *info, const char *name, const char *title, const char **actions, int action_count);
+
+void *window_add_user_profile_card_control(main__WindowInfo *info, const char *name, const char *avatar_path, const char *name_text, const char *handle, const char *role, const char *bio, int is_online, const char *action_label);
+void window_set_user_online_status(main__WindowInfo *info, const char *name, int is_online);
+
+void *window_add_product_card_control(main__WindowInfo *info, const char *name, const char *image_path, const char *title, const char *description, const char *price, const char *badge, const char *action_label);
+
+void *window_add_image_gallery_control(main__WindowInfo *info, const char *name, const char **images, const char **captions, int count, int initial_idx);
+void window_next_gallery_image(main__WindowInfo *info, const char *name);
+void window_prev_gallery_image(main__WindowInfo *info, const char *name);
+void window_set_gallery_index(main__WindowInfo *info, const char *name, int index);
+int window_get_gallery_index(main__WindowInfo *info, const char *name);
+
+void *window_add_app_launcher_tile_control(main__WindowInfo *info, const char *name, const char *icon_path, const char *title, const char *subtitle, const char *status);
+
+void *window_add_media_player_control(main__WindowInfo *info, const char *name, const char *cover_path, const char *title, const char *artist, int duration_sec, int elapsed_sec, int is_playing);
+void window_set_media_player_audio_file(main__WindowInfo *info, const char *name, const char *audio_path);
+void window_toggle_media_player(main__WindowInfo *info, const char *name);
+void window_set_media_player_progress(main__WindowInfo *info, const char *name, int elapsed_sec);
+int window_get_media_player_playing(main__WindowInfo *info, const char *name);
+
+void *window_add_activity_heatmap_control(main__WindowInfo *info, const char *name, const char *title, int weeks, const int *matrix_flat, int rows, int cols);
+
+void *window_add_masked_input_control(main__WindowInfo *info, const char *name, const char *mask, const char *value);
+const char *window_get_masked_input_value(main__WindowInfo *info, const char *name);
+void window_set_masked_input_value(main__WindowInfo *info, const char *name, const char *value);
+
+void *window_add_inline_editable_label_control(main__WindowInfo *info, const char *name, const char *text);
+const char *window_get_inline_editable_label(main__WindowInfo *info, const char *name);
+void window_set_inline_editable_label(main__WindowInfo *info, const char *name, const char *text);
+
+void *window_add_nav_rail_control(main__WindowInfo *info, const char *name, const char **ids, const char **titles, const char **icons, const char **badges, const int *is_active, int count);
+const char *window_get_nav_rail_selected(main__WindowInfo *info, const char *name);
+void window_set_nav_rail_selected(main__WindowInfo *info, const char *name, const char *item_id);
+
+
 // Comprehensive Window Control APIs
 void window_set_vibrancy(main__WindowInfo *info, const char *material);
 void window_set_corner_radius(main__WindowInfo *info, double radius);

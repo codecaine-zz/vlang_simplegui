@@ -1917,6 +1917,23 @@ Screenshots are auto-generated using `v run capture_demos.vsh`.
 - **High-Level Form Builder**: `v run demos/high_level_demo.v`
   ![High-Level Form Builder](screenshots/high_level_demo.png)
 
+### Modern Super Controls & simple_gg Ideals Suite
+
+- **Modern Super Controls & simple_gg Ideals Showcase**: `v run demos/simple_gg_ideals_showcase_demo.v`
+  - **Donut / Radial Progress Gauges**: `win.add_donut_chart` / `win.donut` with live dynamic percentage updates (`win.set_donut_percentage`).
+  - **macOS Code Studio**: `win.add_code_studio` / `win.code_box` featuring macOS traffic light buttons, line numbers, and live code updating.
+  - **Review Scorecards**: `win.add_score_card` / `win.score_card` with 5-tier review distributions and ratings.
+  - **Floating Action Toolbars**: `win.add_floating_toolbar` / `win.floating_toolbar` with capsule action buttons.
+  - **User Profile Cards**: `win.add_user_profile_card` / `win.user_profile` with avatar, active presence dot, and bio.
+  - **Product Showcase Cards**: `win.add_product_card` / `win.product_card` with pricing, badge tags, and CTA buttons.
+  - **Carousel Image Gallery**: `win.add_image_gallery` / `win.gallery` with slide thumbnails, captions, and navigation arrows.
+  - **3D App Launcher Tiles**: `win.add_app_launcher_tile` / `win.app_tile` with status pills and app icons.
+  - **Hi-Fi Media Players**: `win.add_media_player` / `win.media_player` with track info, scrubber progress, and play/pause controls.
+  - **Contribution Heatmaps**: `win.add_activity_heatmap` / `win.heatmap` with 7xN GitHub-style activity matrices.
+  - **Masked Input Fields**: `win.add_masked_input` / `win.masked_input` with automated formatting rules.
+  - **Inline Editable Labels**: `win.add_inline_editable_label` / `win.editable_label` with click-to-edit interactions.
+  - **Vertical Navigation Rails**: `win.add_nav_rail` / `win.nav_rail` with icons and notification badges.
+
 ## Contributing
 
 Contributions are welcome! If you find a bug, have a feature request, or want to contribute new controls or themes:

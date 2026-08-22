@@ -2443,6 +2443,9 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
       return key;
     }
   }
+  if (control.identifier.length > 0) {
+    return control.identifier;
+  }
   // NSTextField focus notifications may arrive from the shared field editor.
   if ([control isKindOfClass:[NSTextView class]]) {
     for (NSString *key in self.controlsByName) {
@@ -11501,7 +11504,7 @@ void *window_add_tabs_control(main__WindowInfo *info, const char *name, const ch
     [tabs setControlSize:NSSmallControlSize];
     [tabs setFont:[NSFont systemFontOfSize:12]];
     [tabs setTranslatesAutoresizingMaskIntoConstraints:NO];
-    [tabs.widthAnchor constraintLessThanOrEqualToConstant:420].active = YES;
+    [tabs.widthAnchor constraintGreaterThanOrEqualToConstant:560].active = YES;
     [tabs.heightAnchor constraintEqualToConstant:32].active = YES;
     for (int i = 0; i < titles_count; i++) {
       NSTabViewItem *item = [[NSTabViewItem alloc] initWithIdentifier:[NSString stringWithFormat:@"tab_%d", i]];
@@ -20113,6 +20116,1723 @@ void *window_add_stat_grid_control(main__WindowInfo *info, const char *name, con
   if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
   return (__bridge void *)gridStack;
 }
+
+// -------------------------------------------------------------
+// 8. Donut / Radial Chart Control
+// -------------------------------------------------------------
+@interface DonutChartView : NSView
+@property (nonatomic, assign) double percentage;
+@property (nonatomic, copy) NSString *titleText;
+@end
+
+@implementation DonutChartView
+- (NSSize)intrinsicContentSize {
+  return NSMakeSize(140.0, 140.0);
+}
+
+- (void)drawRect:(NSRect)dirtyRect {
+  [super drawRect:dirtyRect];
+  NSRect b = self.bounds;
+  CGFloat side = MIN(b.size.width, b.size.height);
+  if (side <= 0) return;
+  CGFloat stroke = MAX(9.0, side * 0.12);
+  NSPoint center = NSMakePoint(NSMidX(b), NSMidY(b));
+  CGFloat radius = (side - stroke) / 2.0 - 4.0;
+  if (radius <= 0) return;
+
+  // Background ring track
+  NSBezierPath *bgTrack = [NSBezierPath bezierPath];
+  [bgTrack appendBezierPathWithArcWithCenter:center radius:radius startAngle:0 endAngle:360];
+  [bgTrack setLineWidth:stroke];
+  [[[NSColor secondaryLabelColor] colorWithAlphaComponent:0.18] setStroke];
+  [bgTrack stroke];
+
+  // Active progress arc
+  double pct = MAX(0.0, MIN(100.0, self.percentage));
+  if (pct > 0) {
+    CGFloat startAngle = 90.0;
+    CGFloat endAngle = 90.0 - (CGFloat)(pct / 100.0 * 360.0);
+    NSBezierPath *arc = [NSBezierPath bezierPath];
+    [arc appendBezierPathWithArcWithCenter:center radius:radius startAngle:startAngle endAngle:endAngle clockwise:YES];
+    [arc setLineWidth:stroke];
+    [arc setLineCapStyle:NSLineCapStyleRound];
+    [[NSColor controlAccentColor] setStroke];
+    [arc stroke];
+  }
+
+  // Percentage value text in center
+  NSString *pctStr = [NSString stringWithFormat:@"%.1f%%", pct];
+  NSMutableParagraphStyle *para = [[NSMutableParagraphStyle alloc] init];
+  para.alignment = NSTextAlignmentCenter;
+  NSDictionary *attrs = @{
+    NSFontAttributeName: [NSFont systemFontOfSize:MAX(14.0, side * 0.20) weight:NSFontWeightBold],
+    NSForegroundColorAttributeName: [NSColor labelColor],
+    NSParagraphStyleAttributeName: para
+  };
+  NSSize sz = [pctStr sizeWithAttributes:attrs];
+  NSRect textRect = NSMakeRect(center.x - sz.width / 2.0, center.y - sz.height / 2.0 + (self.titleText.length > 0 ? 8 : 0), sz.width, sz.height);
+  [pctStr drawInRect:textRect withAttributes:attrs];
+
+  if (self.titleText.length > 0) {
+    NSDictionary *tAttrs = @{
+      NSFontAttributeName: [NSFont systemFontOfSize:MAX(10.0, side * 0.10) weight:NSFontWeightMedium],
+      NSForegroundColorAttributeName: [NSColor secondaryLabelColor],
+      NSParagraphStyleAttributeName: para
+    };
+    NSSize tSz = [self.titleText sizeWithAttributes:tAttrs];
+    NSRect tRect = NSMakeRect(center.x - tSz.width / 2.0, textRect.origin.y - tSz.height - 4, tSz.width, tSz.height);
+    [self.titleText drawInRect:tRect withAttributes:tAttrs];
+  }
+}
+@end
+
+void *window_add_donut_chart_control(main__WindowInfo *info, const char *name, const char *title, double percentage) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *nameStr = nsstring(name);
+  NSString *titleStr = nsstring(title);
+  __block DonutChartView *view = nil;
+  
+  void (^runBlock)(void) = ^{
+    view = [[DonutChartView alloc] initWithFrame:NSMakeRect(0, 0, 140, 140)];
+    [view setIdentifier:nameStr];
+    view.percentage = percentage;
+    view.titleText = titleStr;
+    [view setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [view.widthAnchor constraintEqualToConstant:140.0].active = YES;
+    [view.heightAnchor constraintEqualToConstant:140.0].active = YES;
+    
+    delegate.controlsByName[[nameStr lowercaseString]] = view;
+    [delegate addControlToLayout:view];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)view;
+}
+
+void window_set_donut_percentage(main__WindowInfo *info, const char *name, double percentage) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  void (^runBlock)(void) = ^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[DonutChartView class]]) {
+      DonutChartView *d = (DonutChartView *)v;
+      d.percentage = percentage;
+      [d setNeedsDisplay:YES];
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+// -------------------------------------------------------------
+// 9. Code Studio Control
+// -------------------------------------------------------------
+@interface CodeStudioHandler : NSObject
+@property (nonatomic, assign) NSTextView *textView;
+@property (nonatomic, assign) NSButton *copyButton;
+@property (nonatomic, copy) NSString *controlName;
+@property (nonatomic, assign) void *winPtr;
+- (void)copyClicked:(id)sender;
+@end
+
+@implementation CodeStudioHandler
+- (void)copyClicked:(id)sender {
+  if (self.textView) {
+    NSString *str = [self.textView string];
+    if (str) {
+      NSPasteboard *pb = [NSPasteboard generalPasteboard];
+      [pb clearContents];
+      [pb setString:str forType:NSPasteboardTypeString];
+      
+      if (self.copyButton) {
+        [self.copyButton setTitle:@"✓ Copied!"];
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+          [self.copyButton setTitle:@"📋 Copy"];
+        });
+      }
+    }
+  }
+  if (self.winPtr && self.controlName.length > 0) {
+    vlang_dispatch_event(self.winPtr, [self.controlName UTF8String], "click", "copy");
+  }
+}
+
+- (void)dealloc {
+  [_controlName release];
+  [super dealloc];
+}
+@end
+
+void *window_add_code_studio_control(main__WindowInfo *info, const char *name, const char *filename, const char *language, const char *code) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *nameStr = nsstring(name);
+  NSString *fnStr = nsstring(filename);
+  NSString *langStr = nsstring(language);
+  NSString *codeStr = nsstring(code);
+  
+  __block NSBox *box = nil;
+  void (^runBlock)(void) = ^{
+    box = [[NSBox alloc] initWithFrame:NSZeroRect];
+    [box setIdentifier:nameStr];
+    [box setBoxType:NSBoxCustom];
+    [box setCornerRadius:8.0];
+    [box setBorderWidth:1.0];
+    [box setBorderColor:[NSColor separatorColor]];
+    [box setFillColor:[[NSColor blackColor] colorWithAlphaComponent:0.4]];
+    [box setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [box.heightAnchor constraintEqualToConstant:190.0].active = YES;
+    
+    NSStackView *vStack = [[NSStackView alloc] initWithFrame:NSZeroRect];
+    [vStack setOrientation:NSUserInterfaceLayoutOrientationVertical];
+    [vStack setAlignment:NSLayoutAttributeLeading];
+    [vStack setSpacing:8.0];
+    [vStack setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [vStack setEdgeInsets:NSEdgeInsetsMake(10, 12, 10, 12)];
+    
+    CodeStudioHandler *handler = [[CodeStudioHandler alloc] init];
+    handler.controlName = nameStr;
+    handler.winPtr = delegate.win_ptr;
+    
+    // Top Bar (Traffic lights + Title + Badge + Copy)
+    NSStackView *topBar = [[NSStackView alloc] initWithFrame:NSZeroRect];
+    [topBar setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+    [topBar setAlignment:NSLayoutAttributeCenterY];
+    [topBar setSpacing:8.0];
+    [topBar setTranslatesAutoresizingMaskIntoConstraints:NO];
+    
+    // Dots
+    NSArray *dotColors = @[
+      [NSColor colorWithRed:1.0 green:0.37 blue:0.34 alpha:1.0],
+      [NSColor colorWithRed:1.0 green:0.74 blue:0.18 alpha:1.0],
+      [NSColor colorWithRed:0.15 green:0.79 blue:0.25 alpha:1.0]
+    ];
+    for (NSColor *c in dotColors) {
+      NSBox *dot = [[NSBox alloc] initWithFrame:NSZeroRect];
+      [dot setBoxType:NSBoxCustom];
+      [dot setCornerRadius:5.0];
+      [dot setBorderWidth:0.0];
+      [dot setFillColor:c];
+      [dot setTranslatesAutoresizingMaskIntoConstraints:NO];
+      [dot.widthAnchor constraintEqualToConstant:10.0].active = YES;
+      [dot.heightAnchor constraintEqualToConstant:10.0].active = YES;
+      [topBar addArrangedSubview:dot];
+    }
+    
+    NSTextField *fLbl = [NSTextField labelWithString:fnStr.length > 0 ? fnStr : @"script.v"];
+    [fLbl setFont:[NSFont systemFontOfSize:12 weight:NSFontWeightBold]];
+    [topBar addArrangedSubview:fLbl];
+    
+    if (langStr.length > 0) {
+      NSTextField *lBadge = [NSTextField labelWithString:[NSString stringWithFormat:@"[%@]", [langStr uppercaseString]]];
+      [lBadge setFont:[NSFont monospacedSystemFontOfSize:10 weight:NSFontWeightMedium]];
+      [lBadge setTextColor:[NSColor systemBlueColor]];
+      [topBar addArrangedSubview:lBadge];
+    }
+    
+    NSButton *copyBtn = [NSButton buttonWithTitle:@"📋 Copy" target:handler action:@selector(copyClicked:)];
+    [copyBtn setIdentifier:[NSString stringWithFormat:@"%@_copy", nameStr]];
+    [copyBtn setBezelStyle:NSBezelStyleInline];
+    [copyBtn setControlSize:NSControlSizeSmall];
+    handler.copyButton = copyBtn;
+    [topBar addArrangedSubview:copyBtn];
+    
+    [vStack addArrangedSubview:topBar];
+    [topBar.widthAnchor constraintEqualToAnchor:vStack.widthAnchor].active = YES;
+    
+    // Code View with Scroller
+    NSScrollView *sv = [[NSScrollView alloc] initWithFrame:NSMakeRect(0, 0, 400, 130)];
+    [sv setHasVerticalScroller:YES];
+    [sv setHasHorizontalScroller:NO];
+    [sv setDrawsBackground:NO];
+    [sv setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [sv.heightAnchor constraintEqualToConstant:130.0].active = YES;
+    
+    NSTextView *tv = [[NSTextView alloc] initWithFrame:NSMakeRect(0, 0, 400, 130)];
+    [tv setIdentifier:[NSString stringWithFormat:@"%@_editor", nameStr]];
+    [tv setFont:[NSFont monospacedSystemFontOfSize:12 weight:NSFontWeightRegular]];
+    [tv setTextColor:[NSColor colorWithRed:0.92 green:0.95 blue:1.0 alpha:1.0]];
+    [tv setInsertionPointColor:[NSColor systemBlueColor]];
+    [tv setDrawsBackground:NO];
+    [tv setMinSize:NSMakeSize(0.0, 130.0)];
+    [tv setMaxSize:NSMakeSize(FLT_MAX, FLT_MAX)];
+    [tv setVerticallyResizable:YES];
+    [tv setHorizontallyResizable:NO];
+    [tv setAutoresizingMask:NSViewWidthSizable];
+    [[tv textContainer] setContainerSize:NSMakeSize(FLT_MAX, FLT_MAX)];
+    [[tv textContainer] setWidthTracksTextView:YES];
+    [tv setString:codeStr];
+    [tv setEditable:YES];
+    [tv setSelectable:YES];
+    handler.textView = tv;
+    
+    [sv setDocumentView:tv];
+    [vStack addArrangedSubview:sv];
+    [sv.widthAnchor constraintEqualToAnchor:vStack.widthAnchor].active = YES;
+    
+    [box setContentView:vStack];
+    [box.widthAnchor constraintGreaterThanOrEqualToConstant:600.0].active = YES;
+    [vStack.widthAnchor constraintEqualToAnchor:box.widthAnchor constant:-24.0].active = YES;
+    [vStack.heightAnchor constraintEqualToAnchor:box.heightAnchor constant:-20.0].active = YES;
+    
+    objc_setAssociatedObject(box, "codeStudioHandler", handler, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    [handler release];
+    
+    delegate.controlsByName[[nameStr lowercaseString]] = box;
+    [delegate addControlToLayout:box];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)box;
+}
+
+void window_set_code_studio(main__WindowInfo *info, const char *name, const char *filename, const char *language, const char *code) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  NSString *codeStr = nsstring(code);
+  void (^runBlock)(void) = ^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[NSBox class]]) {
+      NSBox *b = (NSBox *)v;
+      NSStackView *vs = (NSStackView *)b.contentView;
+      for (NSView *sub in vs.arrangedSubviews) {
+        if ([sub isKindOfClass:[NSScrollView class]]) {
+          NSTextView *tv = (NSTextView *)[(NSScrollView *)sub documentView];
+          [tv setString:codeStr];
+        }
+      }
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+// -------------------------------------------------------------
+// 10. Rating Score Card Control
+// -------------------------------------------------------------
+void *window_add_score_card_control(main__WindowInfo *info, const char *name, const char *title, double score, int reviews, const double *breakdown, int breakdown_count) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *nameStr = nsstring(name);
+  NSString *titleStr = nsstring(title);
+  
+  NSMutableArray *bdVals = [NSMutableArray array];
+  for (int i = 0; i < breakdown_count; i++) {
+    [bdVals addObject:@(breakdown ? breakdown[i] : 0.0)];
+  }
+  
+  __block NSBox *box = nil;
+  void (^runBlock)(void) = ^{
+    box = [[NSBox alloc] initWithFrame:NSZeroRect];
+    [box setIdentifier:nameStr];
+    [box setBoxType:NSBoxCustom];
+    [box setCornerRadius:8.0];
+    [box setBorderWidth:1.0];
+    [box setBorderColor:[NSColor separatorColor]];
+    [box setFillColor:[NSColor controlBackgroundColor]];
+    [box setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [box.heightAnchor constraintEqualToConstant:140.0].active = YES;
+    
+    NSStackView *hMain = [[NSStackView alloc] initWithFrame:NSZeroRect];
+    [hMain setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+    [hMain setAlignment:NSLayoutAttributeCenterY];
+    [hMain setSpacing:24.0];
+    [hMain setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [hMain setEdgeInsets:NSEdgeInsetsMake(12, 16, 12, 16)];
+    
+    // Left: Score & Stars
+    NSStackView *vLeft = [[NSStackView alloc] initWithFrame:NSZeroRect];
+    [vLeft setOrientation:NSUserInterfaceLayoutOrientationVertical];
+    [vLeft setAlignment:NSLayoutAttributeLeading];
+    [vLeft setSpacing:3.0];
+    
+    NSTextField *tLbl = [NSTextField labelWithString:titleStr];
+    [tLbl setFont:[NSFont systemFontOfSize:11 weight:NSFontWeightMedium]];
+    [tLbl setTextColor:[NSColor secondaryLabelColor]];
+    [vLeft addArrangedSubview:tLbl];
+    
+    NSTextField *sLbl = [NSTextField labelWithString:[NSString stringWithFormat:@"%.2f", score]];
+    [sLbl setFont:[NSFont systemFontOfSize:26 weight:NSFontWeightBold]];
+    [vLeft addArrangedSubview:sLbl];
+    
+    NSTextField *starsLbl = [NSTextField labelWithString:@"★★★★★"];
+    [starsLbl setFont:[NSFont systemFontOfSize:14]];
+    [starsLbl setTextColor:[NSColor colorWithRed:0.96 green:0.62 blue:0.07 alpha:1.0]];
+    [vLeft addArrangedSubview:starsLbl];
+    
+    NSTextField *revLbl = [NSTextField labelWithString:[NSString stringWithFormat:@"%d total reviews", reviews]];
+    [revLbl setFont:[NSFont systemFontOfSize:10]];
+    [revLbl setTextColor:[NSColor secondaryLabelColor]];
+    [vLeft addArrangedSubview:revLbl];
+    
+    [hMain addArrangedSubview:vLeft];
+    
+    // Right: 5-star distribution breakdown bars
+    NSStackView *vRight = [[NSStackView alloc] initWithFrame:NSZeroRect];
+    [vRight setOrientation:NSUserInterfaceLayoutOrientationVertical];
+    [vRight setSpacing:4.0];
+    
+    for (int i = 0; i < 5; i++) {
+      double p = i < bdVals.count ? [bdVals[i] doubleValue] : 0.0;
+      NSStackView *barRow = [[NSStackView alloc] initWithFrame:NSZeroRect];
+      [barRow setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+      [barRow setAlignment:NSLayoutAttributeCenterY];
+      [barRow setSpacing:6.0];
+      
+      NSTextField *starTag = [NSTextField labelWithString:[NSString stringWithFormat:@"%d★", 5 - i]];
+      [starTag setFont:[NSFont systemFontOfSize:10 weight:NSFontWeightMedium]];
+      [starTag.widthAnchor constraintEqualToConstant:20.0].active = YES;
+      [barRow addArrangedSubview:starTag];
+      
+      NSProgressIndicator *bar = [[NSProgressIndicator alloc] initWithFrame:NSZeroRect];
+      [bar setIndeterminate:NO];
+      [bar setMinValue:0.0];
+      [bar setMaxValue:100.0];
+      [bar setDoubleValue:p];
+      [bar setTranslatesAutoresizingMaskIntoConstraints:NO];
+      [bar.widthAnchor constraintEqualToConstant:140.0].active = YES;
+      [barRow addArrangedSubview:bar];
+      
+      NSTextField *pLbl = [NSTextField labelWithString:[NSString stringWithFormat:@"%.0f%%", p]];
+      [pLbl setFont:[NSFont systemFontOfSize:10]];
+      [pLbl setTextColor:[NSColor secondaryLabelColor]];
+      [pLbl.widthAnchor constraintEqualToConstant:32.0].active = YES;
+      [barRow addArrangedSubview:pLbl];
+      
+      [vRight addArrangedSubview:barRow];
+    }
+    
+    [hMain addArrangedSubview:vRight];
+    [box setContentView:hMain];
+    [hMain.widthAnchor constraintEqualToAnchor:box.widthAnchor constant:-32.0].active = YES;
+    [hMain.heightAnchor constraintEqualToAnchor:box.heightAnchor constant:-24.0].active = YES;
+    
+    delegate.controlsByName[[nameStr lowercaseString]] = box;
+    [delegate addControlToLayout:box];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)box;
+}
+
+// -------------------------------------------------------------
+// 11. Floating Toolbar Control
+// -------------------------------------------------------------
+void *window_add_floating_toolbar_control(main__WindowInfo *info, const char *name, const char *title, const char **actions, int action_count) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *nameStr = nsstring(name);
+  NSString *titleStr = nsstring(title);
+  
+  NSMutableArray *actList = [NSMutableArray array];
+  for (int i = 0; i < action_count; i++) {
+    [actList addObject:(actions && actions[i]) ? nsstring(actions[i]) : @""];
+  }
+  
+  __block NSBox *capsule = nil;
+  void (^runBlock)(void) = ^{
+    capsule = [[NSBox alloc] initWithFrame:NSZeroRect];
+    [capsule setIdentifier:nameStr];
+    [capsule setBoxType:NSBoxCustom];
+    [capsule setCornerRadius:18.0];
+    [capsule setBorderWidth:1.0];
+    [capsule setBorderColor:[[NSColor controlAccentColor] colorWithAlphaComponent:0.3]];
+    [capsule setFillColor:[[NSColor controlBackgroundColor] colorWithAlphaComponent:0.9]];
+    [capsule setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [capsule.heightAnchor constraintEqualToConstant:40.0].active = YES;
+    
+    NSStackView *hStack = [[NSStackView alloc] initWithFrame:NSZeroRect];
+    [hStack setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+    [hStack setAlignment:NSLayoutAttributeCenterY];
+    [hStack setSpacing:8.0];
+    [hStack setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [hStack setEdgeInsets:NSEdgeInsetsMake(4, 12, 4, 12)];
+    
+    if (titleStr.length > 0) {
+      NSTextField *tLbl = [NSTextField labelWithString:titleStr];
+      [tLbl setFont:[NSFont systemFontOfSize:12 weight:NSFontWeightBold]];
+      [tLbl setTextColor:[NSColor controlAccentColor]];
+      [hStack addArrangedSubview:tLbl];
+      
+      NSBox *sep = [[NSBox alloc] initWithFrame:NSZeroRect];
+      [sep setBoxType:NSBoxSeparator];
+      [hStack addArrangedSubview:sep];
+    }
+    
+    for (NSString *act in actList) {
+      NSButton *btn = [NSButton buttonWithTitle:act target:delegate action:@selector(handleButtonClicked:)];
+      [btn setIdentifier:[NSString stringWithFormat:@"%@_%@", nameStr, act]];
+      [btn setBezelStyle:NSBezelStyleInline];
+      [btn setControlSize:NSControlSizeSmall];
+      delegate.controlsByName[[btn.identifier lowercaseString]] = btn;
+      delegate.controlsByName[[act lowercaseString]] = btn;
+      delegate.controlsByName[[NSString stringWithFormat:@"%@_%@", [nameStr lowercaseString], [act lowercaseString]]] = btn;
+      [hStack addArrangedSubview:btn];
+    }
+    
+    [capsule setContentView:hStack];
+    [hStack.widthAnchor constraintEqualToAnchor:capsule.widthAnchor constant:-24.0].active = YES;
+    [hStack.heightAnchor constraintEqualToAnchor:capsule.heightAnchor constant:-8.0].active = YES;
+    
+    delegate.controlsByName[[nameStr lowercaseString]] = capsule;
+    [delegate addControlToLayout:capsule];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)capsule;
+}
+
+// -------------------------------------------------------------
+// 12. User Profile Card Control
+// -------------------------------------------------------------
+void *window_add_user_profile_card_control(main__WindowInfo *info, const char *name, const char *avatar_path, const char *name_text, const char *handle, const char *role, const char *bio, int is_online, const char *action_label) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *nameStr = nsstring(name);
+  NSString *avPath = nsstring(avatar_path);
+  NSString *nText = nsstring(name_text);
+  NSString *hText = nsstring(handle);
+  NSString *rText = nsstring(role);
+  NSString *bText = nsstring(bio);
+  NSString *actLbl = nsstring(action_label);
+  
+  __block NSBox *card = nil;
+  void (^runBlock)(void) = ^{
+    card = [[NSBox alloc] initWithFrame:NSZeroRect];
+    [card setIdentifier:nameStr];
+    [card setBoxType:NSBoxCustom];
+    [card setCornerRadius:10.0];
+    [card setBorderWidth:1.0];
+    [card setBorderColor:[NSColor separatorColor]];
+    [card setFillColor:[NSColor controlBackgroundColor]];
+    [card setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [card.heightAnchor constraintEqualToConstant:105.0].active = YES;
+    
+    NSStackView *hMain = [[NSStackView alloc] initWithFrame:NSZeroRect];
+    [hMain setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+    [hMain setAlignment:NSLayoutAttributeCenterY];
+    [hMain setSpacing:14.0];
+    [hMain setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [hMain setEdgeInsets:NSEdgeInsetsMake(10, 14, 10, 14)];
+    
+    // Left: Avatar + Online Dot
+    NSView *avContainer = [[NSView alloc] initWithFrame:NSMakeRect(0, 0, 52, 52)];
+    [avContainer setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [avContainer.widthAnchor constraintEqualToConstant:52.0].active = YES;
+    [avContainer.heightAnchor constraintEqualToConstant:52.0].active = YES;
+    
+    NSImageView *iv = [[NSImageView alloc] initWithFrame:NSMakeRect(2, 2, 48, 48)];
+    [iv setImageScaling:NSImageScaleProportionallyUpOrDown];
+    [iv setWantsLayer:YES];
+    iv.layer.cornerRadius = 24.0;
+    iv.layer.masksToBounds = YES;
+    if (avPath.length > 0 && [[NSFileManager defaultManager] fileExistsAtPath:avPath]) {
+      [iv setImage:[[NSImage alloc] initWithContentsOfFile:avPath]];
+    } else {
+      [iv setImage:[NSImage imageNamed:NSImageNameUser]];
+    }
+    [avContainer addSubview:iv];
+    
+    NSBox *dot = [[NSBox alloc] initWithFrame:NSMakeRect(36, 2, 12, 12)];
+    [dot setIdentifier:[NSString stringWithFormat:@"%@_status_dot", nameStr]];
+    [dot setBoxType:NSBoxCustom];
+    [dot setCornerRadius:6.0];
+    [dot setBorderWidth:2.0];
+    [dot setBorderColor:[NSColor controlBackgroundColor]];
+    [dot setFillColor:is_online ? [NSColor systemGreenColor] : [NSColor secondaryLabelColor]];
+    [avContainer addSubview:dot];
+    [hMain addArrangedSubview:avContainer];
+    
+    // Middle: Info
+    NSStackView *vInfo = [[NSStackView alloc] initWithFrame:NSZeroRect];
+    [vInfo setOrientation:NSUserInterfaceLayoutOrientationVertical];
+    [vInfo setAlignment:NSLayoutAttributeLeading];
+    [vInfo setSpacing:2.0];
+    
+    NSTextField *nameField = [NSTextField labelWithString:nText];
+    [nameField setFont:[NSFont systemFontOfSize:14 weight:NSFontWeightBold]];
+    [vInfo addArrangedSubview:nameField];
+    
+    NSStackView *subRow = [[NSStackView alloc] initWithFrame:NSZeroRect];
+    [subRow setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+    [subRow setSpacing:6.0];
+    if (hText.length > 0) {
+      NSTextField *hField = [NSTextField labelWithString:hText];
+      [hField setFont:[NSFont systemFontOfSize:11]];
+      [hField setTextColor:[NSColor secondaryLabelColor]];
+      [subRow addArrangedSubview:hField];
+    }
+    if (rText.length > 0) {
+      NSTextField *rField = [NSTextField labelWithString:[NSString stringWithFormat:@"• %@", rText]];
+      [rField setFont:[NSFont systemFontOfSize:10 weight:NSFontWeightMedium]];
+      [rField setTextColor:[NSColor systemBlueColor]];
+      [subRow addArrangedSubview:rField];
+    }
+    [vInfo addArrangedSubview:subRow];
+    
+    if (bText.length > 0) {
+      NSTextField *bField = [NSTextField labelWithString:bText];
+      [bField setFont:[NSFont systemFontOfSize:11]];
+      [bField setTextColor:[NSColor labelColor]];
+      [bField setLineBreakMode:NSLineBreakByTruncatingTail];
+      [vInfo addArrangedSubview:bField];
+    }
+    [hMain addArrangedSubview:vInfo];
+    
+    // Right: Action Button
+    if (actLbl.length > 0) {
+      NSButton *btn = [NSButton buttonWithTitle:actLbl target:delegate action:@selector(handleButtonClicked:)];
+      [btn setIdentifier:[NSString stringWithFormat:@"%@_action", nameStr]];
+      [btn setBezelStyle:NSBezelStyleRounded];
+      [hMain addArrangedSubview:btn];
+    }
+    
+    [card setContentView:hMain];
+    [hMain.widthAnchor constraintEqualToAnchor:card.widthAnchor constant:-28.0].active = YES;
+    [hMain.heightAnchor constraintEqualToAnchor:card.heightAnchor constant:-20.0].active = YES;
+    
+    delegate.controlsByName[[nameStr lowercaseString]] = card;
+    [delegate addControlToLayout:card];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)card;
+}
+
+void window_set_user_online_status(main__WindowInfo *info, const char *name, int is_online) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  void (^runBlock)(void) = ^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[NSBox class]]) {
+      NSBox *b = (NSBox *)v;
+      NSStackView *hMain = (NSStackView *)b.contentView;
+      for (NSView *sub in hMain.arrangedSubviews) {
+        for (NSView *c in sub.subviews) {
+          if ([c isKindOfClass:[NSBox class]] && [[c identifier] hasSuffix:@"_status_dot"]) {
+            [(NSBox *)c setFillColor:is_online ? [NSColor systemGreenColor] : [NSColor secondaryLabelColor]];
+          }
+        }
+      }
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+// -------------------------------------------------------------
+// 13. Product Card Control
+// -------------------------------------------------------------
+void *window_add_product_card_control(main__WindowInfo *info, const char *name, const char *image_path, const char *title, const char *description, const char *price, const char *badge, const char *action_label) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *nameStr = nsstring(name);
+  NSString *imgPath = nsstring(image_path);
+  NSString *tStr = nsstring(title);
+  NSString *dStr = nsstring(description);
+  NSString *pStr = nsstring(price);
+  NSString *bStr = nsstring(badge);
+  NSString *actStr = nsstring(action_label);
+  
+  __block NSBox *card = nil;
+  void (^runBlock)(void) = ^{
+    card = [[NSBox alloc] initWithFrame:NSZeroRect];
+    [card setIdentifier:nameStr];
+    [card setBoxType:NSBoxCustom];
+    [card setCornerRadius:10.0];
+    [card setBorderWidth:1.0];
+    [card setBorderColor:[NSColor separatorColor]];
+    [card setFillColor:[NSColor controlBackgroundColor]];
+    [card setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [card.heightAnchor constraintEqualToConstant:210.0].active = YES;
+    
+    NSStackView *vMain = [[NSStackView alloc] initWithFrame:NSZeroRect];
+    [vMain setOrientation:NSUserInterfaceLayoutOrientationVertical];
+    [vMain setAlignment:NSLayoutAttributeLeading];
+    [vMain setSpacing:6.0];
+    [vMain setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [vMain setEdgeInsets:NSEdgeInsetsMake(10, 12, 10, 12)];
+    
+    // Top Row: Image & Badge
+    NSImageView *iv = [[NSImageView alloc] initWithFrame:NSZeroRect];
+    [iv setImageScaling:NSImageScaleProportionallyUpOrDown];
+    [iv setWantsLayer:YES];
+    iv.layer.cornerRadius = 6.0;
+    iv.layer.masksToBounds = YES;
+    [iv setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [iv.heightAnchor constraintEqualToConstant:80.0].active = YES;
+    if (imgPath.length > 0 && [[NSFileManager defaultManager] fileExistsAtPath:imgPath]) {
+      [iv setImage:[[NSImage alloc] initWithContentsOfFile:imgPath]];
+    } else {
+      [iv setImage:[NSImage imageNamed:NSImageNameFolder]];
+    }
+    [vMain addArrangedSubview:iv];
+    [iv.widthAnchor constraintEqualToAnchor:vMain.widthAnchor].active = YES;
+    
+    if (bStr.length > 0) {
+      NSTextField *bgLbl = [NSTextField labelWithString:[NSString stringWithFormat:@" ★ %@ ", [bStr uppercaseString]]];
+      [bgLbl setFont:[NSFont systemFontOfSize:9 weight:NSFontWeightBold]];
+      [bgLbl setTextColor:[NSColor systemOrangeColor]];
+      [vMain addArrangedSubview:bgLbl];
+    }
+    
+    NSTextField *tLbl = [NSTextField labelWithString:tStr];
+    [tLbl setFont:[NSFont systemFontOfSize:13 weight:NSFontWeightBold]];
+    [vMain addArrangedSubview:tLbl];
+    
+    if (dStr.length > 0) {
+      NSTextField *dLbl = [NSTextField labelWithString:dStr];
+      [dLbl setFont:[NSFont systemFontOfSize:11]];
+      [dLbl setTextColor:[NSColor secondaryLabelColor]];
+      [dLbl setLineBreakMode:NSLineBreakByTruncatingTail];
+      [vMain addArrangedSubview:dLbl];
+    }
+    
+    // Bottom: Price & Button
+    NSStackView *bRow = [[NSStackView alloc] initWithFrame:NSZeroRect];
+    [bRow setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+    [bRow setAlignment:NSLayoutAttributeCenterY];
+    [bRow setSpacing:12.0];
+    
+    NSTextField *pLbl = [NSTextField labelWithString:pStr];
+    [pLbl setFont:[NSFont systemFontOfSize:15 weight:NSFontWeightBold]];
+    [pLbl setTextColor:[NSColor controlAccentColor]];
+    [bRow addArrangedSubview:pLbl];
+    
+    if (actStr.length > 0) {
+      NSButton *btn = [NSButton buttonWithTitle:actStr target:delegate action:@selector(handleButtonClicked:)];
+      [btn setIdentifier:[NSString stringWithFormat:@"%@_buy", nameStr]];
+      [btn setBezelStyle:NSBezelStyleRounded];
+      [bRow addArrangedSubview:btn];
+    }
+    [vMain addArrangedSubview:bRow];
+    
+    [card setContentView:vMain];
+    [vMain.widthAnchor constraintEqualToAnchor:card.widthAnchor constant:-24.0].active = YES;
+    [vMain.heightAnchor constraintEqualToAnchor:card.heightAnchor constant:-20.0].active = YES;
+    
+    delegate.controlsByName[[nameStr lowercaseString]] = card;
+    [delegate addControlToLayout:card];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)card;
+}
+
+// -------------------------------------------------------------
+// 14. Image Gallery Control
+// -------------------------------------------------------------
+@interface ImageGalleryState : NSObject
+@property (nonatomic, strong) NSArray<NSString *> *images;
+@property (nonatomic, strong) NSArray<NSString *> *captions;
+@property (nonatomic, assign) NSInteger currentIndex;
+@property (nonatomic, strong) NSImageView *imageView;
+@property (nonatomic, strong) NSTextField *counterLabel;
+@property (nonatomic, strong) NSTextField *captionLabel;
+@end
+@implementation ImageGalleryState
+@end
+
+void *window_add_image_gallery_control(main__WindowInfo *info, const char *name, const char **images, const char **captions, int count, int initial_idx) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *nameStr = nsstring(name);
+  
+  NSMutableArray *imgList = [NSMutableArray array];
+  NSMutableArray *capList = [NSMutableArray array];
+  for (int i = 0; i < count; i++) {
+    [imgList addObject:(images && images[i]) ? nsstring(images[i]) : @""];
+    [capList addObject:(captions && captions[i]) ? nsstring(captions[i]) : @""];
+  }
+  
+  __block NSBox *box = nil;
+  void (^runBlock)(void) = ^{
+    box = [[NSBox alloc] initWithFrame:NSZeroRect];
+    [box setIdentifier:nameStr];
+    [box setBoxType:NSBoxCustom];
+    [box setCornerRadius:8.0];
+    [box setBorderWidth:1.0];
+    [box setBorderColor:[NSColor separatorColor]];
+    [box setFillColor:[NSColor controlBackgroundColor]];
+    [box setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [box.heightAnchor constraintEqualToConstant:210.0].active = YES;
+    
+    NSStackView *vStack = [[NSStackView alloc] initWithFrame:NSZeroRect];
+    [vStack setOrientation:NSUserInterfaceLayoutOrientationVertical];
+    [vStack setAlignment:NSLayoutAttributeLeading];
+    [vStack setSpacing:8.0];
+    [vStack setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [vStack setEdgeInsets:NSEdgeInsetsMake(10, 10, 10, 10)];
+    
+    ImageGalleryState *st = [[ImageGalleryState alloc] init];
+    st.images = imgList;
+    st.captions = capList;
+    st.currentIndex = (initial_idx >= 0 && initial_idx < count) ? initial_idx : 0;
+    
+    // Main Hero Image
+    NSImageView *iv = [[NSImageView alloc] initWithFrame:NSZeroRect];
+    [iv setImageScaling:NSImageScaleProportionallyUpOrDown];
+    [iv setWantsLayer:YES];
+    iv.layer.cornerRadius = 6.0;
+    iv.layer.masksToBounds = YES;
+    [iv setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [iv.heightAnchor constraintEqualToConstant:140.0].active = YES;
+    
+    if (st.images.count > 0 && [[NSFileManager defaultManager] fileExistsAtPath:st.images[st.currentIndex]]) {
+      [iv setImage:[[NSImage alloc] initWithContentsOfFile:st.images[st.currentIndex]]];
+    } else {
+      [iv setImage:[NSImage imageNamed:NSImageNameQuickLookTemplate]];
+    }
+    st.imageView = iv;
+    [vStack addArrangedSubview:iv];
+    [iv.widthAnchor constraintEqualToAnchor:vStack.widthAnchor].active = YES;
+    
+    // Navigation & Caption Bar
+    NSStackView *navBar = [[NSStackView alloc] initWithFrame:NSZeroRect];
+    [navBar setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+    [navBar setAlignment:NSLayoutAttributeCenterY];
+    [navBar setSpacing:8.0];
+    
+    NSButton *prevBtn = [NSButton buttonWithTitle:@"◀ Prev" target:delegate action:@selector(handleButtonClicked:)];
+    [prevBtn setIdentifier:[NSString stringWithFormat:@"%@_prev", nameStr]];
+    [prevBtn setBezelStyle:NSBezelStyleInline];
+    [navBar addArrangedSubview:prevBtn];
+    
+    NSTextField *cptLbl = [NSTextField labelWithString:st.captions.count > st.currentIndex ? st.captions[st.currentIndex] : @""];
+    [cptLbl setFont:[NSFont systemFontOfSize:12 weight:NSFontWeightMedium]];
+    st.captionLabel = cptLbl;
+    [navBar addArrangedSubview:cptLbl];
+    
+    NSTextField *cntLbl = [NSTextField labelWithString:[NSString stringWithFormat:@"(%ld / %lu)", (long)st.currentIndex + 1, (unsigned long)st.images.count]];
+    [cntLbl setFont:[NSFont systemFontOfSize:11]];
+    [cntLbl setTextColor:[NSColor secondaryLabelColor]];
+    st.counterLabel = cntLbl;
+    [navBar addArrangedSubview:cntLbl];
+    
+    NSButton *nextBtn = [NSButton buttonWithTitle:@"Next ▶" target:delegate action:@selector(handleButtonClicked:)];
+    [nextBtn setIdentifier:[NSString stringWithFormat:@"%@_next", nameStr]];
+    [nextBtn setBezelStyle:NSBezelStyleInline];
+    [navBar addArrangedSubview:nextBtn];
+    
+    [vStack addArrangedSubview:navBar];
+    [box setContentView:vStack];
+    [vStack.widthAnchor constraintEqualToAnchor:box.widthAnchor constant:-20.0].active = YES;
+    [vStack.heightAnchor constraintEqualToAnchor:box.heightAnchor constant:-20.0].active = YES;
+    
+    objc_setAssociatedObject(box, "galleryState", st, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    delegate.controlsByName[[nameStr lowercaseString]] = box;
+    [delegate addControlToLayout:box];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)box;
+}
+
+static void updateGalleryUI(ImageGalleryState *st) {
+  if (!st || st.images.count == 0) return;
+  if (st.currentIndex < 0) st.currentIndex = 0;
+  if (st.currentIndex >= st.images.count) st.currentIndex = st.images.count - 1;
+  
+  NSString *p = st.images[st.currentIndex];
+  if ([[NSFileManager defaultManager] fileExistsAtPath:p]) {
+    [st.imageView setImage:[[NSImage alloc] initWithContentsOfFile:p]];
+  } else {
+    [st.imageView setImage:[NSImage imageNamed:NSImageNameQuickLookTemplate]];
+  }
+  if (st.currentIndex < st.captions.count) {
+    [st.captionLabel setStringValue:st.captions[st.currentIndex]];
+  }
+  [st.counterLabel setStringValue:[NSString stringWithFormat:@"(%ld / %lu)", (long)st.currentIndex + 1, (unsigned long)st.images.count]];
+}
+
+void window_next_gallery_image(main__WindowInfo *info, const char *name) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  void (^runBlock)(void) = ^{
+    NSView *v = delegate.controlsByName[key];
+    if (v) {
+      ImageGalleryState *st = objc_getAssociatedObject(v, "galleryState");
+      if (st && st.images.count > 0) {
+        st.currentIndex = (st.currentIndex + 1) % st.images.count;
+        updateGalleryUI(st);
+      }
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+void window_prev_gallery_image(main__WindowInfo *info, const char *name) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  void (^runBlock)(void) = ^{
+    NSView *v = delegate.controlsByName[key];
+    if (v) {
+      ImageGalleryState *st = objc_getAssociatedObject(v, "galleryState");
+      if (st && st.images.count > 0) {
+        st.currentIndex = (st.currentIndex - 1 + st.images.count) % st.images.count;
+        updateGalleryUI(st);
+      }
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+void window_set_gallery_index(main__WindowInfo *info, const char *name, int index) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  void (^runBlock)(void) = ^{
+    NSView *v = delegate.controlsByName[key];
+    if (v) {
+      ImageGalleryState *st = objc_getAssociatedObject(v, "galleryState");
+      if (st && index >= 0 && index < st.images.count) {
+        st.currentIndex = index;
+        updateGalleryUI(st);
+      }
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+int window_get_gallery_index(main__WindowInfo *info, const char *name) {
+  if (!info || !info->app_delegate) return 0;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  __block int res = 0;
+  void (^runBlock)(void) = ^{
+    NSView *v = delegate.controlsByName[key];
+    if (v) {
+      ImageGalleryState *st = objc_getAssociatedObject(v, "galleryState");
+      if (st) res = (int)st.currentIndex;
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return res;
+}
+
+// -------------------------------------------------------------
+// 15. App Launcher Tile Control
+// -------------------------------------------------------------
+void *window_add_app_launcher_tile_control(main__WindowInfo *info, const char *name, const char *icon_path, const char *title, const char *subtitle, const char *status) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *nameStr = nsstring(name);
+  NSString *iconPath = nsstring(icon_path);
+  NSString *tStr = nsstring(title);
+  NSString *sStr = nsstring(subtitle);
+  NSString *stStr = nsstring(status);
+  
+  __block NSBox *tile = nil;
+  void (^runBlock)(void) = ^{
+    tile = [[NSBox alloc] initWithFrame:NSZeroRect];
+    [tile setIdentifier:nameStr];
+    [tile setBoxType:NSBoxCustom];
+    [tile setCornerRadius:8.0];
+    [tile setBorderWidth:1.0];
+    [tile setBorderColor:[NSColor separatorColor]];
+    [tile setFillColor:[NSColor controlBackgroundColor]];
+    [tile setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [tile.heightAnchor constraintEqualToConstant:64.0].active = YES;
+    
+    NSStackView *hStack = [[NSStackView alloc] initWithFrame:NSZeroRect];
+    [hStack setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+    [hStack setAlignment:NSLayoutAttributeCenterY];
+    [hStack setSpacing:12.0];
+    [hStack setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [hStack setEdgeInsets:NSEdgeInsetsMake(8, 10, 8, 10)];
+    
+    NSImageView *iv = [[NSImageView alloc] initWithFrame:NSZeroRect];
+    [iv setImageScaling:NSImageScaleProportionallyUpOrDown];
+    [iv setWantsLayer:YES];
+    iv.layer.cornerRadius = 6.0;
+    iv.layer.masksToBounds = YES;
+    [iv setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [iv.widthAnchor constraintEqualToConstant:40.0].active = YES;
+    [iv.heightAnchor constraintEqualToConstant:40.0].active = YES;
+    if (iconPath.length > 0 && [[NSFileManager defaultManager] fileExistsAtPath:iconPath]) {
+      [iv setImage:[[NSImage alloc] initWithContentsOfFile:iconPath]];
+    } else {
+      [iv setImage:[NSImage imageNamed:NSImageNameApplicationIcon]];
+    }
+    [hStack addArrangedSubview:iv];
+    
+    NSStackView *vText = [[NSStackView alloc] initWithFrame:NSZeroRect];
+    [vText setOrientation:NSUserInterfaceLayoutOrientationVertical];
+    [vText setAlignment:NSLayoutAttributeLeading];
+    [vText setSpacing:2.0];
+    
+    NSTextField *tLbl = [NSTextField labelWithString:tStr];
+    [tLbl setFont:[NSFont systemFontOfSize:13 weight:NSFontWeightBold]];
+    [vText addArrangedSubview:tLbl];
+    
+    if (sStr.length > 0) {
+      NSTextField *subLbl = [NSTextField labelWithString:sStr];
+      [subLbl setFont:[NSFont systemFontOfSize:10]];
+      [subLbl setTextColor:[NSColor secondaryLabelColor]];
+      [vText addArrangedSubview:subLbl];
+    }
+    [hStack addArrangedSubview:vText];
+    
+    if (stStr.length > 0) {
+      NSTextField *statPill = [NSTextField labelWithString:[NSString stringWithFormat:@" %@ ", [stStr uppercaseString]]];
+      [statPill setFont:[NSFont systemFontOfSize:9 weight:NSFontWeightBold]];
+      if ([[stStr lowercaseString] containsString:@"online"] || [[stStr lowercaseString] containsString:@"ready"]) {
+        [statPill setTextColor:[NSColor systemGreenColor]];
+      } else {
+        [statPill setTextColor:[NSColor systemBlueColor]];
+      }
+      [hStack addArrangedSubview:statPill];
+    }
+    
+    [tile setContentView:hStack];
+    [hStack.widthAnchor constraintEqualToAnchor:tile.widthAnchor constant:-20.0].active = YES;
+    [hStack.heightAnchor constraintEqualToAnchor:tile.heightAnchor constant:-16.0].active = YES;
+    
+    delegate.controlsByName[[nameStr lowercaseString]] = tile;
+    [delegate addControlToLayout:tile];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)tile;
+}
+
+// -------------------------------------------------------------
+// 16. Media Player Card Control
+// -------------------------------------------------------------
+@interface MediaPlayerState : NSObject
+@property (nonatomic, assign) int durationSec;
+@property (nonatomic, assign) int elapsedSec;
+@property (nonatomic, assign) BOOL isPlaying;
+@property (nonatomic, copy) NSString *audioPath;
+@property (nonatomic, copy) NSString *cardName;
+@property (nonatomic, strong) NSSound *sound;
+@property (nonatomic, strong) NSTimer *playbackTimer;
+@property (nonatomic, strong) NSSlider *scrubber;
+@property (nonatomic, strong) NSTextField *timeLabel;
+@property (nonatomic, strong) NSButton *playBtn;
+@property (nonatomic, assign) void *winPtr;
+- (void)togglePlayPause;
+- (void)startPlayback;
+- (void)stopPlayback;
+- (void)handlePlayBtnClicked:(id)sender;
+- (void)handleScrubberChanged:(id)sender;
+- (void)loadAudioWithFile:(NSString *)path;
+@end
+
+static NSString *formatTimeSeconds(int sec) {
+  int m = sec / 60;
+  int s = sec % 60;
+  return [NSString stringWithFormat:@"%02d:%02d", m, s];
+}
+
+@implementation MediaPlayerState
+- (void)loadAudioWithFile:(NSString *)path {
+  if (path && path.length > 0) {
+    self.audioPath = path;
+  }
+  if (self.sound && [self.sound isPlaying]) {
+    [self.sound stop];
+  }
+  self.sound = nil;
+  
+  NSString *soundPath = nil;
+  if (self.audioPath.length > 0 && [[NSFileManager defaultManager] fileExistsAtPath:self.audioPath]) {
+    soundPath = self.audioPath;
+  } else {
+    NSArray *candidates = @[
+      @"resources/lofi_beats.wav",
+      @"../resources/lofi_beats.wav",
+      [[[NSBundle mainBundle] resourcePath] stringByAppendingPathComponent:@"lofi_beats.wav"],
+      [[[NSBundle mainBundle] resourcePath] stringByAppendingPathComponent:@"resources/lofi_beats.wav"]
+    ];
+    for (NSString *c in candidates) {
+      if ([[NSFileManager defaultManager] fileExistsAtPath:c]) {
+        soundPath = c;
+        break;
+      }
+    }
+  }
+  
+  if (soundPath) {
+    self.sound = [[NSSound alloc] initWithContentsOfFile:soundPath byReference:YES];
+  }
+  if (!self.sound) {
+    self.sound = [NSSound soundNamed:@"Hero"];
+  }
+  if (self.sound) {
+    [self.sound setLoops:YES];
+  }
+}
+
+- (void)handlePlayBtnClicked:(id)sender {
+  [self togglePlayPause];
+  if (self.winPtr && self.cardName.length > 0) {
+    vlang_dispatch_event(self.winPtr, [self.cardName UTF8String], "click", self.isPlaying ? "play" : "pause");
+  }
+}
+
+- (void)handleScrubberChanged:(id)sender {
+  NSSlider *sl = (NSSlider *)sender;
+  self.elapsedSec = (int)[sl doubleValue];
+  [self.timeLabel setStringValue:[NSString stringWithFormat:@"%@ / %@", formatTimeSeconds(self.elapsedSec), formatTimeSeconds(self.durationSec)]];
+  if (self.sound && self.durationSec > 0) {
+    NSTimeInterval soundDuration = [self.sound duration];
+    if (soundDuration > 0) {
+      NSTimeInterval targetTime = fmod((double)self.elapsedSec, soundDuration);
+      [self.sound setCurrentTime:targetTime];
+    }
+  }
+}
+
+- (void)togglePlayPause {
+  if (self.isPlaying) {
+    [self stopPlayback];
+  } else {
+    [self startPlayback];
+  }
+}
+
+- (void)timerTick:(NSTimer *)timer {
+  if (self.isPlaying) {
+    self.elapsedSec = self.elapsedSec + 1;
+    if (self.elapsedSec > self.durationSec) {
+      self.elapsedSec = 0;
+    }
+    [self.scrubber setDoubleValue:(double)self.elapsedSec];
+    [self.timeLabel setStringValue:[NSString stringWithFormat:@"%@ / %@", formatTimeSeconds(self.elapsedSec), formatTimeSeconds(self.durationSec)]];
+  }
+}
+
+- (void)startPlayback {
+  self.isPlaying = YES;
+  [self.playBtn setTitle:@"⏸ Pause"];
+  
+  if (!self.sound) {
+    [self loadAudioWithFile:self.audioPath];
+  }
+  
+  if (self.sound) {
+    if (self.durationSec > 0) {
+      NSTimeInterval soundDuration = [self.sound duration];
+      if (soundDuration > 0) {
+        NSTimeInterval targetTime = fmod((double)self.elapsedSec, soundDuration);
+        [self.sound setCurrentTime:targetTime];
+      }
+    }
+    if (![self.sound isPlaying]) {
+      [self.sound play];
+    }
+  }
+  
+  [self.playbackTimer invalidate];
+  self.playbackTimer = [NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(timerTick:) userInfo:nil repeats:YES];
+}
+
+- (void)stopPlayback {
+  self.isPlaying = NO;
+  [self.playBtn setTitle:@"▶ Play"];
+  if (self.sound && [self.sound isPlaying]) {
+    [self.sound pause];
+  }
+  [self.playbackTimer invalidate];
+  self.playbackTimer = nil;
+}
+
+- (void)dealloc {
+  if (_sound && [_sound isPlaying]) {
+    [_sound stop];
+  }
+  [_playbackTimer invalidate];
+  _playbackTimer = nil;
+  [_audioPath release];
+  [_cardName release];
+  [_sound release];
+  [super dealloc];
+}
+@end
+
+void *window_add_media_player_control(main__WindowInfo *info, const char *name, const char *cover_path, const char *title, const char *artist, int duration_sec, int elapsed_sec, int is_playing) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *nameStr = nsstring(name);
+  NSString *covPath = nsstring(cover_path);
+  NSString *tStr = nsstring(title);
+  NSString *aStr = nsstring(artist);
+  
+  __block NSBox *card = nil;
+  void (^runBlock)(void) = ^{
+    card = [[NSBox alloc] initWithFrame:NSZeroRect];
+    [card setIdentifier:nameStr];
+    [card setBoxType:NSBoxCustom];
+    [card setCornerRadius:10.0];
+    [card setBorderWidth:1.0];
+    [card setBorderColor:[NSColor separatorColor]];
+    [card setFillColor:[NSColor controlBackgroundColor]];
+    [card setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [card.heightAnchor constraintEqualToConstant:85.0].active = YES;
+    
+    NSStackView *hMain = [[NSStackView alloc] initWithFrame:NSZeroRect];
+    [hMain setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+    [hMain setAlignment:NSLayoutAttributeCenterY];
+    [hMain setSpacing:12.0];
+    [hMain setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [hMain setEdgeInsets:NSEdgeInsetsMake(8, 12, 8, 12)];
+    
+    MediaPlayerState *st = [[MediaPlayerState alloc] init];
+    st.durationSec = duration_sec > 0 ? duration_sec : 180;
+    st.elapsedSec = elapsed_sec >= 0 ? elapsed_sec : 0;
+    st.isPlaying = NO;
+    st.cardName = nameStr;
+    st.winPtr = delegate.win_ptr;
+    [st loadAudioWithFile:nil];
+    
+    // Album Cover
+    NSImageView *cov = [[NSImageView alloc] initWithFrame:NSZeroRect];
+    [cov setImageScaling:NSImageScaleProportionallyUpOrDown];
+    [cov setWantsLayer:YES];
+    cov.layer.cornerRadius = 6.0;
+    cov.layer.masksToBounds = YES;
+    [cov setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [cov.widthAnchor constraintEqualToConstant:50.0].active = YES;
+    [cov.heightAnchor constraintEqualToConstant:50.0].active = YES;
+    if (covPath.length > 0 && [[NSFileManager defaultManager] fileExistsAtPath:covPath]) {
+      [cov setImage:[[NSImage alloc] initWithContentsOfFile:covPath]];
+    } else {
+      [cov setImage:[NSImage imageNamed:NSImageNameTouchBarAudioOutputVolumeHighTemplate]];
+    }
+    [hMain addArrangedSubview:cov];
+    
+    // Track Info + Scrubber
+    NSStackView *vCenter = [[NSStackView alloc] initWithFrame:NSZeroRect];
+    [vCenter setOrientation:NSUserInterfaceLayoutOrientationVertical];
+    [vCenter setAlignment:NSLayoutAttributeLeading];
+    [vCenter setSpacing:2.0];
+    [vCenter setTranslatesAutoresizingMaskIntoConstraints:NO];
+    
+    NSTextField *tLbl = [NSTextField labelWithString:tStr];
+    [tLbl setFont:[NSFont systemFontOfSize:12 weight:NSFontWeightBold]];
+    [vCenter addArrangedSubview:tLbl];
+    
+    NSTextField *aLbl = [NSTextField labelWithString:aStr];
+    [aLbl setFont:[NSFont systemFontOfSize:10]];
+    [aLbl setTextColor:[NSColor secondaryLabelColor]];
+    [vCenter addArrangedSubview:aLbl];
+    
+    NSSlider *sl = [[NSSlider alloc] initWithFrame:NSZeroRect];
+    [sl setMinValue:0.0];
+    [sl setMaxValue:(double)st.durationSec];
+    [sl setDoubleValue:(double)st.elapsedSec];
+    [sl setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [sl.heightAnchor constraintEqualToConstant:14.0].active = YES;
+    [sl.widthAnchor constraintGreaterThanOrEqualToConstant:180.0].active = YES;
+    [sl setTarget:st];
+    [sl setAction:@selector(handleScrubberChanged:)];
+    st.scrubber = sl;
+    [vCenter addArrangedSubview:sl];
+    
+    NSTextField *timeLbl = [NSTextField labelWithString:[NSString stringWithFormat:@"%@ / %@", formatTimeSeconds(st.elapsedSec), formatTimeSeconds(st.durationSec)]];
+    [timeLbl setFont:[NSFont monospacedSystemFontOfSize:10 weight:NSFontWeightRegular]];
+    [timeLbl setTextColor:[NSColor secondaryLabelColor]];
+    st.timeLabel = timeLbl;
+    [vCenter addArrangedSubview:timeLbl];
+    
+    [hMain addArrangedSubview:vCenter];
+    
+    NSButton *pBtn = [NSButton buttonWithTitle:is_playing ? @"⏸ Pause" : @"▶ Play" target:st action:@selector(handlePlayBtnClicked:)];
+    [pBtn setIdentifier:[NSString stringWithFormat:@"%@_play", nameStr]];
+    [pBtn setBezelStyle:NSBezelStyleRounded];
+    st.playBtn = pBtn;
+    [hMain addArrangedSubview:pBtn];
+    
+    [card setContentView:hMain];
+    [hMain.widthAnchor constraintEqualToAnchor:card.widthAnchor constant:-24.0].active = YES;
+    [hMain.heightAnchor constraintEqualToAnchor:card.heightAnchor constant:-16.0].active = YES;
+    
+    objc_setAssociatedObject(card, "mediaState", st, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    delegate.controlsByName[[nameStr lowercaseString]] = card;
+    [delegate addControlToLayout:card];
+    
+    if (is_playing) {
+      [st startPlayback];
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)card;
+}
+
+void window_set_media_player_audio_file(main__WindowInfo *info, const char *name, const char *audio_path) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  NSString *aPath = nsstring(audio_path);
+  void (^runBlock)(void) = ^{
+    NSView *v = delegate.controlsByName[key];
+    if (v) {
+      MediaPlayerState *st = objc_getAssociatedObject(v, "mediaState");
+      if (st) {
+        [st loadAudioWithFile:aPath];
+        if (st.isPlaying) {
+          [st startPlayback];
+        }
+      }
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+void window_toggle_media_player(main__WindowInfo *info, const char *name) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  void (^runBlock)(void) = ^{
+    NSView *v = delegate.controlsByName[key];
+    if (v) {
+      MediaPlayerState *st = objc_getAssociatedObject(v, "mediaState");
+      if (st) {
+        [st togglePlayPause];
+      }
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+void window_set_media_player_progress(main__WindowInfo *info, const char *name, int elapsed_sec) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  void (^runBlock)(void) = ^{
+    NSView *v = delegate.controlsByName[key];
+    if (v) {
+      MediaPlayerState *st = objc_getAssociatedObject(v, "mediaState");
+      if (st) {
+        st.elapsedSec = elapsed_sec;
+        [st.scrubber setDoubleValue:(double)elapsed_sec];
+        [st.timeLabel setStringValue:[NSString stringWithFormat:@"%@ / %@", formatTimeSeconds(st.elapsedSec), formatTimeSeconds(st.durationSec)]];
+        if (st.sound && st.durationSec > 0) {
+          NSTimeInterval soundDuration = [st.sound duration];
+          if (soundDuration > 0) {
+            NSTimeInterval targetTime = fmod((double)st.elapsedSec, soundDuration);
+            [st.sound setCurrentTime:targetTime];
+          }
+        }
+      }
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+int window_get_media_player_playing(main__WindowInfo *info, const char *name) {
+  if (!info || !info->app_delegate) return 0;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  __block int res = 0;
+  void (^runBlock)(void) = ^{
+    NSView *v = delegate.controlsByName[key];
+    if (v) {
+      MediaPlayerState *st = objc_getAssociatedObject(v, "mediaState");
+      if (st && st.isPlaying) res = 1;
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return res;
+}
+
+// -------------------------------------------------------------
+// 17. Activity Contribution Heatmap Control
+// -------------------------------------------------------------
+@interface ActivityHeatmapView : NSView
+@property (nonatomic, copy) NSString *titleText;
+@property (nonatomic, assign) int weeks;
+@property (nonatomic, strong) NSArray<NSNumber *> *matrix;
+@end
+
+@implementation ActivityHeatmapView
+- (NSSize)intrinsicContentSize {
+  int wks = self.weeks > 0 ? self.weeks : 26;
+  return NSMakeSize(wks * 14.0 + 20.0, 7 * 14.0 + 44.0);
+}
+
+- (void)drawRect:(NSRect)dirtyRect {
+  [super drawRect:dirtyRect];
+  NSRect b = self.bounds;
+  int wks = self.weeks > 0 ? self.weeks : 26;
+  CGFloat blockSize = 11.0;
+  CGFloat spacing = 3.0;
+  
+  if (self.titleText.length > 0) {
+    NSDictionary *tAttrs = @{
+      NSFontAttributeName: [NSFont systemFontOfSize:12 weight:NSFontWeightBold],
+      NSForegroundColorAttributeName: [NSColor labelColor]
+    };
+    [self.titleText drawAtPoint:NSMakePoint(4, b.size.height - 18) withAttributes:tAttrs];
+  }
+  
+  NSArray<NSColor *> *levels = @[
+    [[NSColor secondaryLabelColor] colorWithAlphaComponent:0.15],
+    [NSColor colorWithRed:0.05 green:0.27 blue:0.16 alpha:1.0],
+    [NSColor colorWithRed:0.0 green:0.43 blue:0.20 alpha:1.0],
+    [NSColor colorWithRed:0.15 green:0.65 blue:0.25 alpha:1.0],
+    [NSColor colorWithRed:0.22 green:0.83 blue:0.33 alpha:1.0]
+  ];
+  
+  CGFloat startY = b.size.height - 38;
+  for (int row = 0; row < 7; row++) {
+    for (int col = 0; col < wks; col++) {
+      int idx = row * wks + col;
+      int lvl = 0;
+      if (idx < self.matrix.count) {
+        lvl = [self.matrix[idx] intValue];
+        if (lvl < 0) lvl = 0;
+        if (lvl > 4) lvl = 4;
+      }
+      NSRect blockRect = NSMakeRect(4 + col * (blockSize + spacing), startY - row * (blockSize + spacing), blockSize, blockSize);
+      NSBezierPath *p = [NSBezierPath bezierPathWithRoundedRect:blockRect xRadius:2.0 yRadius:2.0];
+      [levels[lvl] setFill];
+      [p fill];
+    }
+  }
+}
+@end
+
+void *window_add_activity_heatmap_control(main__WindowInfo *info, const char *name, const char *title, int weeks, const int *matrix_flat, int rows, int cols) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *nameStr = nsstring(name);
+  NSString *titleStr = nsstring(title);
+  int total = rows * cols;
+  
+  NSMutableArray *flat = [NSMutableArray array];
+  for (int i = 0; i < total; i++) {
+    [flat addObject:@(matrix_flat ? matrix_flat[i] : 0)];
+  }
+  
+  __block ActivityHeatmapView *view = nil;
+  void (^runBlock)(void) = ^{
+    CGFloat h = 7 * 14.0 + 44.0;
+    CGFloat w = weeks * 14.0 + 20.0;
+    view = [[ActivityHeatmapView alloc] initWithFrame:NSMakeRect(0, 0, w, h)];
+    [view setIdentifier:nameStr];
+    view.titleText = titleStr;
+    view.weeks = weeks;
+    view.matrix = flat;
+    [view setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [view.widthAnchor constraintEqualToConstant:w].active = YES;
+    [view.heightAnchor constraintEqualToConstant:h].active = YES;
+    
+    delegate.controlsByName[[nameStr lowercaseString]] = view;
+    [delegate addControlToLayout:view];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)view;
+}
+
+// -------------------------------------------------------------
+// 18. Masked Input Field Control
+// -------------------------------------------------------------
+@interface MaskedInputDelegate : NSObject <NSTextFieldDelegate>
+@property (nonatomic, copy) NSString *maskPattern;
+@end
+
+@implementation MaskedInputDelegate
+- (void)controlTextDidChange:(NSNotification *)obj {
+  NSTextField *tf = (NSTextField *)obj.object;
+  NSString *raw = tf.stringValue;
+  if (self.maskPattern.length == 0) return;
+  
+  // Extract digits
+  NSMutableString *digits = [NSMutableString string];
+  for (NSUInteger i = 0; i < raw.length; i++) {
+    unichar c = [raw characterAtIndex:i];
+    if (isdigit(c)) [digits appendFormat:@"%C", c];
+  }
+  
+  // Format with mask
+  NSMutableString *formatted = [NSMutableString string];
+  NSUInteger digitIdx = 0;
+  for (NSUInteger i = 0; i < self.maskPattern.length; i++) {
+    unichar mc = [self.maskPattern characterAtIndex:i];
+    if (mc == '#') {
+      if (digitIdx < digits.length) {
+        [formatted appendFormat:@"%C", [digits characterAtIndex:digitIdx]];
+        digitIdx++;
+      } else {
+        break;
+      }
+    } else {
+      if (digitIdx < digits.length) {
+        [formatted appendFormat:@"%C", mc];
+      } else {
+        break;
+      }
+    }
+  }
+  [tf setStringValue:formatted];
+}
+@end
+
+void *window_add_masked_input_control(main__WindowInfo *info, const char *name, const char *mask, const char *value) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *nameStr = nsstring(name);
+  NSString *maskStr = nsstring(mask);
+  NSString *valStr = nsstring(value);
+  
+  __block NSTextField *tf = nil;
+  void (^runBlock)(void) = ^{
+    tf = [[NSTextField alloc] initWithFrame:NSZeroRect];
+    [tf setIdentifier:nameStr];
+    [tf setPlaceholderString:maskStr];
+    [tf setStringValue:valStr];
+    [tf setFont:[NSFont monospacedSystemFontOfSize:12 weight:NSFontWeightRegular]];
+    [tf setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [tf.heightAnchor constraintEqualToConstant:28.0].active = YES;
+    [tf.widthAnchor constraintGreaterThanOrEqualToConstant:220.0].active = YES;
+    
+    MaskedInputDelegate *md = [[MaskedInputDelegate alloc] init];
+    md.maskPattern = maskStr;
+    [tf setDelegate:md];
+    objc_setAssociatedObject(tf, "maskedDelegate", md, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    
+    // Format initial value
+    if (valStr.length > 0 && maskStr.length > 0) {
+      NSMutableString *digits = [NSMutableString string];
+      for (NSUInteger i = 0; i < valStr.length; i++) {
+        unichar c = [valStr characterAtIndex:i];
+        if (isdigit(c)) [digits appendFormat:@"%C", c];
+      }
+      NSMutableString *formatted = [NSMutableString string];
+      NSUInteger digitIdx = 0;
+      for (NSUInteger i = 0; i < maskStr.length; i++) {
+        unichar mc = [maskStr characterAtIndex:i];
+        if (mc == '#') {
+          if (digitIdx < digits.length) {
+            [formatted appendFormat:@"%C", [digits characterAtIndex:digitIdx++]];
+          } else {
+            break;
+          }
+        } else {
+          if (digitIdx < digits.length) {
+            [formatted appendFormat:@"%C", mc];
+          } else {
+            break;
+          }
+        }
+      }
+      [tf setStringValue:formatted.length > 0 ? formatted : valStr];
+    }
+    
+    delegate.controlsByName[[nameStr lowercaseString]] = tf;
+    [delegate addControlToLayout:tf];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)tf;
+}
+
+const char *window_get_masked_input_value(main__WindowInfo *info, const char *name) {
+  if (!info || !info->app_delegate) return "";
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  __block NSString *res = @"";
+  void (^runBlock)(void) = ^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[NSTextField class]]) {
+      res = [(NSTextField *)v stringValue];
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return [res UTF8String] ? [res UTF8String] : "";
+}
+
+void window_set_masked_input_value(main__WindowInfo *info, const char *name, const char *value) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  NSString *vStr = nsstring(value);
+  void (^runBlock)(void) = ^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[NSTextField class]]) {
+      [(NSTextField *)v setStringValue:vStr];
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+// -------------------------------------------------------------
+// 19. Inline Editable Label Control
+// -------------------------------------------------------------
+@interface InlineEditableLabelView : NSStackView <NSTextFieldDelegate>
+@property (nonatomic, strong) NSTextField *label;
+@property (nonatomic, strong) NSTextField *editor;
+@property (nonatomic, strong) NSButton *editBtn;
+@property (nonatomic, assign) BOOL isEditing;
+@end
+
+@implementation InlineEditableLabelView
+- (void)toggleEditMode {
+  self.isEditing = !self.isEditing;
+  if (self.isEditing) {
+    [self.editor setStringValue:self.label.stringValue];
+    [self.label setHidden:YES];
+    [self.editor setHidden:NO];
+    [self.window makeFirstResponder:self.editor];
+    [self.editBtn setTitle:@"✓"];
+  } else {
+    [self.label setStringValue:self.editor.stringValue];
+    [self.editor setHidden:YES];
+    [self.label setHidden:NO];
+    [self.editBtn setTitle:@"✎"];
+  }
+}
+
+- (void)controlTextDidEndEditing:(NSNotification *)obj {
+  if (self.isEditing) {
+    [self toggleEditMode];
+  }
+}
+@end
+
+void *window_add_inline_editable_label_control(main__WindowInfo *info, const char *name, const char *text) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *nameStr = nsstring(name);
+  NSString *tStr = nsstring(text);
+  
+  __block InlineEditableLabelView *stack = nil;
+  void (^runBlock)(void) = ^{
+    stack = [[InlineEditableLabelView alloc] initWithFrame:NSZeroRect];
+    [stack setIdentifier:nameStr];
+    [stack setOrientation:NSUserInterfaceLayoutOrientationHorizontal];
+    [stack setAlignment:NSLayoutAttributeCenterY];
+    [stack setSpacing:6.0];
+    [stack setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [stack.heightAnchor constraintEqualToConstant:32.0].active = YES;
+    
+    NSTextField *lbl = [NSTextField labelWithString:tStr];
+    [lbl setFont:[NSFont systemFontOfSize:13 weight:NSFontWeightMedium]];
+    stack.label = lbl;
+    [stack addArrangedSubview:lbl];
+    
+    NSTextField *ed = [[NSTextField alloc] initWithFrame:NSZeroRect];
+    [ed setStringValue:tStr];
+    [ed setHidden:YES];
+    [ed setDelegate:stack];
+    stack.editor = ed;
+    [stack addArrangedSubview:ed];
+    
+    NSButton *btn = [NSButton buttonWithTitle:@"✎" target:stack action:@selector(toggleEditMode)];
+    [btn setBezelStyle:NSBezelStyleInline];
+    [btn setControlSize:NSControlSizeSmall];
+    stack.editBtn = btn;
+    [stack addArrangedSubview:btn];
+    
+    delegate.controlsByName[[nameStr lowercaseString]] = stack;
+    [delegate addControlToLayout:stack];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)stack;
+}
+
+const char *window_get_inline_editable_label(main__WindowInfo *info, const char *name) {
+  if (!info || !info->app_delegate) return "";
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  __block NSString *res = @"";
+  void (^runBlock)(void) = ^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[InlineEditableLabelView class]]) {
+      res = [((InlineEditableLabelView *)v).label stringValue];
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return [res UTF8String] ? [res UTF8String] : "";
+}
+
+void window_set_inline_editable_label(main__WindowInfo *info, const char *name, const char *text) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  NSString *tStr = nsstring(text);
+  void (^runBlock)(void) = ^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[InlineEditableLabelView class]]) {
+      InlineEditableLabelView *iv = (InlineEditableLabelView *)v;
+      [iv.label setStringValue:tStr];
+      [iv.editor setStringValue:tStr];
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+}
+
+// -------------------------------------------------------------
+// 20. Nav Rail Control
+// -------------------------------------------------------------
+void *window_add_nav_rail_control(main__WindowInfo *info, const char *name, const char **ids, const char **titles, const char **icons, const char **badges, const int *is_active, int count) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *nameStr = nsstring(name);
+  
+  __block NSBox *railBox = nil;
+  void (^runBlock)(void) = ^{
+    railBox = [[NSBox alloc] initWithFrame:NSZeroRect];
+    [railBox setIdentifier:nameStr];
+    [railBox setBoxType:NSBoxCustom];
+    [railBox setCornerRadius:8.0];
+    [railBox setBorderWidth:1.0];
+    [railBox setBorderColor:[NSColor separatorColor]];
+    [railBox setFillColor:[[NSColor controlBackgroundColor] colorWithAlphaComponent:0.6]];
+    [railBox setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [railBox.widthAnchor constraintEqualToConstant:100.0].active = YES;
+    [railBox.heightAnchor constraintEqualToConstant:240.0].active = YES;
+    
+    NSStackView *vRail = [[NSStackView alloc] initWithFrame:NSZeroRect];
+    [vRail setOrientation:NSUserInterfaceLayoutOrientationVertical];
+    [vRail setAlignment:NSLayoutAttributeCenterX];
+    [vRail setSpacing:8.0];
+    [vRail setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [vRail setEdgeInsets:NSEdgeInsetsMake(10, 6, 10, 6)];
+    
+    for (int i = 0; i < count; i++) {
+      NSString *itemId = (ids && ids[i]) ? nsstring(ids[i]) : [NSString stringWithFormat:@"item_%d", i];
+      NSString *itemTitle = (titles && titles[i]) ? nsstring(titles[i]) : @"";
+      NSString *itemIcon = (icons && icons[i]) ? nsstring(icons[i]) : @"●";
+      NSString *itemBadge = (badges && badges[i]) ? nsstring(badges[i]) : @"";
+      BOOL active = is_active ? (is_active[i] != 0) : (i == 0);
+      
+      NSButton *btn = [NSButton buttonWithTitle:[NSString stringWithFormat:@"%@ %@", itemIcon, itemTitle] target:delegate action:@selector(handleButtonClicked:)];
+      [btn setIdentifier:[NSString stringWithFormat:@"%@_%@", nameStr, itemId]];
+      [btn setBezelStyle:NSBezelStyleRegularSquare];
+      [btn setFont:[NSFont systemFontOfSize:11 weight:active ? NSFontWeightBold : NSFontWeightRegular]];
+      [btn setTranslatesAutoresizingMaskIntoConstraints:NO];
+      [btn.widthAnchor constraintEqualToConstant:88.0].active = YES;
+      [btn.heightAnchor constraintEqualToConstant:36.0].active = YES;
+      delegate.controlsByName[[btn.identifier lowercaseString]] = btn;
+      delegate.controlsByName[[itemId lowercaseString]] = btn;
+      delegate.controlsByName[[NSString stringWithFormat:@"%@_%@", [nameStr lowercaseString], [itemId lowercaseString]]] = btn;
+      
+      if (active) {
+        [btn setContentTintColor:[NSColor controlAccentColor]];
+      }
+      [vRail addArrangedSubview:btn];
+      
+      if (itemBadge.length > 0) {
+        NSTextField *bLbl = [NSTextField labelWithString:itemBadge];
+        [bLbl setFont:[NSFont systemFontOfSize:9 weight:NSFontWeightBold]];
+        [bLbl setTextColor:[NSColor systemRedColor]];
+        [vRail addArrangedSubview:bLbl];
+      }
+    }
+    
+    [railBox setContentView:vRail];
+    delegate.controlsByName[[nameStr lowercaseString]] = railBox;
+    [delegate addControlToLayout:railBox];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return (__bridge void *)railBox;
+}
+
+const char *window_get_nav_rail_selected(main__WindowInfo *info, const char *name) {
+  return "";
+}
+
+void window_set_nav_rail_selected(main__WindowInfo *info, const char *name, const char *item_id) {
+}
+
+
 
 
 

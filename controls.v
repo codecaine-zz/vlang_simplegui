@@ -5191,3 +5191,508 @@ pub fn (win &SimpleWindow) add_stat_grid(name string, titles []string, values []
 pub fn (win &SimpleWindow) stat_grid(titles []string, values []string, trends []string, trend_styles []string) &SimpleWindow {
 	return win.add_stat_grid('', titles, values, trends, trend_styles)
 }
+
+// SidebarItem represents a navigation item inside a Navigation Rail or Sidebar.
+pub struct SidebarItem {
+pub mut:
+	id        string
+	title     string
+	icon      string
+	badge     string
+	is_active bool
+}
+
+// add_donut_chart adds a circular radial gauge chart with percentage label.
+pub fn (win &SimpleWindow) add_donut_chart(name string, title string, percentage f64) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('donut_chart')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name:   real_name
+			kind:   'donut_chart'
+			label:  title
+			value:  '${percentage}'
+			number: int(percentage)
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_donut_chart_control(win.window_info, real_name.str, title.str, percentage)
+	}
+	return win
+}
+
+// set_donut_percentage updates the progress percentage of a donut chart at runtime.
+pub fn (win &SimpleWindow) set_donut_percentage(name string, percentage f64) &SimpleWindow {
+	idx := win.find_control(name)
+	if idx >= 0 {
+		unsafe {
+			mut w := &SimpleWindow(win)
+			w.controls[idx].value = '${percentage}'
+			w.controls[idx].number = int(percentage)
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_set_donut_percentage(win.window_info, name.str, percentage)
+	}
+	return win
+}
+
+// add_code_studio adds a macOS-styled code container with traffic light dots, filename, and line numbers.
+pub fn (win &SimpleWindow) add_code_studio(name string, filename string, language string, code string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('code_studio')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name:  real_name
+			kind:  'code_studio'
+			label: filename
+			value: code
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_code_studio_control(win.window_info, real_name.str, filename.str, language.str, code.str)
+	}
+	return win
+}
+
+// set_code_studio updates the code contents of a code studio widget.
+pub fn (win &SimpleWindow) set_code_studio(name string, filename string, language string, code string) &SimpleWindow {
+	idx := win.find_control(name)
+	if idx >= 0 {
+		unsafe {
+			mut w := &SimpleWindow(win)
+			w.controls[idx].label = filename
+			w.controls[idx].value = code
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_set_code_studio(win.window_info, name.str, filename.str, language.str, code.str)
+	}
+	return win
+}
+
+// add_score_card adds a rating scorecard with review count, vector stars, and 5-tier distribution bars.
+pub fn (win &SimpleWindow) add_score_card(name string, title string, score f64, reviews int, breakdown []f64) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('score_card')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name:   real_name
+			kind:   'score_card'
+			label:  title
+			value:  '${score}'
+			number: reviews
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_score_card_control(win.window_info, real_name.str, title.str, score, reviews, breakdown.data, breakdown.len)
+	}
+	return win
+}
+
+// add_floating_toolbar adds a capsule floating action bar with brand badge and interactive action buttons.
+pub fn (win &SimpleWindow) add_floating_toolbar(name string, title string, actions []string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('floating_toolbar')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name:  real_name
+			kind:  'floating_toolbar'
+			label: title
+			value: actions.join(',')
+		}
+	}
+	if win.window_info != unsafe { nil } && actions.len > 0 {
+		mut c_acts := []&u8{cap: actions.len}
+		for a in actions {
+			c_acts << a.str
+		}
+		C.window_add_floating_toolbar_control(win.window_info, real_name.str, title.str, c_acts.data, actions.len)
+	}
+	return win
+}
+
+// add_user_profile_card adds a developer/user profile card with avatar, online status dot, handle, role, and action button.
+pub fn (win &SimpleWindow) add_user_profile_card(name string, avatar_path string, name_text string, handle string, role string, bio string, is_online bool, action_label string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('user_profile_card')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name:    real_name
+			kind:    'user_profile_card'
+			label:   name_text
+			value:   handle
+			checked: is_online
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		online_int := if is_online { 1 } else { 0 }
+		C.window_add_user_profile_card_control(win.window_info, real_name.str, avatar_path.str, name_text.str, handle.str, role.str, bio.str, online_int, action_label.str)
+	}
+	return win
+}
+
+// set_user_online_status updates the online/offline status dot indicator on a user profile card.
+pub fn (win &SimpleWindow) set_user_online_status(name string, is_online bool) &SimpleWindow {
+	idx := win.find_control(name)
+	if idx >= 0 {
+		unsafe {
+			mut w := &SimpleWindow(win)
+			w.controls[idx].checked = is_online
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		online_int := if is_online { 1 } else { 0 }
+		C.window_set_user_online_status(win.window_info, name.str, online_int)
+	}
+	return win
+}
+
+// add_product_card adds an e-commerce / SaaS showcase card with hero image, badge tag, price, and CTA action.
+pub fn (win &SimpleWindow) add_product_card(name string, image_path string, title string, description string, price string, badge string, action_label string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('product_card')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name:  real_name
+			kind:  'product_card'
+			label: title
+			value: price
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_product_card_control(win.window_info, real_name.str, image_path.str, title.str, description.str, price.str, badge.str, action_label.str)
+	}
+	return win
+}
+
+// add_image_gallery adds a multi-image carousel with slide previews, navigation arrows, counter, and captions.
+pub fn (win &SimpleWindow) add_image_gallery(name string, images []string, captions []string, initial_idx int) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('image_gallery')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name:   real_name
+			kind:   'image_gallery'
+			label:  if captions.len > initial_idx { captions[initial_idx] } else { '' }
+			number: initial_idx
+		}
+	}
+	if win.window_info != unsafe { nil } && images.len > 0 {
+		mut c_imgs := []&u8{cap: images.len}
+		for img in images {
+			c_imgs << img.str
+		}
+		mut c_caps := []&u8{cap: captions.len}
+		for cap in captions {
+			c_caps << cap.str
+		}
+		C.window_add_image_gallery_control(win.window_info, real_name.str, c_imgs.data, c_caps.data, images.len, initial_idx)
+	}
+	return win
+}
+
+// next_gallery_image advances an image gallery to the next slide.
+pub fn (win &SimpleWindow) next_gallery_image(name string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_next_gallery_image(win.window_info, name.str)
+	}
+	return win
+}
+
+// prev_gallery_image navigates an image gallery to the previous slide.
+pub fn (win &SimpleWindow) prev_gallery_image(name string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_prev_gallery_image(win.window_info, name.str)
+	}
+	return win
+}
+
+// set_gallery_index jumps an image gallery directly to a target slide index.
+pub fn (win &SimpleWindow) set_gallery_index(name string, index int) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_gallery_index(win.window_info, name.str, index)
+	}
+	return win
+}
+
+// get_gallery_index returns the active slide index of an image gallery.
+pub fn (win &SimpleWindow) get_gallery_index(name string) int {
+	if win.window_info != unsafe { nil } {
+		return C.window_get_gallery_index(win.window_info, name.str)
+	}
+	return 0
+}
+
+// add_app_launcher_tile adds a 3D app icon tile with title, category/subtitle, and colored status pill.
+pub fn (win &SimpleWindow) add_app_launcher_tile(name string, icon_path string, title string, subtitle string, status string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('app_launcher_tile')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name:  real_name
+			kind:  'app_launcher_tile'
+			label: title
+			value: status
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_app_launcher_tile_control(win.window_info, real_name.str, icon_path.str, title.str, subtitle.str, status.str)
+	}
+	return win
+}
+
+// add_media_player adds an audio & media player card with cover art, track info, progress scrubber, and playback toggle.
+pub fn (win &SimpleWindow) add_media_player(name string, cover_path string, title string, artist string, duration_sec int, elapsed_sec int, is_playing bool) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('media_player')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name:    real_name
+			kind:    'media_player'
+			label:   title
+			value:   artist
+			checked: is_playing
+			number:  elapsed_sec
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		play_int := if is_playing { 1 } else { 0 }
+		C.window_add_media_player_control(win.window_info, real_name.str, cover_path.str, title.str, artist.str, duration_sec, elapsed_sec, play_int)
+	}
+	return win
+}
+
+// add_media_player_with_audio adds a media player with an explicit audio file path.
+pub fn (win &SimpleWindow) add_media_player_with_audio(name string, cover_path string, audio_path string, title string, artist string, duration_sec int, elapsed_sec int, is_playing bool) &SimpleWindow {
+	win.add_media_player(name, cover_path, title, artist, duration_sec, elapsed_sec, is_playing)
+	if audio_path.len > 0 {
+		win.set_media_player_audio_file(name, audio_path)
+	}
+	return win
+}
+
+// set_media_player_audio_file sets or updates the sound file to play for a media player.
+pub fn (win &SimpleWindow) set_media_player_audio_file(name string, audio_path string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_set_media_player_audio_file(win.window_info, name.str, audio_path.str)
+	}
+	return win
+}
+
+// toggle_media_player toggles play/pause state on a media player card.
+pub fn (win &SimpleWindow) toggle_media_player(name string) &SimpleWindow {
+	if win.window_info != unsafe { nil } {
+		C.window_toggle_media_player(win.window_info, name.str)
+	}
+	return win
+}
+
+// set_media_player_progress updates the playback position in seconds of a media player.
+pub fn (win &SimpleWindow) set_media_player_progress(name string, elapsed_sec int) &SimpleWindow {
+	idx := win.find_control(name)
+	if idx >= 0 {
+		unsafe {
+			mut w := &SimpleWindow(win)
+			w.controls[idx].number = elapsed_sec
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_set_media_player_progress(win.window_info, name.str, elapsed_sec)
+	}
+	return win
+}
+
+// get_media_player_playing returns true if the media player is currently playing.
+pub fn (win &SimpleWindow) get_media_player_playing(name string) bool {
+	if win.window_info != unsafe { nil } {
+		return C.window_get_media_player_playing(win.window_info, name.str) != 0
+	}
+	return false
+}
+
+// add_activity_heatmap adds a GitHub-style 7xN contribution grid matrix.
+pub fn (win &SimpleWindow) add_activity_heatmap(name string, title string, weeks int, matrix [][]int) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('activity_heatmap')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name:   real_name
+			kind:   'activity_heatmap'
+			label:  title
+			number: weeks
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		mut flat := []int{cap: 7 * weeks}
+		for r in 0 .. 7 {
+			for c in 0 .. weeks {
+				if r < matrix.len && c < matrix[r].len {
+					flat << matrix[r][c]
+				} else {
+					flat << 0
+				}
+			}
+		}
+		C.window_add_activity_heatmap_control(win.window_info, real_name.str, title.str, weeks, flat.data, 7, weeks)
+	}
+	return win
+}
+
+// add_masked_input adds a text field that enforces an input formatting mask (e.g. '(###) ###-####').
+pub fn (win &SimpleWindow) add_masked_input(name string, mask string, value string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('masked_input')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name:  real_name
+			kind:  'masked_input'
+			label: mask
+			value: value
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_masked_input_control(win.window_info, real_name.str, mask.str, value.str)
+	}
+	return win
+}
+
+// get_masked_input reads the current formatted text value of a masked input field.
+pub fn (win &SimpleWindow) get_masked_input(name string) string {
+	if win.window_info != unsafe { nil } {
+		res := C.window_get_masked_input_value(win.window_info, name.str)
+		if res != unsafe { nil } {
+			return unsafe { cstring_to_vstring(res) }
+		}
+	}
+	return win.get_text(name)
+}
+
+// set_masked_input sets the value of a masked input field.
+pub fn (win &SimpleWindow) set_masked_input(name string, value string) &SimpleWindow {
+	idx := win.find_control(name)
+	if idx >= 0 {
+		unsafe {
+			mut w := &SimpleWindow(win)
+			w.controls[idx].value = value
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_set_masked_input_value(win.window_info, name.str, value.str)
+	}
+	return win
+}
+
+// add_inline_editable_label adds an interactive text label that seamlessly becomes an input on click.
+pub fn (win &SimpleWindow) add_inline_editable_label(name string, text string) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('inline_editable_label')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name:  real_name
+			kind:  'inline_editable_label'
+			label: text
+			value: text
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_add_inline_editable_label_control(win.window_info, real_name.str, text.str)
+	}
+	return win
+}
+
+// get_inline_editable_label returns the current text of an inline editable label.
+pub fn (win &SimpleWindow) get_inline_editable_label(name string) string {
+	if win.window_info != unsafe { nil } {
+		res := C.window_get_inline_editable_label(win.window_info, name.str)
+		if res != unsafe { nil } {
+			return unsafe { cstring_to_vstring(res) }
+		}
+	}
+	return win.get_text(name)
+}
+
+// set_inline_editable_label updates the text of an inline editable label.
+pub fn (win &SimpleWindow) set_inline_editable_label(name string, text string) &SimpleWindow {
+	idx := win.find_control(name)
+	if idx >= 0 {
+		unsafe {
+			mut w := &SimpleWindow(win)
+			w.controls[idx].label = text
+			w.controls[idx].value = text
+		}
+	}
+	if win.window_info != unsafe { nil } {
+		C.window_set_inline_editable_label(win.window_info, name.str, text.str)
+	}
+	return win
+}
+
+// add_nav_rail adds a slim modern vertical navigation rail with icons, titles, and active highlights.
+pub fn (win &SimpleWindow) add_nav_rail(name string, items []SidebarItem) &SimpleWindow {
+	mut real_name := name
+	if real_name == '' {
+		real_name = win.auto_name('nav_rail')
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.controls << ControlEntry{
+			name:   real_name
+			kind:   'nav_rail'
+			number: items.len
+		}
+	}
+	if win.window_info != unsafe { nil } && items.len > 0 {
+		mut c_ids := []&u8{cap: items.len}
+		mut c_titles := []&u8{cap: items.len}
+		mut c_icons := []&u8{cap: items.len}
+		mut c_badges := []&u8{cap: items.len}
+		mut is_acts := []int{cap: items.len}
+		for it in items {
+			c_ids << it.id.str
+			c_titles << it.title.str
+			c_icons << it.icon.str
+			c_badges << it.badge.str
+			is_acts << if it.is_active { 1 } else { 0 }
+		}
+		C.window_add_nav_rail_control(win.window_info, real_name.str, c_ids.data, c_titles.data, c_icons.data, c_badges.data, is_acts.data, items.len)
+	}
+	return win
+}
+
