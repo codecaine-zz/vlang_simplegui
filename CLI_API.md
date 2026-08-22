@@ -448,32 +448,126 @@ videos_dir    := app.get_system_path('videos')
 abs_path := app.resolve_user_path('~/.config/myapp/settings.toml')
 ```
 
-### File System Utilities
+### File System Utilities & Overwrite Options
+
+`simplecli` provides built-in path resolution (expanding `~/`), automatic parent directory creation, and flexible file operations.
+
+#### Overwrite & Persistence Behavior Matrix
+
+| Method | Default Behavior | Parent Dirs Created? | Safe Non-Overwrite Alternative |
+| :--- | :--- | :--- | :--- |
+| `app.write_file(path, content)` | **Always Overwrites** (truncates target) | ✅ Yes | Guard with `if !app.file_exists(path)` |
+| `app.append_file(path, content)` | **Appends** (preserves existing content) | ✅ Yes | N/A (non-destructive) |
+| `app.copy_file(src, dst)!` | **Overwrites** destination if present | ✅ Yes | Guard with `if !app.file_exists(dst)` |
+| `app.move_file(src, dst)!` | **Overwrites** / replaces destination | ❌ No | Guard with `if !app.file_exists(dst)` |
+| `app.http_download(url, dst)!` | **Always Overwrites** destination | ✅ Yes | Guard with `if !app.file_exists(dst)` |
+| `app.save_state(path)!` | **Always Overwrites** JSON state file | ✅ Yes | Check file existence or create backup |
+
+---
+
+#### 1. Default Overwrite vs. Safe Non-Overwrite Pattern
 
 ```v
-// Existence checks
-exists := app.file_exists('/path/to/file.txt')
-is_dir := app.dir_exists('/path/to/folder')
+file_path := app.resolve_user_path('~/project/config.env')
+content := 'API_KEY=secret_12345\nDEBUG=true\n'
 
-// File read, write & append
-app.write_file('/tmp/demo.txt', 'Hello World\n')!
-app.append_file('/tmp/demo.txt', 'Second Line\n')!
-content := app.read_file('/tmp/demo.txt')!
+// --- OPTION A: Direct Overwrite (Replaces entire content) ---
+// Note: Automatically creates parent directories if they do not exist
+app.write_file(file_path, content)
+app.success('Wrote (overwrote) file: ${file_path}')
 
-// File copy, move & delete
-app.copy_file('/tmp/demo.txt', '/tmp/demo_backup.txt')!
-app.move_file('/tmp/demo_backup.txt', '/tmp/demo_renamed.txt')!
-app.delete_file('/tmp/demo_renamed.txt')!
+// --- OPTION B: Safe Non-Overwrite (Only write if file does NOT exist) ---
+if !app.file_exists(file_path) {
+	app.write_file(file_path, content)
+	app.success('Created new file: ${file_path}')
+} else {
+	app.warn('File already exists: ${file_path}. Skipping write to prevent overwrite.')
+}
 
-// Directory operations
-app.mkdir('/tmp/my_nested/dir')!
-entries := app.list_dir('/tmp')
-all_files := app.list_dir_recursive('/tmp/my_nested')
-app.rmdir('/tmp/my_nested')!
+// --- OPTION C: CLI Flag-Controlled Overwrite (--overwrite / -f) ---
+overwrite_allowed := app.get_flag_bool('overwrite') // Or: app.get_flag_bool('force')
 
-// File metadata
-size_bytes := app.file_size('/tmp/demo.txt')
-mod_time_unix := app.file_mod_time('/tmp/demo.txt')
+if !app.file_exists(file_path) || overwrite_allowed {
+	app.write_file(file_path, content)
+	app.info('File saved successfully (force/overwrite: ${overwrite_allowed})')
+} else {
+	app.error('File "${file_path}" exists. Pass --overwrite / -f to replace it.')
+}
+
+// --- OPTION D: Interactive Prompt Confirmation Before Overwrite ---
+if app.file_exists(file_path) {
+	if app.prompt_confirm('File "${file_path}" already exists. Overwrite?', false) {
+		app.write_file(file_path, content)
+		app.success('File overwritten by user confirmation.')
+	} else {
+		app.info('Operation aborted by user.')
+	}
+} else {
+	app.write_file(file_path, content)
+}
+
+// --- OPTION E: Atomic Backup Before Overwrite ---
+if app.file_exists(file_path) {
+	bak_path := '${file_path}.bak'
+	app.copy_file(file_path, bak_path)!
+	app.info('Backed up existing file to ${bak_path}')
+}
+app.write_file(file_path, content)
+```
+
+---
+
+#### 2. Appending to Files Without Overwriting
+
+```v
+log_file := '/tmp/audit.log'
+
+// app.append_file appends text without modifying existing contents:
+app.append_file(log_file, '[2026-08-22 09:00:00] Worker started')
+app.append_file(log_file, '[2026-08-22 09:01:00] Job completed successfully')
+
+// Read back the complete file content:
+full_log := app.read_file(log_file)
+app.info('Log file size: ${full_log.len} bytes')
+```
+
+---
+
+#### 3. Copy, Move, Directory & Metadata Operations
+
+```v
+src := '/tmp/source_data.csv'
+dst := '/tmp/backups/target_data.csv'
+
+// Copy with overwrite protection
+if app.file_exists(dst) && !app.get_flag_bool('force') {
+	app.warn('Destination already exists. Use --force to overwrite.')
+} else {
+	app.copy_file(src, dst)! // Automatically creates /tmp/backups/ if needed
+	app.success('Copied ${src} -> ${dst}')
+}
+
+// Moving / Renaming files
+app.move_file('/tmp/old_name.txt', '/tmp/new_name.txt')!
+
+// Deleting files
+app.delete_file('/tmp/temporary_cache.tmp')
+
+// Directory management
+app.create_directory('/tmp/my_app/workspace/logs')
+entries := app.read_dir('/tmp/my_app')
+
+// Recursive file listing by file extension (e.g. all '.v' or '.json' files, or '' for all)
+v_files := app.list_files_recursive('/path/to/project', '.v')
+all_files := app.list_files_recursive('/path/to/project', '')
+
+// Detailed File & Directory Metadata
+if meta := app.get_file_metadata('/tmp/source_data.csv') {
+	app.info('Path: ${meta.path}')
+	app.info('Size: ${meta.size_bytes} bytes')
+	app.info('Is Directory: ${meta.is_dir}')
+	app.info('Is Readable: ${meta.is_readable}, Is Writable: ${meta.is_writable}')
+}
 ```
 
 ---
