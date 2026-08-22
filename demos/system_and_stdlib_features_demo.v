@@ -100,13 +100,13 @@ fn main() {
 	uid := gui.get_uid()
 	gid := gui.get_gid()
 
-	config_dir := gui.get_system_path('config')
-	cache_dir := gui.get_system_path('cache')
-	data_dir := gui.get_system_path('data')
+	config_dir := gui.get_system_path('config').replace(os.home_dir(), '~')
+	cache_dir := gui.get_system_path('cache').replace(os.home_dir(), '~')
+	data_dir := gui.get_system_path('data').replace(os.home_dir(), '~')
 
 	gui.begin_row('row_diag_1')
 	gui.add_label('lbl_host', 'Host: ' + hostname)
-	gui.add_label('lbl_user', 'User: ' + username)
+	gui.add_label('lbl_user', 'User: developer')
 	gui.add_label('lbl_os', 'OS: ' + user_os)
 	gui.end_row()
 

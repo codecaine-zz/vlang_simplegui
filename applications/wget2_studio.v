@@ -25,12 +25,7 @@ fn get_wget2_bin() string {
 }
 
 fn get_default_download_dir() string {
-	home := os.home_dir()
-	dl_dir := os.join_path(home, 'Downloads', 'Wget2_Downloads')
-	if !os.exists(dl_dir) {
-		os.mkdir_all(dl_dir) or {}
-	}
-	return dl_dir
+	return '~/Downloads/Wget2_Downloads'
 }
 
 fn main() {
@@ -292,7 +287,11 @@ fn main() {
 		mut raw_args := []string{}
 
 		// Save Directory
-		raw_args << ['-P', dest_dir]
+		real_dest := if dest_dir.starts_with('~') { dest_dir.replace('~', os.home_dir()) } else { dest_dir }
+		if !os.exists(real_dest) {
+			os.mkdir_all(real_dest) or {}
+		}
+		raw_args << ['-P', real_dest]
 
 		// Threads
 		if threads_val != '' && threads_val != '1' {

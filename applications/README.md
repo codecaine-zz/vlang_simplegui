@@ -4,7 +4,7 @@ Native macOS GUI applications built with **SimpleGUI** for V, providing high-per
 
 ---
 
-## 📦 Complete Applications Suite (46 Workstations)
+## 📦 Complete Applications Suite (44 Workstations)
 
 | Application | Source File | Description |
 | :--- | :--- | :--- |
@@ -58,7 +58,266 @@ Native macOS GUI applications built with **SimpleGUI** for V, providing high-per
 ## 📸 Applications Showcase
 
 ### 📦 App Bundler Studio Pro
-![App Bundler Studio Pro](../screenshots/app_bundler_studio.png)
+> **Source**: [`applications/app_bundler_studio.v`](applications/app_bundler_studio.v)  
+> **Focus**: Visual macOS `.app` bundle packager & `.icns` generator: turn any Mach-O binary or CLI tool into a native macOS `.app` bundle with Retina icons, Info.plist config, ad-hoc codesigning, and quarantine scrubber.
+
+![📦 App Bundler Studio Pro](../screenshots/app_bundler_studio.png)
+
+### 🧩 JQ Studio Pro
+> **Source**: [`applications/jq_studio.v`](applications/jq_studio.v)  
+> **Focus**: Interactive JSON query, formatting & filter workbench powered by `jq`: live query evaluations, 12 built-in transformation recipes, key/path inspection, minifier/prettifier, and error diagnostics.
+
+![🧩 JQ Studio Pro](../screenshots/jq_studio.png)
+
+### 🚀 API Studio Pro
+> **Source**: [`applications/api_studio.v`](applications/api_studio.v)  
+> **Focus**: Full-featured REST API testing client powered by `curl`: HTTP method selector (GET, POST, PUT, PATCH, DELETE, HEAD), request headers/body editors, latency telemetry (DNS/TLS/TTFB), and 1-click `curl` command exporter.
+
+![🚀 API Studio Pro](../screenshots/api_studio.png)
+
+### 🛡️ Nmap Studio Pro
+> **Source**: [`applications/nmap_studio.v`](applications/nmap_studio.v)  
+> **Focus**: High-speed port scanner & network discovery workbench powered by `nmap`: quick scan (-F), service versioning (-sV), OS detection (-O), aggressive timing (-T4), vulnerability scripts, and open port reports.
+
+![🛡️ Nmap Studio Pro](../screenshots/nmap_studio.png)
+
+### 🌐 DNS & SSL Studio Pro
+> **Source**: [`applications/dns_studio.v`](applications/dns_studio.v)  
+> **Focus**: Dual DNS resolution & TLS certificate analyzer powered by `dig` and `openssl`: multi-record lookups (A, AAAA, CNAME, MX, TXT, NS, SOA, CAA), certificate chain & expiry inspector, and SPF/DKIM/DMARC email security auditor.
+
+![🌐 DNS & SSL Studio Pro](../screenshots/dns_studio.png)
+
+### 🕵️ Recon Studio Pro
+> **Source**: [`applications/recon_studio.v`](applications/recon_studio.v)  
+> **Focus**: OSINT footprinting & asset mapping workbench powered by `whois`, public CT logs (crt.sh), IPInfo geolocation/ASN lookup, security headers inspector, and robots.txt crawler.
+
+![🕵️ Recon Studio Pro](../screenshots/recon_studio.png)
+
+### 🔄 Format Converter Pro
+> **Source**: [`applications/dataconvert_studio.v`](applications/dataconvert_studio.v)  
+> **Focus**: Universal data interchange transformer: bidirectional live translation across **JSON ⇄ YAML ⇄ TOML ⇄ CSV ⇄ XML ⇄ SQLite**, schema validation, field extractors, and file export.
+
+![🔄 Format Converter Pro](../screenshots/dataconvert_studio.png)
+
+### 🗄️ SQLite Studio Pro
+> **Source**: [`applications/sqlite_studio.v`](applications/sqlite_studio.v)  
+> **Focus**: Embedded SQL database workbench powered by `sqlite3`: database browser, table/column/index schema explorer, SQL query scratchpad, formatted grid table/JSON/CSV views, and query plan analyzer.
+
+![🗄️ SQLite Studio Pro](../screenshots/sqlite_studio.png)
+
+### 🎯 Regex Studio Pro
+> **Source**: [`applications/regex_studio.v`](applications/regex_studio.v)  
+> **Focus**: Interactive regular expression workbench: live match highlighter, capture group breakdown table (`$1, $2`), flags (case-insensitive, multiline, dotall), find-and-replace engine, and 9 built-in regex recipes.
+
+![🎯 Regex Studio Pro](../screenshots/regex_studio.png)
+
+### 🔍 ExifTool Studio Pro
+> **Source**: [`applications/exif_studio.v`](applications/exif_studio.v)  
+> **Focus**: Image & video metadata investigator powered by `exiftool`: camera/lens specs, EXIF/IPTC/XMP tag explorer, 1-click GPS launch in Apple Maps, batch privacy PII metadata stripper, and tag writer.
+
+![🔍 ExifTool Studio Pro](../screenshots/exif_studio.png)
+
+### 👁️ Tesseract OCR Pro
+> **Source**: [`applications/ocr_studio.v`](applications/ocr_studio.v)  
+> **Focus**: Optical character recognition & document scanner powered by `tesseract`: multi-language packs (eng, spa, fra, deu, chi, jpn...), page segmentation modes (PSM), text post-processing, and searchable PDF generator.
+
+![👁️ Tesseract OCR Pro](../screenshots/ocr_studio.png)
+
+### 🎵 Audio Tag Studio Pro
+> **Source**: [`applications/audiotag_studio.v`](applications/audiotag_studio.v)  
+> **Focus**: Audio metadata & lossless tagging studio powered by `ffmpeg` and `ffprobe`: track title, artist, album, genre, year, track #, comment, cover art extractor, tag stripper, and live macOS `afplay` playback.
+
+![🎵 Audio Tag Studio Pro](../screenshots/audiotag_studio.png)
+
+### 📊 Graphviz Studio Pro
+> **Source**: [`applications/dot_studio.v`](applications/dot_studio.v)  
+> **Focus**: Code-to-diagram visual workbench powered by `graphviz` (`dot`): DOT source editor, live SVG/PNG compilation, 7 architecture/state/tree diagram templates, and layout engine selector (`dot`, `neato`, `fdp`, `circo`, `twopi`).
+
+![📊 Graphviz Studio Pro](../screenshots/dot_studio.png)
+
+### 🍺 Homebrew Studio Pro
+> **Source**: [`applications/brew_studio.v`](applications/brew_studio.v)  
+> **Focus**: Visual package manager & service controller for macOS powered by `brew`: formula & cask search, package info inspector, 1-click bulk updates/upgrades, background services manager (`brew services`), and disk cache cleaner.
+
+![🍺 Homebrew Studio Pro](../screenshots/brew_studio.png)
+
+### 🐳 Docker Studio Pro
+> **Source**: [`applications/docker_studio.v`](applications/docker_studio.v)  
+> **Focus**: Container & microservice workbench powered by `docker`/`podman`: active container status table, start/stop/restart/logs lifecycle controls, local image repository manager, volume/network explorer, and system prune.
+
+![🐳 Docker Studio Pro](../screenshots/docker_studio.png)
+
+### 💾 Disk Space Studio Pro
+> **Source**: [`applications/disk_studio.v`](applications/disk_studio.v)  
+> **Focus**: macOS storage analyzer & developer junk cleaner powered by `du` and `df`: directory size breakdown, top 30 largest files finder, APFS volume monitor, and developer cache scrubber (`node_modules`, Xcode `DerivedData`, `.cache`).
+
+![💾 Disk Space Studio Pro](../screenshots/disk_studio.png)
+
+### ⏰ Launchd & Cron Pro
+> **Source**: [`applications/launchd_studio.v`](applications/launchd_studio.v)  
+> **Focus**: macOS daemon & task scheduler workbench powered by `launchctl` and `crontab`: active system/user daemon explorer, user LaunchAgents inspector, visual cron expression generator, and `.plist` builder.
+
+![⏰ Launchd & Cron Pro](../screenshots/launchd_studio.png)
+
+### 🔐 Crypto & Hash Studio
+> **Source**: [`applications/crypto_studio.v`](applications/crypto_studio.v)  
+> **Focus**: Cryptographic & checksum verification utility: multi-algorithm hash generator (MD5, SHA-1, SHA-224, SHA-256, SHA-384, SHA-512), target hash verifier, HMAC generator, JWT token claims decoder, and password entropy generator.
+
+![🔐 Crypto & Hash Studio](../screenshots/crypto_studio.png)
+
+### 🔄 TR Studio Pro
+> **Source**: [`applications/tr_studio.v`](applications/tr_studio.v)  
+> **Focus**: Character translation & stream cleansing workbench powered by `tr`: character mapping, deletion (`-d`), squeeze repeats (`-s`), delete & squeeze (`-ds`), complement inversion (`-c`), 10 built-in recipes, and dual-pane editor.
+
+![🔄 TR Studio Pro](../screenshots/tr_studio.png)
+
+### ✂️ Cut Studio Pro
+> **Source**: [`applications/cut_studio.v`](applications/cut_studio.v)  
+> **Focus**: Fast stream & column slicing workbench powered by `cut`: field extraction (`-f`), delimiter modes, character columns (`-c`), byte slices (`-b`), only delimited lines (`-s`), 9 built-in recipes, and file exporters.
+
+![✂️ Cut Studio Pro](../screenshots/cut_studio.png)
+
+### 🔍 RG Studio Pro
+> **Source**: [`applications/rg_studio.v`](applications/rg_studio.v)  
+> **Focus**: High-speed code & content search workbench powered by `ripgrep` (`rg`): regex search, fixed-strings (`-F`), whole-word matching (`-w`), case-modes (`-s`/`-S`), inverted match (`-v`), file-type selectors, glob filters, and context lines.
+
+![🔍 RG Studio Pro](../screenshots/rg_studio.png)
+
+### ⚡ FD Studio Pro
+> **Source**: [`applications/fd_studio.v`](applications/fd_studio.v)  
+> **Focus**: Ultra-fast file finder & filesystem workbench powered by `fd`: regex/glob search, multi-extension filters, large file detection (>100MB), recent modification filters, and type filters.
+
+![⚡ FD Studio Pro](../screenshots/fd_studio.png)
+
+### 🔍 SD Studio Pro
+> **Source**: [`applications/sd_studio.v`](applications/sd_studio.v)  
+> **Focus**: Ultra-fast regex search and replace workbench powered by `sd`: dual-pane editor, captured group transforms (`$1, $2`), code refactoring, text cleansing, PII redaction, and in-place multi-file batch processor.
+
+![🔍 SD Studio Pro](../screenshots/sd_studio.png)
+
+### ⚡ GAWK Studio Pro
+> **Source**: [`applications/gawk_studio.v`](applications/gawk_studio.v)  
+> **Focus**: Interactive data stream & log processing workbench: real-time dual-pane editor, CSV/TSV/Log parser, built-in library of **40+ classic & modern AWK one-liners**, and direct multi-gigabyte disk file streamer.
+
+![⚡ GAWK Studio Pro](../screenshots/gawk_studio.png)
+
+### 📄 Pandoc Studio Pro
+> **Source**: [`applications/pandoc_studio.v`](applications/pandoc_studio.v)  
+> **Focus**: Universal document converter & publishing studio: Markdown, HTML5, LaTeX, Typst, MS Word (.docx), EPUB eBooks, Slide decks (PPTX, Reveal.js, Beamer), syntax themes, math rendering (MathJax), and direct PDF compiler.
+
+![📄 Pandoc Studio Pro](../screenshots/pandoc_studio.png)
+
+### ⚡ Wget2 Studio Pro
+> **Source**: [`applications/wget2_studio.v`](applications/wget2_studio.v)  
+> **Focus**: High-speed multi-threaded download accelerator & website mirror powered by GNU `wget2`: parallel chunking (up to 16 threads), offline site crawling (`--mirror`), extension scrapers, automatic resume (`-c`), and browser emulation.
+
+![⚡ Wget2 Studio Pro](../screenshots/wget2_studio.png)
+
+### 🎬 yt-dlp Studio Pro
+> **Source**: [`applications/yt_dlp_studio.v`](applications/yt_dlp_studio.v)  
+> **Focus**: High-performance media downloader & stream archiver: 4K UHD / 1080p / 720p presets, audio extractors (MP3 320k, FLAC, AAC, Opus, WAV), subtitle & metadata embedding, browser cookie support, and stream inspector (`-F`).
+
+![🎬 yt-dlp Studio Pro](../screenshots/yt_dlp_studio.png)
+
+### 🎬 FFmpeg Studio Pro
+> **Source**: [`applications/ffmpeg_studio.v`](applications/ffmpeg_studio.v)  
+> **Focus**: Full-featured video & audio engineering studio: transcode engine, social media & Discord limits, EBU R128 audio loudnorm & denoise, lossless trimmer, 9:16 vertical crop, frame extraction, and 2-pass HD GIF maker.
+
+![🎬 FFmpeg Studio Pro](../screenshots/ffmpeg_studio.png)
+
+### 🎨 ImageMagick Studio Pro
+> **Source**: [`applications/imagemagick_studio.v`](applications/imagemagick_studio.v)  
+> **Focus**: Complete graphic manipulation workstation: modern WebP/AVIF compression, multi-size favicon generator, magic background color removal (transparency), social presets, floating drop shadows, and bulk processing.
+
+![🎨 ImageMagick Studio Pro](../screenshots/imagemagick_studio.png)
+
+### 🌐 Subfinder Studio Pro
+> **Source**: [`applications/subfinder_studio.v`](applications/subfinder_studio.v)  
+> **Focus**: High-speed passive subdomain discovery & asset mapping workbench powered by `subfinder`: multi-source passive OSINT enumeration, active DNS validation, rate-limiting, and custom resolvers.
+
+![🌐 Subfinder Studio Pro](../screenshots/subfinder_studio.png)
+
+### 🗣️ Say Studio Pro
+> **Source**: [`applications/say_studio.v`](applications/say_studio.v)  
+> **Focus**: Native macOS speech synthesizer & voiceover generator powered by `say`: real-time text-to-speech, system voice browser (Samantha, Alex, Daniel, Fred, Victoria, Zarvox...), rate tuner, and audio exporter (.m4a, .aiff, .wav).
+
+![🗣️ Say Studio Pro](../screenshots/say_studio.png)
+
+### 📂 Find Studio Pro
+> **Source**: [`applications/find_studio.v`](applications/find_studio.v)  
+> **Focus**: Advanced filesystem explorer & inode search workbench powered by POSIX/BSD `find`: glob/regex matching, multi-pattern names, entry type filters, size filters, age filters, and permission auditors.
+
+![📂 Find Studio Pro](../screenshots/find_studio.png)
+
+### 📝 Text Editor Pro
+> **Source**: [`applications/text_editor.v`](applications/text_editor.v)  
+> **Focus**: Ultimate native code editor & workspace: multi-buffer scratchpads, live WebKit Markdown HTML preview, integrated code runner (V, Python, Node, Bash, Ruby), unified diff comparison, regex search/replace, and telemetry.
+
+![📝 Text Editor Pro](../screenshots/text_editor.png)
+
+### ⚡ Task Manager Pro
+> **Source**: [`applications/task_manager.v`](applications/task_manager.v)  
+> **Focus**: macOS process manager & hardware telemetry monitor: real-time process data grid (PID, Name, CPU %, Memory RSS, State), hardware stats cards, filtering scopes, process signals (SIGKILL, SIGTERM), and `lsof` socket inspector.
+
+![⚡ Task Manager Pro](../screenshots/task_manager.png)
+
+### 📦 Ouch Studio Pro
+> **Source**: [`applications/ouch_studio.v`](applications/ouch_studio.v)  
+> **Focus**: Ultra-fast universal archive & compression workbench powered by `ouch`: lossless/high-density packaging across `.tar.zst`, `.tar.gz`, `.zip`, `.7z`, `.tar.xz`, `.tar.bz2`, compression tuning, and tree hierarchy explorer.
+
+![📦 Ouch Studio Pro](../screenshots/ouch_studio.png)
+
+### 📝 Sed Studio Pro
+> **Source**: [`applications/sed_studio.v`](applications/sed_studio.v)  
+> **Focus**: POSIX/BSD `sed` stream editor & regex transformation workbench: dual-pane live scratchpad, in-place disk file editing (`-i ''`), character/line counters, backup preservation, and 15 built-in recipes.
+
+![📝 Sed Studio Pro](../screenshots/sed_studio.png)
+
+### 🌐 IFConfig Studio Pro
+> **Source**: [`applications/ifconfig_studio.v`](applications/ifconfig_studio.v)  
+> **Focus**: Comprehensive native macOS IP intelligence & network diagnostics studio: Public IPv4 & IPv6 detection, rich geolocation (City, Country, GPS, ASN, ISP), 1-click Maps launcher, local interface scanner, and DNS latency ping.
+
+### 🧮 Qalc Studio Pro
+> **Source**: [`applications/qalc_studio.v`](applications/qalc_studio.v)  
+> **Focus**: Advanced symbolic mathematics & universal unit converter powered by `qalc` (`libqalculate`): arbitrary precision (up to 100 digits), symbolic equation solver, calculus derivatives/integrals, and 30+ formula presets.
+
+![🧮 Qalc Studio Pro](../screenshots/qalc_studio.png)
+
+### ⚡ Numbat Studio Pro
+> **Source**: [`applications/numbat_studio.v`](applications/numbat_studio.v)  
+> **Focus**: Scientific & physical dimensional analysis studio powered by `numbat`: statically-typed physical expressions, automatic dimension validation, multi-line physics IDE, and fundamental physical constants database.
+
+![⚡ Numbat Studio Pro](../screenshots/numbat_studio.png)
+
+### 📐 Kalker Studio Pro
+> **Source**: [`applications/kalker_studio.v`](applications/kalker_studio.v)  
+> **Focus**: Pure mathematics, natural calculus syntax & complex analysis studio powered by `kalker`: natural calculus syntax (∫, √, f'(x)), complex arithmetic, polar conversions, and matrix/vector algebra.
+
+![📐 Kalker Studio Pro](../screenshots/kalker_studio.png)
+
+### 📊 Statistics Studio Pro
+> **Source**: [`applications/statistics_studio.v`](applications/statistics_studio.v)  
+> **Focus**: Comprehensive scientific data science workbench in pure V: descriptive statistics, normality tests, hypothesis testing (Student's t-test, ANOVA), OLS linear regression, and ASCII histograms.
+
+![📊 Statistics Studio Pro](../screenshots/statistics_studio.png)
+
+### 📈 Graph Studio Pro
+> **Source**: [`applications/graph_studio.v`](applications/graph_studio.v)  
+> **Focus**: High-precision scientific plotting & visualization studio in pure V: 2D continuous function grapher, multi-series data visualizer, bar charts, scatter plots, and network topology graph visualizer.
+
+![📈 Graph Studio Pro](../screenshots/graph_studio.png)
+
+### 💻 Programmer Calculator
+> **Source**: [`applications/programmer_calculator.v`](applications/programmer_calculator.v)  
+> **Focus**: Advanced multi-radix computer science calculator in pure V: simultaneous Hex, Dec, Oct, Bin displays, interactive 64-bit grid, IEEE-754 floating point inspector, Endianness converters, and bitwise logic.
+
+![💻 Programmer Calculator](../screenshots/programmer_calculator.png)
+
+### 🚀 Media & Data Studio Hub
+> **Source**: [`applications/media_studio_hub.v`](applications/media_studio_hub.v)  
+> **Focus**: Master workstation with system environment diagnostics, instant one-click quick tools (Discord <10MB, TikTok 9:16, Loudnorm, Favicon, Remove White BG, 2-Pass GIF, WebP), and sub-app launchers.
+
+![🚀 Media & Data Studio Hub](../screenshots/media_studio_hub.png)
 
 ---
 

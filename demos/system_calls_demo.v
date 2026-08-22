@@ -26,7 +26,7 @@ fn main() {
 	cpu_info := gui.get_cpu_info()
 	cores := gui.get_cpu_cores()
 	mem_info := gui.get_memory_info()
-	home_path := gui.get_system_path('home')
+	home_path := '~'
 
 	gui.add_label('cpu_lbl', 'Processor Model:  ' + cpu_info)
 	gui.add_label('cores_lbl', 'Processor Cores:  ' + cores.str() + ' Cores')

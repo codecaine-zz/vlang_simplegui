@@ -97,7 +97,7 @@ fn main() {
 
 	// Native File Picker Field with NSOpenPanel
 	win.add_label('lbl_file', 'Export Destination:')
-	win.add_file_picker_field('export_path', '/Users/codecaine/Documents', 'Choose Folder...',
+	win.add_file_picker_field('export_path', '~/Documents', 'Choose Folder...',
 		true)
 	win.on_change('export_path', fn (mut w simplegui.SimpleWindow, path string) {
 		w.set_status('Export path: ${path}')

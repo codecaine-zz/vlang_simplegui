@@ -6480,8 +6480,8 @@ safe_pattern := simplegui.quote_arg('test; rm -rf /')
 Sanitizes file and directory paths by stripping dangerous null-bytes (`\0`) and applying strict POSIX single-quote escaping.
 
 ```v
-safe_path := simplegui.quote_path('/Users/codecaine/My Documents/file.mp4')
-// Produces: '\'/Users/codecaine/My Documents/file.mp4\''
+safe_path := simplegui.quote_path('/Users/developer/My Documents/file.mp4')
+// Produces: '\'/Users/developer/My Documents/file.mp4\''
 ```
 
 ### `simplegui.exec_safe(bin string, args []string) os.Result`

@@ -58,17 +58,14 @@ fn get_window_rect_for_pid(target_pid int, binary_name string) string {
 }
 
 fn main() {
-	// Compile list_windows tool
-	println('Compiling list_windows helper...')
-	clang_res := os.execute('clang -framework Cocoa -framework CoreGraphics tools/list_windows.m -o tools/list_windows')
-	if clang_res.exit_code != 0 {
-		eprintln('❌ Could not compile list_windows: ${clang_res.output}')
-		exit(1)
-	}
-
+	// Compile list_windows tool if needed
 	if !os.exists('tools/list_windows') {
-		eprintln('❌ Could not build list_windows tool')
-		exit(1)
+		println('Compiling list_windows helper...')
+		clang_res := os.execute('clang -framework Cocoa -framework CoreGraphics tools/list_windows.m -o tools/list_windows')
+		if clang_res.exit_code != 0 {
+			eprintln('❌ Could not compile list_windows: ${clang_res.output}')
+			exit(1)
+		}
 	}
 
 	os.mkdir_all('screenshots') or {
@@ -76,8 +73,7 @@ fn main() {
 		exit(1)
 	}
 
-	// Get all .v files in demos/
-	demo_dir := 'demos'
+	app_dir := 'applications'
 	mut all_files := []string{}
 	if os.args.len > 1 {
 		for i in 1 .. os.args.len {
@@ -89,72 +85,70 @@ fn main() {
 			all_files << filename
 		}
 	} else {
-		files := os.ls(demo_dir) or {
-			eprintln('❌ Failed to list demos: ${err}')
+		files := os.ls(app_dir) or {
+			eprintln('❌ Failed to list applications: ${err}')
 			exit(1)
 		}
 		for f in files {
-			if f.ends_with('.v') {
+			if f.ends_with('.v') && f != 'ifconfig_studio.v' {
 				all_files << f
 			}
 		}
 		all_files.sort()
 	}
 
-	println('Found ${all_files.len} demos to process.')
+	println('Found ${all_files.len} applications to capture.')
 
-	for filename in all_files {
-		demo_path := os.join_path(demo_dir, filename)
+	for i, filename in all_files {
+		app_path := os.join_path(app_dir, filename)
 		basename := filename.replace('.v', '')
+		bin_target := 'bin/${basename}'
 
-		println('\n--- Processing: ${basename} ---')
+		println('\n[${i+1}/${all_files.len}] Processing: ${basename}...')
 
 		// Compile
-		println('Compiling ${demo_path}...')
-		comp_res := os.execute('v -nocache -o ${os.quoted_path(basename)} ${os.quoted_path(demo_path)}')
+		println('  Compiling ${app_path} -> ${bin_target}...')
+		comp_res := os.execute('v -nocache -o ${os.quoted_path(bin_target)} ${os.quoted_path(app_path)}')
 		if comp_res.exit_code != 0 {
 			eprintln('❌ Compilation failed for ${basename}:\n${comp_res.output}')
 			continue
 		}
 
-		if !os.exists(basename) {
-			eprintln('❌ Executable not found for ${basename}')
+		if !os.exists(bin_target) {
+			eprintln('❌ Executable not found at ${bin_target}')
 			continue
 		}
 
 		// Run
-		println('Launching ${basename}...')
-		mut proc := os.new_process('./${basename}')
+		println('  Launching ${bin_target}...')
+		mut proc := os.new_process('./${bin_target}')
 		proc.run()
 
-		// Wait for the UI to spawn and display
+		// Wait for UI to render
 		time.sleep(2000 * time.millisecond)
 
 		// Retrieve window rect
 		rect := get_window_rect_for_pid(proc.pid, basename)
-		if rect != '' {
-			println('Found Window Rect: ${rect} for ${basename}')
-			screenshot_path := 'screenshots/${basename}.png'
+		screenshot_path := 'screenshots/${basename}.png'
 
-			// Capture using rect
-			println('Capturing screenshot to ${screenshot_path}...')
+		if rect != '' {
+			println('  Found Window Rect: ${rect}')
+			println('  Capturing screenshot to ${screenshot_path}...')
 			sc_res := os.execute('screencapture -x -R ${rect} ${os.quoted_path(screenshot_path)}')
 			if sc_res.exit_code != 0 {
 				eprintln('⚠️ screencapture exited with code ${sc_res.exit_code}:\n${sc_res.output}')
 			}
 
-			// Quick check if file is created
 			if os.exists(screenshot_path) {
-				println('Success! Captured ${screenshot_path}')
+				println('  ✅ Successfully captured ${screenshot_path}')
 			} else {
-				eprintln('❌ Failed to create screenshot file for ${basename}')
+				eprintln('  ❌ Failed to create screenshot file for ${basename}')
 			}
 		} else {
-			eprintln('❌ Could not locate active window for ${basename} with PID ${proc.pid}')
+			eprintln('  ❌ Could not locate active window for ${basename} (PID ${proc.pid})')
 		}
 
 		// Terminate
-		println('Killing ${basename}...')
 		proc.signal_term()
 		time.sleep(100 * time.millisecond)
 		if proc.is_alive() {
@@ -162,9 +156,11 @@ fn main() {
 		}
 		proc.close()
 
-		// Clean up binary
-		if os.exists(basename) {
-			os.rm(basename) or { eprintln('⚠️ Failed to remove binary ${basename}: ${err}') }
+		// Cleanup binary
+		if os.exists(bin_target) {
+			os.rm(bin_target) or {}
 		}
 	}
+
+	println('\n🎉 All application captures complete!')
 }

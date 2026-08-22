@@ -185,7 +185,7 @@ fn main() {
 
 	win.begin_row('row_target_dir')
 	win.add_label('lbl_dir', 'Target Directory:')
-	win.add_input('txt_target_dir', os.getwd())
+	win.add_input('txt_target_dir', '.')
 	win.set_control_width('txt_target_dir', 480)
 	win.add_button('btn_browse_dir', '📂 Browse...')
 	win.add_button('btn_home_dir', '🏠 Home (~)')
@@ -328,6 +328,7 @@ fn main() {
 	build_find_args := fn (win simplegui.SimpleWindow) []string {
 		mut dir := win.get('txt_target_dir').trim_space()
 		if dir == '' { dir = '.' }
+		if dir.starts_with('~') { dir = dir.replace('~', os.home_dir()) }
 
 		mut args := [dir]
 
@@ -431,8 +432,8 @@ fn main() {
 		}
 	})
 	win.on_click('btn_home_dir', fn (mut w simplegui.SimpleWindow) {
-		w.set('txt_target_dir', os.home_dir())
-		w.toast('Scope set to Home folder.')
+		w.set('txt_target_dir', '~')
+		w.toast('Scope set to Home folder (~).')
 	})
 	win.on_click('btn_tmp_dir', fn (mut w simplegui.SimpleWindow) {
 		w.set('txt_target_dir', '/tmp')

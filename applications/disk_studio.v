@@ -34,7 +34,7 @@ fn main() {
 	
 	win.begin_row('row_target_dir')
 	win.add_label('lbl_dir', 'Directory:')
-	win.add_input('txt_target_dir', os.home_dir())
+	win.add_input('txt_target_dir', '~')
 	win.set_control_width('txt_target_dir', 420)
 
 	win.add_button('btn_select_dir', '📂 Browse Folder...')
@@ -72,7 +72,7 @@ fn main() {
 
 	// Status Row
 	win.begin_row('row_stats')
-	win.add_label('lbl_stats', '📊 Stats: Ready  |  Target: ${os.home_dir()}  |  Duration: 0 ms')
+	win.add_label('lbl_stats', '📊 Stats: Ready  |  Target: ~  |  Duration: 0 ms')
 	win.end_row()
 
 	win.append_console('disk_console', '💾 Disk Space & Cleanup Studio Pro Initialized.\n', 1)
@@ -93,25 +93,26 @@ fn main() {
 
 	// Home Dir Quick Action
 	win.on_click('btn_home_dir', fn (mut w simplegui.SimpleWindow) {
-		w.set('txt_target_dir', os.home_dir())
-		w.toast('Target set to Home directory.')
+		w.set('txt_target_dir', '~')
+		w.toast('Target set to Home directory (~).')
 	})
 
 	// Downloads Dir Quick Action
 	win.on_click('btn_downloads_dir', fn (mut w simplegui.SimpleWindow) {
-		w.set('txt_target_dir', os.join_path(os.home_dir(), 'Downloads'))
+		w.set('txt_target_dir', '~/Downloads')
 		w.toast('Target set to Downloads directory.')
 	})
 
 	// Directory Breakdown Action
 	win.on_click('btn_analyze_usage', fn (mut w simplegui.SimpleWindow) {
-		target_dir := w.get('txt_target_dir').trim_space()
+		raw_target := w.get('txt_target_dir').trim_space()
+		target_dir := if raw_target.starts_with('~') { raw_target.replace('~', os.home_dir()) } else { raw_target }
 		if target_dir == '' || !os.exists(target_dir) {
 			w.alert('Directory Required', 'Please select a valid directory on disk.')
 			return
 		}
 
-		w.append_console('disk_console', '▶ Analyzing directory sizes for: ${target_dir}...\n', 1)
+		w.append_console('disk_console', '▶ Analyzing directory sizes for: ${raw_target}...\n', 1)
 		w.set_status('Calculating disk space usage...')
 		w.toast('⚡ Calculating disk usage...')
 

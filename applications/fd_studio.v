@@ -205,7 +205,7 @@ fn main() {
 
 	win.begin_row('row_scope_2')
 	win.add_label('lbl_search_dir', 'Search Directory:')
-	win.add_input('txt_search_dir', os.getwd())
+	win.add_input('txt_search_dir', '.')
 	win.set_control_width('txt_search_dir', 480)
 	win.add_button('btn_browse_dir', '📂 Choose Folder...')
 	win.add_button('btn_home_dir', '🏠 Home Folder')
@@ -281,7 +281,8 @@ fn main() {
 	// Core Search Engine (Async Non-Blocking)
 	// -------------------------------------------------------------
 	execute_fd_search := fn (mut win simplegui.SimpleWindow) {
-		search_dir := win.get('txt_search_dir').trim_space()
+		raw_search_dir := win.get('txt_search_dir').trim_space()
+		search_dir := if raw_search_dir.starts_with('~') { raw_search_dir.replace('~', os.home_dir()) } else { raw_search_dir }
 		if search_dir == '' || !os.exists(search_dir) {
 			win.alert('Directory Required', 'Please select a valid search directory.')
 			return
@@ -387,8 +388,8 @@ fn main() {
 
 	// Home Folder
 	win.on_click('btn_home_dir', fn (mut w simplegui.SimpleWindow) {
-		w.set('txt_search_dir', os.home_dir())
-		w.toast('Search folder set to Home.')
+		w.set('txt_search_dir', '~')
+		w.toast('Search folder set to Home (~).')
 	})
 
 	// Open in Finder

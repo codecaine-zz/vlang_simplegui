@@ -190,7 +190,7 @@ fn main() {
 	// File Picker Field
 	win.begin_row('col_file_picker')
 	win.add_label('lbl_picker_title', 'Native File Chooser Field:')
-	win.add_file_picker_field('app_target_path', '/Users/codecaine/vlang_simplegui', 'Select Folder...',
+	win.add_file_picker_field('app_target_path', '~/Projects/vlang_simplegui', 'Select Folder...',
 		true)
 	win.on_change('app_target_path', fn (mut w simplegui.SimpleWindow, chosen string) {
 		w.set_status('Selected Path: ${chosen}')
