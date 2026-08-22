@@ -25,6 +25,7 @@ Build real, native Cocoa desktop apps in [V](https://vlang.io) with a beginner-f
 - [Capturing demo screenshots](#capturing-demo-screenshots)
 - [Demos](#demos)
 - [Production Workstations & Studio Applications](#production-workstations--studio-applications)
+- [SimpleCLI: Headless Console & RAD Toolkit](#simplecli-headless-console--rad-toolkit)
 - [Security & Command Injection Prevention](#security--command-injection-prevention)
 - [Testing](#testing)
 - [Project structure](#project-structure)
@@ -2152,6 +2153,19 @@ All 44 applications are fully equipped with native screenshots. See [`applicatio
 
 ---
 👉 **Explore the complete detailed documentation and all screenshots in the [SimpleGUI Applications Suite README](applications/README.md).**
+
+---
+
+## SimpleCLI: Headless Console & RAD Toolkit
+
+For headless console scripts, backend daemons, automation tools, and CI/CD pipelines without graphical window backends, `simplegui` includes **`simplecli`** ([`simplecli/`](simplecli/)):
+
+- **Zero GUI Dependencies**: Pure terminal RAD toolkit (ANSI colors, banners, panels, data tables, spinners, progress bars, interactive prompts).
+- **Subprocess & Telemetry**: Safe process execution (`exec_safe`, `exec_timeout`, `parallel_exec`), argument quoting, and hardware resource monitoring (CPU, RAM, swap, load, battery).
+- **Stdlib & Cryptography**: Native HTTP client, SHA-256/512/MD5, AES-256-CTR, Bcrypt, GZIP, TOML, JSON, and generic data collections (`SimpleStack`, `SimpleQueue`, `SimpleRingBuffer`, `SimpleMinHeap`).
+- **Production CLI Suite**: Ready-to-use tools in [`cli_apps/`](cli_apps/) (`devops_sentinel.v`, `vault_backup_manager.v`, `api_stress_bench.v`, `multirepo_git_pilot.v`).
+
+👉 **Read the comprehensive 20-chapter [SimpleCLI Reference Manual (CLI_API.md)](CLI_API.md).**
 
 ---
 
