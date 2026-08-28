@@ -270,7 +270,7 @@ Looks up a built-in production theme by name (or alias) and applies its backgrou
   - `Warm Paper & Ink`
 - **Control styling**: applying a theme restyles every control — buttons, dropdowns, text inputs, textareas, and date pickers derive their light/dark surface colors from the theme's background luminance, not from the macOS system appearance. A light theme therefore renders light controls even on a Mac running system Dark Mode (and vice versa).
 - **Window appearance**: the window's `NSAppearance` (Aqua / Dark Aqua) is switched automatically to match the theme background, so native bezels, menus, and scrollers stay consistent.
-- **Explicit overrides**: per-control colors set with `win.set_control_background_color()` / `win.set_control_font_color()` complement the theme — setting one property never resets the other. Applying a new theme restyles all controls, so re-apply per-control overrides after `set_theme()` when switching palettes at runtime (see [demos/form_color_theme_demo.v](demos/form_color_theme_demo.v)).
+- **Explicit overrides**: per-control colors set with `win.set_control_background_color()` / `win.set_control_font_color()` complement the theme — setting one property never resets the other. Applying a new theme restyles all controls, so re-apply per-control overrides after `set_theme()` when switching palettes at runtime (see [demos/form_color_theme_demo.v](../demos/form_color_theme_demo.v)).
 
 ```v
 win.set_theme('GitHub Dark')
@@ -6209,7 +6209,7 @@ win.on_shortcut('cmd+shift+p', fn (mut win simplegui.SimpleWindow, key string) {
 
 ## 18. RAD Visual UI Designer & Code Generator API
 
-SimpleGUI includes a Delphi/VB/Lazarus-inspired **Visual UI Designer Engine** ([designer.v](file:///Users/codecaine/vlang_simplegui/designer.v)) and executable RAD Studio workspace ([ui_designer.v](file:///Users/codecaine/vlang_simplegui/ui_designer.v) and [demos/ui_designer.v](file:///Users/codecaine/vlang_simplegui/demos/ui_designer.v)).
+SimpleGUI includes a Delphi/VB/Lazarus-inspired **Visual UI Designer Engine** ([designer.v](../designer.v)) and executable RAD Studio workspace ([tools/ui_designer.v](../tools/ui_designer.v)).
 
 ### Structs
 

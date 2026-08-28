@@ -1,19 +1,21 @@
 # SimpleGUI — Native macOS GUIs in V
 
-Build real, native Cocoa desktop apps in [V](https://vlang.io) with a beginner-friendly API inspired by Delphi, VBA, and Python UI toolkits — no Objective-C required.
+Build real, native Cocoa desktop apps in [V](https://vlang.io) with a beginner-friendly API and a built-in drag-and-drop Visual UI Designer & Code Generator inspired by Delphi, Lazarus, and Visual Basic — no Objective-C required.
 
 ![Platform: macOS](https://img.shields.io/badge/platform-macOS-blue)
 ![Language: V](https://img.shields.io/badge/language-V-4f87c4)
 ![License: MIT](https://img.shields.io/badge/license-MIT-green)
 ![Demos: 70+](https://img.shields.io/badge/demos-70%2B-orange)
+![RAD Studio: Visual Designer Included](https://img.shields.io/badge/RAD%20Designer-Included-8A2BE2)
 
 ![SimpleGUI — All Controls Demo (20 sections, every win.add_* control)](screenshots/all_controls_demo.png)
 
 ## Table of contents
 
 - [Overview](#overview)
-- [📘 Beginner's Core Concepts Glossary](#-beginners-core-concepts--jargon-free-glossary)
+- [📘 Beginner's Core Concepts Glossary](#beginners-core-concepts--jargon-free-glossary)
 - [Features](#features)
+- [🎨 RAD Visual UI Designer & Code Studio](#rad-visual-ui-designer--code-studio)
 - [Platform Support Matrix](#platform-support-matrix)
 - [Installation](#installation)
 - [Quick start](#quick-start)
@@ -26,6 +28,7 @@ Build real, native Cocoa desktop apps in [V](https://vlang.io) with a beginner-f
 - [Demos](#demos)
 - [Production Workstations & Studio Applications](#production-workstations--studio-applications)
 - [SimpleCLI: Headless Console & RAD Toolkit](#simplecli-headless-console--rad-toolkit)
+- [🌟 Related RAD & GUI Ecosystem Projects](#related-rad--gui-ecosystem-projects)
 - [Security & Command Injection Prevention](#security--command-injection-prevention)
 - [Testing](#testing)
 - [Project structure](#project-structure)
@@ -41,6 +44,7 @@ SimpleGUI makes building desktop software on macOS effortless and enjoyable for 
 - **Lightweight V Code**: Write clean, concise code in [V](https://vlang.io) without heavy frameworks or bloated web views.
 - **Native macOS Cocoa Bridge**: Displays real, native Mac windows, buttons, text fields, and menus that match the macOS operating system seamlessly.
 - **Beginner-Friendly API**: Add named controls, read/write input values, and attach click or change events in just a few lines of code.
+- **🎨 Built-in Drag & Drop Visual UI Designer**: Design forms visually with a Delphi/VB/Lazarus-style WYSIWYG studio (`v run tools/ui_designer.v`), complete with an Object Inspector, property search filter, multi-column grid auto-layout, undo/redo history, 10+ layout presets, and 1-click V source code & HTML generation.
 
 The goal is to provide an intuitive, event-driven GUI framework similar to classic tools like Delphi, Visual Basic, or Python UI libraries — while delivering the lightning-fast performance of compiled native software.
 
@@ -117,7 +121,7 @@ If you are new to programming or desktop app creation, here are simple definitio
 - **Native Keyboard Shortcuts & Overlay Levels**:
   - `CMD + F` for full screen, `CMD + Q` to quit, custom shortcut recorder widget, and window always-on-top level control.
 - **RAD Visual UI Designer & Code Generator**:
-  - Delphi/VB/Lazarus-inspired drag-and-drop visual design studio (`v run ui_designer.v` or `v run demos/ui_designer.v`).
+  - Delphi/VB/Lazarus-inspired drag-and-drop visual design studio (`v run tools/ui_designer.v`).
   - **⚡ Object Inspector Component Selector Dropdown**: Top dropdown selector listing all controls on the form (`id: ControlType ("Caption")`) for instant selection and canvas highlighting.
   - **Object Inspector Property Search & Filter**: Live keyword filter bar in Object Inspector to instantly search properties (`color`, `width`, `text`, `hover`, etc.).
   - **Auto-Generated Event Callbacks & Code Stubs**: 1-click RAD event generator (`on_<id>_click`, `on_<id>_change`, `on_<id>_hover`, `on_<id>_hover_exit`) and generated V callback function stubs.
@@ -133,7 +137,7 @@ If you are new to programming or desktop app creation, here are simple definitio
   - One-click V source code generator producing clean `simplegui` code with event handler callback stubs.
   - Import / Export JSON layout specs, live V runtime state sync (`syncSpecToV()`), and launch live native preview test windows (`launch_preview_window`) executing click, hover, hover exit, and change callbacks.
 - **RAD Code Explorer & Live Previewer Studio**:
-  - Interactive V code studio & file explorer (`v run vlang_simple_gui_previewer.v`), buildable as a standalone macOS `.app` bundle via `v run build_previewer.vsh`.
+  - Interactive V code studio & file explorer (`v run tools/vlang_simple_gui_previewer.v`), buildable as a standalone macOS `.app` bundle via `v run scripts/build_previewer.vsh`.
   - **📂 Workspace Folder Management & Drag & Drop**: Select any local V project directory (`w.select_folder()`) or drag-and-drop folders/files directly into the window to open them.
   - **📄 File Creation, Saving & Reverting**: Create new V source files (`📄 New File`), save edits back to disk (`💾 Save File`), or revert unsaved edits (`↺ Reset Code`) to original file contents.
   - **📚 Workspace File Explorer & Search**: Live list box with instant file search filtering (`bind_search_to_list`).
@@ -159,6 +163,43 @@ For app code, the grid helpers are intentionally ergonomic:
 - `grid_get_rows()` / `grid_set_rows()` replace the full data set in one step.
 - `grid_get_row()` / `grid_set_row()` and `grid_get_column()` / `grid_set_column()` cover the common spreadsheet-style operations.
 - `grid_get_selected_column()`, `grid_set_selected_column()`, and `grid_set_selected_cell()` make selection easy to drive from code.
+
+---
+
+## 🎨 RAD Visual UI Designer & Code Studio
+
+SimpleGUI includes a dedicated, Delphi & Visual Basic-inspired **Visual UI Designer Studio** (`tools/ui_designer.v`) and **RAD Code Explorer & Live Previewer** (`tools/vlang_simple_gui_previewer.v`). Design forms visually, drag and drop native controls, configure properties with live search, test run interactive windows, and export production-ready V source code in seconds.
+
+![SimpleGUI RAD Visual UI Designer Studio](screenshots/ui_designer.png)
+
+### Launching the Designer Studio
+
+Run the visual designer directly with the V compiler:
+
+```bash
+# Launch the Delphi/VB-inspired RAD Visual UI Designer
+v run tools/ui_designer.v
+
+# Or launch the interactive V Code Explorer & Live Previewer
+v run tools/vlang_simple_gui_previewer.v
+```
+
+### Core Designer Features & Capabilities
+
+- **🎨 Drag & Drop WYSIWYG Canvas**: Place and position 25+ native macOS controls directly on the canvas — buttons, inputs, password fields, textareas, checkboxes, switches, sliders, progress dials, color wells, date pickers, editable data grids, tree views, code views, rating stars, steppers, token fields, and file drop zones.
+- **⚡ Object Inspector & Instant Property Search**:
+  - **Component Selector Dropdown**: Top dropdown selector (`id: ControlType ("Caption")`) for instant selection and canvas highlighting.
+  - **Property Filter Bar**: Live keyword search to filter properties (`color`, `width`, `text`, `hover`, `font`, etc.).
+  - **Component Tree Inspector**: Visual z-index layer ordering (`Move Up`/`Move Down`) and locking (`Lock`/`Unlock`).
+- **🔲 Multi-Selection & Simultaneous Move/Resize**: Marquee drag selection box, `Shift`/`Cmd`-click selection, and `Cmd+A` Select All with simultaneous multi-control drag moving, resize handles, and batch property edits.
+- **📐 Layout & Distribution Toolbar**: 1-click alignment (`Align Left`, `Center`, `Right`, `Top`, `Middle`, `Bottom`, `Center H Form`, `Center V Form`, `Distribute Horizontally/Vertically`, `Equal Width/Height`, `Fit Text Size`) with smart snap alignment guide lines.
+- **⚡ 1-Click RAD Event Generator & V Code Stubs**: Automatically generates clean event handlers (`on_<id>_click`, `on_<id>_change`, `on_<id>_hover`, `on_<id>_hover_exit`) and idiomatic `simplegui` V code ready to copy to the clipboard or save into a `.v` file.
+- **▶️ Live Interactive Test Run**: Click **"Test Run Form"** (`tb_run`) to instantly spin up a live native Cocoa window executing your form layout and callbacks in real time.
+- **📋 10+ Pre-Loaded Layout Presets**: Instant starter templates for Customer Registration, Auth Login, KPI Dashboard, Settings Studio, Checkout, Data Grid CRUD Manager, Support Ticket Reporter, REST API Client Tester, Audio Player, and User Profile.
+- **↺ Undo / Redo History**: Full `Cmd+Z` and `Cmd+Shift+Z` state history engine.
+- **🌐 Standalone HTML5/CSS Web Export**: 1-click export of form layouts to clean HTML5 and CSS for multi-platform preview and web embedding.
+
+---
 
 ## Platform Support Matrix
 
@@ -969,7 +1010,7 @@ To build and package your V project into a standalone, native macOS application 
 To compile `main.v` with release optimization (`-prod`) and bundle it as a macOS application using the default app name:
 
 ```bash
-v run build.vsh
+v run scripts/build.vsh
 ```
 
 This compiles your V code and creates:
@@ -983,7 +1024,7 @@ dist/Vlang Macos Native Window.app
 You can build the app with a custom entry point, a custom name, a custom icon PNG, and a custom bundle ID:
 
 ```bash
-v run build.vsh [entry_file.v] --name "My Custom App" --icon icon.png --identifier "com.example.myapp"
+v run scripts/build.vsh [entry_file.v] --name "My Custom App" --icon icon.png --identifier "com.example.myapp"
 ```
 
 ### 3. Compilation Examples with Premium Icons
@@ -992,25 +1033,25 @@ This project comes packaged with **101 premium, futuristic Apple-style obsidian/
 
 ```bash
 # 1. Compile the Calculator Demo with the native Calculator Tile icon
-v run build.vsh demos/calculator.v --name "Interactive Calculator" --icon resources/calculator.png
+v run scripts/build.vsh demos/calculator.v --name "Interactive Calculator" --icon resources/calculator.png
 
 # 2. Compile the Markdown Editor with the native Markdown Editor Tile icon
-v run build.vsh demos/markdown_editor.v --name "Markdown Studio" --icon resources/markdown_editor.png
+v run scripts/build.vsh demos/markdown_editor.v --name "Markdown Studio" --icon resources/markdown_editor.png
 
 # 3. Compile the System Monitor Demo with the native System Monitor Tile icon
-v run build.vsh demos/timer_demo.v --name "Task Timer" --icon resources/clock.png
+v run scripts/build.vsh demos/timer_demo.v --name "Task Timer" --icon resources/clock.png
 
 # 4. Compile the Data Viewer / Database Catalog with the Database Admin Tile icon
-v run build.vsh demos/data_viewer.v --name "DB Browser" --icon resources/database_admin.png
+v run scripts/build.vsh demos/data_viewer.v --name "DB Browser" --icon resources/database_admin.png
 
 # 5. Compile the Settings Configuration Editor with the Password manager / Security Tile icon
-v run build.vsh demos/settings_editor.v --name "Preferences Panel" --icon resources/password_manager.png
+v run scripts/build.vsh demos/settings_editor.v --name "Preferences Panel" --icon resources/password_manager.png
 
 # 6. Compile the Web Studio Demo with the high-fidelity Browser / DOM Explorer Tile icon
-v run build.vsh demos/web_studio_demo.v --name "Web BI Studio" --icon resources/browser.png
+v run scripts/build.vsh demos/web_studio_demo.v --name "Web BI Studio" --icon resources/browser.png
 
 # 7. Compile the RAD Code Explorer & Live Previewer into a standalone macOS .app bundle with icon
-v run build_previewer.vsh
+v run scripts/build_previewer.vsh
 ```
 
 ### 4. Batch Compile All Demos
@@ -1018,7 +1059,7 @@ v run build_previewer.vsh
 To compile and package all available demos concurrently in a single command, run:
 
 ```bash
-v run build_demos.vsh
+v run scripts/build_demos.vsh
 ```
 
 This script:
@@ -1039,12 +1080,12 @@ This script:
 
 ## Capturing Demo Screenshots
 
-To automatically launch every demo, capture a screenshot of its window, and save the result to the `screenshots/` folder, use the pure V shell script `capture_demos.vsh`. It requires no Python or external runtime — only V and the macOS Clang toolchain.
+To automatically launch every demo, capture a screenshot of its window, and save the result to the `screenshots/` folder, use the pure V shell script `capture_demos.vsh` in `scripts/`. It requires no Python or external runtime — only V and the macOS Clang toolchain.
 
 ### Capture All Demos
 
 ```bash
-v run capture_demos.vsh
+v run scripts/capture_demos.vsh
 ```
 
 ### Capture a Single Demo
@@ -1052,7 +1093,7 @@ v run capture_demos.vsh
 Pass the demo filename (with or without the `.v` extension) as an argument:
 
 ```bash
-v run capture_demos.vsh beginner_demo
+v run scripts/capture_demos.vsh beginner_demo
 ```
 
 ### How It Works
@@ -1082,8 +1123,8 @@ v run .
 
 | Demo                                                           | Description                                                                 |
 | -------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| [ui_designer.v](ui_designer.v)                                 | Delphi & VB-inspired Visual RAD Designer studio & V code generator          |
-| [vlang_simple_gui_previewer.v](vlang_simple_gui_previewer.v)   | Interactive V Code Explorer & Live Window Preview Studio                    |
+| [ui_designer.v](tools/ui_designer.v)                           | Delphi & VB-inspired Visual RAD Designer studio & V code generator          |
+| [vlang_simple_gui_previewer.v](tools/vlang_simple_gui_previewer.v) | Interactive V Code Explorer & Live Window Preview Studio                 |
 | [starter_template.v](demos/starter_template.v)                 | Minimal starter app for new developers                                      |
 | [beginner_demo.v](demos/beginner_demo.v)                       | Beginner-friendly signup form and profile builder                           |
 | [vertical_stack_starter.v](demos/vertical_stack_starter.v)     | Best-practice template for vertical stack forms                             |
@@ -1113,7 +1154,7 @@ v run .
 
 | Demo                                                                 | Description                                                                                                                                                                    |
 | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| [all_controls_demo.v](demos/all_controls_demo.v)                     | Comprehensive 20-section showcase of every `win.add_*` control in API.md — text, buttons, sliders, pickers, charts, grids, badges, stat cards, code editor, timeline, and more |
+| [all_controls_demo.v](demos/all_controls_demo.v)                     | Comprehensive 20-section showcase of every `win.add_*` control in [docs/API.md](docs/API.md) — text, buttons, sliders, pickers, charts, grids, badges, stat cards, code editor, timeline, and more |
 | [new_controls_demo.v](demos/new_controls_demo.v)                     | Segmented menus, popup selections, and search fields                                                                                                                           |
 | [cursor_demo.v](demos/cursor_demo.v)                                 | Window-wide and per-control cursor icon/size customization, mouse warping, and live mouse tracking                                                                             |
 | [new_controls_showcase.v](demos/new_controls_showcase.v)             | Showcase of the newest control additions                                                                                                                                       |
@@ -1562,7 +1603,7 @@ v test .
 - [window.v](window.v) — core window API and Cocoa integration
 - [window.m](window.m) — native macOS bridge implementation
 - [window.h](window.h) — bridge declarations used by V
-- [simplegui_test.v](simplegui_test.v) — regression tests for the wrapper API
+- [tests/](tests/) — regression and unit test suite for controls, windows, layout, theming, and security
 - [demos/stack_style.v](demos/stack_style.v) — demo of clean, vertical form stacking
 - [demos/grid_style.v](demos/grid_style.v) — demo of side-by-side row-based grids
 - [demos/calculator.v](demos/calculator.v) — interactive math calculator showing nested grid rows
@@ -1635,7 +1676,7 @@ v test .
 
 ## Documentation
 
-Full API documentation and detailed signature references are maintained in [API.md](API.md). Below is an architectural overview of SimpleGUI's API surface:
+Full API documentation and detailed signature references are maintained in [API.md](docs/API.md). Below is an architectural overview of SimpleGUI's API surface:
 
 ### 1. Window Operations & Themes
 
@@ -1761,7 +1802,7 @@ fn main() {
 - **Async Execution**: `win.run_async(bg_task_fn, on_complete_cb)`, `win.run_on_main_thread(cb)`, `win.run_on_main_thread_sync(cb)`
 - **System Tray Mode**: `win.enable_status_bar(icon_path)`
 
-For complete method details, arguments, and full code examples, view [API.md](API.md).
+For complete method details, arguments, and full code examples, view [API.md](docs/API.md).
 
 ## Notes
 
@@ -1772,13 +1813,13 @@ The goal of this project is to provide a simple, high-abstraction GUI layer that
 ## Screenshots
 
 The following native macOS windows were captured dynamically by building and running each live V demo.
-Screenshots are auto-generated using `v run capture_demos.vsh`.
+Screenshots are auto-generated using `v run scripts/capture_demos.vsh`.
 
 ### High-Fidelity App & Web Studios
 
-- **RAD Visual UI Designer Studio**: `v run ui_designer.v`
+- **RAD Visual UI Designer Studio**: `v run tools/ui_designer.v`
   ![SimpleGUI RAD Visual UI Designer Studio](screenshots/ui_designer.png)
-- **RAD Code Explorer & Live Previewer Studio**: `v run vlang_simple_gui_previewer.v`
+- **RAD Code Explorer & Live Previewer Studio**: `v run tools/vlang_simple_gui_previewer.v`
   ![SimpleGUI RAD Code Explorer & Live Previewer Studio](screenshots/vlang_simple_gui_previewer.png)
 - **Web HTML Studio**: `v run demos/web_studio_demo.v`
   ![Web HTML Studio](screenshots/web_studio_demo.png)
@@ -2166,6 +2207,18 @@ For headless console scripts, backend daemons, automation tools, and CI/CD pipel
 - **Production CLI Suite**: Ready-to-use tools in [`cli_apps/`](cli_apps/) (`devops_sentinel.v`, `vault_backup_manager.v`, `api_stress_bench.v`, `multirepo_git_pilot.v`).
 
 👉 **Read the comprehensive 20-chapter [SimpleCLI Reference Manual (CLI_API.md)](CLI_API.md).**
+
+---
+
+## 🌟 Related RAD & GUI Ecosystem Projects
+
+If you are developing graphical user interfaces, 2D game graphics, client desktop applications, or high-productivity command-line tools in V and modern web technologies, check out these related projects:
+
+| Project | Description | Primary Use Case |
+| :--- | :--- | :--- |
+| **[simple_gg](https://github.com/codecaine-zz/simple_gg)** | A lightweight, high-performance 2D game and graphics engine / immediate-mode GUI toolkit written in V. Features hardware-accelerated rendering, sprites, shapes, animations, custom canvas drawing, and interactive controls. | 2D games, graphical simulations, custom canvas widgets, interactive data visualizers, and creative coding in V. |
+| **[bun_rad_studio](https://github.com/codecaine-zz/bun_rad_studio)** | A modern, full-stack Rapid Application Development (RAD) visual designer and code generation studio powered by Bun, TypeScript, and modern web UI technologies. Inspired by Delphi and Visual Basic. | Full-stack desktop & client web applications, rapid UI prototyping, visual form design, and component-driven client architecture. |
+| **[vlang_simplecli](https://github.com/codecaine-zz/vlang_simplecli)** | A high-productivity, zero-dependency console and terminal RAD toolkit for V. Provides rich ANSI colors, banners, interactive prompts, spinners, progress bars, data tables, safe process execution, and system diagnostics. | Headless CLI tools, DevOps scripts, backend daemons, automation utilities, and terminal dashboards (the headless companion to SimpleGUI). |
 
 ---
 

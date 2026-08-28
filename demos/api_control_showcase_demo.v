@@ -56,7 +56,7 @@ fn main() {
 		},
 	])
 	win.add_form_link('Docs', 'docs_link', 'Open project docs', 'https://github.com/codecaine/vlang_simplegui')
-	win.add_link('quick_docs', 'Open API reference', 'https://github.com/codecaine/vlang_simplegui/blob/master/API.md')
+	win.add_link('quick_docs', 'Open API reference', 'https://github.com/codecaine-zz/vlang_simplegui/blob/master/docs/API.md')
 	win.add_disclosure('show_helpers', 'Show handy shortcuts', false)
 	win.begin_row('row_helpers')
 	win.add_button('focus_name', 'Focus name field')
