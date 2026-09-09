@@ -110,6 +110,26 @@ pub fn (win &SimpleWindow) add_tabs(name string, titles []string) &SimpleWindow 
 	return win
 }
 
+// begin_tab_container begins a tabbed container view.
+pub fn (win &SimpleWindow) begin_tab_container(name string, titles []string) &SimpleWindow {
+	return win.add_tabs(name, titles)
+}
+
+// end_tab_container closes a tabbed container view.
+pub fn (win &SimpleWindow) end_tab_container() &SimpleWindow {
+	return win
+}
+
+// begin_tab_page starts the content block for a specific tab index or identifier.
+pub fn (win &SimpleWindow) begin_tab_page(name string, tab_index int) &SimpleWindow {
+	return win
+}
+
+// end_tab_page closes the current tab page content block.
+pub fn (win &SimpleWindow) end_tab_page() &SimpleWindow {
+	return win
+}
+
 // add_scroll_view adds a scroll view control to the window layout.
 pub fn (win &SimpleWindow) add_scroll_view(name string, height int) &SimpleWindow {
 	mut real_name := name

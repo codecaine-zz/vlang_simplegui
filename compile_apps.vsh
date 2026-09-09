@@ -66,6 +66,7 @@ fn get_app_maps() map[string]AppConfig {
 	m['nmap_studio.v'] = AppConfig{'Nmap Studio', 'security.png', 'com.simplegui.nmapstudio'}
 	m['numbat_studio.v'] = AppConfig{'Numbat Studio', 'calculator.png', 'com.simplegui.numbatstudio'}
 	m['ocr_studio.v'] = AppConfig{'OCR Studio', 'transcription.png', 'com.simplegui.ocrstudio'}
+	m['omnitool_studio.v'] = AppConfig{'Omnitool Studio', 'developer.png', 'com.simplegui.omnitoolstudio'}
 	m['ouch_studio.v'] = AppConfig{'Ouch Studio', 'archive_manager.png', 'com.simplegui.ouchstudio'}
 	m['pandoc_studio.v'] = AppConfig{'Pandoc Studio', 'markdown_editor.png', 'com.simplegui.pandocstudio'}
 	m['programmer_calculator.v'] = AppConfig{'Programmer Calculator', 'calculator.png', 'com.simplegui.programmercalculator'}
@@ -73,6 +74,7 @@ fn get_app_maps() map[string]AppConfig {
 	m['recon_studio.v'] = AppConfig{'Recon Studio', 'security.png', 'com.simplegui.reconstudio'}
 	m['regex_studio.v'] = AppConfig{'Regex Studio', 'regex_tester.png', 'com.simplegui.regexstudio'}
 	m['rg_studio.v'] = AppConfig{'RG Studio', 'snippet_manager.png', 'com.simplegui.rgstudio'}
+	m['rip_studio.v'] = AppConfig{'Rip Studio', 'file_manager.png', 'com.simplegui.ripstudio'}
 	m['say_studio.v'] = AppConfig{'Say Studio', 'voice_recorder.png', 'com.simplegui.saystudio'}
 	m['sd_studio.v'] = AppConfig{'SD Studio', 'text_editor.png', 'com.simplegui.sdstudio'}
 	m['sed_studio.v'] = AppConfig{'Sed Studio', 'text_editor.png', 'com.simplegui.sedstudio'}
@@ -82,6 +84,7 @@ fn get_app_maps() map[string]AppConfig {
 	m['task_manager.v'] = AppConfig{'Task Manager', 'system_monitor.png', 'com.simplegui.taskmanager'}
 	m['text_editor.v'] = AppConfig{'Text Editor', 'text_editor.png', 'com.simplegui.texteditor'}
 	m['tr_studio.v'] = AppConfig{'TR Studio', 'utility.png', 'com.simplegui.trstudio'}
+	m['watchexec_studio.v'] = AppConfig{'Watchexec Studio', 'task_scheduler.png', 'com.simplegui.watchexecstudio'}
 	m['wget2_studio.v'] = AppConfig{'Wget2 Studio', 'cloud_storage.png', 'com.simplegui.wget2studio'}
 	m['yt_dlp_studio.v'] = AppConfig{'YT-DLP Studio', 'screen_recorder.png', 'com.simplegui.ytdlpstudio'}
 	return m
@@ -377,9 +380,12 @@ fn main() {
 	}
 
 	if install_deps_flag || check_deps_flag {
-		dep_script := os.join_path(os.getwd(), 'scripts', 'install_deps.vsh')
+		mut dep_script := os.join_path(os.getwd(), 'install_dependencies.vsh')
+		if !os.exists(dep_script) {
+			dep_script = os.join_path(os.getwd(), 'scripts', 'install_deps.vsh')
+		}
 		if os.exists(dep_script) {
-			mode_opt := if check_deps_flag { '--check' } else { '--all' }
+			mode_opt := if check_deps_flag { '--check' } else { '-y' }
 			println('🔍 Checking Homebrew dependencies before build...')
 			exit_code := os.system('v run ${os.quoted_path(dep_script)} ${mode_opt}')
 			if exit_code != 0 && !check_deps_flag {

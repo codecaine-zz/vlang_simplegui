@@ -60,6 +60,8 @@ fn main() {
 	has_qalc, _ := check_bin('qalc', ['/opt/homebrew/bin/qalc', '/usr/local/bin/qalc', '/usr/bin/qalc'])
 	has_numbat, _ := check_bin('numbat', ['/opt/homebrew/bin/numbat', '/usr/local/bin/numbat'])
 	has_kalker, _ := check_bin('kalker', ['/opt/homebrew/bin/kalker', '/usr/local/bin/kalker'])
+	has_watchexec, _ := check_bin('watchexec', ['/opt/homebrew/bin/watchexec', '/usr/local/bin/watchexec'])
+	has_rip, _ := check_bin('rip', ['/opt/homebrew/bin/rip', '/usr/local/bin/rip'])
 
 	win.begin_group_box('grp_env', '⚡ Core CLI Engines & macOS Subsystems Status')
 	win.begin_row('row_env_1')
@@ -76,6 +78,8 @@ fn main() {
 	win.add_label('lbl_stat_fd', if has_fd { '✅ FD' } else { '❌ FD' })
 	win.add_label('lbl_stat_sed', if has_sed { '✅ sed' } else { '❌ sed' })
 	win.add_label('lbl_stat_ouch', if has_ouch { '✅ ouch' } else { '❌ ouch' })
+	win.add_label('lbl_stat_watchexec', if has_watchexec { '✅ watchexec' } else { '❌ watchexec' })
+	win.add_label('lbl_stat_rip', if has_rip { '✅ rip' } else { '❌ rip' })
 	win.add_label('lbl_stat_subf', if has_subfinder { '✅ Subfinder' } else { '❌ Subfinder' })
 	win.add_label('lbl_stat_ytdlp', if has_ytdlp { '✅ yt-dlp' } else { '❌ yt-dlp' })
 	win.add_label('lbl_stat_wget2', if has_wget2 { '✅ Wget2' } else { '❌ Wget2' })
@@ -93,16 +97,18 @@ fn main() {
 	
 	// Category 1: Files, Search & Text Processing
 	win.begin_row('row_apps_1')
-	win.add_label('lbl_cat_1', '📁 Files & Text:')
+	win.add_label('lbl_cat_1', '📁 Files & Search:')
 	win.add_button('btn_launch_editor', '📝 Text Editor')
 	win.add_button('btn_launch_taskman', '⚡ Task Manager')
-	win.add_button('btn_launch_ouch', '📦 Ouch Archives')
+	win.add_button('btn_launch_ouch', '📦 Ouch Studio')
 	win.add_button('btn_launch_sed', '📝 Sed Studio')
 	win.add_button('btn_launch_cut', '✂️ Cut Studio')
 	win.add_button('btn_launch_tr', '🔄 TR Studio')
 	win.add_button('btn_launch_rg', '🔍 Ripgrep')
 	win.add_button('btn_launch_fd', '⚡ FD Finder')
 	win.add_button('btn_launch_find', '📂 Find Inodes')
+	win.add_button('btn_launch_rip', '⚰️ Rip Graveyard')
+	win.add_button('btn_launch_watchexec', '⌚ Watchexec')
 	win.end_row()
 
 	// Category 2: Media, Creative & Publishing
@@ -144,6 +150,7 @@ fn main() {
 	win.add_button('btn_launch_docker', '🐳 Docker')
 	win.add_button('btn_launch_disk', '💾 Disk Space')
 	win.add_button('btn_launch_launchd', '⏰ Launchd & Cron')
+	win.add_button('btn_launch_omnitool', '🛠️ Omnitool')
 	win.end_row()
 
 	// Category 5: Mathematics, Science & Computation
@@ -308,6 +315,36 @@ fn main() {
 			simplegui.exec_safe('v', ['run', app_path])
 		}()
 		w.toast('Find Studio Pro launched!')
+	})
+
+	// Launch Rip Graveyard Studio
+	win.on_click('btn_launch_rip', fn (mut w simplegui.SimpleWindow) {
+		app_path := os.join_path(os.dir(@FILE), 'rip_studio.v')
+		w.append_console('hub_log', '⚰️ Launching Rip Studio Pro in background...\n', 1)
+		go fn [app_path] () {
+			simplegui.exec_safe('v', ['run', app_path])
+		}()
+		w.toast('Rip Studio Pro launched!')
+	})
+
+	// Launch Watchexec Studio
+	win.on_click('btn_launch_watchexec', fn (mut w simplegui.SimpleWindow) {
+		app_path := os.join_path(os.dir(@FILE), 'watchexec_studio.v')
+		w.append_console('hub_log', '⚡ Launching Watchexec Studio Pro in background...\n', 1)
+		go fn [app_path] () {
+			simplegui.exec_safe('v', ['run', app_path])
+		}()
+		w.toast('Watchexec Studio Pro launched!')
+	})
+
+	// Launch Omnitool Studio
+	win.on_click('btn_launch_omnitool', fn (mut w simplegui.SimpleWindow) {
+		app_path := os.join_path(os.dir(@FILE), 'omnitool_studio.v')
+		w.append_console('hub_log', '🛠️ Launching Omnitool Studio Pro in background...\n', 1)
+		go fn [app_path] () {
+			simplegui.exec_safe('v', ['run', app_path])
+		}()
+		w.toast('Omnitool Studio Pro launched!')
 	})
 
 	// Launch IFConfig Studio

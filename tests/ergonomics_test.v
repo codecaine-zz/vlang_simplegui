@@ -2,7 +2,6 @@ module main
 
 import simplegui
 import os
-import time
 
 fn test_has_control_list_controls_and_safe_accessors() {
 	mut win := simplegui.new_simple_window('Ergonomics Test', 400, 300)

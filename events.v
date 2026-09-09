@@ -244,7 +244,11 @@ fn vlang_dispatch_close_requested(win_ptr voidptr) bool {
 		return true
 	}
 	mut win := unsafe { &SimpleWindow(win_ptr) }
-	return win.can_close()
+	allowed := win.can_close()
+	if allowed && win.auto_save_state {
+		win.save_app_form_state_or()
+	}
+	return allowed
 }
 
 // set_interval starts a recurring timer that triggers a callback every ms milliseconds.

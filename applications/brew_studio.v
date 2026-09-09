@@ -79,6 +79,12 @@ fn main() {
 	win.add_button('btn_fix_casks', '🛠️ Fix Orphaned Casks')
 	win.end_row()
 
+	win.begin_row('row_bundle_btns')
+	win.add_button('btn_brew_bundle_install', '📦 Install Brewfile Bundle')
+	win.add_button('btn_brew_bundle_check', '🔍 Check Brewfile Status')
+	win.add_button('btn_brew_bundle_view', '📄 View Brewfile')
+	win.end_row()
+
 	win.end_group_box()
 
 	// Package Details / Query Output
@@ -317,6 +323,44 @@ fn main() {
 			w.append_console('brew_console', '✅ All Caskroom directories are healthy.\n', 4)
 			w.toast('Caskroom is healthy.')
 		}
+	})
+
+	// Brewfile Bundle Install
+	win.on_click('btn_brew_bundle_install', fn [run_brew_cmd] (mut w simplegui.SimpleWindow) {
+		cwd := os.getwd()
+		brewfile := os.join_path(cwd, 'Brewfile')
+		if !os.exists(brewfile) {
+			w.alert('Brewfile Missing', 'Could not find Brewfile in current workspace: ${brewfile}')
+			return
+		}
+		if !w.confirm('Install Brewfile Dependencies', 'Install all dependencies declared in Brewfile via Homebrew bundle?') {
+			return
+		}
+		run_brew_cmd(mut w, 'Brewfile Bundle Install', ['bundle', '--file', brewfile])
+	})
+
+	// Brewfile Bundle Check
+	win.on_click('btn_brew_bundle_check', fn [run_brew_cmd] (mut w simplegui.SimpleWindow) {
+		cwd := os.getwd()
+		brewfile := os.join_path(cwd, 'Brewfile')
+		if !os.exists(brewfile) {
+			w.alert('Brewfile Missing', 'Could not find Brewfile in current workspace: ${brewfile}')
+			return
+		}
+		run_brew_cmd(mut w, 'Check Brewfile Dependencies', ['bundle', 'check', '--verbose', '--file', brewfile])
+	})
+
+	// Brewfile View
+	win.on_click('btn_brew_bundle_view', fn (mut w simplegui.SimpleWindow) {
+		cwd := os.getwd()
+		brewfile := os.join_path(cwd, 'Brewfile')
+		if !os.exists(brewfile) {
+			w.alert('Brewfile Missing', 'Could not find Brewfile in current workspace: ${brewfile}')
+			return
+		}
+		content := os.read_file(brewfile) or { 'Error reading Brewfile' }
+		w.set('txt_brew_output', content)
+		w.toast('Loaded Brewfile')
 	})
 
 	win.start()

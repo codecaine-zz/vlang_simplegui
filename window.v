@@ -1160,6 +1160,10 @@ pub fn new_simple_window(title string, width int, height int) &SimpleWindow {
 	win.table_column_selection = map[string]bool{}
 	win.grid_rows = map[string][][]string{}
 	win.grid_headers = map[string][]string{}
+	win.state_store = map[string]string{}
+	win.state_listeners = map[string][]StringEventCallback{}
+	win.auto_save_state = true
+	win.theme = get_theme(get_saved_theme())
 	win.ensure_window()
 	sys_register_window(win)
 	return win
@@ -2247,6 +2251,9 @@ pub fn (win &SimpleWindow) get_maximizable() bool {
 
 // close closes the window.
 pub fn (win &SimpleWindow) close() &SimpleWindow {
+	if win.auto_save_state {
+		win.save_app_form_state_or()
+	}
 	if win.window_info != unsafe { nil } {
 		C.window_close(win.window_info)
 	}
@@ -2310,6 +2317,16 @@ pub fn (win &SimpleWindow) set_size(width int, height int) &SimpleWindow {
 	return win
 }
 
+// set_width sets the window width in pixels while maintaining the current height.
+pub fn (win &SimpleWindow) set_width(width int) &SimpleWindow {
+	return win.set_size(width, win.get_height())
+}
+
+// set_height sets the window height in pixels while maintaining the current width.
+pub fn (win &SimpleWindow) set_height(height int) &SimpleWindow {
+	return win.set_size(win.get_width(), height)
+}
+
 // get_width returns the current window width in pixels.
 pub fn (win &SimpleWindow) get_width() int {
 	if win.window_info != unsafe { nil } {
@@ -2368,10 +2385,8 @@ pub fn (win &SimpleWindow) get_opacity() f64 {
 
 // toggle_fullscreen toggles the window fullscreen state.
 pub fn (win &SimpleWindow) toggle_fullscreen() &SimpleWindow {
-	if win.window_info != unsafe { nil } {
-		C.window_toggle_fullscreen(win.window_info)
-	}
-	return win
+	next := !win.is_fullscreen()
+	return win.set_fullscreen(next)
 }
 
 // minimize minimizes the window to the Dock.
@@ -2419,7 +2434,7 @@ pub fn (win &SimpleWindow) is_fullscreen() bool {
 	if win.window_info != unsafe { nil } {
 		return C.window_is_fullscreen(win.window_info) == 1
 	}
-	return false
+	return win.fullscreen
 }
 
 // is_active checks if the window or control is active.
@@ -2694,6 +2709,10 @@ pub fn (win &SimpleWindow) get_window_level() string {
 
 // set_fullscreen toggles full screen mode on or off.
 pub fn (win &SimpleWindow) set_fullscreen(enabled bool) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.fullscreen = enabled
+	}
 	if win.window_info != unsafe { nil } {
 		C.window_set_fullscreen(win.window_info, if enabled { 1 } else { 0 })
 	}
@@ -3141,6 +3160,9 @@ pub fn (win &SimpleWindow) status(text string) &SimpleWindow {
 
 // run starts the application event loop and displays the main Cocoa window.
 pub fn (win &SimpleWindow) run() &SimpleWindow {
+	if win.auto_save_state {
+		win.restore_app_form_state()
+	}
 	if win.window_info == unsafe { nil } {
 		unsafe {
 			mut w := &SimpleWindow(win)

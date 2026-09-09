@@ -2047,6 +2047,42 @@ pub fn (win &SimpleWindow) get_listening_ports() []int {
 	return ports
 }
 
+// get_platform_label returns the human-readable platform name.
+pub fn get_platform_label() string {
+	$if macos {
+		return 'macOS Cocoa'
+	} $else $if linux {
+		return 'Linux'
+	} $else $if windows {
+		return 'Windows'
+	} $else {
+		return 'Unknown'
+	}
+}
+
+// get_os_name returns the operating system name ('macOS', 'Linux', 'Windows', or 'Unknown').
+pub fn get_os_name() string {
+	$if macos {
+		return 'macOS'
+	} $else $if linux {
+		return 'Linux'
+	} $else $if windows {
+		return 'Windows'
+	} $else {
+		return 'Unknown'
+	}
+}
+
+// get_platform_label returns the human-readable platform label for this window.
+pub fn (win &SimpleWindow) get_platform_label() string {
+	return get_platform_label()
+}
+
+// get_os_name returns the operating system name for this window.
+pub fn (win &SimpleWindow) get_os_name() string {
+	return get_os_name()
+}
+
 // get_app_name infers a clean, filesystem-safe application identifier from window title, bundle ID, or binary name.
 pub fn (win &SimpleWindow) get_app_name() string {
 	if win.title.trim_space() != '' {
@@ -2148,11 +2184,21 @@ pub fn (win &SimpleWindow) resolve_storage_path(path string, app_name ...string)
 }
 
 // get_app_data_dir returns the user application support directory path for app_name.
-pub fn (win &SimpleWindow) get_app_data_dir(app_name string) string {
-	if app_name != '' {
-		return win.get_app_storage_dir(app_name)
+pub fn (win &SimpleWindow) get_app_data_dir(args ...string) string {
+	if args.len > 0 && args[0].len > 0 {
+		return get_app_data_dir(args[0])
 	}
-	return win.get_app_storage_dir()
+	return get_app_data_dir(win.get_app_id())
+}
+
+// get_app_data_file returns the full file path for an app data file.
+pub fn (win &SimpleWindow) get_app_data_file(args ...string) string {
+	if args.len >= 2 {
+		return get_app_data_file(args[0], args[1])
+	} else if args.len == 1 {
+		return get_app_data_file(win.get_app_id(), args[0])
+	}
+	return get_app_data_file(win.get_app_id(), 'data.json')
 }
 
 // get_user_downloads_dir returns absolute path to Downloads folder.
@@ -2610,6 +2656,30 @@ pub fn get_app_config_file(app_name string, filename string) string {
 	return os.join_path(get_app_config_dir(app_name), filename)
 }
 
+// get_app_data_dir returns the standard directory for application data files.
+pub fn get_app_data_dir(app_name string) string {
+	$if macos {
+		return os.join_path(os.home_dir(), 'Library', 'Application Support', app_name)
+	} $else $if windows {
+		app_data := os.getenv('APPDATA')
+		if app_data.len > 0 {
+			return os.join_path(app_data, app_name)
+		}
+		return os.join_path(os.home_dir(), 'AppData', 'Roaming', app_name)
+	} $else {
+		xdg := os.getenv('XDG_DATA_HOME')
+		if xdg.len > 0 {
+			return os.join_path(xdg, app_name)
+		}
+		return os.join_path(os.home_dir(), '.local', 'share', app_name)
+	}
+}
+
+// get_app_data_file returns the full file path for an app data file.
+pub fn get_app_data_file(app_name string, filename string) string {
+	return os.join_path(get_app_data_dir(app_name), filename)
+}
+
 // get_app_state_dir returns the standard directory for runtime state files.
 pub fn get_app_state_dir(app_name string) string {
 	$if macos {
@@ -2671,60 +2741,155 @@ pub fn get_app_runtime_dir(app_name string) string {
 	return os.join_path(os.temp_dir(), app_name)
 }
 
-// resolve_user_path expands '~' to user's home directory.
+// resolve_user_path expands user home tildes (~ and ~/ or ~\), environment variables ($VAR, ${VAR}, %VAR%),
+// and normalizes directory separators for the current operating system.
 pub fn resolve_user_path(raw_path string) string {
-	if raw_path.starts_with('~/') {
-		return os.join_path(os.home_dir(), raw_path[2..])
+	trimmed := raw_path.trim_space()
+	if trimmed == '' {
+		return ''
 	}
-	return raw_path
+
+	mut p := trimmed
+
+	// 1. Expand environment variables: ${VAR}, %VAR%, $VAR
+	for p.contains(r'${') {
+		start := p.index(r'${') or { break }
+		end := p.index_after(r'}', start) or { break }
+		var_name := p[start + 2..end]
+		env_val := os.getenv(var_name)
+		p = p[..start] + env_val + p[end + 1..]
+	}
+
+	if p.contains('%') {
+		parts := p.split('%')
+		if parts.len >= 3 {
+			mut sb := []string{}
+			mut i := 0
+			for i < parts.len {
+				if i + 1 < parts.len && i % 2 == 1 {
+					var_name := parts[i]
+					env_val := os.getenv(var_name)
+					sb << env_val
+				} else {
+					sb << parts[i]
+				}
+				i++
+			}
+			p = sb.join('')
+		}
+	}
+
+	if p.contains('$') {
+		mut res := []u8{cap: p.len}
+		mut i := 0
+		bytes := p.bytes()
+		for i < bytes.len {
+			if bytes[i] == `$` && i + 1 < bytes.len && (bytes[i + 1].is_letter() || bytes[i + 1] == `_`) {
+				mut j := i + 1
+				for j < bytes.len && (bytes[j].is_letter() || bytes[j].is_digit() || bytes[j] == `_`) {
+					j++
+				}
+				var_name := p[i + 1..j]
+				env_val := os.getenv(var_name)
+				for b in env_val.bytes() {
+					res << b
+				}
+				i = j
+			} else {
+				res << bytes[i]
+				i++
+			}
+		}
+		p = res.bytestr()
+	}
+
+	// 2. Expand tildes (~ and ~/ or ~\ )
+	home := get_user_home_dir()
+	if p == '~' {
+		p = home
+	} else if p.starts_with('~/') || p.starts_with('~\\') {
+		p = os.join_path(home, p[2..])
+	}
+
+	// 3. Normalize path separators per OS
+	$if windows {
+		p = p.replace('/', '\\')
+	} $else {
+		p = p.replace('\\', '/')
+	}
+
+	return p
 }
 
-// expand_user_path expands '~' to user's home directory.
+// expand_user_path expands '~' and environment variables to user's paths.
 pub fn expand_user_path(raw_path string) string {
 	return resolve_user_path(raw_path)
 }
 
 // get_app_config_file returns the full path for a config file.
-pub fn (win &SimpleWindow) get_app_config_file(filename string) string {
-	return get_app_config_file(win.title, filename)
+pub fn (win &SimpleWindow) get_app_config_file(args ...string) string {
+	if args.len >= 2 {
+		return get_app_config_file(args[0], args[1])
+	} else if args.len == 1 {
+		return get_app_config_file(win.get_app_id(), args[0])
+	}
+	return get_app_config_file(win.get_app_id(), 'config.json')
 }
 
 // get_app_state_dir returns the state directory for this app.
-pub fn (win &SimpleWindow) get_app_state_dir() string {
-	return get_app_state_dir(win.title)
+pub fn (win &SimpleWindow) get_app_state_dir(args ...string) string {
+	app := if args.len > 0 && args[0].len > 0 { args[0] } else { win.get_app_id() }
+	return get_app_state_dir(app)
 }
 
 // get_app_state_file returns the full path for a state file.
-pub fn (win &SimpleWindow) get_app_state_file(filename string) string {
-	return get_app_state_file(win.title, filename)
+pub fn (win &SimpleWindow) get_app_state_file(args ...string) string {
+	if args.len >= 2 {
+		return get_app_state_file(args[0], args[1])
+	} else if args.len == 1 {
+		return get_app_state_file(win.get_app_id(), args[0])
+	}
+	return get_app_state_file(win.get_app_id(), 'state.json')
 }
 
 // get_app_cache_file returns the full path for a cache file.
-pub fn (win &SimpleWindow) get_app_cache_file(filename string) string {
-	return get_app_cache_file(win.title, filename)
+pub fn (win &SimpleWindow) get_app_cache_file(args ...string) string {
+	if args.len >= 2 {
+		return get_app_cache_file(args[0], args[1])
+	} else if args.len == 1 {
+		return get_app_cache_file(win.get_app_id(), args[0])
+	}
+	return get_app_cache_file(win.get_app_id(), 'cache.bin')
 }
 
 // get_app_log_dir returns the log directory for this app.
-pub fn (win &SimpleWindow) get_app_log_dir() string {
-	return get_app_log_dir(win.title)
+pub fn (win &SimpleWindow) get_app_log_dir(args ...string) string {
+	app := if args.len > 0 && args[0].len > 0 { args[0] } else { win.get_app_id() }
+	return get_app_log_dir(app)
 }
 
 // get_app_log_file returns the full path for a log file.
-pub fn (win &SimpleWindow) get_app_log_file(filename string) string {
-	return get_app_log_file(win.title, filename)
+pub fn (win &SimpleWindow) get_app_log_file(args ...string) string {
+	if args.len >= 2 {
+		return get_app_log_file(args[0], args[1])
+	} else if args.len == 1 {
+		return get_app_log_file(win.get_app_id(), args[0])
+	}
+	return get_app_log_file(win.get_app_id(), 'app.log')
 }
 
 // get_app_runtime_dir returns the runtime directory for this app.
-pub fn (win &SimpleWindow) get_app_runtime_dir() string {
-	return get_app_runtime_dir(win.title)
+pub fn (win &SimpleWindow) get_app_runtime_dir(args ...string) string {
+	app := if args.len > 0 && args[0].len > 0 { args[0] } else { win.get_app_id() }
+	return get_app_runtime_dir(app)
 }
 
-// resolve_user_path expands '~' to home directory.
+// resolve_user_path expands '~' and environment variables to paths.
 pub fn (win &SimpleWindow) resolve_user_path(raw_path string) string {
 	return resolve_user_path(raw_path)
 }
 
-// expand_user_path expands '~' to home directory.
+// expand_user_path expands '~' and environment variables to paths.
 pub fn (win &SimpleWindow) expand_user_path(raw_path string) string {
 	return resolve_user_path(raw_path)
 }

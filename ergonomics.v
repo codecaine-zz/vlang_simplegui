@@ -120,6 +120,19 @@ pub fn (win &SimpleWindow) get_all(names []string) map[string]string {
 	return values
 }
 
+// export_form_json encodes field values for the specified control `names` into a JSON formatted string.
+pub fn (win &SimpleWindow) export_form_json(names []string) string {
+	m := win.get_all(names)
+	return json2.encode[map[string]string](m)
+}
+
+// import_form_json populates control values from a JSON formatted string map.
+pub fn (win &SimpleWindow) import_form_json(json_str string) &SimpleWindow {
+	m := json2.decode[map[string]string](json_str) or { return win }
+	win.set_all(m)
+	return win
+}
+
 // batch_enable_controls is an alias for enable_controls.
 pub fn (win &SimpleWindow) batch_enable_controls(names []string) &SimpleWindow {
 	return win.enable_controls(names)
@@ -620,85 +633,7 @@ pub fn (win &SimpleWindow) load_values_from_file(path string) ! {
 	}
 }
 
-// save_app_state persists all window control values to the recommended user application storage location.
-// Default state file is "app_state.json" or specified custom name (e.g. "preset_1").
-pub fn (win &SimpleWindow) save_app_state(state_name ...string) ! {
-	target_name := if state_name.len > 0 && state_name[0].trim_space() != '' {
-		mut s := state_name[0].trim_space()
-		if !s.ends_with('.json') {
-			s += '.json'
-		}
-		s
-	} else {
-		'app_state.json'
-	}
-	path := win.get_app_storage_path(target_name)
-	win.save_values_to_file(path)!
-}
 
-// load_app_state restores all window control values from the recommended user application storage location.
-// Returns true when state was loaded successfully, or false if the state file does not exist or failed to parse.
-pub fn (win &SimpleWindow) load_app_state(state_name ...string) bool {
-	target_name := if state_name.len > 0 && state_name[0].trim_space() != '' {
-		mut s := state_name[0].trim_space()
-		if !s.ends_with('.json') {
-			s += '.json'
-		}
-		s
-	} else {
-		'app_state.json'
-	}
-	path := win.get_app_storage_path(target_name)
-	if !os.exists(path) {
-		return false
-	}
-	win.load_values_from_file(path) or { return false }
-	return true
-}
-
-// save_state is a convenience method that saves current form/control values to the recommended store location.
-pub fn (win &SimpleWindow) save_state(filename ...string) ! {
-	win.save_app_state(...filename)!
-}
-
-// load_state is a convenience method that restores form/control values from the recommended store location.
-pub fn (win &SimpleWindow) load_state(filename ...string) bool {
-	return win.load_app_state(...filename)
-}
-
-// has_saved_state checks if a persisted state file exists in the recommended application storage directory.
-pub fn (win &SimpleWindow) has_saved_state(state_name ...string) bool {
-	target_name := if state_name.len > 0 && state_name[0].trim_space() != '' {
-		mut s := state_name[0].trim_space()
-		if !s.ends_with('.json') {
-			s += '.json'
-		}
-		s
-	} else {
-		'app_state.json'
-	}
-	path := win.get_app_storage_path(target_name)
-	return os.exists(path)
-}
-
-// clear_app_state removes a persisted state file from the recommended storage location.
-pub fn (win &SimpleWindow) clear_app_state(state_name ...string) bool {
-	target_name := if state_name.len > 0 && state_name[0].trim_space() != '' {
-		mut s := state_name[0].trim_space()
-		if !s.ends_with('.json') {
-			s += '.json'
-		}
-		s
-	} else {
-		'app_state.json'
-	}
-	path := win.get_app_storage_path(target_name)
-	if os.exists(path) {
-		os.rm(path) or { return false }
-		return true
-	}
-	return false
-}
 
 // enable_app_autosave periodically saves application state into the recommended application support directory.
 // Default interval is 5000ms.

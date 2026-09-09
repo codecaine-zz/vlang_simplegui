@@ -1,8 +1,6 @@
 module main
 
 import simplegui
-import os
-import time
 
 struct BindingExample {
 	username         string

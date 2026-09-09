@@ -3,7 +3,7 @@
 import os
 
 fn main() {
-	script_path := os.join_path(os.dir(@FILE), 'scripts', 'install_deps.vsh')
+	script_path := os.join_path(os.dir(@FILE), 'install_dependencies.vsh')
 	if !os.exists(script_path) {
 		eprintln('Could not find ${script_path}')
 		exit(1)

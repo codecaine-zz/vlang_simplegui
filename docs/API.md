@@ -73,6 +73,7 @@ If you are new to programming or desktop app creation, here are simple definitio
 - [18. RAD Visual UI Designer & Code Generator API](#18-rad-visual-ui-designer--code-generator-api)
 - [19. Security, Sanitization & Safe Subshell Execution API](#19-security-sanitization--safe-subshell-execution-api)
 - [20. Production Workstation Applications Suite](#20-production-workstation-applications-suite)
+- [21. Reactive State Management & Auto-Persistence API](#21-reactive-state-management--auto-persistence-api)
 
 ## Quick start
 
@@ -6563,6 +6564,91 @@ SimpleGUI includes 19 production-grade desktop workstation applications located 
 | **🎨 ImageMagick Studio Pro** | [`applications/imagemagick_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/imagemagick_studio.v) | WebP/AVIF compression, multi-size favicon generator, white background removal, batch image optimizer. |
 | **🌐 Subfinder Studio Pro** | [`applications/subfinder_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/subfinder_studio.v) | Passive subdomain recon, active DNS validation, multi-source OSINT querying, rate-limiting. |
 | **🚀 Media & Data Studio Hub** | [`applications/media_studio_hub.v`](file:///Users/codecaine/vlang_simplegui/applications/media_studio_hub.v) | Master workstation hub with environment diagnostics, quick actions, and unified sub-application launchers. |
+
+---
+
+## 21. Reactive State Management & Auto-Persistence API
+
+SimpleGUI provides a reactive key-value state store, automatic form persistence, two-way control data binding, and atomic session restoration.
+
+### 21.1 Reactive State Store
+
+Each `SimpleWindow` instance features an isolated, reactive state dictionary. Subscribers can listen to specific key mutations, and typed getters/setters provide ergonomics for strings, booleans, integers, and floats.
+
+| Method | Return | Description |
+| :--- | :--- | :--- |
+| `win.set_state(key string, val string)` | `&SimpleWindow` | Stores a string value and notifies all listeners registered for `key`. |
+| `win.get_state(key string)` | `string` | Retrieves a state string, or empty string `''` if missing. |
+| `win.get_state_or(key string, default_val string)` | `string` | Retrieves a state string or returns `default_val` fallback. |
+| `win.has_state(key string)` | `bool` | Returns `true` if `key` is present in the state store. |
+| `win.remove_state(key string)` | `&SimpleWindow` | Removes a key from the state store. |
+| `win.clear_state()` | `&SimpleWindow` | Purges all keys from the reactive state store. |
+| `win.set_state_int(key string, val int)` | `&SimpleWindow` | Sets an integer state value. |
+| `win.get_state_int(key string)` | `int` | Gets integer state value (or 0). |
+| `win.get_state_int_or(key string, fallback int)` | `int` | Gets integer state value or returns `fallback`. |
+| `win.set_state_bool(key string, val bool)` | `&SimpleWindow` | Sets a boolean state value. |
+| `win.get_state_bool(key string)` | `bool` | Gets boolean state value (or false). |
+| `win.get_state_bool_or(key string, fallback bool)` | `bool` | Gets boolean state value or returns `fallback`. |
+| `win.set_state_f64(key string, val f64)` | `&SimpleWindow` | Sets a float state value. |
+| `win.get_state_f64(key string)` | `f64` | Gets float state value (or 0.0). |
+| `win.get_state_f64_or(key string, fallback f64)` | `f64` | Gets float state value or returns `fallback`. |
+| `win.toggle_state_bool(key string)` | `bool` | Inverts a boolean state value and returns the new state. |
+| `win.increment_state_int(key string, amount int)` | `int` | Adds `amount` to an integer state value and returns the new value. |
+| `win.on_state_change(key string, callback)` | `&SimpleWindow` | Registers a listener callback invoked whenever `key` changes. |
+
+```v
+win.set_state('user_name', 'Ada Lovelace')
+win.set_state_int('counter', 1)
+win.set_state_bool('auto_login', true)
+
+win.on_state_change('counter', fn (mut win simplegui.SimpleWindow, val string) {
+    println("Counter changed to: ${val}")
+})
+
+win.increment_state_int('counter', 1) // prints: "Counter changed to: 2"
+```
+
+### 21.2 Two-Way Control Data Binding
+
+Synchronize UI controls directly with reactive state keys in both directions. Changes in UI controls update state keys, and `win.set_state(...)` updates UI controls without triggering recursive loops.
+
+| Method | Return | Description |
+| :--- | :--- | :--- |
+| `win.bind_state(control_name string, key string)` | `&SimpleWindow` | Establishes bidirectional reactive binding between control and state key. |
+| `win.bind_control(control_name string, key string)` | `&SimpleWindow` | Ergonomic alias for `bind_state`. |
+| `win.bind_value(control_name string, key string)` | `&SimpleWindow` | Ergonomic alias for `bind_state`. |
+
+```v
+win.add_input('txt_username', '')
+win.bind_state('txt_username', 'user.name')
+
+// Modifying the text input updates state 'user.name'
+// Modifying win.set_state('user.name', 'Grace') updates 'txt_username' text field
+```
+
+### 21.3 Automatic Form & Window Persistence
+
+SimpleGUI automatically saves and restores form inputs, slider positions, checkboxes, active theme, and window dimensions across app launches.
+
+- **Auto-Save Lifecycle:** Enabled by default (`auto_save_state = true`). Window restores saved form state during `run()` and automatically saves form state atomically during window close / `close_requested`.
+- **Atomic File Replacement:** State files are written to `.tmp` files with `fsync` before atomic renaming, preventing file corruption on crashes or abrupt shutdowns.
+- **Cross-Platform OS Standard Directories:** macOS `~/Library/Application Support/<app>`, Windows `%APPDATA%\<app>`, Linux `~/.local/state/<app>`.
+
+| Method | Return | Description |
+| :--- | :--- | :--- |
+| `win.enable_auto_save_state(enabled bool)` | `&SimpleWindow` | Toggles automatic form state persistence on startup/shutdown. |
+| `win.enable_auto_save()` | `&SimpleWindow` | Fluent alias to enable automatic form persistence. |
+| `win.disable_auto_save()` | `&SimpleWindow` | Fluent alias to disable automatic form persistence. |
+| `win.save_app_form_state(app_name ...string)` | `!` | Atomically persists active control values, theme, and window dimensions. |
+| `win.restore_app_form_state(app_name ...string)` | `bool` | Restores persisted control values, active theme, and window geometry. |
+| `win.clear_app_form_state(app_name ...string)` | `!` | Deletes the persisted form state JSON file for the application. |
+| `win.save_window_session(app_name string)` | `!` | Persists window dimensions, theme, and state keys to `session.json`. |
+| `win.restore_window_session(app_name string)` | `bool` | Restores window dimensions, theme, and state keys from `session.json`. |
+| `win.export_form_json()` | `string` | Serializes current form control values to formatted JSON. |
+| `win.import_form_json(json_str string)` | `!` | Deserializes JSON string and populates corresponding UI controls. |
+| `win.get_control_ptr(name string)` | `!&ControlEntry` | Retrieves mutable pointer to a control for low-level inspection. |
+| `win.control(name string)` | `&ControlEntry` | Direct lookup returning mutable pointer, panics if not found. |
+
 
 
 

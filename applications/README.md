@@ -4,7 +4,7 @@ Native macOS GUI applications built with **SimpleGUI** for V, providing high-per
 
 ---
 
-## 📦 Complete Applications Suite (44 Workstations)
+## 📦 Complete Applications Suite (47 Workstations)
 
 | Application | Source File | Description |
 | :--- | :--- | :--- |
@@ -51,6 +51,9 @@ Native macOS GUI applications built with **SimpleGUI** for V, providing high-per
 | **📊 Statistics Studio Pro** | [`applications/statistics_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/statistics_studio.v) | Comprehensive scientific data science workbench in pure V: descriptive statistics, normality tests, hypothesis testing (Student's t-test, ANOVA), OLS linear regression, and ASCII histograms. |
 | **📈 Graph Studio Pro** | [`applications/graph_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/graph_studio.v) | High-precision scientific plotting & visualization studio in pure V: 2D continuous function grapher, multi-series data visualizer, bar charts, scatter plots, and network topology graph visualizer. |
 | **💻 Programmer Calculator** | [`applications/programmer_calculator.v`](file:///Users/codecaine/vlang_simplegui/applications/programmer_calculator.v) | Advanced multi-radix computer science calculator in pure V: simultaneous Hex, Dec, Oct, Bin displays, interactive 64-bit grid, IEEE-754 floating point inspector, Endianness converters, and bitwise logic. |
+| **⚰️ Rip Studio Pro** | [`applications/rip_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/rip_studio.v) | Safe deletion & graveyard recovery workbench powered by `rip2`: non-destructive `rm` alternative, tomb browser, directory séance ghost summoning, selective restoration, and purge telemetry. |
+| **⚡ Watchexec Studio Pro** | [`applications/watchexec_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/watchexec_studio.v) | Real-time filesystem event monitor & automated task runner powered by `watchexec`: live daemon lifecycle, debounce configuration, path filters, and background execution console. |
+| **🛠️ Omnitool Studio Pro** | [`applications/omnitool_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/omnitool_studio.v) | Universal Unix toolchain & developer workbench orchestrator: unified control center for `fd`, `sd`, `watchexec`, `wget2`, `rg`, `rip`, `ouch`, `bat`, and `eza`. |
 | **🚀 Media & Data Studio Hub** | [`applications/media_studio_hub.v`](file:///Users/codecaine/vlang_simplegui/applications/media_studio_hub.v) | Master workstation with system environment diagnostics, instant one-click quick tools (Discord <10MB, TikTok 9:16, Loudnorm, Favicon, Remove White BG, 2-Pass GIF, WebP), and sub-app launchers. |
 
 ---

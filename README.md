@@ -1987,19 +1987,32 @@ Screenshots are auto-generated using `v run scripts/capture_demos.vsh`.
 
 ## Production Workstations & Studio Applications
 
-SimpleGUI includes 44 complete, native desktop workstation applications in [`applications/`](applications/) designed for engineering workflows, low-level binary & bitwise register engineering, 2D function plotting & network graph topology, symbolic math, physical dimensional analysis, calculus, statistics & data science, network intelligence, text & code editing, universal archiving & compression, stream editing, system monitoring, filesystem discovery, data analysis, speech synthesis, and media transformation:
+SimpleGUI includes 47 complete, native desktop workstation applications in [`applications/`](applications/) designed for engineering workflows, low-level binary & bitwise register engineering, 2D function plotting & network graph topology, symbolic math, physical dimensional analysis, calculus, statistics & data science, network intelligence, text & code editing, universal archiving & compression, stream editing, system monitoring, filesystem discovery, data analysis, speech synthesis, and media transformation:
 
-### 📦 Prerequisites & Homebrew Installation:
+### 📦 Prerequisites & Homebrew Installation
+
+You can install all dependencies via standard Homebrew bundle, automated shell script, or the interactive V dependency inspector:
 
 ```bash
-# Check status and automatically install missing Homebrew formulae
-./install_deps.vsh
+# 1. Automated Homebrew Bundle Installation (Recommended)
+./install_homebrew_dependencies.sh
 
-# Or install manually via Homebrew:
-brew install ripgrep fd sd gawk ouch ffmpeg imagemagick pandoc wget2 yt-dlp subfinder jq libqalculate numbat kalker nmap exiftool tesseract graphviz
+# Or directly with Homebrew bundle:
+brew bundle --file ./Brewfile
+
+# 2. Interactive / Non-Interactive V Dependency Inspector & Auto-Installer
+./install_dependencies.vsh -y
+
+# 3. Check health and missing dependencies without installing:
+./install_dependencies.vsh --check
+
+# 4. Include optional cross-compilers (zig, mingw-w64):
+./install_homebrew_dependencies.sh --optional
+# or
+./install_dependencies.vsh --all -y
 ```
 
-### 🚀 Complete Workstations Catalog (44 Applications):
+### 🚀 Complete Workstations Catalog (47 Applications):
 
 | Application | Source File | Description |
 | :--- | :--- | :--- |

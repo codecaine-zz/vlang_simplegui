@@ -373,6 +373,10 @@ pub fn (win &SimpleWindow) restore_saved_theme() string {
 
 // apply_theme applies a Theme struct configuration to the window and persists the selection.
 pub fn (win &SimpleWindow) apply_theme(t Theme) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.theme = t
+	}
 	win.set_background_color(t.background_color)
 	win.set_font_color(t.font_color)
 	save_theme(t.name)
@@ -383,6 +387,16 @@ pub fn (win &SimpleWindow) apply_theme(t Theme) &SimpleWindow {
 pub fn (win &SimpleWindow) set_theme(theme_name string) &SimpleWindow {
 	t := get_theme(theme_name)
 	return win.apply_theme(t)
+}
+
+// get_theme retrieves the current active Theme struct of the window.
+pub fn (win &SimpleWindow) get_theme() Theme {
+	return win.theme
+}
+
+// get_theme_name retrieves the current active theme name of the window.
+pub fn (win &SimpleWindow) get_theme_name() string {
+	return win.theme.name
 }
 
 // color sets the background color of the last created control.
