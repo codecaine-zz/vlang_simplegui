@@ -106,9 +106,9 @@ pub:
 fn build_simple_http_response(url string, res http.Response) SimpleHttpResponse {
 	return SimpleHttpResponse{
 		status_code: int(res.status_code)
-		body:        res.body
+		body: res.body
 		raw_headers: res.header.str()
-		url:         url
+		url: url
 	}
 }
 
@@ -117,9 +117,9 @@ fn http_request_once(method http.Method, url string, data string, headers map[st
 		return error('url cannot be empty')
 	}
 	mut req := http.Request{
-		url:    url
+		url: url
 		method: method
-		data:   data
+		data: data
 	}
 	if user_agent.len > 0 {
 		req.header.set(http.CommonHeader.user_agent, user_agent)
@@ -140,8 +140,7 @@ pub fn http_request(method http.Method, url string, data string, options SimpleH
 	attempts := if options.retries > 0 { options.retries + 1 } else { 1 }
 	mut last_err := 'request failed'
 	for attempt in 0 .. attempts {
-		res := http_request_once(method, url, data, options.headers, options.user_agent,
-			options.expect_success) or {
+		res := http_request_once(method, url, data, options.headers, options.user_agent, options.expect_success) or {
 			last_err = err.msg()
 			if attempt < attempts - 1 && options.retry_delay_ms > 0 {
 				time.sleep(options.retry_delay_ms * time.millisecond)
@@ -289,7 +288,7 @@ pub fn crypto_encrypt_aes(plain_text string, key_hex string) string {
 	// Deterministic IV to keep decryption simple
 	iv := [u8(9), 8, 7, 6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4]
 
-	block := aes.new_cipher(key)
+	block := aes.new_cipher(key) or { return '' }
 	mut enc := cipher.new_cbc(block, iv)
 
 	plaintext := plain_text.bytes()
@@ -329,7 +328,7 @@ pub fn crypto_decrypt_aes(cipher_hex string, key_hex string) string {
 		return ''
 	}
 
-	block := aes.new_cipher(key)
+	block := aes.new_cipher(key) or { return '' }
 	mut dec := cipher.new_cbc(block, iv)
 	mut decrypted := []u8{len: ciphertext.len}
 	dec.decrypt_blocks(mut decrypted, ciphertext)
@@ -386,7 +385,7 @@ fn pkcs7_unpad(data []u8, block_size int) ![]u8 {
 pub fn crypto_encrypt_aes_secure(plain_text string, key_hex string) !string {
 	key := aes_key_from_hex_strict(key_hex)!
 	iv := crand.bytes(16)!
-	block := aes.new_cipher(key)
+	block := aes.new_cipher(key)!
 	mut enc := cipher.new_cbc(block, iv)
 	padded := pkcs7_pad(plain_text.bytes(), 16)
 	mut ciphertext := []u8{len: padded.len}
@@ -411,7 +410,7 @@ pub fn crypto_decrypt_aes_secure(payload_hex string, key_hex string) !string {
 	}
 	iv := payload[..16].clone()
 	ciphertext := payload[16..]
-	block := aes.new_cipher(key)
+	block := aes.new_cipher(key)!
 	mut dec := cipher.new_cbc(block, iv)
 	mut decrypted := []u8{len: ciphertext.len}
 	dec.decrypt_blocks(mut decrypted, ciphertext)
@@ -667,9 +666,11 @@ pub fn (t &TOMLWrapperDoc) get_bool(key string) bool {
 
 // toml_parse parses flat TOML text content, wrapping query details inside an easy helper.
 pub fn toml_parse(content string) &TOMLWrapperDoc {
-	res := toml.parse_text(content) or { return &TOMLWrapperDoc{
-		doc: toml.Doc{}
-	} }
+	res := toml.parse_text(content) or {
+		return &TOMLWrapperDoc{
+			doc: toml.Doc{}
+		}
+	}
 	return &TOMLWrapperDoc{
 		doc: res
 	}
@@ -746,7 +747,7 @@ pub type SimpleWSMessageCallback = fn (msg string)
 
 pub struct SimpleWSClient {
 pub mut:
-	client        &websocket.Client       = unsafe { nil }
+	client        &websocket.Client = unsafe { nil }
 	on_message_cb SimpleWSMessageCallback = unsafe { nil }
 }
 
@@ -769,7 +770,7 @@ pub fn websocket_client(url string, on_msg SimpleWSMessageCallback) ?&SimpleWSCl
 	mut client := websocket.new_client(url) or { return none }
 
 	mut ws := &SimpleWSClient{
-		client:        client
+		client: client
 		on_message_cb: on_msg
 	}
 
@@ -1460,10 +1461,10 @@ pub fn (win &SimpleWindow) html_parse(content string) SimpleHTMLDocument {
 // Supported corpora: 'lorem' (default), 'poe', 'darwin', 'bard'.
 pub fn lorem_generate(corpus_name string, paragraphs int, sentences int, words int) string {
 	return lorem.generate(lorem.LoremCfg{
-		corpus_name:             corpus_name
-		paragraphs:              paragraphs
+		corpus_name: corpus_name
+		paragraphs: paragraphs
 		sentences_per_paragraph: sentences
-		words_per_sentence:      words
+		words_per_sentence: words
 	})
 }
 
@@ -1995,7 +1996,7 @@ pub:
 pub fn crypto_ed25519_generate_key() !SimpleEd25519KeyPair {
 	pub_k, priv_k := ed25519.generate_key()!
 	return SimpleEd25519KeyPair{
-		pub_key:  pub_k
+		pub_key: pub_k
 		priv_key: priv_k
 	}
 }
@@ -2642,11 +2643,11 @@ pub fn url_parse(raw_url string) SimpleURL {
 		}
 	}
 	return SimpleURL{
-		scheme:   u.scheme
-		host:     u.hostname()
-		port:     u.port()
-		path:     u.path
-		query:    query_map
+		scheme: u.scheme
+		host: u.hostname()
+		port: u.port()
+		path: u.path
+		query: query_map
 		fragment: u.fragment
 	}
 }
@@ -2660,9 +2661,9 @@ pub fn (win &SimpleWindow) url_parse(raw_url string) SimpleURL {
 pub fn url_build(scheme string, host string, path string, query_params map[string]string) string {
 	su := SimpleURL{
 		scheme: scheme
-		host:   host
-		path:   path
-		query:  query_params
+		host: host
+		path: path
+		query: query_params
 	}
 	return su.build_url()
 }
@@ -3066,13 +3067,23 @@ pub fn (win &SimpleWindow) http_download(url string, dest_file string) !&SimpleW
 
 // levenshtein_distance computes the edit distance between two strings.
 pub fn levenshtein_distance(a string, b string) int {
-	if a == b { return 0 }
-	if a.len == 0 { return b.len }
-	if b.len == 0 { return a.len }
+	if a == b {
+		return 0
+	}
+	if a.len == 0 {
+		return b.len
+	}
+	if b.len == 0 {
+		return a.len
+	}
 
 	mut d := [][]int{len: a.len + 1, init: []int{len: b.len + 1, init: 0}}
-	for i in 0 .. a.len + 1 { d[i][0] = i }
-	for j in 0 .. b.len + 1 { d[0][j] = j }
+	for i in 0 .. a.len + 1 {
+		d[i][0] = i
+	}
+	for j in 0 .. b.len + 1 {
+		d[0][j] = j
+	}
 
 	for i in 1 .. a.len + 1 {
 		for j in 1 .. b.len + 1 {
@@ -3090,9 +3101,13 @@ pub fn (win &SimpleWindow) levenshtein_distance(a string, b string) int {
 
 // similarity_ratio calculates a float similarity between 0.0 (unrelated) and 1.0 (identical).
 pub fn similarity_ratio(a string, b string) f64 {
-	if a == b { return 1.0 }
+	if a == b {
+		return 1.0
+	}
 	max_len := math.max(a.len, b.len)
-	if max_len == 0 { return 1.0 }
+	if max_len == 0 {
+		return 1.0
+	}
 	dist := levenshtein_distance(a, b)
 	return 1.0 - (f64(dist) / f64(max_len))
 }
@@ -3104,7 +3119,8 @@ pub fn (win &SimpleWindow) similarity_ratio(a string, b string) f64 {
 
 // lorem_words generates placeholder words.
 pub fn lorem_words(count int) string {
-	sample := ['lorem', 'ipsum', 'dolor', 'sit', 'amet', 'consectetur', 'adipiscing', 'elit', 'sed', 'do', 'eiusmod', 'tempor', 'incididunt', 'ut', 'labore', 'et', 'dolore', 'magna', 'aliqua']
+	sample := ['lorem', 'ipsum', 'dolor', 'sit', 'amet', 'consectetur', 'adipiscing', 'elit', 'sed',
+		'do', 'eiusmod', 'tempor', 'incididunt', 'ut', 'labore', 'et', 'dolore', 'magna', 'aliqua']
 	mut out := []string{}
 	for i in 0 .. count {
 		out << sample[i % sample.len]

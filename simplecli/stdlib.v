@@ -156,12 +156,12 @@ pub fn (cli &SimpleCli) crypto_bcrypt_verify(password string, hash string) bool 
 // crypto_aes_encrypt encrypts plaintext using AES-256-CTR with a 32-byte key.
 pub fn (cli &SimpleCli) crypto_aes_encrypt(key_str string, plaintext string) !string {
 	key_hash := sha256.sum(key_str.bytes())
-	block := aes.new_cipher(key_hash)
+	block := aes.new_cipher(key_hash)!
 	iv := rand.bytes(aes.block_size) or { return error('Failed to generate random IV') }
 	mut stream := cipher.new_ctr(block, iv)
 	mut ciphertext := []u8{len: plaintext.len}
 	stream.xor_key_stream(mut ciphertext, plaintext.bytes())
-	
+
 	mut combined := []u8{cap: iv.len + ciphertext.len}
 	combined << iv
 	combined << ciphertext
@@ -177,7 +177,7 @@ pub fn (cli &SimpleCli) crypto_aes_decrypt(key_str string, b64_ciphertext string
 	iv := combined[..aes.block_size]
 	cipher_bytes := combined[aes.block_size..]
 	key_hash := sha256.sum(key_str.bytes())
-	block := aes.new_cipher(key_hash)
+	block := aes.new_cipher(key_hash)!
 	mut stream := cipher.new_ctr(block, iv)
 	mut plaintext := []u8{len: cipher_bytes.len}
 	stream.xor_key_stream(mut plaintext, cipher_bytes)
@@ -405,7 +405,8 @@ pub fn (cli &SimpleCli) semver_compare(v1 string, v2 string) !int {
 
 // lorem_words generates placeholder words.
 pub fn (cli &SimpleCli) lorem_words(count int) string {
-	sample := ['lorem', 'ipsum', 'dolor', 'sit', 'amet', 'consectetur', 'adipiscing', 'elit', 'sed', 'do', 'eiusmod', 'tempor', 'incididunt', 'ut', 'labore', 'et', 'dolore', 'magna', 'aliqua']
+	sample := ['lorem', 'ipsum', 'dolor', 'sit', 'amet', 'consectetur', 'adipiscing', 'elit', 'sed',
+		'do', 'eiusmod', 'tempor', 'incididunt', 'ut', 'labore', 'et', 'dolore', 'magna', 'aliqua']
 	mut out := []string{}
 	for i in 0 .. count {
 		out << sample[i % sample.len]
@@ -599,13 +600,23 @@ pub fn (mut h SimpleMinHeap) pop() ?f64 {
 
 // levenshtein_distance computes the edit distance between two strings.
 pub fn (cli &SimpleCli) levenshtein_distance(a string, b string) int {
-	if a == b { return 0 }
-	if a.len == 0 { return b.len }
-	if b.len == 0 { return a.len }
+	if a == b {
+		return 0
+	}
+	if a.len == 0 {
+		return b.len
+	}
+	if b.len == 0 {
+		return a.len
+	}
 
 	mut d := [][]int{len: a.len + 1, init: []int{len: b.len + 1, init: 0}}
-	for i in 0 .. a.len + 1 { d[i][0] = i }
-	for j in 0 .. b.len + 1 { d[0][j] = j }
+	for i in 0 .. a.len + 1 {
+		d[i][0] = i
+	}
+	for j in 0 .. b.len + 1 {
+		d[0][j] = j
+	}
 
 	for i in 1 .. a.len + 1 {
 		for j in 1 .. b.len + 1 {
@@ -618,9 +629,13 @@ pub fn (cli &SimpleCli) levenshtein_distance(a string, b string) int {
 
 // similarity_ratio calculates a float similarity between 0.0 (unrelated) and 1.0 (identical).
 pub fn (cli &SimpleCli) similarity_ratio(a string, b string) f64 {
-	if a == b { return 1.0 }
+	if a == b {
+		return 1.0
+	}
 	max_len := math.max(a.len, b.len)
-	if max_len == 0 { return 1.0 }
+	if max_len == 0 {
+		return 1.0
+	}
 	dist := cli.levenshtein_distance(a, b)
 	return 1.0 - (f64(dist) / f64(max_len))
 }
