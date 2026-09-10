@@ -28,6 +28,7 @@ Build real, native Cocoa desktop apps in [V](https://vlang.io) with a beginner-f
 - [Demos](#demos)
 - [Production Workstations & Studio Applications](#production-workstations--studio-applications)
 - [SimpleCLI: Headless Console & RAD Toolkit](#simplecli-headless-console--rad-toolkit)
+- [Developer Utility Suite (30 Modules)](#developer-utility-suite-30-modules)
 - [Related GUI & RAD Desktop Projects](#related-gui--rad-desktop-projects)
 - [Security & Command Injection Prevention](#security--command-injection-prevention)
 - [Testing](#testing)
@@ -2220,6 +2221,47 @@ For headless console scripts, backend daemons, automation tools, and CI/CD pipel
 - **Production CLI Suite**: Ready-to-use tools in [`cli_apps/`](cli_apps/) (`devops_sentinel.v`, `vault_backup_manager.v`, `api_stress_bench.v`, `multirepo_git_pilot.v`).
 
 👉 **Read the comprehensive 20-chapter [SimpleCLI Reference Manual (CLI_API.md)](CLI_API.md).**
+
+---
+
+## Developer Utility Suite (30 Modules)
+
+`vlang_simplegui` bundles the complete **`vlang_utils`** developer utility suite — 30 standalone, zero-dependency, production-grade utility modules designed for rapid application development:
+
+| Module | Description |
+| :--- | :--- |
+| [`fileutils`](UTILS_API.md#fileutils-api) | JSON serialization, text operations, CSV parsing, copy/move, recursive listing, human-readable file sizes. |
+| [`sqliteutils`](UTILS_API.md#sqliteutils-api) | Ergonomic SQLite persistence, KV store, JSON document store, SQL injection defense, parameterized CRUD, secure PRAGMAs, DDL migrations. |
+| [`strutils`](UTILS_API.md#strutils-api) | Case conversions (snake, kebab, camel, pascal, title), slugify, masking, padding, Levenshtein distance, word wrap. |
+| [`sliceutils`](UTILS_API.md#sliceutils-api) | Generic collection operations: unique, chunk, flatten, partition, intersection, difference, shuffle, sampling, stats. |
+| [`envutils`](UTILS_API.md#envutils-api) | Type-safe environment variable retrieval (`get_str`, `get_int`, `get_bool`), `.env` file loader, variable expansion. |
+| [`cryptoutils`](UTILS_API.md#cryptoutils-api) | SHA-256, SHA-512, MD5, HMAC-SHA256, Base64 / Base64URL encode/decode, UUID v4, secure tokens. |
+| [`timeutils`](UTILS_API.md#timeutils-api) | Human relative time ("2 hours ago", "in 3 days"), ISO 8601 formatting/parsing, calendar boundaries, `Stopwatch`. |
+| [`httputils`](UTILS_API.md#httputils-api) | Ergonomic HTTP client (`get_json[T]`, `post_json[T, R]`, `get_text`), query string builder/parser, retry with backoff. |
+| [`cliutils`](UTILS_API.md#cliutils-api) | Terminal ANSI styling, FlagParser, interactive prompts, progress bar, sparkline, bar chart, gauge, tree, diff, tables. |
+| [`sysutils`](UTILS_API.md#sysutils-api) | System telemetry (CPU usage/cores, RAM, swap, disk, uptime, load averages), safe exec (`exec_safe`, `quote_arg`), paths, clipboard. |
+| [`netutils`](UTILS_API.md#netutils-api) | Network discovery (local/public IP, MAC, Wi-Fi SSID, DNS servers, gateway, listening ports), connectivity check & TCP ping. |
+| [`validutils`](UTILS_API.md#validutils-api) | High-speed validation for email, URL, IPv4/IPv6, phone numbers, alphanumeric strings, numeric ranges, UUID, JSON. |
+| [`structutils`](UTILS_API.md#structutils-api) | Generic RAD data structures: `SimpleStack[T]`, `SimpleQueue[T]`, circular `SimpleRingBuffer[T]`, and `SimpleMinHeap`. |
+| [`statutils`](UTILS_API.md#statutils-api) | Statistical analysis, regression & modeling: mean, median, mode, sample/pop variance & std dev, SEM, quartiles, IQR, skewness, kurtosis, covariance, Pearson/Spearman correlation, OLS linear regression, normal PDF/CDF, Z-scores, outlier detection, moving averages, and summary profiles. |
+| [`stateutils`](UTILS_API.md#stateutils-api) | Managed app state persistence (`AppStateStore[T]`, `KeyValueState`) in OS-recommended paths with atomic writes, auto-save, and rollback. |
+| [`cacheutils`](UTILS_API.md#cacheutils-api) | In-memory caching: fixed-capacity `LRUCache[T]` with O(1) recency eviction and entry-level `TTLCache[T]` with auto-cleanup and `get_or_set`. |
+| [`semverutils`](UTILS_API.md#semverutils-api) | Semantic Versioning 2.0.0 parsing, precedence comparison, range matching (`^`, `~`, `>=`, `<=`), and version bumping. |
+| [`flowutils`](UTILS_API.md#flowutils-api) | Traffic control & resilience: Token Bucket `RateLimiter`, 3-state `CircuitBreaker`, exponential backoff `retry[T]`, and event `Debouncer`. |
+| [`templateutils`](UTILS_API.md#templateutils-api) | Fast string templating with fallback defaults (`{{key | default}}`), dynamic resolvers, and styled ANSI markdown terminal rendering. |
+| [`colorutils`](UTILS_API.md#colorutils-api) | HEX/RGB/HSL color conversions, color theory transforms, WCAG 2.1 accessibility & contrast auditing, and 24-bit Truecolor terminal formatting. |
+| [`archiveutils`](UTILS_API.md#archiveutils-api) | Ergonomic Zip archive creation, extraction, recursive directory compression, and in-memory inspection via V's native `compress.szip`. |
+| [`asyncutils`](UTILS_API.md#asyncutils-api) | Bounded concurrency primitives: order-preserving `parallel_map[T, R]`, `parallel_filter[T]`, `parallel_each[T]`, `WaitGroup`, and `WorkerPool`. |
+| [`regexutils`](UTILS_API.md#regexutils-api) | High-level regular expression helpers: `is_match`, `find_first`, `find_all`, `replace`, `split`, and `find_matches`. |
+| [`mockutils`](UTILS_API.md#mockutils-api) | Synthetic testing & prototyping data generation: `lorem_text`, `lorem_words`, `mock_user`, `mock_email`, `mock_phone`, `mock_ipv4`, `mock_url`. |
+| [`logutils`](UTILS_API.md#logutils-api) | Leveled structured logging (`LogLevel`, `Logger`, file/stdout targets, ANSI color highlighting). |
+| [`tomlutils`](UTILS_API.md#tomlutils-api) | TOML configuration file and string parsing with typed accessors (`get_string`, `get_int`, `get_bool`, `get_strings`). |
+| [`htmlutils`](UTILS_API.md#htmlutils-api) | HTML parsing, DOM navigation (`get_element_by_id`, `get_elements_by_tag`), entity escaping, and tag stripping. |
+| [`bitutils`](UTILS_API.md#bitutils-api) | Dynamic bitsets (`BitSet`), bitwise operations, popcount, binary string conversions, and bitmask flag manipulation. |
+| [`compressutils`](UTILS_API.md#compressutils-api) | Fast compression & decompression for Gzip, Zlib, Deflate, and Zstandard strings and byte buffers. |
+| [`tarutils`](UTILS_API.md#tarutils-api) | In-memory and on-disk TAR archive creation, unpacking, directory archiving, and tarball inspection. |
+
+👉 **Read the comprehensive 4,600+ line [Developer Utility Suite Reference Manual (UTILS_API.md)](UTILS_API.md).**
 
 ---
 
