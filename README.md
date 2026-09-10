@@ -2234,7 +2234,7 @@ For headless console scripts, backend daemons, automation tools, and CI/CD pipel
 | [`sqliteutils`](UTILS_API.md#sqliteutils-api) | Ergonomic SQLite persistence, KV store, JSON document store, SQL injection defense, parameterized CRUD, secure PRAGMAs, DDL migrations. |
 | [`strutils`](UTILS_API.md#strutils-api) | Case conversions (snake, kebab, camel, pascal, title), slugify, masking, padding, Levenshtein distance, word wrap. |
 | [`sliceutils`](UTILS_API.md#sliceutils-api) | Generic collection operations: unique, chunk, flatten, partition, intersection, difference, shuffle, sampling, stats. |
-| [`envutils`](UTILS_API.md#envutils-api) | Type-safe environment variable retrieval (`get_str`, `get_int`, `get_bool`), `.env` file loader, variable expansion. |
+| [`envutils`](UTILS_API.md#envutils-api) | Type-safe environment variable retrieval (`get_str`, `get_int`, `get_bool`), setters (`set`, `set_int`, `set_bool`), `.env` file loader, variable expansion. |
 | [`cryptoutils`](UTILS_API.md#cryptoutils-api) | SHA-256, SHA-512, MD5, HMAC-SHA256, Base64 / Base64URL encode/decode, UUID v4, secure tokens. |
 | [`timeutils`](UTILS_API.md#timeutils-api) | Human relative time ("2 hours ago", "in 3 days"), ISO 8601 formatting/parsing, calendar boundaries, `Stopwatch`. |
 | [`httputils`](UTILS_API.md#httputils-api) | Ergonomic HTTP client (`get_json[T]`, `post_json[T, R]`, `get_text`), query string builder/parser, retry with backoff. |
