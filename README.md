@@ -28,7 +28,7 @@ Build real, native Cocoa desktop apps in [V](https://vlang.io) with a beginner-f
 - [Demos](#demos)
 - [Production Workstations & Studio Applications](#production-workstations--studio-applications)
 - [SimpleCLI: Headless Console & RAD Toolkit](#simplecli-headless-console--rad-toolkit)
-- [🌟 Related RAD & GUI Ecosystem Projects](#related-rad--gui-ecosystem-projects)
+- [Related GUI & RAD Desktop Projects](#related-gui--rad-desktop-projects)
 - [Security & Command Injection Prevention](#security--command-injection-prevention)
 - [Testing](#testing)
 - [Project structure](#project-structure)
@@ -2223,15 +2223,22 @@ For headless console scripts, backend daemons, automation tools, and CI/CD pipel
 
 ---
 
-## 🌟 Related RAD & GUI Ecosystem Projects
+# Related GUI & RAD Desktop Projects
 
-If you are developing graphical user interfaces, 2D game graphics, client desktop applications, or high-productivity command-line tools in V and modern web technologies, check out these related projects:
+Explore sister projects and complementary GUI frameworks, templates, and RAD visual design suites:
 
-| Project | Description | Primary Use Case |
+| Project | Primary Stack | Architecture & Description |
 | :--- | :--- | :--- |
-| **[simple_gg](https://github.com/codecaine-zz/simple_gg)** | A lightweight, high-performance 2D game and graphics engine / immediate-mode GUI toolkit written in V. Features hardware-accelerated rendering, sprites, shapes, animations, custom canvas drawing, and interactive controls. | 2D games, graphical simulations, custom canvas widgets, interactive data visualizers, and creative coding in V. |
-| **[bun_rad_studio](https://github.com/codecaine-zz/bun_rad_studio)** | A modern, full-stack Rapid Application Development (RAD) visual designer and code generation studio powered by Bun, TypeScript, and modern web UI technologies. Inspired by Delphi and Visual Basic. | Full-stack desktop & client web applications, rapid UI prototyping, visual form design, and component-driven client architecture. |
-| **[vlang_simplecli](https://github.com/codecaine-zz/vlang_simplecli)** | A high-productivity, zero-dependency console and terminal RAD toolkit for V. Provides rich ANSI colors, banners, interactive prompts, spinners, progress bars, data tables, safe process execution, and system diagnostics. | Headless CLI tools, DevOps scripts, backend daemons, automation utilities, and terminal dashboards (the headless companion to SimpleGUI). |
+| **[simple_gg](https://github.com/codecaine-zz/simple_gg)** | V (vlang) + Sokol / gg | Lightweight, cross-platform hardware-accelerated GUI framework with zero C/Obj-C dependencies. Delivers 47 desktop studio workstations, 49 companion CLIs, 34 themes, and reactive state persistence. |
+| **[Vlang Webview RAD Studio](https://github.com/codecaine-zz/vlang_webview_rad_studio)** | V (vlang) + Native OS Webview | Cross-platform visual Rapid Application Development (RAD) IDE & enterprise desktop suite. Borland Delphi/VB-inspired form designer with 70+ controls, 42 desktop themes, 16 enterprise studio applications, 16 companion CLIs, and standalone `.app`/`.exe`/ELF packager. |
+| **[Bun RAD Studio](https://github.com/codecaine-zz/bun_rad_studio)** | Bun + TypeScript / Webview-Bun | High-performance visual RAD IDE for Bun and Webview-Bun, featuring instant hot-reload, drag-and-drop form canvas, full TypeScript type safety, and 42 desktop themes. |
+| **[Vlang macOS Webview App Template](https://github.com/codecaine-zz/vlang_macos_webview_app_template)** | V (vlang) + Cocoa Webview | Standalone native macOS `.app` desktop application template for V using `ttytm.webview`, Cocoa Objective-C window helper integration (`window_helper.m`), 9-point screen placement geometry, stay-on-top pinning, and two-way IPC. |
+| **[vlang_simplegui](https://github.com/codecaine-zz/vlang_simplegui)** | V (vlang) + Native GUI | Declarative macOS-native GUI starter framework written in V, featuring fluent builder syntax, reactive two-way value synchronization, KPI dashboards, sortable tables, and dynamic live theme switching across 42 themes. |
+
+### Notable Open-Source Webview Frameworks
+
+- **[pywebview](https://github.com/r0x0r/pywebview)** - Lightweight, cross-platform native GUI window wrapper around OS webviews for Python applications by Roman Sirokov (`r0x0r`) and community.
+- **[Neutralinojs](https://github.com/neutralinojs/neutralinojs)** - Portable, lightweight cross-platform desktop application development framework using web technologies and native webview by the Neutralinojs organization.
 
 ---
 
