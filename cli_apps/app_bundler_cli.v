@@ -10,7 +10,7 @@ fn main() {
 	app.add_flag_string('bin', 'b', '', 'Path to compiled executable binary')
 	app.add_flag_string('name', 'n', 'MyApp', 'Application bundle display name')
 	app.add_flag_string('id', 'i', 'com.simplegui.app', 'Bundle identifier (CFBundleIdentifier)')
-	app.add_flag_string('version', 'v', '1.0.0', 'Bundle version (CFBundleShortVersionString)')
+	app.add_flag_string('bundle-version', 'V', '1.0.0', 'Bundle version (CFBundleShortVersionString)')
 	app.add_flag_string('out', 'o', '.', 'Output destination directory for .app bundle')
 	app.add_flag_bool('interactive', 'x', false, 'Launch interactive app bundler wizard')
 
@@ -37,7 +37,7 @@ fn main() {
 
 	app_name := app.get_flag_string('name')
 	bundle_id := app.get_flag_string('id')
-	version := app.get_flag_string('version')
+	version := app.get_flag_string('bundle-version')
 	out_dir := app.get_flag_string('out')
 
 	bundle_path := '${out_dir}/${app_name}.app'

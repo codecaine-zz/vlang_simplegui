@@ -32,7 +32,18 @@ v test .
 
 To run tests in the `tests/` directory specifically:
 ```bash
-v test tests/
+VJOBS=1 v test tests/
+```
+
+To verify that every GUI button has exactly one click handler and that CLI flags
+do not shadow built-in help/version options:
+```bash
+v test tests/application_audit_test.v
+```
+
+To run the SimpleCLI parser and utility tests:
+```bash
+v test simplecli/
 ```
 
 To build and run the main entry point:
@@ -62,6 +73,6 @@ v fmt -verify .
 ## Submitting Pull Requests
 
 1. Fork the repository and create a feature branch (`git checkout -b feature/my-feature`).
-2. Ensure `v test .` passes cleanly and `v fmt -verify .` succeeds.
+2. Ensure `VJOBS=1 v test .`, `v test tests/application_audit_test.v`, and `v fmt -verify .` succeed.
 3. Commit your changes with clear, descriptive commit messages.
 4. Push to your fork and submit a Pull Request to `main`.

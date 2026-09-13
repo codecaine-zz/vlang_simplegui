@@ -5,6 +5,7 @@
 //   v run cli_apps/vault_backup_manager.v --backup --src ./my_data --dest ./backup.vault
 //   v run cli_apps/vault_backup_manager.v --restore --src ./backup.vault --dest ./restored
 //   v run cli_apps/vault_backup_manager.v --verify --src ./backup.vault
+//   v run cli_apps/vault_backup_manager.v -V --src ./backup.vault
 
 module main
 
@@ -34,7 +35,7 @@ fn main() {
 
 	app.add_flag_bool('backup', 'b', false, 'Create a new encrypted archive')
 	app.add_flag_bool('restore', 'r', false, 'Restore and decrypt an existing archive')
-	app.add_flag_bool('verify', 'v', false, 'Verify archive cryptographic integrity')
+	app.add_flag_bool('verify', 'V', false, 'Verify archive cryptographic integrity')
 	app.add_flag_string('src', 's', '', 'Source path (file or directory)')
 	app.add_flag_string('dest', 'd', '', 'Destination path')
 	app.add_flag_string('key', 'k', '', 'Passphrase/Secret encryption key')

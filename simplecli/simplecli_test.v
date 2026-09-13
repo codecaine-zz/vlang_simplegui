@@ -34,6 +34,50 @@ fn test_simplecli_flags_and_args() {
 	assert app.get_positional_args() == ['positional_arg1', 'positional_arg2']
 }
 
+fn test_simplecli_rejects_unknown_and_missing_flag_values() {
+	mut app := new('StrictFlagTest')
+	app.add_flag_string('config', 'c', '', 'Path to config')
+	app.add_flag_int('port', 'p', 8080, 'Server port')
+	app.add_flag_bool('verbose', 'd', false, 'Verbose output')
+
+	if _ := app.parse_args(['--unknown']) {
+		assert false, 'unknown long option should fail'
+	} else {
+		assert err.msg() == 'Unknown option: --unknown'
+	}
+	if _ := app.parse_args(['-z']) {
+		assert false, 'unknown short option should fail'
+	} else {
+		assert err.msg() == 'Unknown option: -z'
+	}
+	if _ := app.parse_args(['--config']) {
+		assert false, 'missing long option value should fail'
+	} else {
+		assert err.msg() == 'Option --config requires a value'
+	}
+	if _ := app.parse_args(['-p', 'not-a-number']) {
+		assert false, 'invalid integer option should fail'
+	} else {
+		assert err.msg() == 'Option --port requires an integer, got "not-a-number"'
+	}
+	if _ := app.parse_args(['--verbose=maybe']) {
+		assert false, 'invalid boolean option should fail'
+	} else {
+		assert err.msg() == 'Option --verbose requires a boolean, got "maybe"'
+	}
+}
+
+fn test_simplecli_accepts_equals_values_containing_equals() {
+	mut app := new('EqualsFlagTest')
+	app.add_flag_string('filter', 'f', '', 'Filter expression')
+	app.add_flag_bool('verbose', 'd', true, 'Verbose output')
+
+	app.parse_args(['--filter=key=value', '--verbose=false']) or { panic(err) }
+
+	assert app.get_flag_string('filter') == 'key=value'
+	assert app.get_flag_bool('verbose') == false
+}
+
 fn test_simplecli_logging_and_file() {
 	mut app := new('LogTest')
 	temp_log := os.join_path(os.temp_dir(), 'simplecli_log_test_${os.getpid()}.log')
@@ -241,4 +285,3 @@ fn test_pipeline_execution() {
 	ok := pipeline.run()
 	assert ok == true
 }
-

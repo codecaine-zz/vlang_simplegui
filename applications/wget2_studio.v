@@ -246,7 +246,7 @@ fn main() {
 	})
 
 	// Quick 1GB Speed Test
-	win.on_click('btn_quick_100mb', fn (mut w simplegui.SimpleWindow) {
+	win.on_click('btn_quick_1gb', fn (mut w simplegui.SimpleWindow) {
 		w.set('txt_url', 'https://proof.ovh.net/files/1Gb.dat')
 		w.set_text('dd_preset', '⚡ Turbo Multi-Threaded File Download (Max Speed)')
 		w.toast('Loaded 1GB benchmark file.')

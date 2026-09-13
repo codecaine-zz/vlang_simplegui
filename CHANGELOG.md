@@ -5,7 +5,7 @@ All notable changes to SimpleGUI will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2026-07-28
+## [Unreleased]
 
 ### Added
 - **API Ergonomics**:
@@ -13,8 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `list_controls() []string`: Returns a slice of all active control IDs in a window.
   - Safe optional state accessors: `get_text_opt()`, `get_checked_opt()`, `get_value_int_opt()`, and `get_control_opt()` returning V Option types (`?T`).
 - **CI & Quality Integration**:
-  - GitHub Actions CI workflow running `v test .` and `v fmt -verify .` on every push/PR.
+  - GitHub Actions CI workflow formatting V sources and running `VJOBS=1 v test tests/` on every push/PR.
   - Added CI status badge to `README.md`.
+  - Added an application audit test covering all 47 GUI workstations and 49 CLI utilities. It verifies that every declared GUI button has exactly one click handler and that application flags do not shadow built-in help/version aliases.
 - **VPM Publishing Readiness**:
   - Updated `v.mod` metadata (`repo_url`, `tags`, `name: 'simplegui'`, `version: '0.5.0'`).
   - Added `.vpmignore` for lightweight package installation via VPM.
@@ -25,6 +26,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Detailed `CHANGELOG.md` tracking all major releases.
 
 ### Changed
+- **SimpleCLI Argument Validation**:
+  - Unknown options, missing values, and malformed typed values now fail explicitly.
+  - Invalid command-line usage is written to standard error and exits with status `2`.
+  - `--name=value` parsing preserves embedded equals signs.
+  - `--help`/`-h` and `--version`/`-v` are reserved consistently across all CLI applications.
 - **Module Architecture Refactor**:
   - Split the monolithic `simplegui.v` (~318 KB) into 7 domain-focused source files under `simplegui/`:
     - `window.v`: Core `SimpleWindow` struct, lifecycle functions, and Cocoa C bindings.
@@ -45,3 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Gated all debug `println` calls behind `$if debug { ... }`.
   - Standardized all string concatenations to V string interpolation syntax `${var}`.
   - Standardized event handler registration and function definition ordering to match control layout order.
+
+### Fixed
+- Wired the FFmpeg and ImageMagick “Batch Folder” controls to their batch tabs.
+- Corrected the Wget2 1 GB preset handler so it no longer replaces the 100 MB preset handler.

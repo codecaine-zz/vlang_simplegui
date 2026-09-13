@@ -2218,9 +2218,9 @@ For headless console scripts, backend daemons, automation tools, and CI/CD pipel
 - **Zero GUI Dependencies**: Pure terminal RAD toolkit (ANSI colors, banners, panels, data tables, spinners, progress bars, interactive prompts).
 - **Subprocess & Telemetry**: Safe process execution (`exec_safe`, `exec_timeout`, `parallel_exec`), argument quoting, and hardware resource monitoring (CPU, RAM, swap, load, battery).
 - **Stdlib & Cryptography**: Native HTTP client, SHA-256/512/MD5, AES-256-CTR, Bcrypt, GZIP, TOML, JSON, and generic data collections (`SimpleStack`, `SimpleQueue`, `SimpleRingBuffer`, `SimpleMinHeap`).
-- **Production CLI Suite**: Ready-to-use tools in [`cli_apps/`](cli_apps/) (`devops_sentinel.v`, `vault_backup_manager.v`, `api_stress_bench.v`, `multirepo_git_pilot.v`).
+- **Production CLI Suite**: 49 ready-to-use tools in [`cli_apps/`](cli_apps/), all with generated `--help`/`--version`, strict typed argument validation, stderr diagnostics, and nonzero invalid-usage exit codes.
 
-👉 **Read the comprehensive 20-chapter [SimpleCLI Reference Manual (CLI_API.md)](CLI_API.md).**
+👉 **Read the comprehensive 20-chapter [SimpleCLI Reference Manual (CLI_API.md)](CLI_API.md) or browse the [complete CLI application catalog](cli_apps/README.md).**
 
 ---
 
@@ -2314,7 +2314,7 @@ Contributions are welcome! If you find a bug, have a feature request, or want to
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/my-feature`)
 3. Commit your changes (`git commit -am 'Add new feature'`)
-4. Run tests (`v test .`)
+4. Run tests (`VJOBS=1 v test .`) and the application wiring audit (`v test tests/application_audit_test.v`)
 5. Push to your branch (`git push origin feature/my-feature`)
 6. Open a Pull Request
 

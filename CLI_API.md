@@ -80,11 +80,9 @@ app.add_flag_int('port', 'p', 5432, 'Target database port')
 app.add_flag_bool('dry-run', 'd', false, 'Simulate execution without modifying state')
 app.add_flag_float('timeout', 't', 30.0, 'Network timeout in seconds')
 
-// Parse command line arguments from os.args
-app.parse_cli() or {
-	// Automatically outputs flag usage or version if --help/-h or --version/-v was passed
-	return
-}
+// Parse os.args. Built-in help/version exit successfully; invalid usage writes
+// a diagnostic to stderr and exits with status 2.
+app.parse_cli()!
 
 // Access parsed flag values
 cfg_file   := app.get_flag_string('config')
@@ -102,6 +100,11 @@ Custom argument slices can also be parsed with `app.parse_args(args []string)`:
 ```v
 app.parse_args(['--config', 'custom.json', '--port', '8080', 'deploy', 'target1'])!
 ```
+
+`parse_args` returns an error for unknown options, options missing required values,
+and malformed `int`, `float`, or explicit `bool` values. Long option values may
+use either `--name value` or `--name=value`; embedded equals signs are preserved.
+Reserve `--help`/`-h` and `--version`/`-v` for the built-in behavior.
 
 ---
 

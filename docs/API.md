@@ -6541,29 +6541,29 @@ safe_name := simplegui.sanitize_filename('../../etc/passwd; evil')
 
 ## 20. Production Workstation Applications Suite
 
-SimpleGUI includes 19 production-grade desktop workstation applications located in [`applications/`](file:///Users/codecaine/vlang_simplegui/applications/):
+SimpleGUI includes 47 production-grade desktop workstation applications in [`applications/`](../applications/). The table below highlights 19 representative applications; see the [complete application catalog](../applications/README.md) for all workstations.
 
 | Application | Source File | Key Features |
 | :--- | :--- | :--- |
-| **📝 Text Editor Pro** | [`applications/text_editor.v`](file:///Users/codecaine/vlang_simplegui/applications/text_editor.v) | Code & document editor: multi-font typography, search/replace, JSON prettifier, Base64, transforms. |
-| **📝 Sed Studio Pro** | [`applications/sed_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/sed_studio.v) | Stream editor & regex scratchpad: live dual-pane transform, in-place file editing, 15 recipes. |
-| **📦 Ouch Studio Pro** | [`applications/ouch_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/ouch_studio.v) | Ultra-fast universal archive & compression workbench: `.tar.zst`, `.tar.gz`, `.zip`, `.7z`, `--fast`/`--slow`, tree inspector. |
-| **⚡ Task Manager Pro** | [`applications/task_manager.v`](file:///Users/codecaine/vlang_simplegui/applications/task_manager.v) | Process monitor & system telemetry: live process grid, resource stat cards, signals, and socket inspector. |
-| **📂 Find Studio Pro** | [`applications/find_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/find_studio.v) | Filesystem search & inode explorer, type filters, size filters, age, depth, and 10 recipes. |
-| **🗣️ Say Studio Pro** | [`applications/say_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/say_studio.v) | Speech synthesizer, voice browser, rate tuner, voiceover presets, audio exporter (.m4a/.aiff/.wav). |
-| **🔄 TR Studio Pro** | [`applications/tr_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/tr_studio.v) | Stream translation, deletion (`-d`), repeat squeeze (`-s`), 10 cleansing recipes, dual-pane editor. |
-| **✂️ Cut Studio Pro** | [`applications/cut_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/cut_studio.v) | Column slicing, field extraction (`-f`), delimiter selectors (comma, tab, colon, pipe, custom), 9 recipes. |
-| **🔍 RG Studio Pro** | [`applications/rg_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/rg_studio.v) | ripgrep code search workbench, type filters (`-t`), globs (`-g`), context lines (`-C`), 8 recipes. |
-| **⚡ FD Studio Pro** | [`applications/fd_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/fd_studio.v) | Fast filesystem indexer, multi-extension filters, large file detection (>100MB), recent modification filters. |
-| **🔍 SD Studio Pro** | [`applications/sd_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/sd_studio.v) | Regex find/replace workbench, capture groups (`$1`), in-place multi-file folder batch replacement. |
-| **⚡ GAWK Studio Pro** | [`applications/gawk_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/gawk_studio.v) | AWK scripting workbench, 40+ built-in one-liner recipes, CSV/Log parser, multi-gigabyte disk file streamer. |
-| **📄 Pandoc Studio Pro** | [`applications/pandoc_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/pandoc_studio.v) | Document publishing studio: Markdown, HTML5, LaTeX, Typst, Word .docx, EPUB, PPTX, syntax styling. |
-| **⚡ Wget2 Studio Pro** | [`applications/wget2_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/wget2_studio.v) | Multi-threaded download accelerator (16 threads), website offline mirror (`--mirror`), extension scrapers. |
-| **🎬 yt-dlp Studio Pro** | [`applications/yt_dlp_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/yt_dlp_studio.v) | 4K UHD / 1080p / 720p downloader, audio extractors (MP3 320k, FLAC), cookie authentication, section downloader. |
-| **🎬 FFmpeg Studio Pro** | [`applications/ffmpeg_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/ffmpeg_studio.v) | Transcoding, social presets (Discord <10MB, Reels 9:16), EBU R128 loudnorm, HD GIF generator, batch queue. |
-| **🎨 ImageMagick Studio Pro** | [`applications/imagemagick_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/imagemagick_studio.v) | WebP/AVIF compression, multi-size favicon generator, white background removal, batch image optimizer. |
-| **🌐 Subfinder Studio Pro** | [`applications/subfinder_studio.v`](file:///Users/codecaine/vlang_simplegui/applications/subfinder_studio.v) | Passive subdomain recon, active DNS validation, multi-source OSINT querying, rate-limiting. |
-| **🚀 Media & Data Studio Hub** | [`applications/media_studio_hub.v`](file:///Users/codecaine/vlang_simplegui/applications/media_studio_hub.v) | Master workstation hub with environment diagnostics, quick actions, and unified sub-application launchers. |
+| **📝 Text Editor Pro** | [`applications/text_editor.v`](../applications/text_editor.v) | Code & document editor: multi-font typography, search/replace, JSON prettifier, Base64, transforms. |
+| **📝 Sed Studio Pro** | [`applications/sed_studio.v`](../applications/sed_studio.v) | Stream editor & regex scratchpad: live dual-pane transform, in-place file editing, 15 recipes. |
+| **📦 Ouch Studio Pro** | [`applications/ouch_studio.v`](../applications/ouch_studio.v) | Ultra-fast universal archive & compression workbench: `.tar.zst`, `.tar.gz`, `.zip`, `.7z`, `--fast`/`--slow`, tree inspector. |
+| **⚡ Task Manager Pro** | [`applications/task_manager.v`](../applications/task_manager.v) | Process monitor & system telemetry: live process grid, resource stat cards, signals, and socket inspector. |
+| **📂 Find Studio Pro** | [`applications/find_studio.v`](../applications/find_studio.v) | Filesystem search & inode explorer, type filters, size filters, age, depth, and 10 recipes. |
+| **🗣️ Say Studio Pro** | [`applications/say_studio.v`](../applications/say_studio.v) | Speech synthesizer, voice browser, rate tuner, voiceover presets, audio exporter (.m4a/.aiff/.wav). |
+| **🔄 TR Studio Pro** | [`applications/tr_studio.v`](../applications/tr_studio.v) | Stream translation, deletion (`-d`), repeat squeeze (`-s`), 10 cleansing recipes, dual-pane editor. |
+| **✂️ Cut Studio Pro** | [`applications/cut_studio.v`](../applications/cut_studio.v) | Column slicing, field extraction (`-f`), delimiter selectors (comma, tab, colon, pipe, custom), 9 recipes. |
+| **🔍 RG Studio Pro** | [`applications/rg_studio.v`](../applications/rg_studio.v) | ripgrep code search workbench, type filters (`-t`), globs (`-g`), context lines (`-C`), 8 recipes. |
+| **⚡ FD Studio Pro** | [`applications/fd_studio.v`](../applications/fd_studio.v) | Fast filesystem indexer, multi-extension filters, large file detection (>100MB), recent modification filters. |
+| **🔍 SD Studio Pro** | [`applications/sd_studio.v`](../applications/sd_studio.v) | Regex find/replace workbench, capture groups (`$1`), in-place multi-file folder batch replacement. |
+| **⚡ GAWK Studio Pro** | [`applications/gawk_studio.v`](../applications/gawk_studio.v) | AWK scripting workbench, 40+ built-in one-liner recipes, CSV/Log parser, multi-gigabyte disk file streamer. |
+| **📄 Pandoc Studio Pro** | [`applications/pandoc_studio.v`](../applications/pandoc_studio.v) | Document publishing studio: Markdown, HTML5, LaTeX, Typst, Word .docx, EPUB, PPTX, syntax styling. |
+| **⚡ Wget2 Studio Pro** | [`applications/wget2_studio.v`](../applications/wget2_studio.v) | Multi-threaded download accelerator (16 threads), website offline mirror (`--mirror`), extension scrapers. |
+| **🎬 yt-dlp Studio Pro** | [`applications/yt_dlp_studio.v`](../applications/yt_dlp_studio.v) | 4K UHD / 1080p / 720p downloader, audio extractors (MP3 320k, FLAC), cookie authentication, section downloader. |
+| **🎬 FFmpeg Studio Pro** | [`applications/ffmpeg_studio.v`](../applications/ffmpeg_studio.v) | Transcoding, social presets (Discord <10MB, Reels 9:16), EBU R128 loudnorm, HD GIF generator, batch queue. |
+| **🎨 ImageMagick Studio Pro** | [`applications/imagemagick_studio.v`](../applications/imagemagick_studio.v) | WebP/AVIF compression, multi-size favicon generator, white background removal, batch image optimizer. |
+| **🌐 Subfinder Studio Pro** | [`applications/subfinder_studio.v`](../applications/subfinder_studio.v) | Passive subdomain recon, active DNS validation, multi-source OSINT querying, rate-limiting. |
+| **🚀 Media & Data Studio Hub** | [`applications/media_studio_hub.v`](../applications/media_studio_hub.v) | Master workstation hub with environment diagnostics, quick actions, and unified sub-application launchers. |
 
 ---
 
@@ -6648,7 +6648,6 @@ SimpleGUI automatically saves and restores form inputs, slider positions, checkb
 | `win.import_form_json(json_str string)` | `!` | Deserializes JSON string and populates corresponding UI controls. |
 | `win.get_control_ptr(name string)` | `!&ControlEntry` | Retrieves mutable pointer to a control for low-level inspection. |
 | `win.control(name string)` | `&ControlEntry` | Direct lookup returning mutable pointer, panics if not found. |
-
 
 
 

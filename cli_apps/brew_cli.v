@@ -26,7 +26,7 @@ fn main() {
 	app.add_flag_string('search', 's', '', 'Search for formulae or casks')
 	app.add_flag_string('info', 'i', '', 'Get detailed package information')
 	app.add_flag_bool('outdated', 'o', false, 'Check for outdated packages')
-	app.add_flag_bool('services', 'v', false, 'List running Homebrew background services')
+	app.add_flag_bool('services', 'S', false, 'List running Homebrew background services')
 	app.add_flag_bool('doctor', 'd', false, 'Run brew doctor diagnostic check')
 	app.add_flag_bool('interactive', 'x', false, 'Launch interactive Homebrew wizard')
 

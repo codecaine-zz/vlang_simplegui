@@ -4,13 +4,13 @@ This directory contains standalone, production-ready console applications, clien
 
 ---
 
-## 🛠️ Complete Applications Catalog (48 Console Utilities)
+## 🛠️ Complete Applications Catalog (49 Console Utilities)
 
 ### 1. DevOps, Infrastructure & Automation
 | Application | File | Description | Run Command |
 | :--- | :--- | :--- | :--- |
 | **DevOps Sentinel** | [`devops_sentinel.v`](devops_sentinel.v) | System health guardian & TCP port monitor | `v run cli_apps/devops_sentinel.v --interactive` |
-| **Vault Backup Manager** | [`vault_backup_manager.v`](vault_backup_manager.v) | AES-256 encrypted directory backup vault | `v run cli_apps/vault_backup_manager.v -h` |
+| **Vault Backup Manager** | [`vault_backup_manager.v`](vault_backup_manager.v) | AES-256 encrypted directory backup vault | `v run cli_apps/vault_backup_manager.v --verify --src backup.vault` |
 | **API Stress Bench** | [`api_stress_bench.v`](api_stress_bench.v) | HTTP API throughput & latency benchmarker | `v run cli_apps/api_stress_bench.v --url https://httpbin.org/get` |
 | **Git Workspace Pilot** | [`multirepo_git_pilot.v`](multirepo_git_pilot.v) | Multi-repository Git orchestrator & stash manager | `v run cli_apps/multirepo_git_pilot.v --path .` |
 | **Docker Studio CLI** | [`docker_cli.v`](docker_cli.v) | Docker container/image manager & log viewer | `v run cli_apps/docker_cli.v --interactive` |
@@ -94,3 +94,16 @@ This directory contains standalone, production-ready console applications, clien
 | **Ouch Archive CLI** | [`ouch_cli.v`](ouch_cli.v) | ZIP, TAR, GZ, 7Z, ZSTD compressor/extractor | `v run cli_apps/ouch_cli.v --interactive` |
 | **Rip Safe Deletion CLI** | [`rip_cli.v`](rip_cli.v) | Safe rm alternative with graveyard & seance | `v run cli_apps/rip_cli.v --interactive` |
 | **Wget2 Downloader CLI**| [`wget2_cli.v`](wget2_cli.v) | Fast HTTP/HTTPS file download manager | `v run cli_apps/wget2_cli.v --interactive` |
+
+## Common command-line behavior
+
+All 49 applications support `--help`/`-h` and `--version`/`-v`. Those aliases are reserved by SimpleCLI; application-specific flags use different short aliases. Unknown options, missing values, and malformed typed values are reported on standard error and exit with status `2`.
+
+Notable application-specific aliases:
+
+- App bundle version: `--bundle-version` or `-V`
+- Homebrew services: `--services` or `-S`
+- Programmer calculator value: `--val` or `-n`
+- Nmap host: `--host` or `-H`
+- Say voice: `--voice` or `-V`
+- Vault verification: `--verify` or `-V`

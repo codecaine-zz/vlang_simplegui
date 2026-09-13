@@ -10,6 +10,7 @@
 module simplecli
 
 import os
+import strconv
 import term
 import time
 import json2
@@ -320,18 +321,25 @@ pub fn (mut cli SimpleCli) parse_args(raw_args []string) !&SimpleCli {
 		if arg.starts_with('--') {
 			flag_name := arg[2..]
 			if flag_name.contains('=') {
-				parts := flag_name.split('=')
-				k := parts[0]
-				v := parts[1]
-				if k in cli.flags_def {
-					cli.flags_val[k] = v
+				separator := flag_name.index('=') or { return error('Invalid option: ${arg}') }
+				name := flag_name[..separator]
+				if name !in cli.flags_def {
+					return error('Unknown option: --${name}')
 				}
-			} else if flag_name in cli.flags_def {
+				def := cli.flags_def[name]
+				cli.flags_val[name] = validate_flag_value(def, flag_name[separator + 1..])!
+			} else {
+				if flag_name !in cli.flags_def {
+					return error('Unknown option: ${arg}')
+				}
 				def := cli.flags_def[flag_name]
 				if def.kind == 'bool' {
 					cli.flags_val[flag_name] = 'true'
-				} else if i + 1 < raw_args.len {
-					cli.flags_val[flag_name] = raw_args[i + 1]
+				} else {
+					if i + 1 >= raw_args.len || raw_args[i + 1].starts_with('-') {
+						return error('Option ${arg} requires a value')
+					}
+					cli.flags_val[flag_name] = validate_flag_value(def, raw_args[i + 1])!
 					i++
 				}
 			}
@@ -343,15 +351,18 @@ pub fn (mut cli SimpleCli) parse_args(raw_args []string) !&SimpleCli {
 					matched = true
 					if def.kind == 'bool' {
 						cli.flags_val[k] = 'true'
-					} else if i + 1 < raw_args.len {
-						cli.flags_val[k] = raw_args[i + 1]
+					} else {
+						if i + 1 >= raw_args.len || raw_args[i + 1].starts_with('-') {
+							return error('Option ${arg} requires a value')
+						}
+						cli.flags_val[k] = validate_flag_value(def, raw_args[i + 1])!
 						i++
 					}
 					break
 				}
 			}
 			if !matched {
-				cli.pos_args << arg
+				return error('Unknown option: ${arg}')
 			}
 		} else {
 			cli.pos_args << arg
@@ -361,10 +372,38 @@ pub fn (mut cli SimpleCli) parse_args(raw_args []string) !&SimpleCli {
 	return cli
 }
 
+fn validate_flag_value(def FlagOption, value string) !string {
+	match def.kind {
+		'int' {
+			strconv.atoi(value) or {
+				return error('Option --${def.name} requires an integer, got "${value}"')
+			}
+		}
+		'float' {
+			strconv.atof64(value) or {
+				return error('Option --${def.name} requires a number, got "${value}"')
+			}
+		}
+		'bool' {
+			normalized := value.to_lower()
+			if normalized !in ['true', 'false', '1', '0', 'yes', 'no'] {
+				return error('Option --${def.name} requires a boolean, got "${value}"')
+			}
+			return normalized
+		}
+		else {}
+	}
+	return value
+}
+
 // parse_cli parses `os.args[1..]` automatically.
 pub fn (mut cli SimpleCli) parse_cli() !&SimpleCli {
 	args := if os.args.len > 1 { os.args[1..] } else { []string{} }
-	return cli.parse_args(args)
+	return cli.parse_args(args) or {
+		eprintln('${cli.app_name}: ${err.msg()}')
+		eprintln('Try "${cli.app_name.to_lower().replace(' ', '-')} --help" for usage.')
+		exit(2)
+	}
 }
 
 // get_flag_string retrieves the parsed string value of a flag.
@@ -1687,4 +1726,3 @@ pub fn render_markdown(md_text string) {
 	cli := new('SimpleCli')
 	cli.render_markdown(md_text)
 }
-

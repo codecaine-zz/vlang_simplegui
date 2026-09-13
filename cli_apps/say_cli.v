@@ -7,7 +7,7 @@ fn main() {
 	app.set_description('Text-to-Speech (TTS) Speech Synthesis & Audio Export CLI')
 
 	app.add_flag_string('text', 't', '', 'Text sentence to speak aloud')
-	app.add_flag_string('voice', 'v', '', 'Voice name (e.g. Samantha, Alex, Victoria, Fred)')
+	app.add_flag_string('voice', 'V', '', 'Voice name (e.g. Samantha, Alex, Victoria, Fred)')
 	app.add_flag_string('rate', 'r', '175', 'Speech rate speed in words per minute')
 	app.add_flag_string('output', 'o', '', 'Export speech audio to AIFF/WAV file')
 	app.add_flag_bool('list-voices', 'l', false, 'List available native system voices')

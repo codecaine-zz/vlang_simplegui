@@ -527,6 +527,10 @@ fn main() {
 		w.set_control_visible('pane_batch', val.contains('Batch'))
 	})
 
+	win.on_click('btn_batch_mode', fn (mut w simplegui.SimpleWindow) {
+		w.set_value('tabs_mode', '📦 Batch Transcode')
+	})
+
 	// Input Browse Button
 	win.on_click('btn_browse_in', fn (mut w simplegui.SimpleWindow) {
 		path := w.select_file()

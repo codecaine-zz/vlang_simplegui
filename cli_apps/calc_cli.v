@@ -6,7 +6,7 @@ fn main() {
 	mut app := simplecli.new_app('calc-cli', '1.0.0')
 	app.set_description('Programmer Calculator (HEX, DEC, OCT, BIN, Bitwise Ops) CLI')
 
-	app.add_flag_string('val', 'v', '255', 'Numeric value (prefix with 0x for Hex, 0b for Binary, or standard Decimal)')
+	app.add_flag_string('val', 'n', '255', 'Numeric value (prefix with 0x for Hex, 0b for Binary, or standard Decimal)')
 	app.add_flag_string('op', 'o', '', 'Bitwise operation (e.g. NOT, AND, OR, XOR, SHL, SHR)')
 	app.add_flag_string('val2', 'w', '', 'Second operand for binary bitwise operation')
 	app.add_flag_bool('interactive', 'x', false, 'Launch interactive programmer calculator')
