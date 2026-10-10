@@ -10,7 +10,8 @@ fn main() {
 	win.set_spacing(10)
 
 	win.add_heading('Table Features Pro Demo')
-	win.add_label('hint', 'Select rows, edit values, sort both directions, and import/export using file pickers.')
+	win.add_label('hint',
+		'Select rows, edit values, sort both directions, and import/export using file pickers.')
 
 	win.row('editor_row', fn (mut w simplegui.SimpleWindow) {
 		w.add_input('in_id', '').placeholder('ID').width(100)
@@ -266,7 +267,8 @@ fn show_summary(mut win simplegui.SimpleWindow) {
 	total := win.get_table_column_sum('data_table', 2)
 	avg := win.get_table_column_average('data_table', 2)
 	avg_numeric := win.get_table_column_average_numeric('data_table', 2)
-	win.info('Table Summary', 'Rows: ${rows.len}\nColumns: ${win.get_table_column_count('data_table')}\nTotal score: ${format_score(total)}\nAverage score (legacy): ${format_score(avg)}\nAverage score (numeric-only): ${format_score(avg_numeric)}')
+	win.info('Table Summary',
+		'Rows: ${rows.len}\nColumns: ${win.get_table_column_count('data_table')}\nTotal score: ${format_score(total)}\nAverage score (legacy): ${format_score(avg)}\nAverage score (numeric-only): ${format_score(avg_numeric)}')
 	win.status('Summary calculated for ${rows.len} row(s).')
 }
 

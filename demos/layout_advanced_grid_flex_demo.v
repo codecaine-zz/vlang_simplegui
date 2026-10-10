@@ -3,8 +3,7 @@ module main
 import simplegui
 
 fn main() {
-	mut win := simplegui.new_simple_window('Advanced Layout, Grid & Flexbox Studio', 640,
-		620)
+	mut win := simplegui.new_simple_window('Advanced Layout, Grid & Flexbox Studio', 640, 620)
 		.configure(fn (mut cfg simplegui.WindowConfig) {
 			cfg.padding = 20
 			cfg.spacing = 10
@@ -13,7 +12,8 @@ fn main() {
 		})
 
 	win.add_heading('Advanced Layout & Auto-Sizing Studio')
-	win.add_label('desc', 'Explore multi-column Grids, Flexbox alignment & distribution, explicit anchoring, and nested container structures.')
+	win.add_label('desc',
+		'Explore multi-column Grids, Flexbox alignment & distribution, explicit anchoring, and nested container structures.')
 	win.set_control_font_size('desc', 11)
 
 	win.add_vertical_spacer(8)
@@ -28,14 +28,14 @@ fn main() {
 	// PANE 1: Multi-Column Form & Metrics Grid
 	// ==========================================
 	win.group('pane_grid', 'Multi-Column Grid Containers', fn (mut w simplegui.SimpleWindow) {
-		w.add_label('grid_intro', 'Grid layout containers (begin_grid/end_grid) automatically wrap controls across columns without manual row nesting.')
+		w.add_label('grid_intro',
+			'Grid layout containers (begin_grid/end_grid) automatically wrap controls across columns without manual row nesting.')
 		w.set_control_font_size('grid_intro', 11)
 
 		w.add_vertical_spacer(6)
 
 		// 2-Column Responsive Form Grid
-		w.add_section_header('sec_2col', '2-Column Personal Profile Grid (spacing: 12px)',
-			'')
+		w.add_section_header('sec_2col', '2-Column Personal Profile Grid (spacing: 12px)', '')
 		w.grid('form_grid_2col', 2, 12, fn (mut g simplegui.SimpleWindow) {
 			g.add_label('lbl_fname', 'First Name:')
 
@@ -57,16 +57,15 @@ fn main() {
 
 			g.add_label('lbl_role', 'Security Role:')
 
-			g.add_dropdown('user_role', ['System Administrator', 'Lead Engineer', 'Security Auditor'],
-				'Lead Engineer')
+			g.add_dropdown('user_role',
+				['System Administrator', 'Lead Engineer', 'Security Auditor'], 'Lead Engineer')
 				.expand_fill()
 		})
 
 		w.add_vertical_spacer(10)
 
 		// 3-Column Metrics Dashboard Grid
-		w.add_section_header('sec_3col', '3-Column System Health Grid (spacing: 10px)',
-			'')
+		w.add_section_header('sec_3col', '3-Column System Health Grid (spacing: 10px)', '')
 		w.grid('metrics_grid_3col', 3, 10, fn (mut g simplegui.SimpleWindow) {
 			g.add_stat_card('stat_cpu', 'CPU Load', '24%', '+2% nominal', 'positive')
 			g.add_stat_card('stat_mem', 'RAM Usage', '14.2 GB', 'Stable', 'neutral')
@@ -88,14 +87,14 @@ fn main() {
 	// PANE 2: Flexbox Directions & Distributions
 	// ==========================================
 	win.group('pane_flex', 'Flexbox Containers (Row & Column)', fn (mut w simplegui.SimpleWindow) {
-		w.add_label('flex_intro', 'Flexbox containers (begin_flex_box/end_flex_box) support row/column directions, justify main-axis distribution, and cross-axis alignment.')
+		w.add_label('flex_intro',
+			'Flexbox containers (begin_flex_box/end_flex_box) support row/column directions, justify main-axis distribution, and cross-axis alignment.')
 		w.set_control_font_size('flex_intro', 11)
 
 		w.add_vertical_spacer(6)
 
 		// Flex Row: Space-Between Action Bar
-		w.add_section_header('sec_flex_sb', 'Flex Row: justify="space_between" align="center"',
-			'')
+		w.add_section_header('sec_flex_sb', 'Flex Row: justify="space_between" align="center"', '')
 		w.flex_box('flex_sb', 'row', 'space_between', 'center', fn (mut f simplegui.SimpleWindow) {
 			f.add_button('btn_flex_left', '← Back')
 				.align_left()
@@ -113,8 +112,7 @@ fn main() {
 		w.add_vertical_spacer(10)
 
 		// Flex Row: Center Distribution with Badges & Chip Group
-		w.add_section_header('sec_flex_center', 'Flex Row: justify="center" align="center"',
-			'')
+		w.add_section_header('sec_flex_center', 'Flex Row: justify="center" align="center"', '')
 		w.flex_box('flex_center', 'row', 'center', 'center', fn (mut f simplegui.SimpleWindow) {
 			f.add_badge('badge_status', 'STATUS: ACTIVE', 'success')
 			f.add_badge('badge_env', 'ENV: PRODUCTION', 'warning')
@@ -124,10 +122,10 @@ fn main() {
 		w.add_vertical_spacer(10)
 
 		// Flex Column: Vertical Stack Container
-		w.add_section_header('sec_flex_col', 'Flex Column: direction="column" align="stretch"',
-			'')
+		w.add_section_header('sec_flex_col', 'Flex Column: direction="column" align="stretch"', '')
 		w.flex_box('flex_col', 'column', 'start', 'stretch', fn (mut f simplegui.SimpleWindow) {
-			f.add_banner('banner_flex_info', 'Flexbox column arranges elements vertically with stretch cross-axis alignment.',
+			f.add_banner('banner_flex_info',
+				'Flexbox column arranges elements vertically with stretch cross-axis alignment.',
 				'info')
 
 			f.add_search_field('search_flex', '')
@@ -139,7 +137,8 @@ fn main() {
 	// PANE 3: Alignment & Anchoring Modifiers
 	// ==========================================
 	win.group('pane_align', 'Explicit Alignment & Expansion Modifiers', fn (mut w simplegui.SimpleWindow) {
-		w.add_label('align_intro', 'Use explicit modifiers like .align_left(), .align_center(), .align_right(), and .expand_fill() to anchor controls inside containers.')
+		w.add_label('align_intro',
+			'Use explicit modifiers like .align_left(), .align_center(), .align_right(), and .expand_fill() to anchor controls inside containers.')
 		w.set_control_font_size('align_intro', 11)
 
 		w.add_vertical_spacer(6)
@@ -152,7 +151,8 @@ fn main() {
 
 		w.add_vertical_spacer(8)
 
-		w.add_section_header('sec_live_align', 'Live Alignment Modifier Switcher', 'Click buttons to dynamically re-align the target input field above')
+		w.add_section_header('sec_live_align', 'Live Alignment Modifier Switcher',
+			'Click buttons to dynamically re-align the target input field above')
 		w.row('align_controls', fn (mut r simplegui.SimpleWindow) {
 			r.add_button('btn_align_left', 'Align Left')
 				.onclick(on_set_left)
@@ -177,7 +177,8 @@ fn main() {
 	// PANE 4: Deeply Nested Layout Containers
 	// ==========================================
 	win.group('pane_nested', 'Nested Layout Containers', fn (mut w simplegui.SimpleWindow) {
-		w.add_label('nest_intro', 'The native Cocoa containerStack supports arbitrary layout nesting (Grid inside Flexbox inside Cards/Groups).')
+		w.add_label('nest_intro',
+			'The native Cocoa containerStack supports arbitrary layout nesting (Grid inside Flexbox inside Cards/Groups).')
 		w.set_control_font_size('nest_intro', 11)
 
 		w.add_vertical_spacer(6)
@@ -204,8 +205,7 @@ fn main() {
 			flex_outer.add_vertical_spacer(8)
 
 			// Imperative nesting demonstration (begin_flex_box / begin_grid)
-			flex_outer.begin_flex_box('nested_imperative_flex', 'row', 'space_between',
-				'center')
+			flex_outer.begin_flex_box('nested_imperative_flex', 'row', 'space_between', 'center')
 			flex_outer.add_label('lbl_imp_nest', 'Imperative Grid & Flex Containers:')
 
 			flex_outer.add_button('btn_nest_save', 'Commit Nested Config')
@@ -225,7 +225,8 @@ fn main() {
 	win.add_vertical_spacer(8)
 
 	// Universal Footer Status Bar
-	win.add_label('footer_status', 'Ready. Select tabs above to explore Grid, Flexbox, Alignment, and Nesting capabilities.')
+	win.add_label('footer_status',
+		'Ready. Select tabs above to explore Grid, Flexbox, Alignment, and Nesting capabilities.')
 	win.set_control_font_size('footer_status', 11)
 
 	win.run()

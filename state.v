@@ -364,8 +364,8 @@ pub fn (win &SimpleWindow) add_status_banner(name string, title string, message 
 		}
 	}
 	if win.window_info != unsafe { nil } {
-		C.window_add_status_banner_control(win.window_info, real_name.str, title.str,
-			message.str, style_type.str)
+		C.window_add_status_banner_control(win.window_info, real_name.str, title.str, message.str,
+			style_type.str)
 	}
 	return win
 }
@@ -618,7 +618,9 @@ pub fn write_file_atomic(file_path string, content string) ! {
 	resolved := resolve_user_path(file_path)
 	parent_dir := os.dir(resolved)
 	if parent_dir != '' && !os.exists(parent_dir) {
-		os.mkdir_all(parent_dir) or { return error('Failed to create parent directory: ${parent_dir} (${err.msg()})') }
+		os.mkdir_all(parent_dir) or {
+			return error('Failed to create parent directory: ${parent_dir} (${err.msg()})')
+		}
 	}
 
 	rand_id := '${os.getpid()}_${time.now().unix_nano()}'
@@ -1027,8 +1029,8 @@ pub fn should_persist_control(ctrl &ControlEntry) bool {
 		|| lower.contains('terminal') || lower.contains('console') || lower.contains('live_output')
 		|| lower.contains('preview') || lower.contains('diff') || lower.contains('logs')
 		|| lower.contains('log_area') || lower.contains('results') || lower.contains('msg_box')
-		|| lower.contains('status_bar') || lower.contains('status_lbl') || lower.contains('telemetry')
-		|| lower.contains('summary_card') {
+		|| lower.contains('status_bar') || lower.contains('status_lbl')
+		|| lower.contains('telemetry') || lower.contains('summary_card') {
 		return false
 	}
 
@@ -1201,7 +1203,8 @@ pub fn (win &SimpleWindow) restore_app_form_state(app_name ...string) bool {
 				if ctrl.kind in ['checkbox', 'switch', 'toggle'] {
 					b_val := (val.to_lower().trim_space() in ['true', '1', 'yes', 'on'])
 					win.set_bool(ctrl.name, b_val)
-				} else if ctrl.kind in ['slider', 'number', 'progress', 'stepper', 'rating', 'spinner'] {
+				} else if ctrl.kind in ['slider', 'number', 'progress', 'stepper', 'rating',
+					'spinner'] {
 					win.set_number_value(ctrl.name, val.int())
 				} else {
 					win.set_text(ctrl.name, val)
@@ -1248,8 +1251,6 @@ pub fn (win &SimpleWindow) get_control_ptr(name string) !&ControlEntry {
 
 // control returns a mutable reference pointer to the named ControlEntry directly, panicking if missing.
 pub fn (win &SimpleWindow) control(name string) &ControlEntry {
-	ptr := win.get_control_ptr(name) or {
-		panic(err.msg())
-	}
+	ptr := win.get_control_ptr(name) or { panic(err.msg()) }
 	return ptr
 }

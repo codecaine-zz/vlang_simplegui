@@ -765,7 +765,8 @@ fn test_new_ergonomic_features() {
 
 	assert win.get_table_row_where('scores', 0, 'Grace') == ['Grace', '25']
 	assert win.get_table_row_where('scores', 0, 'Nobody') == []string{}
-	assert win.get_table_rows_where('scores', 1, '25') == [['Grace', '25'], ['Linus', '25']]
+	assert win.get_table_rows_where('scores', 1, '25') == [['Grace', '25'],
+		['Linus', '25']]
 	assert win.get_table_column_sum('scores', 1) == 60.0
 	assert win.get_table_column_average('scores', 1) == 20.0
 
@@ -782,7 +783,8 @@ fn test_new_ergonomic_features() {
 	win.save_table_to_json('scores', table_json_path) or { assert false, err.msg() }
 	win.clear_table('scores')
 	win.load_table_from_json('scores', table_json_path) or { assert false, err.msg() }
-	assert win.get_table_rows('scores') == [['Ada', '10'], ['Grace', '25'], ['Linus', '25']]
+	assert win.get_table_rows('scores') == [['Ada', '10'], ['Grace', '25'],
+		['Linus', '25']]
 
 	os.rm(list_json_path) or {}
 	os.rm(table_json_path) or {}
@@ -945,8 +947,7 @@ fn test_new_ergonomic_helpers_added() {
 }
 
 fn test_developer_inspection_controls() {
-	mut win := simplegui.new_simple_window('Developer Inspection Controls Test', 800,
-		600)
+	mut win := simplegui.new_simple_window('Developer Inspection Controls Test', 800, 600)
 
 	// 1. Diff View
 	win.add_diff_view('diff_1', 'line 1\nline 2', 'line 1\nline 2 updated', 120)
@@ -1206,9 +1207,7 @@ fn test_recommended_storage_and_app_state() {
 	win.add_slider('sld_volume', 85)
 
 	// Save app state
-	win.save_app_state('test_preset') or {
-		assert false, 'save_app_state failed: ${err}'
-	}
+	win.save_app_state('test_preset') or { assert false, 'save_app_state failed: ${err}' }
 	assert win.has_saved_state('test_preset') == true
 
 	// Clear controls

@@ -53,7 +53,8 @@ fn main() {
 	})
 
 	curl_path := get_curl_bin()
-	win.add_label('lbl_engine_info', '⚡ Engine: ${curl_path}  |  Platform: macOS Cocoa  |  Mode: Async Non-Blocking Worker')
+	win.add_label('lbl_engine_info',
+		'⚡ Engine: ${curl_path}  |  Platform: macOS Cocoa  |  Mode: Async Non-Blocking Worker')
 
 	// Request URL & Method Bar
 	win.begin_group_box('grp_request_url', '🌐 Target Endpoint & HTTP Method')
@@ -106,7 +107,8 @@ fn main() {
 	win.begin_row('row_req_config')
 
 	win.begin_group_box('grp_headers', '📋 Request Headers (Name: Value per line)')
-	win.add_textarea('txt_headers', 'Accept: application/json\nContent-Type: application/json\nUser-Agent: SimpleGUI-API-Studio/1.0')
+	win.add_textarea('txt_headers',
+		'Accept: application/json\nContent-Type: application/json\nUser-Agent: SimpleGUI-API-Studio/1.0')
 	win.set_control_height('txt_headers', 120)
 	win.set_control_width('txt_headers', 495)
 	win.end_group_box()
@@ -141,7 +143,8 @@ fn main() {
 
 	// Status Row
 	win.begin_row('row_stats')
-	win.add_label('lbl_stats', '📊 Stats: Ready  |  Status: None  |  Latency: 0 ms  |  Size: 0 bytes')
+	win.add_label('lbl_stats',
+		'📊 Stats: Ready  |  Status: None  |  Latency: 0 ms  |  Size: 0 bytes')
 	win.end_row()
 
 	win.append_console('api_console', '🚀 API Studio Pro initialized.\n', 1)
@@ -175,7 +178,8 @@ fn main() {
 			w.set('txt_request_body', '')
 		} else if selected.starts_with('6.') {
 			w.set('dd_http_method', 'GET')
-			w.set('txt_url', 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd')
+			w.set('txt_url',
+				'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd')
 			w.set('txt_request_body', '')
 		} else if selected.starts_with('7.') {
 			w.set('dd_http_method', 'GET')
@@ -264,13 +268,18 @@ fn main() {
 				}
 
 				if res.exit_code == 0 {
-					win_main.append_console('api_console', '✅ Response received in ${elapsed_ms} ms (${out.len} bytes)\n', 4)
-					win_main.set('lbl_stats', '📊 Stats: SUCCESS  |  Status: ${status_code}  |  Latency: ${elapsed_ms} ms  |  Size: ${out.len} B')
+					win_main.append_console('api_console',
+						'✅ Response received in ${elapsed_ms} ms (${out.len} bytes)\n', 4)
+					win_main.set('lbl_stats',
+						'📊 Stats: SUCCESS  |  Status: ${status_code}  |  Latency: ${elapsed_ms} ms  |  Size: ${out.len} B')
 					win_main.set_status('Completed ${method} in ${elapsed_ms} ms.')
 					win_main.toast('Response received in ${elapsed_ms} ms!')
 				} else {
-					win_main.append_console('api_console', '❌ Curl Error (Exit ${res.exit_code}):\n' + out + '\n', 3)
-					win_main.set('lbl_stats', '📊 Stats: ERROR (Exit ${res.exit_code})  |  Latency: ${elapsed_ms} ms')
+					win_main.append_console('api_console',
+
+						'❌ Curl Error (Exit ${res.exit_code}):\n' + out + '\n', 3)
+					win_main.set('lbl_stats',
+						'📊 Stats: ERROR (Exit ${res.exit_code})  |  Latency: ${elapsed_ms} ms')
 					win_main.set_status('Request failed.')
 					win_main.toast('Request error.')
 				}

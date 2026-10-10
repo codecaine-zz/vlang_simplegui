@@ -69,6 +69,7 @@ fn run_qalc(expr string, precision int, angle string, base string, fractional st
 			'Sexagesimal (60)' { 'sexa' }
 			else { 'dec' }
 		}
+
 		args << '-s'
 		args << 'base ${b_arg}'
 	}
@@ -79,6 +80,7 @@ fn run_qalc(expr string, precision int, angle string, base string, fractional st
 			'Mixed Numbers' { 'fractions combined' }
 			else { 'fractions off' }
 		}
+
 		args << '-s'
 		args << f_arg
 	}
@@ -97,7 +99,8 @@ fn run_qalc(expr string, precision int, angle string, base string, fractional st
 fn main() {
 	println('Starting SimpleGUI - Qalc Studio Pro (libqalculate)...')
 
-	mut win := simplegui.new_simple_window('🧮 Qalc Studio Pro — Advanced Symbolic Math & Unit Converter', 1140, 910)
+	mut win := simplegui.new_simple_window('🧮 Qalc Studio Pro — Advanced Symbolic Math & Unit Converter',
+		1140, 910)
 	win.restore_saved_theme()
 	win.set_spacing(6)
 	win.set_padding(14)
@@ -124,7 +127,8 @@ fn main() {
 	win.set_control_width('dd_precision', 110)
 
 	win.add_label('lbl_angle', '  Angle:')
-	win.add_dropdown('dd_angle', ['Radians (rad)', 'Degrees (deg)', 'Gradians (gra)'], 'Radians (rad)')
+	win.add_dropdown('dd_angle', ['Radians (rad)', 'Degrees (deg)', 'Gradians (gra)'],
+		'Radians (rad)')
 	win.set_control_width('dd_angle', 130)
 
 	win.add_label('lbl_theme_hdr', '  Theme:')
@@ -205,8 +209,10 @@ fn main() {
 	win.end_row()
 
 	// Multi-Line Scratchpad
-	win.add_label('lbl_scratch_hdr', '📝 Multi-Line Calculation Scratchpad (Evaluate line by line or batch):')
-	win.add_textarea('txt_scratchpad', 'radius = 15 cm\nheight = 40 cm\nvolume = pi * radius^2 * height\nvolume to liters\n100 USD to EUR\n50 mph to km/h\nsin(45 deg) + cos(45 deg)\nsolve(3*x^2 - 12 = 0, x)')
+	win.add_label('lbl_scratch_hdr',
+		'📝 Multi-Line Calculation Scratchpad (Evaluate line by line or batch):')
+	win.add_textarea('txt_scratchpad',
+		'radius = 15 cm\nheight = 40 cm\nvolume = pi * radius^2 * height\nvolume to liters\n100 USD to EUR\n50 mph to km/h\nsin(45 deg) + cos(45 deg)\nsolve(3*x^2 - 12 = 0, x)')
 	win.set_control_height('txt_scratchpad', 240)
 	win.set_control_font_name('txt_scratchpad', 'Menlo')
 	win.set_control_font_size('txt_scratchpad', 13)
@@ -238,7 +244,8 @@ fn main() {
 	win.add_button('btn_alg_expand', '↔️ Expand')
 	win.end_row()
 
-	win.add_textarea('txt_alg_output', 'Enter an equation (e.g. 2*x^2 + 5*x - 12 = 0 or 3*x + 4*y = 10, 2*x - y = 3) and click SOLVE.\n')
+	win.add_textarea('txt_alg_output',
+		'Enter an equation (e.g. 2*x^2 + 5*x - 12 = 0 or 3*x + 4*y = 10, 2*x - y = 3) and click SOLVE.\n')
 	win.set_control_height('txt_alg_output', 380)
 	win.set_control_font_name('txt_alg_output', 'Menlo')
 	win.set_control_font_size('txt_alg_output', 13)
@@ -260,7 +267,8 @@ fn main() {
 	win.add_button('btn_calc_taylor', 'Taylor Series')
 	win.end_row()
 
-	win.add_textarea('txt_calc_output', 'Calculus expressions and step evaluations will appear here.\n')
+	win.add_textarea('txt_calc_output',
+		'Calculus expressions and step evaluations will appear here.\n')
 	win.set_control_height('txt_calc_output', 400)
 	win.set_control_font_name('txt_calc_output', 'Menlo')
 	win.set_control_font_size('txt_calc_output', 13)
@@ -298,7 +306,8 @@ fn main() {
 	win.add_button('btn_up_kg_lbs', '⚖️ kg ➔ lbs')
 	win.end_row()
 
-	win.add_textarea('txt_unit_output', 'Unit conversion results and exact conversion factors will be displayed here.\n')
+	win.add_textarea('txt_unit_output',
+		'Unit conversion results and exact conversion factors will be displayed here.\n')
 	win.set_control_height('txt_unit_output', 380)
 	win.set_control_font_name('txt_unit_output', 'Menlo')
 	win.set_control_font_size('txt_unit_output', 13)
@@ -320,7 +329,8 @@ fn main() {
 	win.add_button('btn_mat_trans', 'Transpose')
 	win.end_row()
 
-	win.add_textarea('txt_matrix_output', 'Enter matrices in format [1, 2; 3, 4] where semicolons separate rows.\n')
+	win.add_textarea('txt_matrix_output',
+		'Enter matrices in format [1, 2; 3, 4] where semicolons separate rows.\n')
 	win.set_control_height('txt_matrix_output', 400)
 	win.set_control_font_name('txt_matrix_output', 'Menlo')
 	win.set_control_font_size('txt_matrix_output', 13)
@@ -346,7 +356,8 @@ fn main() {
 	win.add_button('btn_rec_fourier', '🌊 Definite Integral')
 	win.end_row()
 
-	win.add_textarea('txt_recipes_output', 'Click any formula preset above to load and evaluate the expression.\n')
+	win.add_textarea('txt_recipes_output',
+		'Click any formula preset above to load and evaluate the expression.\n')
 	win.set_control_height('txt_recipes_output', 380)
 	win.set_control_font_name('txt_recipes_output', 'Menlo')
 	win.set_control_font_size('txt_recipes_output', 13)
@@ -410,7 +421,6 @@ fn main() {
 	eval_expr_fn := fn [mut state, update_history_view] (mut w simplegui.SimpleWindow, expr string, mode_label string) string {
 		clean := expr.trim_space()
 		if clean == '' { return '' }
-
 		// Parse precision
 		prec_text := w.get('dd_precision')
 		prec_num := prec_text.all_before(' ').int()
@@ -745,7 +755,8 @@ fn main() {
 	})
 
 	win.on_click('btn_rec_grav', fn [eval_expr_fn] (mut w simplegui.SimpleWindow) {
-		res := eval_expr_fn(mut w, 'G * 5.972e24 kg * 70 kg / (6371 km)^2 to N', 'Gravitation Recipe')
+		res := eval_expr_fn(mut w, 'G * 5.972e24 kg * 70 kg / (6371 km)^2 to N',
+			'Gravitation Recipe')
 		w.set('txt_recipes_output', 'Earth Surface Gravity on 70 kg person:\n\n' + res)
 	})
 
@@ -760,7 +771,8 @@ fn main() {
 	})
 
 	win.on_click('btn_rec_ideal', fn [eval_expr_fn] (mut w simplegui.SimpleWindow) {
-		res := eval_expr_fn(mut w, '1 mol * (8.314 J / (mol * K)) * 298.15 K / (1 atm) to L', 'Ideal Gas Recipe')
+		res := eval_expr_fn(mut w, '1 mol * (8.314 J / (mol * K)) * 298.15 K / (1 atm) to L',
+			'Ideal Gas Recipe')
 		w.set('txt_recipes_output', 'Volume of 1 mol ideal gas at 25°C & 1 atm:\n\n' + res)
 	})
 

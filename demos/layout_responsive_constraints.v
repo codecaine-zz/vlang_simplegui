@@ -16,7 +16,8 @@ fn main() {
 
 	win.add_heading('Responsive Sizing & Constraints')
 
-	win.add_label('desc', 'By default, responsive layout allows controls to grow and shrink alongside the window. You can override individual control constraints using width/height methods.')
+	win.add_label('desc',
+		'By default, responsive layout allows controls to grow and shrink alongside the window. You can override individual control constraints using width/height methods.')
 	win.set_control_font_size('desc', 11)
 
 	win.add_vertical_spacer(10)

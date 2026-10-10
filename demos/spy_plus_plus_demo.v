@@ -579,7 +579,8 @@ fn (t SpyTarget) export_json(path string, mut win simplegui.SimpleWindow) bool {
 		lines << '  "controls": ['
 		for i, ctrl in ext_ctrls {
 			comma := if i < ext_ctrls.len - 1 { ',' } else { '' }
-			lines << '    {"role":"${ctrl.role.replace('"', '\\"')}","title":"${ctrl.title.replace('"', '\\"')}","value":"${ctrl.value.replace('"', '\\"')}","enabled":${ctrl.enabled}}${comma}'
+			lines << '    {"role":"${ctrl.role.replace('"', '\\"')}","title":"${ctrl.title.replace('"',
+				'\\"')}","value":"${ctrl.value.replace('"', '\\"')}","enabled":${ctrl.enabled}}${comma}'
 		}
 		lines << '  ]'
 		lines << '}'
@@ -620,17 +621,20 @@ fn get_frontmost_pid(mut win simplegui.SimpleWindow) int {
 fn update_external_pid_status(mut win simplegui.SimpleWindow) {
 	pid := pid_from_input(mut win)
 	if pid <= 0 {
-		win.set_text('external_pid_status', 'External PID status: inactive (0 = internal target mode)')
+		win.set_text('external_pid_status',
+			'External PID status: inactive (0 = internal target mode)')
 		return
 	}
 	apps := simplegui.sys_list_external_apps()
 	for app in apps {
 		if app.pid == pid {
-			win.set_text('external_pid_status', 'External PID status: ${pid} -> ${app.name} (${app.bundle_id})')
+			win.set_text('external_pid_status',
+				'External PID status: ${pid} -> ${app.name} (${app.bundle_id})')
 			return
 		}
 	}
-	win.set_text('external_pid_status', 'External PID status: ${pid} (not found in desktop app list)')
+	win.set_text('external_pid_status',
+		'External PID status: ${pid} (not found in desktop app list)')
 }
 
 fn selected_control_name(mut win simplegui.SimpleWindow) string {
@@ -649,7 +653,8 @@ fn selected_control_name(mut win simplegui.SimpleWindow) string {
 fn require_control_name(mut win simplegui.SimpleWindow, action string) ?string {
 	name := selected_control_name(mut win)
 	if name == '' {
-		win.append_console('spy_output', '⚠️ ${action}: no control selected. Pick a control from tree or enter a selector first.',
+		win.append_console('spy_output',
+			'⚠️ ${action}: no control selected. Pick a control from tree or enter a selector first.',
 			0)
 		return none
 	}
@@ -762,8 +767,8 @@ fn refresh_targets_table(mut win simplegui.SimpleWindow) {
 		}
 	}
 	sync_selected_target(mut win)
-	win.append_console('spy_output', '🔄 Refreshed target catalog (${rows.len} available targets).',
-		0)
+	win.append_console('spy_output',
+		'🔄 Refreshed target catalog (${rows.len} available targets).', 0)
 }
 
 fn sync_selected_target(mut win simplegui.SimpleWindow) {
@@ -778,7 +783,8 @@ fn sync_selected_target(mut win simplegui.SimpleWindow) {
 		win.set_control_text('ext_pid_input', target.pid.str())
 		win.set_text('target_window_input', '')
 		win.set_control_text('target_title_input', '')
-		win.set_text('selected_target_label', 'Selected Target: External PID ${target.pid} (${target.name})')
+		win.set_text('selected_target_label',
+			'Selected Target: External PID ${target.pid} (${target.name})')
 	} else {
 		win.set_control_text('ext_pid_input', '0')
 		win.set_control_text('target_window_input', target.name)
@@ -839,8 +845,7 @@ fn load_controls_for_selected_target(mut win simplegui.SimpleWindow) {
 
 	summary_metrics := 'Metrics: Target=${target.name} | Total=${ctrls.len} [Inputs:${inputs_cnt} Buttons:${buttons_cnt} Checks:${checks_cnt} Lists:${lists_cnt}]'
 	win.set_text('dashboard_metrics', summary_metrics)
-	win.append_console('spy_output', '🧩 Loaded ${ctrls.len} controls for ${target.label()}.',
-		0)
+	win.append_console('spy_output', '🧩 Loaded ${ctrls.len} controls for ${target.label()}.', 0)
 
 	update_code_generator(mut win, 'inspect')
 }
@@ -873,9 +878,9 @@ fn run_health_check(mut win simplegui.SimpleWindow) {
 	target := selected_target(mut win)
 	strict := strict_selector_enabled(mut win)
 	ctrl := selected_control_name(mut win).trim_space()
-	win.append_console('spy_output', '=== 🩺 Spy++ Comprehensive Health Check ===',
-		0)
-	win.append_console('spy_output', 'Target: scope=${target.scope} pid=${target.pid} name="${target.name}" strict=${strict} control="${ctrl}"',
+	win.append_console('spy_output', '=== 🩺 Spy++ Comprehensive Health Check ===', 0)
+	win.append_console('spy_output',
+		'Target: scope=${target.scope} pid=${target.pid} name="${target.name}" strict=${strict} control="${ctrl}"',
 		0)
 
 	if target.is_external() {
@@ -884,47 +889,48 @@ fn run_health_check(mut win simplegui.SimpleWindow) {
 		for app in apps {
 			if app.pid == target.pid {
 				listed = true
-				win.append_console('spy_output', '✅ External PID ${target.pid} active: ${app.name} (${app.bundle_id})',
-					0)
+				win.append_console('spy_output',
+					'✅ External PID ${target.pid} active: ${app.name} (${app.bundle_id})', 0)
 				break
 			}
 		}
 		if !listed {
-			win.append_console('spy_output', '⚠️ External PID ${target.pid} not found in desktop application list.',
-				0)
+			win.append_console('spy_output',
+				'⚠️ External PID ${target.pid} not found in desktop application list.', 0)
 		}
 		controls := target.list_controls('')
-		win.append_console('spy_output', '📊 Inspectable AXUIElement controls count: ${controls.len}',
-			0)
+		win.append_console('spy_output',
+			'📊 Inspectable AXUIElement controls count: ${controls.len}', 0)
 		if controls.len == 0 {
-			win.append_console('spy_output', '💡 Troubleshooting Tip: Ensure Accessibility permission is granted in macOS System Settings -> Privacy & Security -> Accessibility.',
+			win.append_console('spy_output',
+				'💡 Troubleshooting Tip: Ensure Accessibility permission is granted in macOS System Settings -> Privacy & Security -> Accessibility.',
 				0)
 		}
 		if ctrl != '' {
 			val := target.get_control_text(ctrl, strict) or {
-				win.append_console('spy_output', '❌ Selector "${ctrl}" did not resolve under strict=${strict}.',
-					0)
+				win.append_console('spy_output',
+					'❌ Selector "${ctrl}" did not resolve under strict=${strict}.', 0)
 				log_action(mut win, 'health_check', 'external:${target.pid}', ctrl, 'unresolved')
 				return
 			}
-			win.append_console('spy_output', '✅ Selector "${ctrl}" resolved successfully with value: "${val}".',
-				0)
+			win.append_console('spy_output',
+				'✅ Selector "${ctrl}" resolved successfully with value: "${val}".', 0)
 			log_action(mut win, 'health_check', 'external:${target.pid}', ctrl, 'ok')
 		}
 	} else {
 		target_win := simplegui.sys_get_window(target.name) or {
-			win.append_console('spy_output', '❌ Internal target window "${target.name}" not registered in registry.',
-				0)
+			win.append_console('spy_output',
+				'❌ Internal target window "${target.name}" not registered in registry.', 0)
 			log_action(mut win, 'health_check', 'internal:${target.name}', ctrl, 'missing_window')
 			return
 		}
 		_ := target_win
-		win.append_console('spy_output', '✅ Internal target window "${target.name}" registered and operational.',
-			0)
+		win.append_console('spy_output',
+			'✅ Internal target window "${target.name}" registered and operational.', 0)
 		if ctrl != '' {
 			val := target.get_control_text(ctrl, strict) or { '' }
-			win.append_console('spy_output', '✅ Internal control readback for "${ctrl}": "${val}"',
-				0)
+			win.append_console('spy_output',
+				'✅ Internal control readback for "${ctrl}": "${val}"', 0)
 		}
 		log_action(mut win, 'health_check', 'internal:${target.name}', ctrl, 'ok')
 	}
@@ -952,13 +958,20 @@ fn run_listbox_get_set_self_check(mut win simplegui.SimpleWindow) {
 
 	passed := set_text_ok && get_text_ok && set_index_ok && get_index_ok
 	status := if passed { 'PASS' } else { 'FAIL' }
-	win.set_text('dashboard_metrics', 'Metrics: Target=${target.name} (${target.scope}) | Self-Check=${status}')
-	win.set_text('selected_control_label', 'Selected Control: ${control_name} (self-check=${status})')
+	win.set_text('dashboard_metrics',
+		'Metrics: Target=${target.name} (${target.scope}) | Self-Check=${status}')
+	win.set_text('selected_control_label',
+		'Selected Control: ${control_name} (self-check=${status})')
 	win.set_control_text('ctrl_name_input', control_name)
 	win.set_control_text('new_value_input', expected_by_text)
-	win.set_text('ctrl_detail_text', 'Self-check readbacks -> by_text="${read_text}" | by_index="${read_index_text}"')
-	win.append_console('spy_output', '[SELF-CHECK:listbox_get_set] ${status} | set_text=${set_text_ok} read_text="${read_text}" | set_index=${set_index_ok} read_index="${read_index_text}"',
-		if passed { 4 } else { 3 })
+	win.set_text('ctrl_detail_text',
+		'Self-check readbacks -> by_text="${read_text}" | by_index="${read_index_text}"')
+	win.append_console('spy_output',
+		'[SELF-CHECK:listbox_get_set] ${status} | set_text=${set_text_ok} read_text="${read_text}" | set_index=${set_index_ok} read_index="${read_index_text}"', if passed {
+		4
+	} else {
+		3
+	})
 	log_action(mut win, 'self_check_listbox', target.name, control_name, status)
 }
 
@@ -1011,7 +1024,8 @@ fn main() {
 		'Billing Questions', 'Technical Support'])
 	target_win.add_label('lbl_queue_status', 'Queue Selection: General Inquiry')
 
-	target_win.add_textarea('ticket_notes', 'Customer requires urgent assistance with API license key activation.')
+	target_win.add_textarea('ticket_notes',
+		'Customer requires urgent assistance with API license key activation.')
 	target_win.set_control_height('ticket_notes', 65)
 
 	target_win.begin_row('target_btn_row')
@@ -1024,7 +1038,8 @@ fn main() {
 
 	target_win.on_click('btn_submit', fn (mut w simplegui.SimpleWindow) {
 		name := w.get_control_text('customer_name')
-		w.set_control_text('lbl_status', 'Status: Ticket submitted for ${name} at ${time.now().format_ss()}')
+		w.set_control_text('lbl_status',
+			'Status: Ticket submitted for ${name} at ${time.now().format_ss()}')
 		w.toast('Ticket submitted for ${name}')
 	})
 
@@ -1088,7 +1103,8 @@ fn main() {
 	// =========================================================================
 	spy_win.group('pane_catalog', 'Target Discovery & Application Process Catalog', fn (mut w simplegui.SimpleWindow) {
 		w.begin_row('targets_filter_row')
-		w.add_search_field('target_filter_input', 'Filter targets by app/window, bundle ID, or PID...')
+		w.add_search_field('target_filter_input',
+			'Filter targets by app/window, bundle ID, or PID...')
 		w.add_dropdown('scope_filter', ['all', 'internal', 'external'], 'all')
 		w.add_button('btn_apply_target_filter', 'Apply Filter')
 		w.add_button('btn_reset_target_filter', 'Reset Filter')
@@ -1144,7 +1160,8 @@ fn main() {
 	// =========================================================================
 	spy_win.group('pane_inspector', 'Control Hierarchy & Element Inspector', fn (mut w simplegui.SimpleWindow) {
 		w.begin_row('controls_filter_row')
-		w.add_search_field('control_filter_input', 'Filter controls by role, title, name, or value...')
+		w.add_search_field('control_filter_input',
+			'Filter controls by role, title, name, or value...')
 		w.add_button('btn_apply_control_filter', 'Apply Filter')
 		w.add_button('btn_reset_control_filter', 'Reset Filter')
 		w.end_row()
@@ -1169,7 +1186,8 @@ fn main() {
 
 		w.begin_row('ctrl_inputs_row')
 		w.add_input('ctrl_name_input', 'customer_name')
-		w.set_placeholder('ctrl_name_input', 'Control selector (e.g. customer_name, btn_submit, AXButton)')
+		w.set_placeholder('ctrl_name_input',
+			'Control selector (e.g. customer_name, btn_submit, AXButton)')
 		w.add_input('new_value_input', 'Jane Smith')
 		w.set_placeholder('new_value_input', 'Enter new text/value for target control')
 		w.end_row()
@@ -1194,52 +1212,51 @@ fn main() {
 	// =========================================================================
 	// TAB 3: Automation Studio & Code Generator
 	// =========================================================================
-	spy_win.group('pane_automation', 'Automation Studio, Live Watcher & Code Generator',
-		fn (mut w simplegui.SimpleWindow) {
-			w.add_label('lbl_macro_header', '🤖 One-Click Form Macro Automation Workflows:')
-			w.begin_row('macro_buttons_row')
-			w.add_button('btn_macro_autofill', '⚡ Auto-Fill Sample Ticket')
-			w.add_button('btn_macro_clear', '🧹 Reset Form Inputs')
-			w.add_button('btn_macro_toggle_checks', '🔁 Toggle Checkboxes')
-			w.end_row()
+	spy_win.group('pane_automation', 'Automation Studio, Live Watcher & Code Generator', fn (mut w simplegui.SimpleWindow) {
+		w.add_label('lbl_macro_header', '🤖 One-Click Form Macro Automation Workflows:')
+		w.begin_row('macro_buttons_row')
+		w.add_button('btn_macro_autofill', '⚡ Auto-Fill Sample Ticket')
+		w.add_button('btn_macro_clear', '🧹 Reset Form Inputs')
+		w.add_button('btn_macro_toggle_checks', '🔁 Toggle Checkboxes')
+		w.end_row()
 
-			w.add_vertical_spacer(8)
-			w.add_label('lbl_watcher_header', '👀 Control Watcher & Matching Options:')
-			w.begin_row('watcher_options_row')
-			w.add_checkbox('strict_selector_mode', 'Strict selector mode', false)
-			w.add_checkbox('auto_watch_control', 'Watch selected control value (800ms)', false)
-			w.add_label('watch_status', 'Watch mode: idle')
-			w.end_row()
+		w.add_vertical_spacer(8)
+		w.add_label('lbl_watcher_header', '👀 Control Watcher & Matching Options:')
+		w.begin_row('watcher_options_row')
+		w.add_checkbox('strict_selector_mode', 'Strict selector mode', false)
+		w.add_checkbox('auto_watch_control', 'Watch selected control value (800ms)', false)
+		w.add_label('watch_status', 'Watch mode: idle')
+		w.end_row()
 
-			w.add_vertical_spacer(8)
-			w.add_label('lbl_bulk_header', '🧱 Bulk Batch Control Operations:')
-			w.begin_row('bulk_actions_row')
-			w.add_button('btn_enable_all', '✅ Enable All (Filtered)')
-			w.add_button('btn_disable_all', '🚫 Disable All (Filtered)')
-			w.add_button('btn_disable_all_internal', '🧱 Disable All (Internal)')
-			w.add_button('btn_set_all', '✍️ Set All (Filtered)')
-			w.add_button('btn_get_all', '📦 Get All (Filtered)')
-			w.end_row()
+		w.add_vertical_spacer(8)
+		w.add_label('lbl_bulk_header', '🧱 Bulk Batch Control Operations:')
+		w.begin_row('bulk_actions_row')
+		w.add_button('btn_enable_all', '✅ Enable All (Filtered)')
+		w.add_button('btn_disable_all', '🚫 Disable All (Filtered)')
+		w.add_button('btn_disable_all_internal', '🧱 Disable All (Internal)')
+		w.add_button('btn_set_all', '✍️ Set All (Filtered)')
+		w.add_button('btn_get_all', '📦 Get All (Filtered)')
+		w.end_row()
 
-			w.add_vertical_spacer(8)
-			w.add_label('lbl_codegen_header', '⚡ Live Executable Automation Code Generator:')
-			w.add_label('lbl_v_code', 'V Code Snippet:')
-			w.add_input('code_snippet_v', '')
-			w.add_label('lbl_py_code', 'Python Code Snippet:')
-			w.add_input('code_snippet_py', '')
+		w.add_vertical_spacer(8)
+		w.add_label('lbl_codegen_header', '⚡ Live Executable Automation Code Generator:')
+		w.add_label('lbl_v_code', 'V Code Snippet:')
+		w.add_input('code_snippet_v', '')
+		w.add_label('lbl_py_code', 'Python Code Snippet:')
+		w.add_input('code_snippet_py', '')
 
-			w.begin_row('copy_snippets_row')
-			w.add_button('btn_copy_v_snippet', '📋 Copy V Code Snippet')
-			w.add_button('btn_copy_py_snippet', '📋 Copy Python Snippet')
-			w.end_row()
+		w.begin_row('copy_snippets_row')
+		w.add_button('btn_copy_v_snippet', '📋 Copy V Code Snippet')
+		w.add_button('btn_copy_py_snippet', '📋 Copy Python Snippet')
+		w.end_row()
 
-			w.add_vertical_spacer(8)
-			w.add_label('lbl_export_header', '💾 Target Snapshot Export Tools:')
-			w.begin_row('export_tools_row')
-			w.add_button('btn_export_json_file', '💾 Save Target Snapshot JSON')
-			w.add_button('btn_export_csv_file', '📊 Save Control Tree CSV')
-			w.end_row()
-		})
+		w.add_vertical_spacer(8)
+		w.add_label('lbl_export_header', '💾 Target Snapshot Export Tools:')
+		w.begin_row('export_tools_row')
+		w.add_button('btn_export_json_file', '💾 Save Target Snapshot JSON')
+		w.add_button('btn_export_csv_file', '📊 Save Control Tree CSV')
+		w.end_row()
+	})
 
 	// =========================================================================
 	// TAB 4: Live Logs & Action Audit History
@@ -1328,26 +1345,26 @@ fn main() {
 	// Macro Automation Handlers
 	spy_win.on_click('btn_macro_autofill', fn (mut w simplegui.SimpleWindow) {
 		target := selected_target(mut w)
-		w.append_console('spy_output', '🤖 Executing Auto-Fill Macro Workflow on ${target.label()}...',
-			0)
+		w.append_console('spy_output',
+			'🤖 Executing Auto-Fill Macro Workflow on ${target.label()}...', 0)
 
 		target.set_control_text('customer_name', 'Alice Smith')
 		target.set_control_text('email_address', 'alice.smith@enterprise-corp.com')
 		target.set_control_text('phone_number', '+1 (800) 555-0199')
 		target.set_control_text('support_queue', 'Priority Escalations')
-		target.set_control_text('ticket_notes', 'Urgent priority escalation ticket auto-generated by Spy++ Macro Runner.')
+		target.set_control_text('ticket_notes',
+			'Urgent priority escalation ticket auto-generated by Spy++ Macro Runner.')
 		target.press_control('btn_submit')
 
 		log_action(mut w, 'macro_autofill', target.name, '*', 'ok')
 		w.toast('Auto-fill macro completed!')
-		w.append_console('spy_output', '✅ Form filled and support ticket submitted.',
-			0)
+		w.append_console('spy_output', '✅ Form filled and support ticket submitted.', 0)
 	})
 
 	spy_win.on_click('btn_macro_clear', fn (mut w simplegui.SimpleWindow) {
 		target := selected_target(mut w)
-		w.append_console('spy_output', '🤖 Executing Reset Form Macro Workflow on ${target.label()}...',
-			0)
+		w.append_console('spy_output',
+			'🤖 Executing Reset Form Macro Workflow on ${target.label()}...', 0)
 		target.press_control('btn_reset')
 		log_action(mut w, 'macro_reset', target.name, '*', 'ok')
 		w.toast('Reset form macro completed!')
@@ -1356,8 +1373,7 @@ fn main() {
 
 	spy_win.on_click('btn_macro_toggle_checks', fn (mut w simplegui.SimpleWindow) {
 		target := selected_target(mut w)
-		w.append_console('spy_output', '🤖 Toggling form checkboxes on ${target.label()}...',
-			0)
+		w.append_console('spy_output', '🤖 Toggling form checkboxes on ${target.label()}...', 0)
 		target.press_control('chk_vip')
 		target.press_control('chk_newsletter')
 		log_action(mut w, 'macro_toggle_checkboxes', target.name, '*', 'ok')
@@ -1401,8 +1417,7 @@ fn main() {
 	spy_win.on_click('btn_use_frontmost_pid', fn (mut w simplegui.SimpleWindow) {
 		pid := get_frontmost_pid(mut w)
 		if pid <= 0 {
-			w.append_console('spy_output', '❌ Could not resolve frontmost app PID.',
-				0)
+			w.append_console('spy_output', '❌ Could not resolve frontmost app PID.', 0)
 			return
 		}
 		w.set_control_text('ext_pid_input', pid.str())
@@ -1415,24 +1430,23 @@ fn main() {
 	spy_win.on_click('btn_validate_pid', fn (mut w simplegui.SimpleWindow) {
 		pid := pid_from_input(mut w)
 		if pid <= 0 {
-			w.append_console('spy_output', 'ℹ️ PID is 0: internal target mode active.',
-				0)
+			w.append_console('spy_output', 'ℹ️ PID is 0: internal target mode active.', 0)
 			update_external_pid_status(mut w)
 			return
 		}
 		apps := simplegui.sys_list_external_apps()
 		for app in apps {
 			if app.pid == pid {
-				w.append_console('spy_output', '✅ PID ${pid} is active: ${app.name} (${app.bundle_id}).',
-					0)
+				w.append_console('spy_output',
+					'✅ PID ${pid} is active: ${app.name} (${app.bundle_id}).', 0)
 				log_action(mut w, 'validate_pid', 'external:${pid}', '-', 'ok')
 				update_external_pid_status(mut w)
 				w.toast('PID ${pid} is active: ${app.name}')
 				return
 			}
 		}
-		w.append_console('spy_output', '⚠️ PID ${pid} is not currently listed as a running desktop app.',
-			0)
+		w.append_console('spy_output',
+			'⚠️ PID ${pid} is not currently listed as a running desktop app.', 0)
 		log_action(mut w, 'validate_pid', 'external:${pid}', '-', 'not_listed')
 		update_external_pid_status(mut w)
 	})
@@ -1440,47 +1454,45 @@ fn main() {
 	spy_win.on_click('btn_probe_pid', fn (mut w simplegui.SimpleWindow) {
 		pid := pid_from_input(mut w)
 		if pid <= 0 {
-			w.append_console('spy_output', '⚠️ Enter an external PID (>0) before probing.',
-				0)
+			w.append_console('spy_output', '⚠️ Enter an external PID (>0) before probing.', 0)
 			return
 		}
 		controls := simplegui.sys_spy_external_app(pid)
-		w.append_console('spy_output', '🧪 Probe PID ${pid}: discovered ${controls.len} AXUIElement controls.',
-			0)
+		w.append_console('spy_output',
+			'🧪 Probe PID ${pid}: discovered ${controls.len} AXUIElement controls.', 0)
 		log_action(mut w, 'probe_pid', 'external:${pid}', '-', 'controls=${controls.len}')
 		w.toast('Discovered ${controls.len} AX controls')
 	})
 
 	spy_win.on_click('btn_open_accessibility', fn (mut w simplegui.SimpleWindow) {
 		w.open_url('x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility')
-		w.append_console('spy_output', '⚙️ Opened macOS Accessibility Settings.',
-			0)
+		w.append_console('spy_output', '⚙️ Opened macOS Accessibility Settings.', 0)
 		log_action(mut w, 'open_accessibility', '-', '-', 'ok')
 	})
 
 	spy_win.on_click('btn_set_target_title', fn (mut w simplegui.SimpleWindow) {
 		target := selected_target(mut w)
 		if target.is_external() {
-			w.append_console('spy_output', '⚠️ Rename Internal Window is only available for internal SimpleGUI windows.',
+			w.append_console('spy_output',
+				'⚠️ Rename Internal Window is only available for internal SimpleGUI windows.',
 				0)
 			log_action(mut w, 'rename_window', target.name, '-', 'unsupported_external')
 			return
 		}
 		new_title := w.get_control_text('target_title_input').trim_space()
 		if new_title == '' {
-			w.append_console('spy_output', '⚠️ Enter a non-empty title in "New title for internal window" first.',
-				0)
+			w.append_console('spy_output',
+				'⚠️ Enter a non-empty title in "New title for internal window" first.', 0)
 			return
 		}
 		if new_title == target.name {
-			w.append_console('spy_output', 'ℹ️ Target title is already "${new_title}".',
-				0)
+			w.append_console('spy_output', 'ℹ️ Target title is already "${new_title}".', 0)
 			return
 		}
 
 		target_win := simplegui.sys_get_window(target.name) or {
-			w.append_console('spy_output', '❌ Internal target "${target.name}" is no longer registered.',
-				0)
+			w.append_console('spy_output',
+				'❌ Internal target "${target.name}" is no longer registered.', 0)
 			log_action(mut w, 'rename_window', target.name, '-', 'missing_window')
 			return
 		}
@@ -1497,8 +1509,8 @@ fn main() {
 		}
 		sync_selected_target(mut w)
 		load_controls_for_selected_target(mut w)
-		w.append_console('spy_output', '🪪 Renamed internal window "${old_title}" -> "${new_title}".',
-			0)
+		w.append_console('spy_output',
+			'🪪 Renamed internal window "${old_title}" -> "${new_title}".', 0)
 		log_action(mut w, 'rename_window', old_title, '-', 'ok')
 		w.toast('Window renamed to "${new_title}"')
 	})
@@ -1558,13 +1570,11 @@ fn main() {
 	spy_win.on_click('btn_target_front', fn (mut w simplegui.SimpleWindow) {
 		target := selected_target(mut w)
 		if target.order_front() {
-			w.append_console('spy_output', '⬆️ Brought ${target.label()} to front.',
-				0)
+			w.append_console('spy_output', '⬆️ Brought ${target.label()} to front.', 0)
 			log_action(mut w, 'bring_front', target.name, '-', 'ok')
 			w.toast('Target brought to front')
 		} else {
-			w.append_console('spy_output', '❌ Failed to bring ${target.label()} to front.',
-				0)
+			w.append_console('spy_output', '❌ Failed to bring ${target.label()} to front.', 0)
 			log_action(mut w, 'bring_front', target.name, '-', 'failed')
 		}
 	})
@@ -1576,8 +1586,8 @@ fn main() {
 			log_action(mut w, 'send_back', target.name, '-', 'ok')
 			w.toast('Target sent to back')
 		} else {
-			w.append_console('spy_output', '⚠️ Send-to-back is supported on internal registered windows.',
-				0)
+			w.append_console('spy_output',
+				'⚠️ Send-to-back is supported on internal registered windows.', 0)
 			log_action(mut w, 'send_back', target.name, '-', 'unsupported')
 		}
 	})
@@ -1610,7 +1620,8 @@ fn main() {
 	target_win.on_any_event(fn [mut spy_win] (mut w simplegui.SimpleWindow, control_name string, event_name string, value string) {
 		timestamp := time.now().format_ss()
 		val_suffix := if value.len > 0 { ' -> "${value}"' } else { '' }
-		spy_win.append_console('spy_output', '⚡ [LIVE EVENT ${timestamp}] Control "${control_name}" fired "${event_name}"${val_suffix}',
+		spy_win.append_console('spy_output',
+			'⚡ [LIVE EVENT ${timestamp}] Control "${control_name}" fired "${event_name}"${val_suffix}',
 			0)
 	})
 
@@ -1620,8 +1631,8 @@ fn main() {
 		target := selected_target(mut w)
 		strict := strict_selector_enabled(mut w)
 
-		w.append_console('spy_output', '=== 🔎 Inspection Result for "${ctrl_name}" in ${target.label()} ===',
-			0)
+		w.append_console('spy_output',
+			'=== 🔎 Inspection Result for "${ctrl_name}" in ${target.label()} ===', 0)
 
 		if val := target.get_control_text(ctrl_name, strict) {
 			w.append_console('spy_output', '  • Control Selector: "${ctrl_name}"', 0)
@@ -1629,8 +1640,8 @@ fn main() {
 			log_action(mut w, 'inspect', target.name, ctrl_name, 'ok')
 			w.toast('Inspected "${ctrl_name}"')
 		} else {
-			w.append_console('spy_output', '⚠️ Control "${ctrl_name}" not found or could not read value.',
-				0)
+			w.append_console('spy_output',
+				'⚠️ Control "${ctrl_name}" not found or could not read value.', 0)
 			log_action(mut w, 'inspect', target.name, ctrl_name, 'not_found')
 		}
 		update_code_generator(mut w, 'inspect')
@@ -1641,13 +1652,12 @@ fn main() {
 		target := selected_target(mut w)
 
 		if target.flash_control(ctrl_name) {
-			w.append_console('spy_output', '🎯 Flashing outline over control "${ctrl_name}" on ${target.label()}!',
-				0)
+			w.append_console('spy_output',
+				'🎯 Flashing outline over control "${ctrl_name}" on ${target.label()}!', 0)
 			log_action(mut w, 'flash', target.name, ctrl_name, 'ok')
 			w.toast('Flashing "${ctrl_name}"')
 		} else {
-			w.append_console('spy_output', '❌ Failed to flash control "${ctrl_name}".',
-				0)
+			w.append_console('spy_output', '❌ Failed to flash control "${ctrl_name}".', 0)
 			log_action(mut w, 'flash', target.name, ctrl_name, 'failed')
 		}
 		update_code_generator(mut w, 'flash')
@@ -1658,13 +1668,12 @@ fn main() {
 		target := selected_target(mut w)
 
 		if target.set_control_enabled(ctrl_name, true) {
-			w.append_console('spy_output', '✅ Enabled control "${ctrl_name}" on ${target.label()}.',
-				0)
+			w.append_console('spy_output',
+				'✅ Enabled control "${ctrl_name}" on ${target.label()}.', 0)
 			log_action(mut w, 'enable', target.name, ctrl_name, 'ok')
 			w.toast('Enabled "${ctrl_name}"')
 		} else {
-			w.append_console('spy_output', '❌ Failed to enable control "${ctrl_name}".',
-				0)
+			w.append_console('spy_output', '❌ Failed to enable control "${ctrl_name}".', 0)
 			log_action(mut w, 'enable', target.name, ctrl_name, 'failed')
 		}
 		update_code_generator(mut w, 'enable')
@@ -1675,13 +1684,12 @@ fn main() {
 		target := selected_target(mut w)
 
 		if target.set_control_enabled(ctrl_name, false) {
-			w.append_console('spy_output', '🚫 Disabled control "${ctrl_name}" on ${target.label()}.',
-				0)
+			w.append_console('spy_output',
+				'🚫 Disabled control "${ctrl_name}" on ${target.label()}.', 0)
 			log_action(mut w, 'disable', target.name, ctrl_name, 'ok')
 			w.toast('Disabled "${ctrl_name}"')
 		} else {
-			w.append_console('spy_output', '❌ Failed to disable control "${ctrl_name}".',
-				0)
+			w.append_console('spy_output', '❌ Failed to disable control "${ctrl_name}".', 0)
 			log_action(mut w, 'disable', target.name, ctrl_name, 'failed')
 		}
 		update_code_generator(mut w, 'disable')
@@ -1692,13 +1700,12 @@ fn main() {
 		target := selected_target(mut w)
 
 		if target.set_control_visible(ctrl_name, true) {
-			w.append_console('spy_output', '👁️ Showed control "${ctrl_name}" on ${target.label()}.',
-				0)
+			w.append_console('spy_output',
+				'👁️ Showed control "${ctrl_name}" on ${target.label()}.', 0)
 			log_action(mut w, 'show_control', target.name, ctrl_name, 'ok')
 			w.toast('Showed "${ctrl_name}"')
 		} else {
-			w.append_console('spy_output', '❌ Failed to show control "${ctrl_name}".',
-				0)
+			w.append_console('spy_output', '❌ Failed to show control "${ctrl_name}".', 0)
 			log_action(mut w, 'show_control', target.name, ctrl_name, 'failed')
 		}
 	})
@@ -1713,8 +1720,7 @@ fn main() {
 			log_action(mut w, 'hide_control', target.name, ctrl_name, 'ok')
 			w.toast('Hid "${ctrl_name}"')
 		} else {
-			w.append_console('spy_output', '❌ Failed to hide control "${ctrl_name}".',
-				0)
+			w.append_console('spy_output', '❌ Failed to hide control "${ctrl_name}".', 0)
 			log_action(mut w, 'hide_control', target.name, ctrl_name, 'failed')
 		}
 	})
@@ -1725,13 +1731,11 @@ fn main() {
 		strict := strict_selector_enabled(mut w)
 
 		if val := target.get_control_text(ctrl_name, strict) {
-			w.append_console('spy_output', '📖 Read value of "${ctrl_name}": "${val}"',
-				0)
+			w.append_console('spy_output', '📖 Read value of "${ctrl_name}": "${val}"', 0)
 			log_action(mut w, 'get_text', target.name, ctrl_name, 'ok')
 			w.toast('Read text from "${ctrl_name}"')
 		} else {
-			w.append_console('spy_output', '⚠️ Could not read text/value of "${ctrl_name}".',
-				0)
+			w.append_console('spy_output', '⚠️ Could not read text/value of "${ctrl_name}".', 0)
 			log_action(mut w, 'get_text', target.name, ctrl_name, 'failed')
 		}
 		update_code_generator(mut w, 'get_text')
@@ -1745,28 +1749,28 @@ fn main() {
 		before := target.get_control_text(ctrl_name, strict) or { '' }
 
 		if target.set_control_text(ctrl_name, new_text) {
-			w.append_console('spy_output', '✍️ Set value of "${ctrl_name}" to "${new_text}"',
-				0)
+			w.append_console('spy_output', '✍️ Set value of "${ctrl_name}" to "${new_text}"', 0)
 			log_action(mut w, 'set_text', target.name, ctrl_name, 'ok')
 			w.toast('Set text on "${ctrl_name}"')
 			w.run_after(150, fn [target, ctrl_name, new_text, strict] (mut w2 simplegui.SimpleWindow) {
 				read_back := target.get_control_text(ctrl_name, strict) or { '' }
 				ok := read_back == new_text
-				w2.append_console('spy_output', '🔎 Readback verify "${ctrl_name}": got "${read_back}" (expected "${new_text}") => ${ok}',
+				w2.append_console('spy_output',
+					'🔎 Readback verify "${ctrl_name}": got "${read_back}" (expected "${new_text}") => ${ok}',
 					0)
 			})
 			if target.is_external() {
 				w.run_after(220, fn [target, ctrl_name, new_text, before, strict] (mut w2 simplegui.SimpleWindow) {
 					after := target.get_control_text(ctrl_name, strict) or { '' }
 					if after != new_text {
-						w2.append_console('spy_output', 'ℹ️ External UI note: "${ctrl_name}" appears read-only in this app (before="${before}", after="${after}").',
+						w2.append_console('spy_output',
+							'ℹ️ External UI note: "${ctrl_name}" appears read-only in this app (before="${before}", after="${after}").',
 							0)
 					}
 				})
 			}
 		} else {
-			w.append_console('spy_output', '❌ Failed to set value on control "${ctrl_name}".',
-				0)
+			w.append_console('spy_output', '❌ Failed to set value on control "${ctrl_name}".', 0)
 			log_action(mut w, 'set_text', target.name, ctrl_name, 'failed')
 		}
 		update_code_generator(mut w, 'set_text')
@@ -1777,13 +1781,12 @@ fn main() {
 		target := selected_target(mut w)
 
 		if target.press_control(ctrl_name) {
-			w.append_console('spy_output', '🖱️ Clicked/Pressed control "${ctrl_name}" on ${target.label()}.',
-				0)
+			w.append_console('spy_output',
+				'🖱️ Clicked/Pressed control "${ctrl_name}" on ${target.label()}.', 0)
 			log_action(mut w, 'press', target.name, ctrl_name, 'ok')
 			w.toast('Pressed "${ctrl_name}"')
 		} else {
-			w.append_console('spy_output', '❌ Failed to press control "${ctrl_name}".',
-				0)
+			w.append_console('spy_output', '❌ Failed to press control "${ctrl_name}".', 0)
 			log_action(mut w, 'press', target.name, ctrl_name, 'failed')
 		}
 		update_code_generator(mut w, 'press')
@@ -1792,8 +1795,7 @@ fn main() {
 	// Automation Studio Handlers
 	spy_win.on_change('strict_selector_mode', fn (mut w simplegui.SimpleWindow, value string) {
 		mode := if value == 'true' { 'strict' } else { 'flexible' }
-		w.append_console('spy_output', '🎛️ Selector matching mode set to ${mode}.',
-			0)
+		w.append_console('spy_output', '🎛️ Selector matching mode set to ${mode}.', 0)
 	})
 
 	spy_win.on_change('auto_watch_control', fn [mut watch_state] (mut w simplegui.SimpleWindow, value string) {
@@ -1817,14 +1819,14 @@ fn main() {
 					return
 				}
 				if val != watch_state.last_value {
-					w2.append_console('spy_output', '👀 [WATCH CHANGE] ${ctrl_name}: "${watch_state.last_value}" -> "${val}"',
+					w2.append_console('spy_output',
+						'👀 [WATCH CHANGE] ${ctrl_name}: "${watch_state.last_value}" -> "${val}"',
 						0)
 					log_action(mut w2, 'watch_change', key, ctrl_name, 'updated')
 					watch_state.last_value = val
 				}
 			})
-			w.append_console('spy_output', '👀 Real-time watch mode enabled (800ms interval).',
-				0)
+			w.append_console('spy_output', '👀 Real-time watch mode enabled (800ms interval).', 0)
 			w.toast('Watch mode active (800ms)')
 		} else {
 			w.stop_interval('spy_watch_control')
@@ -1838,7 +1840,8 @@ fn main() {
 		target := selected_target(mut w)
 		filter_query := w.get_control_text('control_filter_input')
 		total, success := target.set_all_enabled(filter_query, true)
-		w.append_console('spy_output', '✅ Enable all (${target.label()}): ${success}/${total} controls updated (filter="${filter_query.trim_space()}").',
+		w.append_console('spy_output',
+			'✅ Enable all (${target.label()}): ${success}/${total} controls updated (filter="${filter_query.trim_space()}").',
 			0)
 		log_action(mut w, 'enable_all', target.name, '*', '${success}/${total}')
 		load_controls_for_selected_target(mut w)
@@ -1849,7 +1852,8 @@ fn main() {
 		target := selected_target(mut w)
 		filter_query := w.get_control_text('control_filter_input')
 		total, in_state := target.set_all_enabled(filter_query, false)
-		w.append_console('spy_output', '🚫 Disable all (${target.label()}): ${in_state}/${total} controls currently disabled (filter="${filter_query.trim_space()}").',
+		w.append_console('spy_output',
+			'🚫 Disable all (${target.label()}): ${in_state}/${total} controls currently disabled (filter="${filter_query.trim_space()}").',
 			0)
 		log_action(mut w, 'disable_all', target.name, '*', '${in_state}/${total}')
 		load_controls_for_selected_target(mut w)
@@ -1859,14 +1863,16 @@ fn main() {
 	spy_win.on_click('btn_disable_all_internal', fn (mut w simplegui.SimpleWindow) {
 		target := selected_target(mut w)
 		if target.is_external() {
-			w.append_console('spy_output', '⚠️ Internal-only disable works only on registered SimpleGUI windows. Select an internal target first.',
+			w.append_console('spy_output',
+				'⚠️ Internal-only disable works only on registered SimpleGUI windows. Select an internal target first.',
 				0)
 			log_action(mut w, 'disable_all_internal', target.name, '*', 'blocked_external')
 			return
 		}
 		filter_query := w.get_control_text('control_filter_input')
 		total, in_state := target.set_all_enabled(filter_query, false)
-		w.append_console('spy_output', '🧱 Disable all internal (${target.label()}): ${in_state}/${total} controls currently disabled (filter="${filter_query.trim_space()}").',
+		w.append_console('spy_output',
+			'🧱 Disable all internal (${target.label()}): ${in_state}/${total} controls currently disabled (filter="${filter_query.trim_space()}").',
 			0)
 		log_action(mut w, 'disable_all_internal', target.name, '*', '${in_state}/${total}')
 		load_controls_for_selected_target(mut w)
@@ -1878,7 +1884,8 @@ fn main() {
 		filter_query := w.get_control_text('control_filter_input')
 		new_val := w.get_control_text('new_value_input')
 		attempted, success := target.set_all_values(filter_query, new_val)
-		w.append_console('spy_output', '✍️ Set all (${target.label()}): ${success}/${attempted} text-like controls updated to "${new_val}".',
+		w.append_console('spy_output',
+			'✍️ Set all (${target.label()}): ${success}/${attempted} text-like controls updated to "${new_val}".',
 			0)
 		log_action(mut w, 'set_all', target.name, '*', '${success}/${attempted}')
 		load_controls_for_selected_target(mut w)
@@ -1891,8 +1898,8 @@ fn main() {
 		strict := strict_selector_enabled(mut w)
 		values := target.get_all_values(filter_query, strict)
 		preview := format_value_preview(values, 10)
-		w.append_console('spy_output', '📦 Get all (${target.label()}): ${values.len} controls read -> ${preview}',
-			0)
+		w.append_console('spy_output',
+			'📦 Get all (${target.label()}): ${values.len} controls read -> ${preview}', 0)
 		w.set_text('ctrl_detail_text', 'Bulk read (${values.len}): ${preview}')
 		log_action(mut w, 'get_all', target.name, '*', 'count=${values.len}')
 		w.toast('Read ${values.len} controls')
@@ -1904,8 +1911,7 @@ fn main() {
 			w.set_interval('spy_targets_auto_refresh', 2500, fn (mut w2 simplegui.SimpleWindow) {
 				refresh_targets_table(mut w2)
 			})
-			w.append_console('spy_output', '⏱️ Auto refresh enabled (2.5s interval).',
-				0)
+			w.append_console('spy_output', '⏱️ Auto refresh enabled (2.5s interval).', 0)
 			w.toast('Auto refresh active')
 		} else {
 			w.stop_interval('spy_targets_auto_refresh')
@@ -1919,8 +1925,7 @@ fn main() {
 		code := w.get_control_text('code_snippet_v')
 		if code.trim_space() != '' {
 			w.copy_to_clipboard(code)
-			w.append_console('spy_output', '📋 Copied V code snippet to clipboard.',
-				0)
+			w.append_console('spy_output', '📋 Copied V code snippet to clipboard.', 0)
 			w.toast('V code copied to clipboard!')
 		}
 	})
@@ -1929,8 +1934,7 @@ fn main() {
 		code := w.get_control_text('code_snippet_py')
 		if code.trim_space() != '' {
 			w.copy_to_clipboard(code)
-			w.append_console('spy_output', '📋 Copied Python snippet to clipboard.',
-				0)
+			w.append_console('spy_output', '📋 Copied Python snippet to clipboard.', 0)
 			w.toast('Python code copied to clipboard!')
 		}
 	})
@@ -1943,13 +1947,11 @@ fn main() {
 		}
 		target := selected_target(mut w)
 		if target.export_json(path, mut w) {
-			w.append_console('spy_output', '💾 Saved target snapshot JSON to ${path}',
-				0)
+			w.append_console('spy_output', '💾 Saved target snapshot JSON to ${path}', 0)
 			log_action(mut w, 'export_json', target.name, '-', 'ok')
 			w.toast('Saved JSON snapshot!')
 		} else {
-			w.append_console('spy_output', '❌ Failed to save JSON snapshot to ${path}',
-				0)
+			w.append_console('spy_output', '❌ Failed to save JSON snapshot to ${path}', 0)
 			log_action(mut w, 'export_json', target.name, '-', 'failed')
 		}
 	})
@@ -1966,8 +1968,7 @@ fn main() {
 			log_action(mut w, 'export_csv', target.name, '-', 'ok')
 			w.toast('Saved CSV tree export!')
 		} else {
-			w.append_console('spy_output', '❌ Failed to save CSV snapshot to ${path}',
-				0)
+			w.append_console('spy_output', '❌ Failed to save CSV snapshot to ${path}', 0)
 			log_action(mut w, 'export_csv', target.name, '-', 'failed')
 		}
 	})
@@ -1989,12 +1990,11 @@ fn main() {
 		payload := lines.join('\n')
 		w.write_file(path, payload)
 		if w.file_exists(path) {
-			w.append_console('spy_output', '📊 Exported action audit history (${rows.len} entries) to ${path}',
-				0)
+			w.append_console('spy_output',
+				'📊 Exported action audit history (${rows.len} entries) to ${path}', 0)
 			w.toast('Exported audit history CSV!')
 		} else {
-			w.append_console('spy_output', '❌ Failed to export audit history to ${path}',
-				0)
+			w.append_console('spy_output', '❌ Failed to export audit history to ${path}', 0)
 		}
 	})
 
@@ -2035,9 +2035,10 @@ fn main() {
 	refresh_targets_table(mut spy_win)
 	load_controls_for_selected_target(mut spy_win)
 	update_external_pid_status(mut spy_win)
-	spy_win.append_console('spy_output', '🔍 Spy++ Application Inspector & Automation Studio ready.',
-		0)
-	spy_win.append_console('spy_output', '💡 Select target application from catalog and pick elements in control tree to inspect or automate.',
+	spy_win.append_console('spy_output',
+		'🔍 Spy++ Application Inspector & Automation Studio ready.', 0)
+	spy_win.append_console('spy_output',
+		'💡 Select target application from catalog and pick elements in control tree to inspect or automate.',
 		0)
 
 	spy_win.run_after(450, fn (mut w simplegui.SimpleWindow) {
@@ -2048,11 +2049,9 @@ fn main() {
 	if capture_path != '' {
 		spy_win.run_after(900, fn [capture_path] (mut w simplegui.SimpleWindow) {
 			if w.capture_screenshot(capture_path) {
-				w.append_console('spy_output', '📸 Captured screenshot: ${capture_path}',
-					4)
+				w.append_console('spy_output', '📸 Captured screenshot: ${capture_path}', 4)
 			} else {
-				w.append_console('spy_output', '❌ Screenshot capture failed: ${capture_path}',
-					3)
+				w.append_console('spy_output', '❌ Screenshot capture failed: ${capture_path}', 3)
 			}
 		})
 	}

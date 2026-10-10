@@ -14,7 +14,8 @@ fn main() {
 
 	win.add_heading('Interactive Tabbed Layout')
 
-	win.add_label('desc', 'In simplegui, native tabs (`add_tabs`) can be wired with `on_change` to switch between completely different layouts by toggling container visibility.')
+	win.add_label('desc',
+		'In simplegui, native tabs (`add_tabs`) can be wired with `on_change` to switch between completely different layouts by toggling container visibility.')
 	win.set_control_font_size('desc', 11)
 
 	win.add_vertical_spacer(10)
@@ -40,7 +41,8 @@ fn main() {
 
 	// 4. Tab Pane 3: Logs View
 	win.group('logs_pane', 'Diagnostics System Logs', fn (mut w simplegui.SimpleWindow) {
-		w.add_textarea('log_content', '[2026-07-17 23:27:36] applicationDidFinishLaunching\n[2026-07-17 23:27:38] connection established: 192.168.1.254\n[2026-07-17 23:28:12] query fetched successfully: 12 records')
+		w.add_textarea('log_content',
+			'[2026-07-17 23:27:36] applicationDidFinishLaunching\n[2026-07-17 23:27:38] connection established: 192.168.1.254\n[2026-07-17 23:28:12] query fetched successfully: 12 records')
 		w.set_control_height('log_content', 90)
 		w.add_action('btn_clear_logs', 'Flush Log Buffer', on_clear_logs)
 	})

@@ -147,6 +147,7 @@ fn press_equal(mut win simplegui.SimpleWindow) {
 			}
 			else {}
 		}
+
 		i += 2
 	}
 	win.set_text('display', result.str())

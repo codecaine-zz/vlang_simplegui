@@ -21,7 +21,8 @@ fn main() {
 	win.add_label('lbl_active_theme', 'Active Theme: Apple Light')
 	win.end_row()
 
-	win.add_label('lbl_desc', 'Production UI engineering and color palette showcase across controls.')
+	win.add_label('lbl_desc',
+		'Production UI engineering and color palette showcase across controls.')
 
 	// Search & Configuration
 	win.begin_group_box('grp_inputs', '🔍 Form Controls & Configuration')
@@ -30,7 +31,9 @@ fn main() {
 	win.add_input('txt_name', 'SimpleGUI Enterprise Suite')
 	win.set_control_width('txt_name', 300)
 	win.add_label('lbl_env', 'Environment:')
-	win.add_dropdown('dd_env', ['Production (US-East)', 'Staging (EU-West)', 'Development (Local)'], 'Production (US-East)')
+	win.add_dropdown('dd_env',
+		['Production (US-East)', 'Staging (EU-West)', 'Development (Local)'],
+		'Production (US-East)')
 	win.end_row()
 
 	win.begin_row('row_f2')
@@ -44,7 +47,8 @@ fn main() {
 
 	// Content Area
 	win.begin_group_box('grp_content', '📊 Data Telemetry & Log Output')
-	win.add_textarea('txt_log', '// Sample Production Log Stream\n[2026-08-21 21:30:00] [INFO] Theme engine initialized successfully.\n[2026-08-21 21:30:01] [SUCCESS] All 18 color tokens calibrated for contrast and readability.\n[2026-08-21 21:30:02] [METRICS] Render latency: 0.12ms | Memory: 14.2MB | Zero UI Beach-balls.')
+	win.add_textarea('txt_log',
+		'// Sample Production Log Stream\n[2026-08-21 21:30:00] [INFO] Theme engine initialized successfully.\n[2026-08-21 21:30:01] [SUCCESS] All 18 color tokens calibrated for contrast and readability.\n[2026-08-21 21:30:02] [METRICS] Render latency: 0.12ms | Memory: 14.2MB | Zero UI Beach-balls.')
 	win.set_control_height('txt_log', 140)
 	win.end_group_box()
 

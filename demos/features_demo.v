@@ -16,7 +16,8 @@ fn main() {
 
 	// Add custom menu items
 	gui.add_menu_item('Tray Mode', 'Switch to Status Menu Bar', 's', fn (mut win simplegui.SimpleWindow) {
-		win.alert('Status Bar Mode Enabled', 'The window will now hide. Look for the system tray menu in your top right macOS bar!')
+		win.alert('Status Bar Mode Enabled',
+			'The window will now hide. Look for the system tray menu in your top right macOS bar!')
 		win.enable_status_bar('') // pass empty for default title
 
 		// Add status bar specific items (these go to tray menu now)
@@ -75,7 +76,8 @@ fn main() {
 		println('Age:      ${user.age}')
 		println('Newsletter: ${user.wants_newsletter}')
 		println('------------------------')
-		win.alert('Struct Binding Output', 'Struct State Printed to Console!\n\nUsername: ${user.username}\nAge: ${user.age}')
+		win.alert('Struct Binding Output',
+			'Struct State Printed to Console!\n\nUsername: ${user.username}\nAge: ${user.age}')
 	})
 
 	gui.on_click('load_btn', fn (mut win simplegui.SimpleWindow) {

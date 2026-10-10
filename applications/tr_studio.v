@@ -152,7 +152,8 @@ fn main() {
 	})
 
 	tr_path := get_tr_bin()
-	win.add_label('lbl_engine_info', '⚡ Engine: ${tr_path}  |  Platform: macOS Cocoa  |  Mode: Async Stream Worker (Zero UI Freezes)')
+	win.add_label('lbl_engine_info',
+		'⚡ Engine: ${tr_path}  |  Platform: macOS Cocoa  |  Mode: Async Stream Worker (Zero UI Freezes)')
 
 	all_recipes := get_all_tr_recipes()
 
@@ -335,12 +336,15 @@ fn main() {
 						0
 					}
 
-					win_main.set('lbl_stats', '📊 Stats: SUCCESS  |  Chars: ${char_count}  |  Lines: ${line_count}  |  Duration: ${elapsed_ms} ms')
+					win_main.set('lbl_stats',
+						'📊 Stats: SUCCESS  |  Chars: ${char_count}  |  Lines: ${line_count}  |  Duration: ${elapsed_ms} ms')
 					win_main.set_status('Stream translated successfully (${char_count} chars in ${elapsed_ms} ms).')
 					win_main.toast('Translated ${char_count} chars in ${elapsed_ms} ms!')
 				} else {
-					win_main.set('txt_output_stream', '⚠️ TR Translation Error:\n\n' + res.output)
-					win_main.set('lbl_stats', '📊 Stats: ERROR (Exit code ${res.exit_code})  |  Duration: ${elapsed_ms} ms')
+					win_main.set('txt_output_stream', '⚠️ TR Translation Error:\n\n' +
+						res.output)
+					win_main.set('lbl_stats',
+						'📊 Stats: ERROR (Exit code ${res.exit_code})  |  Duration: ${elapsed_ms} ms')
 					win_main.set_status('TR command returned an error.')
 				}
 			})

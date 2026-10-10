@@ -31,8 +31,7 @@ fn main() {
 	mut spec := DashboardSpec{}
 
 	// Create and configure a premium SimpleGUI environment
-	mut win := simplegui.new_simple_window('Enterprise Fintech Analytics, KPI & BI Center',
-		880, 680)
+	mut win := simplegui.new_simple_window('Enterprise Fintech Analytics, KPI & BI Center', 880, 680)
 		.set_background_color('#0b0f19') // Premium Obsidian Space Black
 		.set_font_color('#f1f5f9')
 		.set_padding(18)
@@ -40,7 +39,8 @@ fn main() {
 
 	win.add_heading('📊 Enterprise BI Dashboard & KPI Publisher')
 
-	win.add_label('studio_sub', 'Model business data and styling metrics live in V. Real-time updates re-render interactive WebKit charts, financial tickers, and high-performance canvas gauges.')
+	win.add_label('studio_sub',
+		'Model business data and styling metrics live in V. Real-time updates re-render interactive WebKit charts, financial tickers, and high-performance canvas gauges.')
 		.font_size(11)
 		.font_color('#64748b')
 
@@ -174,13 +174,15 @@ fn on_export_clicked(mut win simplegui.SimpleWindow) {
 	encoded_spec := json2.encode(spec)
 	win.alert('Enterprise Spec Exported',
 		'KPI specs serialized successfully to JSON!\n\nPayload:\n' + encoded_spec +
-			'\n\nThis payload can be published directly to enterprise analytics APIs.')
+		'\n\nThis payload can be published directly to enterprise analytics APIs.')
 	win.toast('JSON Specs Compiled')
 }
 
 fn on_report_clicked(mut win simplegui.SimpleWindow) {
 	comp := win.get_text('company_name')
-	if win.confirm('Publish BI Report', 'Do you want to confirm submitting the compiled metrics summary for ${comp}?') {
+	if win.confirm('Publish BI Report',
+		'Do you want to confirm submitting the compiled metrics summary for ${comp}?')
+	{
 		win.alert('Report Submitted', 'BI dashboard published successfully to production database.')
 		win.toast('Database updated')
 	}

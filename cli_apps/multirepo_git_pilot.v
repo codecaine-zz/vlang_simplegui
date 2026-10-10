@@ -28,7 +28,8 @@ fn main() {
 
 	app.add_flag_string('path', 'p', '.', 'Root directory to scan for Git repositories')
 	app.add_flag_bool('fetch', 'f', false, 'Run git fetch across all repositories in parallel')
-	app.add_flag_bool('dirty-only', 'd', false, 'Only display repositories with uncommitted changes')
+	app.add_flag_bool('dirty-only', 'd', false,
+		'Only display repositories with uncommitted changes')
 	app.add_flag_bool('interactive', 'i', false, 'Launch interactive batch sync wizard')
 
 	app.parse_cli() or { return }

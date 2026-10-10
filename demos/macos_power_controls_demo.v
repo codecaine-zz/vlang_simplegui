@@ -3,12 +3,12 @@ module main
 import simplegui
 
 fn main() {
-	mut win := simplegui.new_simple_window('macOS Appearance and Power Controls Demo',
-		860, 640)
+	mut win := simplegui.new_simple_window('macOS Appearance and Power Controls Demo', 860, 640)
 
-	win.add_section_header('title', 'System Appearance and Power Controls', 'Demonstrates global macOS theme and session/power commands')
-	win.add_alert_banner('warning', 'Use with care', 'Sleep, logout, restart, and shutdown actions affect your full system.',
-		'warning')
+	win.add_section_header('title', 'System Appearance and Power Controls',
+		'Demonstrates global macOS theme and session/power commands')
+	win.add_alert_banner('warning', 'Use with care',
+		'Sleep, logout, restart, and shutdown actions affect your full system.', 'warning')
 
 	win.add_status_indicator('theme_mode', 'System Theme', 'unknown')
 	win.add_status_indicator('power_source', 'Power Source', 'unknown')
@@ -200,7 +200,8 @@ fn refresh_power(mut win simplegui.SimpleWindow) {
 		win.set_status_indicator('sleep_guard', 'idle')
 	}
 
-	win.set_value('power_label', 'Power: ${source} | Battery: ${charge_pct}% | Charge: ${charge_state}')
+	win.set_value('power_label',
+		'Power: ${source} | Battery: ${charge_pct}% | Charge: ${charge_state}')
 }
 
 fn append_log(mut win simplegui.SimpleWindow, line string) {

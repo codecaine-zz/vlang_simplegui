@@ -41,35 +41,51 @@ struct TaskResult {
 fn get_app_maps() map[string]AppConfig {
 	mut m := map[string]AppConfig{}
 	m['api_studio.v'] = AppConfig{'API Studio', 'api_client.png', 'com.simplegui.apistudio'}
-	m['app_bundler_studio.v'] = AppConfig{'App Bundler Studio', 'launcher.png', 'com.simplegui.appbundlerstudio'}
-	m['audiotag_studio.v'] = AppConfig{'Audio Tag Studio', 'audio_editor.png', 'com.simplegui.audiotagstudio'}
+	m['app_bundler_studio.v'] =
+		AppConfig{'App Bundler Studio', 'launcher.png', 'com.simplegui.appbundlerstudio'}
+	m['audiotag_studio.v'] =
+		AppConfig{'Audio Tag Studio', 'audio_editor.png', 'com.simplegui.audiotagstudio'}
 	m['brew_studio.v'] = AppConfig{'Brew Studio', 'package_manager.png', 'com.simplegui.brewstudio'}
 	m['crypto_studio.v'] = AppConfig{'Crypto Studio', 'security.png', 'com.simplegui.cryptostudio'}
 	m['cut_studio.v'] = AppConfig{'Cut Studio', 'utility.png', 'com.simplegui.cutstudio'}
-	m['dataconvert_studio.v'] = AppConfig{'Data Convert Studio', 'csv_editor.png', 'com.simplegui.dataconvertstudio'}
+	m['dataconvert_studio.v'] =
+		AppConfig{'Data Convert Studio', 'csv_editor.png', 'com.simplegui.dataconvertstudio'}
 	m['disk_studio.v'] = AppConfig{'Disk Studio', 'disk_utility.png', 'com.simplegui.diskstudio'}
 	m['dns_studio.v'] = AppConfig{'DNS Studio', 'network_analyzer.png', 'com.simplegui.dnsstudio'}
-	m['docker_studio.v'] = AppConfig{'Docker Studio', 'docker_monitor.png', 'com.simplegui.dockerstudio'}
-	m['dot_studio.v'] = AppConfig{'Graphviz Studio', 'diagram_maker.png', 'com.simplegui.graphvizstudio'}
+	m['docker_studio.v'] =
+		AppConfig{'Docker Studio', 'docker_monitor.png', 'com.simplegui.dockerstudio'}
+	m['dot_studio.v'] =
+		AppConfig{'Graphviz Studio', 'diagram_maker.png', 'com.simplegui.graphvizstudio'}
 	m['exif_studio.v'] = AppConfig{'Exif Studio', 'image_viewer.png', 'com.simplegui.exifstudio'}
 	m['fd_studio.v'] = AppConfig{'FD Studio', 'file_manager.png', 'com.simplegui.fdstudio'}
-	m['ffmpeg_studio.v'] = AppConfig{'FFmpeg Studio', 'video_editor.png', 'com.simplegui.ffmpegstudio'}
+	m['ffmpeg_studio.v'] =
+		AppConfig{'FFmpeg Studio', 'video_editor.png', 'com.simplegui.ffmpegstudio'}
 	m['find_studio.v'] = AppConfig{'Find Studio', 'file_manager.png', 'com.simplegui.findstudio'}
 	m['gawk_studio.v'] = AppConfig{'GAWK Studio', 'snippet_manager.png', 'com.simplegui.gawkstudio'}
-	m['graph_studio.v'] = AppConfig{'Graph Studio', 'drawing_board.png', 'com.simplegui.graphstudio'}
-	m['ifconfig_studio.v'] = AppConfig{'IFConfig Studio', 'network_analyzer.png', 'com.simplegui.ifconfigstudio'}
-	m['imagemagick_studio.v'] = AppConfig{'ImageMagick Studio', 'image_optimizer.png', 'com.simplegui.imagemagickstudio'}
+	m['graph_studio.v'] =
+		AppConfig{'Graph Studio', 'drawing_board.png', 'com.simplegui.graphstudio'}
+	m['ifconfig_studio.v'] =
+		AppConfig{'IFConfig Studio', 'network_analyzer.png', 'com.simplegui.ifconfigstudio'}
+	m['imagemagick_studio.v'] =
+		AppConfig{'ImageMagick Studio', 'image_optimizer.png', 'com.simplegui.imagemagickstudio'}
 	m['jq_studio.v'] = AppConfig{'JQ Studio', 'dom_explorer.png', 'com.simplegui.jqstudio'}
-	m['kalker_studio.v'] = AppConfig{'Kalker Studio', 'calculator.png', 'com.simplegui.kalkerstudio'}
-	m['launchd_studio.v'] = AppConfig{'Launchd Studio', 'task_scheduler.png', 'com.simplegui.launchdstudio'}
-	m['media_studio_hub.v'] = AppConfig{'Media Studio Hub', 'media.png', 'com.simplegui.mediastudiohub'}
+	m['kalker_studio.v'] =
+		AppConfig{'Kalker Studio', 'calculator.png', 'com.simplegui.kalkerstudio'}
+	m['launchd_studio.v'] =
+		AppConfig{'Launchd Studio', 'task_scheduler.png', 'com.simplegui.launchdstudio'}
+	m['media_studio_hub.v'] =
+		AppConfig{'Media Studio Hub', 'media.png', 'com.simplegui.mediastudiohub'}
 	m['nmap_studio.v'] = AppConfig{'Nmap Studio', 'security.png', 'com.simplegui.nmapstudio'}
-	m['numbat_studio.v'] = AppConfig{'Numbat Studio', 'calculator.png', 'com.simplegui.numbatstudio'}
+	m['numbat_studio.v'] =
+		AppConfig{'Numbat Studio', 'calculator.png', 'com.simplegui.numbatstudio'}
 	m['ocr_studio.v'] = AppConfig{'OCR Studio', 'transcription.png', 'com.simplegui.ocrstudio'}
-	m['omnitool_studio.v'] = AppConfig{'Omnitool Studio', 'developer.png', 'com.simplegui.omnitoolstudio'}
+	m['omnitool_studio.v'] =
+		AppConfig{'Omnitool Studio', 'developer.png', 'com.simplegui.omnitoolstudio'}
 	m['ouch_studio.v'] = AppConfig{'Ouch Studio', 'archive_manager.png', 'com.simplegui.ouchstudio'}
-	m['pandoc_studio.v'] = AppConfig{'Pandoc Studio', 'markdown_editor.png', 'com.simplegui.pandocstudio'}
-	m['programmer_calculator.v'] = AppConfig{'Programmer Calculator', 'calculator.png', 'com.simplegui.programmercalculator'}
+	m['pandoc_studio.v'] =
+		AppConfig{'Pandoc Studio', 'markdown_editor.png', 'com.simplegui.pandocstudio'}
+	m['programmer_calculator.v'] =
+		AppConfig{'Programmer Calculator', 'calculator.png', 'com.simplegui.programmercalculator'}
 	m['qalc_studio.v'] = AppConfig{'Qalc Studio', 'calculator.png', 'com.simplegui.qalcstudio'}
 	m['recon_studio.v'] = AppConfig{'Recon Studio', 'security.png', 'com.simplegui.reconstudio'}
 	m['regex_studio.v'] = AppConfig{'Regex Studio', 'regex_tester.png', 'com.simplegui.regexstudio'}
@@ -78,15 +94,22 @@ fn get_app_maps() map[string]AppConfig {
 	m['say_studio.v'] = AppConfig{'Say Studio', 'voice_recorder.png', 'com.simplegui.saystudio'}
 	m['sd_studio.v'] = AppConfig{'SD Studio', 'text_editor.png', 'com.simplegui.sdstudio'}
 	m['sed_studio.v'] = AppConfig{'Sed Studio', 'text_editor.png', 'com.simplegui.sedstudio'}
-	m['sqlite_studio.v'] = AppConfig{'SQLite Studio', 'database_admin.png', 'com.simplegui.sqlitestudio'}
-	m['statistics_studio.v'] = AppConfig{'Statistics Studio', 'spreadsheet.png', 'com.simplegui.statisticsstudio'}
-	m['subfinder_studio.v'] = AppConfig{'Subfinder Studio', 'network_analyzer.png', 'com.simplegui.subfinderstudio'}
-	m['task_manager.v'] = AppConfig{'Task Manager', 'system_monitor.png', 'com.simplegui.taskmanager'}
+	m['sqlite_studio.v'] =
+		AppConfig{'SQLite Studio', 'database_admin.png', 'com.simplegui.sqlitestudio'}
+	m['statistics_studio.v'] =
+		AppConfig{'Statistics Studio', 'spreadsheet.png', 'com.simplegui.statisticsstudio'}
+	m['subfinder_studio.v'] =
+		AppConfig{'Subfinder Studio', 'network_analyzer.png', 'com.simplegui.subfinderstudio'}
+	m['task_manager.v'] =
+		AppConfig{'Task Manager', 'system_monitor.png', 'com.simplegui.taskmanager'}
 	m['text_editor.v'] = AppConfig{'Text Editor', 'text_editor.png', 'com.simplegui.texteditor'}
 	m['tr_studio.v'] = AppConfig{'TR Studio', 'utility.png', 'com.simplegui.trstudio'}
-	m['watchexec_studio.v'] = AppConfig{'Watchexec Studio', 'task_scheduler.png', 'com.simplegui.watchexecstudio'}
-	m['wget2_studio.v'] = AppConfig{'Wget2 Studio', 'cloud_storage.png', 'com.simplegui.wget2studio'}
-	m['yt_dlp_studio.v'] = AppConfig{'YT-DLP Studio', 'screen_recorder.png', 'com.simplegui.ytdlpstudio'}
+	m['watchexec_studio.v'] =
+		AppConfig{'Watchexec Studio', 'task_scheduler.png', 'com.simplegui.watchexecstudio'}
+	m['wget2_studio.v'] =
+		AppConfig{'Wget2 Studio', 'cloud_storage.png', 'com.simplegui.wget2studio'}
+	m['yt_dlp_studio.v'] =
+		AppConfig{'YT-DLP Studio', 'screen_recorder.png', 'com.simplegui.ytdlpstudio'}
 	return m
 }
 

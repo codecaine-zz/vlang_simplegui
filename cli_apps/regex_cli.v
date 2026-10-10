@@ -6,7 +6,8 @@ fn main() {
 	mut app := simplecli.new_app('regex-cli', '1.0.0')
 	app.set_description('Regular Expression Tester & Match Extractor CLI')
 
-	app.add_flag_string('pattern', 'p', '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$', 'Regular expression pattern')
+	app.add_flag_string('pattern', 'p', '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$',
+		'Regular expression pattern')
 	app.add_flag_string('text', 't', 'contact@vlang.io', 'Text to match against')
 	app.add_flag_bool('interactive', 'x', false, 'Launch interactive Regex tester')
 

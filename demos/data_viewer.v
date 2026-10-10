@@ -57,7 +57,8 @@ fn main() {
 		}
 
 		if filtered.len == 0 {
-			win.set_text('output', 'No matching records found for name: "${query}" with role: ${role}.')
+			win.set_text('output',
+				'No matching records found for name: "${query}" with role: ${role}.')
 			win.set_status('No records matched.')
 		} else {
 			display_text := 'Fetched ' + filtered.len.str() + ' records:\n\n' + filtered.join('\n')

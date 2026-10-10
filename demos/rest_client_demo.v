@@ -129,7 +129,8 @@ fn main() {
 		.font_size(20)
 		.font_color('#ff79c6') // Dracula Pink
 
-	win.add_label('sub_header', 'Interact with JSON APIs. Spawns asynchronous requests to keep UI responsive.')
+	win.add_label('sub_header',
+		'Interact with JSON APIs. Spawns asynchronous requests to keep UI responsive.')
 		.font_size(11)
 		.font_color('#6272a4')
 
@@ -153,7 +154,8 @@ fn main() {
 	win.add_token_field('headers_input', 'Content-Type: application/json, Accept: application/json')
 
 	win.add_label('lbl_body', 'Request Body (JSON - for POST / PUT):')
-	win.add_textarea('txt_body', '{\n\t"title": "Hello from V",\n\t"body": "simplegui makes Cocoa APIs easy!",\n\t"userId": 1\n}')
+	win.add_textarea('txt_body',
+		'{\n\t"title": "Hello from V",\n\t"body": "simplegui makes Cocoa APIs easy!",\n\t"userId": 1\n}')
 	win.set_control_height('txt_body', 80)
 
 	// Send button

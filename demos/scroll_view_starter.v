@@ -14,7 +14,8 @@ fn main() {
 
 	// Built-in scrollable text area container with 200px viewport height
 
-	win.add_textarea('terms_text', '1. License Agreement\nBy using this software, you agree to all terms and conditions set forth herein.\n\n2. Privacy Policy\nYour data remains private and stored strictly on your local machine.\n\n3. User Responsibilities\nDo not use this software for unauthorized network scanning or malicious activities.\n\n4. Warranty Disclaimer\nThis software is provided AS-IS without warranty of any kind, express or implied.\n\n5. Termination\nYour right to use this software terminates automatically upon violation of these terms.')
+	win.add_textarea('terms_text',
+		'1. License Agreement\nBy using this software, you agree to all terms and conditions set forth herein.\n\n2. Privacy Policy\nYour data remains private and stored strictly on your local machine.\n\n3. User Responsibilities\nDo not use this software for unauthorized network scanning or malicious activities.\n\n4. Warranty Disclaimer\nThis software is provided AS-IS without warranty of any kind, express or implied.\n\n5. Termination\nYour right to use this software terminates automatically upon violation of these terms.')
 		.height(200)
 
 	win.add_vertical_spacer(12)

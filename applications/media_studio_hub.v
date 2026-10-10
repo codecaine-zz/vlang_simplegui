@@ -34,7 +34,8 @@ fn main() {
 	win.set_control_width('dd_hub_theme', 160)
 	win.end_row()
 
-	win.add_label('lbl_sub', 'Unified macOS Native Engineering Suite for Media, Security, Data, DevOps & Computing (45 Workstations)')
+	win.add_label('lbl_sub',
+		'Unified macOS Native Engineering Suite for Media, Security, Data, DevOps & Computing (45 Workstations)')
 
 	// -------------------------------------------------------------
 	// System Diagnostics Bar
@@ -61,14 +62,17 @@ fn main() {
 		'/bin/pandoc'])
 	has_fd, _ := check_bin('fd', ['/opt/homebrew/bin/fd', '/usr/local/bin/fd', '/bin/fd',
 		'/usr/bin/fdfind'])
-	has_rg, _ := check_bin('rg', ['/opt/homebrew/bin/rg', '/usr/local/bin/rg', '/bin/rg', '/usr/bin/rg'])
+	has_rg, _ := check_bin('rg', ['/opt/homebrew/bin/rg', '/usr/local/bin/rg', '/bin/rg',
+		'/usr/bin/rg'])
 	has_cut, _ := check_bin('cut', ['/usr/bin/cut', '/bin/cut', '/opt/homebrew/bin/gcut'])
 	has_tr, _ := check_bin('tr', ['/usr/bin/tr', '/bin/tr', '/opt/homebrew/bin/gtr'])
 	has_say, _ := check_bin('say', ['/usr/bin/say', '/bin/say'])
 	has_find, _ := check_bin('find', ['/usr/bin/find', '/bin/find', '/opt/homebrew/bin/gfind'])
-	has_ouch, _ := check_bin('ouch', ['/opt/homebrew/bin/ouch', '/usr/local/bin/ouch', '/usr/bin/ouch'])
+	has_ouch, _ := check_bin('ouch', ['/opt/homebrew/bin/ouch', '/usr/local/bin/ouch',
+		'/usr/bin/ouch'])
 	has_sed, _ := check_bin('sed', ['/usr/bin/sed', '/bin/sed', '/opt/homebrew/bin/gsed'])
-	has_qalc, _ := check_bin('qalc', ['/opt/homebrew/bin/qalc', '/usr/local/bin/qalc', '/usr/bin/qalc'])
+	has_qalc, _ := check_bin('qalc', ['/opt/homebrew/bin/qalc', '/usr/local/bin/qalc',
+		'/usr/bin/qalc'])
 	has_numbat, _ := check_bin('numbat', ['/opt/homebrew/bin/numbat', '/usr/local/bin/numbat'])
 	has_kalker, _ := check_bin('kalker', ['/opt/homebrew/bin/kalker', '/usr/local/bin/kalker'])
 	has_watchexec, _ := check_bin('watchexec', ['/opt/homebrew/bin/watchexec',
@@ -109,7 +113,8 @@ fn main() {
 	// -------------------------------------------------------------
 	// Dedicated Studio Workstations (5 Categorized Workstation Blocks)
 	// -------------------------------------------------------------
-	win.begin_group_box('grp_launchers', '🚀 Dedicated Studio Workstations (Click to Launch Independent Workspace)')
+	win.begin_group_box('grp_launchers',
+		'🚀 Dedicated Studio Workstations (Click to Launch Independent Workspace)')
 
 	// Category 1: Files, Search & Text Processing
 	win.begin_row('row_apps_1')
@@ -416,7 +421,8 @@ fn main() {
 	// Launch Programmer's Calculator
 	win.on_click('btn_launch_progcalc', fn (mut w simplegui.SimpleWindow) {
 		app_path := os.join_path(os.dir(@FILE), 'programmer_calculator.v')
-		w.append_console('hub_log', "🧮 Launching Programmer's Calculator Pro in background...\n", 1)
+		w.append_console('hub_log',
+			"🧮 Launching Programmer's Calculator Pro in background...\n", 1)
 		go fn [app_path] () {
 			simplegui.exec_safe('v', ['run', app_path])
 		}()
@@ -790,7 +796,8 @@ fn main() {
 		}
 
 		out_file := file_path + '.discord_10mb.mp4'
-		w.append_console('hub_log', '🎯 Compressing for Discord (<10MB): ${os.file_name(file_path)}...\n', 1)
+		w.append_console('hub_log',
+			'🎯 Compressing for Discord (<10MB): ${os.file_name(file_path)}...\n', 1)
 		w.set_status('Compressing for Discord...')
 
 		go fn [mut w, ffmpeg_path, file_path, out_file] () {
@@ -800,7 +807,8 @@ fn main() {
 				if res.exit_code == 0 {
 					sz := os.file_size(out_file)
 					mb := f64(sz) / (1024.0 * 1024.0)
-					win_main.append_console('hub_log', '✅ Discord Video created: ${out_file} (${mb:.2f} MB)\n', 4)
+					win_main.append_console('hub_log',
+						'✅ Discord Video created: ${out_file} (${mb:.2f} MB)\n', 4)
 					win_main.set_status('Discord compression done!')
 					win_main.toast('Discord video ready (${mb:.2f} MB)!')
 				} else {
@@ -824,7 +832,8 @@ fn main() {
 		}
 
 		out_file := file_path + '.vertical_9_16.mp4'
-		w.append_console('hub_log', '📱 Cropping to 9:16 Vertical Video: ${os.file_name(file_path)}...\n', 1)
+		w.append_console('hub_log',
+			'📱 Cropping to 9:16 Vertical Video: ${os.file_name(file_path)}...\n', 1)
 		w.set_status('Cropping 9:16 vertical...')
 
 		go fn [mut w, ffmpeg_path, file_path, out_file] () {
@@ -833,7 +842,8 @@ fn main() {
 				'-c:a', 'copy', out_file])
 			w.run_on_main_thread(fn [res, out_file] (mut win_main simplegui.SimpleWindow) {
 				if res.exit_code == 0 {
-					win_main.append_console('hub_log', '✅ Vertical 9:16 video saved: ${out_file}\n', 4)
+					win_main.append_console('hub_log',
+						'✅ Vertical 9:16 video saved: ${out_file}\n', 4)
 					win_main.set_status('Vertical crop done!')
 					win_main.toast('TikTok / Reels 9:16 ready!')
 				} else {
@@ -857,15 +867,17 @@ fn main() {
 		}
 
 		out_file := file_path + '.extracted.mp3'
-		w.append_console('hub_log', '🎵 Extracting MP3 Audio (320kbps): ${os.file_name(file_path)}...\n', 1)
+		w.append_console('hub_log',
+			'🎵 Extracting MP3 Audio (320kbps): ${os.file_name(file_path)}...\n', 1)
 		w.set_status('Extracting MP3 audio...')
 
 		go fn [mut w, ffmpeg_path, file_path, out_file] () {
-			res := simplegui.exec_safe(ffmpeg_path, ['-y', '-i', file_path, '-vn', '-c:a', 'libmp3lame',
-				'-b:a', '320k', out_file])
+			res := simplegui.exec_safe(ffmpeg_path, ['-y', '-i', file_path, '-vn', '-c:a',
+				'libmp3lame', '-b:a', '320k', out_file])
 			w.run_on_main_thread(fn [res, out_file] (mut win_main simplegui.SimpleWindow) {
 				if res.exit_code == 0 {
-					win_main.append_console('hub_log', '✅ Extracted 320kbps MP3: ${out_file}\n', 4)
+					win_main.append_console('hub_log', '✅ Extracted 320kbps MP3: ${out_file}\n',
+						4)
 					win_main.set_status('Audio extraction done!')
 					win_main.toast('Extracted MP3!')
 				} else {
@@ -889,7 +901,8 @@ fn main() {
 		}
 
 		out_file := file_path + '.loudnorm.wav'
-		w.append_console('hub_log', '🎙️ Normalizing audio to EBU R128 (-14 LUFS): ${os.file_name(file_path)}...\n', 1)
+		w.append_console('hub_log',
+			'🎙️ Normalizing audio to EBU R128 (-14 LUFS): ${os.file_name(file_path)}...\n', 1)
 		w.set_status('Normalizing audio...')
 
 		go fn [mut w, ffmpeg_path, file_path, out_file] () {
@@ -897,7 +910,8 @@ fn main() {
 				'loudnorm=I=-14:LRA=7:TP=-1.5', out_file])
 			w.run_on_main_thread(fn [res, out_file] (mut win_main simplegui.SimpleWindow) {
 				if res.exit_code == 0 {
-					win_main.append_console('hub_log', '✅ Broadcast Master Loudnorm Audio: ${out_file}\n', 4)
+					win_main.append_console('hub_log',
+						'✅ Broadcast Master Loudnorm Audio: ${out_file}\n', 4)
 					win_main.set_status('Loudnorm done!')
 					win_main.toast('EBU R128 Audio Normalized!')
 				} else {
@@ -921,7 +935,8 @@ fn main() {
 		}
 
 		out_file := file_path + '.optimized.webp'
-		w.append_console('hub_log', '🖼️ Compressing image to WebP (Quality 85): ${os.file_name(file_path)}...\n', 1)
+		w.append_console('hub_log',
+			'🖼️ Compressing image to WebP (Quality 85): ${os.file_name(file_path)}...\n', 1)
 		w.set_status('Converting to WebP...')
 
 		go fn [mut w, magick_path, file_path, out_file] () {
@@ -931,7 +946,8 @@ fn main() {
 				if res.exit_code == 0 {
 					sz := os.file_size(out_file)
 					kb := f64(sz) / 1024.0
-					win_main.append_console('hub_log', '✅ WebP image saved: ${out_file} (${kb:.1f} KB)\n', 4)
+					win_main.append_console('hub_log',
+						'✅ WebP image saved: ${out_file} (${kb:.1f} KB)\n', 4)
 					win_main.set_status('WebP conversion done!')
 					win_main.toast('WebP saved (${kb:.1f} KB)!')
 				} else {
@@ -955,7 +971,9 @@ fn main() {
 		}
 
 		out_file := file_path + '.favicon.ico'
-		w.append_console('hub_log', '🌟 Generating multi-size favicon.ico (16,32,48,64): ${os.file_name(file_path)}...\n', 1)
+		w.append_console('hub_log',
+			'🌟 Generating multi-size favicon.ico (16,32,48,64): ${os.file_name(file_path)}...\n',
+			1)
 		w.set_status('Generating favicon.ico...')
 
 		go fn [mut w, magick_path, file_path, out_file] () {
@@ -963,7 +981,8 @@ fn main() {
 				'icon:auto-resize=64,48,32,16', out_file])
 			w.run_on_main_thread(fn [res, out_file] (mut win_main simplegui.SimpleWindow) {
 				if res.exit_code == 0 {
-					win_main.append_console('hub_log', '✅ Multi-resolution Favicon created: ${out_file}\n', 4)
+					win_main.append_console('hub_log',
+						'✅ Multi-resolution Favicon created: ${out_file}\n', 4)
 					win_main.set_status('Favicon done!')
 					win_main.toast('Favicon.ico created!')
 				} else {
@@ -987,7 +1006,8 @@ fn main() {
 		}
 
 		out_file := file_path + '.transparent.png'
-		w.append_console('hub_log', '🪄 Removing white background: ${os.file_name(file_path)}...\n', 1)
+		w.append_console('hub_log',
+			'🪄 Removing white background: ${os.file_name(file_path)}...\n', 1)
 		w.set_status('Removing white background...')
 
 		go fn [mut w, magick_path, file_path, out_file] () {
@@ -995,7 +1015,8 @@ fn main() {
 				'white', out_file])
 			w.run_on_main_thread(fn [res, out_file] (mut win_main simplegui.SimpleWindow) {
 				if res.exit_code == 0 {
-					win_main.append_console('hub_log', '✅ Transparent PNG saved: ${out_file}\n', 4)
+					win_main.append_console('hub_log', '✅ Transparent PNG saved: ${out_file}\n',
+						4)
 					win_main.set_status('Transparency applied!')
 					win_main.toast('White background removed!')
 				} else {
@@ -1019,17 +1040,20 @@ fn main() {
 		}
 
 		out_file := file_path + '.2pass_hd.gif'
-		w.append_console('hub_log', '🎞️ Generating 2-pass HD animated GIF: ${os.file_name(file_path)}...\n', 1)
+		w.append_console('hub_log',
+			'🎞️ Generating 2-pass HD animated GIF: ${os.file_name(file_path)}...\n', 1)
 		w.set_status('Rendering HD GIF...')
 
 		go fn [mut w, ffmpeg_path, file_path, out_file] () {
 			filter := 'fps=15,scale=480:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse'
-			res := simplegui.exec_safe(ffmpeg_path, ['-y', '-i', file_path, '-vf', filter, out_file])
+			res := simplegui.exec_safe(ffmpeg_path,
+				['-y', '-i', file_path, '-vf', filter, out_file])
 			w.run_on_main_thread(fn [res, out_file] (mut win_main simplegui.SimpleWindow) {
 				if res.exit_code == 0 {
 					sz := os.file_size(out_file)
 					mb := f64(sz) / (1024.0 * 1024.0)
-					win_main.append_console('hub_log', '✅ HD Animated GIF created: ${out_file} (${mb:.2f} MB)\n', 4)
+					win_main.append_console('hub_log',
+						'✅ HD Animated GIF created: ${out_file} (${mb:.2f} MB)\n', 4)
 					win_main.set_status('HD GIF finished!')
 					win_main.toast('2-Pass HD GIF created (${mb:.2f} MB)!')
 				} else {
@@ -1053,7 +1077,8 @@ fn main() {
 		}
 
 		out_file := file_path + '.resized_50pct.png'
-		w.append_console('hub_log', '📐 Resizing image to 50%: ${os.file_name(file_path)}...\n', 1)
+		w.append_console('hub_log', '📐 Resizing image to 50%: ${os.file_name(file_path)}...\n',
+			1)
 		w.set_status('Resizing image...')
 
 		go fn [mut w, magick_path, file_path, out_file] () {

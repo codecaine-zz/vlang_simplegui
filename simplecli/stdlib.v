@@ -93,6 +93,7 @@ pub fn (cli &SimpleCli) http_request(method string, url string, body string) !Si
 		'HEAD' { http.Method.head }
 		else { http.Method.get }
 	}
+
 	mut req := http.new_request(req_method, url, body)
 	res := req.do()!
 	return SimpleHttpResponse{
@@ -335,7 +336,8 @@ pub fn (cli &SimpleCli) validate_ip(ip_str string) bool {
 
 // validate_phone checks if a string is a valid international/national phone number.
 pub fn (cli &SimpleCli) validate_phone(phone string) bool {
-	clean := phone.replace(' ', '').replace('-', '').replace('(', '').replace(')', '').replace('+', '')
+	clean :=
+		phone.replace(' ', '').replace('-', '').replace('(', '').replace(')', '').replace('+', '')
 	return clean.len >= 7 && clean.len <= 15 && clean.int() > 0
 }
 

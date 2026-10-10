@@ -10,8 +10,7 @@ struct Employee {
 }
 
 fn main() {
-	mut win := simplegui.new_simple_window('Multi-Column Table & Data Grid Demo', 700,
-		750)
+	mut win := simplegui.new_simple_window('Multi-Column Table & Data Grid Demo', 700, 750)
 
 	// SECTION 1: Multi-Column Table
 	win.add_heading('1. Multi-Column Table')

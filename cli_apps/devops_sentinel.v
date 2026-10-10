@@ -53,12 +53,36 @@ fn run_sentinel_monitor(mut app simplecli.SimpleCli) {
 
 	// Defined critical services to probe
 	services := [
-		ServiceTarget{ name: 'DNS Gateway (Cloudflare)', host: '1.1.1.1', port: 53 },
-		ServiceTarget{ name: 'DNS Gateway (Google)', host: '8.8.8.8', port: 53 },
-		ServiceTarget{ name: 'Local PostgreSQL', host: '127.0.0.1', port: 5432 },
-		ServiceTarget{ name: 'Local MySQL / MariaDB', host: '127.0.0.1', port: 3306 },
-		ServiceTarget{ name: 'Local Redis Cache', host: '127.0.0.1', port: 6379 },
-		ServiceTarget{ name: 'Local Web Server', host: '127.0.0.1', port: 8080 },
+		ServiceTarget{
+			name: 'DNS Gateway (Cloudflare)'
+			host: '1.1.1.1'
+			port: 53
+		},
+		ServiceTarget{
+			name: 'DNS Gateway (Google)'
+			host: '8.8.8.8'
+			port: 53
+		},
+		ServiceTarget{
+			name: 'Local PostgreSQL'
+			host: '127.0.0.1'
+			port: 5432
+		},
+		ServiceTarget{
+			name: 'Local MySQL / MariaDB'
+			host: '127.0.0.1'
+			port: 3306
+		},
+		ServiceTarget{
+			name: 'Local Redis Cache'
+			host: '127.0.0.1'
+			port: 6379
+		},
+		ServiceTarget{
+			name: 'Local Web Server'
+			host: '127.0.0.1'
+			port: 8080
+		},
 	]
 
 	app.step(1, 'Inspecting Hardware Baseline & System Topology')
@@ -101,7 +125,12 @@ fn run_sentinel_monitor(mut app simplecli.SimpleCli) {
 	cpu_usage := app.get_cpu_usage_percent()
 	l1, l5, l15 := app.get_load_average()
 	disk_stats := app.get_disk_usage('/') or {
-		simplecli.DiskStats{ total_bytes: 1, free_bytes: 1, used_bytes: 0, percent: 0.0 }
+		simplecli.DiskStats{
+			total_bytes: 1
+			free_bytes:  1
+			used_bytes:  0
+			percent:     0.0
+		}
 	}
 	battery := app.get_battery_percent()
 	batt_str := if battery >= 0 { '${battery}%' } else { 'Desktop / AC Power' }
@@ -109,7 +138,8 @@ fn run_sentinel_monitor(mut app simplecli.SimpleCli) {
 	disk_gb_used := f64(disk_stats.used_bytes) / 1073741824.0
 	disk_gb_total := f64(disk_stats.total_bytes) / 1073741824.0
 
-	app.progress_bar(disk_stats.percent, 100.0, 'Root Partition (/) Storage: ${disk_gb_used:.1f} GB / ${disk_gb_total:.1f} GB')
+	app.progress_bar(disk_stats.percent, 100.0,
+		'Root Partition (/) Storage: ${disk_gb_used:.1f} GB / ${disk_gb_total:.1f} GB')
 
 	app.print_kv({
 		'CPU Utilization': '${cpu_usage:.1f}%'
@@ -123,7 +153,8 @@ fn run_sentinel_monitor(mut app simplecli.SimpleCli) {
 		app.warn('High system utilization threshold breached!')
 		if enable_alerts {
 			app.play_system_sound('Hero')
-			app.notify('Sentinel Alert', 'System load high: CPU ${cpu_usage:.1f}%, Disk ${disk_stats.percent:.1f}%')
+			app.notify('Sentinel Alert',
+				'System load high: CPU ${cpu_usage:.1f}%, Disk ${disk_stats.percent:.1f}%')
 		}
 	} else {
 		app.success('All system health parameters within standard tolerances.')
@@ -142,7 +173,8 @@ fn run_sentinel_monitor(mut app simplecli.SimpleCli) {
 }
 
 fn run_interactive_wizard(mut app simplecli.SimpleCli) {
-	app.panel('Sentinel Interactive Configuration Wizard', 'Configure automated threshold triggers and monitoring rules.')
+	app.panel('Sentinel Interactive Configuration Wizard',
+		'Configure automated threshold triggers and monitoring rules.')
 
 	target_host := app.prompt('Enter custom host or IP to monitor', '127.0.0.1')
 	target_port := app.prompt_number('Enter port number', 8080, 1, 65535)

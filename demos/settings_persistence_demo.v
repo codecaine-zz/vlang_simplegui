@@ -21,8 +21,7 @@ fn main() {
 			'Development')
 		.add_form_switch('Enable Logging', 'log_switch', 'Verbose Logs', true)
 		.add_form_slider('Max Connections', 'max_conn', 50)
-		.add_separator()
-		.begin_row
+		.add_separator().begin_row
 
 	// 2. Action Buttons
 
@@ -51,8 +50,7 @@ fn main() {
 	win.on_click('btn_load_struct', fn (mut win simplegui.SimpleWindow) {
 		content := win.read_file('app_settings.json')
 		if content == '' // 1. Controls Setup
-
-		{
+		  {
 			win.set_status('No app_settings.json file found!')
 			return
 		}

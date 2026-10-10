@@ -45,7 +45,8 @@ fn main() {
 	})
 
 	brew_path := get_brew_bin()
-	win.add_label('lbl_engine_info', '⚡ Engine: ${brew_path}  |  Platform: Apple Silicon / Intel macOS  |  Mode: Async Worker')
+	win.add_label('lbl_engine_info',
+		'⚡ Engine: ${brew_path}  |  Platform: Apple Silicon / Intel macOS  |  Mode: Async Worker')
 
 	// Search & Quick Operation Bar
 	win.begin_group_box('grp_brew_search', '🔍 Package Search & Information Inspection')
@@ -104,7 +105,8 @@ fn main() {
 	win.end_row()
 
 	win.append_console('brew_console', '🍺 Homebrew Studio Pro Initialized.\n', 1)
-	win.append_console('brew_console', '⚡ Ready to manage formulae, casks, and background services.\n', 4)
+	win.append_console('brew_console',
+		'⚡ Ready to manage formulae, casks, and background services.\n', 4)
 
 	// -------------------------------------------------------------
 	// Async Execution Helper
@@ -139,13 +141,19 @@ fn main() {
 
 				lines_cnt := if out != '' { out.split_into_lines().len } else { 0 }
 				if res.exit_code == 0 || (lines_cnt > 0 && !out.starts_with('Error:')) {
-					win_main.append_console('brew_console', '✅ ${desc} completed in ${elapsed_ms} ms (${lines_cnt} lines output).\n', 4)
-					win_main.set('lbl_stats', '📊 Stats: SUCCESS  |  Action: ${desc}  |  Lines: ${lines_cnt}  |  Duration: ${elapsed_ms} ms')
+					win_main.append_console('brew_console',
+						'✅ ${desc} completed in ${elapsed_ms} ms (${lines_cnt} lines output).\n',
+						4)
+					win_main.set('lbl_stats',
+						'📊 Stats: SUCCESS  |  Action: ${desc}  |  Lines: ${lines_cnt}  |  Duration: ${elapsed_ms} ms')
 					win_main.set_status('${desc} complete.')
 					win_main.toast('${desc} complete!')
 				} else {
-					win_main.append_console('brew_console', '❌ Notice / Error (Exit ${res.exit_code}):\n' + out + '\n', 3)
-					win_main.set('lbl_stats', '📊 Stats: NOTICE (Exit ${res.exit_code})  |  Duration: ${elapsed_ms} ms')
+					win_main.append_console('brew_console',
+
+						'❌ Notice / Error (Exit ${res.exit_code}):\n' + out + '\n', 3)
+					win_main.set('lbl_stats',
+						'📊 Stats: NOTICE (Exit ${res.exit_code})  |  Duration: ${elapsed_ms} ms')
 					win_main.set_status('${desc} finished.')
 				}
 			})
@@ -233,8 +241,10 @@ fn main() {
 				out += res_c.output.trim_space() + '\n'
 
 				win_main.set('txt_brew_output', out)
-				win_main.append_console('brew_console', '✅ Listed ${f_cnt} formulae and ${c_cnt} casks in ${elapsed_ms} ms.\n', 4)
-				win_main.set('lbl_stats', '📊 Stats: SUCCESS  |  Formulae: ${f_cnt}  |  Casks: ${c_cnt}  |  Duration: ${elapsed_ms} ms')
+				win_main.append_console('brew_console',
+					'✅ Listed ${f_cnt} formulae and ${c_cnt} casks in ${elapsed_ms} ms.\n', 4)
+				win_main.set('lbl_stats',
+					'📊 Stats: SUCCESS  |  Formulae: ${f_cnt}  |  Casks: ${c_cnt}  |  Duration: ${elapsed_ms} ms')
 				win_main.set_status('Listed all installed packages.')
 				win_main.toast('Listed all installed packages!')
 			})
@@ -292,7 +302,8 @@ fn main() {
 			return
 		}
 
-		w.append_console('brew_console', '🛠️ Scanning for orphaned Caskroom entries without installed versions...\n', 1)
+		w.append_console('brew_console',
+			'🛠️ Scanning for orphaned Caskroom entries without installed versions...\n', 1)
 
 		entries := os.ls(caskroom_dir) or { []string{} }
 		mut removed_cnt := 0
@@ -308,7 +319,8 @@ fn main() {
 					}
 				}
 				if !has_version_dir {
-					w.append_console('brew_console', '🧹 Cleaning orphaned cask receipt: ${entry}\n', 3)
+					w.append_console('brew_console',
+						'🧹 Cleaning orphaned cask receipt: ${entry}\n', 3)
 					os.rmdir_all(dir_path) or {}
 					removed_cnt++
 				}
@@ -316,9 +328,11 @@ fn main() {
 		}
 
 		if removed_cnt > 0 {
-			w.append_console('brew_console', '✅ Cleaned ${removed_cnt} orphaned cask directories.\n', 4)
+			w.append_console('brew_console',
+				'✅ Cleaned ${removed_cnt} orphaned cask directories.\n', 4)
 			w.toast('Cleaned ${removed_cnt} orphaned casks!')
-			w.alert('Orphaned Casks Cleaned', 'Successfully resolved ${removed_cnt} orphaned cask receipts. Homebrew list commands will now run cleanly.')
+			w.alert('Orphaned Casks Cleaned',
+				'Successfully resolved ${removed_cnt} orphaned cask receipts. Homebrew list commands will now run cleanly.')
 		} else {
 			w.append_console('brew_console', '✅ All Caskroom directories are healthy.\n', 4)
 			w.toast('Caskroom is healthy.')
@@ -333,7 +347,8 @@ fn main() {
 			w.alert('Brewfile Missing', 'Could not find Brewfile in current workspace: ${brewfile}')
 			return
 		}
-		if !w.confirm('Install Brewfile Dependencies', 'Install all dependencies declared in Brewfile via Homebrew bundle?') {
+		if !w.confirm('Install Brewfile Dependencies',
+			'Install all dependencies declared in Brewfile via Homebrew bundle?') {
 			return
 		}
 		run_brew_cmd(mut w, 'Brewfile Bundle Install', ['bundle', '--file', brewfile])

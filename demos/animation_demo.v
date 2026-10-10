@@ -4,14 +4,14 @@ import simplegui
 
 fn main() {
 	// Create the window
-	mut win := simplegui.new_simple_window('GUI Animation & Transition Helpers Demo',
-		600, 500)
+	mut win := simplegui.new_simple_window('GUI Animation & Transition Helpers Demo', 600, 500)
 	win.set_theme('dracula')
 	win.set_padding(20)
 	win.set_spacing(15)
 
 	win.add_heading('✨ Native Animation Showcase')
-	win.add_label('desc', 'Interact with the controls below to trigger smooth hardware-accelerated animations.')
+	win.add_label('desc',
+		'Interact with the controls below to trigger smooth hardware-accelerated animations.')
 
 	// 1. Shake Section
 	win.add_heading('1. Attention & Feedback (Shake)')

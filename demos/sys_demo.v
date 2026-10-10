@@ -4,8 +4,7 @@ import simplegui
 import os
 
 fn main() {
-	mut win := simplegui.new_simple_window('SimpleGUI sys.v Demo — All System Commands',
-		920, 500)
+	mut win := simplegui.new_simple_window('SimpleGUI sys.v Demo — All System Commands', 920, 500)
 
 	win.add_menu_item('File', 'Quit', 'q', fn (mut w simplegui.SimpleWindow) {
 		w.quit()
@@ -38,8 +37,7 @@ fn main() {
 
 	win.on_click('btn_run_all', fn (mut w simplegui.SimpleWindow) {
 		w.clear_console('output')
-		w.append_console('output', '⏳ Running all 13 system sections in background thread…',
-			0)
+		w.append_console('output', '⏳ Running all 13 system sections in background thread…', 0)
 		spawn fn (mut window simplegui.SimpleWindow) {
 			run_all(mut window)
 		}(mut w)
@@ -90,8 +88,7 @@ fn main() {
 					demo_extra_sys(mut window)
 				}
 				else {
-					window.append_console('output', 'Unknown section: ${selected_tab}',
-						1)
+					window.append_console('output', 'Unknown section: ${selected_tab}', 1)
 				}
 			}
 		}(mut w, tab)
@@ -106,10 +103,12 @@ fn log(mut w simplegui.SimpleWindow, label string, value string) {
 
 fn log_header(mut w simplegui.SimpleWindow, title string) {
 	w.append_console('output', '', 0)
-	w.append_console('output', '══════════════════════════════════════════',
+	w.append_console('output',
+		'══════════════════════════════════════════',
 		0)
 	w.append_console('output', '  ${title}', 0)
-	w.append_console('output', '══════════════════════════════════════════',
+	w.append_console('output',
+		'══════════════════════════════════════════',
 		0)
 }
 
@@ -136,7 +135,8 @@ fn run_all(mut w simplegui.SimpleWindow) {
 	demo_process(mut w)
 	demo_extra_sys(mut w)
 	w.append_console('output', '', 0)
-	w.append_console('output', '✅  All sections complete. (Interactive popups & launchers are safely isolated to §7 Open and §10 Shell tabs).',
+	w.append_console('output',
+		'✅  All sections complete. (Interactive popups & launchers are safely isolated to §7 Open and §10 Shell tabs).',
 		0)
 }
 
@@ -174,13 +174,16 @@ fn demo_exec(mut w simplegui.SimpleWindow) {
 	log(mut w, 'get_envs() count', '${envs.len} vars')
 
 	result_meta := w.exec_result('echo "structured execution"')
-	log(mut w, 'exec_result', 'ok=${result_meta.success()} exit=${result_meta.exit_code} duration=${result_meta.duration_ms}ms')
+	log(mut w, 'exec_result',
+		'ok=${result_meta.success()} exit=${result_meta.exit_code} duration=${result_meta.duration_ms}ms')
 
 	timeout_meta := w.exec_timeout_result('sleep 2', 400)
-	log(mut w, 'exec_timeout_result', 'timed_out=${timeout_meta.timed_out} exit=${timeout_meta.exit_code}')
+	log(mut w, 'exec_timeout_result',
+		'timed_out=${timeout_meta.timed_out} exit=${timeout_meta.exit_code}')
 
 	retry_meta := w.exec_retry('this_cmd_does_not_exist_xyz', 3, 100, 2.0)
-	log(mut w, 'exec_retry (expected fail)', 'attempts=${retry_meta.attempts} exit=${retry_meta.exit_code}')
+	log(mut w, 'exec_retry (expected fail)',
+		'attempts=${retry_meta.attempts} exit=${retry_meta.exit_code}')
 
 	w.show_system_notification('sys.v Demo', 'Section §1 — exec/env running!')
 	log_ok(mut w, 'show_system_notification sent')
@@ -399,7 +402,8 @@ fn demo_network(mut w simplegui.SimpleWindow) {
 
 	log(mut w, 'dns_lookup "google.com"', w.dns_lookup('google.com'))
 	log(mut w, 'dns_lookup "vlang.io"', w.dns_lookup('vlang.io'))
-	log(mut w, 'wait_for_port("google.com", 443)', '${w.wait_for_port('google.com', 443, 2000, 100)}')
+	log(mut w, 'wait_for_port("google.com", 443)',
+		'${w.wait_for_port('google.com', 443, 2000, 100)}')
 
 	log(mut w, 'get_wifi_ssid', w.get_wifi_ssid())
 	log(mut w, 'get_network_interfaces', w.get_network_interfaces().join(', '))
@@ -427,7 +431,8 @@ fn demo_shell_non_interactive(mut w simplegui.SimpleWindow) {
 	w.beep()
 	log_ok(mut w, 'say() speech output test…')
 	w.say('SimpleGUI non-interactive shell test complete')
-	log_ok(mut w, 'Shell utilities ready. Select §10 Shell tab to test interactive native dialogs.')
+	log_ok(mut w,
+		'Shell utilities ready. Select §10 Shell tab to test interactive native dialogs.')
 }
 
 fn demo_shell(mut w simplegui.SimpleWindow) {
@@ -511,7 +516,8 @@ fn demo_process(mut w simplegui.SimpleWindow) {
 
 // ─── §13 Extra Utility Extensions ─────────────────────────────────────────
 fn demo_extra_sys(mut w simplegui.SimpleWindow) {
-	log_header(mut w, '§13  Extra Utility Extensions — Theme / Audio / Zip / Trash / Hash / Ports')
+	log_header(mut w,
+		'§13  Extra Utility Extensions — Theme / Audio / Zip / Trash / Hash / Ports')
 
 	log(mut w, 'is_dark_mode', '${w.is_dark_mode()}')
 	log(mut w, 'get_system_theme', w.get_system_theme())

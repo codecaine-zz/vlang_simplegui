@@ -30,8 +30,7 @@ fn main() {
 	println('==================================================')
 
 	// 2. Build the SimpleGUI application playground window
-	mut gui := simplegui.new_simple_window('Secure Unix Domain Socket Client Demo', 640,
-		620)
+	mut gui := simplegui.new_simple_window('Secure Unix Domain Socket Client Demo', 640, 620)
 	gui.set_title('SimpleGUI Secure Unix Socket Client (AES-128-CBC)')
 	gui.set_padding(20)
 	gui.set_spacing(12)
@@ -41,7 +40,8 @@ fn main() {
 	gui.set_control_font_size('title', 18)
 	gui.set_control_font_bold('title', true)
 
-	gui.add_label('subtitle', 'Secure local communication. Payloads are AES encrypted on transmission and decrypted on receipt.')
+	gui.add_label('subtitle',
+		'Secure local communication. Payloads are AES encrypted on transmission and decrypted on receipt.')
 
 	gui.add_separator()
 
@@ -71,7 +71,8 @@ fn main() {
 	gui.add_separator()
 
 	// Text area for packet tracing
-	gui.add_label('stream_lbl', '📜 Active Secure Stream Event Tracker logs (Ciphertext vs Plaintext):')
+	gui.add_label('stream_lbl',
+		'📜 Active Secure Stream Event Tracker logs (Ciphertext vs Plaintext):')
 	gui.set_control_font_bold('stream_lbl', true)
 	gui.add_textarea('stream_logs', '[Logs] Standing by. Click Connect to initiate handshake...\n')
 	gui.set_control_height('stream_logs', 160)
@@ -124,8 +125,7 @@ fn main() {
 						time_stamp := w_inner.time_now()
 						current_logs := w_inner.get_text('stream_logs')
 						w_inner.set_text('stream_logs', current_logs + '\n[' + time_stamp +
-							'] [Received Ciphertext (Hex)]: ' + cipher + '\n[' + time_stamp +
-							'] [Received Decrypted (Plain)]: ' + plain + '\n')
+							'] [Received Ciphertext (Hex)]: ' + cipher + '\n[' + time_stamp + '] [Received Decrypted (Plain)]: ' + plain + '\n')
 						w_inner.toast('Secure Unix socket payload arrived & decrypted!')
 						w_inner.set_status('Received secure Unix response.')
 					})
@@ -185,8 +185,7 @@ fn main() {
 
 		current_logs := win.get_text('stream_logs')
 		win.set_text('stream_logs', current_logs + '\n[' + time_stamp +
-			'] [Sent Plaintext (Plain)]: ' + msg + '\n[' + time_stamp +
-			'] [Sent Ciphertext (Hex)]: ' + cipher)
+			'] [Sent Plaintext (Plain)]: ' + msg + '\n[' + time_stamp + '] [Sent Ciphertext (Hex)]: ' + cipher)
 
 		// Send data
 		mut client := unsafe { &SimpleUnixClient(win.ws_client) }

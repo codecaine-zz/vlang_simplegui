@@ -67,8 +67,7 @@ fn worker(worker_id int, task_chan chan Task, progress_chan chan ProgressEvent) 
 fn main() {
 	mut state := AppState{}
 
-	mut win := simplegui.new_simple_window('Worker Pool Concurrency Visualizer', 620,
-		820)
+	mut win := simplegui.new_simple_window('Worker Pool Concurrency Visualizer', 620, 820)
 	win.set_theme('dracula')
 	win.set_padding(18)
 	win.set_spacing(12)
@@ -78,7 +77,8 @@ fn main() {
 		.font_size(20)
 		.font_color('#8be9fd') // Dracula Cyan
 
-	win.add_label('intro', 'Configure worker count and task quantity. Click Start Pool to dispatch tasks to parallel V-routines and watch live execution.')
+	win.add_label('intro',
+		'Configure worker count and task quantity. Click Start Pool to dispatch tasks to parallel V-routines and watch live execution.')
 		.font_size(11)
 		.font_color('#6272a4')
 
@@ -203,7 +203,8 @@ fn main() {
 							state.tasks_done++
 							progress_pct := int(100.0 * f64(state.tasks_done) / f64(state.tasks_total))
 							w_inner.set_value_int('prog_overall', progress_pct)
-							w_inner.set_text('status_info', 'Tasks Completed: ${state.tasks_done} / ${state.tasks_total}')
+							w_inner.set_text('status_info',
+								'Tasks Completed: ${state.tasks_done} / ${state.tasks_total}')
 
 							if state.tasks_done >= state.tasks_total {
 								// Pool Finished!
@@ -213,7 +214,8 @@ fn main() {
 								w_inner.set_control_enabled('slider_workers', true)
 								w_inner.set_control_enabled('num_tasks', true)
 								w_inner.set_value_int('spinner_running', 0) // Stop spinner
-								w_inner.alert('Success', 'Worker Pool successfully processed all ${state.tasks_total} tasks!')
+								w_inner.alert('Success',
+									'Worker Pool successfully processed all ${state.tasks_total} tasks!')
 								state.running = false
 							}
 						}

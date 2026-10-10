@@ -58,7 +58,8 @@ fn main() {
 	})
 
 	sqlite_path := get_sqlite_bin()
-	win.add_label('lbl_engine_info', '⚡ Engine: ${sqlite_path}  |  Platform: macOS Cocoa  |  Mode: Async Worker')
+	win.add_label('lbl_engine_info',
+		'⚡ Engine: ${sqlite_path}  |  Platform: macOS Cocoa  |  Mode: Async Worker')
 
 	// Database File Selection & Schema Browser
 	win.begin_group_box('grp_db_config', '📁 Database Connection & Schema Explorer')
@@ -131,11 +132,13 @@ fn main() {
 
 	// Status Row
 	win.begin_row('row_stats')
-	win.add_label('lbl_stats', '📊 Stats: Ready  |  Database: :memory:  |  Rows: 0  |  Duration: 0 ms')
+	win.add_label('lbl_stats',
+		'📊 Stats: Ready  |  Database: :memory:  |  Rows: 0  |  Duration: 0 ms')
 	win.end_row()
 
 	win.append_console('sqlite_console', '🗄️ SQLite Studio Pro Initialized.\n', 1)
-	win.append_console('sqlite_console', '⚡ Ready to run queries against SQLite / In-Memory databases.\n', 4)
+	win.append_console('sqlite_console',
+		'⚡ Ready to run queries against SQLite / In-Memory databases.\n', 4)
 
 	// Demo Database Initializer Script
 	demo_db_path := os.join_path(os.temp_dir(), 'simplegui_demo_store.sqlite')
@@ -187,7 +190,8 @@ fn main() {
 		w.set('txt_db_path', demo_db_path)
 		w.set('txt_sql_query', sample_sql_query)
 		w.toast('Demo Store database initialized!')
-		w.append_console('sqlite_console', '🚀 Created demo SQLite database at: ${demo_db_path}\n', 4)
+		w.append_console('sqlite_console',
+			'🚀 Created demo SQLite database at: ${demo_db_path}\n', 4)
 	})
 
 	// Open DB File Picker
@@ -205,17 +209,22 @@ fn main() {
 		if selected.starts_with('1.') {
 			w.set('txt_sql_query', sample_sql_query)
 		} else if selected.starts_with('2.') {
-			w.set('txt_sql_query', 'SELECT c.name AS category, COUNT(p.id) AS product_count, AVG(p.price) AS avg_price FROM categories c LEFT JOIN products p ON c.id = p.category_id GROUP BY c.name;')
+			w.set('txt_sql_query',
+				'SELECT c.name AS category, COUNT(p.id) AS product_count, AVG(p.price) AS avg_price FROM categories c LEFT JOIN products p ON c.id = p.category_id GROUP BY c.name;')
 		} else if selected.starts_with('3.') {
-			w.set('txt_sql_query', 'SELECT name, price, stock_quantity FROM products ORDER BY price DESC LIMIT 5;')
+			w.set('txt_sql_query',
+				'SELECT name, price, stock_quantity FROM products ORDER BY price DESC LIMIT 5;')
 		} else if selected.starts_with('4.') {
 			w.set('txt_sql_query', 'EXPLAIN QUERY PLAN\n' + sample_sql_query)
 		} else if selected.starts_with('5.') {
-			w.set('txt_sql_query', 'INSERT INTO products (category_id, name, price, stock_quantity) VALUES (1, "Mac mini M2", 599.00, 20);')
+			w.set('txt_sql_query',
+				'INSERT INTO products (category_id, name, price, stock_quantity) VALUES (1, "Mac mini M2", 599.00, 20);')
 		} else if selected.starts_with('6.') {
-			w.set('txt_sql_query', 'CREATE TABLE IF NOT EXISTS audit_logs (id INTEGER PRIMARY KEY, action TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP);\nCREATE INDEX IF NOT EXISTS idx_audit_time ON audit_logs(timestamp);')
+			w.set('txt_sql_query',
+				'CREATE TABLE IF NOT EXISTS audit_logs (id INTEGER PRIMARY KEY, action TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP);\nCREATE INDEX IF NOT EXISTS idx_audit_time ON audit_logs(timestamp);')
 		} else if selected.starts_with('7.') {
-			w.set('txt_sql_query', 'SELECT "categories" AS table_name, count(*) AS total_rows FROM categories\nUNION ALL\nSELECT "products", count(*) FROM products;')
+			w.set('txt_sql_query',
+				'SELECT "categories" AS table_name, count(*) AS total_rows FROM categories\nUNION ALL\nSELECT "products", count(*) FROM products;')
 		} else if selected.starts_with('8.') {
 			w.set('txt_sql_query', 'VACUUM;\nPRAGMA optimize;')
 		}
@@ -264,7 +273,8 @@ fn main() {
 		raw_args << target_db
 		raw_args << query_str
 
-		w.append_console('sqlite_console', '▶ Executing SQL (${mode_flag}) against ${target_db}...\n', 1)
+		w.append_console('sqlite_console',
+			'▶ Executing SQL (${mode_flag}) against ${target_db}...\n', 1)
 		w.set_status('Running SQL query...')
 
 		go fn [mut w, sqlite_bin, raw_args, target_db] () {
@@ -278,13 +288,17 @@ fn main() {
 
 				if res.exit_code == 0 {
 					lines_cnt := if out != '' { out.split_into_lines().len } else { 0 }
-					win_main.append_console('sqlite_console', '✅ SQL query executed successfully in ${elapsed_ms} ms (${out.len} bytes)\n', 4)
-					win_main.set('lbl_stats', '📊 Stats: SUCCESS  |  DB: ${os.file_name(target_db)}  |  Output: ${lines_cnt} lines  |  Duration: ${elapsed_ms} ms')
+					win_main.append_console('sqlite_console',
+						'✅ SQL query executed successfully in ${elapsed_ms} ms (${out.len} bytes)\n',
+						4)
+					win_main.set('lbl_stats',
+						'📊 Stats: SUCCESS  |  DB: ${os.file_name(target_db)}  |  Output: ${lines_cnt} lines  |  Duration: ${elapsed_ms} ms')
 					win_main.set_status('Query finished in ${elapsed_ms} ms.')
 					win_main.toast('Query executed in ${elapsed_ms} ms!')
 				} else {
 					win_main.append_console('sqlite_console', '❌ SQLite Error:\n' + out + '\n', 3)
-					win_main.set('lbl_stats', '📊 Stats: ERROR (Exit ${res.exit_code})  |  Duration: ${elapsed_ms} ms')
+					win_main.set('lbl_stats',
+						'📊 Stats: ERROR (Exit ${res.exit_code})  |  Duration: ${elapsed_ms} ms')
 					win_main.set_status('Query execution failed.')
 					win_main.toast('SQL error encountered.')
 				}
@@ -301,7 +315,8 @@ fn main() {
 
 	// List Tables
 	win.on_click('btn_list_tables', fn (mut w simplegui.SimpleWindow) {
-		w.set('txt_sql_query', 'SELECT name, type, sql FROM sqlite_master WHERE type IN ("table", "view") AND name NOT LIKE "sqlite_%";')
+		w.set('txt_sql_query',
+			'SELECT name, type, sql FROM sqlite_master WHERE type IN ("table", "view") AND name NOT LIKE "sqlite_%";')
 		w.set('dd_out_mode', 'Table Grid (-box / -column)')
 		w.toast('List tables query loaded.')
 	})

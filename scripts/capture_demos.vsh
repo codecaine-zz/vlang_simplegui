@@ -60,7 +60,8 @@ fn get_window_rect_for_pid(target_pid int, binary_name string) string {
 fn main() {
 	// Compile list_windows tool
 	println('Compiling list_windows helper...')
-	clang_res := os.execute('clang -framework Cocoa -framework CoreGraphics tools/list_windows.m -o tools/list_windows')
+	clang_res :=
+		os.execute('clang -framework Cocoa -framework CoreGraphics tools/list_windows.m -o tools/list_windows')
 	if clang_res.exit_code != 0 {
 		eprintln('❌ Could not compile list_windows: ${clang_res.output}')
 		exit(1)
@@ -111,7 +112,8 @@ fn main() {
 
 		// Compile
 		println('Compiling ${demo_path}...')
-		comp_res := os.execute('v -nocache -o ${os.quoted_path(basename)} ${os.quoted_path(demo_path)}')
+		comp_res :=
+			os.execute('v -nocache -o ${os.quoted_path(basename)} ${os.quoted_path(demo_path)}')
 		if comp_res.exit_code != 0 {
 			eprintln('❌ Compilation failed for ${basename}:\n${comp_res.output}')
 			continue

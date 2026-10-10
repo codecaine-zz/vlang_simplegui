@@ -46,7 +46,8 @@ fn main() {
 	})
 
 	nmap_path := get_nmap_bin()
-	win.add_label('lbl_engine_info', '⚡ Engine: ${nmap_path}  |  Platform: macOS Cocoa  |  Mode: Async Worker')
+	win.add_label('lbl_engine_info',
+		'⚡ Engine: ${nmap_path}  |  Platform: macOS Cocoa  |  Mode: Async Worker')
 
 	// Target & Scan Profile Scope
 	win.begin_group_box('grp_target', '🎯 Target Specification & Scan Profiles')
@@ -110,7 +111,8 @@ fn main() {
 	win.end_row()
 
 	win.append_console('nmap_console', '🛡️ Nmap Studio Pro Initialized.\n', 1)
-	win.append_console('nmap_console', '⚡ Ready to scan network interfaces and remote targets.\n', 4)
+	win.append_console('nmap_console',
+		'⚡ Ready to scan network interfaces and remote targets.\n', 4)
 
 	// -------------------------------------------------------------
 	// Event Handlers
@@ -146,7 +148,8 @@ fn main() {
 	win.on_click('btn_start_scan', fn (mut w simplegui.SimpleWindow) {
 		target := w.get('txt_target').trim_space()
 		if target == '' {
-			w.alert('Target Required', 'Please enter a target host, IP, or network CIDR (e.g. scanme.nmap.org or 192.168.1.0/24).')
+			w.alert('Target Required',
+				'Please enter a target host, IP, or network CIDR (e.g. scanme.nmap.org or 192.168.1.0/24).')
 			return
 		}
 
@@ -209,13 +212,18 @@ fn main() {
 				win_main.set('txt_scan_results', out)
 
 				if res.exit_code == 0 {
-					win_main.append_console('nmap_console', '✅ Scan completed for ${target} in ${elapsed_ms} ms.\n', 4)
-					win_main.set('lbl_stats', '📊 Stats: SUCCESS  |  Target: ${target}  |  Duration: ${elapsed_ms} ms')
+					win_main.append_console('nmap_console',
+						'✅ Scan completed for ${target} in ${elapsed_ms} ms.\n', 4)
+					win_main.set('lbl_stats',
+						'📊 Stats: SUCCESS  |  Target: ${target}  |  Duration: ${elapsed_ms} ms')
 					win_main.set_status('Scan completed in ${elapsed_ms} ms.')
 					win_main.toast('Port scan finished successfully!')
 				} else {
-					win_main.append_console('nmap_console', '❌ Nmap Scan Notice (Exit ${res.exit_code}):\n' + out + '\n', 3)
-					win_main.set('lbl_stats', '📊 Stats: COMPLETED (Exit ${res.exit_code})  |  Duration: ${elapsed_ms} ms')
+					win_main.append_console('nmap_console',
+
+						'❌ Nmap Scan Notice (Exit ${res.exit_code}):\n' + out + '\n', 3)
+					win_main.set('lbl_stats',
+						'📊 Stats: COMPLETED (Exit ${res.exit_code})  |  Duration: ${elapsed_ms} ms')
 					win_main.set_status('Scan completed with notices.')
 				}
 			})

@@ -34,7 +34,8 @@ fn main() {
 		.font_size(20)
 		.font_color('#8be9fd') // Dracula cyan
 
-	win.add_label('subtitle', 'Write document content using standard Markdown syntax and view interactive parsed elements live.')
+	win.add_label('subtitle',
+		'Write document content using standard Markdown syntax and view interactive parsed elements live.')
 		.font_size(11)
 		.font_color('#6272a4')
 
@@ -128,12 +129,14 @@ fn main() {
 			'dark' { '#ff6b6b' }
 			else { '#0066cc' } // Light
 		}
+
 		subtitle_color := match state.theme_name {
 			'dracula' { '#6272a4' }
 			'nord' { '#a3be8c' }
 			'dark' { '#e0e0e0' }
 			else { '#4a5568' } // Light - dark grey, very readable
 		}
+
 		w.set_control_font_color('studio_title', title_color)
 		w.set_control_font_color('subtitle', subtitle_color)
 		w.set_status('Editor theme changed to ${value}')
@@ -258,8 +261,7 @@ fn markdown_to_html(md string, theme string) string {
 
 		if in_code_block {
 			// Simple HTML escape for code blocks
-			mut escaped := line.replace('&', '&amp;').replace('<', '&lt;').replace('>',
-				'&gt;')
+			mut escaped := line.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
 			html += escaped + '\n'
 			continue
 		}
@@ -325,7 +327,8 @@ fn markdown_to_html(md string, theme string) string {
 	}
 
 	// Dynamic, beautiful wrap with system font stylesheet matching theme
-	return '<html><head><meta charset="utf-8"></head><body style="font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Helvetica, Arial, sans-serif; font-size: 14px; background-color: ' +
+	return
+		'<html><head><meta charset="utf-8"></head><body style="font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Helvetica, Arial, sans-serif; font-size: 14px; background-color: ' +
 		body_bg + '; color: ' + body_fg + '; padding: 18px; margin: 0; line-height: 1.6;">' + html +
 		'</body></html>'
 }

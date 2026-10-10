@@ -4185,8 +4185,7 @@ pub fn (win &SimpleWindow) add_section_header(name string, title string, subtitl
 		}
 	}
 	if win.window_info != unsafe { nil } {
-		C.window_add_section_header_control(win.window_info, real_name.str, title.str,
-			subtitle.str)
+		C.window_add_section_header_control(win.window_info, real_name.str, title.str, subtitle.str)
 	}
 	return win
 }
@@ -4365,8 +4364,7 @@ pub fn (win &SimpleWindow) set_key_value_card_data(name string, keys []string, v
 			c_vals << v.str
 		}
 		count := if keys.len < values.len { keys.len } else { values.len }
-		C.window_set_key_value_card_data(win.window_info, name.str, c_keys.data, c_vals.data,
-			count)
+		C.window_set_key_value_card_data(win.window_info, name.str, c_keys.data, c_vals.data, count)
 	}
 	return win
 }
@@ -4425,8 +4423,7 @@ pub fn (win &SimpleWindow) set_env_vars(name string, keys []string, values []str
 			c_vals << v.str
 		}
 		count := if keys.len < values.len { keys.len } else { values.len }
-		C.window_set_env_vars_data(win.window_info, name.str, c_keys.data, c_vals.data,
-			count)
+		C.window_set_env_vars_data(win.window_info, name.str, c_keys.data, c_vals.data, count)
 	}
 	return win
 }
@@ -4499,8 +4496,7 @@ pub fn (win &SimpleWindow) set_accordion_expanded(name string, index int, expand
 // add_segment_distribution_bar adds a proportional segment distribution bar displaying breakdown ratios.
 pub fn (win &SimpleWindow) set_segment_distribution_values(name string, values []f64) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
-		C.window_set_segment_distribution_values(win.window_info, name.str, values.data,
-			values.len)
+		C.window_set_segment_distribution_values(win.window_info, name.str, values.data, values.len)
 	}
 	return win
 }
@@ -5006,7 +5002,7 @@ pub fn (win &SimpleWindow) get_screen_reference_edr_headroom() f64 {
 // When enabled, controls and layers inside the window can draw luminance beyond standard UI white.
 pub fn (win &SimpleWindow) set_window_hdr(enabled bool) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
-		C.window_set_hdr_color_space(win.window_info, if enabled { 1 } else { 0 }, 'extended_srgb'.str)
+		C.window_set_hdr_color_space(win.window_info, if enabled { 1 } else { 0 }, c'extended_srgb')
 	}
 	return win
 }
@@ -5038,4 +5034,3 @@ pub fn (win &SimpleWindow) is_window_hdr() bool {
 	}
 	return false
 }
-

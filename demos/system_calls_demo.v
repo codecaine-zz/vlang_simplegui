@@ -64,7 +64,8 @@ fn main() {
 				win.set_status('Env variable ' + key + ' is not defined.')
 			}
 		} else {
-			win.alert('Input Error', 'Please enter an environment variable name (e.g. USER, SHELL, PATH).')
+			win.alert('Input Error',
+				'Please enter an environment variable name (e.g. USER, SHELL, PATH).')
 		}
 	})
 
@@ -247,8 +248,9 @@ fn main() {
 		rand_token := win.rand_string(16)
 		time_stamp := win.time_now()
 
-		win.set_text('sl_output', '[Time: ' + time_stamp + ']\nRandom Integer (100 -> 1000): ' +
-			rand_int.str() + '\nRandom Alphanumeric Token (16 chars): ' + rand_token)
+		win.set_text('sl_output', '[Time: ' + time_stamp +
+			']\nRandom Integer (100 -> 1000): ' + rand_int.str() +
+			'\nRandom Alphanumeric Token (16 chars): ' + rand_token)
 		win.set_status('Random token generation completed.')
 	})
 
@@ -259,8 +261,8 @@ fn main() {
 		decompressed := win.decompress_gzip(compressed_bytes)
 
 		output := 'Original:      "' + input + '" (' + input.len.str() + ' bytes)\n' +
-			'Gzip Bytes:    ' + compressed_bytes.len.str() + ' bytes (Compressed!)\n' +
-			'Decompressed:  "' + decompressed + '"'
+			'Gzip Bytes:    ' + compressed_bytes.len.str() +
+			' bytes (Compressed!)\n' + 'Decompressed:  "' + decompressed + '"'
 		win.set_text('sl_output', output)
 		win.set_status('Gzip compression/decompression verified.')
 	})
@@ -274,8 +276,7 @@ fn main() {
 		decrypted := win.crypto_decrypt_aes(ciphertext_hex, secret_key_hex)
 
 		output := 'Plaintext:   "' + input + '"\n' + 'AES Hex Key: ' + secret_key_hex + '\n' +
-			'AES CBC Ciphertext (Hex): ' + ciphertext_hex + '\n' + 'AES Decrypted Text:       "' +
-			decrypted + '"'
+			'AES CBC Ciphertext (Hex): ' + ciphertext_hex + '\n' + 'AES Decrypted Text:       "' + decrypted + '"'
 		win.set_text('sl_output', output)
 		win.set_status('AES CBC symmetric encryption verified.')
 	})

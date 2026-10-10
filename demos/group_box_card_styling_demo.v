@@ -13,7 +13,8 @@ fn main() {
 		})
 
 	win.add_heading('🌩️ Cloud Infrastructure & Analytics Studio')
-	win.add_label('lbl_sub', 'Explore visual containers featuring custom border strokes, corner radii, background fills, elevation shadows, and caption alignments.')
+	win.add_label('lbl_sub',
+		'Explore visual containers featuring custom border strokes, corner radii, background fills, elevation shadows, and caption alignments.')
 	win.set_control_font_size('lbl_sub', 12)
 
 	win.add_vertical_spacer(4)
@@ -23,7 +24,8 @@ fn main() {
 	// ----------------------------------------------------
 	win.card_with_title('card_telemetry', '📊 Cluster Telemetry & Node Health', fn (mut w simplegui.SimpleWindow) {
 		w.flex_box('row_telemetry_status', 'row', 'space_between', 'center', fn (mut w simplegui.SimpleWindow) {
-			w.add_status_indicator('ind_cluster', 'online', 'Kubernetes Cluster us-east-1 (128 Nodes Active)')
+			w.add_status_indicator('ind_cluster', 'online',
+				'Kubernetes Cluster us-east-1 (128 Nodes Active)')
 			w.add_badge('badge_status', 'HEALTHY', 'success')
 		})
 
@@ -50,18 +52,17 @@ fn main() {
 		caption_color:     '#A5B4FC'
 		caption_alignment: 'left'
 	}, fn (mut w simplegui.SimpleWindow) {
-		w.add_switch('sw_mfa', 'Enforce Mandatory Multi-Factor Authentication (MFA)',
-			true)
-		w.add_switch('sw_vpn', 'Restrict Control Plane to Verified Corporate VPN Subnets',
-			true)
+		w.add_switch('sw_mfa', 'Enforce Mandatory Multi-Factor Authentication (MFA)', true)
+		w.add_switch('sw_vpn', 'Restrict Control Plane to Verified Corporate VPN Subnets', true)
 
 		w.add_vertical_spacer(4)
 		w.add_label('lbl_roles', 'Active IAM Identity Role Group:')
-		w.add_chip_group('chip_roles', ['SecOps Admin', 'DevOps Engineer', 'Auditor', 'Billing Spec'],
-			'DevOps Engineer')
+		w.add_chip_group('chip_roles',
+			['SecOps Admin', 'DevOps Engineer', 'Auditor', 'Billing Spec'], 'DevOps Engineer')
 
 		w.add_action('btn_sec_apply', 'Apply Security Baseline', fn (mut w simplegui.SimpleWindow) {
-			w.alert('Security Baseline', 'IAM security baseline policies enforced successfully across all clusters.')
+			w.alert('Security Baseline',
+				'IAM security baseline policies enforced successfully across all clusters.')
 		})
 	})
 
@@ -81,9 +82,11 @@ fn main() {
 		caption_alignment: 'center'
 		shadow:            true
 	}, fn (mut w simplegui.SimpleWindow) {
-		w.add_label('lbl_rate_desc', 'Adjust maximum allowed request burst throughput per client IP address:')
+		w.add_label('lbl_rate_desc',
+			'Adjust maximum allowed request burst throughput per client IP address:')
 		w.add_slider('sl_rate', 45)
-		w.add_label('lbl_rate_info', 'Current Limit: 2,500 requests / sec (Burst Window: 5,000 req / min)')
+		w.add_label('lbl_rate_info',
+			'Current Limit: 2,500 requests / sec (Burst Window: 5,000 req / min)')
 
 		w.row('row_api_actions', fn (mut w simplegui.SimpleWindow) {
 			w.add_action('btn_purge', 'Purge Edge Cache', fn (mut w simplegui.SimpleWindow) {
@@ -114,7 +117,8 @@ fn main() {
 		w.add_input('inp_sample', 'Sample input element inside live target container')
 	})
 
-	win.add_label('lbl_presets_head', 'Click a preset button below to dynamically morph the container style at runtime:')
+	win.add_label('lbl_presets_head',
+		'Click a preset button below to dynamically morph the container style at runtime:')
 
 	win.row('row_presets', fn (mut w simplegui.SimpleWindow) {
 		w.add_action('btn_p_neon', 'Neon Pink Cyber', fn (mut w simplegui.SimpleWindow) {
@@ -160,7 +164,8 @@ fn main() {
 				bg_color:      '#0F172A'
 				shadow:        false
 			})
-			w.set_text('lbl_live_status', 'Active Preset: Sharp Industrial Minimal (1px Stroke, 0px Radius)')
+			w.set_text('lbl_live_status',
+				'Active Preset: Sharp Industrial Minimal (1px Stroke, 0px Radius)')
 		})
 	})
 

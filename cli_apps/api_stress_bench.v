@@ -75,6 +75,7 @@ fn main() {
 					'HEAD' { http.Method.head }
 					else { http.Method.get }
 				}
+
 				mut req := http.new_request(req_method, url, payload)
 				resp := req.do() or {
 					elapsed := f64(time.since(t0).microseconds()) / 1000.0

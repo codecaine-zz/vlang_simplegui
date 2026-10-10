@@ -3,8 +3,7 @@ module main
 import simplegui
 
 fn main() {
-	mut gui := simplegui.new_simple_window('HTML Parser & Lorem Generator Demo', 550,
-		520)
+	mut gui := simplegui.new_simple_window('HTML Parser & Lorem Generator Demo', 550, 520)
 	gui.set_padding(20)
 	gui.set_spacing(10)
 
@@ -34,7 +33,8 @@ fn main() {
 	gui.add_group_box('html_group', '🌐 DOM HTML Parser (net.html)')
 
 	gui.add_label('lbl_html_input', 'HTML Input string:')
-	gui.add_input('input_html_text', '<html><body><h1 class="title">SimpleGUI Rules!</h1><p class="desc">HTML parse demo.</p><p class="desc">Vlang standard library is powerful.</p></body></html>')
+	gui.add_input('input_html_text',
+		'<html><body><h1 class="title">SimpleGUI Rules!</h1><p class="desc">HTML parse demo.</p><p class="desc">Vlang standard library is powerful.</p></body></html>')
 
 	gui.begin_row('row_html_btn')
 	gui.add_button('btn_html_parse', 'Parse HTML Title & Classes')
@@ -83,8 +83,7 @@ fn main() {
 		}
 
 		formatted := 'Parsed HTML Document DOM successfully!\n' +
-			'  Found Title (h1 tag text): "${title_text}"\n' +
-			'  Found Paragraphs with class "desc":\n' + formatted_desc
+			'  Found Title (h1 tag text): "${title_text}"\n' + '  Found Paragraphs with class "desc":\n' + formatted_desc
 
 		win.set_text('output_box', formatted)
 		win.set_status('HTML parsing completed.')

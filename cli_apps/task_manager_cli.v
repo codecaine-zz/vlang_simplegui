@@ -87,7 +87,8 @@ fn display_process_table(mut app simplecli.SimpleCli) {
 }
 
 fn run_interactive(mut app simplecli.SimpleCli) {
-	app.panel('Task Manager Interactive Console', 'Inspect system telemetry and terminate runaway processes.')
+	app.panel('Task Manager Interactive Console',
+		'Inspect system telemetry and terminate runaway processes.')
 	for {
 		display_process_table(mut app)
 		choice := app.select('Action:', [

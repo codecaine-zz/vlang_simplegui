@@ -51,7 +51,8 @@ fn main() {
 		w.toast('Theme changed to ${selected}')
 	})
 	wget2_path := get_wget2_bin()
-	win.add_label('lbl_engine_info', '⚡ Engine: ${wget2_path}  |  Platform: macOS Cocoa  |  Mode: Async Multi-Threaded Worker')
+	win.add_label('lbl_engine_info',
+		'⚡ Engine: ${wget2_path}  |  Platform: macOS Cocoa  |  Mode: Async Multi-Threaded Worker')
 
 	// -------------------------------------------------------------
 	// Target URL & Destination Configuration
@@ -94,7 +95,8 @@ fn main() {
 	win.set_control_width('dd_preset', 400)
 
 	win.add_label('lbl_threads', 'Threads (-t):')
-	win.add_dropdown('dd_threads', ['1 (Single)', '2', '4', '8 (Recommended)', '16 (Max Turbo)'], '8 (Recommended)')
+	win.add_dropdown('dd_threads', ['1 (Single)', '2', '4', '8 (Recommended)', '16 (Max Turbo)'],
+		'8 (Recommended)')
 	win.set_control_width('dd_threads', 140)
 
 	win.add_label('lbl_depth', 'Depth (-l):')
@@ -159,7 +161,8 @@ fn main() {
 	win.end_row()
 
 	win.append_console('wget_console', '⚡ Wget2 Studio Pro Initialized.\n', 1)
-	win.append_console('wget_console', '🚀 Ready for high-speed multi-threaded transfers and recursive website mirroring.\n', 4)
+	win.append_console('wget_console',
+		'🚀 Ready for high-speed multi-threaded transfers and recursive website mirroring.\n', 4)
 
 	// -------------------------------------------------------------
 	// Event Handlers & Async Engine
@@ -357,7 +360,8 @@ fn main() {
 		w.append_console('wget_console', '▶ Starting Wget2 securely in background...\n', 1)
 		w.set_status('Wget2 transferring data in background...')
 		w.toast('⚡ Wget2 transfer started...')
-		w.set('lbl_stats', '📊 Status: DOWNLOADING  |  Target: ${url}  |  Threads: ${threads_val}')
+		w.set('lbl_stats',
+			'📊 Status: DOWNLOADING  |  Target: ${url}  |  Threads: ${threads_val}')
 
 		go fn [mut w, wget2, raw_args, dest_dir] () {
 			t0 := time.ticks()
@@ -367,12 +371,17 @@ fn main() {
 
 			w.run_on_main_thread(fn [res, sec, dest_dir] (mut win_main simplegui.SimpleWindow) {
 				if res.exit_code == 0 {
-					win_main.append_console('wget_console', '✅ Transfer Completed Successfully in ${sec:.1f}s!\n' + res.output + '\n', 4)
-					win_main.set('lbl_stats', '📊 Status: COMPLETED (in ${sec:.1f}s)  |  Saved in: ${dest_dir}')
+					win_main.append_console('wget_console',
+
+						'✅ Transfer Completed Successfully in ${sec:.1f}s!\n' + res.output + '\n',
+						4)
+					win_main.set('lbl_stats',
+						'📊 Status: COMPLETED (in ${sec:.1f}s)  |  Saved in: ${dest_dir}')
 					win_main.set_status('Wget2 completed in ${sec:.1f}s.')
 					win_main.toast('Wget2 download completed successfully!')
 				} else {
-					win_main.append_console('wget_console', '❌ Wget2 Error:\n' + res.output + '\n', 3)
+					win_main.append_console('wget_console',
+						'❌ Wget2 Error:\n' + res.output + '\n', 3)
 					win_main.set('lbl_stats', '📊 Status: ERROR (Exit code ${res.exit_code})')
 					win_main.set_status('Wget2 reported an error.')
 				}

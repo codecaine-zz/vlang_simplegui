@@ -39,7 +39,8 @@ fn main() {
 	gui.set_control_font_size('title', 18)
 	gui.set_control_font_bold('title', true)
 
-	gui.add_label('subtitle', 'Secure datagram communication. Payloads are AES encrypted on transmission and decrypted on receipt.')
+	gui.add_label('subtitle',
+		'Secure datagram communication. Payloads are AES encrypted on transmission and decrypted on receipt.')
 
 	gui.add_separator()
 
@@ -125,8 +126,7 @@ fn main() {
 						time_stamp := w_inner.time_now()
 						current_logs := w_inner.get_text('stream_logs')
 						w_inner.set_text('stream_logs', current_logs + '\n[' + time_stamp +
-							'] [Received Ciphertext (Hex)]: ' + cipher + '\n[' + time_stamp +
-							'] [Received Decrypted (Plain)]: ' + plain + '\n')
+							'] [Received Ciphertext (Hex)]: ' + cipher + '\n[' + time_stamp + '] [Received Decrypted (Plain)]: ' + plain + '\n')
 						w_inner.toast('Secure UDP payload arrived & decrypted!')
 						w_inner.set_status('Received secure UDP response.')
 					})
@@ -186,8 +186,7 @@ fn main() {
 
 		current_logs := win.get_text('stream_logs')
 		win.set_text('stream_logs', current_logs + '\n[' + time_stamp +
-			'] [Sent Plaintext (Plain)]: ' + msg + '\n[' + time_stamp +
-			'] [Sent Ciphertext (Hex)]: ' + cipher)
+			'] [Sent Plaintext (Plain)]: ' + msg + '\n[' + time_stamp + '] [Sent Ciphertext (Hex)]: ' + cipher)
 
 		// Send data
 		mut client := unsafe { &SimpleUDPClient(win.ws_client) }

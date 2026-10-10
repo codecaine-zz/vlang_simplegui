@@ -37,7 +37,8 @@ fn main() {
 		b.step()
 		time.sleep(15 * time.millisecond)
 		b.fail()
-		msg2 := b.step_message('Step 2: Connected to primary cloud database (simulated connection error)')
+		msg2 :=
+			b.step_message('Step 2: Connected to primary cloud database (simulated connection error)')
 
 		// Step 3: Success step
 		b.step()

@@ -80,7 +80,8 @@ fn sync_selection_to_ui(mut win simplegui.SimpleWindow, mut state SqliteAppState
 		win.set_checked('in_stock_input', true)
 		win.set_text('date_recv_input', '2026-07-05')
 
-		win.set_text('info_label', 'Select a row in the table above to edit, or fill details below to add a new product.')
+		win.set_text('info_label',
+			'Select a row in the table above to edit, or fill details below to add a new product.')
 
 		win.set_control_enabled('delete_row_btn', false)
 		win.set_control_enabled('save_row_btn', false)
@@ -199,7 +200,8 @@ fn main() {
 		.font_size(20)
 		.font_color('#8be9fd') // Dracula Cyan
 
-	win.add_label('intro', 'Manage product records inside a local SQLite database in real-time. Changes persist across application runs.')
+	win.add_label('intro',
+		'Manage product records inside a local SQLite database in real-time. Changes persist across application runs.')
 		.font_size(11)
 		.font_color('#6272a4')
 
@@ -216,7 +218,8 @@ fn main() {
 
 	// Context description label
 
-	win.add_label('info_label', 'Select a row in the table above to edit, or fill details below to add a new product.')
+	win.add_label('info_label',
+		'Select a row in the table above to edit, or fill details below to add a new product.')
 		.bold(true)
 		.font_size(12)
 		.font_color('#50fa7b') // Dracula Green
@@ -388,7 +391,8 @@ fn main() {
 		date_recv := w.get_text('date_recv_input').trim_space()
 
 		if name == '' || category == '' || date_recv == '' {
-			w.alert('Validation Error', 'Please complete the Name, Category, and Date fields first.')
+			w.alert('Validation Error',
+				'Please complete the Name, Category, and Date fields first.')
 			return
 		}
 

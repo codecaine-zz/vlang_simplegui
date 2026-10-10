@@ -198,7 +198,8 @@ fn apply_theme_presentation(mut w simplegui.SimpleWindow, theme_name string) {
 	w.set_text('info_fg', 'Font/Text Color: ${window_text}')
 	w.set_text('info_accent', 'Accent Color: ${t.accent_color}')
 	w.set_text('info_mode', 'Mode: ${status_mode}')
-	w.set_text('info_contrast', 'Contrast: Base ${bg_contrast:.2f}:1 • Surface ${surface_contrast:.2f}:1')
+	w.set_text('info_contrast',
+		'Contrast: Base ${bg_contrast:.2f}:1 • Surface ${surface_contrast:.2f}:1')
 	w.set_status('Theme applied: ${t.name} (${status_mode}) - readability optimized')
 }
 
@@ -212,7 +213,8 @@ fn main() {
 	win.add_heading('Apple & Production Theme Engine')
 		.bold(true)
 
-	win.add_label('subheading', 'Select from Apple system palettes and modern production theme presets.')
+	win.add_label('subheading',
+		'Select from Apple system palettes and modern production theme presets.')
 
 	win.add_separator()
 
@@ -253,14 +255,14 @@ fn main() {
 
 	// 5. Form Input Fields
 	win.add_form_field('Full Name', 'user_name', 'Alex Smith')
-	win.add_form_textarea('Bio', 'user_bio', 'Software engineer testing Apple production-ready theme presets.')
+	win.add_form_textarea('Bio', 'user_bio',
+		'Software engineer testing Apple production-ready theme presets.')
 	win.add_form_password('Password', 'user_pass', 'secret123')
 	win.add_form_number('Age', 'user_age', 28)
 	win.add_form_dropdown('Country', 'country_select', ['United States', 'Canada', 'United Kingdom',
 		'Germany', 'Japan'], 'United States')
 	win.add_form_date_picker('Birth Date', 'dob_picker', '1996-05-15')
-	win.add_form_switch('Notifications', 'notif_switch', 'Enable System Notifications',
-		true)
+	win.add_form_switch('Notifications', 'notif_switch', 'Enable System Notifications', true)
 
 	win.add_separator()
 

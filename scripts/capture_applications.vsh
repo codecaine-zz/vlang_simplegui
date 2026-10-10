@@ -61,7 +61,8 @@ fn main() {
 	// Compile list_windows tool if needed
 	if !os.exists('tools/list_windows') {
 		println('Compiling list_windows helper...')
-		clang_res := os.execute('clang -framework Cocoa -framework CoreGraphics tools/list_windows.m -o tools/list_windows')
+		clang_res :=
+			os.execute('clang -framework Cocoa -framework CoreGraphics tools/list_windows.m -o tools/list_windows')
 		if clang_res.exit_code != 0 {
 			eprintln('❌ Could not compile list_windows: ${clang_res.output}')
 			exit(1)
@@ -108,7 +109,8 @@ fn main() {
 
 		// Compile
 		println('  Compiling ${app_path} -> ${bin_target}...')
-		comp_res := os.execute('v -nocache -o ${os.quoted_path(bin_target)} ${os.quoted_path(app_path)}')
+		comp_res :=
+			os.execute('v -nocache -o ${os.quoted_path(bin_target)} ${os.quoted_path(app_path)}')
 		if comp_res.exit_code != 0 {
 			eprintln('❌ Compilation failed for ${basename}:\n${comp_res.output}')
 			continue

@@ -106,7 +106,6 @@ fn get_all_sd_recipes() []SdRecipe {
 			across:      true
 			desc:        'Removes multi-line C-style block comments across line boundaries.'
 		},
-
 		// 2. Text Cleansing & Whitespace
 		SdRecipe{
 			title:       'Trim Trailing Whitespace from Lines'
@@ -158,7 +157,6 @@ fn get_all_sd_recipes() []SdRecipe {
 			across:      false
 			desc:        'Extracts plain text by stripping HTML and XML tags.'
 		},
-
 		// 3. Format & Pattern Transformation
 		SdRecipe{
 			title:       'Format Phone Numbers (1234567890 -> (123) 456-7890)'
@@ -220,7 +218,6 @@ fn get_all_sd_recipes() []SdRecipe {
 			across:      false
 			desc:        'Hides public and private IP addresses.'
 		},
-
 		// 4. DevOps, Config & Cloud
 		SdRecipe{
 			title:       'Update .env Key-Value Pair (PORT=3000 -> PORT=8080)'
@@ -313,7 +310,8 @@ fn main() {
 		w.toast('Theme changed to ${selected}')
 	})
 	sd_path := get_sd_bin()
-	win.add_label('lbl_engine_info', '⚡ Engine: ${sd_path}  |  Platform: macOS Cocoa  |  Mode: Async Worker (Zero UI Freezes)')
+	win.add_label('lbl_engine_info',
+		'⚡ Engine: ${sd_path}  |  Platform: macOS Cocoa  |  Mode: Async Worker (Zero UI Freezes)')
 
 	all_recipes := get_all_sd_recipes()
 
@@ -361,14 +359,16 @@ fn main() {
 	win.end_row()
 
 	win.begin_row('row_recipe_desc')
-	win.add_label('lbl_recipe_desc', 'ℹ️ Pick any recipe above to automatically configure regex pattern, replacement and flags.')
+	win.add_label('lbl_recipe_desc',
+		'ℹ️ Pick any recipe above to automatically configure regex pattern, replacement and flags.')
 	win.end_row()
 	win.end_group_box()
 
 	// -------------------------------------------------------------
 	// Dual Pane: Input Text & Output Preview
 	// -------------------------------------------------------------
-	win.begin_group_box('grp_input_pane', '📥 Input Data Stream (Paste code, logs, or text to transform)')
+	win.begin_group_box('grp_input_pane',
+		'📥 Input Data Stream (Paste code, logs, or text to transform)')
 	win.begin_row('row_in_actions')
 	win.add_button('btn_sample_code', '📄 Load Sample Code')
 	win.add_button('btn_load_in_file', '📂 Load File from Disk...')
@@ -458,12 +458,14 @@ fn main() {
 					win_main.set('txt_output_data', out_str)
 					bytes := out_str.len
 					lines := out_str.count('\n')
-					win_main.set('lbl_exec_stats', '📊 Stats: SUCCESS  |  Duration: ${elapsed_ms} ms  |  Output: ${bytes} bytes  |  Lines: ${lines}')
+					win_main.set('lbl_exec_stats',
+						'📊 Stats: SUCCESS  |  Duration: ${elapsed_ms} ms  |  Output: ${bytes} bytes  |  Lines: ${lines}')
 					win_main.set_status('SD replaced successfully in ${elapsed_ms} ms.')
 					win_main.toast('Replaced in ${elapsed_ms} ms!')
 				} else {
 					win_main.set('txt_output_data', '⚠️ SD Execution Error:\n\n' + res.output)
-					win_main.set('lbl_exec_stats', '📊 Stats: ERROR (Exit code ${res.exit_code})  |  Duration: ${elapsed_ms} ms')
+					win_main.set('lbl_exec_stats',
+						'📊 Stats: ERROR (Exit code ${res.exit_code})  |  Duration: ${elapsed_ms} ms')
 					win_main.set_status('SD reported an error.')
 				}
 			})
@@ -604,7 +606,8 @@ fn main() {
 			return
 		}
 
-		confirm := w.confirm('Confirm Batch Replacement', 'This will modify matching files inside:\n${folder}\n\nSearch: "${find_str}"\nReplace: "${repl_str}"\n\nProceed?')
+		confirm := w.confirm('Confirm Batch Replacement',
+			'This will modify matching files inside:\n${folder}\n\nSearch: "${find_str}"\nReplace: "${repl_str}"\n\nProceed?')
 		if !confirm {
 			return
 		}
@@ -651,7 +654,8 @@ fn main() {
 			w.run_on_main_thread(fn [modified, folder] (mut win_main simplegui.SimpleWindow) {
 				win_main.set_status('Batch replacement completed: ${modified} files processed.')
 				win_main.toast('Batch replacement finished: ${modified} files updated!')
-				win_main.alert('Batch Complete', 'Successfully processed ${modified} files in:\n${folder}')
+				win_main.alert('Batch Complete',
+					'Successfully processed ${modified} files in:\n${folder}')
 			})
 		}()
 	})

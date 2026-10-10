@@ -22,6 +22,7 @@ $if macos || linux || freebsd {
 
 	$if macos || freebsd {
 		#include <sys/sysctl.h>
+
 		fn C.sysctl(name &int, namelen u32, oldp voidptr, oldlenp &usize, newp voidptr, newlen usize) int
 	}
 
@@ -138,7 +139,8 @@ pub fn (cli &SimpleCli) exec_timeout(command string, timeout_ms int) (string, in
 	start_time := time.now()
 
 	// Create temporary result files
-	temp_out := os.join_path(os.temp_dir(), 'simplecli_timeout_${os.getpid()}_${time.now().unix_nano()}.log')
+	temp_out := os.join_path(os.temp_dir(),
+		'simplecli_timeout_${os.getpid()}_${time.now().unix_nano()}.log')
 	temp_done := temp_out + '.done'
 
 	spawn fn (cmd string, out_file string, done_file string) {
@@ -259,7 +261,8 @@ pub fn (cli &SimpleCli) get_uptime_seconds() u64 {
 			}
 		}
 	} $else $if windows {
-		_, code := cli.exec('powershell -Command "(Get-CimInstance -ClassName Win32_OperatingSystem).LastBootUpTime"')
+		_, code :=
+			cli.exec('powershell -Command "(Get-CimInstance -ClassName Win32_OperatingSystem).LastBootUpTime"')
 		if code == 0 {
 			return 3600
 		}
@@ -512,7 +515,8 @@ pub fn (cli &SimpleCli) get_memory_info() string {
 			}
 		}
 	} $else $if windows {
-		out, code := cli.exec('powershell -Command "(Get-CimInstance Win32_PhysicalMemory | Measure-Object -Property Capacity -Sum).Sum / 1GB"')
+		out, code :=
+			cli.exec('powershell -Command "(Get-CimInstance Win32_PhysicalMemory | Measure-Object -Property Capacity -Sum).Sum / 1GB"')
 		if code == 0 && out.len > 0 {
 			return '${out.trim_space()} GB RAM'
 		}
@@ -559,9 +563,15 @@ pub fn (cli &SimpleCli) get_load_average() (f64, f64, f64) {
 pub fn (cli &SimpleCli) get_disk_usage(path string) !DiskStats {
 	target := if path.len > 0 { path } else { '/' }
 	$if windows {
-		_, code := cli.exec('powershell -Command "Get-PSDrive -PSProvider FileSystem | Select-Object Used,Free"')
+		_, code :=
+			cli.exec('powershell -Command "Get-PSDrive -PSProvider FileSystem | Select-Object Used,Free"')
 		if code == 0 {
-			return DiskStats{ total_bytes: 512 * 1073741824, free_bytes: 256 * 1073741824, used_bytes: 256 * 1073741824, percent: 50.0 }
+			return DiskStats{
+				total_bytes: 512 * 1073741824
+				free_bytes:  256 * 1073741824
+				used_bytes:  256 * 1073741824
+				percent:     50.0
+			}
 		}
 	} $else {
 		out, code := cli.exec('df -k "${target}"')
@@ -974,12 +984,14 @@ pub fn (cli &SimpleCli) ping_tcp_port(host string, port int, timeout_ms int) boo
 // get_local_ip returns the local network IP address of this machine.
 pub fn (cli &SimpleCli) get_local_ip() string {
 	$if macos || linux {
-		out, code := cli.exec("ipconfig getifaddr en0 2>/dev/null || hostname -I | awk '{print \$1}'")
+		out, code :=
+			cli.exec("ipconfig getifaddr en0 2>/dev/null || hostname -I | awk '{print \$1}'")
 		if code == 0 && out.len > 0 {
 			return out.trim_space()
 		}
 	} $else $if windows {
-		out, code := cli.exec('powershell -Command "(Get-NetIPAddress -AddressFamily IPv4 -InterfaceAlias Ethernet,Wi-Fi).IPAddress | Select -First 1"')
+		out, code :=
+			cli.exec('powershell -Command "(Get-NetIPAddress -AddressFamily IPv4 -InterfaceAlias Ethernet,Wi-Fi).IPAddress | Select -First 1"')
 		if code == 0 && out.len > 0 {
 			return out.trim_space()
 		}
@@ -1001,12 +1013,14 @@ pub fn (cli &SimpleCli) get_mac_address() string {
 			return out.trim_space()
 		}
 	} $else $if linux {
-		out, code := cli.exec("cat /sys/class/net/eth0/address 2>/dev/null || ip link show | grep ether | awk '{print \$2}' | head -n 1")
+		out, code :=
+			cli.exec("cat /sys/class/net/eth0/address 2>/dev/null || ip link show | grep ether | awk '{print \$2}' | head -n 1")
 		if code == 0 && out.len > 0 {
 			return out.trim_space()
 		}
 	} $else $if windows {
-		out, code := cli.exec('powershell -Command "(Get-NetAdapter | Where-Object Status -eq Up).MacAddress | Select -First 1"')
+		out, code :=
+			cli.exec('powershell -Command "(Get-NetAdapter | Where-Object Status -eq Up).MacAddress | Select -First 1"')
 		if code == 0 && out.len > 0 {
 			return out.trim_space()
 		}
@@ -1017,7 +1031,8 @@ pub fn (cli &SimpleCli) get_mac_address() string {
 // get_wifi_ssid returns the currently connected Wi-Fi network SSID name.
 pub fn (cli &SimpleCli) get_wifi_ssid() string {
 	$if macos {
-		out, code := cli.exec("/System/Library/PrivateFrameworks/Apple80211.framework/Resources/airport -I | awk -F': ' '/ SSID/{print \$2}'")
+		out, code :=
+			cli.exec("/System/Library/PrivateFrameworks/Apple80211.framework/Resources/airport -I | awk -F': ' '/ SSID/{print \$2}'")
 		if code == 0 && out.len > 0 {
 			return out.trim_space()
 		}
@@ -1027,7 +1042,8 @@ pub fn (cli &SimpleCli) get_wifi_ssid() string {
 			return out.trim_space()
 		}
 	} $else $if windows {
-		out, code := cli.exec('powershell -Command "(netsh wlan show interfaces | Select-String \'SSID\')[0].Line.Split(\':\')[1].Trim()"')
+		out, code :=
+			cli.exec('powershell -Command "(netsh wlan show interfaces | Select-String \'SSID\')[0].Line.Split(\':\')[1].Trim()"')
 		if code == 0 && out.len > 0 {
 			return out.trim_space()
 		}
@@ -1038,12 +1054,14 @@ pub fn (cli &SimpleCli) get_wifi_ssid() string {
 // get_default_gateway returns the default network router gateway IP address.
 pub fn (cli &SimpleCli) get_default_gateway() string {
 	$if macos || linux {
-		out, code := cli.exec("route -n get default 2>/dev/null | grep gateway | awk '{print \$2}' || ip route | grep default | awk '{print \$3}'")
+		out, code :=
+			cli.exec("route -n get default 2>/dev/null | grep gateway | awk '{print \$2}' || ip route | grep default | awk '{print \$3}'")
 		if code == 0 && out.len > 0 {
 			return out.trim_space()
 		}
 	} $else $if windows {
-		out, code := cli.exec('powershell -Command "(Get-NetRoute -DestinationPrefix \'0.0.0.0/0\').NextHop | Select -First 1"')
+		out, code :=
+			cli.exec('powershell -Command "(Get-NetRoute -DestinationPrefix \'0.0.0.0/0\').NextHop | Select -First 1"')
 		if code == 0 && out.len > 0 {
 			return out.trim_space()
 		}
@@ -1054,7 +1072,8 @@ pub fn (cli &SimpleCli) get_default_gateway() string {
 // get_dns_servers returns the configured DNS server IP addresses.
 pub fn (cli &SimpleCli) get_dns_servers() []string {
 	$if macos {
-		out, code := cli.exec("scutil --dns | grep 'nameserver\\[[0-9]*\\]' | awk '{print \$3}' | sort -u")
+		out, code :=
+			cli.exec("scutil --dns | grep 'nameserver\\[[0-9]*\\]' | awk '{print \$3}' | sort -u")
 		if code == 0 && out.len > 0 {
 			return out.split_into_lines().filter(it.len > 0)
 		}
@@ -1071,7 +1090,8 @@ pub fn (cli &SimpleCli) get_dns_servers() []string {
 pub fn (cli &SimpleCli) get_listening_ports() []int {
 	mut ports := []int{}
 	$if macos || linux {
-		out, code := cli.exec("lsof -iTCP -sTCP:LISTEN -P -n | awk '{print \$9}' | cut -d: -f2 | sort -un")
+		out, code :=
+			cli.exec("lsof -iTCP -sTCP:LISTEN -P -n | awk '{print \$9}' | cut -d: -f2 | sort -un")
 		if code == 0 && out.len > 0 {
 			for line in out.split_into_lines() {
 				p := line.trim_space().int()

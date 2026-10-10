@@ -72,7 +72,8 @@ const sample_dot_architecture = 'digraph SimpleGUIArchitecture {
 fn main() {
 	println('Starting SimpleGUI - Graphviz & Diagram Studio Pro...')
 
-	mut win := simplegui.new_simple_window('📊 SimpleGUI - Graphviz & Diagram Studio Pro', 1080, 950)
+	mut win :=
+		simplegui.new_simple_window('📊 SimpleGUI - Graphviz & Diagram Studio Pro', 1080, 950)
 	win.set_spacing(8)
 	win.set_padding(16)
 
@@ -93,10 +94,12 @@ fn main() {
 	})
 
 	dot_path := get_dot_bin()
-	win.add_label('lbl_engine_info', '⚡ Engine: ${dot_path} (Graphviz Suite)  |  Platform: macOS Cocoa  |  Mode: Async Compiler')
+	win.add_label('lbl_engine_info',
+		'⚡ Engine: ${dot_path} (Graphviz Suite)  |  Platform: macOS Cocoa  |  Mode: Async Compiler')
 
 	// Diagram Configuration & Presets Bar
-	win.begin_group_box('grp_diagram_config', '🎯 Diagram Templates & Layout Engine Specification')
+	win.begin_group_box('grp_diagram_config',
+		'🎯 Diagram Templates & Layout Engine Specification')
 
 	win.begin_row('row_presets_bar')
 	win.add_label('lbl_presets', 'Diagram Template:')
@@ -164,7 +167,8 @@ fn main() {
 	win.end_row()
 
 	win.append_console('dot_console', '📊 Graphviz & Diagram Studio Pro Initialized.\n', 1)
-	win.append_console('dot_console', '⚡ Ready to compile and render DOT graphs into SVG, PNG, and PDF.\n', 4)
+	win.append_console('dot_console',
+		'⚡ Ready to compile and render DOT graphs into SVG, PNG, and PDF.\n', 4)
 
 	// -------------------------------------------------------------
 	// Event Handlers
@@ -288,25 +292,32 @@ fn main() {
 			return
 		}
 
-		w.append_console('dot_console', '▶ Compiling DOT code with layout engine: ${layout_prog}...\n', 1)
+		w.append_console('dot_console',
+			'▶ Compiling DOT code with layout engine: ${layout_prog}...\n', 1)
 		w.set_status('Rendering diagram...')
 
 		go fn [mut w, dot_bin, layout_prog, tmp_dot, tmp_svg] () {
 			t0 := time.ticks()
-			res := simplegui.exec_safe(dot_bin, ['-K' + layout_prog, '-Tsvg', tmp_dot, '-o', tmp_svg])
+			res := simplegui.exec_safe(dot_bin,
+				['-K' + layout_prog, '-Tsvg', tmp_dot, '-o', tmp_svg])
 			elapsed_ms := time.ticks() - t0
 
 			w.run_on_main_thread(fn [res, elapsed_ms, tmp_svg] (mut win_main simplegui.SimpleWindow) {
 				if res.exit_code == 0 && os.exists(tmp_svg) {
 					svg_content := os.read_file(tmp_svg) or { '' }
 					win_main.set('txt_svg_output', svg_content)
-					win_main.append_console('dot_console', '✅ Diagram rendered to SVG in ${elapsed_ms} ms (${svg_content.len} bytes).\n', 4)
-					win_main.set('lbl_stats', '📊 Stats: SUCCESS  |  SVG: ${svg_content.len} B  |  Duration: ${elapsed_ms} ms')
+					win_main.append_console('dot_console',
+						'✅ Diagram rendered to SVG in ${elapsed_ms} ms (${svg_content.len} bytes).\n',
+						4)
+					win_main.set('lbl_stats',
+						'📊 Stats: SUCCESS  |  SVG: ${svg_content.len} B  |  Duration: ${elapsed_ms} ms')
 					win_main.set_status('Diagram compiled in ${elapsed_ms} ms.')
 					win_main.toast('Diagram rendered successfully!')
 				} else {
-					win_main.append_console('dot_console', '❌ Graphviz Compiler Error:\n' + res.output + '\n', 3)
-					win_main.set('lbl_stats', '📊 Stats: COMPILER ERROR (Exit ${res.exit_code})  |  Duration: ${elapsed_ms} ms')
+					win_main.append_console('dot_console', '❌ Graphviz Compiler Error:\n' +
+						res.output + '\n', 3)
+					win_main.set('lbl_stats',
+						'📊 Stats: COMPILER ERROR (Exit ${res.exit_code})  |  Duration: ${elapsed_ms} ms')
 					win_main.set_status('Graphviz compilation failed.')
 					win_main.toast('Compilation error.')
 				}

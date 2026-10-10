@@ -40,6 +40,7 @@ fn (mut state GameState) reset(difficulty int) {
 			state.max_attempts = 10
 		}
 	}
+
 	state.attempts_left = state.max_attempts
 	state.secret_number = rand.int_in_range(state.min_val, state.max_val + 1) or { 42 }
 }
@@ -58,7 +59,8 @@ fn main() {
 		.font_size(22)
 		.font_color('#ff79c6') // Dracula Pink
 
-	win.add_label('sub_header', 'Select a difficulty, adjust your guess, and submit to test your luck!')
+	win.add_label('sub_header',
+		'Select a difficulty, adjust your guess, and submit to test your luck!')
 		.font_size(12)
 		.font_color('#6272a4')
 
@@ -155,7 +157,8 @@ fn main() {
 		}
 		guess := w.get_value_int('num_guess')
 		if guess < state.min_val || guess > state.max_val {
-			w.alert('Invalid Guess', 'Please enter a number between ${state.min_val} and ${state.max_val}.')
+			w.alert('Invalid Guess',
+				'Please enter a number between ${state.min_val} and ${state.max_val}.')
 			return
 		}
 
@@ -184,14 +187,16 @@ fn main() {
 			log_entry += 'CORRECT! 🎉 You won!\n'
 			color = '#50fa7b' // Dracula Green
 			w.set_text('status_info', 'You Won! Secret was indeed ${state.secret_number}.')
-			w.alert('Winner!', 'Congratulations! You guessed the secret number ${state.secret_number}!')
+			w.alert('Winner!',
+				'Congratulations! You guessed the secret number ${state.secret_number}!')
 			w.set_status('Winner!')
 		} else if state.attempts_left <= 0 {
 			state.game_over = true
 			log_entry += 'Game Over! Secret was ${state.secret_number}.\n'
 			color = '#ff5555' // Dracula Red
 			w.set_text('status_info', 'Game Over! The secret number was ${state.secret_number}.')
-			w.alert('Game Over', 'You ran out of attempts! The secret number was ${state.secret_number}.')
+			w.alert('Game Over',
+				'You ran out of attempts! The secret number was ${state.secret_number}.')
 			w.set_status('Game over.')
 		} else {
 			if guess < state.secret_number {
@@ -239,7 +244,9 @@ fn update_ui(mut w simplegui.SimpleWindow, state GameState) {
 		4 { 'Hard' }
 		else { 'Expert' }
 	}
-	w.set_text('status_info', 'Difficulty: ${diff_name} | Range: ${state.min_val} - ${state.max_val} | Attempts Left: ${state.attempts_left}')
+
+	w.set_text('status_info',
+		'Difficulty: ${diff_name} | Range: ${state.min_val} - ${state.max_val} | Attempts Left: ${state.attempts_left}')
 
 	// Update levels
 	w.set_value_int('lvl_warmth', 0)

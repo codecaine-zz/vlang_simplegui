@@ -126,8 +126,7 @@ fn test_new_window_commands_and_controls() {
 	assert win.get_control_kind('user_tags') == 'tag_cloud'
 
 	// Wizard Stepper Control
-	win.add_wizard_stepper('checkout_flow', ['Cart', 'Shipping', 'Payment', 'Review'],
-		1)
+	win.add_wizard_stepper('checkout_flow', ['Cart', 'Shipping', 'Payment', 'Review'], 1)
 	assert win.has_control('checkout_flow') == true
 	assert win.get_control_kind('checkout_flow') == 'wizard_stepper'
 }
@@ -136,19 +135,24 @@ fn test_new_useful_window_controls() {
 	mut win := simplegui.new_simple_window('New Useful Controls Test', 800, 600)
 
 	// 1. Quick Action Bar
-	win.add_quick_action_bar('quick_bar', ['Refresh', 'Export', 'Settings'], ['🔄', '📤', '⚙️'])
+	win.add_quick_action_bar('quick_bar', ['Refresh', 'Export', 'Settings'], ['🔄', '📤',
+		'⚙️'])
 	assert win.has_control('quick_bar') == true
 	win.set_quick_action_enabled('quick_bar', 0, false)
 
 	// 2. Accordion Group
-	win.add_accordion_group('accordion_1', ['General Settings', 'Security & Privacy', 'Notifications'],
-		0)
+	win.add_accordion_group('accordion_1',
+		['General Settings', 'Security & Privacy', 'Notifications'], 0)
 	assert win.has_control('accordion_1') == true
 	win.set_accordion_expanded('accordion_1', 1, true)
 
 	// 3. Segment Distribution Bar
-	win.add_segment_distribution_bar('storage_bar', ['System', 'Apps', 'Documents', 'Free'],
-		[40.0, 30.0, 15.0, 15.0], ['#007aff', '#34c759', '#ff9500', '#8e8e93'], 16)
+	win.add_segment_distribution_bar('storage_bar', ['System', 'Apps', 'Documents', 'Free'], [
+		40.0,
+		30.0,
+		15.0,
+		15.0,
+	], ['#007aff', '#34c759', '#ff9500', '#8e8e93'], 16)
 	assert win.has_control('storage_bar') == true
 	win.set_segment_distribution_values('storage_bar', [50.0, 25.0, 15.0, 10.0])
 
@@ -167,7 +171,8 @@ fn test_new_useful_window_controls() {
 	win.add_info_callout('callout_card', 'Update Available', 'SimpleGUI v1.5 is ready to install.',
 		'info', 'Install Now')
 	assert win.has_control('callout_card') == true
-	win.set_info_callout_text('callout_card', 'Critical Update', 'Version v1.5 includes security improvements.')
+	win.set_info_callout_text('callout_card', 'Critical Update',
+		'Version v1.5 includes security improvements.')
 }
 
 fn test_new_window_management_commands() {

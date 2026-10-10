@@ -64,7 +64,8 @@ fn inspect_ssl(mut app simplecli.SimpleCli, domain string) {
 }
 
 fn run_interactive(mut app simplecli.SimpleCli) {
-	app.panel('DNS & SSL Studio REPL', 'Query domain name system servers and verify TLS certificates.')
+	app.panel('DNS & SSL Studio REPL',
+		'Query domain name system servers and verify TLS certificates.')
 	target := app.prompt('Enter target domain name', 'github.com')
 	choice := app.select('Action:', [
 		'Resolve All DNS Records (A, MX, TXT)',

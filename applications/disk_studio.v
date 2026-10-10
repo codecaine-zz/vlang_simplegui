@@ -7,7 +7,8 @@ import simplegui
 fn main() {
 	println('Starting SimpleGUI - Disk Space & Cleanup Studio Pro...')
 
-	mut win := simplegui.new_simple_window('💾 SimpleGUI - Disk Space & Cleanup Studio Pro', 1080, 950)
+	mut win := simplegui.new_simple_window('💾 SimpleGUI - Disk Space & Cleanup Studio Pro',
+		1080, 950)
 	win.set_spacing(8)
 	win.set_padding(16)
 
@@ -27,7 +28,8 @@ fn main() {
 		w.toast('Theme changed to ${selected}')
 	})
 
-	win.add_label('lbl_engine_info', '⚡ Engine: macOS APFS Core Utilities (du, df, find)  |  Platform: macOS Cocoa  |  Mode: Async')
+	win.add_label('lbl_engine_info',
+		'⚡ Engine: macOS APFS Core Utilities (du, df, find)  |  Platform: macOS Cocoa  |  Mode: Async')
 
 	// Directory Scope Selector
 	win.begin_group_box('grp_disk_scope', '📁 Target Directory & Filesystem Scope')
@@ -76,7 +78,8 @@ fn main() {
 	win.end_row()
 
 	win.append_console('disk_console', '💾 Disk Space & Cleanup Studio Pro Initialized.\n', 1)
-	win.append_console('disk_console', '⚡ Ready to analyze directory sizes, top large files, and clean developer caches.\n', 4)
+	win.append_console('disk_console',
+		'⚡ Ready to analyze directory sizes, top large files, and clean developer caches.\n', 4)
 
 	// -------------------------------------------------------------
 	// Event Handlers
@@ -130,8 +133,11 @@ fn main() {
 				win_main.set('txt_disk_output', out)
 
 				lines_cnt := if out != '' { out.split_into_lines().len } else { 0 }
-				win_main.append_console('disk_console', '✅ Directory breakdown complete in ${elapsed_ms} ms (${lines_cnt} entries sorted by size).\n', 4)
-				win_main.set('lbl_stats', '📊 Stats: SUCCESS  |  Target: ${os.file_name(target_dir)}  |  Entries: ${lines_cnt}  |  Duration: ${elapsed_ms} ms')
+				win_main.append_console('disk_console',
+					'✅ Directory breakdown complete in ${elapsed_ms} ms (${lines_cnt} entries sorted by size).\n',
+					4)
+				win_main.set('lbl_stats',
+					'📊 Stats: SUCCESS  |  Target: ${os.file_name(target_dir)}  |  Entries: ${lines_cnt}  |  Duration: ${elapsed_ms} ms')
 				win_main.set_status('Disk usage analysis complete.')
 				win_main.toast('Disk breakdown calculated!')
 			})
@@ -146,7 +152,8 @@ fn main() {
 			return
 		}
 
-		w.append_console('disk_console', '▶ Searching for top largest files in: ${target_dir}...\n', 1)
+		w.append_console('disk_console',
+			'▶ Searching for top largest files in: ${target_dir}...\n', 1)
 		w.set_status('Finding largest files...')
 		w.toast('⚡ Scanning for large files...')
 
@@ -160,8 +167,10 @@ fn main() {
 				out := res.output.trim_space()
 				win_main.set('txt_disk_output', out)
 
-				win_main.append_console('disk_console', '✅ Top largest files located in ${elapsed_ms} ms.\n', 4)
-				win_main.set('lbl_stats', '📊 Stats: SUCCESS  |  Scope: ${os.file_name(target_dir)}  |  Duration: ${elapsed_ms} ms')
+				win_main.append_console('disk_console',
+					'✅ Top largest files located in ${elapsed_ms} ms.\n', 4)
+				win_main.set('lbl_stats',
+					'📊 Stats: SUCCESS  |  Scope: ${os.file_name(target_dir)}  |  Duration: ${elapsed_ms} ms')
 				win_main.set_status('Largest files found.')
 				win_main.toast('Largest files located!')
 			})
@@ -170,7 +179,8 @@ fn main() {
 
 	// APFS Volumes Telemetry
 	win.on_click('btn_df_volumes', fn (mut w simplegui.SimpleWindow) {
-		w.append_console('disk_console', '▶ Reading APFS mounted filesystem volumes (df -h)...\n', 1)
+		w.append_console('disk_console',
+			'▶ Reading APFS mounted filesystem volumes (df -h)...\n', 1)
 		w.set_status('Reading mounted filesystems...')
 
 		go fn [mut w] () {
@@ -180,8 +190,10 @@ fn main() {
 
 			w.run_on_main_thread(fn [res, elapsed_ms] (mut win_main simplegui.SimpleWindow) {
 				win_main.set('txt_disk_output', res.output.trim_space())
-				win_main.append_console('disk_console', '✅ APFS volume telemetry loaded in ${elapsed_ms} ms.\n', 4)
-				win_main.set('lbl_stats', '📊 Stats: APFS MOUNTED VOLUMES  |  Duration: ${elapsed_ms} ms')
+				win_main.append_console('disk_console',
+					'✅ APFS volume telemetry loaded in ${elapsed_ms} ms.\n', 4)
+				win_main.set('lbl_stats',
+					'📊 Stats: APFS MOUNTED VOLUMES  |  Duration: ${elapsed_ms} ms')
 				win_main.set_status('Mounted volume stats loaded.')
 			})
 		}()
@@ -195,7 +207,8 @@ fn main() {
 			return
 		}
 
-		w.append_console('disk_console', '🧹 Scanning for developer junk (node_modules, target, .cache, __pycache__)...\n', 1)
+		w.append_console('disk_console',
+			'🧹 Scanning for developer junk (node_modules, target, .cache, __pycache__)...\n', 1)
 		w.set_status('Scanning developer caches...')
 
 		go fn [mut w, target_dir] () {
@@ -211,8 +224,10 @@ fn main() {
 				} else {
 					'No developer junk directories found in this path.'
 				})
-				win_main.append_console('disk_console', '✅ Developer junk scan complete in ${elapsed_ms} ms.\n', 4)
-				win_main.set('lbl_stats', '📊 Stats: DEV JUNK SCAN COMPLETE  |  Duration: ${elapsed_ms} ms')
+				win_main.append_console('disk_console',
+					'✅ Developer junk scan complete in ${elapsed_ms} ms.\n', 4)
+				win_main.set('lbl_stats',
+					'📊 Stats: DEV JUNK SCAN COMPLETE  |  Duration: ${elapsed_ms} ms')
 				win_main.set_status('Developer junk scan finished.')
 				win_main.toast('Scan complete!')
 			})
@@ -226,10 +241,12 @@ fn main() {
 			w.alert('No DerivedData', 'Xcode DerivedData folder not found or already empty.')
 			return
 		}
-		if !w.confirm('Clean Xcode DerivedData', 'Delete all Xcode DerivedData cache to reclaim disk space?') {
+		if !w.confirm('Clean Xcode DerivedData',
+			'Delete all Xcode DerivedData cache to reclaim disk space?') {
 			return
 		}
-		w.append_console('disk_console', '🛠️ Cleaning Xcode DerivedData: ${derived_path}...\n', 1)
+		w.append_console('disk_console',
+			'🛠️ Cleaning Xcode DerivedData: ${derived_path}...\n', 1)
 		os.execute('rm -rf "${derived_path}"/*')
 		w.toast('Xcode DerivedData cleaned!')
 		w.append_console('disk_console', '✅ Xcode DerivedData emptied.\n', 4)

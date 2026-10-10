@@ -53,7 +53,8 @@ fn main() {
 	win.add_label('choice_lbl', 'Multiple Choice native macOS Modal Dialogs:')
 	win.add_action('choice_btn', 'Try Multi-Choice alert', fn (mut w simplegui.SimpleWindow) {
 		choices := ['Nordic Theme', 'Dracula Theme', 'Reset Slate', 'Cancel']
-		choice_index := w.choice_dialog('Theme Switcher', 'Choose a color preset layout to apply to this window and all of its elements dynamically:',
+		choice_index := w.choice_dialog('Theme Switcher',
+			'Choose a color preset layout to apply to this window and all of its elements dynamically:',
 			choices)
 		match choice_index {
 			0 {
@@ -83,7 +84,8 @@ fn main() {
 	// 4. Tray / Status Bar accessory demo
 	win.add_label('tray_lbl', 'Seamless Status Bar Mode Integration:')
 	win.add_action('tray_btn', 'Minimize to Tray Menu Bar Accessory', fn (mut w simplegui.SimpleWindow) {
-		w.alert('Accessory Mode Switch', 'The main window will now minimize/hide.\n\nClick the tray applet in your macOS Status Bar to restore the window any time!')
+		w.alert('Accessory Mode Switch',
+			'The main window will now minimize/hide.\n\nClick the tray applet in your macOS Status Bar to restore the window any time!')
 		w.enable_status_bar('') // Launches macOS Tray status item
 
 		// Add custom items directly to the status bar dropdown menu

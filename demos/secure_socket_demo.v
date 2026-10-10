@@ -48,7 +48,8 @@ fn main() {
 	gui.set_control_font_size('title', 18)
 	gui.set_control_font_bold('title', true)
 
-	gui.add_label('subtitle', 'Testing Secure TLS socket communication asynchronously. Hosts a local mbedtls server.')
+	gui.add_label('subtitle',
+		'Testing Secure TLS socket communication asynchronously. Hosts a local mbedtls server.')
 
 	gui.add_separator()
 
@@ -257,7 +258,8 @@ fn main() {
 // generate_certs runs openssl to create a temporary self-signed certificate and key.
 fn generate_certs() ! {
 	println('Generating temporary self-signed SSL certificate...')
-	res := os.execute('openssl req -x509 -newkey rsa:2048 -keyout temp_server.key -out temp_server.crt -days 1 -nodes -subj "/CN=localhost"')
+	res :=
+		os.execute('openssl req -x509 -newkey rsa:2048 -keyout temp_server.key -out temp_server.crt -days 1 -nodes -subj "/CN=localhost"')
 	if res.exit_code != 0 {
 		return error('Failed to generate certs: ${res.output}')
 	}

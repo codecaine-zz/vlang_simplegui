@@ -51,7 +51,8 @@ fn main() {
 }
 
 fn run_interactive(mut app simplecli.SimpleCli) {
-	app.panel('Media Studio Operations Hub', 'Unified launcher for audio, video, graphics, and text processing.')
+	app.panel('Media Studio Operations Hub',
+		'Unified launcher for audio, video, graphics, and text processing.')
 	choice := app.select('Select Media Subsystem:', [
 		'Audio Extraction (FFmpeg)',
 		'Image Resizing / Thumbnail (ImageMagick)',

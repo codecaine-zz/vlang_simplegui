@@ -6,8 +6,7 @@ fn main() {
 	mut win := simplegui.new_simple_window('Token Field Ergonomics Demo', 550, 500)
 		.add_label('lbl_tags', 'Project Tags:')
 		.add_token_field('project_tags', 'vlang, gui, desktop')
-		.add_separator()
-		.begin_row
+		.add_separator().begin_row
 
 	// 2. Buttons to interact with Token Helpers
 

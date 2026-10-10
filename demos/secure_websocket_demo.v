@@ -11,7 +11,8 @@ fn main() {
 	// We run a local plain ws server in case the user wants to test offline,
 	// but the UI points to wss://echo.websocket.org by default to demo secure wss.
 	port := 30399
-	mut ws_server := simplegui.new_simple_window('WS Fallback Listener', 1, 1) // Dummy for import or helper
+	mut ws_server :=
+		simplegui.new_simple_window('WS Fallback Listener', 1, 1) // Dummy for import or helper
 	_ = ws_server
 
 	// Spawn the standard local offline WS echo server in the background
@@ -24,8 +25,7 @@ fn main() {
 	println('==================================================')
 
 	// 2. Build the SimpleGUI application playground window
-	mut gui := simplegui.new_simple_window('Secure WebSocket (wss://) Client Demo', 640,
-		600)
+	mut gui := simplegui.new_simple_window('Secure WebSocket (wss://) Client Demo', 640, 600)
 	gui.set_title('SimpleGUI Secure WebSocket (WSS) Client')
 	gui.set_padding(20)
 	gui.set_spacing(12)
@@ -35,7 +35,8 @@ fn main() {
 	gui.set_control_font_size('title', 18)
 	gui.set_control_font_bold('title', true)
 
-	gui.add_label('subtitle', 'Testing secure wss:// connections asynchronously. Defaults to echo.websocket.org.')
+	gui.add_label('subtitle',
+		'Testing secure wss:// connections asynchronously. Defaults to echo.websocket.org.')
 
 	gui.add_separator()
 
@@ -105,7 +106,8 @@ fn main() {
 			fail_stamp := win.time_now()
 			win.set_text('stream_logs', win.get_text('stream_logs') + '\n[' + fail_stamp +
 				'] [Error]: Secure handshake failed: ' + err.msg())
-			win.alert('Connection Failed', 'Handshake or network endpoint is unreachable. (If offline, try: ws://127.0.0.1:30399)')
+			win.alert('Connection Failed',
+				'Handshake or network endpoint is unreachable. (If offline, try: ws://127.0.0.1:30399)')
 			win.set_status('Websocket connection failed.')
 			return
 		}

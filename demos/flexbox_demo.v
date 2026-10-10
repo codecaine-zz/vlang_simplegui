@@ -7,7 +7,8 @@ fn main() {
 		.set_padding(20)
 
 	win.add_heading('SimpleGUI Flexbox Layout Examples')
-	win.add_label('lbl_desc', 'Flexbox containers support direction (row/column), justify (main-axis distribution), and align (cross-axis alignment).')
+	win.add_label('lbl_desc',
+		'Flexbox containers support direction (row/column), justify (main-axis distribution), and align (cross-axis alignment).')
 	win.add_vertical_spacer(10)
 
 	// Example 1: Action Toolbar Header (Row + Space-Between + Center Align)
@@ -34,15 +35,14 @@ fn main() {
 	win.add_vertical_spacer(10)
 
 	// Example 3: Equal Distribution Chips (Row + Space-Around + Center)
-	win.group('grp_ex3', '3. Evenly Spaced Action Badges (row, space_around, center)',
-		fn (mut w simplegui.SimpleWindow) {
-			w.flex_box('flex_around_bar', 'row', 'space_around', 'center', fn (mut f simplegui.SimpleWindow) {
-				f.add_button('btn_tag1', '🏷️ Design')
-				f.add_button('btn_tag2', '🏷️ Frontend')
-				f.add_button('btn_tag3', '🏷️ Backend')
-				f.add_button('btn_tag4', '🏷️ DevOps')
-			})
+	win.group('grp_ex3', '3. Evenly Spaced Action Badges (row, space_around, center)', fn (mut w simplegui.SimpleWindow) {
+		w.flex_box('flex_around_bar', 'row', 'space_around', 'center', fn (mut f simplegui.SimpleWindow) {
+			f.add_button('btn_tag1', '🏷️ Design')
+			f.add_button('btn_tag2', '🏷️ Frontend')
+			f.add_button('btn_tag3', '🏷️ Backend')
+			f.add_button('btn_tag4', '🏷️ DevOps')
 		})
+	})
 
 	win.add_vertical_spacer(10)
 

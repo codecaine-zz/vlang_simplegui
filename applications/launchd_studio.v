@@ -51,10 +51,12 @@ fn main() {
 		w.toast('Theme changed to ${selected}')
 	})
 
-	win.add_label('lbl_engine_info', '⚡ Engine: macOS launchctl & crontab Subsystems  |  Platform: macOS Cocoa  |  Mode: Async')
+	win.add_label('lbl_engine_info',
+		'⚡ Engine: macOS launchctl & crontab Subsystems  |  Platform: macOS Cocoa  |  Mode: Async')
 
 	// Job Scheduler Specification & Presets Bar
-	win.begin_group_box('grp_job_presets', '🎯 Scheduled Task Templates & Cron Expression Builder')
+	win.begin_group_box('grp_job_presets',
+		'🎯 Scheduled Task Templates & Cron Expression Builder')
 
 	win.begin_row('row_presets_bar')
 	win.add_label('lbl_template', 'Schedule Template:')
@@ -114,7 +116,8 @@ fn main() {
 	win.end_row()
 
 	win.append_console('job_console', '⏰ Launchd & Cron Studio Pro Initialized.\n', 1)
-	win.append_console('job_console', '⚡ Ready to inspect launchd services, user agents, and crontab tables.\n', 4)
+	win.append_console('job_console',
+		'⚡ Ready to inspect launchd services, user agents, and crontab tables.\n', 4)
 
 	// -------------------------------------------------------------
 	// Event Handlers
@@ -195,7 +198,8 @@ fn main() {
 
 	// List Launchd Daemons
 	win.on_click('btn_list_launchd', fn (mut w simplegui.SimpleWindow) {
-		w.append_console('job_console', '▶ Querying active launchd services (launchctl list)...\n', 1)
+		w.append_console('job_console',
+			'▶ Querying active launchd services (launchctl list)...\n', 1)
 		w.set_status('Querying launchctl...')
 
 		go fn [mut w] () {
@@ -205,8 +209,10 @@ fn main() {
 
 			w.run_on_main_thread(fn [res, elapsed_ms] (mut win_main simplegui.SimpleWindow) {
 				win_main.set('txt_job_output', res.output.trim_space())
-				win_main.append_console('job_console', '✅ Launchd services listed in ${elapsed_ms} ms.\n', 4)
-				win_main.set('lbl_stats', '📊 Stats: LAUNCHCTL ACTIVE SERVICES  |  Duration: ${elapsed_ms} ms')
+				win_main.append_console('job_console',
+					'✅ Launchd services listed in ${elapsed_ms} ms.\n', 4)
+				win_main.set('lbl_stats',
+					'📊 Stats: LAUNCHCTL ACTIVE SERVICES  |  Duration: ${elapsed_ms} ms')
 				win_main.set_status('Launchd services loaded.')
 			})
 		}()
@@ -229,8 +235,10 @@ fn main() {
 				} else {
 					'No crontab entries installed for current user.'
 				})
-				win_main.append_console('job_console', '✅ Crontab table read in ${elapsed_ms} ms.\n', 4)
-				win_main.set('lbl_stats', '📊 Stats: CRONTAB CHECKED  |  Duration: ${elapsed_ms} ms')
+				win_main.append_console('job_console',
+					'✅ Crontab table read in ${elapsed_ms} ms.\n', 4)
+				win_main.set('lbl_stats',
+					'📊 Stats: CRONTAB CHECKED  |  Duration: ${elapsed_ms} ms')
 				win_main.set_status('Crontab loaded.')
 			})
 		}()
@@ -239,7 +247,8 @@ fn main() {
 	// List User LaunchAgents
 	win.on_click('btn_list_user_agents', fn (mut w simplegui.SimpleWindow) {
 		agents_dir := os.join_path(os.home_dir(), 'Library/LaunchAgents')
-		w.append_console('job_console', '▶ Inspecting user agents directory: ~/Library/LaunchAgents...\n', 1)
+		w.append_console('job_console',
+			'▶ Inspecting user agents directory: ~/Library/LaunchAgents...\n', 1)
 
 		if os.exists(agents_dir) {
 			files := os.ls(agents_dir) or { []string{} }
@@ -272,7 +281,8 @@ fn main() {
 				return
 			}
 			w.toast('Saved to ${os.file_name(save_file)}')
-			w.append_console('job_console', '💾 Saved scheduled job definition to: ${save_file}\n', 4)
+			w.append_console('job_console',
+				'💾 Saved scheduled job definition to: ${save_file}\n', 4)
 		}
 	})
 

@@ -25,7 +25,8 @@ fn get_tesseract_bin() string {
 fn main() {
 	println('Starting SimpleGUI - Tesseract OCR Studio Pro (Optical Character Recognition)...')
 
-	mut win := simplegui.new_simple_window('👁️ SimpleGUI - Tesseract OCR Studio Pro', 1080, 950)
+	mut win :=
+		simplegui.new_simple_window('👁️ SimpleGUI - Tesseract OCR Studio Pro', 1080, 950)
 	win.set_spacing(8)
 	win.set_padding(16)
 
@@ -46,7 +47,8 @@ fn main() {
 	})
 
 	tesseract_path := get_tesseract_bin()
-	win.add_label('lbl_engine_info', '⚡ Engine: ${tesseract_path}  |  Platform: macOS Cocoa  |  Mode: Async OCR Pipeline')
+	win.add_label('lbl_engine_info',
+		'⚡ Engine: ${tesseract_path}  |  Platform: macOS Cocoa  |  Mode: Async OCR Pipeline')
 
 	// File Selection & Language Scope
 	win.begin_group_box('grp_ocr_source', '📁 Source Document / Image & Language Configuration')
@@ -124,11 +126,13 @@ fn main() {
 
 	// Status Row
 	win.begin_row('row_stats')
-	win.add_label('lbl_stats', '📊 Stats: Ready  |  Words: 0  |  Characters: 0  |  Duration: 0 ms')
+	win.add_label('lbl_stats',
+		'📊 Stats: Ready  |  Words: 0  |  Characters: 0  |  Duration: 0 ms')
 	win.end_row()
 
 	win.append_console('ocr_console', '👁️ Tesseract OCR Studio Pro Initialized.\n', 1)
-	win.append_console('ocr_console', '⚡ Ready to extract text and generate searchable PDFs from scanned images.\n', 4)
+	win.append_console('ocr_console',
+		'⚡ Ready to extract text and generate searchable PDFs from scanned images.\n', 4)
 
 	// -------------------------------------------------------------
 	// Event Handlers
@@ -148,7 +152,8 @@ fn main() {
 	win.on_click('btn_list_langs', fn (mut w simplegui.SimpleWindow) {
 		tess_bin := get_tesseract_bin()
 		res := simplegui.exec_safe(tess_bin, ['--list-langs'])
-		w.append_console('ocr_console', '🌐 Installed Tesseract Language Packs:\n' + res.output + '\n', 4)
+		w.append_console('ocr_console', '🌐 Installed Tesseract Language Packs:\n' + res.output +
+			'\n', 4)
 		w.toast('Listed installed languages in console.')
 	})
 
@@ -175,7 +180,8 @@ fn main() {
 		args << '--psm'
 		args << psm
 
-		w.append_console('ocr_console', '▶ Running OCR (Lang: ${lang}, PSM: ${psm}) on ${os.file_name(img_path)}...\n', 1)
+		w.append_console('ocr_console',
+			'▶ Running OCR (Lang: ${lang}, PSM: ${psm}) on ${os.file_name(img_path)}...\n', 1)
 		w.set_status('Extracting text with Tesseract...')
 		w.toast('⚡ Extracting text...')
 
@@ -192,13 +198,18 @@ fn main() {
 				chars_cnt := out.len
 
 				if res.exit_code == 0 {
-					win_main.append_console('ocr_console', '✅ OCR Extraction Complete: ${words_cnt} words (${chars_cnt} chars) in ${elapsed_ms} ms.\n', 4)
-					win_main.set('lbl_stats', '📊 Stats: SUCCESS  |  File: ${os.file_name(img_path)}  |  Words: ${words_cnt}  |  Chars: ${chars_cnt}  |  Duration: ${elapsed_ms} ms')
+					win_main.append_console('ocr_console',
+						'✅ OCR Extraction Complete: ${words_cnt} words (${chars_cnt} chars) in ${elapsed_ms} ms.\n',
+						4)
+					win_main.set('lbl_stats',
+						'📊 Stats: SUCCESS  |  File: ${os.file_name(img_path)}  |  Words: ${words_cnt}  |  Chars: ${chars_cnt}  |  Duration: ${elapsed_ms} ms')
 					win_main.set_status('OCR finished in ${elapsed_ms} ms.')
 					win_main.toast('Text extracted successfully!')
 				} else {
-					win_main.append_console('ocr_console', '❌ Tesseract OCR Notice:\n' + out + '\n', 3)
-					win_main.set('lbl_stats', '📊 Stats: NOTICE (Exit ${res.exit_code})  |  Duration: ${elapsed_ms} ms')
+					win_main.append_console('ocr_console', '❌ Tesseract OCR Notice:\n' + out +
+						'\n', 3)
+					win_main.set('lbl_stats',
+						'📊 Stats: NOTICE (Exit ${res.exit_code})  |  Duration: ${elapsed_ms} ms')
 					win_main.set_status('OCR completed with notices.')
 				}
 			})
@@ -224,7 +235,8 @@ fn main() {
 			lang_raw := w.get('dd_ocr_lang')
 			lang := lang_raw.split(' ')[0]
 
-			w.append_console('ocr_console', '▶ Generating Searchable PDF: ${base_out}.pdf...\n', 1)
+			w.append_console('ocr_console', '▶ Generating Searchable PDF: ${base_out}.pdf...\n',
+				1)
 			w.set_status('Compiling PDF...')
 
 			go fn [mut w, tess_bin, img_path, base_out, lang] () {
@@ -235,11 +247,14 @@ fn main() {
 				w.run_on_main_thread(fn [res, elapsed_ms, base_out] (mut win_main simplegui.SimpleWindow) {
 					if res.exit_code == 0 {
 						pdf_name := os.file_name(base_out) + '.pdf'
-						win_main.append_console('ocr_console', '✅ Searchable PDF generated: ${base_out}.pdf in ${elapsed_ms} ms\n', 4)
+						win_main.append_console('ocr_console',
+							'✅ Searchable PDF generated: ${base_out}.pdf in ${elapsed_ms} ms\n',
+							4)
 						win_main.toast('Saved ${pdf_name}!')
 						win_main.set_status('PDF saved successfully.')
 					} else {
-						win_main.append_console('ocr_console', '❌ Error compiling PDF: ' + res.output + '\n', 3)
+						win_main.append_console('ocr_console', '❌ Error compiling PDF: ' +
+							res.output + '\n', 3)
 					}
 				})
 			}()

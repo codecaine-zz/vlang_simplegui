@@ -15,7 +15,8 @@ fn main() {
 	win.add_heading('Horizontal Row Layouts')
 		.font_color('#ff79c6') // Dracula pink
 
-	win.add_label('desc', 'You can place controls side-by-side using rows. Rows can be block-based (begin_row/end_row), closure-based, or built with quick row helpers.')
+	win.add_label('desc',
+		'You can place controls side-by-side using rows. Rows can be block-based (begin_row/end_row), closure-based, or built with quick row helpers.')
 		.font_color('#f1fa8c') // Dracula yellow
 	win.set_control_font_size('desc', 11)
 

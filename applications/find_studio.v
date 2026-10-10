@@ -157,7 +157,8 @@ fn get_find_bin() string {
 fn main() {
 	println('Starting SimpleGUI - Find Studio Pro (POSIX/macOS find Filesystem Explorer)...')
 
-	mut win := simplegui.new_simple_window('📂 Find Studio Pro — Advanced Filesystem Search & Filter Workbench', 1040, 920)
+	mut win := simplegui.new_simple_window('📂 Find Studio Pro — Advanced Filesystem Search & Filter Workbench',
+		1040, 920)
 	win.restore_saved_theme()
 	win.set_spacing(8)
 	win.set_padding(16)
@@ -176,7 +177,8 @@ fn main() {
 	win.set_control_width('dd_theme_selector', 180)
 	win.end_row()
 
-	win.add_label('lbl_engine_info', '⚡ Engine: ${find_bin} (POSIX/BSD find)  |  Platform: macOS Cocoa  |  Mode: Non-Blocking Safe Worker')
+	win.add_label('lbl_engine_info',
+		'⚡ Engine: ${find_bin} (POSIX/BSD find)  |  Platform: macOS Cocoa  |  Mode: Non-Blocking Safe Worker')
 
 	// -------------------------------------------------------------
 	// Scope & Target Directory
@@ -213,14 +215,16 @@ fn main() {
 	win.end_row()
 
 	win.begin_row('row_rec_desc')
-	win.add_label('lbl_recipe_desc', 'ℹ️ Select a recipe to quickly search for large files, temp cruft, stale logs, or code.')
+	win.add_label('lbl_recipe_desc',
+		'ℹ️ Select a recipe to quickly search for large files, temp cruft, stale logs, or code.')
 	win.end_row()
 	win.end_group_box()
 
 	// -------------------------------------------------------------
 	// Search Criteria & Filters
 	// -------------------------------------------------------------
-	win.begin_group_box('grp_filters', '⚙️ Filter Criteria (Name, Inode Type, Size, Depth, Age)')
+	win.begin_group_box('grp_filters',
+		'⚙️ Filter Criteria (Name, Inode Type, Size, Depth, Age)')
 
 	win.begin_row('row_name_type')
 	win.add_label('lbl_name', 'Name Pattern:')
@@ -322,7 +326,8 @@ fn main() {
 	win.add_label('lbl_status', '📊 Status: Ready  |  Matches: 0  |  Elapsed: 0 ms')
 	win.end_row()
 
-	win.set('txt_results', '🚀 Find Studio Pro ready. Select target scope and click "Run Find Search".\n')
+	win.set('txt_results',
+		'🚀 Find Studio Pro ready. Select target scope and click "Run Find Search".\n')
 
 	// Helper to assemble find arguments
 	build_find_args := fn (win simplegui.SimpleWindow) []string {
@@ -529,7 +534,8 @@ fn main() {
 				if res.exit_code == 0 {
 					lines := res.output.split_into_lines().filter(it.trim_space() != '')
 					win_main.set('txt_results', res.output)
-					win_main.set('lbl_status', '📊 Status: Search complete  |  Matches: ${lines.len}  |  Elapsed: ${elapsed_ms} ms')
+					win_main.set('lbl_status',
+						'📊 Status: Search complete  |  Matches: ${lines.len}  |  Elapsed: ${elapsed_ms} ms')
 					win_main.set_status('Find search completed.')
 					win_main.toast('Found ${lines.len} matching items!')
 				} else {
@@ -571,7 +577,8 @@ fn main() {
 						if res.exit_code == 0 {
 							lines := res.output.split_into_lines().filter(it.trim_space() != '')
 							win_main.set('txt_results', res.output)
-							win_main.set('lbl_status', '📊 Status: Recipe complete  |  Matches: ${lines.len}  |  Elapsed: ${elapsed_ms} ms')
+							win_main.set('lbl_status',
+								'📊 Status: Recipe complete  |  Matches: ${lines.len}  |  Elapsed: ${elapsed_ms} ms')
 							win_main.set_status('Recipe search complete.')
 						}
 					})

@@ -3,14 +3,14 @@ module main
 import simplegui
 
 fn main() {
-	mut win := simplegui.new_simple_window('Tight Text-to-Control Alignment Demo', 650,
-		480)
+	mut win := simplegui.new_simple_window('Tight Text-to-Control Alignment Demo', 650, 480)
 		.set_padding(20)
 		.set_spacing(12)
 
 	win.add_heading('Text-to-Control Tight Layouts')
 
-	win.add_label('desc', 'Demonstrating right-aligned grid labels and tight row layouts where text sits close to controls.')
+	win.add_label('desc',
+		'Demonstrating right-aligned grid labels and tight row layouts where text sits close to controls.')
 		.font_size(11)
 
 	win.add_vertical_spacer(10)

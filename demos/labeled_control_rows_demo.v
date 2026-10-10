@@ -10,8 +10,7 @@ fn main() {
 		.add_labeled_number('Target Age', 'age_num', 25)
 		.add_labeled_date_picker('Start Date', 'start_date', '2026-07-20')
 		.add_labeled_progress('Download State', 'progress_bar', 75)
-		.add_separator()
-		.begin_row
+		.add_separator().begin_row
 
 	// 2. Form Action Buttons
 

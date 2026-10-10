@@ -45,7 +45,8 @@ fn main() {
 		w.toast('Theme changed to ${selected}')
 	})
 	subfinder_path := get_subfinder_bin()
-	win.add_label('lbl_engine_info', '⚡ Engine: ${subfinder_path}  |  Platform: macOS Cocoa  |  Mode: Async Worker (Non-Blocking)')
+	win.add_label('lbl_engine_info',
+		'⚡ Engine: ${subfinder_path}  |  Platform: macOS Cocoa  |  Mode: Async Worker (Non-Blocking)')
 
 	// -------------------------------------------------------------
 	// Target Domain Scope & Input
@@ -119,7 +120,9 @@ fn main() {
 	win.end_row()
 
 	win.append_console('subfinder_console', '🌐 Subfinder Studio Pro Initialized.\n', 1)
-	win.append_console('subfinder_console', '⚡ Ready to discover passive subdomains via Certificate Transparency, DNS, and Web Archives.\n', 4)
+	win.append_console('subfinder_console',
+		'⚡ Ready to discover passive subdomains via Certificate Transparency, DNS, and Web Archives.\n',
+		4)
 
 	// -------------------------------------------------------------
 	// Event Handlers & Async Engine
@@ -130,7 +133,8 @@ fn main() {
 		path := w.select_file()
 		if path != '' && os.exists(path) {
 			w.set('txt_domain', '@' + path)
-			w.append_console('subfinder_console', '📁 Target domain list loaded from: ${path}\n', 1)
+			w.append_console('subfinder_console', '📁 Target domain list loaded from: ${path}\n',
+				1)
 			w.toast('Loaded domain list from file.')
 		}
 	})
@@ -138,7 +142,8 @@ fn main() {
 	// List Available Sources
 	win.on_click('btn_list_sources', fn (mut w simplegui.SimpleWindow) {
 		subfinder := get_subfinder_bin()
-		w.append_console('subfinder_console', '▶ Querying all available Subfinder sources (-ls)...\n', 1)
+		w.append_console('subfinder_console',
+			'▶ Querying all available Subfinder sources (-ls)...\n', 1)
 		w.set_status('Fetching available OSINT sources...')
 		w.toast('⚡ Listing sources...')
 
@@ -207,7 +212,8 @@ fn main() {
 
 		raw_args << '-nc' // No color for clean text parsing
 
-		w.append_console('subfinder_console', '▶ Executing in background with secure argument isolation\n', 1)
+		w.append_console('subfinder_console',
+			'▶ Executing in background with secure argument isolation\n', 1)
 		w.set_status('Enumerating subdomains for ${domain_input} in background...')
 		w.toast('⚡ Discovery started in background...')
 
@@ -226,13 +232,18 @@ fn main() {
 						count = out_str.split_into_lines().len
 					}
 
-					win_main.append_console('subfinder_console', '✅ Completed! Found ${count} subdomains for ${domain_input} in ${elapsed_ms} ms.\n', 4)
-					win_main.set('lbl_stats', '📊 Stats: SUCCESS  |  Target: ${domain_input}  |  Subdomains Found: ${count}  |  Duration: ${elapsed_ms} ms')
+					win_main.append_console('subfinder_console',
+						'✅ Completed! Found ${count} subdomains for ${domain_input} in ${elapsed_ms} ms.\n',
+						4)
+					win_main.set('lbl_stats',
+						'📊 Stats: SUCCESS  |  Target: ${domain_input}  |  Subdomains Found: ${count}  |  Duration: ${elapsed_ms} ms')
 					win_main.set_status('Discovery completed: ${count} subdomains found.')
 					win_main.toast('Found ${count} subdomains in ${elapsed_ms} ms!')
 				} else {
-					win_main.append_console('subfinder_console', '❌ Subfinder Error:\n' + res.output + '\n', 3)
-					win_main.set('lbl_stats', '📊 Stats: ERROR (Exit code ${res.exit_code})  |  Duration: ${elapsed_ms} ms')
+					win_main.append_console('subfinder_console', '❌ Subfinder Error:\n' +
+						res.output + '\n', 3)
+					win_main.set('lbl_stats',
+						'📊 Stats: ERROR (Exit code ${res.exit_code})  |  Duration: ${elapsed_ms} ms')
 					win_main.set_status('Subfinder reported an error.')
 				}
 			})

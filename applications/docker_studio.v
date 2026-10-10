@@ -50,7 +50,8 @@ fn main() {
 	})
 
 	container_bin := get_container_bin()
-	win.add_label('lbl_engine_info', '⚡ Engine: ${container_bin} (Docker/Podman Daemon)  |  Platform: macOS  |  Mode: Async Worker')
+	win.add_label('lbl_engine_info',
+		'⚡ Engine: ${container_bin} (Docker/Podman Daemon)  |  Platform: macOS  |  Mode: Async Worker')
 
 	// Container & Image Target Selection
 	win.begin_group_box('grp_target_box', '🎯 Target Container / Image Specification')
@@ -100,14 +101,16 @@ fn main() {
 	win.end_row()
 
 	win.append_console('docker_console', '🐳 Docker Studio Pro Initialized.\n', 1)
-	win.append_console('docker_console', '⚡ Ready to manage local containers, microservices, and images.\n', 4)
+	win.append_console('docker_console',
+		'⚡ Ready to manage local containers, microservices, and images.\n', 4)
 
 	// -------------------------------------------------------------
 	// Async Execution Helper
 	// -------------------------------------------------------------
 	run_docker_cmd := fn (mut w simplegui.SimpleWindow, desc string, args []string) {
 		bin_path := get_container_bin()
-		w.append_console('docker_console', '▶ Executing: ${os.file_name(bin_path)} ${args.join(' ')}...\n', 1)
+		w.append_console('docker_console',
+			'▶ Executing: ${os.file_name(bin_path)} ${args.join(' ')}...\n', 1)
 		w.set_status('Running ${desc}...')
 		w.toast('⚡ ${desc}...')
 
@@ -122,13 +125,19 @@ fn main() {
 
 				lines_cnt := if out != '' { out.split_into_lines().len } else { 0 }
 				if res.exit_code == 0 {
-					win_main.append_console('docker_console', '✅ ${desc} completed in ${elapsed_ms} ms (${lines_cnt} lines output).\n', 4)
-					win_main.set('lbl_stats', '📊 Stats: SUCCESS  |  Action: ${desc}  |  Lines: ${lines_cnt}  |  Duration: ${elapsed_ms} ms')
+					win_main.append_console('docker_console',
+						'✅ ${desc} completed in ${elapsed_ms} ms (${lines_cnt} lines output).\n',
+						4)
+					win_main.set('lbl_stats',
+						'📊 Stats: SUCCESS  |  Action: ${desc}  |  Lines: ${lines_cnt}  |  Duration: ${elapsed_ms} ms')
 					win_main.set_status('${desc} complete.')
 					win_main.toast('${desc} complete!')
 				} else {
-					win_main.append_console('docker_console', '❌ Docker Notice / Error (Exit ${res.exit_code}):\n' + out + '\n', 3)
-					win_main.set('lbl_stats', '📊 Stats: NOTICE (Exit ${res.exit_code})  |  Duration: ${elapsed_ms} ms')
+					win_main.append_console('docker_console',
+
+						'❌ Docker Notice / Error (Exit ${res.exit_code}):\n' + out + '\n', 3)
+					win_main.set('lbl_stats',
+						'📊 Stats: NOTICE (Exit ${res.exit_code})  |  Duration: ${elapsed_ms} ms')
 					win_main.set_status('${desc} finished.')
 				}
 			})
@@ -215,7 +224,8 @@ fn main() {
 
 	// Prune System
 	win.on_click('btn_system_prune', fn [run_docker_cmd] (mut w simplegui.SimpleWindow) {
-		if !w.confirm('Prune Docker System', 'Remove all stopped containers, unused networks, and dangling images?') {
+		if !w.confirm('Prune Docker System',
+			'Remove all stopped containers, unused networks, and dangling images?') {
 			return
 		}
 		run_docker_cmd(mut w, 'Prune Docker System', ['system', 'prune', '-f'])

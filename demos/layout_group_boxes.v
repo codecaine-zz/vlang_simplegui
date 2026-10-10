@@ -14,7 +14,8 @@ fn main() {
 
 	win.add_heading('Visual Group Boxes')
 
-	win.add_label('desc', 'Group boxes provide visually framed containers with title labels to organize related controls.')
+	win.add_label('desc',
+		'Group boxes provide visually framed containers with title labels to organize related controls.')
 	win.set_control_font_size('desc', 11)
 
 	win.add_vertical_spacer(10)
@@ -54,5 +55,6 @@ fn on_save(mut win simplegui.SimpleWindow) {
 	retention := win.get_value_int('backup_retention')
 
 	win.toast('Settings applied!')
-	win.alert('Settings Applied', 'Database: ${host}:${port}\nAutomated Backup: ${backup} (Retention: ${retention} days)')
+	win.alert('Settings Applied',
+		'Database: ${host}:${port}\nAutomated Backup: ${backup} (Retention: ${retention} days)')
 }

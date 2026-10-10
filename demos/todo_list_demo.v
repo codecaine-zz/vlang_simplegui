@@ -48,7 +48,8 @@ fn main() {
 		'Complete Selected': fn (mut w simplegui.SimpleWindow) {
 			removed := w.remove_selected_list_items('tasks')
 			if removed.len == 0 {
-				w.warn('Nothing Selected', 'Pick one or more tasks first (Cmd/Shift-click for multiple).')
+				w.warn('Nothing Selected',
+					'Pick one or more tasks first (Cmd/Shift-click for multiple).')
 				return
 			}
 			w.status('Completed ${removed.len} task(s) - ${w.get_list_count('tasks')} left')

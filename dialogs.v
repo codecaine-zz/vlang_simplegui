@@ -149,7 +149,8 @@ pub fn (win &SimpleWindow) select_multiple_files(extensions string) []string {
 
 // save_file_picker_with_name opens a native save dialog with a pre-filled default filename and allowed extensions.
 pub fn (win &SimpleWindow) save_file_picker_with_name(default_filename string, allowed_extensions string) string {
-	res := C.window_save_file_picker_with_name(win.window_info, default_filename.str, allowed_extensions.str)
+	res := C.window_save_file_picker_with_name(win.window_info, default_filename.str,
+		allowed_extensions.str)
 	return unsafe { tos3(res) }
 }
 
@@ -185,6 +186,7 @@ pub fn select_multiple_files(extensions string) []string {
 
 // save_file_picker_with_name opens a save file dialog with default name and extensions.
 pub fn save_file_picker_with_name(default_filename string, allowed_extensions string) string {
-	res := C.window_save_file_picker_with_name(unsafe { nil }, default_filename.str, allowed_extensions.str)
+	res := C.window_save_file_picker_with_name(unsafe { nil }, default_filename.str,
+		allowed_extensions.str)
 	return unsafe { tos3(res) }
 }

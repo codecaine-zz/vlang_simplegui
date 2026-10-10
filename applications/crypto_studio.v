@@ -29,7 +29,8 @@ fn main() {
 		w.toast('Theme changed to ${selected}')
 	})
 
-	win.add_label('lbl_engine_info', '⚡ Engine: macOS OpenSSL & CommonCrypto  |  Platform: Apple Silicon / Intel  |  Mode: Async')
+	win.add_label('lbl_engine_info',
+		'⚡ Engine: macOS OpenSSL & CommonCrypto  |  Platform: Apple Silicon / Intel  |  Mode: Async')
 
 	// Input Text / Secret Key Bar
 	win.begin_group_box('grp_input_scope', '🎯 Input Text, File or Secret Key Specification')
@@ -67,7 +68,8 @@ fn main() {
 	win.begin_row('row_dual_pane')
 
 	win.begin_group_box('grp_input_text', '📥 Input Data Stream / JWT Token')
-	win.add_textarea('txt_crypto_input', 'Hello, SimpleGUI! Ultra-fast native macOS GUI applications in V.')
+	win.add_textarea('txt_crypto_input',
+		'Hello, SimpleGUI! Ultra-fast native macOS GUI applications in V.')
 	win.set_control_height('txt_crypto_input', 320)
 	win.set_control_width('txt_crypto_input', 500)
 	win.end_group_box()
@@ -91,7 +93,9 @@ fn main() {
 	win.end_row()
 
 	win.append_console('crypto_console', '🔐 Crypto & Hash Studio Pro Initialized.\n', 1)
-	win.append_console('crypto_console', '⚡ Ready to generate cryptographic checksums, decode JWT tokens, and generate entropy.\n', 4)
+	win.append_console('crypto_console',
+		'⚡ Ready to generate cryptographic checksums, decode JWT tokens, and generate entropy.\n',
+		4)
 
 	// -------------------------------------------------------------
 	// Event Handlers
@@ -107,7 +111,8 @@ fn main() {
 
 		expected := w.get('txt_expected_hash').trim_space().to_lower()
 
-		w.append_console('crypto_console', '▶ Computing MD5, SHA-1, SHA-224, SHA-256, SHA-384, SHA-512...\n', 1)
+		w.append_console('crypto_console',
+			'▶ Computing MD5, SHA-1, SHA-224, SHA-256, SHA-384, SHA-512...\n', 1)
 		w.set_status('Computing hashes...')
 
 		go fn [mut w, input_data, expected] () {
@@ -161,8 +166,10 @@ print("\\n".join(out))
 
 			w.run_on_main_thread(fn [res, elapsed_ms] (mut win_main simplegui.SimpleWindow) {
 				win_main.set('txt_crypto_output', res.output.trim_space())
-				win_main.append_console('crypto_console', '✅ Hashes calculated in ${elapsed_ms} ms.\n', 4)
-				win_main.set('lbl_stats', '📊 Stats: HASHES CALCULATED  |  Duration: ${elapsed_ms} ms')
+				win_main.append_console('crypto_console',
+					'✅ Hashes calculated in ${elapsed_ms} ms.\n', 4)
+				win_main.set('lbl_stats',
+					'📊 Stats: HASHES CALCULATED  |  Duration: ${elapsed_ms} ms')
 				win_main.set_status('Hashes computed in ${elapsed_ms} ms.')
 				win_main.toast('Checksums computed!')
 			})
@@ -176,7 +183,8 @@ print("\\n".join(out))
 			content := os.read_file(path) or { '' }
 			w.set('txt_crypto_input', content)
 			w.toast('Loaded ${os.file_name(path)} (${content.len} bytes)')
-			w.append_console('crypto_console', '📁 Loaded file for hashing: ${path} (${content.len} bytes)\n', 1)
+			w.append_console('crypto_console',
+				'📁 Loaded file for hashing: ${path} (${content.len} bytes)\n', 1)
 		}
 	})
 
@@ -230,8 +238,10 @@ print("\\n".join(out))
 
 			w.run_on_main_thread(fn [res, elapsed_ms] (mut win_main simplegui.SimpleWindow) {
 				win_main.set('txt_crypto_output', res.output.trim_space())
-				win_main.append_console('crypto_console', '✅ HMAC computed in ${elapsed_ms} ms.\n', 4)
-				win_main.set('lbl_stats', '📊 Stats: HMAC COMPUTED  |  Duration: ${elapsed_ms} ms')
+				win_main.append_console('crypto_console',
+					'✅ HMAC computed in ${elapsed_ms} ms.\n', 4)
+				win_main.set('lbl_stats',
+					'📊 Stats: HMAC COMPUTED  |  Duration: ${elapsed_ms} ms')
 				win_main.set_status('HMAC computed.')
 				win_main.toast('HMAC computed!')
 			})
@@ -304,7 +314,8 @@ except Exception as e:
 
 			w.run_on_main_thread(fn [res, elapsed_ms] (mut win_main simplegui.SimpleWindow) {
 				win_main.set('txt_crypto_output', res.output.trim_space())
-				win_main.append_console('crypto_console', '✅ JWT Token decoded in ${elapsed_ms} ms.\n', 4)
+				win_main.append_console('crypto_console',
+					'✅ JWT Token decoded in ${elapsed_ms} ms.\n', 4)
 				win_main.set('lbl_stats', '📊 Stats: JWT DECODED  |  Duration: ${elapsed_ms} ms')
 				win_main.set_status('JWT decoded.')
 				win_main.toast('JWT Token decoded!')
@@ -342,7 +353,7 @@ except Exception:
     print(f"Data: {data}\\n")
     print("To render visual QR code images directly:")
     print("brew install qrencode")
-    print(f"qrencode -t UTF8 \"{data}\"")
+    print(f"qrencode -t UTF8 "{data}"")
 '
 			tmp_py := os.join_path(os.temp_dir(), 'qr_${time.ticks()}.py')
 			os.write_file(tmp_py, script) or { return }
@@ -366,8 +377,10 @@ except Exception:
 
 			w.run_on_main_thread(fn [qr_out, elapsed_ms] (mut win_main simplegui.SimpleWindow) {
 				win_main.set('txt_crypto_output', qr_out)
-				win_main.append_console('crypto_console', '✅ QR Code generated in ${elapsed_ms} ms.\n', 4)
-				win_main.set('lbl_stats', '📊 Stats: QR CODE READY  |  Duration: ${elapsed_ms} ms')
+				win_main.append_console('crypto_console',
+					'✅ QR Code generated in ${elapsed_ms} ms.\n', 4)
+				win_main.set('lbl_stats',
+					'📊 Stats: QR CODE READY  |  Duration: ${elapsed_ms} ms')
 				win_main.set_status('QR code ready.')
 				win_main.toast('QR code generated!')
 			})

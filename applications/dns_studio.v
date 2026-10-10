@@ -65,7 +65,8 @@ fn main() {
 
 	dig_path := get_dig_bin()
 	openssl_path := get_openssl_bin()
-	win.add_label('lbl_engine_info', '⚡ DNS Engine: ${dig_path}  |  TLS Engine: ${openssl_path}  |  Mode: Async Worker')
+	win.add_label('lbl_engine_info',
+		'⚡ DNS Engine: ${dig_path}  |  TLS Engine: ${openssl_path}  |  Mode: Async Worker')
 
 	// Query Controls
 	win.begin_group_box('grp_dns_scope', '🎯 Target Domain & Query Parameters')
@@ -138,7 +139,9 @@ fn main() {
 	win.end_row()
 
 	win.append_console('dns_console', '🌐 DNS & SSL Studio Pro Initialized.\n', 1)
-	win.append_console('dns_console', '⚡ Ready to inspect DNS records, authoritative name servers, and X.509 certificates.\n', 4)
+	win.append_console('dns_console',
+		'⚡ Ready to inspect DNS records, authoritative name servers, and X.509 certificates.\n',
+		4)
 
 	// -------------------------------------------------------------
 	// Event Handlers
@@ -205,13 +208,17 @@ fn main() {
 				win_main.set('txt_results', out)
 
 				if res.exit_code == 0 {
-					win_main.append_console('dns_console', '✅ DNS query completed for ${domain} (${rec_type}) in ${elapsed_ms} ms.\n', 4)
-					win_main.set('lbl_stats', '📊 Stats: SUCCESS  |  Domain: ${domain}  |  Record: ${rec_type}  |  Duration: ${elapsed_ms} ms')
+					win_main.append_console('dns_console',
+						'✅ DNS query completed for ${domain} (${rec_type}) in ${elapsed_ms} ms.\n',
+						4)
+					win_main.set('lbl_stats',
+						'📊 Stats: SUCCESS  |  Domain: ${domain}  |  Record: ${rec_type}  |  Duration: ${elapsed_ms} ms')
 					win_main.set_status('DNS query completed in ${elapsed_ms} ms.')
 					win_main.toast('DNS records resolved!')
 				} else {
 					win_main.append_console('dns_console', '❌ DNS Query Error:\n' + out + '\n', 3)
-					win_main.set('lbl_stats', '📊 Stats: ERROR (Exit ${res.exit_code})  |  Duration: ${elapsed_ms} ms')
+					win_main.set('lbl_stats',
+						'📊 Stats: ERROR (Exit ${res.exit_code})  |  Duration: ${elapsed_ms} ms')
 					win_main.set_status('DNS query failed.')
 				}
 			})
@@ -241,12 +248,15 @@ fn main() {
 				out := res.output.trim_space()
 				if out != '' {
 					win_main.set('txt_results', out)
-					win_main.append_console('dns_console', '✅ TLS Certificate extracted for ${domain} in ${elapsed_ms} ms.\n', 4)
-					win_main.set('lbl_stats', '📊 Stats: SSL CERT LOADED  |  Target: ${domain}  |  Duration: ${elapsed_ms} ms')
+					win_main.append_console('dns_console',
+						'✅ TLS Certificate extracted for ${domain} in ${elapsed_ms} ms.\n', 4)
+					win_main.set('lbl_stats',
+						'📊 Stats: SSL CERT LOADED  |  Target: ${domain}  |  Duration: ${elapsed_ms} ms')
 					win_main.set_status('SSL certificate retrieved in ${elapsed_ms} ms.')
 					win_main.toast('SSL Certificate loaded!')
 				} else {
-					win_main.append_console('dns_console', '❌ Failed to connect to SSL on port 443.\n', 3)
+					win_main.append_console('dns_console',
+						'❌ Failed to connect to SSL on port 443.\n', 3)
 					win_main.set_status('SSL connection failed.')
 				}
 			})
@@ -262,7 +272,8 @@ fn main() {
 		}
 
 		dig_bin := get_dig_bin()
-		w.append_console('dns_console', '✉️ Checking SPF, DMARC, and MX records for ${domain}...\n', 1)
+		w.append_console('dns_console',
+			'✉️ Checking SPF, DMARC, and MX records for ${domain}...\n', 1)
 		w.set_status('Checking email authentication records...')
 
 		go fn [mut w, dig_bin, domain] () {
@@ -303,8 +314,11 @@ fn main() {
 
 			w.run_on_main_thread(fn [report, elapsed_ms, domain] (mut win_main simplegui.SimpleWindow) {
 				win_main.set('txt_results', report)
-				win_main.append_console('dns_console', '✅ Email authentication report generated for ${domain} in ${elapsed_ms} ms.\n', 4)
-				win_main.set('lbl_stats', '📊 Stats: EMAIL AUTH CHECKED  |  Domain: ${domain}  |  Duration: ${elapsed_ms} ms')
+				win_main.append_console('dns_console',
+					'✅ Email authentication report generated for ${domain} in ${elapsed_ms} ms.\n',
+					4)
+				win_main.set('lbl_stats',
+					'📊 Stats: EMAIL AUTH CHECKED  |  Domain: ${domain}  |  Duration: ${elapsed_ms} ms')
 				win_main.set_status('Email security analysis complete.')
 				win_main.toast('Email authentication report ready!')
 			})

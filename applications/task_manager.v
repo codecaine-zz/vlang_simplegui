@@ -80,7 +80,8 @@ fn format_rss_mb(rss_kb u64) string {
 fn main() {
 	println('Starting SimpleGUI - Task Manager Pro (macOS Process & Hardware Monitor)...')
 
-	mut win := simplegui.new_simple_window('⚡ Task Manager Pro — macOS Process & Hardware Monitor', 1140, 920)
+	mut win := simplegui.new_simple_window('⚡ Task Manager Pro — macOS Process & Hardware Monitor',
+		1140, 920)
 	win.restore_saved_theme()
 	win.set_spacing(8)
 	win.set_padding(16)
@@ -110,7 +111,8 @@ fn main() {
 	win.add_stat_card('card_cpu', '⚡ CPU Cores', '${cores} Cores (${arch})', cpu_model, 'primary')
 	win.add_stat_card('card_ram', '🧠 Total Memory', mem_info, 'Apple Unified Memory', 'neutral')
 	win.add_stat_card('card_tasks', '📊 Active Tasks', '0 Running', 'Updating...', 'success')
-	win.add_stat_card('card_load', '⏱️ Load Average', '0.00, 0.00, 0.00', '1m, 5m, 15m', 'warning')
+	win.add_stat_card('card_load', '⏱️ Load Average', '0.00, 0.00, 0.00', '1m, 5m, 15m',
+		'warning')
 	win.end_row()
 	win.end_group_box()
 
@@ -175,7 +177,8 @@ fn main() {
 	// Inspection & Details Console
 	// -------------------------------------------------------------
 	win.begin_group_box('grp_details', '🔍 Selected Process Diagnostic Details & Open Sockets')
-	win.add_textarea('txt_details', 'Select any process above to view diagnostic details, open ports, and command paths.\n')
+	win.add_textarea('txt_details',
+		'Select any process above to view diagnostic details, open ports, and command paths.\n')
 	win.set_control_height('txt_details', 130)
 	win.end_group_box()
 
@@ -197,7 +200,8 @@ fn main() {
 		for p in procs {
 			// Search filter
 			if search_query != '' {
-				if !p.comm.to_lower().contains(search_query) && !p.pid.contains(search_query) && !p.full_cmd.to_lower().contains(search_query) {
+				if !p.comm.to_lower().contains(search_query) && !p.pid.contains(search_query)
+					&& !p.full_cmd.to_lower().contains(search_query) {
 					continue
 				}
 			}
@@ -259,11 +263,14 @@ fn main() {
 
 		// Update telemetry cards
 		l1, l5, l15 := win.get_load_average()
-		win.set_stat_card('card_tasks', '${filtered.len} / ${procs.len} Total', '${total_cpu:.1f}% Total CPU', 'success')
-		win.set_stat_card('card_load', '${l1:.2f}, ${l5:.2f}, ${l15:.2f}', '1m, 5m, 15m Load', 'warning')
+		win.set_stat_card('card_tasks', '${filtered.len} / ${procs.len} Total',
+			'${total_cpu:.1f}% Total CPU', 'success')
+		win.set_stat_card('card_load', '${l1:.2f}, ${l5:.2f}, ${l15:.2f}', '1m, 5m, 15m Load',
+			'warning')
 
 		now := time.now().format_ss()
-		win.set('lbl_status', '📊 Status: Live  |  Processes Listed: ${filtered.len} (${procs.len} Total)  |  Last Refreshed: ${now}')
+		win.set('lbl_status',
+			'📊 Status: Live  |  Processes Listed: ${filtered.len} (${procs.len} Total)  |  Last Refreshed: ${now}')
 	}
 
 	// -------------------------------------------------------------
@@ -318,11 +325,14 @@ fn main() {
 			return
 		}
 		if pid == '1' || pid == '0' {
-			w.alert('Protected Process', 'Cannot terminate critical macOS root system process (PID ${pid}).')
+			w.alert('Protected Process',
+				'Cannot terminate critical macOS root system process (PID ${pid}).')
 			return
 		}
 
-		if w.confirm('Force Kill Process', 'Are you sure you want to forcibly terminate "${name}" (PID ${pid}) with SIGKILL (-9)?') {
+		if w.confirm('Force Kill Process',
+			'Are you sure you want to forcibly terminate "${name}" (PID ${pid}) with SIGKILL (-9)?')
+		{
 			res := simplegui.exec_safe('kill', ['-9', pid])
 			if res.exit_code == 0 {
 				w.toast('Forcibly killed ${name} (PID ${pid}).')

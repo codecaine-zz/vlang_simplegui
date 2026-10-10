@@ -31,15 +31,51 @@ fn get_installed_voices() []VoiceInfo {
 	if res.exit_code != 0 || res.output.trim_space() == '' {
 		// Fallback standard macOS voices if command fails
 		return [
-			VoiceInfo{ name: 'Samantha', lang: 'en_US', description: 'Hello! My name is Samantha.' },
-			VoiceInfo{ name: 'Alex', lang: 'en_US', description: 'Most people recognize me by my voice.' },
-			VoiceInfo{ name: 'Daniel', lang: 'en_GB', description: 'Hello! My name is Daniel.' },
-			VoiceInfo{ name: 'Karen', lang: 'en_AU', description: 'Hello! My name is Karen.' },
-			VoiceInfo{ name: 'Fred', lang: 'en_US', description: 'I sure like being inside this fancy computer.' },
-			VoiceInfo{ name: 'Victoria', lang: 'en_US', description: "Isn't it nice to have a computer that will talk to you?" },
-			VoiceInfo{ name: 'Zarvox', lang: 'en_US', description: 'That is not a bug; it is an undocumented feature.' },
-			VoiceInfo{ name: 'Trinoids', lang: 'en_US', description: 'We cannot be defeated.' },
-			VoiceInfo{ name: 'Whisper', lang: 'en_US', description: 'Psssssst! I can speak in a whisper.' },
+			VoiceInfo{
+				name:        'Samantha'
+				lang:        'en_US'
+				description: 'Hello! My name is Samantha.'
+			},
+			VoiceInfo{
+				name:        'Alex'
+				lang:        'en_US'
+				description: 'Most people recognize me by my voice.'
+			},
+			VoiceInfo{
+				name:        'Daniel'
+				lang:        'en_GB'
+				description: 'Hello! My name is Daniel.'
+			},
+			VoiceInfo{
+				name:        'Karen'
+				lang:        'en_AU'
+				description: 'Hello! My name is Karen.'
+			},
+			VoiceInfo{
+				name:        'Fred'
+				lang:        'en_US'
+				description: 'I sure like being inside this fancy computer.'
+			},
+			VoiceInfo{
+				name:        'Victoria'
+				lang:        'en_US'
+				description: "Isn't it nice to have a computer that will talk to you?"
+			},
+			VoiceInfo{
+				name:        'Zarvox'
+				lang:        'en_US'
+				description: 'That is not a bug; it is an undocumented feature.'
+			},
+			VoiceInfo{
+				name:        'Trinoids'
+				lang:        'en_US'
+				description: 'We cannot be defeated.'
+			},
+			VoiceInfo{
+				name:        'Whisper'
+				lang:        'en_US'
+				description: 'Psssssst! I can speak in a whisper.'
+			},
 		]
 	}
 
@@ -47,8 +83,8 @@ fn get_installed_voices() []VoiceInfo {
 	lines := res.output.split_into_lines()
 	for l in lines {
 		trimmed := l.trim_space()
-		if trimmed == '' { continue }
-
+		if trimmed == '' { continue
+		 }
 		// Format: "Name                lang_code    # Description"
 		parts := trimmed.split('#')
 		desc := if parts.len > 1 { parts[1].trim_space() } else { '' }
@@ -163,7 +199,8 @@ fn get_speech_recipes() []SpeechRecipe {
 fn main() {
 	println('Starting SimpleGUI - Say Studio Pro (macOS Native Speech Synthesizer)...')
 
-	mut win := simplegui.new_simple_window('🗣️ Say Studio Pro — macOS Native Speech Synthesizer', 980, 780)
+	mut win := simplegui.new_simple_window('🗣️ Say Studio Pro — macOS Native Speech Synthesizer',
+		980, 780)
 	win.restore_saved_theme()
 	win.set_padding(18)
 	win.set_spacing(10)
@@ -237,14 +274,16 @@ fn main() {
 	win.end_row()
 
 	win.begin_row('row_rec_desc')
-	win.add_label('lbl_recipe_desc', 'ℹ️ Tip: Select a recipe above to instantly test synthesized voices and narrative pacing.')
+	win.add_label('lbl_recipe_desc',
+		'ℹ️ Tip: Select a recipe above to instantly test synthesized voices and narrative pacing.')
 	win.end_row()
 	win.end_group_box()
 
 	// -------------------------------------------------------------
 	// Script Editor Pane
 	// -------------------------------------------------------------
-	win.begin_group_box('grp_script_editor', '📝 Speech Script & Text Editor (Direct Synthesizer Input)')
+	win.begin_group_box('grp_script_editor',
+		'📝 Speech Script & Text Editor (Direct Synthesizer Input)')
 	default_script := 'Welcome to SimpleGUI Say Studio Pro! You can synthesize natural sounding voices, tune speech rates, and export voiceovers directly to high-quality audio files.'
 	win.add_textarea('txt_script', default_script)
 	win.set_control_height('txt_script', 140)
@@ -269,10 +308,13 @@ fn main() {
 	win.end_group_box()
 
 	win.begin_row('row_stats')
-	win.add_label('lbl_stats', '📊 Status: Ready  |  Words: 24  |  Characters: 153  |  Estimated Time: ~8.2s')
+	win.add_label('lbl_stats',
+		'📊 Status: Ready  |  Words: 24  |  Characters: 153  |  Estimated Time: ~8.2s')
 	win.end_row()
 
-	win.append_console('say_console', '🚀 Say Studio Pro initialized. Found ${all_voices.len} installed native macOS voices.\n', 1)
+	win.append_console('say_console',
+		'🚀 Say Studio Pro initialized. Found ${all_voices.len} installed native macOS voices.\n',
+		1)
 
 	// Helper to extract clean voice name
 	get_selected_voice := fn (win simplegui.SimpleWindow) string {
@@ -292,7 +334,8 @@ fn main() {
 		wpm := if rate_val > 50.0 { rate_val } else { 175.0 }
 		est_sec := (f64(words) / wpm) * 60.0
 
-		win.set('lbl_stats', '📊 Status: Ready  |  Words: ${words}  |  Characters: ${chars}  |  Estimated Time: ~${est_sec:.1f}s')
+		win.set('lbl_stats',
+			'📊 Status: Ready  |  Words: ${words}  |  Characters: ${chars}  |  Estimated Time: ~${est_sec:.1f}s')
 	}
 
 	// -------------------------------------------------------------
@@ -354,7 +397,8 @@ fn main() {
 		if path != '' && os.exists(path) {
 			content := os.read_file(path) or { '' }
 			w.set('txt_script', content)
-			w.append_console('say_console', '📁 Loaded document from: ${path} (${content.len} bytes)\n', 1)
+			w.append_console('say_console',
+				'📁 Loaded document from: ${path} (${content.len} bytes)\n', 1)
 			w.toast('Loaded ${os.file_name(path)}')
 			update_stats(mut w)
 		}
@@ -413,7 +457,8 @@ fn main() {
 		voice := get_selected_voice(w)
 		rate := w.get('txt_rate').trim_space()
 
-		w.append_console('say_console', '▶ Starting speech synthesis with voice "${voice}" (${rate} WPM)...\n', 1)
+		w.append_console('say_console',
+			'▶ Starting speech synthesis with voice "${voice}" (${rate} WPM)...\n', 1)
 		w.set_status('Speaking script aloud in background...')
 		w.toast('🗣️ Synthesizing speech...')
 		update_stats(mut w)
@@ -438,11 +483,13 @@ fn main() {
 
 			w.run_on_main_thread(fn [res, elapsed_ms] (mut win_main simplegui.SimpleWindow) {
 				if res.exit_code == 0 {
-					win_main.append_console('say_console', '✅ Speech synthesis completed in ${elapsed_ms} ms.\n', 4)
+					win_main.append_console('say_console',
+						'✅ Speech synthesis completed in ${elapsed_ms} ms.\n', 4)
 					win_main.set_status('Speech playback finished.')
 					win_main.toast('Speech playback finished!')
 				} else {
-					win_main.append_console('say_console', '❌ Speech synthesis error:\n' + res.output + '\n', 3)
+					win_main.append_console('say_console', '❌ Speech synthesis error:\n' +
+						res.output + '\n', 3)
 					win_main.set_status('Error during speech synthesis.')
 				}
 			})
@@ -471,7 +518,8 @@ fn main() {
 				rate := r.rate
 				script := r.script
 
-				w.append_console('say_console', '▶ Speaking recipe "${r.title}" (${voice}, ${rate} WPM)...\n', 1)
+				w.append_console('say_console',
+					'▶ Speaking recipe "${r.title}" (${voice}, ${rate} WPM)...\n', 1)
 				w.set_status('Speaking recipe...')
 				w.toast('🗣️ Synthesizing recipe...')
 
@@ -563,11 +611,14 @@ fn main() {
 				if res.exit_code == 0 && os.exists(final_out) {
 					sz := os.file_size(final_out)
 					mb := f64(sz) / (1024.0 * 1024.0)
-					win_main.append_console('say_console', '✅ Audio file exported: ${final_out} (${mb:.2f} MB) in ${elapsed_ms} ms!\n', 4)
+					win_main.append_console('say_console',
+						'✅ Audio file exported: ${final_out} (${mb:.2f} MB) in ${elapsed_ms} ms!\n',
+						4)
 					win_main.set_status('Audio file exported successfully.')
 					win_main.toast('Exported audio file (${mb:.2f} MB)!')
 				} else {
-					win_main.append_console('say_console', '❌ Audio export error:\n' + res.output + '\n', 3)
+					win_main.append_console('say_console', '❌ Audio export error:\n' +
+						res.output + '\n', 3)
 					win_main.set_status('Error exporting audio.')
 				}
 			})

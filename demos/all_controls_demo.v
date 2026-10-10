@@ -65,7 +65,8 @@ fn main() {
 
 	win.add_label('lbl_html', 'HTML preview (WebKit)')
 
-	win.add_html_view('html_view', '<html><body style="font-family:-apple-system,sans-serif;font-size:13px;color:#f8fafc;background:transparent;margin:0;"><h3 style="color:#bd93f9;margin:0 0 4px">Native HTML Preview</h3><p style="margin:0">Lightweight rich content using WebKit.</p></body></html>')
+	win.add_html_view('html_view',
+		'<html><body style="font-family:-apple-system,sans-serif;font-size:13px;color:#f8fafc;background:transparent;margin:0;"><h3 style="color:#bd93f9;margin:0 0 4px">Native HTML Preview</h3><p style="margin:0">Lightweight rich content using WebKit.</p></body></html>')
 		.width(860)
 		.height(90)
 
@@ -153,8 +154,7 @@ fn main() {
 	win.end_row()
 
 	win.begin_row('row_icon_seg')
-	win.add_icon_segments('icon_seg', ['house', 'gear', 'person', 'envelope', 'trash'],
-		'house')
+	win.add_icon_segments('icon_seg', ['house', 'gear', 'person', 'envelope', 'trash'], 'house')
 	win.add_chip_group('chip_cat', ['Design', 'Dev', 'QA', 'Docs', 'Ops'], 'Dev')
 	win.end_row()
 
@@ -228,13 +228,13 @@ fn main() {
 
 	win.add_tag_cloud('tag_cloud', ['V', 'macOS', 'Cocoa', 'Swift', 'Objective-C', 'GUI', 'Native',
 		'OpenGL'])
-	win.add_wizard_stepper('wizard', ['Account', 'Profile', 'Preferences', 'Review', 'Done'],
-		1)
+	win.add_wizard_stepper('wizard', ['Account', 'Profile', 'Preferences', 'Review', 'Done'], 1)
 
 	// ========================================================================
 	// SECTION 11 · Section headers & separators
 	// ========================================================================
-	win.add_section_header('sec_hdr', 'Advanced Developer Controls', 'Breadcrumbs, shortcuts, charts, grids, code editor & more')
+	win.add_section_header('sec_hdr', 'Advanced Developer Controls',
+		'Breadcrumbs, shortcuts, charts, grids, code editor & more')
 
 	// ========================================================================
 	// SECTION 12 · Developer controls
@@ -339,7 +339,8 @@ fn main() {
 	// ========================================================================
 	win.add_heading('Code Editor')
 
-	win.add_code_editor('code_ed', 'fn greet(name string) string {\n\treturn "Hello, " + name + "!"\n}\n\nfn main() {\n\tprintln(greet("World"))\n}',
+	win.add_code_editor('code_ed',
+		'fn greet(name string) string {\n\treturn "Hello, " + name + "!"\n}\n\nfn main() {\n\tprintln(greet("World"))\n}',
 		180)
 		.width(860)
 
@@ -350,10 +351,8 @@ fn main() {
 
 	win.add_timeline_view('timeline', 200)
 	win.set_control_width('timeline', 860)
-	win.add_timeline_entry('timeline', '09:00', 'Build started', 'Running V compiler…',
-		'info')
-	win.add_timeline_entry('timeline', '09:02', 'Tests passed', 'All 42 unit tests OK',
-		'success')
+	win.add_timeline_entry('timeline', '09:00', 'Build started', 'Running V compiler…', 'info')
+	win.add_timeline_entry('timeline', '09:02', 'Tests passed', 'All 42 unit tests OK', 'success')
 	win.add_timeline_entry('timeline', '09:04', 'Deploy warning', 'Staging server at 92% CPU',
 		'warning')
 	win.add_timeline_entry('timeline', '09:07', 'Deploy failed', 'Port 443 connection refused',
@@ -391,8 +390,7 @@ fn main() {
 	// ========================================================================
 	win.add_heading('Containers')
 
-	win.add_collapsible_section('collap', 'Collapsible Section (click to expand/collapse)',
-		true)
+	win.add_collapsible_section('collap', 'Collapsible Section (click to expand/collapse)', true)
 	win.add_label('collap_content', 'This content lives inside the collapsible section.')
 	win.add_input('collap_input', 'Nested input inside collapsible')
 
@@ -408,7 +406,8 @@ fn main() {
 	win.add_checkbox('grp_accept', 'Accept terms', true)
 
 	win.add_scroll_view('scroll_section', 150)
-	win.add_label('scroll_intro', 'Scrollable container — add many controls without cluttering the layout.')
+	win.add_label('scroll_intro',
+		'Scrollable container — add many controls without cluttering the layout.')
 	win.add_progress_indicator('scroll_prog', 58)
 	win.set_control_width('scroll_prog', 800)
 	win.add_number('scroll_count', 7)
@@ -488,7 +487,8 @@ fn main() {
 	win.add_label('lbl_links', 'Hyperlink buttons (add_link)')
 	win.begin_row('row_links')
 	win.add_link('link_vlang', 'V Language website', 'https://vlang.io')
-	win.add_link('link_github', 'simplegui on GitHub', 'https://github.com/codecaine-zz/vlang_simplegui')
+	win.add_link('link_github', 'simplegui on GitHub',
+		'https://github.com/codecaine-zz/vlang_simplegui')
 	win.end_row()
 
 	win.add_label('lbl_disc', 'Native disclosure triangle (add_disclosure)')
@@ -524,7 +524,8 @@ fn main() {
 	win.add_form_date_picker('Start date', 'form_start', '1944-01-01')
 	win.add_form_progress('Onboarding', 'form_prog', 60)
 	win.add_form_switch('Label', 'form_sw', 'Receive newsletters', true)
-	win.add_form_link('Homepage', 'form_link', 'grace-hopper.info', 'https://en.wikipedia.org/wiki/Grace_Hopper')
+	win.add_form_link('Homepage', 'form_link', 'grace-hopper.info',
+		'https://en.wikipedia.org/wiki/Grace_Hopper')
 
 	win.begin_row('row_form_ops')
 	win.add_button('btn_form_snapshot', 'Form snapshot')
@@ -632,8 +633,7 @@ fn main() {
 		simplegui.MenuItem{
 			title:    'Log timestamp'
 			callback: fn (mut w simplegui.SimpleWindow) {
-				w.append_console('log_console', '[INFO] Timestamp: ${w.time_now()}\n',
-					1)
+				w.append_console('log_console', '[INFO] Timestamp: ${w.time_now()}\n', 1)
 			}
 		},
 	])
@@ -696,7 +696,8 @@ fn main() {
 		w.set_status('Image button: Trash clicked.')
 	})
 	win.on_click('btn_help', fn (mut w simplegui.SimpleWindow) {
-		w.alert('Help', 'This is the native macOS Help (?) button.\nAttach documentation links or popovers here.')
+		w.alert('Help',
+			'This is the native macOS Help (?) button.\nAttach documentation links or popovers here.')
 		w.set_status('Help button clicked.')
 	})
 
@@ -833,8 +834,8 @@ fn main() {
 	win.on_change('prop_grid', fn (mut w simplegui.SimpleWindow, v string) {
 		parts := v.split(':')
 		if parts.len == 2 {
-			w.append_console('log_console', '[INFO] Property updated — key: "${parts[0]}", value: "${parts[1]}"\n',
-				1)
+			w.append_console('log_console',
+				'[INFO] Property updated — key: "${parts[0]}", value: "${parts[1]}"\n', 1)
 		}
 		w.set_status('Property grid → ${v}')
 	})
@@ -875,8 +876,7 @@ fn main() {
 
 	// --- Log console ---
 	win.on_click('btn_log_info', fn (mut w simplegui.SimpleWindow) {
-		w.append_console('log_console', '[INFO] This is an informational message.\n',
-			1)
+		w.append_console('log_console', '[INFO] This is an informational message.\n', 1)
 	})
 	win.on_click('btn_log_warn', fn (mut w simplegui.SimpleWindow) {
 		w.append_console('log_console', '[WARNING] CPU usage exceeded 80%!\n', 2)
@@ -896,7 +896,8 @@ fn main() {
 	win.on_click('btn_tl_add', fn [mut timeline_count] (mut w simplegui.SimpleWindow) {
 		timeline_count++
 		w.add_timeline_entry('timeline', '${10 + timeline_count}:00', 'Event #${timeline_count}',
-			'Automatically added timeline entry.', ['success', 'warning', 'info', 'error'][timeline_count % 4])
+			'Automatically added timeline entry.',
+			['success', 'warning', 'info', 'error'][timeline_count % 4])
 		w.set_status('Timeline entry #${timeline_count} added.')
 	})
 	win.on_click('btn_tl_clear', fn (mut w simplegui.SimpleWindow) {
@@ -993,8 +994,8 @@ fn main() {
 	})
 
 	// --- Initial console message ---
-	win.append_console('log_console', 'All Controls Demo initialized. Interact with any control above.\n',
-		0)
+	win.append_console('log_console',
+		'All Controls Demo initialized. Interact with any control above.\n', 0)
 
 	// --- Live chart & gauge timer (500 ms) ---
 	mut tick := 0

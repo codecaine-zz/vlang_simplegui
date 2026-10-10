@@ -187,7 +187,8 @@ fn on_timer_tick(mut w simplegui.SimpleWindow) {
 			w.set_text('timer_display', format_time(next_time))
 			w.set_value_int('timer_progress', 100)
 
-			w.show_system_notification('Session Complete!', 'Well done! Time for a well-deserved break.')
+			w.show_system_notification('Session Complete!',
+				'Well done! Time for a well-deserved break.')
 			w.alert('Session Complete!', 'Take a break!')
 
 			// Switch theme base to break (cool green base)

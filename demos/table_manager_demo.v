@@ -78,7 +78,8 @@ fn main() {
 		'Remove Selected': fn (mut w simplegui.SimpleWindow) {
 			removed := w.remove_selected_table_rows('inventory')
 			if removed.len == 0 {
-				w.warn('Nothing Selected', 'Pick one or more rows first (Cmd/Shift-click for multiple).')
+				w.warn('Nothing Selected',
+					'Pick one or more rows first (Cmd/Shift-click for multiple).')
 				return
 			}
 			w.status('Removed ${removed.len} row(s) - ${w.get_table_row_count('inventory')} left')

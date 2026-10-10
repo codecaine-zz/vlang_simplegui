@@ -204,7 +204,8 @@ fn country_code_to_flag(code string) string {
 fn main() {
 	println('Starting SimpleGUI - IFConfig Studio Pro (IP & Network Intelligence Workstation)...')
 
-	mut win := simplegui.new_simple_window('🌐 IFConfig Studio Pro — Native macOS IP & Network Intelligence', 1160, 920)
+	mut win := simplegui.new_simple_window('🌐 IFConfig Studio Pro — Native macOS IP & Network Intelligence',
+		1160, 920)
 	win.restore_saved_theme()
 	win.set_spacing(6)
 	win.set_padding(14)
@@ -290,7 +291,8 @@ fn main() {
 	// -------------------------------------------------------------
 	// View Container 1: Public IP & Geolocation
 	// -------------------------------------------------------------
-	win.begin_group_box('pane_public_geo', '🌐 Public IP Address & Detailed Geolocation Telemetry')
+	win.begin_group_box('pane_public_geo',
+		'🌐 Public IP Address & Detailed Geolocation Telemetry')
 
 	// Quick Action Buttons
 	win.begin_row('row_geo_quick_actions')
@@ -304,19 +306,26 @@ fn main() {
 
 	// Cards Grid Layout
 	win.begin_row('row_cards_1')
-	win.add_metric_card('card_ipv4', 'Public IPv4 Address', 'Resolving...', 'IPv4', 'Primary internet address')
-	win.add_metric_card('card_ipv6', 'Public IPv6 Address', 'Resolving...', 'IPv6', 'Next-gen global address')
-	win.add_metric_card('card_city', 'City & Region', 'Resolving...', 'Location', 'Physical geolocation')
+	win.add_metric_card('card_ipv4', 'Public IPv4 Address', 'Resolving...', 'IPv4',
+		'Primary internet address')
+	win.add_metric_card('card_ipv6', 'Public IPv6 Address', 'Resolving...', 'IPv6',
+		'Next-gen global address')
+	win.add_metric_card('card_city', 'City & Region', 'Resolving...', 'Location',
+		'Physical geolocation')
 	win.end_row()
 
 	win.begin_row('row_cards_2')
-	win.add_metric_card('card_country', 'Country & Code', 'Resolving...', 'Country', 'Country flag & ISO code')
-	win.add_metric_card('card_isp', 'ISP & Organization', 'Resolving...', 'ISP', 'Internet service provider')
-	win.add_metric_card('card_asn', 'Autonomous System', 'Resolving...', 'Routing', 'ASN network route')
+	win.add_metric_card('card_country', 'Country & Code', 'Resolving...', 'Country',
+		'Country flag & ISO code')
+	win.add_metric_card('card_isp', 'ISP & Organization', 'Resolving...', 'ISP',
+		'Internet service provider')
+	win.add_metric_card('card_asn', 'Autonomous System', 'Resolving...', 'Routing',
+		'ASN network route')
 	win.end_row()
 
 	// Detailed Text Summary Box
-	win.add_textarea('txt_geo_details', 'Connecting to network endpoints (ifconfig.me & ipinfo.io)...')
+	win.add_textarea('txt_geo_details',
+		'Connecting to network endpoints (ifconfig.me & ipinfo.io)...')
 	win.set_control_height('txt_geo_details', 180)
 	win.set_control_font_name('txt_geo_details', 'Menlo')
 	win.set_control_font_size('txt_geo_details', 13)
@@ -339,7 +348,8 @@ fn main() {
 	win.add_button('btn_set_quad9', '⚡ Quad9 (9.9.9.9)')
 	win.end_row()
 
-	win.add_textarea('txt_target_output', 'Enter an IP address (e.g. 1.1.1.1, 8.8.8.8) or domain name (e.g. github.com, cloudflare.com) above and click "INSPECT TARGET".\n')
+	win.add_textarea('txt_target_output',
+		'Enter an IP address (e.g. 1.1.1.1, 8.8.8.8) or domain name (e.g. github.com, cloudflare.com) above and click "INSPECT TARGET".\n')
 	win.set_control_height('txt_target_output', 440)
 	win.set_control_font_name('txt_target_output', 'Menlo')
 	win.set_control_font_size('txt_target_output', 13)
@@ -348,11 +358,15 @@ fn main() {
 	// -------------------------------------------------------------
 	// View Container 3: Local Network & Adapters
 	// -------------------------------------------------------------
-	win.begin_group_box('pane_local_net', '💻 macOS Local Network Adapters, Gateway & Hardware MAC')
+	win.begin_group_box('pane_local_net',
+		'💻 macOS Local Network Adapters, Gateway & Hardware MAC')
 	win.begin_row('row_local_cards')
-	win.add_metric_card('card_local_ip', 'Local Private IPv4', 'Resolving...', 'LAN', 'Local subnet IP')
-	win.add_metric_card('card_gateway', 'Default Gateway', 'Resolving...', 'Router', 'Upstream router')
-	win.add_metric_card('card_mac', 'MAC Hardware Address', 'Resolving...', 'Hardware', 'Adapter MAC')
+	win.add_metric_card('card_local_ip', 'Local Private IPv4', 'Resolving...', 'LAN',
+		'Local subnet IP')
+	win.add_metric_card('card_gateway', 'Default Gateway', 'Resolving...', 'Router',
+		'Upstream router')
+	win.add_metric_card('card_mac', 'MAC Hardware Address', 'Resolving...', 'Hardware',
+		'Adapter MAC')
 	win.end_row()
 
 	win.begin_row('row_local_actions')
@@ -362,7 +376,8 @@ fn main() {
 	win.add_button('btn_copy_gateway', '📋 Copy Gateway')
 	win.end_row()
 
-	win.add_textarea('txt_local_details', 'Scanning local adapters with ifconfig and networksetup...')
+	win.add_textarea('txt_local_details',
+		'Scanning local adapters with ifconfig and networksetup...')
 	win.set_control_height('txt_local_details', 320)
 	win.set_control_font_name('txt_local_details', 'Menlo')
 	win.set_control_font_size('txt_local_details', 13)
@@ -371,7 +386,8 @@ fn main() {
 	// -------------------------------------------------------------
 	// View Container 4: Latency & DNS Benchmark
 	// -------------------------------------------------------------
-	win.begin_group_box('pane_benchmark', '⚡ Anycast DNS Ping Benchmark & DNS/HTTP Protocol Diagnostics')
+	win.begin_group_box('pane_benchmark',
+		'⚡ Anycast DNS Ping Benchmark & DNS/HTTP Protocol Diagnostics')
 	win.begin_row('row_bench_ctrls')
 	win.add_button('btn_run_ping_bench', '🚀 RUN PING LATENCY BENCHMARK')
 	win.add_button('btn_lookup_dns', '🔍 Lookup DNS Records')
@@ -381,7 +397,8 @@ fn main() {
 	win.set_control_width('txt_bench_host', 180)
 	win.end_row()
 
-	win.add_textarea('txt_benchmark_output', 'Click "RUN PING LATENCY BENCHMARK" to test response latency across Cloudflare, Google, Quad9, OpenDNS, and GitHub.\n')
+	win.add_textarea('txt_benchmark_output',
+		'Click "RUN PING LATENCY BENCHMARK" to test response latency across Cloudflare, Google, Quad9, OpenDNS, and GitHub.\n')
 	win.set_control_height('txt_benchmark_output', 440)
 	win.set_control_font_name('txt_benchmark_output', 'Menlo')
 	win.set_control_font_size('txt_benchmark_output', 13)
@@ -460,13 +477,15 @@ fn main() {
 		rep << 'Public IPv6 Address : ' + state.public_ipv6
 		rep << 'Reverse DNS / Host  : ' + state.hostname
 		rep << 'City & Region       : ' + state.city + ', ' + state.region
-		rep << 'Country             : ' + state.country + ' (' + state.country_code + ') ' + flag_display
+		rep << 'Country             : ' + state.country + ' (' + state.country_code + ') ' +
+			flag_display
 		rep << 'Postal / ZIP Code   : ' + state.postal_code
 		rep << 'GPS Coordinates     : ' + state.loc_coords + ' (Latitude, Longitude)'
 		rep << 'ISP & Organization  : ' + state.isp_org
 		rep << 'Autonomous System   : ' + state.asn
 		rep << 'Timezone            : ' + state.timezone
-		rep << 'Local Adapter (LAN) : ' + state.local_interface + ' | IP: ' + state.local_ipv4 + ' | MAC: ' + state.local_mac
+		rep <<
+			'Local Adapter (LAN) : ' + state.local_interface + ' | IP: ' + state.local_ipv4 + ' | MAC: ' + state.local_mac
 		rep << 'Default Gateway     : ' + state.local_gateway + ' | DNS: ' + state.local_dns
 		rep << '========================================================================'
 		w.set('txt_geo_details', rep.join('\n'))
@@ -493,7 +512,8 @@ fn main() {
 		w.set('txt_raw_json', state.raw_json)
 
 		timestamp := time.now().format_ss()
-		w.set('lbl_status_bar', '📊 Live | Updated at ${timestamp} | IPv4: ${state.public_ipv4} | Location: ${state.city}, ${state.country} | Provider: ${state.selected_provider}')
+		w.set('lbl_status_bar',
+			'📊 Live | Updated at ${timestamp} | IPv4: ${state.public_ipv4} | Location: ${state.city}, ${state.country} | Provider: ${state.selected_provider}')
 	}
 
 	// -------------------------------------------------------------
@@ -556,7 +576,8 @@ fn main() {
 			}
 
 			// 4. Fetch Local Network Info
-			iface, local_ip, netmask, broadcast, mac, gateway, dns := fetch_local_network_telemetry()
+			iface, local_ip, netmask, broadcast, mac, gateway, dns :=
+				fetch_local_network_telemetry()
 			state.local_interface = iface
 			state.local_ipv4 = local_ip
 			state.local_netmask = netmask
@@ -639,7 +660,9 @@ fn main() {
 
 	win.on_click('btn_open_apple_maps', fn [state] (mut w simplegui.SimpleWindow) {
 		if state.loc_coords != '' && state.loc_coords != '0.00, 0.00' {
-			simplegui.exec_safe('open', ['https://maps.apple.com/?q=' + state.loc_coords])
+			simplegui.exec_safe('open', [
+				'https://maps.apple.com/?q=' + state.loc_coords,
+			])
 			w.toast('Opening coordinates in Apple Maps...')
 		} else {
 			w.toast('Coordinates not available.')
@@ -648,7 +671,9 @@ fn main() {
 
 	win.on_click('btn_open_google_maps', fn [state] (mut w simplegui.SimpleWindow) {
 		if state.loc_coords != '' && state.loc_coords != '0.00, 0.00' {
-			simplegui.exec_safe('open', ['https://www.google.com/maps/search/?api=1&query=' + state.loc_coords])
+			simplegui.exec_safe('open', [
+				'https://www.google.com/maps/search/?api=1&query=' + state.loc_coords,
+			])
 			w.toast('Opening coordinates in Google Maps...')
 		} else {
 			w.toast('Coordinates not available.')
@@ -690,7 +715,8 @@ fn main() {
 			if geo.status == 'success' {
 				flag := country_code_to_flag(geo.country_code)
 				out << 'IP / Resolved Query : ' + geo.query
-				out << 'Location            : ' + geo.city + ', ' + geo.region_name + ', ' + geo.country + ' ' + flag
+				out << 'Location            : ' + geo.city + ', ' + geo.region_name + ', ' +
+					geo.country + ' ' + flag
 				out << 'Postal / ZIP Code   : ' + geo.zip
 				out << 'GPS Coordinates     : ${geo.lat:.4f}, ${geo.lon:.4f}'
 				out << 'ISP Provider        : ' + geo.isp

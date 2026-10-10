@@ -79,7 +79,8 @@ fn main() {
 }
 
 fn run_interactive(mut app simplecli.SimpleCli, magick_cmd string) {
-	app.panel('ImageMagick Operations Wizard', 'Resize, compress, convert formats, or apply image filters.')
+	app.panel('ImageMagick Operations Wizard',
+		'Resize, compress, convert formats, or apply image filters.')
 	input := app.prompt('Enter input image path', 'photo.png')
 	choice := app.select('Select Action:', [
 		'Convert to WebP (Optimized Web Format)',

@@ -126,8 +126,10 @@ fn main() {
 		win.add_separator()
 		win.add_label('lbl_adv', 'Advanced Native Views (New!)').font_size(16).bold(true)
 
-		win.add_pdf_view('pdf1', 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf')
-		win.add_avplayer_view('vid1', 'https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_4x3/bipbop_4x3_variant.m3u8')
+		win.add_pdf_view('pdf1',
+			'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf')
+		win.add_avplayer_view('vid1',
+			'https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_4x3/bipbop_4x3_variant.m3u8')
 
 		win.add_mtk_view('mtk1')
 		win.add_map_view('map1')

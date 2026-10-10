@@ -23,7 +23,8 @@ fn main() {
 
 	win.add_heading('Reflection-Based Form')
 
-	win.add_label('desc', "In simplegui, calling add_form_from_struct uses V's compile-time reflection (\$for) to automatically construct labeled form text inputs, number fields, and checkable toggles mapped directly to the struct fields.")
+	win.add_label('desc',
+		"In simplegui, calling add_form_from_struct uses V's compile-time reflection (\$for) to automatically construct labeled form text inputs, number fields, and checkable toggles mapped directly to the struct fields.")
 	win.set_control_font_size('desc', 11)
 
 	win.add_vertical_spacer(10)
@@ -55,5 +56,6 @@ fn on_read(mut win simplegui.SimpleWindow) {
 	email := win.get_text('admin_email')
 
 	win.toast('Retrieved configuration!')
-	win.alert('Generated Config Result', 'Host: ${host}\nPort: ${port}\nSSL: ${ssl}\nAdmin Email: ${email}')
+	win.alert('Generated Config Result',
+		'Host: ${host}\nPort: ${port}\nSSL: ${ssl}\nAdmin Email: ${email}')
 }

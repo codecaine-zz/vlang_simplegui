@@ -207,7 +207,8 @@ fn main() {
 	// 6. Output textarea for logs and exports
 	win.add_label('lbl_output', 'Export Output & Event Logs:')
 
-	win.add_textarea('txt_output', 'Welcome to the 2D Grid Painter!\nSelect a color and paint your design on the grid.\n')
+	win.add_textarea('txt_output',
+		'Welcome to the 2D Grid Painter!\nSelect a color and paint your design on the grid.\n')
 		.height(100)
 
 	win.set_status('Ready to paint! Default color: Red.')

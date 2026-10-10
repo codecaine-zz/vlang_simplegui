@@ -144,7 +144,11 @@ fn run_backup(mut app simplecli.SimpleCli) {
 
 	app.write_file(dest_vault, encrypted)
 	vault_meta := app.get_file_metadata(dest_vault) or {
-		simplecli.FileMetadata{ size_bytes: 0, path: dest_vault, name: '' }
+		simplecli.FileMetadata{
+			size_bytes: 0
+			path:       dest_vault
+			name:       ''
+		}
 	}
 
 	app.step(4, 'Backup Complete')

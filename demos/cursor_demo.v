@@ -114,7 +114,8 @@ fn main() {
 	win.add_label('mouse_pos', 'Mouse position: —')
 	win.set_interval('mouse_tracker', 100, fn (mut w simplegui.SimpleWindow) {
 		x, y := w.get_mouse_location()
-		w.set_text('mouse_pos', 'Mouse position: (${x}, ${y}) — cursor: "${w.get_cursor()}" @ ${w.get_cursor_size():.2f}x')
+		w.set_text('mouse_pos',
+			'Mouse position: (${x}, ${y}) — cursor: "${w.get_cursor()}" @ ${w.get_cursor_size():.2f}x')
 	})
 
 	win.set_status('Pick a cursor icon and adjust its size.')

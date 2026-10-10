@@ -24,27 +24,33 @@ fn main() {
 		.set_spacing(4)
 
 	win.add_heading('RAD Studio Workspace')
-	win.add_label('workspace_intro', 'Design forms in a familiar RAD flow: pick a template, tune properties, auto-arrange multi-column grids, and preview live windows.')
+	win.add_label('workspace_intro',
+		'Design forms in a familiar RAD flow: pick a template, tune properties, auto-arrange multi-column grids, and preview live windows.')
 	win.set_control_font_size('workspace_intro', 11)
 
-	win.add_toolbar_item('tb_code', 'Copy V Code', 'Click to copy generated V source code to your clipboard so you can paste and run it in V',
+	win.add_toolbar_item('tb_code', 'Copy V Code',
+		'Click to copy generated V source code to your clipboard so you can paste and run it in V',
 		'doc.on.doc')
-	win.add_toolbar_item('tb_html', 'Copy HTML', 'Click to copy generated HTML and CSS code to save as a webpage or open in a browser',
+	win.add_toolbar_item('tb_html', 'Copy HTML',
+		'Click to copy generated HTML and CSS code to save as a webpage or open in a browser',
 		'globe')
-	win.add_toolbar_item('tb_run', 'Test Run Form', 'Click to launch an interactive live preview window to test your form design',
+	win.add_toolbar_item('tb_run', 'Test Run Form',
+		'Click to launch an interactive live preview window to test your form design',
 		'play.circle.fill')
 
 	win.on_toolbar_click('tb_code', fn [state] (mut w simplegui.SimpleWindow) {
 		code := simplegui.generate_v_code(state.spec)
 		w.copy_to_clipboard(code)
-		w.alert('V Source Code Exported', 'Generated V source code with Delphi/VB style placeholders copied to clipboard.\n\nYou can paste it into any .v file and run it.')
+		w.alert('V Source Code Exported',
+			'Generated V source code with Delphi/VB style placeholders copied to clipboard.\n\nYou can paste it into any .v file and run it.')
 		w.toast('V source code copied')
 	})
 
 	win.on_toolbar_click('tb_html', fn [state] (mut w simplegui.SimpleWindow) {
 		html_code := simplegui.generate_html_code(state.spec)
 		w.copy_to_clipboard(html_code)
-		w.alert('HTML/CSS Webpage Code Exported', 'Generated standalone HTML5 & CSS webpage code copied to clipboard.\n\nYou can save it as an .html file or open it in any web browser.')
+		w.alert('HTML/CSS Webpage Code Exported',
+			'Generated standalone HTML5 & CSS webpage code copied to clipboard.\n\nYou can save it as an .html file or open it in any web browser.')
 		w.toast('HTML/CSS webpage code copied')
 	})
 
@@ -243,12 +249,10 @@ fn render_preview_control(mut prev_win simplegui.SimpleWindow, c simplegui.Contr
 			prev_win.add_metric_card(c.id, c.text, '$48.2K', '+12%', 'vs previous month')
 		}
 		'alert_banner' {
-			prev_win.add_alert_banner(c.id, c.text, 'System update completed successfully.',
-				'info')
+			prev_win.add_alert_banner(c.id, c.text, 'System update completed successfully.', 'info')
 		}
 		'code_view' {
-			prev_win.add_code_view(c.id, 'v', 'fn main() {\n  println("Hello SimpleGUI")\n}',
-				100)
+			prev_win.add_code_view(c.id, 'v', 'fn main() {\n  println("Hello SimpleGUI")\n}', 100)
 		}
 		else {
 			prev_win.add_button(c.id, c.text)

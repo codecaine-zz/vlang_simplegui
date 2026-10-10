@@ -24,7 +24,8 @@ fn main() {
 
 	if app.get_flag_bool('whois') {
 		app.info('Performing WHOIS lookup for "${target}"...')
-		out, _ := app.exec('whois ${target} | grep -E "Registrar:|Creation Date:|Registry Expiry Date:|Domain Name:" | head -n 10')
+		out, _ :=
+			app.exec('whois ${target} | grep -E "Registrar:|Creation Date:|Registry Expiry Date:|Domain Name:" | head -n 10')
 		println(out)
 		return
 	}

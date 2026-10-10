@@ -169,7 +169,8 @@ fn get_sed_bin() string {
 fn main() {
 	println('Starting SimpleGUI - Sed Studio Pro (Stream Editor & RegEx Workbench)...')
 
-	mut win := simplegui.new_simple_window('📝 Sed Studio Pro — Stream Editor & RegEx Transformation Workbench', 1100, 940)
+	mut win := simplegui.new_simple_window('📝 Sed Studio Pro — Stream Editor & RegEx Transformation Workbench',
+		1100, 940)
 	win.restore_saved_theme()
 	win.set_spacing(8)
 	win.set_padding(16)
@@ -188,7 +189,8 @@ fn main() {
 	win.set_control_width('dd_theme_selector', 180)
 	win.end_row()
 
-	win.add_label('lbl_engine', '⚡ Engine: ${sed_bin} (POSIX/BSD Stream Editor)  |  Dual-Pane Scratchpad & File In-Place Processor')
+	win.add_label('lbl_engine',
+		'⚡ Engine: ${sed_bin} (POSIX/BSD Stream Editor)  |  Dual-Pane Scratchpad & File In-Place Processor')
 
 	// -------------------------------------------------------------
 	// Script Builder & Preset Recipes
@@ -209,7 +211,8 @@ fn main() {
 	win.end_row()
 
 	win.begin_row('row_rec_info')
-	win.add_label('lbl_recipe_desc', 'ℹ️ Tip: Select any preset recipe above to load tested pattern expressions and flags.')
+	win.add_label('lbl_recipe_desc',
+		'ℹ️ Tip: Select any preset recipe above to load tested pattern expressions and flags.')
 	win.end_row()
 
 	win.begin_row('row_cmd_input')
@@ -292,7 +295,8 @@ fn main() {
 		use_quiet := win.get_bool('chk_quiet')
 
 		if script_expr == '' {
-			win.alert('Empty Script', 'Please enter a valid sed expression (e.g. s/find/replace/g).')
+			win.alert('Empty Script',
+				'Please enter a valid sed expression (e.g. s/find/replace/g).')
 			return
 		}
 
@@ -326,7 +330,8 @@ fn main() {
 			out_lines := res.output.split_into_lines().len
 			win.set('lbl_in_stats', '  (${input_text.len} chars, ${in_lines} lines)')
 			win.set('lbl_out_stats', '  (${res.output.len} chars, ${out_lines} lines)')
-			win.set('lbl_status', '📊 Status: Transformed in ${elapsed_ms} ms  |  In: ${in_lines} lines  |  Out: ${out_lines} lines')
+			win.set('lbl_status',
+				'📊 Status: Transformed in ${elapsed_ms} ms  |  In: ${in_lines} lines  |  Out: ${out_lines} lines')
 			win.toast('Stream processed in ${elapsed_ms} ms!')
 		} else {
 			win.set('txt_output', '❌ sed error (exit code ${res.exit_code}):\n' + res.output)
@@ -498,7 +503,8 @@ fn main() {
 		}
 
 		if use_inplace {
-			if !w.confirm('In-Place Modification', 'Are you sure you want to modify "${os.file_name(file)}" in-place on disk?') {
+			if !w.confirm('In-Place Modification',
+				'Are you sure you want to modify "${os.file_name(file)}" in-place on disk?') {
 				return
 			}
 

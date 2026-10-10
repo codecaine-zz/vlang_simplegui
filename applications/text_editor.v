@@ -207,13 +207,16 @@ fn markdown_to_html(md string, theme string) string {
 		}
 
 		if trimmed == '---' || trimmed == '***' {
-			html += '<hr style="border: none; border-top: 1px solid ' + hr_color + '; margin: 20px 0;"/>\n'
+			html += '<hr style="border: none; border-top: 1px solid ' + hr_color +
+				'; margin: 20px 0;"/>\n'
 			continue
 		}
 
 		if trimmed.starts_with('# ') {
-			html += '<h1 style="color: ' + h1_color + '; margin-top: 20px; font-size: 24px; border-bottom: 1px solid ' + hr_color + '; padding-bottom: 6px;">' +
-				parse_inline(trimmed[2..], code_bg, code_fg) + '</h1>\n'
+			html += '<h1 style="color: ' + h1_color +
+				'; margin-top: 20px; font-size: 24px; border-bottom: 1px solid ' + hr_color +
+				'; padding-bottom: 6px;">' + parse_inline(trimmed[2..], code_bg, code_fg) +
+				'</h1>\n'
 			continue
 		} else if trimmed.starts_with('## ') {
 			html += '<h2 style="color: ' + h2_color + '; margin-top: 18px; font-size: 20px;">' +
@@ -231,7 +234,8 @@ fn markdown_to_html(md string, theme string) string {
 				in_list = true
 			}
 			content := trimmed[2..]
-			html += '<li style="margin-bottom: 6px;">' + parse_inline(content, code_bg, code_fg) + '</li>\n'
+			html += '<li style="margin-bottom: 6px;">' + parse_inline(content, code_bg, code_fg) +
+				'</li>\n'
 			continue
 		}
 
@@ -239,7 +243,8 @@ fn markdown_to_html(md string, theme string) string {
 			continue
 		}
 
-		html += '<p style="line-height: 1.6; margin-bottom: 12px;">' + parse_inline(line, code_bg, code_fg) + '</p>\n'
+		html += '<p style="line-height: 1.6; margin-bottom: 12px;">' +
+			parse_inline(line, code_bg, code_fg) + '</p>\n'
 	}
 
 	if in_list {
@@ -249,8 +254,10 @@ fn markdown_to_html(md string, theme string) string {
 		html += '</code></pre>\n'
 	}
 
-	return '<html><head><meta charset="utf-8"></head><body style="font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Helvetica, Arial, sans-serif; font-size: 14px; background-color: ' +
-		body_bg + '; color: ' + body_fg + '; padding: 22px; margin: 0; line-height: 1.6;">' + html + '</body></html>'
+	return
+		'<html><head><meta charset="utf-8"></head><body style="font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Helvetica, Arial, sans-serif; font-size: 14px; background-color: ' +
+		body_bg + '; color: ' + body_fg + '; padding: 22px; margin: 0; line-height: 1.6;">' + html +
+		'</body></html>'
 }
 
 fn parse_inline(text string, code_bg string, code_fg string) string {
@@ -326,7 +333,8 @@ fn generate_unified_diff(original string, modified string, title_a string, title
 		return '✅ Both documents are 100% IDENTICAL. No differences found.\n\n' + out.join('\n')
 	}
 
-	return '⚡ Found differences across documents (${diff_count} line mutations):\n\n' + out.join('\n')
+	return
+		'⚡ Found differences across documents (${diff_count} line mutations):\n\n' + out.join('\n')
 }
 
 // -------------------------------------------------------------
@@ -622,7 +630,8 @@ ENTRYPOINT ["/root/server"]
 fn main() {
 	println('Starting SimpleGUI - Text Editor Pro (Ultimate Native macOS Developer & Document Studio)...')
 
-	mut win := simplegui.new_simple_window('📝 Text Editor Pro — Ultimate Native Developer & Document Studio', 1240, 960)
+	mut win := simplegui.new_simple_window('📝 Text Editor Pro — Ultimate Native Developer & Document Studio',
+		1240, 960)
 	win.restore_saved_theme()
 	win.set_spacing(6)
 	win.set_padding(14)
@@ -635,10 +644,26 @@ fn main() {
 		active_view:       '📝 Editor & Tools'
 		active_buffer_idx: 0
 		buffers:           [
-			ScratchpadBuffer{ name: 'Scratchpad 1', content: '// Welcome to SimpleGUI Text Editor Pro!\n// Full-featured macOS Developer & Text Studio.\n\nfn main() {\n    println("Hello, World!")\n}\n', file: '' },
-			ScratchpadBuffer{ name: 'Scratchpad 2', content: '# Scratchpad 2\nWrite notes, queries, or ideas here.\n', file: '' },
-			ScratchpadBuffer{ name: 'Scratchpad 3', content: '{\n  "status": "ready",\n  "buffer": 3\n}\n', file: '' },
-			ScratchpadBuffer{ name: 'Scratchpad 4', content: '-- Scratchpad 4: SQL & Data\nSELECT * FROM documents WHERE active = true;\n', file: '' },
+			ScratchpadBuffer{
+				name:    'Scratchpad 1'
+				content: '// Welcome to SimpleGUI Text Editor Pro!\n// Full-featured macOS Developer & Text Studio.\n\nfn main() {\n    println("Hello, World!")\n}\n'
+				file:    ''
+			},
+			ScratchpadBuffer{
+				name:    'Scratchpad 2'
+				content: '# Scratchpad 2\nWrite notes, queries, or ideas here.\n'
+				file:    ''
+			},
+			ScratchpadBuffer{
+				name:    'Scratchpad 3'
+				content: '{\n  "status": "ready",\n  "buffer": 3\n}\n'
+				file:    ''
+			},
+			ScratchpadBuffer{
+				name:    'Scratchpad 4'
+				content: '-- Scratchpad 4: SQL & Data\nSELECT * FROM documents WHERE active = true;\n'
+				file:    ''
+			},
 		]
 		original_content:  ''
 	}
@@ -827,7 +852,8 @@ fn main() {
 	win.add_button('btn_clear_console', '🧹 Clear Output')
 	win.end_row()
 
-	win.add_textarea('txt_console_output', '=== SimpleGUI Code Execution Console ===\nSelect an environment above and click "RUN CURRENT CODE" to execute the active editor buffer.\n')
+	win.add_textarea('txt_console_output',
+		'=== SimpleGUI Code Execution Console ===\nSelect an environment above and click "RUN CURRENT CODE" to execute the active editor buffer.\n')
 	win.set_control_height('txt_console_output', 470)
 	win.set_control_font_name('txt_console_output', 'Menlo')
 	win.set_control_font_size('txt_console_output', 13)
@@ -836,7 +862,8 @@ fn main() {
 	// -------------------------------------------------------------
 	// 7. View Container 4: Document Telemetry & Statistics
 	// -------------------------------------------------------------
-	win.begin_group_box('pane_telemetry', '📊 Document Analytics, Readability & Cryptographic Hashes')
+	win.begin_group_box('pane_telemetry',
+		'📊 Document Analytics, Readability & Cryptographic Hashes')
 	win.begin_row('row_stats_actions')
 	win.add_button('btn_refresh_stats', '🔄 Refresh Statistics')
 	win.add_button('btn_copy_stats', '📋 Copy Full Report')
@@ -870,7 +897,8 @@ fn main() {
 	win.add_button('btn_copy_diff', '📋 Copy Diff')
 	win.end_row()
 
-	win.add_textarea('txt_diff_output', 'Select a comparison target above and click "Compute Unified Diff" to view line-by-line mutations.')
+	win.add_textarea('txt_diff_output',
+		'Select a comparison target above and click "Compute Unified Diff" to view line-by-line mutations.')
 	win.set_control_height('txt_diff_output', 490)
 	win.set_control_font_name('txt_diff_output', 'Menlo')
 	win.set_control_font_size('txt_diff_output', 13)
@@ -918,7 +946,8 @@ fn main() {
 	// 10. Status Bar & Telemetry Footer
 	// -------------------------------------------------------------
 	win.begin_row('row_status_bar')
-	win.add_label('lbl_stats', '📊 Lines: 6  |  Words: 15  |  Chars: 125  |  Size: 125 B  |  Encoding: UTF-8  |  Tab: 4 Spaces')
+	win.add_label('lbl_stats',
+		'📊 Lines: 6  |  Words: 15  |  Chars: 125  |  Size: 125 B  |  Encoding: UTF-8  |  Tab: 4 Spaces')
 	win.end_row()
 
 	// -------------------------------------------------------------
@@ -937,14 +966,23 @@ fn main() {
 
 		file_display := if state.current_file_path != '' {
 			name := os.file_name(state.current_file_path)
-			if state.is_dirty { '* ' + name + ' (Modified)' } else { name }
+			if state.is_dirty {
+				'* ' + name + ' (Modified)'
+			} else {
+				name
+			}
 		} else {
 			buf_name := state.buffers[state.active_buffer_idx].name
-			if state.is_dirty { '* ' + buf_name + ' (Unsaved)' } else { buf_name }
+			if state.is_dirty {
+				'* ' + buf_name + ' (Unsaved)'
+			} else {
+				buf_name
+			}
 		}
 
 		win.set('lbl_active_file', '  Active File: ' + file_display)
-		win.set('lbl_stats', '📊 Lines: ${line_count}  |  Words: ${word_count}  |  Chars: ${char_count}  |  Bytes: ${byte_count} B  |  Encoding: UTF-8  |  View: ${state.active_view}')
+		win.set('lbl_stats',
+			'📊 Lines: ${line_count}  |  Words: ${word_count}  |  Chars: ${char_count}  |  Bytes: ${byte_count} B  |  Encoding: UTF-8  |  View: ${state.active_view}')
 
 		// If telemetry tab is visible or generated, populate full report
 		mut max_line_len := 0
@@ -1135,7 +1173,8 @@ fn main() {
 	// New Document
 	win.on_click('btn_new', fn [mut state, update_telemetry] (mut w simplegui.SimpleWindow) {
 		if state.is_dirty {
-			if !w.confirm('Discard Changes?', 'You have unsaved modifications in this buffer. Create new document anyway?') {
+			if !w.confirm('Discard Changes?',
+				'You have unsaved modifications in this buffer. Create new document anyway?') {
 				return
 			}
 		}
@@ -1870,7 +1909,8 @@ fn main() {
 		mut urls := []string{}
 		for tok in tokens {
 			clean := tok.trim_space()
-			if clean.starts_with('http://') || clean.starts_with('https://') || clean.starts_with('ftp://') {
+			if clean.starts_with('http://') || clean.starts_with('https://')
+				|| clean.starts_with('ftp://') {
 				if !urls.contains(clean) {
 					urls << clean
 				}
@@ -1904,7 +1944,9 @@ fn main() {
 		}
 		res := emails.join('\n')
 		w.copy_to_clipboard(res)
-		w.alert('Extracted Emails (${emails.len})', 'Copied ${emails.len} Email(s) to clipboard:\n\n' + res)
+		w.alert('Extracted Emails (${emails.len})',
+
+			'Copied ${emails.len} Email(s) to clipboard:\n\n' + res)
 	})
 
 	// Extract IPv4 Addresses
@@ -1935,7 +1977,9 @@ fn main() {
 		}
 		res := ips.join('\n')
 		w.copy_to_clipboard(res)
-		w.alert('Extracted IPs (${ips.len})', 'Copied ${ips.len} IP address(es) to clipboard:\n\n' + res)
+		w.alert('Extracted IPs (${ips.len})',
+
+			'Copied ${ips.len} IP address(es) to clipboard:\n\n' + res)
 	})
 
 	// Extract Quoted Strings
@@ -1970,7 +2014,9 @@ fn main() {
 		}
 		res := quotes.join('\n')
 		w.copy_to_clipboard(res)
-		w.alert('Extracted Quotes (${quotes.len})', 'Copied ${quotes.len} quoted string(s) to clipboard:\n\n' + res)
+		w.alert('Extracted Quotes (${quotes.len})',
+
+			'Copied ${quotes.len} quoted string(s) to clipboard:\n\n' + res)
 	})
 
 	// CRLF to LF
@@ -2180,7 +2226,8 @@ fn main() {
 			compare_text = state.buffers[3].content
 		}
 
-		diff_result := generate_unified_diff(curr_text, compare_text, 'Active Editor Buffer', title_b)
+		diff_result := generate_unified_diff(curr_text, compare_text, 'Active Editor Buffer',
+			title_b)
 		w.set('txt_diff_output', diff_result)
 		w.toast('Computed unified diff comparison.')
 	})

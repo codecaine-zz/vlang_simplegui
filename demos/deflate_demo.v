@@ -12,7 +12,8 @@ fn main() {
 	gui.set_control_font_bold('header', true)
 
 	gui.add_label('lbl_input', 'Text to Compress:')
-	gui.add_input('input_text', 'SimpleGUI Deflate byte stream compression and decompression walkthrough!')
+	gui.add_input('input_text',
+		'SimpleGUI Deflate byte stream compression and decompression walkthrough!')
 
 	gui.begin_row('buttons_row')
 	gui.add_button('btn_compress', 'Compress & Decompress')

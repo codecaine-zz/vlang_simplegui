@@ -14,7 +14,8 @@ fn main() {
 
 	win.add_heading('Semantic Form & Sections')
 
-	win.add_label('desc', 'Form and Section helpers provide structured grouping containers. You can also define validation rules to display errors inline.')
+	win.add_label('desc',
+		'Form and Section helpers provide structured grouping containers. You can also define validation rules to display errors inline.')
 	win.set_control_font_size('desc', 11)
 
 	win.add_vertical_spacer(10)

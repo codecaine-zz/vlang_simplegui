@@ -140,7 +140,8 @@ pub fn http_request(method http.Method, url string, data string, options SimpleH
 	attempts := if options.retries > 0 { options.retries + 1 } else { 1 }
 	mut last_err := 'request failed'
 	for attempt in 0 .. attempts {
-		res := http_request_once(method, url, data, options.headers, options.user_agent, options.expect_success) or {
+		res := http_request_once(method, url, data, options.headers, options.user_agent,
+			options.expect_success) or {
 			last_err = err.msg()
 			if attempt < attempts - 1 && options.retry_delay_ms > 0 {
 				time.sleep(options.retry_delay_ms * time.millisecond)
@@ -666,11 +667,9 @@ pub fn (t &TOMLWrapperDoc) get_bool(key string) bool {
 
 // toml_parse parses flat TOML text content, wrapping query details inside an easy helper.
 pub fn toml_parse(content string) &TOMLWrapperDoc {
-	res := toml.parse_text(content) or {
-		return &TOMLWrapperDoc{
-			doc: toml.Doc{}
-		}
-	}
+	res := toml.parse_text(content) or { return &TOMLWrapperDoc{
+		doc: toml.Doc{}
+	} }
 	return &TOMLWrapperDoc{
 		doc: res
 	}
@@ -2966,7 +2965,9 @@ pub fn (win &SimpleWindow) json_get_bool(raw_json string, key string, fallback b
 
 // is_valid_email verifies whether a string matches standard email syntax.
 pub fn is_valid_email(email string) bool {
-	mut q := regex.regex_opt(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$') or { return false }
+	mut q := regex.regex_opt(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$') or {
+		return false
+	}
 	return q.matches_string(email.trim_space())
 }
 
@@ -3007,7 +3008,8 @@ pub fn (win &SimpleWindow) is_valid_ip(ip_str string) bool {
 
 // is_valid_phone checks if a string is a valid phone number.
 pub fn is_valid_phone(phone string) bool {
-	clean := phone.replace(' ', '').replace('-', '').replace('(', '').replace(')', '').replace('+', '')
+	clean :=
+		phone.replace(' ', '').replace('-', '').replace('(', '').replace(')', '').replace('+', '')
 	return clean.len >= 7 && clean.len <= 15 && clean.int() > 0
 }
 

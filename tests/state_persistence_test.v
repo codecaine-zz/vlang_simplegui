@@ -214,39 +214,82 @@ fn test_app_id_derivation() {
 
 fn test_control_persistence_filtering() {
 	// Persistent controls
-	input_ctrl := simplegui.Control{ name: 'txt_workspace', kind: 'input', value: '/Users/test' }
+	input_ctrl := simplegui.Control{
+		name:  'txt_workspace'
+		kind:  'input'
+		value: '/Users/test'
+	}
 	assert simplegui.should_persist_control(&input_ctrl) == true
 
-	chk_ctrl := simplegui.Control{ name: 'chk_recursive', kind: 'checkbox', checked: true }
+	chk_ctrl := simplegui.Control{
+		name:    'chk_recursive'
+		kind:    'checkbox'
+		checked: true
+	}
 	assert simplegui.should_persist_control(&chk_ctrl) == true
 
-	dd_ctrl := simplegui.Control{ name: 'dd_mode', kind: 'dropdown', value: 'Fast' }
+	dd_ctrl := simplegui.Control{
+		name:  'dd_mode'
+		kind:  'dropdown'
+		value: 'Fast'
+	}
 	assert simplegui.should_persist_control(&dd_ctrl) == true
 
-	slider_ctrl := simplegui.Control{ name: 'sl_depth', kind: 'slider', number: 5 }
+	slider_ctrl := simplegui.Control{
+		name:   'sl_depth'
+		kind:   'slider'
+		number: 5
+	}
 	assert simplegui.should_persist_control(&slider_ctrl) == true
 
-	notes_ctrl := simplegui.Control{ name: 'txt_notes', kind: 'textarea', value: 'my notes' }
+	notes_ctrl := simplegui.Control{
+		name:  'txt_notes'
+		kind:  'textarea'
+		value: 'my notes'
+	}
 	assert simplegui.should_persist_control(&notes_ctrl) == true
 
 	// Non-persistent controls: outputs, terminals, consoles
-	output_ctrl := simplegui.Control{ name: 'txt_output', kind: 'textarea', value: 'stale logs' }
+	output_ctrl := simplegui.Control{
+		name:  'txt_output'
+		kind:  'textarea'
+		value: 'stale logs'
+	}
 	assert simplegui.should_persist_control(&output_ctrl) == false
 
-	stdout_ctrl := simplegui.Control{ name: 'txt_stdout', kind: 'textarea', value: 'stale stdout' }
+	stdout_ctrl := simplegui.Control{
+		name:  'txt_stdout'
+		kind:  'textarea'
+		value: 'stale stdout'
+	}
 	assert simplegui.should_persist_control(&stdout_ctrl) == false
 
-	term_ctrl := simplegui.Control{ name: 'term_console', kind: 'terminal' }
+	term_ctrl := simplegui.Control{
+		name: 'term_console'
+		kind: 'terminal'
+	}
 	assert simplegui.should_persist_control(&term_ctrl) == false
 
-	btn_ctrl := simplegui.Control{ name: 'btn_run', kind: 'button', label: 'Run' }
+	btn_ctrl := simplegui.Control{
+		name:  'btn_run'
+		kind:  'button'
+		label: 'Run'
+	}
 	assert simplegui.should_persist_control(&btn_ctrl) == false
 
-	lbl_ctrl := simplegui.Control{ name: 'lbl_info', kind: 'label', label: 'Ready' }
+	lbl_ctrl := simplegui.Control{
+		name:  'lbl_info'
+		kind:  'label'
+		label: 'Ready'
+	}
 	assert simplegui.should_persist_control(&lbl_ctrl) == false
 
 	// Sensitive passwords
-	pass_ctrl := simplegui.Control{ name: 'txt_password', kind: 'password', value: 'secret123' }
+	pass_ctrl := simplegui.Control{
+		name:  'txt_password'
+		kind:  'password'
+		value: 'secret123'
+	}
 	assert simplegui.should_persist_control(&pass_ctrl) == false
 }
 

@@ -153,7 +153,8 @@ fn main() {
 	})
 
 	cut_path := get_cut_bin()
-	win.add_label('lbl_engine_info', '⚡ Engine: ${cut_path}  |  Platform: macOS Cocoa  |  Mode: Async Worker (Zero UI Freezes)')
+	win.add_label('lbl_engine_info',
+		'⚡ Engine: ${cut_path}  |  Platform: macOS Cocoa  |  Mode: Async Worker (Zero UI Freezes)')
 
 	all_recipes := get_all_cut_recipes()
 
@@ -352,12 +353,14 @@ fn main() {
 						count = out_str.trim_space().split_into_lines().len
 					}
 
-					win_main.set('lbl_stats', '📊 Stats: SUCCESS  |  Output Lines: ${count}  |  Duration: ${elapsed_ms} ms')
+					win_main.set('lbl_stats',
+						'📊 Stats: SUCCESS  |  Output Lines: ${count}  |  Duration: ${elapsed_ms} ms')
 					win_main.set_status('Stream sliced successfully (${count} lines in ${elapsed_ms} ms).')
 					win_main.toast('Sliced ${count} lines in ${elapsed_ms} ms!')
 				} else {
 					win_main.set('txt_output_stream', '⚠️ Cut Slicing Error:\n\n' + res.output)
-					win_main.set('lbl_stats', '📊 Stats: ERROR (Exit code ${res.exit_code})  |  Duration: ${elapsed_ms} ms')
+					win_main.set('lbl_stats',
+						'📊 Stats: ERROR (Exit code ${res.exit_code})  |  Duration: ${elapsed_ms} ms')
 					win_main.set_status('Cut command returned an error.')
 				}
 			})

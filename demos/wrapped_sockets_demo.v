@@ -81,7 +81,8 @@ fn main() {
 	gui.set_control_font_size('header', 16)
 	gui.set_control_font_bold('header', true)
 
-	gui.add_label('lbl_info', 'Test wrapped socket client connections (TCP, UDP, Unix Domain) asynchronously.')
+	gui.add_label('lbl_info',
+		'Test wrapped socket client connections (TCP, UDP, Unix Domain) asynchronously.')
 
 	gui.add_label('lbl_input', 'Message Payload:')
 	gui.add_input('input_text', 'Socket Handshake Hello!')
@@ -117,7 +118,8 @@ fn main() {
 			return
 		}
 
-		win.set_text('output_text', 'TCP Connection Successful!\nSent:     "${val}"\nReceived: "${response}"')
+		win.set_text('output_text',
+			'TCP Connection Successful!\nSent:     "${val}"\nReceived: "${response}"')
 		win.set_status('TCP socket handshake complete.')
 	})
 
@@ -143,7 +145,8 @@ fn main() {
 			return
 		}
 
-		win.set_text('output_text', 'UDP Handshake Successful!\nSent:     "${val}"\nReceived: "${response}"')
+		win.set_text('output_text',
+			'UDP Handshake Successful!\nSent:     "${val}"\nReceived: "${response}"')
 		win.set_status('UDP socket handshake complete.')
 	})
 
@@ -170,7 +173,8 @@ fn main() {
 			return
 		}
 
-		win.set_text('output_text', 'Unix Domain Socket Successful!\nSent:     "${val}"\nReceived: "${response}"')
+		win.set_text('output_text',
+			'Unix Domain Socket Successful!\nSent:     "${val}"\nReceived: "${response}"')
 		win.set_status('Unix socket handshake complete.')
 	})
 

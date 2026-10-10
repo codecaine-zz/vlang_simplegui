@@ -1704,9 +1704,9 @@ pub fn (win &SimpleWindow) clear_all_fields() &SimpleWindow {
 		} else if control.kind in ['number', 'slider', 'progress', 'levelindicator', 'stepper',
 			'knob'] {
 			win.set_value_int(control.name, 0)
-		} else if control.kind in ['input', 'password', 'textarea', 'date', 'mode', 'theme', 'listbox',
-			'color', 'search', 'dropdown', 'segmented', 'radiogroup', 'combobox', 'pathcontrol',
-			'tokenfield'] {
+		} else if control.kind in ['input', 'password', 'textarea', 'date', 'mode', 'theme',
+			'listbox', 'color', 'search', 'dropdown', 'segmented', 'radiogroup', 'combobox',
+			'pathcontrol', 'tokenfield'] {
 			win.set_text(control.name, '')
 		}
 	}
@@ -2129,8 +2129,8 @@ pub fn (win &SimpleWindow) get_code_editor(name string) string {
 // add_timeline_entry appends an event item with timestamp, title, detail, and status color to a timeline stream.
 pub fn (win &SimpleWindow) add_timeline_entry(name string, time_str string, title string, detail string, style string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
-		C.window_add_timeline_entry(win.window_info, name.str, time_str.str, title.str,
-			detail.str, style.str)
+		C.window_add_timeline_entry(win.window_info, name.str, time_str.str, title.str, detail.str,
+			style.str)
 	}
 	return win
 }
@@ -2213,8 +2213,7 @@ pub fn (win &SimpleWindow) shake_on_error() &SimpleWindow {
 
 // set_fixed_size locks the window to a fixed width and height and disables resizability.
 pub fn (win &SimpleWindow) set_fixed_size(width int, height int) &SimpleWindow {
-	return win.set_size(width, height).set_min_size(width, height).set_max_size(width,
-		height).set_resizable(false)
+	return win.set_size(width, height).set_min_size(width, height).set_max_size(width, height).set_resizable(false)
 }
 
 // set_size_preset resizes the window based on standard preset names (e.g. 'compact', 'medium', 'large', 'hd', 'full_hd', 'dialog', 'login', 'settings', 'sidebar', 'splash', 'square').
@@ -3097,7 +3096,8 @@ pub fn (win &SimpleWindow) floating_toolbar(title string, actions []string) &Sim
 
 // user_profile adds an auto-named user profile card.
 pub fn (win &SimpleWindow) user_profile(avatar_path string, name_text string, handle string, role string, bio string) &SimpleWindow {
-	return win.add_user_profile_card('', avatar_path, name_text, handle, role, bio, true, '[Connect]')
+	return win.add_user_profile_card('', avatar_path, name_text, handle, role, bio, true,
+		'[Connect]')
 }
 
 // product_card adds an auto-named product showcase card.

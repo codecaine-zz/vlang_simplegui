@@ -11,12 +11,14 @@ fn main() {
 
 	win.add_heading('Native macOS AppKit Controls & System Integration')
 
-	win.add_label('lbl_desc', 'This demo showcases native macOS panels: NSBrowser (Column Browser), NSSharingServicePicker (Share Sheet), NSFontPanel (Font Picker), and Quick Look preview.')
+	win.add_label('lbl_desc',
+		'This demo showcases native macOS panels: NSBrowser (Column Browser), NSSharingServicePicker (Share Sheet), NSFontPanel (Font Picker), and Quick Look preview.')
 		.font_size(12)
 		.font_color('#8e8e93')
 
 	// --- 1. NSBrowser: Miller Columns Multi-Column Browser ---
-	win.add_section_header('sec_browser', '1. NSBrowser: Multi-Column Cascading Browser', 'Miller Columns navigation like Finder Column View')
+	win.add_section_header('sec_browser', '1. NSBrowser: Multi-Column Cascading Browser',
+		'Miller Columns navigation like Finder Column View')
 
 	win.add_browser_view('finder_browser', 180)
 
@@ -47,7 +49,8 @@ fn main() {
 	])
 
 	// --- 2. System Share Sheet & Font Panel Actions ---
-	win.add_section_header('sec_panels', '2. System Share Sheet & Font Picker Panels', 'Direct integration with macOS System Services')
+	win.add_section_header('sec_panels', '2. System Share Sheet & Font Picker Panels',
+		'Direct integration with macOS System Services')
 
 	win.begin_row('row_actions')
 
@@ -76,8 +79,11 @@ fn main() {
 	win.end_row()
 
 	// --- 3. Preview text for font modifications ---
-	win.add_section_header('sec_preview', '3. Interactive Text Preview Surface', 'Observe live typography changes')
-	win.add_textarea('target_text', 'The quick brown fox jumps over the lazy dog.\n\nSimpleGUI provides seamless 100% native macOS AppKit integration.')
+	win.add_section_header('sec_preview', '3. Interactive Text Preview Surface',
+		'Observe live typography changes')
+
+	win.add_textarea('target_text',
+		'The quick brown fox jumps over the lazy dog.\n\nSimpleGUI provides seamless 100% native macOS AppKit integration.')
 		.height(90)
 		.font_size(14)
 

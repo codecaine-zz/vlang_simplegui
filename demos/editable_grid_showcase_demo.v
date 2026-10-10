@@ -19,7 +19,8 @@ fn main() {
 	})
 
 	win.add_heading('Editable Grid Showcase')
-	win.add_label('intro', 'This demo exercises the editable grid with text cells, checkbox cells, button cells, row/column actions, event callbacks, column sorting, and visible cell selection.')
+	win.add_label('intro',
+		'This demo exercises the editable grid with text cells, checkbox cells, button cells, row/column actions, event callbacks, column sorting, and visible cell selection.')
 
 	win.begin_row('toolbar')
 	win.add_button('btn_add_row', 'Add Row')

@@ -146,11 +146,13 @@ fn main() {
 		'pdf (Single Document)', 'tiff', 'bmp'], 'webp (Modern Web)')
 	win.add_label('lbl_quality', 'Quality / Compression:')
 	win.add_dropdown('dd_quality', ['95% (Maximum Quality)', '85% (High Quality Web)',
-		'75% (Standard Balance)', '60% (Compact Size)', '40% (Max Compression)'], '85% (High Quality Web)')
+		'75% (Standard Balance)', '60% (Compact Size)', '40% (Max Compression)'],
+		'85% (High Quality Web)')
 	win.end_row()
 
 	win.begin_row('row_fmt_2')
-	win.add_checkbox('chk_strip', 'Strip EXIF Metadata, GPS & Color Profiles (Protects privacy & saves KB)', true)
+	win.add_checkbox('chk_strip',
+		'Strip EXIF Metadata, GPS & Color Profiles (Protects privacy & saves KB)', true)
 	win.add_checkbox('chk_interlace', 'Progressive Interlaced Rendering', true)
 	win.end_row()
 	win.end_group_box()
@@ -173,7 +175,8 @@ fn main() {
 	win.end_row()
 
 	win.begin_row('row_soc_2')
-	win.add_checkbox('chk_pad_black', 'Pad Canvas to Aspect Ratio (Prevents cropping content)', false)
+	win.add_checkbox('chk_pad_black', 'Pad Canvas to Aspect Ratio (Prevents cropping content)',
+		false)
 	win.end_row()
 	win.end_group_box()
 
@@ -181,15 +184,17 @@ fn main() {
 	win.begin_group_box('pane_bg_remove', 'Magic Background Color Removal & Transparency')
 	win.begin_row('row_bg_1')
 	win.add_label('lbl_bg_color', 'Color to Make Transparent:')
-	win.add_dropdown('dd_bg_color', ['white (Solid White Background)', 'black (Solid Black Background)',
-		'#00ff00 (Chroma Green Screen)', '#0000ff (Chroma Blue Screen)'], 'white (Solid White Background)')
+	win.add_dropdown('dd_bg_color', ['white (Solid White Background)',
+		'black (Solid Black Background)', '#00ff00 (Chroma Green Screen)',
+		'#0000ff (Chroma Blue Screen)'], 'white (Solid White Background)')
 	win.add_label('lbl_fuzz', 'Color Tolerance (Fuzz):')
 	win.add_dropdown('dd_fuzz', ['5% (Strict Match)', '10% (Recommended)', '20% (Broader)',
 		'35% (Aggressive)'], '10% (Recommended)')
 	win.end_row()
 
 	win.begin_row('row_bg_2')
-	win.add_checkbox('chk_trim_alpha', 'Auto-trim Transparent Margins after Background Removal', true)
+	win.add_checkbox('chk_trim_alpha', 'Auto-trim Transparent Margins after Background Removal',
+		true)
 	win.end_row()
 	win.end_group_box()
 
@@ -206,7 +211,8 @@ fn main() {
 	win.end_row()
 
 	win.begin_row('row_crop_2')
-	win.add_checkbox('chk_dropshadow', 'Add Elegant Floating Drop Shadow (Ideal for screenshots & product mockups)', false)
+	win.add_checkbox('chk_dropshadow',
+		'Add Elegant Floating Drop Shadow (Ideal for screenshots & product mockups)', false)
 	win.add_checkbox('chk_autotrim', 'Auto-trim Solid Borders (-trim)', false)
 	win.end_row()
 	win.end_group_box()
@@ -236,7 +242,8 @@ fn main() {
 
 	win.begin_row('row_eff_2')
 	win.add_label('lbl_border', 'Border Width:')
-	win.add_dropdown('dd_border_w', ['0 (No border)', '5px', '10px', '20px', '40px'], '0 (No border)')
+	win.add_dropdown('dd_border_w', ['0 (No border)', '5px', '10px', '20px', '40px'],
+		'0 (No border)')
 	win.add_label('lbl_border_col', 'Border Color:')
 	win.add_dropdown('dd_border_col', ['white', 'black', '#1e293b (Slate)', '#3b82f6 (Blue)',
 		'#ef4444 (Red)', '#10b981 (Emerald)'], 'white')
@@ -258,8 +265,14 @@ fn main() {
 	win.add_label('lbl_wm_size', 'Font Size (pt):')
 	win.add_dropdown('dd_wm_size', ['18', '24', '32', '48', '64', '96'], '32')
 	win.add_label('lbl_wm_color', 'Color:')
-	win.add_dropdown('dd_wm_color', ['rgba(255,255,255,0.75) (White Semi-Transparent)', 'white',
-		'black', 'rgba(0,0,0,0.6) (Black Semi-Transparent)', 'gold', 'red'], 'rgba(255,255,255,0.75) (White Semi-Transparent)')
+	win.add_dropdown('dd_wm_color', [
+		'rgba(255,255,255,0.75) (White Semi-Transparent)',
+		'white',
+		'black',
+		'rgba(0,0,0,0.6) (Black Semi-Transparent)',
+		'gold',
+		'red',
+	], 'rgba(255,255,255,0.75) (White Semi-Transparent)')
 	win.end_row()
 	win.end_group_box()
 
@@ -335,7 +348,8 @@ fn main() {
 	win.add_console('log_console', 160)
 
 	// Initial log
-	win.append_console('log_console', '🚀 SimpleGUI ImageMagick Studio Pro Initialized (Async Non-Blocking Engine).\n', 1)
+	win.append_console('log_console',
+		'🚀 SimpleGUI ImageMagick Studio Pro Initialized (Async Non-Blocking Engine).\n', 1)
 	win.append_console('log_console', '⚡ Detected Magick CLI: ' + magick_path + '\n', 4)
 	win.append_console('log_console', '⚡ Detected Identify CLI: ' + identify_path + '\n', 4)
 
@@ -672,7 +686,8 @@ fn main() {
 			res := simplegui.exec_safe(identify, ['-verbose', in_path])
 			w.run_on_main_thread(fn [res, in_path, magick] (mut win_main simplegui.SimpleWindow) {
 				if res.exit_code == 0 {
-					win_main.append_console('log_console', '=== IMAGE METADATA & CHANNELS ===\n' + res.output + '\n', 4)
+					win_main.append_console('log_console', '=== IMAGE METADATA & CHANNELS ===\n' +
+						res.output + '\n', 4)
 				} else {
 					mres := simplegui.exec_safe(magick, ['identify', in_path])
 					win_main.append_console('log_console', mres.output + '\n', 1)
@@ -703,7 +718,9 @@ fn main() {
 		files := os.ls(dir) or { []string{} }
 		action := w.get('dd_batch_action')
 
-		w.append_console('log_console', '📦 Starting image batch processing on folder: ${dir} (Async Background Queue)...\n', 1)
+		w.append_console('log_console',
+			'📦 Starting image batch processing on folder: ${dir} (Async Background Queue)...\n',
+			1)
 		w.set_status('Batch image queue running in background...')
 
 		go fn [mut w, dir, files, action, magick] () {
@@ -756,7 +773,8 @@ fn main() {
 			}
 
 			w.run_on_main_thread(fn [processed] (mut win_main simplegui.SimpleWindow) {
-				win_main.append_console('log_console', '🎉 Batch Complete! Processed ${processed} images.\n', 4)
+				win_main.append_console('log_console',
+					'🎉 Batch Complete! Processed ${processed} images.\n', 4)
 				win_main.set_status('Batch image queue finished.')
 				win_main.toast('Batch processing complete: ${processed} images.')
 			})
@@ -834,14 +852,18 @@ fn main() {
 					if os.exists(out_path) {
 						size_bytes := os.file_size(out_path)
 						size_kb := f64(size_bytes) / 1024.0
-						win_main.append_console('log_console', '📦 Output Created: ${out_path} (${size_kb:.1f} KB)\n', 4)
+						win_main.append_console('log_console',
+							'📦 Output Created: ${out_path} (${size_kb:.1f} KB)\n', 4)
 					}
 					win_main.set_status('Image task completed with success.')
 					win_main.toast('🎉 Image processing finished successfully!')
 				} else {
-					win_main.append_console('log_console', '❌ Error during execution (Exit code ${res.exit_code}):\n' + res.output + '\n', 3)
+					win_main.append_console('log_console',
+						'❌ Error during execution (Exit code ${res.exit_code}):\n' + res.output + '\n',
+						3)
 					win_main.set_status('Error executing ImageMagick.')
-					win_main.alert('ImageMagick Error', 'Failed to process image. Check console logs for details.')
+					win_main.alert('ImageMagick Error',
+						'Failed to process image. Check console logs for details.')
 				}
 			})
 		}()

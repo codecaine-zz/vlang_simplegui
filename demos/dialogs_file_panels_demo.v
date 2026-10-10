@@ -5,8 +5,7 @@ import simplegui
 fn main() {
 	mut win := simplegui.new_simple_window('Dialogs & File Panels Demo', 550, 600)
 		.add_label('lbl_title', 'Click a button to trigger native macOS dialogs:')
-		.add_separator()
-		.begin_row
+		.add_separator().begin_row
 
 	// 1. Alert & Prompt Dialog Buttons
 
@@ -20,8 +19,7 @@ fn main() {
 		.add_button('btn_choose', 'Choose Option')
 		.add_button('btn_ask_text', 'Ask Text')
 		.end_row()
-		.add_separator()
-		.begin_row
+		.add_separator().begin_row
 
 	// 2. File & Directory Picker Buttons
 
@@ -61,8 +59,11 @@ fn main() {
 	})
 
 	win.on_click('btn_choose', fn (mut win simplegui.SimpleWindow) {
-		choice_idx := win.choose('Select Environment', 'Pick a deployment environment:',
-			['Development', 'Staging', 'Production'])
+		choice_idx := win.choose('Select Environment', 'Pick a deployment environment:', [
+			'Development',
+			'Staging',
+			'Production',
+		])
 		win.set_status('Selected choice index: ${choice_idx}')
 	})
 

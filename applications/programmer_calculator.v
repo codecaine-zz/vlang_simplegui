@@ -185,6 +185,7 @@ fn hex_to_u64(hex_str string) ?u64 {
 			`A`...`F` { u64(ch - `A` + 10) }
 			else { return none }
 		}
+
 		res = (res << 4) | digit
 	}
 	return res
@@ -198,6 +199,7 @@ fn bin_to_u64(bin_str string) ?u64 {
 			`1` { u64(1) }
 			else { return none }
 		}
+
 		res = (res << 1) | digit
 	}
 	return res
@@ -210,6 +212,7 @@ fn oct_to_u64(oct_str string) ?u64 {
 			`0`...`7` { u64(ch - `0`) }
 			else { return none }
 		}
+
 		res = (res << 3) | digit
 	}
 	return res
@@ -284,7 +287,8 @@ fn format_ieee754_breakdown(val u64) string {
 	}) + ')'
 	lines << '   • Exponent [30:23] : 0x${exp_32:02X} (${exp_32} unsigned, 2^${bias_exp_32} biased)'
 	lines << '   • Mantissa [22:0]  : 0x${mant_32:06X} (Fractional: 1.${mant_32:06X})'
-	lines << '   • Binary Breakdown : [${sign_32}] [' + format_bits_raw(u64(exp_32), 8) + '] [' + format_bits_raw(u64(mant_32), 23) + ']'
+	lines << '   • Binary Breakdown : [${sign_32}] [' + format_bits_raw(u64(exp_32), 8) + '] [' +
+		format_bits_raw(u64(mant_32), 23) + ']'
 	lines << '------------------------------------------------------------------------'
 	lines << ' 64-BIT DOUBLE PRECISION (DOUBLE):'
 	lines << '   • Floating Value   : ${f64_val}'
@@ -295,7 +299,8 @@ fn format_ieee754_breakdown(val u64) string {
 	}) + ')'
 	lines << '   • Exponent [62:52] : 0x${exp_64:03X} (${exp_64} unsigned, 2^${bias_exp_64} biased)'
 	lines << '   • Mantissa [51:0]  : 0x${mant_64:013X}'
-	lines << '   • Binary Breakdown : [${sign_64}] [' + format_bits_raw(u64(exp_64), 11) + '] [' + format_bits_raw(u64(mant_64), 52) + ']'
+	lines << '   • Binary Breakdown : [${sign_64}] [' + format_bits_raw(u64(exp_64), 11) + '] [' +
+		format_bits_raw(u64(mant_64), 52) + ']'
 	lines << '========================================================================\n'
 	return lines.join('\n')
 }
@@ -355,10 +360,14 @@ fn format_type_interpretations(val u64) string {
 	lines << '🖥️ MULTI-TYPE DATA INTERPRETATIONS'
 	lines << '========================================================================'
 	lines << ' INTEGER PRIMITIVES (SIGNED / UNSIGNED):'
-	lines << '   • 8-bit Byte    (i8 / u8)   : ' + pad_l('${i8_val}', 6) + '  /  ' + pad_l('${u8_val}', 5) + '  (0x${u8_val:02X})'
-	lines << '   • 16-bit Word   (i16 / u16) : ' + pad_l('${i16_val}', 6) + '  /  ' + pad_l('${u16_val}', 5) + '  (0x${u16_val:04X})'
-	lines << '   • 32-bit Dword  (i32 / u32) : ' + pad_l('${i32_val}', 11) + '  /  ' + pad_l('${u32_val}', 10) + '  (0x${u32_val:08X})'
-	lines << '   • 64-bit Qword  (i64 / u64) : ' + pad_l('${i64_val}', 20) + '  /  ' + pad_l('${u64_val}', 20)
+	lines << '   • 8-bit Byte    (i8 / u8)   : ' + pad_l('${i8_val}', 6) + '  /  ' +
+		pad_l('${u8_val}', 5) + '  (0x${u8_val:02X})'
+	lines << '   • 16-bit Word   (i16 / u16) : ' + pad_l('${i16_val}', 6) + '  /  ' +
+		pad_l('${u16_val}', 5) + '  (0x${u16_val:04X})'
+	lines << '   • 32-bit Dword  (i32 / u32) : ' + pad_l('${i32_val}', 11) + '  /  ' +
+		pad_l('${u32_val}', 10) + '  (0x${u32_val:08X})'
+	lines << '   • 64-bit Qword  (i64 / u64) : ' + pad_l('${i64_val}', 20) + '  /  ' +
+		pad_l('${u64_val}', 20)
 	lines << '------------------------------------------------------------------------'
 	lines << ' FLOATING-POINT INTERPRETATION:'
 	lines << '   • IEEE 754 Float32          : ${f32_val}'
@@ -438,21 +447,11 @@ fn swap_bytes_16(v u16) u16 {
 }
 
 fn swap_bytes_32(v u32) u32 {
-	return ((v >> 24) & 0xFF) |
-		((v >> 8) & 0xFF00) |
-		((v << 8) & 0xFF_0000) |
-		((v << 24) & 0xFF00_0000)
+	return ((v >> 24) & 0xFF) | ((v >> 8) & 0xFF00) | ((v << 8) & 0xFF_0000) | ((v << 24) & 0xFF00_0000)
 }
 
 fn swap_bytes_64(v u64) u64 {
-	return ((v >> 56) & 0x0000_0000_0000_00FF) |
-		((v >> 40) & 0x0000_0000_0000_FF00) |
-		((v >> 24) & 0x0000_0000_00FF_0000) |
-		((v >> 8) & 0x0000_0000_FF00_0000) |
-		((v << 8) & 0x0000_00FF_0000_0000) |
-		((v << 24) & 0x0000_FF00_0000_0000) |
-		((v << 40) & 0x00FF_0000_0000_0000) |
-		((v << 56) & 0xFF00_0000_0000_0000)
+	return ((v >> 56) & 0x0000_0000_0000_00FF) | ((v >> 40) & 0x0000_0000_0000_FF00) | ((v >> 24) & 0x0000_0000_00FF_0000) | ((v >> 8) & 0x0000_0000_FF00_0000) | ((v << 8) & 0x0000_00FF_0000_0000) | ((v << 24) & 0x0000_FF00_0000_0000) | ((v << 40) & 0x00FF_0000_0000_0000) | ((v << 56) & 0xFF00_0000_0000_0000)
 }
 
 fn reverse_bits_64(v u64) u64 {
@@ -470,7 +469,8 @@ fn reverse_bits_64(v u64) u64 {
 fn main() {
 	println('Starting SimpleGUI - Programmer Calculator Studio Pro...')
 
-	mut win := simplegui.new_simple_window("🧮 Programmer's Calculator Pro — Systems, Hex & Bitwise Engine", 1180, 920)
+	mut win := simplegui.new_simple_window("🧮 Programmer's Calculator Pro — Systems, Hex & Bitwise Engine",
+		1180, 920)
 	win.restore_saved_theme()
 	win.set_spacing(6)
 	win.set_padding(14)
@@ -578,7 +578,8 @@ fn main() {
 	win.add_button('btn_apply_y', 'Apply Y with Selected Op')
 	win.end_row()
 
-	win.add_textarea('txt_calc_report', 'Real-time multi-radix evaluation report will appear here.\n')
+	win.add_textarea('txt_calc_report',
+		'Real-time multi-radix evaluation report will appear here.\n')
 	win.set_control_height('txt_calc_report', 300)
 	win.set_control_font_name('txt_calc_report', 'Menlo')
 	win.set_control_font_size('txt_calc_report', 12)
@@ -646,7 +647,8 @@ fn main() {
 	win.add_button('btn_revbits', 'Reverse All Bits')
 	win.end_row()
 
-	win.add_textarea('txt_endian_report', 'Endianness byte swaps and reverse bit representations will appear here.\n')
+	win.add_textarea('txt_endian_report',
+		'Endianness byte swaps and reverse bit representations will appear here.\n')
 	win.set_control_height('txt_endian_report', 340)
 	win.set_control_font_name('txt_endian_report', 'Menlo')
 	win.set_control_font_size('txt_endian_report', 12)
@@ -671,7 +673,8 @@ fn main() {
 	win.add_button('btn_pre_deadbeef', '0xDEADBEEF (Magic Value)')
 	win.end_row()
 
-	win.add_textarea('txt_presets_report', 'Quickly load common bitwise masks and constants above.\n')
+	win.add_textarea('txt_presets_report',
+		'Quickly load common bitwise masks and constants above.\n')
 	win.set_control_height('txt_presets_report', 300)
 	win.set_control_font_name('txt_presets_report', 'Menlo')
 	win.set_control_font_size('txt_presets_report', 12)
@@ -688,7 +691,8 @@ fn main() {
 	win.add_button('btn_export_ledger', '💾 Export Ledger...')
 	win.end_row()
 
-	win.add_textarea('txt_ledger', 'All programmer calculator operations and evaluations are recorded here.\n')
+	win.add_textarea('txt_ledger',
+		'All programmer calculator operations and evaluations are recorded here.\n')
 	win.set_control_height('txt_ledger', 380)
 	win.set_control_font_name('txt_ledger', 'Menlo')
 	win.set_control_font_size('txt_ledger', 12)
@@ -798,7 +802,8 @@ fn main() {
 		w.set('txt_endian_report', end_rep.join('\n'))
 
 		w.set('lbl_status_bar', '🧮 Value = ${hex_str} (${val} dec, 0b${bin_str})')
-		append_ledger(mut w, 'Register Update: ${hex_str}', 'DEC: ${val}, BIN: 0b${bin_str}, Popcount: ${bm.popcount}')
+		append_ledger(mut w, 'Register Update: ${hex_str}',
+			'DEC: ${val}, BIN: 0b${bin_str}, Popcount: ${bm.popcount}')
 	}
 
 	// -------------------------------------------------------------
@@ -846,7 +851,8 @@ fn main() {
 	win.on_click('btn_sync_reg', fn [mut state, sync_all_views] (mut w simplegui.SimpleWindow) {
 		raw_in := w.get('txt_main_val')
 		parsed := parse_any_radix(raw_in) or {
-			w.alert('Parse Error', 'Invalid integer or radix format: "${raw_in}".\nUse 0x.. for Hex, 0b.. for Binary, 0o.. for Octal, or Plain Decimal.')
+			w.alert('Parse Error',
+				'Invalid integer or radix format: "${raw_in}".\nUse 0x.. for Hex, 0b.. for Binary, 0o.. for Octal, or Plain Decimal.')
 			return
 		}
 		state.current_val = parsed
@@ -902,6 +908,7 @@ fn main() {
 			.ws_dword { bit_len = 32 }
 			.ws_qword { bit_len = 64 }
 		}
+
 		high_bit := (val >> u64(bit_len - 1)) & 1
 		state.current_val = ((val << 1) | high_bit)
 		sync_all_views(mut w, true)
@@ -917,6 +924,7 @@ fn main() {
 			.ws_dword { bit_len = 32 }
 			.ws_qword { bit_len = 64 }
 		}
+
 		low_bit := val & 1
 		state.current_val = ((val >> 1) | (low_bit << u64(bit_len - 1)))
 		sync_all_views(mut w, true)

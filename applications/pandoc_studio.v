@@ -80,7 +80,8 @@ fn main() {
 		w.toast('Theme changed to ${selected}')
 	})
 	pandoc_path := get_pandoc_bin()
-	win.add_label('lbl_engine_info', '⚡ Engine: ${pandoc_path}  |  Platform: macOS Cocoa  |  Mode: Async Worker (Zero UI Freezes)')
+	win.add_label('lbl_engine_info',
+		'⚡ Engine: ${pandoc_path}  |  Platform: macOS Cocoa  |  Mode: Async Worker (Zero UI Freezes)')
 
 	// -------------------------------------------------------------
 	// Format Selection & Transformation Matrix
@@ -148,7 +149,8 @@ fn main() {
 	// -------------------------------------------------------------
 	// Dual Pane: Input Document & Output Preview
 	// -------------------------------------------------------------
-	win.begin_group_box('grp_input_pane', '📥 Input Document (Markdown, HTML, LaTeX, or Raw Source)')
+	win.begin_group_box('grp_input_pane',
+		'📥 Input Document (Markdown, HTML, LaTeX, or Raw Source)')
 	win.begin_row('row_in_actions')
 	win.add_button('btn_load_sample', '📄 Load Sample Markdown')
 	win.add_button('btn_load_in_file', '📂 Load File from Disk...')
@@ -180,7 +182,8 @@ fn main() {
 
 	// Stats Row
 	win.begin_row('row_stats')
-	win.add_label('lbl_stats', '📊 Stats: Ready  |  Input Length: 0  |  Output Length: 0  |  Duration: 0 ms')
+	win.add_label('lbl_stats',
+		'📊 Stats: Ready  |  Input Length: 0  |  Output Length: 0  |  Duration: 0 ms')
 	win.end_row()
 
 	// -------------------------------------------------------------
@@ -235,12 +238,15 @@ fn main() {
 				if res.exit_code == 0 {
 					out_str := res.output
 					win_main.set('txt_output_data', out_str)
-					win_main.set('lbl_stats', '📊 Stats: SUCCESS  |  ${from_fmt} ➔ ${to_fmt}  |  Out Size: ${out_str.len} bytes  |  Duration: ${elapsed_ms} ms')
+					win_main.set('lbl_stats',
+						'📊 Stats: SUCCESS  |  ${from_fmt} ➔ ${to_fmt}  |  Out Size: ${out_str.len} bytes  |  Duration: ${elapsed_ms} ms')
 					win_main.set_status('Converted ${from_fmt} to ${to_fmt} in ${elapsed_ms} ms.')
 					win_main.toast('Document converted in ${elapsed_ms} ms!')
 				} else {
-					win_main.set('txt_output_data', '⚠️ Pandoc Conversion Error:\n\n' + res.output)
-					win_main.set('lbl_stats', '📊 Stats: ERROR (Exit code ${res.exit_code})  |  Duration: ${elapsed_ms} ms')
+					win_main.set('txt_output_data', '⚠️ Pandoc Conversion Error:\n\n' +
+						res.output)
+					win_main.set('lbl_stats',
+						'📊 Stats: ERROR (Exit code ${res.exit_code})  |  Duration: ${elapsed_ms} ms')
 					win_main.set_status('Pandoc reported a conversion error.')
 				}
 			})
@@ -274,9 +280,9 @@ fn main() {
 				w.set_text('dd_from', 'html')
 			} else if ext in ['.tex', '.latex'] {
 				w.set_text('dd_from', 'latex')
-			} else if ext in ['.rst'] {
+			} else if ext == '.rst' {
 				w.set_text('dd_from', 'rst (reStructuredText)')
-			} else if ext in ['.org'] {
+			} else if ext == '.org' {
 				w.set_text('dd_from', 'org (Emacs Org-mode)')
 			}
 			w.toast('Loaded ${os.file_name(path)}')
@@ -356,7 +362,6 @@ fn main() {
 		if is_toc { args << '--toc' }
 		if is_num_sec { args << '-N' }
 		if theme != '' { args << '--highlight-style=${theme}' }
-
 		// PDF engine check
 		if out_path.ends_with('.pdf') {
 			if _ := os.find_abs_path_of_executable('typst') {
@@ -383,7 +388,8 @@ fn main() {
 					kb := f64(sz) / 1024.0
 					win_main.set_status('Published ${os.file_name(out_path)} (${kb:.1f} KB) in ${elapsed_ms} ms.')
 					win_main.toast('Published: ${os.file_name(out_path)} (${kb:.1f} KB)!')
-					win_main.alert('Publish Success', 'Successfully compiled document to:\n${out_path}\n\nSize: ${kb:.1f} KB\nTime: ${elapsed_ms} ms')
+					win_main.alert('Publish Success',
+						'Successfully compiled document to:\n${out_path}\n\nSize: ${kb:.1f} KB\nTime: ${elapsed_ms} ms')
 				} else {
 					win_main.alert('Pandoc Error', 'Error publishing file: ' + res.output)
 					win_main.set_status('Error publishing file.')

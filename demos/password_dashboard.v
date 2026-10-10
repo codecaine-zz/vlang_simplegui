@@ -21,7 +21,8 @@ fn main() {
 	win.add_heading('Lockbox Security Dashboard')
 		.font_color('#cba6f7') // Catppuccin Purple accent
 
-	win.add_label('desc', 'Generate strong passwords, inspect cryptographic hashes, and manage credentials securely.')
+	win.add_label('desc',
+		'Generate strong passwords, inspect cryptographic hashes, and manage credentials securely.')
 		.font_color('#a6adc8')
 	win.set_control_font_size('desc', 12)
 

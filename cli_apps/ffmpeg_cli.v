@@ -80,7 +80,8 @@ fn main() {
 }
 
 fn run_interactive(mut app simplecli.SimpleCli) {
-	app.panel('FFmpeg Transcoder Wizard', 'Quickly convert media formats, resize video, or extract audio tracks.')
+	app.panel('FFmpeg Transcoder Wizard',
+		'Quickly convert media formats, resize video, or extract audio tracks.')
 	input := app.prompt('Enter input media path', 'sample.mov')
 	choice := app.select('Select Action:', [
 		'Convert to Web MP4 (H.264 / AAC)',

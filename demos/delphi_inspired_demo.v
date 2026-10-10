@@ -36,11 +36,12 @@ fn main() {
 			'info')
 	})
 	win.add_action('warn_btn', 'Show Warning Alert', fn (mut w simplegui.SimpleWindow) {
-		w.alert_with_style('Caution Required', 'Deprecations found. Please upgrade to the latest macOS target framework.',
-			'warning')
+		w.alert_with_style('Caution Required',
+			'Deprecations found. Please upgrade to the latest macOS target framework.', 'warning')
 	})
 	win.add_action('error_btn', 'Show Critical Error', fn (mut w simplegui.SimpleWindow) {
-		w.alert_with_style('Linker Error (Visual debug)', 'Undefined symbol found! Missing Cocoa framework references in your build script.',
+		w.alert_with_style('Linker Error (Visual debug)',
+			'Undefined symbol found! Missing Cocoa framework references in your build script.',
 			'error')
 	})
 	win.end_row()
@@ -82,7 +83,8 @@ fn main() {
 
 	// 3. Easy-To-Use ListView load from Struct list (Anders' Reflection philosophy)
 
-	win.add_label('table_lbl', '3. ListView Autowired from Array of Structs (Load compile-time reflection)')
+	win.add_label('table_lbl',
+		'3. ListView Autowired from Array of Structs (Load compile-time reflection)')
 		.bold(true)
 		.font_size(14)
 		.font_color('#f43f5e')

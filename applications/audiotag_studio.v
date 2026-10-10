@@ -46,7 +46,8 @@ fn run_probe_audio(mut w simplegui.SimpleWindow, audio_path string) {
 	}
 
 	ffprobe_bin := get_ffprobe_bin()
-	w.append_console('audio_console', '▶ Probing audio stream for: ${os.file_name(audio_path)}...\n', 1)
+	w.append_console('audio_console',
+		'▶ Probing audio stream for: ${os.file_name(audio_path)}...\n', 1)
 	w.set_status('Extracting audio metadata...')
 
 	go fn [mut w, ffprobe_bin, audio_path] () {
@@ -67,8 +68,10 @@ fn run_probe_audio(mut w simplegui.SimpleWindow, audio_path string) {
 			win_main.set('txt_stream_info', out)
 
 			if res.exit_code == 0 {
-				win_main.append_console('audio_console', '✅ Audio stream probed in ${elapsed_ms} ms.\n', 4)
-				win_main.set('lbl_stats', '📊 Stats: SUCCESS  |  File: ${os.file_name(audio_path)}  |  Duration: ${elapsed_ms} ms')
+				win_main.append_console('audio_console',
+					'✅ Audio stream probed in ${elapsed_ms} ms.\n', 4)
+				win_main.set('lbl_stats',
+					'📊 Stats: SUCCESS  |  File: ${os.file_name(audio_path)}  |  Duration: ${elapsed_ms} ms')
 				win_main.set_status('Audio metadata loaded.')
 				win_main.toast('Loaded ' + os.file_name(audio_path))
 			} else {
@@ -81,7 +84,8 @@ fn run_probe_audio(mut w simplegui.SimpleWindow, audio_path string) {
 fn main() {
 	println('Starting SimpleGUI - Audio Tag & Lossless Studio Pro...')
 
-	mut win := simplegui.new_simple_window('🎵 SimpleGUI - Audio Tag & Lossless Studio Pro', 1080, 950)
+	mut win := simplegui.new_simple_window('🎵 SimpleGUI - Audio Tag & Lossless Studio Pro',
+		1080, 950)
 	win.set_spacing(8)
 	win.set_padding(16)
 
@@ -102,10 +106,12 @@ fn main() {
 	})
 
 	ff_path := get_ffmpeg_bin()
-	win.add_label('lbl_engine_info', '⚡ Engine: ${ff_path} (FFmpeg & macOS CoreAudio)  |  Platform: macOS Cocoa')
+	win.add_label('lbl_engine_info',
+		'⚡ Engine: ${ff_path} (FFmpeg & macOS CoreAudio)  |  Platform: macOS Cocoa')
 
 	// File Selection Bar
-	win.begin_group_box('grp_file_scope', '📁 Target Audio File (MP3, FLAC, M4A, AAC, WAV, OGG, AIFF)')
+	win.begin_group_box('grp_file_scope',
+		'📁 Target Audio File (MP3, FLAC, M4A, AAC, WAV, OGG, AIFF)')
 
 	win.begin_row('row_file_bar')
 	win.add_label('lbl_audio_file', 'Audio File:')
@@ -192,11 +198,13 @@ fn main() {
 
 	// Status Row
 	win.begin_row('row_stats')
-	win.add_label('lbl_stats', '📊 Stats: Ready  |  Bitrate: None  |  Sample Rate: None  |  Channels: None')
+	win.add_label('lbl_stats',
+		'📊 Stats: Ready  |  Bitrate: None  |  Sample Rate: None  |  Channels: None')
 	win.end_row()
 
 	win.append_console('audio_console', '🎵 Audio Tag & Lossless Studio Pro Initialized.\n', 1)
-	win.append_console('audio_console', '⚡ Ready to inspect and edit ID3v2, Vorbis, and MP4 tags.\n', 4)
+	win.append_console('audio_console',
+		'⚡ Ready to inspect and edit ID3v2, Vorbis, and MP4 tags.\n', 4)
 
 	// -------------------------------------------------------------
 	// Event Handlers
@@ -310,11 +318,13 @@ fn main() {
 					os.cp(tmp_out, path) or {}
 					os.rm(tmp_out) or {}
 
-					win_main.append_console('audio_console', '✅ Audio tags written successfully!\n', 4)
+					win_main.append_console('audio_console',
+						'✅ Audio tags written successfully!\n', 4)
 					win_main.toast('Tags updated!')
 					run_probe_audio(mut win_main, path)
 				} else {
-					win_main.append_console('audio_console', '❌ Error writing tags: ' + res.output + '\n', 3)
+					win_main.append_console('audio_console', '❌ Error writing tags: ' +
+						res.output + '\n', 3)
 					win_main.toast('Failed to write tags.')
 				}
 			})
@@ -340,7 +350,8 @@ fn main() {
 				save_file])
 			if res.exit_code == 0 && os.exists(save_file) {
 				w.toast('Cover art extracted to ' + os.file_name(save_file))
-				w.append_console('audio_console', '🖼️ Album cover art saved: ${save_file}\n', 4)
+				w.append_console('audio_console', '🖼️ Album cover art saved: ${save_file}\n',
+					4)
 			} else {
 				w.alert('No Cover Art', 'No embedded artwork found in this audio file.')
 			}
@@ -359,7 +370,8 @@ fn main() {
 		ext := os.file_ext(path)
 		tmp_out := os.join_path(os.temp_dir(), 'clean_${time.ticks()}${ext}')
 
-		w.append_console('audio_console', '🧹 Stripping all metadata tags (-map_metadata -1)...\n', 1)
+		w.append_console('audio_console',
+			'🧹 Stripping all metadata tags (-map_metadata -1)...\n', 1)
 		w.set_status('Clearing tags...')
 
 		go fn [mut w, ffmpeg_bin, tmp_out, path] () {

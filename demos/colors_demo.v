@@ -14,7 +14,8 @@ fn main() {
 	win.add_heading('Live Control Colorizer')
 		.font_color('#f5c2e7')
 
-	win.add_label('desc', 'Select a target control, pick custom colors, or select a theme preset to dynamically style multiple controls at runtime.')
+	win.add_label('desc',
+		'Select a target control, pick custom colors, or select a theme preset to dynamically style multiple controls at runtime.')
 		.font_color('#bac2de')
 	win.set_control_font_size('desc', 11)
 
@@ -92,7 +93,8 @@ fn main() {
 			.bold(true)
 			.font_color('#f5c2e7')
 
-		w.add_label('preview_label', 'This label will change color in real-time as you tweak custom background/font colors or cycle presets.')
+		w.add_label('preview_label',
+			'This label will change color in real-time as you tweak custom background/font colors or cycle presets.')
 
 		w.add_label('lbl_preview_input', 'Input Field:')
 
@@ -101,7 +103,8 @@ fn main() {
 
 		w.add_label('lbl_preview_textarea', 'Textarea:')
 
-		w.add_textarea('preview_textarea', 'Multi-line notes field. Apply custom backgrounds and text colors to verify readability.')
+		w.add_textarea('preview_textarea',
+			'Multi-line notes field. Apply custom backgrounds and text colors to verify readability.')
 			.height(80)
 
 		w.add_vertical_spacer(5)

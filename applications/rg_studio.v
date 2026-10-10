@@ -143,7 +143,8 @@ fn main() {
 	})
 
 	rg_path := get_rg_bin()
-	win.add_label('lbl_engine_info', '⚡ Engine: ${rg_path} (ripgrep)  |  Platform: macOS Cocoa  |  Mode: Async Worker (Zero Freezes)')
+	win.add_label('lbl_engine_info',
+		'⚡ Engine: ${rg_path} (ripgrep)  |  Platform: macOS Cocoa  |  Mode: Async Worker (Zero Freezes)')
 
 	all_recipes := get_all_rg_recipes()
 
@@ -293,7 +294,11 @@ fn main() {
 
 			if is_fixed { raw_args << '-F' }
 			if is_word { raw_args << '-w' }
-			if is_case_s { raw_args << '-s' } else { raw_args << '-S' } // Smart Case default
+			if is_case_s {
+				raw_args << '-s'
+			} else {
+				raw_args << '-S'
+			} // Smart Case default
 			if is_invert { raw_args << '-v' }
 			if is_hidden { raw_args << '--hidden' }
 			if is_no_ignore { raw_args << '--no-ignore' }
@@ -330,12 +335,14 @@ fn main() {
 						count = out_str.split_into_lines().len
 					}
 
-					win_main.set('lbl_stats', '📊 Stats: SUCCESS  |  Lines / Matches: ${count}  |  Duration: ${elapsed_ms} ms')
+					win_main.set('lbl_stats',
+						'📊 Stats: SUCCESS  |  Lines / Matches: ${count}  |  Duration: ${elapsed_ms} ms')
 					win_main.set_status('Found ${count} lines matching query in ${elapsed_ms} ms.')
 					win_main.toast('Found ${count} matches in ${elapsed_ms} ms!')
 				} else {
 					win_main.set('txt_results', '⚠️ Ripgrep Error:\n\n' + res.output)
-					win_main.set('lbl_stats', '📊 Stats: ERROR (Exit code ${res.exit_code})  |  Duration: ${elapsed_ms} ms')
+					win_main.set('lbl_stats',
+						'📊 Stats: ERROR (Exit code ${res.exit_code})  |  Duration: ${elapsed_ms} ms')
 					win_main.set_status('Ripgrep returned an error.')
 				}
 			})

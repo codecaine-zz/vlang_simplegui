@@ -25,7 +25,8 @@ fn get_exiftool_bin() string {
 fn main() {
 	println('Starting SimpleGUI - ExifTool Metadata Studio Pro...')
 
-	mut win := simplegui.new_simple_window('🔍 SimpleGUI - ExifTool Metadata Studio Pro', 1080, 950)
+	mut win :=
+		simplegui.new_simple_window('🔍 SimpleGUI - ExifTool Metadata Studio Pro', 1080, 950)
 	win.set_spacing(8)
 	win.set_padding(16)
 
@@ -46,10 +47,12 @@ fn main() {
 	})
 
 	exiftool_path := get_exiftool_bin()
-	win.add_label('lbl_engine_info', '⚡ Engine: ${exiftool_path}  |  Platform: macOS Cocoa  |  Mode: Async Non-Blocking')
+	win.add_label('lbl_engine_info',
+		'⚡ Engine: ${exiftool_path}  |  Platform: macOS Cocoa  |  Mode: Async Non-Blocking')
 
 	// Media File Selection Bar
-	win.begin_group_box('grp_file_scope', '📁 Target Media File (JPEG, PNG, HEIC, TIFF, RAW, MP4, MOV)')
+	win.begin_group_box('grp_file_scope',
+		'📁 Target Media File (JPEG, PNG, HEIC, TIFF, RAW, MP4, MOV)')
 
 	win.begin_row('row_file_select')
 	win.add_label('lbl_media_file', 'Media File:')
@@ -103,11 +106,14 @@ fn main() {
 
 	// Status Row
 	win.begin_row('row_stats')
-	win.add_label('lbl_stats', '📊 Stats: Ready  |  File: None  |  GPS: Not Detected  |  Duration: 0 ms')
+	win.add_label('lbl_stats',
+		'📊 Stats: Ready  |  File: None  |  GPS: Not Detected  |  Duration: 0 ms')
 	win.end_row()
 
 	win.append_console('exif_console', '🔍 ExifTool Metadata Studio Pro Initialized.\n', 1)
-	win.append_console('exif_console', '⚡ Select an image or video to inspect camera EXIF, GPS location, and color profiles.\n', 4)
+	win.append_console('exif_console',
+		'⚡ Select an image or video to inspect camera EXIF, GPS location, and color profiles.\n',
+		4)
 
 	// -------------------------------------------------------------
 	// Event Handlers
@@ -122,7 +128,8 @@ fn main() {
 		}
 
 		exiftool_bin := get_exiftool_bin()
-		w.append_console('exif_console', '▶ Reading EXIF metadata for: ${os.file_name(file_path)}...\n', 1)
+		w.append_console('exif_console',
+			'▶ Reading EXIF metadata for: ${os.file_name(file_path)}...\n', 1)
 		w.set_status('Extracting metadata...')
 
 		go fn [mut w, exiftool_bin, file_path] () {
@@ -139,13 +146,18 @@ fn main() {
 
 				if res.exit_code == 0 {
 					lines_cnt := if out != '' { out.split_into_lines().len } else { 0 }
-					win_main.append_console('exif_console', '✅ Extracted ${lines_cnt} metadata tags in ${elapsed_ms} ms (${gps_status}).\n', 4)
-					win_main.set('lbl_stats', '📊 Stats: SUCCESS  |  File: ${os.file_name(file_path)}  |  Tags: ${lines_cnt}  |  ${gps_status}  |  Duration: ${elapsed_ms} ms')
+					win_main.append_console('exif_console',
+						'✅ Extracted ${lines_cnt} metadata tags in ${elapsed_ms} ms (${gps_status}).\n',
+						4)
+					win_main.set('lbl_stats',
+						'📊 Stats: SUCCESS  |  File: ${os.file_name(file_path)}  |  Tags: ${lines_cnt}  |  ${gps_status}  |  Duration: ${elapsed_ms} ms')
 					win_main.set_status('Metadata extracted in ${elapsed_ms} ms.')
 					win_main.toast('Metadata extracted successfully!')
 				} else {
-					win_main.append_console('exif_console', '❌ ExifTool Notice:\n' + out + '\n', 3)
-					win_main.set('lbl_stats', '📊 Stats: NOTICE (Exit ${res.exit_code})  |  Duration: ${elapsed_ms} ms')
+					win_main.append_console('exif_console', '❌ ExifTool Notice:\n' + out + '\n',
+						3)
+					win_main.set('lbl_stats',
+						'📊 Stats: NOTICE (Exit ${res.exit_code})  |  Duration: ${elapsed_ms} ms')
 					win_main.set_status('ExifTool completed with notices.')
 				}
 			})
@@ -182,9 +194,11 @@ fn main() {
 			maps_url := 'https://maps.apple.com/?q=${clean_coords}'
 			os.execute('open "${maps_url}"')
 			w.toast('Opened coordinates in Apple Maps: ${coords}')
-			w.append_console('exif_console', '🗺️ GPS Coordinates: ${coords} ➔ Launched Maps\n', 4)
+			w.append_console('exif_console',
+				'🗺️ GPS Coordinates: ${coords} ➔ Launched Maps\n', 4)
 		} else {
-			w.alert('No GPS Found', 'This media file does not contain embedded GPS latitude/longitude metadata.')
+			w.alert('No GPS Found',
+				'This media file does not contain embedded GPS latitude/longitude metadata.')
 		}
 	})
 
@@ -201,7 +215,8 @@ fn main() {
 		desc := w.get('txt_description').trim_space()
 
 		if artist == '' && copyright == '' && desc == '' {
-			w.alert('No Tags', 'Please enter at least one tag (Artist, Copyright, or Description) to write.')
+			w.alert('No Tags',
+				'Please enter at least one tag (Artist, Copyright, or Description) to write.')
 			return
 		}
 
@@ -235,7 +250,8 @@ fn main() {
 					re_res := simplegui.exec_safe(exiftool_bin, [path])
 					win_main.set('txt_metadata_report', re_res.output.trim_space())
 				} else {
-					win_main.append_console('exif_console', '❌ Error writing tags: ' + res.output + '\n', 3)
+					win_main.append_console('exif_console', '❌ Error writing tags: ' +
+						res.output + '\n', 3)
 					win_main.toast('Failed to write tags.')
 				}
 			})
@@ -251,19 +267,22 @@ fn main() {
 		}
 
 		exiftool_bin := get_exiftool_bin()
-		w.append_console('exif_console', '🧹 Stripping ALL metadata and GPS tags (-all= -overwrite_original)...\n', 1)
+		w.append_console('exif_console',
+			'🧹 Stripping ALL metadata and GPS tags (-all= -overwrite_original)...\n', 1)
 		w.set_status('Scrubbing metadata...')
 
 		go fn [mut w, exiftool_bin, path] () {
 			res := simplegui.exec_safe(exiftool_bin, ['-all=', '-overwrite_original', path])
 			w.run_on_main_thread(fn [res, path, exiftool_bin] (mut win_main simplegui.SimpleWindow) {
 				if res.exit_code == 0 {
-					win_main.append_console('exif_console', '✅ Privacy Scrub Complete: All EXIF/GPS metadata removed.\n', 4)
+					win_main.append_console('exif_console',
+						'✅ Privacy Scrub Complete: All EXIF/GPS metadata removed.\n', 4)
 					win_main.toast('File completely scrubbed!')
 					re_res := simplegui.exec_safe(exiftool_bin, [path])
 					win_main.set('txt_metadata_report', re_res.output.trim_space())
 				} else {
-					win_main.append_console('exif_console', '❌ Error stripping metadata: ' + res.output + '\n', 3)
+					win_main.append_console('exif_console', '❌ Error stripping metadata: ' +
+						res.output + '\n', 3)
 				}
 			})
 		}()

@@ -97,7 +97,8 @@ fn test_grid_state_getters_and_setters_are_available() {
 
 fn test_grid_sort_api_is_available() {
 	mut win := simplegui.SimpleWindow{}
-	win.add_grid('inventory', ['ID', 'Task'], [['3', 'Ship'], ['1', 'Build'], ['2', 'Test']])
+	win.add_grid('inventory', ['ID', 'Task'], [['3', 'Ship'],
+		['1', 'Build'], ['2', 'Test']])
 
 	win.grid_sort_by_column('inventory', 0, true)
 }
@@ -625,11 +626,13 @@ fn test_list_sort_move_and_search_binding() {
 fn test_table_sort_move_and_csv_roundtrip() {
 	mut win := simplegui.SimpleWindow{}
 	win.add_table('inv', ['Name', 'Qty'])
-	win.set_table_rows('inv', [['bolt', '2'], ['Anchor', '10'], ['clip', '1']])
+	win.set_table_rows('inv', [['bolt', '2'], ['Anchor', '10'],
+		['clip', '1']])
 
 	// Numeric-aware column sort
 	win.sort_table_by_column('inv', 1, true)
-	assert win.get_table_rows('inv') == [['clip', '1'], ['bolt', '2'], ['Anchor', '10']]
+	assert win.get_table_rows('inv') == [['clip', '1'], ['bolt', '2'],
+		['Anchor', '10']]
 
 	// Case-insensitive text sort, descending
 	win.sort_table_by_column('inv', 0, false)
@@ -1006,8 +1009,8 @@ fn test_new_extended_controls_api() {
 	win.add_timeline_view('act_feed', 180)
 	assert win.has_control('act_feed') == true
 	assert win.get_control_kind('act_feed') == 'timeline_view'
-	win.add_timeline_entry('act_feed', '14:32:01', 'Build Completed', 'Artifact simplegui v2.4 compiled',
-		'success')
+	win.add_timeline_entry('act_feed', '14:32:01', 'Build Completed',
+		'Artifact simplegui v2.4 compiled', 'success')
 
 	// Toolbar Item
 	win.add_toolbar_item('tb_refresh', 'Refresh Data', 'Refresh active dataset', 'arrow.clockwise')
@@ -1527,7 +1530,8 @@ fn test_modern_productivity_and_analytics_controls() {
 	win.set_activity_rings_values('rings1', [0.80, 0.60, 0.95])
 
 	// 2. Hero Banner
-	win.add_hero_banner('banner1', 'Welcome to SimpleGUI', 'The fastest native desktop GUI library for V', 'Get Started', 'indigo')
+	win.add_hero_banner('banner1', 'Welcome to SimpleGUI',
+		'The fastest native desktop GUI library for V', 'Get Started', 'indigo')
 	assert win.has_control('banner1')
 
 	// 3. Segmented Progress
@@ -1593,7 +1597,8 @@ fn test_simple_gg_ideals_super_controls() {
 	win.score_card('Product Rating', 4.8, 1200, [85.0, 10.0, 3.0, 1.5, 0.5])
 
 	// 4. Floating Action Toolbar
-	win.add_floating_toolbar('hero_bar', 'DevStudio Pro', ['Overview', 'Deploy', 'Logs', 'Settings'])
+	win.add_floating_toolbar('hero_bar', 'DevStudio Pro',
+		['Overview', 'Deploy', 'Logs', 'Settings'])
 	assert win.has_control('hero_bar')
 	win.floating_toolbar('Tools', ['Build', 'Run', 'Test'])
 }
@@ -1602,13 +1607,15 @@ fn test_simple_gg_ideals_image_and_media_controls() {
 	mut win := simplegui.SimpleWindow{}
 
 	// 1. User Profile Card
-	win.add_user_profile_card('prof_ada', '', 'Ada Lovelace', '@ada', 'Systems Architect', 'Pioneer of computing algorithms.', true, '[Connect]')
+	win.add_user_profile_card('prof_ada', '', 'Ada Lovelace', '@ada', 'Systems Architect',
+		'Pioneer of computing algorithms.', true, '[Connect]')
 	assert win.has_control('prof_ada')
 	win.set_user_online_status('prof_ada', false)
 	win.user_profile('', 'Alex Chen', '@alex', 'Senior SRE', 'Cloud infrastructure lead.')
 
 	// 2. Product Card
-	win.add_product_card('prod_key', '', 'Custom Mechanical Keyboard', 'Walnut finish with RGB backlighting', '$189.00', 'BESTSELLER', '[Buy Now]')
+	win.add_product_card('prod_key', '', 'Custom Mechanical Keyboard',
+		'Walnut finish with RGB backlighting', '$189.00', 'BESTSELLER', '[Buy Now]')
 	assert win.has_control('prod_key')
 	win.product_card('', 'Developer Keypad', '$79.00')
 
@@ -1626,7 +1633,8 @@ fn test_simple_gg_ideals_image_and_media_controls() {
 	win.gallery(['photo1.png', 'photo2.png'])
 
 	// 4. App Launcher Tile
-	win.add_app_launcher_tile('tile_db', '', 'Cyber DB Engine', 'High-speed Key-Value Store', 'ONLINE')
+	win.add_app_launcher_tile('tile_db', '', 'Cyber DB Engine', 'High-speed Key-Value Store',
+		'ONLINE')
 	assert win.has_control('tile_db')
 	win.app_tile('', 'DevStudio CLI', 'READY')
 
@@ -1666,9 +1674,23 @@ fn test_simple_gg_ideals_ui_suite_and_ergonomics() {
 
 	// 4. Nav Rail
 	nav_items := [
-		simplegui.SidebarItem{ id: 'dash', title: 'Dashboard', icon: '⊞', is_active: true },
-		simplegui.SidebarItem{ id: 'cluster', title: 'Cluster', icon: '☁', badge: '12' },
-		simplegui.SidebarItem{ id: 'settings', title: 'Settings', icon: '⚙' },
+		simplegui.SidebarItem{
+			id:        'dash'
+			title:     'Dashboard'
+			icon:      '⊞'
+			is_active: true
+		},
+		simplegui.SidebarItem{
+			id:    'cluster'
+			title: 'Cluster'
+			icon:  '☁'
+			badge: '12'
+		},
+		simplegui.SidebarItem{
+			id:    'settings'
+			title: 'Settings'
+			icon:  '⚙'
+		},
 	]
 	win.add_nav_rail('app_rail', nav_items)
 	assert win.has_control('app_rail')

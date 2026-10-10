@@ -115,7 +115,8 @@ fn get_ouch_bin() string {
 fn main() {
 	println('Starting SimpleGUI - Ouch Studio Pro (Universal Archive & Compression Workbench)...')
 
-	mut win := simplegui.new_simple_window('📦 Ouch Studio Pro — Universal Archive & Compression Workbench', 1060, 940)
+	mut win := simplegui.new_simple_window('📦 Ouch Studio Pro — Universal Archive & Compression Workbench',
+		1060, 940)
 	win.restore_saved_theme()
 	win.set_spacing(8)
 	win.set_padding(16)
@@ -134,7 +135,8 @@ fn main() {
 	win.set_control_width('dd_theme_selector', 180)
 	win.end_row()
 
-	win.add_label('lbl_engine_info', '⚡ Engine: ${ouch_bin} (Ouch Fast Archive Helper)  |  Formats: tar, zip, gz, 7z, xz, zst, bz2, rar, lz4  |  Async Worker')
+	win.add_label('lbl_engine_info',
+		'⚡ Engine: ${ouch_bin} (Ouch Fast Archive Helper)  |  Formats: tar, zip, gz, 7z, xz, zst, bz2, rar, lz4  |  Async Worker')
 
 	// -------------------------------------------------------------
 	// Mode Selector & Quick Presets
@@ -162,7 +164,8 @@ fn main() {
 	win.end_row()
 
 	win.begin_row('row_rec_desc')
-	win.add_label('lbl_recipe_desc', 'ℹ️ Tip: Select Compress to package files, Decompress to extract, or List Tree to inspect.')
+	win.add_label('lbl_recipe_desc',
+		'ℹ️ Tip: Select Compress to package files, Decompress to extract, or List Tree to inspect.')
 	win.end_row()
 	win.end_group_box()
 
@@ -246,7 +249,8 @@ fn main() {
 	// Results & Activity Console
 	// -------------------------------------------------------------
 	win.begin_group_box('grp_results', '📊 Operation Log & Archive Tree Output')
-	win.add_textarea('txt_log', '🚀 Ouch Studio Pro ready. Select source path and click "Compress", "Decompress", or "Inspect Tree".\n')
+	win.add_textarea('txt_log',
+		'🚀 Ouch Studio Pro ready. Select source path and click "Compress", "Decompress", or "Inspect Tree".\n')
 	win.set_control_height('txt_log', 240)
 	win.end_group_box()
 
@@ -477,7 +481,8 @@ fn main() {
 				if res.exit_code == 0 && os.exists(dest) {
 					sz := os.file_size(dest)
 					mb := f64(sz) / (1024.0 * 1024.0)
-					msg := '✅ Successfully compressed archive in ${elapsed_ms} ms!\n📦 Archive: ${dest} (${mb:.2f} MB)\n\n' + res.output
+					msg :=
+						'✅ Successfully compressed archive in ${elapsed_ms} ms!\n📦 Archive: ${dest} (${mb:.2f} MB)\n\n' + res.output
 					win_main.set('txt_log', msg)
 					win_main.set_status('Compression completed successfully.')
 					win_main.toast('Archive created (${mb:.2f} MB)!')
@@ -523,7 +528,9 @@ fn main() {
 
 			w.run_on_main_thread(fn [res, elapsed_ms, src] (mut win_main simplegui.SimpleWindow) {
 				if res.exit_code == 0 {
-					msg := '✅ Successfully extracted archive in ${elapsed_ms} ms!\n📦 Source: ${src}\n\n' + res.output
+					msg :=
+						'✅ Successfully extracted archive in ${elapsed_ms} ms!\n📦 Source: ${src}\n\n' +
+						res.output
 					win_main.set('txt_log', msg)
 					win_main.set_status('Decompression finished.')
 					win_main.toast('Extraction completed!')

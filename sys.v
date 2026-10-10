@@ -913,8 +913,8 @@ pub fn (win &SimpleWindow) dns_lookup(hostname string) string {
 // get_wifi_ssid returns the SSID of the currently connected Wi-Fi network (macOS).
 // Uses fast ipconfig getsummary, falling back to the airport tool.
 pub fn (win &SimpleWindow) get_wifi_ssid() string {
-	ssid_ip := win.exec_or("ipconfig getsummary en0 2>/dev/null | awk -F ' : ' '/ SSID /{print $2}'",
-		'').trim_space()
+	ssid_ip :=
+		win.exec_or("ipconfig getsummary en0 2>/dev/null | awk -F ' : ' '/ SSID /{print $2}'", '').trim_space()
 	if ssid_ip.len > 0 {
 		return ssid_ip
 	}
@@ -962,8 +962,8 @@ pub fn (win &SimpleWindow) get_load_average() (f64, f64, f64) {
 // get_memory_pressure returns a macOS memory pressure string: "normal", "warn", or "critical".
 // Uses sysctl for sub-millisecond kernel lookup.
 pub fn (win &SimpleWindow) get_memory_pressure() string {
-	level := win.exec_or('sysctl -n kern.memorystatus_vm_pressure_level 2>/dev/null',
-		'').trim_space().int()
+	level :=
+		win.exec_or('sysctl -n kern.memorystatus_vm_pressure_level 2>/dev/null', '').trim_space().int()
 	if level >= 4 {
 		return 'critical'
 	} else if level >= 2 {
@@ -1125,8 +1125,8 @@ pub fn (win &SimpleWindow) get_serial_number() string {
 // get_screen_resolution returns the primary display resolution (e.g. "2560 x 1600").
 // Uses fast AppleScript desktop query with fallback.
 pub fn (win &SimpleWindow) get_screen_resolution() string {
-	raw := win.exec_or('osascript -e \'tell application "Finder" to get bounds of window of desktop\' 2>/dev/null',
-		'')
+	raw :=
+		win.exec_or('osascript -e \'tell application "Finder" to get bounds of window of desktop\' 2>/dev/null', '')
 	if raw.len > 0 {
 		parts := raw.split(',').map(it.trim_space())
 		if parts.len >= 4 {
@@ -1140,8 +1140,8 @@ pub fn (win &SimpleWindow) get_screen_resolution() string {
 // get_gpu_info returns the GPU model string of the primary graphics adapter.
 // Uses fast IOPCIDevice ioreg lookup with fallback.
 pub fn (win &SimpleWindow) get_gpu_info() string {
-	ioreg_gpu := win.exec_or('ioreg -rc IOPCIDevice 2>/dev/null | awk -F \'"\' \'/"model" = /{print $4}\' | head -1',
-		'').trim_space()
+	ioreg_gpu :=
+		win.exec_or('ioreg -rc IOPCIDevice 2>/dev/null | awk -F \'"\' \'/"model" = /{print $4}\' | head -1', '').trim_space()
 	if ioreg_gpu.len > 0 {
 		return ioreg_gpu
 	}
@@ -1151,8 +1151,7 @@ pub fn (win &SimpleWindow) get_gpu_info() string {
 
 // get_battery_percent returns the battery charge percentage, or -1 if no battery is present.
 pub fn (win &SimpleWindow) get_battery_percent() int {
-	raw := win.exec_or("pmset -g batt 2>/dev/null | grep -oE '[0-9]+%' | head -1 | tr -d '%'",
-		'')
+	raw := win.exec_or("pmset -g batt 2>/dev/null | grep -oE '[0-9]+%' | head -1 | tr -d '%'", '')
 	pct := raw.trim_space()
 	if pct.len == 0 {
 		return -1
@@ -1342,8 +1341,8 @@ pub fn (win &SimpleWindow) shut_down_computer() &SimpleWindow {
 
 // get_volume returns the system output volume level (0 to 100).
 pub fn (win &SimpleWindow) get_volume() int {
-	vol_str := win.exec_or("osascript -e 'output volume of (get volume settings)' 2>/dev/null",
-		'0').trim_space()
+	vol_str :=
+		win.exec_or("osascript -e 'output volume of (get volume settings)' 2>/dev/null", '0').trim_space()
 	return vol_str.int()
 }
 
@@ -1452,16 +1451,15 @@ pub fn (win &SimpleWindow) md5_file(path string) !string {
 
 // get_screen_count returns the number of active displays connected to the machine.
 pub fn (win &SimpleWindow) get_screen_count() int {
-	raw := win.exec_or("system_profiler SPDisplaysDataType 2>/dev/null | grep -c 'Resolution:'",
-		'1')
+	raw :=
+		win.exec_or("system_profiler SPDisplaysDataType 2>/dev/null | grep -c 'Resolution:'", '1')
 	cnt := raw.trim_space().int()
 	return if cnt > 0 { cnt } else { 1 }
 }
 
 // is_retina_display checks if the primary display is a high-DPI (Retina) display.
 pub fn (win &SimpleWindow) is_retina_display() bool {
-	raw := win.exec_or("system_profiler SPDisplaysDataType 2>/dev/null | grep -i 'retina'",
-		'')
+	raw := win.exec_or("system_profiler SPDisplaysDataType 2>/dev/null | grep -i 'retina'", '')
 	if raw.trim_space().len > 0 {
 		return true
 	}
@@ -1516,8 +1514,8 @@ pub fn (win &SimpleWindow) get_power_source() string {
 
 // get_battery_charge_percent returns battery percentage (0..100), or -1 when unavailable.
 pub fn (win &SimpleWindow) get_battery_charge_percent() int {
-	raw := win.exec_or("pmset -g batt 2>/dev/null | grep -Eo '[0-9]+%' | head -n 1 | tr -d '%'",
-		'').trim_space()
+	raw :=
+		win.exec_or("pmset -g batt 2>/dev/null | grep -Eo '[0-9]+%' | head -n 1 | tr -d '%'", '').trim_space()
 	if raw != '' {
 		return raw.int()
 	}
@@ -1688,8 +1686,8 @@ pub fn (win &SimpleWindow) get_active_window_title() string {
 
 // get_running_app_names returns a list of names of all active GUI applications running on macOS.
 pub fn (win &SimpleWindow) get_running_app_names() []string {
-	raw := win.exec_or('osascript -e \'tell application "System Events" to get name of every application process whose background only is false\' 2>/dev/null',
-		'')
+	raw :=
+		win.exec_or('osascript -e \'tell application "System Events" to get name of every application process whose background only is false\' 2>/dev/null', '')
 	if raw.len == 0 {
 		return []string{}
 	}
@@ -1716,8 +1714,7 @@ pub fn (win &SimpleWindow) is_sip_enabled() bool {
 
 // get_battery_time_remaining returns estimated remaining battery operating time (e.g. "2:30").
 pub fn (win &SimpleWindow) get_battery_time_remaining() string {
-	raw := win.exec_or("pmset -g batt 2>/dev/null | grep -oE '[0-9]+:[0-9]+' | head -1",
-		'N/A')
+	raw := win.exec_or("pmset -g batt 2>/dev/null | grep -oE '[0-9]+:[0-9]+' | head -1", 'N/A')
 	return raw.trim_space()
 }
 
@@ -1957,8 +1954,8 @@ pub fn (win &SimpleWindow) get_cpu_architecture() string {
 
 // get_main_display_bounds returns (x, y, width, height) of the primary display.
 pub fn (win &SimpleWindow) get_main_display_bounds() (int, int, int, int) {
-	raw := win.exec_or('osascript -e \'tell application "Finder" to get bounds of window of desktop\' 2>/dev/null',
-		'')
+	raw :=
+		win.exec_or('osascript -e \'tell application "Finder" to get bounds of window of desktop\' 2>/dev/null', '')
 	if raw.len > 0 {
 		parts := raw.split(',').map(it.trim_space().int())
 		if parts.len >= 4 {
@@ -1994,8 +1991,8 @@ pub fn (win &SimpleWindow) get_system_accent_color() string {
 
 // is_do_not_disturb_enabled returns true if macOS Do Not Disturb / Focus Mode is active.
 pub fn (win &SimpleWindow) is_do_not_disturb_enabled() bool {
-	raw := win.exec_or("defaults read com.apple.controlcenter 'NSStatusItem Visible FocusModes' 2>/dev/null",
-		'0').trim_space()
+	raw :=
+		win.exec_or("defaults read com.apple.controlcenter 'NSStatusItem Visible FocusModes' 2>/dev/null", '0').trim_space()
 	if raw == '1' {
 		return true
 	}
@@ -2010,8 +2007,8 @@ pub fn (win &SimpleWindow) get_mac_address() string {
 
 // get_dns_servers returns a list of configured DNS server IP addresses.
 pub fn (win &SimpleWindow) get_dns_servers() []string {
-	raw := win.exec_or("scutil --dns 2>/dev/null | awk '/nameserver\\[[0-9]+\\]/{print $3}' | sort -u",
-		'')
+	raw :=
+		win.exec_or("scutil --dns 2>/dev/null | awk '/nameserver\\[[0-9]+\\]/{print $3}' | sort -u", '')
 	if raw.len == 0 {
 		return []string{}
 	}
@@ -2020,8 +2017,7 @@ pub fn (win &SimpleWindow) get_dns_servers() []string {
 
 // get_default_gateway returns the IP address of the default network gateway.
 pub fn (win &SimpleWindow) get_default_gateway() string {
-	return win.exec_or("route -n get default 2>/dev/null | awk '/gateway:/{print $2}'",
-		'unknown').trim_space()
+	return win.exec_or("route -n get default 2>/dev/null | awk '/gateway:/{print $2}'", 'unknown').trim_space()
 }
 
 // is_internet_connected tests if the machine currently has active internet connectivity.
@@ -2031,8 +2027,8 @@ pub fn (win &SimpleWindow) is_internet_connected() bool {
 
 // get_listening_ports returns a list of TCP ports currently listening for connections on the machine.
 pub fn (win &SimpleWindow) get_listening_ports() []int {
-	raw := win.exec_or("lsof -iTCP -sTCP:LISTEN -P -n 2>/dev/null | awk 'NR>1 {print \$9}' | awk -F: '{print \$NF}' | sort -n -u",
-		'')
+	raw :=
+		win.exec_or("lsof -iTCP -sTCP:LISTEN -P -n 2>/dev/null | awk 'NR>1 {print \$9}' | awk -F: '{print \$NF}' | sort -n -u", '')
 	if raw.len == 0 {
 		return []int{}
 	}
@@ -2122,9 +2118,7 @@ pub fn (win &SimpleWindow) get_app_storage_dir(app_name ...string) string {
 	} else {
 		win.get_app_name()
 	}
-	base := os.config_dir() or {
-		os.join_path(os.home_dir(), 'Library', 'Application Support')
-	}
+	base := os.config_dir() or { os.join_path(os.home_dir(), 'Library', 'Application Support') }
 	dir := os.join_path(base, target_app)
 	if !os.exists(dir) {
 		os.mkdir_all(dir) or {}
@@ -2784,9 +2778,11 @@ pub fn resolve_user_path(raw_path string) string {
 		mut i := 0
 		bytes := p.bytes()
 		for i < bytes.len {
-			if bytes[i] == `$` && i + 1 < bytes.len && (bytes[i + 1].is_letter() || bytes[i + 1] == `_`) {
+			if bytes[i] == `$` && i + 1 < bytes.len && (bytes[i + 1].is_letter()
+				|| bytes[i + 1] == `_`) {
 				mut j := i + 1
-				for j < bytes.len && (bytes[j].is_letter() || bytes[j].is_digit() || bytes[j] == `_`) {
+				for j < bytes.len && (bytes[j].is_letter() || bytes[j].is_digit()
+					|| bytes[j] == `_`) {
 					j++
 				}
 				var_name := p[i + 1..j]

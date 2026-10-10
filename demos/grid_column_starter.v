@@ -43,6 +43,7 @@ fn on_search_clicked(mut win simplegui.SimpleWindow) {
 	category := win.get_text('category')
 	id := win.get_value_int('filter_id')
 
-	win.set_text('output', 'Running database query...\nFetched records matching ${category} with minimum ID ${id}!')
+	win.set_text('output',
+		'Running database query...\nFetched records matching ${category} with minimum ID ${id}!')
 	win.toast('Queries fetched successfully')
 }

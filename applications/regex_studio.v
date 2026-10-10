@@ -74,8 +74,10 @@ except Exception as e:
 	os.write_file(tmp_py, script) or { return 'Error writing worker script.' }
 	defer { os.rm(tmp_py) or {} }
 
-	b64_pattern := os.execute('python3 -c "import sys, base64; sys.stdout.write(base64.b64encode(sys.argv[1].encode(\'utf-8\')).decode(\'ascii\'))" "${pattern.replace('"', '\\"')}"').output.trim_space()
-	b64_text := os.execute('python3 -c "import sys, base64; sys.stdout.write(base64.b64encode(sys.argv[1].encode(\'utf-8\')).decode(\'ascii\'))" "${text.replace('"', '\\"')}"').output.trim_space()
+	b64_pattern := os.execute('python3 -c "import sys, base64; sys.stdout.write(base64.b64encode(sys.argv[1].encode(\'utf-8\')).decode(\'ascii\'))" "${pattern.replace('"',
+		'\\"')}"').output.trim_space()
+	b64_text := os.execute('python3 -c "import sys, base64; sys.stdout.write(base64.b64encode(sys.argv[1].encode(\'utf-8\')).decode(\'ascii\'))" "${text.replace('"',
+		'\\"')}"').output.trim_space()
 
 	res := simplegui.exec_safe('python3', [
 		tmp_py,
@@ -131,9 +133,12 @@ except Exception as e:
 	os.write_file(tmp_py, script) or { return 'Error writing worker script.' }
 	defer { os.rm(tmp_py) or {} }
 
-	b64_pattern := os.execute('python3 -c "import sys, base64; sys.stdout.write(base64.b64encode(sys.argv[1].encode(\'utf-8\')).decode(\'ascii\'))" "${pattern.replace('"', '\\"')}"').output.trim_space()
-	b64_replacement := os.execute('python3 -c "import sys, base64; sys.stdout.write(base64.b64encode(sys.argv[1].encode(\'utf-8\')).decode(\'ascii\'))" "${replacement.replace('"', '\\"')}"').output.trim_space()
-	b64_text := os.execute('python3 -c "import sys, base64; sys.stdout.write(base64.b64encode(sys.argv[1].encode(\'utf-8\')).decode(\'ascii\'))" "${text.replace('"', '\\"')}"').output.trim_space()
+	b64_pattern := os.execute('python3 -c "import sys, base64; sys.stdout.write(base64.b64encode(sys.argv[1].encode(\'utf-8\')).decode(\'ascii\'))" "${pattern.replace('"',
+		'\\"')}"').output.trim_space()
+	b64_replacement := os.execute('python3 -c "import sys, base64; sys.stdout.write(base64.b64encode(sys.argv[1].encode(\'utf-8\')).decode(\'ascii\'))" "${replacement.replace('"',
+		'\\"')}"').output.trim_space()
+	b64_text := os.execute('python3 -c "import sys, base64; sys.stdout.write(base64.b64encode(sys.argv[1].encode(\'utf-8\')).decode(\'ascii\'))" "${text.replace('"',
+		'\\"')}"').output.trim_space()
 
 	res := simplegui.exec_safe('python3', [
 		tmp_py,
@@ -170,10 +175,12 @@ fn main() {
 		w.toast('Theme changed to ${selected}')
 	})
 
-	win.add_label('lbl_engine_info', '⚡ Engine: High-Performance PCRE2 / Python Regex Engine  |  Platform: macOS Cocoa  |  Mode: Async')
+	win.add_label('lbl_engine_info',
+		'⚡ Engine: High-Performance PCRE2 / Python Regex Engine  |  Platform: macOS Cocoa  |  Mode: Async')
 
 	// Regex Configuration & Pattern Bar
-	win.begin_group_box('grp_pattern_config', '🎯 Regular Expression & Substitution Specification')
+	win.begin_group_box('grp_pattern_config',
+		'🎯 Regular Expression & Substitution Specification')
 
 	win.begin_row('row_pattern_input')
 	win.add_label('lbl_pattern', 'Regex Pattern:')
@@ -245,7 +252,8 @@ fn main() {
 	win.end_row()
 
 	win.append_console('regex_console', '🎯 Regex Studio Pro Initialized.\n', 1)
-	win.append_console('regex_console', '⚡ Ready to analyze regex capture groups and text substitutions.\n', 4)
+	win.append_console('regex_console',
+		'⚡ Ready to analyze regex capture groups and text substitutions.\n', 4)
 
 	// -------------------------------------------------------------
 	// Event Handlers
@@ -269,7 +277,8 @@ fn main() {
 			w.set_text('txt_pattern', r'(\d{4})-(\d{2})-(\d{2})')
 			w.set_text('txt_replacement', r'$2/$3/$1')
 		} else if selected.starts_with('6.') {
-			w.set_text('txt_pattern', r'([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})')
+			w.set_text('txt_pattern',
+				r'([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})')
 			w.set_text('txt_replacement', r'UUID{$1}')
 		} else if selected.starts_with('7.') {
 			w.set_text('txt_pattern', r'(#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3})')
@@ -319,13 +328,16 @@ fn main() {
 				win_main.set_text('txt_matches_out', report)
 				match_cnt := report.count('Match #')
 				if !report.starts_with('❌') {
-					win_main.append_console('regex_console', '✅ Found ${match_cnt} regex matches in ${elapsed_ms} ms.\n', 4)
-					win_main.set_text('lbl_stats', '📊 Stats: SUCCESS  |  Matches: ${match_cnt}  |  Duration: ${elapsed_ms} ms')
+					win_main.append_console('regex_console',
+						'✅ Found ${match_cnt} regex matches in ${elapsed_ms} ms.\n', 4)
+					win_main.set_text('lbl_stats',
+						'📊 Stats: SUCCESS  |  Matches: ${match_cnt}  |  Duration: ${elapsed_ms} ms')
 					win_main.set_status('Found ${match_cnt} matches in ${elapsed_ms} ms.')
 					win_main.toast('Found ${match_cnt} matches!')
 				} else {
 					win_main.append_console('regex_console', report + '\n', 3)
-					win_main.set_text('lbl_stats', '📊 Stats: REGEX ERROR  |  Duration: ${elapsed_ms} ms')
+					win_main.set_text('lbl_stats',
+						'📊 Stats: REGEX ERROR  |  Duration: ${elapsed_ms} ms')
 					win_main.set_status('Regex evaluation error.')
 				}
 			})
@@ -346,24 +358,29 @@ fn main() {
 			return
 		}
 
-		w.append_console('regex_console', '▶ Performing substitution with: ${replacement}...\n', 1)
+		w.append_console('regex_console', '▶ Performing substitution with: ${replacement}...\n',
+			1)
 		w.set_status('Executing substitution...')
 
 		go fn [mut w, pattern_raw, replacement, target_text, case_i, multiline, dotall] () {
 			t0 := time.ticks()
-			report := run_regex_replacement(pattern_raw, replacement, target_text, case_i, multiline, dotall)
+			report := run_regex_replacement(pattern_raw, replacement, target_text, case_i,
+				multiline, dotall)
 			elapsed_ms := time.ticks() - t0
 
 			w.run_on_main_thread(fn [report, elapsed_ms] (mut win_main simplegui.SimpleWindow) {
 				win_main.set_text('txt_matches_out', report)
 				if !report.starts_with('❌') {
-					win_main.append_console('regex_console', '✅ Substitution complete in ${elapsed_ms} ms.\n', 4)
-					win_main.set_text('lbl_stats', '📊 Stats: SUBSTITUTION COMPLETE  |  Duration: ${elapsed_ms} ms')
+					win_main.append_console('regex_console',
+						'✅ Substitution complete in ${elapsed_ms} ms.\n', 4)
+					win_main.set_text('lbl_stats',
+						'📊 Stats: SUBSTITUTION COMPLETE  |  Duration: ${elapsed_ms} ms')
 					win_main.set_status('Substitution completed.')
 					win_main.toast('Substitution complete!')
 				} else {
 					win_main.append_console('regex_console', report + '\n', 3)
-					win_main.set_text('lbl_stats', '📊 Stats: SUBSTITUTION ERROR  |  Duration: ${elapsed_ms} ms')
+					win_main.set_text('lbl_stats',
+						'📊 Stats: SUBSTITUTION ERROR  |  Duration: ${elapsed_ms} ms')
 					win_main.set_status('Substitution error.')
 				}
 			})

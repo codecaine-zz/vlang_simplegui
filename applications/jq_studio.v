@@ -72,7 +72,8 @@ fn main() {
 	})
 
 	jq_path := get_jq_bin()
-	win.add_label('lbl_engine_info', '⚡ Engine: ${jq_path}  |  Platform: macOS Cocoa  |  Mode: Async Worker (Non-Blocking)')
+	win.add_label('lbl_engine_info',
+		'⚡ Engine: ${jq_path}  |  Platform: macOS Cocoa  |  Mode: Async Worker (Non-Blocking)')
 
 	// Filter & Query Configuration Bar
 	win.begin_group_box('grp_query', '🎯 JQ Filter Expression & Query Builder')
@@ -145,11 +146,13 @@ fn main() {
 
 	// Status & Metrics Row
 	win.begin_row('row_stats')
-	win.add_label('lbl_stats', '📊 Stats: Ready  |  Input Length: ${sample_json.len} bytes  |  Duration: 0 ms')
+	win.add_label('lbl_stats',
+		'📊 Stats: Ready  |  Input Length: ${sample_json.len} bytes  |  Duration: 0 ms')
 	win.end_row()
 
 	win.append_console('jq_console', '🧩 JQ Studio Pro initialized.\n', 1)
-	win.append_console('jq_console', '⚡ Ready to process high-speed JSON stream transformations.\n', 4)
+	win.append_console('jq_console',
+		'⚡ Ready to process high-speed JSON stream transformations.\n', 4)
 
 	// -------------------------------------------------------------
 	// Event Handlers
@@ -240,7 +243,8 @@ fn main() {
 			tmp_path := os.join_path(os.temp_dir(), 'simplegui_jq_${time.ticks()}.json')
 			os.write_file(tmp_path, input_data) or {
 				w.run_on_main_thread(fn (mut win_main simplegui.SimpleWindow) {
-					win_main.append_console('jq_console', '❌ Error writing temp file for JQ.\n', 3)
+					win_main.append_console('jq_console', '❌ Error writing temp file for JQ.\n',
+						3)
 				})
 				return
 			}
@@ -256,13 +260,17 @@ fn main() {
 				if res.exit_code == 0 {
 					win_main.set('txt_output_json', res.output)
 					lines_cnt := res.output.split_into_lines().len
-					win_main.append_console('jq_console', '✅ Success: processed in ${elapsed_ms} ms (${res.output.len} bytes, ${lines_cnt} lines)\n', 4)
-					win_main.set('lbl_stats', '📊 Stats: SUCCESS  |  Input: ${input_data.len}B  |  Output: ${res.output.len}B (${lines_cnt} lines)  |  Duration: ${elapsed_ms} ms')
+					win_main.append_console('jq_console',
+						'✅ Success: processed in ${elapsed_ms} ms (${res.output.len} bytes, ${lines_cnt} lines)\n',
+						4)
+					win_main.set('lbl_stats',
+						'📊 Stats: SUCCESS  |  Input: ${input_data.len}B  |  Output: ${res.output.len}B (${lines_cnt} lines)  |  Duration: ${elapsed_ms} ms')
 					win_main.set_status('Query finished in ${elapsed_ms} ms.')
 					win_main.toast('JQ query evaluated successfully!')
 				} else {
 					win_main.append_console('jq_console', '❌ JQ Error:\n' + res.output + '\n', 3)
-					win_main.set('lbl_stats', '📊 Stats: ERROR (Exit ${res.exit_code})  |  Duration: ${elapsed_ms} ms')
+					win_main.set('lbl_stats',
+						'📊 Stats: ERROR (Exit ${res.exit_code})  |  Duration: ${elapsed_ms} ms')
 					win_main.set_status('JQ evaluation error.')
 					win_main.toast('JQ error encountered.')
 				}

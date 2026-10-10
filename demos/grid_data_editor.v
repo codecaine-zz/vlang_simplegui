@@ -102,7 +102,8 @@ fn sync_selection_to_ui(mut win simplegui.SimpleWindow, mut state AppState) {
 		// Clear Cell Spot Editor
 		win.set_text('cell_coords_label', 'Coordinate: [No Row Selected]')
 		win.set_text('cell_value_input', '')
-		win.set_text('info_label', 'Select a row in the table above to start interactively editing.')
+		win.set_text('info_label',
+			'Select a row in the table above to start interactively editing.')
 
 		win.set_control_enabled('delete_row_btn', false)
 		win.set_control_enabled('save_row_btn', false)
@@ -163,7 +164,8 @@ fn main() {
 		.font_size(18)
 		.font_color('#0ea5e9') // Bright sky-blue header
 
-	win.add_label('sys_intro', 'Select rows in the grid to sync field editors, edit cell-level values, or apply bulk updates.')
+	win.add_label('sys_intro',
+		'Select rows in the grid to sync field editors, edit cell-level values, or apply bulk updates.')
 		.font_size(11)
 		.font_color('#94a3b8')
 
@@ -345,7 +347,8 @@ fn main() {
 		price_str := w.get_text('price_input').trim_space()
 
 		if id == '' || name == '' || category == '' {
-			w.alert('Validation Error', 'To create a product, please provide of an ID, Name, and Category!')
+			w.alert('Validation Error',
+				'To create a product, please provide of an ID, Name, and Category!')
 			return
 		}
 
@@ -474,7 +477,8 @@ fn main() {
 	win.on_click('bulk_discount_btn', fn [mut state] (mut w simplegui.SimpleWindow) {
 		selected_cat := w.get_text('category_input').trim_space()
 		if selected_cat == '' {
-			w.alert('Selection Required', 'Please select a row or fill in "Category" under Row Details to state which category gets the 15% discount!')
+			w.alert('Selection Required',
+				'Please select a row or fill in "Category" under Row Details to state which category gets the 15% discount!')
 			return
 		}
 

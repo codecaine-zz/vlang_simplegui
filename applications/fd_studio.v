@@ -173,7 +173,8 @@ fn main() {
 		w.toast('Theme changed to ${selected}')
 	})
 	fd_path := get_fd_bin()
-	win.add_label('lbl_engine_info', '⚡ Engine: ${fd_path}  |  Platform: macOS Cocoa  |  Mode: Async Worker (Zero UI Freezes)')
+	win.add_label('lbl_engine_info',
+		'⚡ Engine: ${fd_path}  |  Platform: macOS Cocoa  |  Mode: Async Worker (Zero UI Freezes)')
 
 	all_recipes := get_all_fd_recipes()
 
@@ -371,12 +372,14 @@ fn main() {
 						count = out_str.split_into_lines().len
 					}
 
-					win_main.set('lbl_stats', '📊 Stats: SUCCESS  |  Files Found: ${count}  |  Duration: ${elapsed_ms} ms')
+					win_main.set('lbl_stats',
+						'📊 Stats: SUCCESS  |  Files Found: ${count}  |  Duration: ${elapsed_ms} ms')
 					win_main.set_status('Found ${count} matching files in ${elapsed_ms} ms.')
 					win_main.toast('Found ${count} files in ${elapsed_ms} ms!')
 				} else {
 					win_main.set('txt_results', '⚠️ FD Search Error:\n\n' + res.output)
-					win_main.set('lbl_stats', '📊 Stats: ERROR (Exit code ${res.exit_code})  |  Duration: ${elapsed_ms} ms')
+					win_main.set('lbl_stats',
+						'📊 Stats: ERROR (Exit code ${res.exit_code})  |  Duration: ${elapsed_ms} ms')
 					win_main.set_status('FD search returned an error.')
 				}
 			})

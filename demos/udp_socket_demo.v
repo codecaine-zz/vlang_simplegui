@@ -36,7 +36,8 @@ fn main() {
 	gui.set_control_font_size('title', 18)
 	gui.set_control_font_bold('title', true)
 
-	gui.add_label('subtitle', 'Testing UDP datagram communication asynchronously. Hosts a local UDP listener.')
+	gui.add_label('subtitle',
+		'Testing UDP datagram communication asynchronously. Hosts a local UDP listener.')
 
 	gui.add_separator()
 

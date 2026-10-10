@@ -207,7 +207,8 @@ fn parse_graph(text string) GraphData {
 	lines := text.split_into_lines()
 	for raw_line in lines {
 		line := raw_line.trim_space()
-		if line == '' || line.starts_with('#') || line.starts_with('//') { continue }
+		if line == '' || line.starts_with('#') || line.starts_with('//') { continue
+		 }
 
 		if line.contains('->') {
 			parts := line.split('->')
@@ -245,8 +246,16 @@ fn parse_graph(text string) GraphData {
 			from_node := parts[0].trim_space()
 			to_node := parts[1].trim_space()
 			if from_node != '' && to_node != '' {
-				g.edges << GraphEdge{ from: from_node, to: to_node, weight: 1.0 }
-				g.edges << GraphEdge{ from: to_node, to: from_node, weight: 1.0 }
+				g.edges << GraphEdge{
+					from:   from_node
+					to:     to_node
+					weight: 1.0
+				}
+				g.edges << GraphEdge{
+					from:   to_node
+					to:     from_node
+					weight: 1.0
+				}
 				node_set[from_node] = true
 				node_set[to_node] = true
 			}
@@ -302,13 +311,16 @@ fn analyze_graph(g GraphData) string {
 		in_str := pad_l('${in_deg}', 9)
 		out_str := pad_l('${out_deg}', 10)
 		tot_str := pad_l('${tot}', 12)
-		lines << '  ' + pad_r(node, 10) + ' | ' + in_str + ' | ' + out_str + ' | ' + tot_str + ' | ' + neighbors.join(', ')
+		lines << '  ' + pad_r(node, 10) + ' | ' + in_str + ' | ' + out_str + ' | ' + tot_str +
+			' | ' + neighbors.join(', ')
 	}
 
 	lines << '------------------------------------------------------------------------'
 	lines << ' ADJACENCY MATRIX (Cost / Weights):'
 	mut hdr := '       |'
-	for n in g.nodes { hdr += ' ' + pad_l(n, 5) + ' |' }
+	for n in g.nodes {
+		hdr += ' ' + pad_l(n, 5) + ' |'
+	}
 	lines << hdr
 	lines << '-------+' + '-------+'.repeat(g.nodes.len)
 
@@ -369,7 +381,8 @@ mut:
 fn main() {
 	println('Starting SimpleGUI - Graph Studio Pro (2D Function Plotter & Network Graph Engine)...')
 
-	mut win := simplegui.new_simple_window('📈 Graph Studio Pro — 2D Function Plotter & Network Topology Studio', 1180, 920)
+	mut win := simplegui.new_simple_window('📈 Graph Studio Pro — 2D Function Plotter & Network Topology Studio',
+		1180, 920)
 	win.restore_saved_theme()
 	win.set_spacing(6)
 	win.set_padding(14)
@@ -421,7 +434,8 @@ fn main() {
 	win.add_metric_card('card_pts', 'Sample Points', '100', 'Resolution', 'Total Samples')
 	win.add_metric_card('card_min_y', 'Global Min Y', '-1.000', 'Lower Bound', 'Minimum Value')
 	win.add_metric_card('card_max_y', 'Global Max Y', '1.000', 'Upper Bound', 'Maximum Value')
-	win.add_metric_card('card_integral', 'Definite Integral', '0.000', '∫ f(x)dx', 'Area Under Curve')
+	win.add_metric_card('card_integral', 'Definite Integral', '0.000', '∫ f(x)dx',
+		'Area Under Curve')
 	win.add_metric_card('card_rms', 'RMS Power', '0.707', 'Root Mean Sq', 'Signal Energy')
 	win.end_row()
 	win.end_group_box()
@@ -429,7 +443,8 @@ fn main() {
 	// -------------------------------------------------------------
 	// Tab 1: Mathematical Function Plotter
 	// -------------------------------------------------------------
-	win.begin_group_box('pane_func', '📈 Continuous Mathematical Function Plotter & Live Cocoa Chart')
+	win.begin_group_box('pane_func',
+		'📈 Continuous Mathematical Function Plotter & Live Cocoa Chart')
 
 	win.begin_row('row_func_select')
 	win.add_label('lbl_fn_choice', 'Function Model f(x):')
@@ -479,7 +494,8 @@ fn main() {
 	// Native Cocoa Area Chart
 	win.add_chart('chart_math', 'area', 140)
 
-	win.add_textarea('txt_func_report', '2D Ascii Grid Curve Plot, Critical Points, Zeros/Roots and Calculus metrics will appear here.\n')
+	win.add_textarea('txt_func_report',
+		'2D Ascii Grid Curve Plot, Critical Points, Zeros/Roots and Calculus metrics will appear here.\n')
 	win.set_control_height('txt_func_report', 240)
 	win.set_control_font_name('txt_func_report', 'Menlo')
 	win.set_control_font_size('txt_func_report', 11)
@@ -488,10 +504,13 @@ fn main() {
 	// -------------------------------------------------------------
 	// Tab 2: Data Series & Moving Average
 	// -------------------------------------------------------------
-	win.begin_group_box('pane_series', '📊 Numerical Data Series Visualizer & Moving Average Smoothing')
+	win.begin_group_box('pane_series',
+		'📊 Numerical Data Series Visualizer & Moving Average Smoothing')
 
-	win.add_label('lbl_series_input', 'Input Raw Data Series (comma or newline separated Y values):')
-	win.add_textarea('txt_series_data', '12.4, 15.8, 14.2, 18.9, 22.1, 19.5, 25.4, 28.0, 26.2, 31.5, 35.8, 33.2, 38.9, 42.1, 39.8, 45.2, 48.9, 46.5, 52.1, 55.4')
+	win.add_label('lbl_series_input',
+		'Input Raw Data Series (comma or newline separated Y values):')
+	win.add_textarea('txt_series_data',
+		'12.4, 15.8, 14.2, 18.9, 22.1, 19.5, 25.4, 28.0, 26.2, 31.5, 35.8, 33.2, 38.9, 42.1, 39.8, 45.2, 48.9, 46.5, 52.1, 55.4')
 	win.set_control_height('txt_series_data', 70)
 	win.set_control_font_name('txt_series_data', 'Menlo')
 
@@ -505,7 +524,8 @@ fn main() {
 
 	win.add_chart('chart_series', 'line', 130)
 
-	win.add_textarea('txt_series_report', 'Data series statistics and smoothed curve tables will appear here.\n')
+	win.add_textarea('txt_series_report',
+		'Data series statistics and smoothed curve tables will appear here.\n')
 	win.set_control_height('txt_series_report', 220)
 	win.set_control_font_name('txt_series_report', 'Menlo')
 	win.set_control_font_size('txt_series_report', 11)
@@ -514,10 +534,12 @@ fn main() {
 	// -------------------------------------------------------------
 	// Tab 3: Network Graph Topology
 	// -------------------------------------------------------------
-	win.begin_group_box('pane_network', '🕸️ Network Graph Topology, Directed Edges & Adjacency Engine')
+	win.begin_group_box('pane_network',
+		'🕸️ Network Graph Topology, Directed Edges & Adjacency Engine')
 
 	win.add_label('lbl_net_prompt', 'Define Graph Edges (format: A -> B [weight=5.0] or A -- B):')
-	win.add_textarea('txt_graph_spec', 'Router_Core -> Switch_A [weight=10.0]\nRouter_Core -> Switch_B [weight=10.0]\nSwitch_A -> Server_Alpha [weight=1.0]\nSwitch_A -> Server_Beta [weight=1.0]\nSwitch_B -> Server_Gamma [weight=1.0]\nSwitch_B -> Server_Delta [weight=1.0]\nServer_Alpha -> Storage_SAN [weight=2.5]\nServer_Beta -> Storage_SAN [weight=2.5]\nServer_Gamma -> Storage_SAN [weight=2.5]\nServer_Delta -> Storage_SAN [weight=2.5]')
+	win.add_textarea('txt_graph_spec',
+		'Router_Core -> Switch_A [weight=10.0]\nRouter_Core -> Switch_B [weight=10.0]\nSwitch_A -> Server_Alpha [weight=1.0]\nSwitch_A -> Server_Beta [weight=1.0]\nSwitch_B -> Server_Gamma [weight=1.0]\nSwitch_B -> Server_Delta [weight=1.0]\nServer_Alpha -> Storage_SAN [weight=2.5]\nServer_Beta -> Storage_SAN [weight=2.5]\nServer_Gamma -> Storage_SAN [weight=2.5]\nServer_Delta -> Storage_SAN [weight=2.5]')
 	win.set_control_height('txt_graph_spec', 100)
 	win.set_control_font_name('txt_graph_spec', 'Menlo')
 
@@ -528,7 +550,8 @@ fn main() {
 	win.add_button('btn_copy_mermaid', '📋 Copy Mermaid Diagram')
 	win.end_row()
 
-	win.add_textarea('txt_graph_report', 'Network density, degree centralities, adjacency matrix, and Mermaid diagram code will appear here.\n')
+	win.add_textarea('txt_graph_report',
+		'Network density, degree centralities, adjacency matrix, and Mermaid diagram code will appear here.\n')
 	win.set_control_height('txt_graph_report', 300)
 	win.set_control_font_name('txt_graph_report', 'Menlo')
 	win.set_control_font_size('txt_graph_report', 11)
@@ -540,7 +563,8 @@ fn main() {
 	win.begin_group_box('pane_proportions', '🍩 Category Frequency, Allocation & Donut Charts')
 
 	win.add_label('lbl_cat_prompt', 'Category Allocations (Label: Value):')
-	win.add_textarea('txt_categories', 'Frontend UI / SimpleGUI: 42.5\nBackend Engine / POSIX: 28.0\nMathematical Calculus: 15.5\nNetwork Intelligence: 14.0')
+	win.add_textarea('txt_categories',
+		'Frontend UI / SimpleGUI: 42.5\nBackend Engine / POSIX: 28.0\nMathematical Calculus: 15.5\nNetwork Intelligence: 14.0')
 	win.set_control_height('txt_categories', 70)
 	win.set_control_font_name('txt_categories', 'Menlo')
 
@@ -548,7 +572,8 @@ fn main() {
 	win.add_button('btn_render_bars', '📊 Generate Horizontal Bar Charts')
 	win.end_row()
 
-	win.add_textarea('txt_proportions_report', 'Unicode bar charts and percentage distributions will appear here.\n')
+	win.add_textarea('txt_proportions_report',
+		'Unicode bar charts and percentage distributions will appear here.\n')
 	win.set_control_height('txt_proportions_report', 360)
 	win.set_control_font_name('txt_proportions_report', 'Menlo')
 	win.set_control_font_size('txt_proportions_report', 12)
@@ -571,7 +596,8 @@ fn main() {
 	win.add_button('btn_pre_poly', '📈 3-Root Polynomial')
 	win.end_row()
 
-	win.add_textarea('txt_preset_info', 'Click any preset above to instantly load parameters, plot the mathematical curve, and update metrics.\n')
+	win.add_textarea('txt_preset_info',
+		'Click any preset above to instantly load parameters, plot the mathematical curve, and update metrics.\n')
 	win.set_control_height('txt_preset_info', 360)
 	win.set_control_font_name('txt_preset_info', 'Menlo')
 	win.set_control_font_size('txt_preset_info', 12)
@@ -588,7 +614,8 @@ fn main() {
 	win.add_button('btn_export_ledger', '💾 Export Ledger...')
 	win.end_row()
 
-	win.add_textarea('txt_ledger', 'All function evaluations and graph analyses are recorded here.\n')
+	win.add_textarea('txt_ledger',
+		'All function evaluations and graph analyses are recorded here.\n')
 	win.set_control_height('txt_ledger', 380)
 	win.set_control_font_name('txt_ledger', 'Menlo')
 	win.set_control_font_size('txt_ledger', 12)
@@ -605,7 +632,8 @@ fn main() {
 	// Status Bar Footer
 	// -------------------------------------------------------------
 	win.begin_row('row_footer')
-	win.add_label('lbl_status_bar', '📈 Ready. 2D Function Plotter & Network Graph Engine active.')
+	win.add_label('lbl_status_bar',
+		'📈 Ready. 2D Function Plotter & Network Graph Engine active.')
 	win.end_row()
 
 	// -------------------------------------------------------------
@@ -718,8 +746,10 @@ fn main() {
 		details << '========================================================================\n'
 
 		w.set('txt_func_report', details.join('\n'))
-		w.set('lbl_status_bar', '📈 Evaluated ${state.samples_count} points for ' + fn_label + '. Y ∈ [${min_y:.3f}, ${max_y:.3f}]')
-		append_ledger(mut w, 'Function Plot: ' + fn_label, 'X ∈ [${state.x_min:.2f}, ${state.x_max:.2f}], Y ∈ [${min_y:.3f}, ${max_y:.3f}], Integral = ${integral:.4f}')
+		w.set('lbl_status_bar', '📈 Evaluated ${state.samples_count} points for ' + fn_label +
+			'. Y ∈ [${min_y:.3f}, ${max_y:.3f}]')
+		append_ledger(mut w, 'Function Plot: ' + fn_label,
+			'X ∈ [${state.x_min:.2f}, ${state.x_max:.2f}], Y ∈ [${min_y:.3f}, ${max_y:.3f}], Integral = ${integral:.4f}')
 	}
 
 	// -------------------------------------------------------------
@@ -778,7 +808,9 @@ fn main() {
 		w.set_chart_data('chart_series', nums)
 
 		mut x_idx := []f64{}
-		for i in 0 .. nums.len { x_idx << f64(i + 1) }
+		for i in 0 .. nums.len {
+			x_idx << f64(i + 1)
+		}
 		plot := render_ascii_plot('Raw Data Series (N=${nums.len})', x_idx, nums, 60, 12)
 
 		w.set('txt_series_report', plot)
@@ -813,8 +845,11 @@ fn main() {
 		w.set_chart_data('chart_series', sma)
 
 		mut x_idx := []f64{}
-		for i in 0 .. sma.len { x_idx << f64(i + 1) }
-		plot := render_ascii_plot('3-Point Moving Average Smoothed (N=${sma.len})', x_idx, sma, 60, 12)
+		for i in 0 .. sma.len {
+			x_idx << f64(i + 1)
+		}
+		plot :=
+			render_ascii_plot('3-Point Moving Average Smoothed (N=${sma.len})', x_idx, sma, 60, 12)
 		w.set('txt_series_report', plot)
 		w.toast('Computed 3-point SMA smoothing!')
 	})
@@ -848,8 +883,11 @@ fn main() {
 		w.set_chart_data('chart_series', sma)
 
 		mut x_idx := []f64{}
-		for i in 0 .. sma.len { x_idx << f64(i + 1) }
-		plot := render_ascii_plot('5-Point Moving Average Smoothed (N=${sma.len})', x_idx, sma, 60, 12)
+		for i in 0 .. sma.len {
+			x_idx << f64(i + 1)
+		}
+		plot :=
+			render_ascii_plot('5-Point Moving Average Smoothed (N=${sma.len})', x_idx, sma, 60, 12)
 		w.set('txt_series_report', plot)
 		w.toast('Computed 5-point SMA smoothing!')
 	})
@@ -874,8 +912,11 @@ fn main() {
 		w.set_chart_data('chart_series', diffs)
 
 		mut x_idx := []f64{}
-		for i in 0 .. diffs.len { x_idx << f64(i + 1) }
-		plot := render_ascii_plot('First Difference Series ΔY (N=${diffs.len})', x_idx, diffs, 60, 12)
+		for i in 0 .. diffs.len {
+			x_idx << f64(i + 1)
+		}
+		plot :=
+			render_ascii_plot('First Difference Series ΔY (N=${diffs.len})', x_idx, diffs, 60, 12)
 		w.set('txt_series_report', plot)
 		w.toast('Computed first differences!')
 	})
@@ -902,7 +943,9 @@ fn main() {
 		w.set_chart_data('chart_series', cum)
 
 		mut x_idx := []f64{}
-		for i in 0 .. cum.len { x_idx << f64(i + 1) }
+		for i in 0 .. cum.len {
+			x_idx << f64(i + 1)
+		}
 		plot := render_ascii_plot('Cumulative Sum Series ΣY (N=${cum.len})', x_idx, cum, 60, 12)
 		w.set('txt_series_report', plot)
 		w.toast('Computed cumulative sum!')
@@ -916,8 +959,10 @@ fn main() {
 		g := parse_graph(spec)
 		rep := analyze_graph(g)
 		w.set('txt_graph_report', rep)
-		w.set('lbl_status_bar', '🕸️ Evaluated network topology: |V| = ${g.nodes.len} nodes, |E| = ${g.edges.len} edges')
-		append_ledger(mut w, 'Network Graph Analysis', 'Analyzed graph with ${g.nodes.len} nodes and ${g.edges.len} edges')
+		w.set('lbl_status_bar',
+			'🕸️ Evaluated network topology: |V| = ${g.nodes.len} nodes, |E| = ${g.edges.len} edges')
+		append_ledger(mut w, 'Network Graph Analysis',
+			'Analyzed graph with ${g.nodes.len} nodes and ${g.edges.len} edges')
 		w.toast('Evaluated network graph!')
 	})
 
@@ -963,7 +1008,8 @@ fn main() {
 
 		for raw_l in lines {
 			l := raw_l.trim_space()
-			if l == '' { continue }
+			if l == '' { continue
+			 }
 			if l.contains(':') {
 				parts := l.split(':')
 				label := parts[0].trim_space()
@@ -997,7 +1043,9 @@ fn main() {
 			pct := (v / total) * 100.0
 			bar_len := int((v / max_v) * 28.0)
 			mut bar := ''
-			for _ in 0 .. bar_len { bar += '█' }
+			for _ in 0 .. bar_len {
+				bar += '█'
+			}
 			if bar == '' && v > 0 { bar = '▌' }
 			v_str := pad_l('${v:.1f}', 5)
 			pct_str := pad_l('${pct:.1f}%', 6)
@@ -1021,7 +1069,8 @@ fn main() {
 		w.set('txt_param1', '0.2')
 		w.set('txt_param2', '3.0')
 		w.set('txt_samples', '120')
-		w.set('txt_preset_info', '🌊 Loaded Damped Harmonic Oscillator: e^(-0.2|x|) cos(3x)\nModels physical wave decay, spring damper friction, and acoustic damping.')
+		w.set('txt_preset_info',
+			'🌊 Loaded Damped Harmonic Oscillator: e^(-0.2|x|) cos(3x)\nModels physical wave decay, spring damper friction, and acoustic damping.')
 		run_function_plot(mut w)
 		w.toast('Loaded Damped Oscillator Preset!')
 	})
@@ -1033,7 +1082,8 @@ fn main() {
 		w.set('txt_param1', '1.0')
 		w.set('txt_param2', '1.0')
 		w.set('txt_samples', '120')
-		w.set('txt_preset_info', '📡 Loaded Normalized Sinc Function: sin(πx)/(πx)\nFundamental brick-wall bandlimited filter kernel in signal processing and Fourier transforms.')
+		w.set('txt_preset_info',
+			'📡 Loaded Normalized Sinc Function: sin(πx)/(πx)\nFundamental brick-wall bandlimited filter kernel in signal processing and Fourier transforms.')
 		run_function_plot(mut w)
 		w.toast('Loaded Sinc Waveform Preset!')
 	})
@@ -1045,7 +1095,8 @@ fn main() {
 		w.set('txt_param1', '0.0')
 		w.set('txt_param2', '1.5')
 		w.set('txt_samples', '100')
-		w.set('txt_preset_info', '🔔 Loaded Gaussian Bell Curve: μ = 0.0, σ = 1.5\nStandard normal probability density distribution.')
+		w.set('txt_preset_info',
+			'🔔 Loaded Gaussian Bell Curve: μ = 0.0, σ = 1.5\nStandard normal probability density distribution.')
 		run_function_plot(mut w)
 		w.toast('Loaded Gaussian Preset!')
 	})
@@ -1057,7 +1108,8 @@ fn main() {
 		w.set('txt_param1', '5.0')
 		w.set('txt_param2', '5.5')
 		w.set('txt_samples', '200')
-		w.set('txt_preset_info', '🎵 Loaded Acoustic Beats Waveform: 0.5(sin(5x) + sin(5.5x))\nInterference pattern producing periodic amplitude modulation envelope.')
+		w.set('txt_preset_info',
+			'🎵 Loaded Acoustic Beats Waveform: 0.5(sin(5x) + sin(5.5x))\nInterference pattern producing periodic amplitude modulation envelope.')
 		run_function_plot(mut w)
 		w.toast('Loaded Acoustic Beats Preset!')
 	})
@@ -1069,7 +1121,8 @@ fn main() {
 		w.set('txt_param1', '1.0')
 		w.set('txt_param2', '1.0')
 		w.set('txt_samples', '100')
-		w.set('txt_preset_info', '🧠 Loaded Logistic Sigmoid Activation Function: 1 / (1 + e^-x)\nCore non-linear activation curve in neural network classifiers and logistic regression.')
+		w.set('txt_preset_info',
+			'🧠 Loaded Logistic Sigmoid Activation Function: 1 / (1 + e^-x)\nCore non-linear activation curve in neural network classifiers and logistic regression.')
 		run_function_plot(mut w)
 		w.toast('Loaded Sigmoid Preset!')
 	})
@@ -1081,7 +1134,8 @@ fn main() {
 		w.set('txt_param1', '1.0')
 		w.set('txt_param2', '1.0')
 		w.set('txt_samples', '100')
-		w.set('txt_preset_info', '📈 Loaded Cubic Polynomial: (x+2)(x-1)(x-3)/10\nExhibits 3 distinct real roots at x = -2, x = 1, x = 3.')
+		w.set('txt_preset_info',
+			'📈 Loaded Cubic Polynomial: (x+2)(x-1)(x-3)/10\nExhibits 3 distinct real roots at x = -2, x = 1, x = 3.')
 		run_function_plot(mut w)
 		w.toast('Loaded Cubic Polynomial Preset!')
 	})

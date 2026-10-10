@@ -181,8 +181,7 @@ pub fn (win &SimpleWindow) end_grid() &SimpleWindow {
 // begin_flex_box begins a flexbox container with direction ('row'|'column'), main-axis justification ('start'|'center'|'end'|'space_between'|'space_around'|'fill'), and cross-axis alignment ('start'|'center'|'end'|'stretch').
 pub fn (win &SimpleWindow) begin_flex_box(name string, direction string, justify string, align string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
-		C.window_begin_flex_box(win.window_info, name.str, direction.str, justify.str,
-			align.str)
+		C.window_begin_flex_box(win.window_info, name.str, direction.str, justify.str, align.str)
 	}
 	return win
 }
@@ -410,8 +409,8 @@ pub fn (win &SimpleWindow) begin_group_box_with_config(name string, cfg GroupCon
 		b_val := if cfg.border { 1 } else { 0 }
 		s_val := if cfg.shadow { 1 } else { 0 }
 		sc_val := if cfg.show_caption { 1 } else { 0 }
-		C.window_begin_group_box_with_config(win.window_info, real_name.str, cfg.title.str,
-			b_val, cfg.border_width, cfg.border_color.str, cfg.corner_radius, cfg.bg_color.str,
+		C.window_begin_group_box_with_config(win.window_info, real_name.str, cfg.title.str, b_val,
+			cfg.border_width, cfg.border_color.str, cfg.corner_radius, cfg.bg_color.str,
 			cfg.padding, s_val, sc_val, cfg.caption_color.str, cfg.caption_alignment.str)
 	}
 	return win
@@ -467,8 +466,8 @@ pub fn (win &SimpleWindow) set_group_style(name string, cfg GroupConfig) &Simple
 	if win.window_info != unsafe { nil } {
 		b_val := if cfg.border { 1 } else { 0 }
 		s_val := if cfg.shadow { 1 } else { 0 }
-		C.window_set_group_style(win.window_info, name.str, b_val, cfg.border_width, cfg.border_color.str,
-			cfg.corner_radius, cfg.bg_color.str, s_val)
+		C.window_set_group_style(win.window_info, name.str, b_val, cfg.border_width,
+			cfg.border_color.str, cfg.corner_radius, cfg.bg_color.str, s_val)
 	}
 	return win
 }

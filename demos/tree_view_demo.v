@@ -36,7 +36,8 @@ fn main() {
 
 	win.add_heading('Hierarchical Tree View Control')
 
-	win.add_label('description', 'This demo showcases the implementation of a recursive native TreeView (NSOutlineView) control in V SimpleGUI.')
+	win.add_label('description',
+		'This demo showcases the implementation of a recursive native TreeView (NSOutlineView) control in V SimpleGUI.')
 		.font_size(12)
 
 	win.begin_row('main_row')

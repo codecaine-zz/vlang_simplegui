@@ -393,6 +393,7 @@ fn validate_flag_value(def FlagOption, value string) !string {
 		}
 		else {}
 	}
+
 	return value
 }
 
@@ -653,9 +654,11 @@ pub fn (cli &SimpleCli) banner(title string, subtitle string) &SimpleCli {
 
 	line_len := 64
 	println(cli.cyan('┌' + '─'.repeat(line_len) + '┐'))
-	println(cli.cyan('│') + '  ' + cli.bold(t) + ' '.repeat(int_max(0, line_len - t.len - 2)) + cli.cyan('│'))
+	println(cli.cyan('│') + '  ' + cli.bold(t) + ' '.repeat(int_max(0, line_len - t.len - 2)) +
+		cli.cyan('│'))
 	if s.len > 0 {
-		println(cli.cyan('│') + '  ' + cli.dim(s) + ' '.repeat(int_max(0, line_len - s.len - 2)) + cli.cyan('│'))
+		println(cli.cyan('│') + '  ' + cli.dim(s) + ' '.repeat(int_max(0, line_len - s.len - 2)) +
+			cli.cyan('│'))
 	}
 	println(cli.cyan('└' + '─'.repeat(line_len) + '┘'))
 	return cli
@@ -908,7 +911,8 @@ pub fn (cli &SimpleCli) bar_chart(title string, data map[string]f64, max_width i
 		bar_str := '█'.repeat(clamped_bar_len) + '░'.repeat(w - clamped_bar_len)
 		pad := ' '.repeat(int_max(0, max_lbl_len - k.len))
 
-		println('  ${cli.bold(k)}${pad}  ${cli.cyan(bar_str)}  ${v:6.1f} ${cli.dim('(' + pct.str() + '%)')}')
+		println('  ${cli.bold(k)}${pad}  ${cli.cyan(bar_str)}  ${v:6.1f} ${cli.dim('(' + pct.str() +
+			'%)')}')
 	}
 	println('')
 	return cli
@@ -1001,7 +1005,8 @@ pub fn (cli &SimpleCli) diff_text(old_text string, new_text string) string {
 			b.write_string('  ${cli.green(line_num + pad + ' +')} ${cli.green(new_lines[i])}\n')
 		}
 	}
-	summary := '  ${cli.dim('───')} ${cli.green('+' + additions.str() + ' additions')}, ${cli.red('-' + deletions.str() + ' deletions')} ${cli.dim('───')}\n'
+	summary := '  ${cli.dim('───')} ${cli.green('+' + additions.str() + ' additions')}, ${cli.red(
+		'-' + deletions.str() + ' deletions')} ${cli.dim('───')}\n'
 	b.write_string(summary)
 	return b.str()
 }
@@ -1083,7 +1088,8 @@ pub fn (cli &SimpleCli) alert(kind AlertKind, title string, msg string) &SimpleC
 	max_len = int_max(max_len, 44)
 
 	println(border_color_fn('┌' + '─'.repeat(max_len + 4) + '┐'))
-	println(border_color_fn('│ ') + cli.bold(header) + ' '.repeat(int_max(0, max_len - header.len + 2)) + border_color_fn(' │'))
+	println(border_color_fn('│ ') + cli.bold(header) + ' '.repeat(int_max(0, max_len -
+		header.len + 2)) + border_color_fn(' │'))
 	println(border_color_fn('├' + '─'.repeat(max_len + 4) + '┤'))
 	for l in lines {
 		pad := ' '.repeat(int_max(0, max_len - l.len + 2))
@@ -1116,6 +1122,7 @@ pub fn (cli &SimpleCli) task_item(title string, status TaskStatus, duration_ms i
 			println('  ${cli.yellow('↷')} ${title} ${cli.dim('[SKIPPED]')}')
 		}
 	}
+
 	return cli
 }
 
@@ -1200,7 +1207,8 @@ pub fn (cli &SimpleCli) json_highlight(json_str string) string {
 			}
 			str_val := if j < json_str.len { json_str[i..j + 1] } else { json_str[i..] }
 			mut k := j + 1
-			for k < json_str.len && (json_str[k] == ` ` || json_str[k] == `\t` || json_str[k] == `\n` || json_str[k] == `\r`) {
+			for k < json_str.len && (json_str[k] == ` ` || json_str[k] == `\t`
+				|| json_str[k] == `\n` || json_str[k] == `\r`) {
 				k++
 			}
 			if k < json_str.len && json_str[k] == `:` {
@@ -1216,7 +1224,9 @@ pub fn (cli &SimpleCli) json_highlight(json_str string) string {
 			res.write_string(cli.dim(ch.ascii_str()))
 		} else if (ch >= `0` && ch <= `9`) || ch == `-` {
 			mut j := i
-			for j < json_str.len && ((json_str[j] >= `0` && json_str[j] <= `9`) || json_str[j] == `.` || json_str[j] == `-` || json_str[j] == `e` || json_str[j] == `E`) {
+			for j < json_str.len && ((json_str[j] >= `0` && json_str[j] <= `9`)
+				|| json_str[j] == `.` || json_str[j] == `-` || json_str[j] == `e`
+				|| json_str[j] == `E`) {
 				j++
 			}
 			num_val := json_str[i..j]
@@ -1408,7 +1418,8 @@ pub fn (cli &SimpleCli) form(title string, fields []FormField) map[string]string
 	if cli.silent_mode || fields.len == 0 {
 		return results
 	}
-	println(cli.cyan('\n┌─ ' + cli.bold(title) + ' ' + '─'.repeat(int_max(0, 50 - title.len)) + '┐'))
+	println(cli.cyan('\n┌─ ' + cli.bold(title) + ' ' + '─'.repeat(int_max(0, 50 -
+		title.len)) + '┐'))
 	for field in fields {
 		req_hint := if field.required { cli.red('*') } else { '' }
 		def_hint := if field.default_val.len > 0 {
@@ -1552,9 +1563,11 @@ pub fn (mut p Pipeline) run() bool {
 		step_dur := time.since(step_start).milliseconds()
 
 		if ok {
-			print('\r  ${p.cli.green('✓')} [${i + 1}/${p.steps.len}] ${step.name} ${p.cli.dim('(' + step_dur.str() + ' ms)')}\n')
+			print('\r  ${p.cli.green('✓')} [${i + 1}/${p.steps.len}] ${step.name} ${p.cli.dim(
+				'(' + step_dur.str() + ' ms)')}\n')
 		} else {
-			print('\r  ${p.cli.red('✖')} [${i + 1}/${p.steps.len}] ${step.name} ${p.cli.red('[FAILED]')} ${p.cli.dim('(' + step_dur.str() + ' ms)')}\n')
+			print('\r  ${p.cli.red('✖')} [${i + 1}/${p.steps.len}] ${step.name} ${p.cli.red('[FAILED]')} ${p.cli.dim(
+				'(' + step_dur.str() + ' ms)')}\n')
 			all_ok = false
 			break
 		}

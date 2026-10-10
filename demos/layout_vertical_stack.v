@@ -19,7 +19,8 @@ fn main() {
 
 	// 2. Explanatory label (Nord Green font color)
 
-	win.add_label('desc', 'In simplegui, controls stack vertically by default. You can separate sections using horizontal dividers or customize empty space using vertical spacers.')
+	win.add_label('desc',
+		'In simplegui, controls stack vertically by default. You can separate sections using horizontal dividers or customize empty space using vertical spacers.')
 		.font_color('#a3be8c')
 	win.set_control_font_size('desc', 11)
 

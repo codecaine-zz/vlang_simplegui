@@ -90,7 +90,6 @@ fn get_all_one_liners() []OneLiner {
 			script:   'NF == 5'
 			desc:     'Extracts only rows that have exactly 5 columns.'
 		},
-
 		// 2. Line Numbering & Slicing
 		OneLiner{
 			title:    'Print Total Line Count (NR)'
@@ -155,7 +154,6 @@ fn get_all_one_liners() []OneLiner {
 			script:   '{ print $0 "\\n" }'
 			desc:     'Inserts an extra blank newline after every line.'
 		},
-
 		// 3. Filtering & Searching
 		OneLiner{
 			title:    'Case-Insensitive Match (tolower ~ /pattern/)'
@@ -199,7 +197,6 @@ fn get_all_one_liners() []OneLiner {
 			script:   'length($0) > 50'
 			desc:     'Finds long lines exceeding 50 characters in length.'
 		},
-
 		// 4. Math & Statistics
 		OneLiner{
 			title:    'Sum Column Values ({ sum += $4 })'
@@ -236,7 +233,6 @@ fn get_all_one_liners() []OneLiner {
 			script:   '{\n    words += NF\n    chars += length($0) + 1\n}\nEND {\n    print "Lines:     ", NR\n    print "Words:     ", words\n    print "Characters:", chars\n}'
 			desc:     'Complete text telemetry counting lines, words, and characters.'
 		},
-
 		// 5. Deduplication & Sets
 		OneLiner{
 			title:    'Remove Duplicate Lines - Preserve Order (!seen[$0]++)'
@@ -266,7 +262,6 @@ fn get_all_one_liners() []OneLiner {
 			script:   'NR > 1 { freq[$3]++ }\nEND {\n    print "CATEGORY", "OCCURRENCES"\n    print "------------------------"\n    for (item in freq) {\n        printf "%-15s %d\\n", item, freq[item]\n    }\n}'
 			desc:     'Generates frequency table of values in department column.'
 		},
-
 		// 6. String Transformations
 		OneLiner{
 			title:    'Convert Entire Text to UPPERCASE'
@@ -310,7 +305,6 @@ fn get_all_one_liners() []OneLiner {
 			script:   '{\n    for (i=length($0); i>0; i--) printf "%s", substr($0, i, 1)\n    print ""\n}'
 			desc:     'Reverses string character-by-character per line.'
 		},
-
 		// 7. Format Conversions
 		OneLiner{
 			title:    'Convert CSV to TSV'
@@ -347,7 +341,6 @@ fn get_all_one_liners() []OneLiner {
 			script:   'BEGIN { printf "(" }\nNR > 1 {\n    printf "%s\'%s\'", (NR > 2 ? ", " : ""), $2\n}\nEND { print ")" }'
 			desc:     "Packages column values into SQL IN ('Val1', 'Val2') list."
 		},
-
 		// 8. Logs & Network Analytics
 		OneLiner{
 			title:    'Top IP Addresses in Web Log (count[$1]++)'
@@ -448,7 +441,8 @@ fn main() {
 		w.toast('Theme changed to ${selected}')
 	})
 	gawk_path := get_gawk_bin()
-	win.add_label('lbl_engine_info', '⚡ Engine: ${gawk_path}  |  Platform: macOS Cocoa  |  Mode: Async Worker')
+	win.add_label('lbl_engine_info',
+		'⚡ Engine: ${gawk_path}  |  Platform: macOS Cocoa  |  Mode: Async Worker')
 
 	all_recipes := get_all_one_liners()
 
@@ -492,7 +486,8 @@ fn main() {
 	// -------------------------------------------------------------
 	// Dual Pane: Input Text & GAWK Script
 	// -------------------------------------------------------------
-	win.begin_group_box('grp_input_pane', '📥 Input Data Stream (Raw text, CSV, TSV, logs, or structured records)')
+	win.begin_group_box('grp_input_pane',
+		'📥 Input Data Stream (Raw text, CSV, TSV, logs, or structured records)')
 	win.add_textarea('txt_input_data', get_sample_csv())
 	win.set_control_height('txt_input_data', 140)
 	win.end_group_box()
@@ -500,7 +495,8 @@ fn main() {
 	// -------------------------------------------------------------
 	// Exhaustive AWK One-Liner Library & Recipe Selector
 	// -------------------------------------------------------------
-	win.begin_group_box('grp_presets', '💡 Ultimate AWK One-Liner Library (40+ Recipes by Category)')
+	win.begin_group_box('grp_presets',
+		'💡 Ultimate AWK One-Liner Library (40+ Recipes by Category)')
 
 	mut recipe_titles := ['-- Select a Classic AWK One-Liner --']
 	for r in all_recipes {
@@ -516,7 +512,8 @@ fn main() {
 	win.end_row()
 
 	win.begin_row('row_recipe_desc')
-	win.add_label('lbl_recipe_desc', 'ℹ️ Tip: Pick any one-liner above and click "Insert & Run" for instantaneous results.')
+	win.add_label('lbl_recipe_desc',
+		'ℹ️ Tip: Pick any one-liner above and click "Insert & Run" for instantaneous results.')
 	win.end_row()
 	win.end_group_box()
 
@@ -550,7 +547,8 @@ fn main() {
 
 	// Stats Row
 	win.begin_row('row_stats')
-	win.add_label('lbl_exec_stats', '📊 Stats: Ready  |  Lines: 0  |  Duration: 0 ms  |  Output Size: 0 bytes')
+	win.add_label('lbl_exec_stats',
+		'📊 Stats: Ready  |  Lines: 0  |  Duration: 0 ms  |  Output Size: 0 bytes')
 	win.end_row()
 
 	// -------------------------------------------------------------
@@ -614,12 +612,14 @@ fn main() {
 					win_main.set('txt_output_data', out_str)
 					lines := out_str.count('\n')
 					bytes := out_str.len
-					win_main.set('lbl_exec_stats', '📊 Stats: SUCCESS  |  Lines: ${lines}  |  Duration: ${elapsed_ms} ms  |  Output: ${bytes} bytes')
+					win_main.set('lbl_exec_stats',
+						'📊 Stats: SUCCESS  |  Lines: ${lines}  |  Duration: ${elapsed_ms} ms  |  Output: ${bytes} bytes')
 					win_main.set_status('GAWK program executed successfully in ${elapsed_ms} ms.')
 					win_main.toast('Completed in ${elapsed_ms} ms (${lines} lines generated)!')
 				} else {
 					win_main.set('txt_output_data', '⚠️ GAWK Execution Error:\n\n' + res.output)
-					win_main.set('lbl_exec_stats', '📊 Stats: ERROR (Exit code ${res.exit_code})  |  Duration: ${elapsed_ms} ms')
+					win_main.set('lbl_exec_stats',
+						'📊 Stats: ERROR (Exit code ${res.exit_code})  |  Duration: ${elapsed_ms} ms')
 					win_main.set_status('GAWK reported a syntax or runtime error.')
 				}
 			})
@@ -641,7 +641,8 @@ fn main() {
 	win.on_click('btn_load_log', fn (mut w simplegui.SimpleWindow) {
 		w.set('txt_input_data', get_sample_nginx_log())
 		w.set_text('dd_fs', '[[:space:]]+ (Whitespace / Columns)')
-		w.set('txt_awk_script', '# Count HTTP Status Codes in Nginx Access Log\n{\n    status = $9\n    if (status != "") count[status]++\n}\nEND {\n    print "HTTP_CODE", "REQUEST_COUNT"\n    print "------------------------"\n    for (s in count) {\n        printf "%-10s %d\\n", s, count[s]\n    }\n}')
+		w.set('txt_awk_script',
+			'# Count HTTP Status Codes in Nginx Access Log\n{\n    status = $9\n    if (status != "") count[status]++\n}\nEND {\n    print "HTTP_CODE", "REQUEST_COUNT"\n    print "------------------------"\n    for (s in count) {\n        printf "%-10s %d\\n", s, count[s]\n    }\n}')
 		w.toast('Sample Nginx access log loaded with status-counting script.')
 	})
 
@@ -649,7 +650,8 @@ fn main() {
 	win.on_click('btn_load_passwd', fn (mut w simplegui.SimpleWindow) {
 		w.set('txt_input_data', get_sample_passwd())
 		w.set_text('dd_fs', ': (Colon - Passwd / Config)')
-		w.set('txt_awk_script', 'BEGIN { FS=":"; OFS="\\t"; print "USERNAME", "UID", "DEFAULT_SHELL" }\n$3 >= 0 {\n    print $1, $3, $7\n}\nEND {\n    print "Total accounts:", NR\n}')
+		w.set('txt_awk_script',
+			'BEGIN { FS=":"; OFS="\\t"; print "USERNAME", "UID", "DEFAULT_SHELL" }\n$3 >= 0 {\n    print $1, $3, $7\n}\nEND {\n    print "Total accounts:", NR\n}')
 		w.toast('Sample /etc/passwd loaded.')
 	})
 
@@ -831,7 +833,8 @@ fn main() {
 					mb := f64(out_sz) / (1024.0 * 1024.0)
 					win_main.set_status('File processed successfully in ${elapsed_ms} ms (${mb:.2f} MB).')
 					win_main.toast('File processed & saved: ${out_path} (${mb:.2f} MB)!')
-					win_main.set('lbl_exec_stats', '📊 Stats: Direct File Stream  |  In: ${os.file_name(in_path)}  |  Out: ${mb:.2f} MB  |  Time: ${elapsed_ms} ms')
+					win_main.set('lbl_exec_stats',
+						'📊 Stats: Direct File Stream  |  In: ${os.file_name(in_path)}  |  Out: ${mb:.2f} MB  |  Time: ${elapsed_ms} ms')
 				} else {
 					win_main.alert('GAWK Error', 'Error processing file: ' + res.output)
 					win_main.set_status('Error processing file.')

@@ -129,14 +129,19 @@ fn main() {
 	win.begin_row('row_tc_2')
 	win.add_label('lbl_crf', 'Quality (CRF):')
 	win.add_dropdown('dd_crf', ['18 (Near Lossless / Master)', '20 (High Quality Web)',
-		'23 (Balanced Standard)', '28 (Compact / Small File)', '32 (Max Space Saving)'], '23 (Balanced Standard)')
+		'23 (Balanced Standard)', '28 (Compact / Small File)', '32 (Max Space Saving)'],
+		'23 (Balanced Standard)')
 	win.add_label('lbl_preset', 'Encoding Speed:')
-	win.add_dropdown('dd_preset', ['ultrafast', 'veryfast', 'fast', 'medium', 'slow', 'veryslow'], 'medium')
+	win.add_dropdown('dd_preset', ['ultrafast', 'veryfast', 'fast', 'medium', 'slow', 'veryslow'],
+		'medium')
 	win.end_row()
 
 	win.begin_row('row_tc_3')
-	win.add_checkbox('chk_hardware_accel', 'Use Apple Silicon VideoToolbox Hardware Encoder (h264_videotoolbox / hevc_videotoolbox)', true)
-	win.add_checkbox('chk_faststart', 'Web FastStart (Moves MP4 moov atom to header for instant web playback)', true)
+	win.add_checkbox('chk_hardware_accel',
+		'Use Apple Silicon VideoToolbox Hardware Encoder (h264_videotoolbox / hevc_videotoolbox)',
+		true)
+	win.add_checkbox('chk_faststart',
+		'Web FastStart (Moves MP4 moov atom to header for instant web playback)', true)
 	win.end_row()
 	win.end_group_box()
 
@@ -160,8 +165,10 @@ fn main() {
 	win.end_row()
 
 	win.begin_row('row_target_2')
-	win.add_checkbox('chk_twopass', 'Use 2-Pass Encoding for Exact Size Matching & Best Quality', true)
-	win.add_checkbox('chk_mute_target', 'Remove Audio (Video Only) to maximize video quality in target size', false)
+	win.add_checkbox('chk_twopass', 'Use 2-Pass Encoding for Exact Size Matching & Best Quality',
+		true)
+	win.add_checkbox('chk_mute_target',
+		'Remove Audio (Video Only) to maximize video quality in target size', false)
 	win.end_row()
 	win.end_group_box()
 
@@ -173,7 +180,8 @@ fn main() {
 		'ogg (Vorbis)', 'm4a (Apple AAC)', 'opus'], 'mp3')
 	win.add_label('lbl_abitrate', 'Bitrate:')
 	win.add_dropdown('dd_abitrate', ['320 kbps (Studio Master)', '256 kbps (High Quality)',
-		'192 kbps (Standard)', '128 kbps (Compact)', '64 kbps (Voice / Podcast)'], '192 kbps (Standard)')
+		'192 kbps (Standard)', '128 kbps (Compact)', '64 kbps (Voice / Podcast)'],
+		'192 kbps (Standard)')
 	win.end_row()
 
 	win.begin_row('row_aud_2')
@@ -186,8 +194,10 @@ fn main() {
 	win.end_row()
 
 	win.begin_row('row_aud_3')
-	win.add_checkbox('chk_loudnorm', 'Apply Broadcast Audio Normalization (EBU R128 loudnorm filter)', true)
-	win.add_checkbox('chk_afftdn', 'Apply FFT Audio Denoise (Removes background hum and hiss)', false)
+	win.add_checkbox('chk_loudnorm',
+		'Apply Broadcast Audio Normalization (EBU R128 loudnorm filter)', true)
+	win.add_checkbox('chk_afftdn', 'Apply FFT Audio Denoise (Removes background hum and hiss)',
+		false)
 	win.end_row()
 	win.end_group_box()
 
@@ -201,13 +211,16 @@ fn main() {
 	win.end_row()
 
 	win.begin_row('row_trim_2')
-	win.add_checkbox('chk_trim_fast', 'Fast Keyframe Seeking (Lossless Stream Copy - Instant, No Re-encoding)', true)
-	win.add_checkbox('chk_fade_in_out', 'Add 1-Second Smooth Video & Audio Fade-In and Fade-Out', false)
+	win.add_checkbox('chk_trim_fast',
+		'Fast Keyframe Seeking (Lossless Stream Copy - Instant, No Re-encoding)', true)
+	win.add_checkbox('chk_fade_in_out', 'Add 1-Second Smooth Video & Audio Fade-In and Fade-Out',
+		false)
 	win.end_row()
 	win.end_group_box()
 
 	// Tab 5: Aspect Ratio & Visual Filters
-	win.begin_group_box('pane_filters', 'Resolution, Social Aspect Ratio (9:16 / 1:1) & Visual Filters')
+	win.begin_group_box('pane_filters',
+		'Resolution, Social Aspect Ratio (9:16 / 1:1) & Visual Filters')
 	win.begin_row('row_flt_1')
 	win.add_label('lbl_scale', 'Resolution / Aspect Ratio:')
 	win.add_dropdown('dd_scale', [
@@ -227,8 +240,9 @@ fn main() {
 
 	win.begin_row('row_flt_2')
 	win.add_label('lbl_transform', 'Rotation / Orientation:')
-	win.add_dropdown('dd_transform', ['None', 'Rotate 90° Clockwise', 'Rotate 90° Counter-Clockwise',
-		'Rotate 180°', 'Flip Horizontal', 'Flip Vertical', 'Grayscale / Black & White'], 'None')
+	win.add_dropdown('dd_transform', ['None', 'Rotate 90° Clockwise',
+		'Rotate 90° Counter-Clockwise', 'Rotate 180°', 'Flip Horizontal', 'Flip Vertical',
+		'Grayscale / Black & White'], 'None')
 	win.add_label('lbl_speed', 'Playback Speed:')
 	win.add_dropdown('dd_speed', ['1.0x (Normal)', '0.5x (Slow Motion)', '1.5x (Speed Up)',
 		'2.0x (Double Speed)', '4.0x (Timelapse)', '8.0x (Hyperlapse)'], '1.0x (Normal)')
@@ -246,7 +260,8 @@ fn main() {
 	win.add_label('lbl_thumb_time', 'Timestamp to Capture (HH:MM:SS):')
 	win.add_input('txt_thumb_time', '00:00:05')
 	win.add_label('lbl_thumb_format', 'Image Format:')
-	win.add_dropdown('dd_thumb_format', ['PNG (Lossless)', 'JPEG (High Quality)', 'WebP'], 'PNG (Lossless)')
+	win.add_dropdown('dd_thumb_format', ['PNG (Lossless)', 'JPEG (High Quality)', 'WebP'],
+		'PNG (Lossless)')
 	win.end_row()
 
 	win.begin_row('row_frame_2')
@@ -268,7 +283,8 @@ fn main() {
 	win.end_row()
 
 	win.begin_row('row_gif_2')
-	win.add_checkbox('chk_gif_palette', 'Use 2-Pass Palettegen Filter (Eliminates color banding & artifacts)', true)
+	win.add_checkbox('chk_gif_palette',
+		'Use 2-Pass Palettegen Filter (Eliminates color banding & artifacts)', true)
 	win.add_checkbox('chk_gif_loop', 'Infinite Looping GIF', true)
 	win.end_row()
 	win.end_group_box()
@@ -285,7 +301,8 @@ fn main() {
 	win.begin_row('row_batch_2')
 	win.add_label('lbl_batch_ext', 'Target Format:')
 	win.add_dropdown('dd_batch_format', ['Convert All Videos to MP4 (H.264)',
-		'Convert All Videos to WebM', 'Extract All Audio to MP3', 'Extract All Audio to WAV'], 'Convert All Videos to MP4 (H.264)')
+		'Convert All Videos to WebM', 'Extract All Audio to MP3', 'Extract All Audio to WAV'],
+		'Convert All Videos to MP4 (H.264)')
 	win.add_button('btn_run_batch', '⚡ Run Batch Queue')
 	win.end_row()
 	win.end_group_box()
@@ -324,7 +341,8 @@ fn main() {
 	win.add_console('log_console', 160)
 
 	// Initial log output
-	win.append_console('log_console', '🚀 SimpleGUI FFmpeg Studio Pro Initialized (Async Non-Blocking Engine).\n', 1)
+	win.append_console('log_console',
+		'🚀 SimpleGUI FFmpeg Studio Pro Initialized (Async Non-Blocking Engine).\n', 1)
 	win.append_console('log_console', '⚡ Detected FFmpeg: ' + ffmpeg_path + '\n', 4)
 	win.append_console('log_console', '⚡ Detected FFprobe: ' + ffprobe_path + '\n', 4)
 
@@ -403,9 +421,9 @@ fn main() {
 			max_r := int(f64(v_rate) * 1.4)
 			buf_r := v_rate * 2
 
-			cmd_parts << ['-c:v', 'libx264', '-b:v', '${v_rate}k', '-maxrate', '${max_r}k', '-bufsize',
-				'${buf_r}k', '-preset', 'medium', '-c:a', 'aac', '-b:a', '128k', '-movflags',
-				'+faststart']
+			cmd_parts << ['-c:v', 'libx264', '-b:v', '${v_rate}k', '-maxrate', '${max_r}k',
+				'-bufsize', '${buf_r}k', '-preset', 'medium', '-c:a', 'aac', '-b:a', '128k',
+				'-movflags', '+faststart']
 		} else if current_tab.contains('Audio') {
 			cmd_parts << ['-vn']
 			format_sel := win.get('dd_aformat')
@@ -580,7 +598,8 @@ fn main() {
 	// Tab switching callback
 	win.on_change('tabs_mode', fn (mut w simplegui.SimpleWindow, val string) {
 		w.set_control_visible('pane_transcode', val.contains('Transcode'))
-		w.set_control_visible('pane_target_size', val.contains('Target Size') || val.contains('Social'))
+		w.set_control_visible('pane_target_size', val.contains('Target Size')
+			|| val.contains('Social'))
 		w.set_control_visible('pane_audio', val.contains('Audio'))
 		w.set_control_visible('pane_trim', val.contains('Trim'))
 		w.set_control_visible('pane_filters', val.contains('Aspect') || val.contains('Filters'))
@@ -675,7 +694,8 @@ fn main() {
 				'-pretty', in_path])
 			w.run_on_main_thread(fn [res, in_path, ffmpeg] (mut win_main simplegui.SimpleWindow) {
 				if res.exit_code == 0 {
-					win_main.append_console('log_console', '=== STREAM & CODEC INFORMATION ===\n' + res.output + '\n', 4)
+					win_main.append_console('log_console', '=== STREAM & CODEC INFORMATION ===\n' +
+						res.output + '\n', 4)
 				} else {
 					fres := simplegui.exec_safe(ffmpeg, ['-i', in_path])
 					win_main.append_console('log_console', fres.output + '\n', 1)
@@ -706,7 +726,8 @@ fn main() {
 		files := os.ls(dir) or { []string{} }
 		mode := w.get('dd_batch_format')
 
-		w.append_console('log_console', '📦 Starting batch processing on folder: ${dir} (Async Background Queue)...\n', 1)
+		w.append_console('log_console',
+			'📦 Starting batch processing on folder: ${dir} (Async Background Queue)...\n', 1)
 		w.set_status('Batch processing running in background...')
 
 		go fn [mut w, dir, files, mode, ffmpeg] () {
@@ -727,8 +748,8 @@ fn main() {
 						raw_args << ['-vn', '-c:a', 'pcm_s16le', full_out]
 					} else if mode.contains('WebM') {
 						full_out = os.join_path(dir, '${stem}_batch.webm')
-						raw_args << ['-c:v', 'libvpx-vp9', '-crf', '30', '-b:v', '0', '-c:a', 'libopus',
-							full_out]
+						raw_args << ['-c:v', 'libvpx-vp9', '-crf', '30', '-b:v', '0', '-c:a',
+							'libopus', full_out]
 					} else {
 						full_out = os.join_path(dir, '${stem}_batch.mp4')
 						raw_args << ['-c:v', 'libx264', '-crf', '23', '-preset', 'fast', '-c:a',
@@ -754,7 +775,8 @@ fn main() {
 			}
 
 			w.run_on_main_thread(fn [processed] (mut win_main simplegui.SimpleWindow) {
-				win_main.append_console('log_console', '🎉 Batch Complete! Processed ${processed} files.\n', 4)
+				win_main.append_console('log_console',
+					'🎉 Batch Complete! Processed ${processed} files.\n', 4)
 				win_main.set_status('Batch processing finished.')
 				win_main.toast('Batch processing complete: ${processed} files.')
 			})
@@ -832,14 +854,18 @@ fn main() {
 					if os.exists(out_path) {
 						size_bytes := os.file_size(out_path)
 						size_mb := f64(size_bytes) / (1024.0 * 1024.0)
-						win_main.append_console('log_console', '📦 Output Created: ${out_path} (${size_mb:.2f} MB)\n', 4)
+						win_main.append_console('log_console',
+							'📦 Output Created: ${out_path} (${size_mb:.2f} MB)\n', 4)
 					}
 					win_main.set_status('FFmpeg task completed with success.')
 					win_main.toast('🎉 FFmpeg processing finished successfully!')
 				} else {
-					win_main.append_console('log_console', '❌ Error during execution (Exit code ${res.exit_code}):\n' + res.output + '\n', 3)
+					win_main.append_console('log_console',
+						'❌ Error during execution (Exit code ${res.exit_code}):\n' + res.output + '\n',
+						3)
 					win_main.set_status('Error executing FFmpeg.')
-					win_main.alert('FFmpeg Error', 'Failed to process media file. Check console logs for details.')
+					win_main.alert('FFmpeg Error',
+						'Failed to process media file. Check console logs for details.')
 				}
 			})
 		}()

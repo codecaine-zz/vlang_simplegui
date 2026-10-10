@@ -54,7 +54,8 @@ fn main() {
 		w.toast('Theme changed to ${selected}')
 	})
 	ytdlp_path := get_yt_dlp_bin()
-	win.add_label('lbl_engine_info', '⚡ Engine: ${ytdlp_path}  |  Platform: macOS Cocoa  |  Mode: Async Worker (Zero UI Freezes)')
+	win.add_label('lbl_engine_info',
+		'⚡ Engine: ${ytdlp_path}  |  Platform: macOS Cocoa  |  Mode: Async Worker (Zero UI Freezes)')
 
 	// -------------------------------------------------------------
 	// URL Input & Destination Directory
@@ -152,11 +153,14 @@ fn main() {
 
 	// Stats Row
 	win.begin_row('row_stats')
-	win.add_label('lbl_dl_stats', '📊 Status: Ready  |  Active Downloads: 0  |  Speed: --  |  ETA: --')
+	win.add_label('lbl_dl_stats',
+		'📊 Status: Ready  |  Active Downloads: 0  |  Speed: --  |  ETA: --')
 	win.end_row()
 
 	win.append_console('dl_console', '🎬 yt-dlp Studio Pro Initialized.\n', 1)
-	win.append_console('dl_console', '⚡ Ready to download and extract media streams from YouTube, Vimeo, Twitter, Twitch, Soundcloud, and 1,000+ sites.\n', 4)
+	win.append_console('dl_console',
+		'⚡ Ready to download and extract media streams from YouTube, Vimeo, Twitter, Twitch, Soundcloud, and 1,000+ sites.\n',
+		4)
 
 	// -------------------------------------------------------------
 	// Event Handlers & Async Engine
@@ -208,7 +212,8 @@ fn main() {
 	// Clear Log
 	win.on_click('btn_clear_log', fn (mut w simplegui.SimpleWindow) {
 		w.clear_console('dl_console')
-		w.set('lbl_dl_stats', '📊 Status: Ready  |  Active Downloads: 0  |  Speed: --  |  ETA: --')
+		w.set('lbl_dl_stats',
+			'📊 Status: Ready  |  Active Downloads: 0  |  Speed: --  |  ETA: --')
 	})
 
 	// Inspect Formats (-F)
@@ -219,7 +224,8 @@ fn main() {
 			return
 		}
 		ytdlp := get_yt_dlp_bin()
-		w.append_console('dl_console', '▶ Inspecting streams & formats securely in background...\n', 1)
+		w.append_console('dl_console',
+			'▶ Inspecting streams & formats securely in background...\n', 1)
 		w.set_status('Inspecting stream formats in background...')
 		w.toast('⚡ Inspecting stream formats...')
 
@@ -230,7 +236,8 @@ fn main() {
 					win_main.append_console('dl_console', res.output + '\n', 4)
 					win_main.set_status('Formats inspection completed.')
 				} else {
-					win_main.append_console('dl_console', '❌ Error inspecting formats:\n' + res.output + '\n', 3)
+					win_main.append_console('dl_console', '❌ Error inspecting formats:\n' +
+						res.output + '\n', 3)
 					win_main.set_status('Failed to inspect formats.')
 				}
 			})
@@ -255,11 +262,13 @@ fn main() {
 				url])
 			w.run_on_main_thread(fn [res] (mut win_main simplegui.SimpleWindow) {
 				if res.exit_code == 0 {
-					win_main.append_console('dl_console', 'ℹ️ Media Metadata:\n' + res.output + '\n', 4)
+					win_main.append_console('dl_console', 'ℹ️ Media Metadata:\n' + res.output +
+						'\n', 4)
 					win_main.set_status('Metadata fetched successfully.')
 					win_main.toast('Metadata received!')
 				} else {
-					win_main.append_console('dl_console', '❌ Error fetching metadata:\n' + res.output + '\n', 3)
+					win_main.append_console('dl_console', '❌ Error fetching metadata:\n' +
+						res.output + '\n', 3)
 					win_main.set_status('Failed to fetch metadata.')
 				}
 			})
@@ -410,12 +419,17 @@ fn main() {
 
 			w.run_on_main_thread(fn [res, sec, out_dir] (mut win_main simplegui.SimpleWindow) {
 				if res.exit_code == 0 {
-					win_main.append_console('dl_console', '✅ Download Completed Successfully in ${sec:.1f}s!\n' + res.output + '\n', 4)
-					win_main.set('lbl_dl_stats', '📊 Status: COMPLETED (in ${sec:.1f}s)  |  Saved in: ${out_dir}')
+					win_main.append_console('dl_console',
+
+						'✅ Download Completed Successfully in ${sec:.1f}s!\n' + res.output + '\n',
+						4)
+					win_main.set('lbl_dl_stats',
+						'📊 Status: COMPLETED (in ${sec:.1f}s)  |  Saved in: ${out_dir}')
 					win_main.set_status('Download finished in ${sec:.1f}s.')
 					win_main.toast('Download finished successfully!')
 				} else {
-					win_main.append_console('dl_console', '❌ Download Error:\n' + res.output + '\n', 3)
+					win_main.append_console('dl_console', '❌ Download Error:\n' + res.output +
+						'\n', 3)
 					win_main.set('lbl_dl_stats', '📊 Status: ERROR (Exit code ${res.exit_code})')
 					win_main.set_status('Download encountered an error.')
 				}
