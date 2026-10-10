@@ -28,7 +28,7 @@ Build real, native Cocoa desktop apps in [V](https://vlang.io) with a beginner-f
 - [Demos](#demos)
 - [Production Workstations & Studio Applications](#production-workstations--studio-applications)
 - [SimpleCLI: Headless Console & RAD Toolkit](#simplecli-headless-console--rad-toolkit)
-- [Developer Utility Suite (40 Modules)](#developer-utility-suite-40-modules)
+- [Developer Utility Suite (45 Modules)](#developer-utility-suite-45-modules)
 - [Related GUI & RAD Desktop Projects](#related-gui--rad-desktop-projects)
 - [Security & Command Injection Prevention](#security--command-injection-prevention)
 - [Testing](#testing)
@@ -2189,9 +2189,9 @@ For headless console scripts, backend daemons, automation tools, and CI/CD pipel
 
 ---
 
-## Developer Utility Suite (40 Modules)
+## Developer Utility Suite (45 Modules)
 
-`vlang_simplegui` bundles the complete **`vlang_utils`** developer utility suite — 40 standalone, zero-dependency, production-grade utility modules designed for rapid application development:
+`vlang_simplegui` bundles the complete **`vlang_utils`** developer utility suite — 45 standalone, zero-dependency, production-grade utility modules designed for rapid application development:
 
 | Module | Description |
 | :--- | :--- |
