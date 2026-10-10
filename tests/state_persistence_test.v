@@ -98,6 +98,7 @@ fn test_app_state_persistence_lifecycle() {
 	win.set_state_int('login_count', 42)
 	win.set_state_bool('logged_in', true)
 	win.set_state_f64('ratio', 3.14)
+	win.set_state_strings('recent_tabs', ['home', 'editor', 'settings'])
 
 	assert win.get_state('user_name') == 'Alice'
 	assert win.get_state_or('missing_key', 'default_val') == 'default_val'
@@ -106,6 +107,8 @@ fn test_app_state_persistence_lifecycle() {
 	assert win.get_state_bool('logged_in') == true
 	assert win.get_state_bool_or('missing_bool', false) == false
 	assert win.get_state_f64('ratio') == 3.14
+	assert win.get_state_strings('recent_tabs') == ['home', 'editor', 'settings']
+	assert win.get_state_strings('missing_tabs', ['default']) == ['default']
 	assert win.get_state_f64_or('missing_f64', 1.23) == 1.23
 
 	// Toggle & Increment
