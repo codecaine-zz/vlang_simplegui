@@ -1,7 +1,6 @@
 module main
 
 import os
-import time
 import simplegui
 
 struct IconPreset {
@@ -44,122 +43,20 @@ fn get_icon_presets() []IconPreset {
 	]
 }
 
-struct IconDimension {
-	name string
-	size int
-}
-
 fn generate_icns_file(src_png string, out_icns_path string) (bool, string) {
-	if !os.exists(src_png) {
-		return false, 'Source icon file does not exist: ${src_png}'
-	}
-
-	temp_dir := os.join_path(os.temp_dir(), 'appbundler_${time.now().unix_milli()}')
-	iconset_dir := os.join_path(temp_dir, 'AppIcon.iconset')
-	os.mkdir_all(iconset_dir) or { return false, 'Failed to create temp iconset directory: ${err}' }
-	defer {
-		os.rmdir_all(temp_dir) or {}
-	}
-
-	dims := [
-		IconDimension{'icon_16x16.png', 16},
-		IconDimension{'icon_16x16@2x.png', 32},
-		IconDimension{'icon_32x32.png', 32},
-		IconDimension{'icon_32x32@2x.png', 64},
-		IconDimension{'icon_128x128.png', 128},
-		IconDimension{'icon_128x128@2x.png', 256},
-		IconDimension{'icon_256x256.png', 256},
-		IconDimension{'icon_256x256@2x.png', 512},
-		IconDimension{'icon_512x512.png', 512},
-		IconDimension{'icon_512x512@2x.png', 1024},
-	]
-
-	for d in dims {
-		out_p := os.join_path(iconset_dir, d.name)
-		cmd := 'sips -s format png -z ${d.size} ${d.size} ${os.quoted_path(src_png)} --out ${os.quoted_path(out_p)}'
-		res := os.execute(cmd)
-		if res.exit_code != 0 {
-			return false, 'sips failed on ${d.name}: ${res.output.trim_space()}'
-		}
-	}
-
-	cmd_iconutil := 'iconutil -c icns ${os.quoted_path(iconset_dir)} -o ${os.quoted_path(out_icns_path)}'
-	res_iconutil := os.execute(cmd_iconutil)
-	if res_iconutil.exit_code != 0 {
-		return false, 'iconutil failed: ${res_iconutil.output.trim_space()}'
-	}
-
-	return true, ''
+	return simplegui.generate_macos_icns(src_png, out_icns_path)
 }
 
 fn build_info_plist(app_name string, exe_name string, bundle_id string, version string, category string, high_dpi bool, dark_mode bool) string {
-	cat_str := if category.len > 0 { category } else { 'public.app-category.utilities' }
-	dpi_str := if high_dpi { 'true' } else { 'false' }
-	dark_str := if dark_mode { 'false' } else { 'true' } // NSRequiresAquaSystemAppearance=false means support dark mode
-
-	return '<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-	<key>CFBundleExecutable</key>
-	<string>${exe_name}</string>
-	<key>CFBundleIconFile</key>
-	<string>AppIcon</string>
-	<key>CFBundleIdentifier</key>
-	<string>${bundle_id}</string>
-	<key>CFBundleName</key>
-	<string>${app_name}</string>
-	<key>CFBundleDisplayName</key>
-	<string>${app_name}</string>
-	<key>CFBundlePackageType</key>
-	<string>APPL</string>
-	<key>CFBundleSignature</key>
-	<string>????</string>
-	<key>CFBundleShortVersionString</key>
-	<string>${version}</string>
-	<key>CFBundleVersion</key>
-	<string>${version}</string>
-	<key>LSMinimumSystemVersion</key>
-	<string>11.0</string>
-	<key>LSApplicationCategoryType</key>
-	<string>${cat_str}</string>
-	<key>NSHighResolutionCapable</key>
-	<${dpi_str}/>
-	<key>NSRequiresAquaSystemAppearance</key>
-	<${dark_str}/>
-	<key>NSPrincipalClass</key>
-	<string>NSApplication</string>
-</dict>
-</plist>
-'
+	return simplegui.build_macos_info_plist(app_name, exe_name, bundle_id, version, category, high_dpi, dark_mode)
 }
 
 fn clean_alphanumeric(raw string) string {
-	mut clean := ''
-	for c in raw {
-		if c.is_alnum() {
-			clean += c.ascii_str()
-		}
-	}
-	return clean.to_lower()
+	return simplegui.clean_bundle_identifier(raw)
 }
 
 fn format_display_title(raw string) string {
-	mut result := []string{}
-	mut cleaned := ''
-	for c in raw {
-		if c in [`-`, `_`, `.`] {
-			cleaned += ' '
-		} else {
-			cleaned += c.ascii_str()
-		}
-	}
-	for word in cleaned.split(' ') {
-		if word.len > 0 {
-			result << word[0..1].to_upper() + word[1..]
-		}
-	}
-	return result.join(' ')
+	return simplegui.format_display_title(raw)
 }
 
 fn inspect_binary(bin_path string) string {
@@ -481,7 +378,7 @@ fn main() {
 			dark_mode)
 		w.set_value('txt_bundler_log',
 			'======================================================================\n📄 Generated Info.plist Preview\n======================================================================\n' +
-			plist)
+				plist)
 		w.toast('Info.plist preview generated.')
 	})
 
@@ -573,11 +470,9 @@ fn main() {
 
 	// PRIMARY ACTION: Package macOS .app Bundle
 	win.on_click('btn_package_app', fn (mut w simplegui.SimpleWindow) {
-		t0 := time.now()
-
 		bin_path := w.get_value('txt_bin_path').trim_space()
 		app_name := w.get_value('txt_app_name').trim_space()
-		mut exe_name := w.get_value('txt_exe_name').trim_space()
+		exe_name := w.get_value('txt_exe_name').trim_space()
 		bundle_id := w.get_value('txt_bundle_id').trim_space()
 		version := w.get_value('txt_version').trim_space()
 		category := w.get_value('dd_category')
@@ -590,191 +485,35 @@ fn main() {
 		do_quarantine := w.get_checked('chk_quarantine')
 		is_terminal_wrapper := w.get_checked('chk_terminal_wrapper')
 
-		if bin_path == '' {
-			w.alert('Validation Error',
-				'Please select or enter the path to the target Mach-O binary.')
+		cfg := simplegui.MacBundleConfig{
+			bin_path:            bin_path
+			app_name:            app_name
+			exe_name:            exe_name
+			bundle_id:           bundle_id
+			version:             version
+			category:            category
+			icon_src:            icon_src
+			out_dir:             out_dir
+			high_dpi:            high_dpi
+			dark_mode:           dark_mode
+			do_codesign:         do_codesign
+			do_quarantine:       do_quarantine
+			is_terminal_wrapper: is_terminal_wrapper
+		}
+
+		simplegui.validate_bundle_config(cfg) or {
+			w.alert('Validation Error', err.msg())
 			return
 		}
 
-		if !os.exists(bin_path) {
-			w.alert('File Not Found', 'Target binary not found at:\n${bin_path}')
-			return
-		}
+		res := simplegui.package_macos_app_bundle(cfg)
+		w.set_value('txt_bundler_log', res.logs.join('\n'))
 
-		if app_name == '' {
-			w.alert('Validation Error', 'Please specify an App Display Name.')
-			return
-		}
-
-		if exe_name == '' {
-			exe_name = clean_alphanumeric(app_name)
-		}
-
-		resolved_out_dir := if os.is_abs_path(out_dir) {
-			out_dir
+		if res.success {
+			w.toast('🎉 Successfully packaged ${app_name}.app!')
 		} else {
-			os.join_path(os.getwd(), out_dir)
+			w.alert('Build Error', res.error_msg)
 		}
-		os.mkdir_all(resolved_out_dir) or {
-			w.alert('Filesystem Error', 'Failed to create output directory: ${err}')
-			return
-		}
-
-		app_bundle := os.join_path(resolved_out_dir, '${app_name}.app')
-		contents_dir := os.join_path(app_bundle, 'Contents')
-		macos_dir := os.join_path(contents_dir, 'MacOS')
-		resources_dir := os.join_path(contents_dir, 'Resources')
-
-		mut logs := []string{}
-		logs << '======================================================================'
-		logs << '🚀 Starting macOS .app Packaging Pipeline'
-		logs << '======================================================================'
-		logs << '• Target Application : ${app_name}.app'
-		logs << '• Executable Name    : ${exe_name}'
-		logs << '• Bundle Identifier  : ${bundle_id}'
-		logs << '• Version String     : ${version}'
-		logs << '• Category           : ${category}'
-		logs << '• Source Binary      : ${bin_path}'
-		logs << '• Output Bundle Path : ${app_bundle}'
-		logs << '----------------------------------------------------------------------'
-
-		// 1. Clean existing bundle
-		if os.exists(app_bundle) {
-			logs << '🧹 Removing existing bundle at ${app_bundle}...'
-			os.rmdir_all(app_bundle) or {
-				logs << '❌ Failed to delete old app bundle: ${err}'
-				w.set_value('txt_bundler_log', logs.join('\n'))
-				w.alert('Build Error', 'Failed to remove old app bundle: ${err}')
-				return
-			}
-		}
-
-		// 2. Setup directory hierarchy
-		os.mkdir_all(macos_dir) or {
-			logs << '❌ Failed to create MacOS folder: ${err}'
-			w.set_value('txt_bundler_log', logs.join('\n'))
-			return
-		}
-		os.mkdir_all(resources_dir) or {
-			logs << '❌ Failed to create Resources folder: ${err}'
-			w.set_value('txt_bundler_log', logs.join('\n'))
-			return
-		}
-		logs << '📁 Created bundle structure: Contents/{MacOS, Resources}'
-
-		// 3. Process & Copy Executable
-		target_bin := os.join_path(macos_dir, exe_name)
-
-		if is_terminal_wrapper {
-			// Terminal launcher wrapper script
-			logs << '💻 Creating Terminal.app launcher wrapper...'
-			cli_bin := os.join_path(resources_dir, exe_name)
-			os.cp(bin_path, cli_bin) or {
-				logs << '❌ Failed to copy CLI binary to Resources: ${err}'
-				w.set_value('txt_bundler_log', logs.join('\n'))
-				return
-			}
-			os.chmod(cli_bin, 0o755) or {}
-
-			wrapper_script := "#!/bin/bash
-DIR=\"$(cd \"$(dirname \"$0\")/../Resources\" && pwd)\"
-osascript -e \"tell application \\\"Terminal\\\" to do script \\\"'${cli_bin}' ; exit\\\"\"
-"
-			os.write_file(target_bin, wrapper_script) or {
-				logs << '❌ Failed to write wrapper script: ${err}'
-				w.set_value('txt_bundler_log', logs.join('\n'))
-				return
-			}
-			os.chmod(target_bin, 0o755) or {}
-			logs << '✅ Configured Terminal wrapper launcher'
-		} else {
-			logs << '📦 Copying Mach-O binary into Contents/MacOS/${exe_name}...'
-			os.cp(bin_path, target_bin) or {
-				logs << '❌ Failed to copy binary: ${err}'
-				w.set_value('txt_bundler_log', logs.join('\n'))
-				w.alert('Copy Error', 'Failed to copy binary: ${err}')
-				return
-			}
-			os.chmod(target_bin, 0o755) or {}
-			logs << '✅ Executable permissions applied (chmod +x)'
-		}
-
-		// 4. Generate Info.plist
-		plist_content := build_info_plist(app_name, exe_name, bundle_id, version, category,
-			high_dpi, dark_mode)
-		plist_path := os.join_path(contents_dir, 'Info.plist')
-		os.write_file(plist_path, plist_content) or {
-			logs << '❌ Failed to write Info.plist: ${err}'
-			w.set_value('txt_bundler_log', logs.join('\n'))
-			return
-		}
-		logs << '✅ Generated Info.plist (${plist_content.len} bytes)'
-
-		// 5. Generate PkgInfo
-		pkginfo_path := os.join_path(contents_dir, 'PkgInfo')
-		os.write_file(pkginfo_path, 'APPL????') or {}
-		logs << '✅ Generated PkgInfo'
-
-		// 6. Generate Icon (.icns)
-		mut icon_resolved := if os.is_abs_path(icon_src) {
-			icon_src
-		} else {
-			os.join_path(os.getwd(), icon_src)
-		}
-		if !os.exists(icon_resolved) {
-			icon_resolved = os.join_path(os.getwd(), 'resources', 'icon.png')
-		}
-
-		if os.exists(icon_resolved) {
-			dest_icns := os.join_path(resources_dir, 'AppIcon.icns')
-			if icon_resolved.ends_with('.icns') {
-				os.cp(icon_resolved, dest_icns) or {}
-				logs << '🎨 Copied pre-built .icns asset directly'
-			} else {
-				logs << '🎨 Compiling multi-resolution iconset via sips & iconutil...'
-				ok_icns, icns_err := generate_icns_file(icon_resolved, dest_icns)
-				if ok_icns {
-					icns_sz := os.file_size(dest_icns)
-					logs << '✅ Compiled AppIcon.icns (${f64(icns_sz) / 1024.0:.1f} KB)'
-				} else {
-					logs << '⚠️ Icon compilation warning: ${icns_err}'
-				}
-			}
-		} else {
-			logs << 'ℹ️ No icon specified (using default macOS generic icon)'
-		}
-
-		// 7. Ad-hoc Codesign
-		if do_codesign {
-			logs << '🔐 Applying Ad-Hoc Code Signature (codesign --force --deep --sign -)...'
-			cs_cmd := 'codesign --force --deep --sign - ${os.quoted_path(app_bundle)}'
-			cs_res := os.execute(cs_cmd)
-			if cs_res.exit_code == 0 {
-				logs << '✅ Code signing succeeded'
-			} else {
-				logs << '⚠️ Code signing warning: ${cs_res.output.trim_space()}'
-			}
-		}
-
-		// 8. Clear Quarantine Attributes
-		if do_quarantine {
-			logs << '🛡️ Stripping macOS quarantine attributes (xattr -cr)...'
-			os.execute('xattr -cr ${os.quoted_path(app_bundle)}')
-			logs << '✅ Quarantine attributes cleared'
-		}
-
-		elapsed := time.since(t0)
-		total_size := os.file_size(target_bin)
-
-		logs << '----------------------------------------------------------------------'
-		logs << '🎉 BUILD COMPLETE: ${app_name}.app'
-		logs << '⏱️ Total Time : ${elapsed.milliseconds()}ms (${elapsed.seconds():.2f}s)'
-		logs << '📦 Bundle Size: ${f64(total_size) / 1024.0 / 1024.0:.2f} MB'
-		logs << '📍 Location   : ${app_bundle}'
-		logs << '======================================================================'
-
-		w.set_value('txt_bundler_log', logs.join('\n'))
-		w.toast('🎉 Successfully packaged ${app_name}.app!')
 	})
 
 	println('Launching App Bundler Studio Pro Window...')

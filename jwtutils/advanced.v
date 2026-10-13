@@ -3,7 +3,6 @@ module jwtutils
 import crypto.hmac
 import crypto.sha256
 import crypto.sha512
-import crypto.internal.subtle
 import encoding.base64
 import json2
 import time
@@ -87,6 +86,17 @@ pub fn decode_jwt_unverified(token string) !JWTClaims {
 	}
 }
 
+fn constant_time_eq(a []u8, b []u8) bool {
+	if a.len != b.len {
+		return false
+	}
+	mut diff := u8(0)
+	for i in 0 .. a.len {
+		diff |= a[i] ^ b[i]
+	}
+	return diff == 0
+}
+
 // verify_jwt_with verifies signature, algorithm and registered claims according to `opts`.
 pub fn verify_jwt_with(token string, secret string, opts VerifyOptions) !JWTClaims {
 	if secret.len == 0 {
@@ -100,7 +110,7 @@ pub fn verify_jwt_with(token string, secret string, opts VerifyOptions) !JWTClai
 	unsigned_token := '${parts[0]}.${parts[1]}'
 	expected := hmac_for(opts.algorithm, secret.bytes(), unsigned_token.bytes())
 	given := base64.url_decode(parts[2])
-	if subtle.constant_time_compare(given, expected) != 1 {
+	if !constant_time_eq(given, expected) {
 		return error('invalid JWT signature')
 	}
 	claims := json2.decode[JWTClaims](base64.url_decode_str(parts[1])) or {

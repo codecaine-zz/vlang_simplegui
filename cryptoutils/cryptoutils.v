@@ -9,7 +9,6 @@ import crypto.md5 as vmd5
 import crypto.rand as crand
 import crypto.sha256 as vsha256
 import crypto.sha512 as vsha512
-import crypto.internal.subtle
 import encoding.base64
 import encoding.hex
 import hash.crc32
@@ -162,7 +161,7 @@ pub fn aes_encrypt_cbc(key []u8, iv []u8, plaintext []u8) ![]u8 {
 		return error('IV must be ${aes.block_size} bytes')
 	}
 	padded := pkcs7_pad(plaintext, aes.block_size)
-	block := aes.new_cipher(key)
+	block := aes.new_cipher(key)!
 	mut enc := cipher.new_cbc(block, iv)
 	mut ciphertext := []u8{len: padded.len}
 	enc.encrypt_blocks(mut ciphertext, padded)
@@ -180,7 +179,7 @@ pub fn aes_decrypt_cbc(key []u8, iv []u8, ciphertext []u8) ![]u8 {
 	if ciphertext.len % aes.block_size != 0 || ciphertext.len == 0 {
 		return error('ciphertext length must be a non-zero multiple of ${aes.block_size}')
 	}
-	block := aes.new_cipher(key)
+	block := aes.new_cipher(key)!
 	mut dec := cipher.new_cbc(block, iv)
 	mut decrypted_padded := []u8{len: ciphertext.len}
 	dec.decrypt_blocks(mut decrypted_padded, ciphertext)
@@ -256,7 +255,11 @@ pub fn secure_compare(a string, b string) bool {
 	if a.len != b.len {
 		return false
 	}
-	return subtle.constant_time_compare(a.bytes(), b.bytes()) == 1
+	mut diff := u8(0)
+	for i in 0 .. a.len {
+		diff |= a[i] ^ b[i]
+	}
+	return diff == 0
 }
 
 const ulid_encoding = '0123456789ABCDEFGHJKMNPQRSTVWXYZ'
@@ -277,8 +280,7 @@ pub fn generate_totp(secret string, counter u64, digits int) !string {
 	}
 	digest := hmac.new(secret.bytes(), msg, vsha256.sum, vsha256.block_size)
 	offset := int(digest[digest.len - 1] & 0x0f)
-	bin_code := ((u32(digest[offset]) & 0x7f) << 24) | ((u32(digest[offset + 1]) & 0xff) << 16) | ((u32(digest[
-		offset + 2]) & 0xff) << 8) | (u32(digest[offset + 3]) & 0xff)
+	bin_code := ((u32(digest[offset]) & 0x7f) << 24) | ((u32(digest[offset + 1]) & 0xff) << 16) | ((u32(digest[offset + 2]) & 0xff) << 8) | (u32(digest[offset + 3]) & 0xff)
 
 	mut mod := u64(1)
 	for _ in 0 .. digits {

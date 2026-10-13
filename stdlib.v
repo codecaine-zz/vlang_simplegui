@@ -289,7 +289,7 @@ pub fn crypto_encrypt_aes(plain_text string, key_hex string) string {
 	// Deterministic IV to keep decryption simple
 	iv := [u8(9), 8, 7, 6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4]
 
-	block := aes.new_cipher(key)
+	block := aes.new_cipher(key) or { return '' }
 	mut enc := cipher.new_cbc(block, iv)
 
 	plaintext := plain_text.bytes()
@@ -329,7 +329,7 @@ pub fn crypto_decrypt_aes(cipher_hex string, key_hex string) string {
 		return ''
 	}
 
-	block := aes.new_cipher(key)
+	block := aes.new_cipher(key) or { return '' }
 	mut dec := cipher.new_cbc(block, iv)
 	mut decrypted := []u8{len: ciphertext.len}
 	dec.decrypt_blocks(mut decrypted, ciphertext)
@@ -386,7 +386,7 @@ fn pkcs7_unpad(data []u8, block_size int) ![]u8 {
 pub fn crypto_encrypt_aes_secure(plain_text string, key_hex string) !string {
 	key := aes_key_from_hex_strict(key_hex)!
 	iv := crand.bytes(16)!
-	block := aes.new_cipher(key)
+	block := aes.new_cipher(key)!
 	mut enc := cipher.new_cbc(block, iv)
 	padded := pkcs7_pad(plain_text.bytes(), 16)
 	mut ciphertext := []u8{len: padded.len}
@@ -411,7 +411,7 @@ pub fn crypto_decrypt_aes_secure(payload_hex string, key_hex string) !string {
 	}
 	iv := payload[..16].clone()
 	ciphertext := payload[16..]
-	block := aes.new_cipher(key)
+	block := aes.new_cipher(key)!
 	mut dec := cipher.new_cbc(block, iv)
 	mut decrypted := []u8{len: ciphertext.len}
 	dec.decrypt_blocks(mut decrypted, ciphertext)
@@ -667,9 +667,11 @@ pub fn (t &TOMLWrapperDoc) get_bool(key string) bool {
 
 // toml_parse parses flat TOML text content, wrapping query details inside an easy helper.
 pub fn toml_parse(content string) &TOMLWrapperDoc {
-	res := toml.parse_text(content) or { return &TOMLWrapperDoc{
-		doc: toml.Doc{}
-	} }
+	res := toml.parse_text(content) or {
+		return &TOMLWrapperDoc{
+			doc: toml.Doc{}
+		}
+	}
 	return &TOMLWrapperDoc{
 		doc: res
 	}
