@@ -14,9 +14,11 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup V Language
-        uses: vlang/setup-v@v1
+        uses: vlang/setup-v@v1.7
         with:
-          check-latest: true
+          stable: true
+        env:
+          LC_ALL: C
 
       - name: Verify Code Formatting
         run: |
