@@ -16,7 +16,7 @@ jobs:
       - name: Setup V Language
         uses: vlang/setup-v@v1.7
         with:
-          stable: true
+          check-latest: true
         env:
           LC_ALL: C
 
