@@ -467,8 +467,8 @@ fn main() {
 	if !auto_confirm {
 		print('\nWould you like to install all missing formulas via brew now? [Y/n]: ')
 		flush_stdout()
-		input := os.get_line().trim_space().to_lower()
-		if input != '' && input != 'y' && input != 'yes' {
+		user_response := os.get_line().trim_space().to_lower()
+		if user_response != '' && user_response != 'y' && user_response != 'yes' {
 			println('Installation cancelled.')
 			exit(0)
 		}
