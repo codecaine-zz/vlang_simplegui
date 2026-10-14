@@ -24,19 +24,7 @@ mut:
 // Binary Resolution Helper
 // -----------------------------------------------------------------------------
 fn find_watchexec() string {
-	if path := os.find_abs_path_of_executable('watchexec') {
-		return path
-	}
-	for p in [
-		'/opt/homebrew/bin/watchexec',
-		'/usr/local/bin/watchexec',
-		'/usr/bin/watchexec',
-	] {
-		if os.exists(p) {
-			return p
-		}
-	}
-	return ''
+	return simplegui.resolve_tool('watchexec') or { '' }
 }
 
 fn get_watchexec_version(bin string) string {

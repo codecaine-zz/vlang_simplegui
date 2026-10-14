@@ -6,20 +6,7 @@ import simplegui
 
 // Helper to find dot path
 fn get_dot_bin() string {
-	if path := os.find_abs_path_of_executable('dot') {
-		return path
-	}
-	common_paths := [
-		'/opt/homebrew/bin/dot',
-		'/usr/local/bin/dot',
-		'/usr/bin/dot',
-	]
-	for p in common_paths {
-		if os.exists(p) {
-			return p
-		}
-	}
-	return 'dot'
+	return simplegui.resolve_tool('dot') or { 'dot' }
 }
 
 const sample_dot_architecture = 'digraph SimpleGUIArchitecture {

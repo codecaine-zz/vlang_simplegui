@@ -6,21 +6,7 @@ import simplegui
 
 // Helper to find curl path
 fn get_curl_bin() string {
-	if path := os.find_abs_path_of_executable('curl') {
-		return path
-	}
-	common_paths := [
-		'/opt/homebrew/bin/curl',
-		'/usr/local/bin/curl',
-		'/usr/bin/curl',
-		'/bin/curl',
-	]
-	for p in common_paths {
-		if os.exists(p) {
-			return p
-		}
-	}
-	return 'curl'
+	return simplegui.resolve_tool('curl') or { 'curl' }
 }
 
 const sample_request_body = '{

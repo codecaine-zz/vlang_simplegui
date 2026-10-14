@@ -6,19 +6,7 @@ import simplegui
 
 // Helper to find Homebrew binary
 fn get_brew_bin() string {
-	if path := os.find_abs_path_of_executable('brew') {
-		return path
-	}
-	common_paths := [
-		'/opt/homebrew/bin/brew',
-		'/usr/local/bin/brew',
-	]
-	for p in common_paths {
-		if os.exists(p) {
-			return p
-		}
-	}
-	return 'brew'
+	return simplegui.resolve_tool('brew') or { 'brew' }
 }
 
 fn main() {

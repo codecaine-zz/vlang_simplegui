@@ -6,21 +6,7 @@ import simplegui
 
 // Helper to find rg binary
 fn get_rg_bin() string {
-	if path := os.find_abs_path_of_executable('rg') {
-		return path
-	}
-	common_paths := [
-		'/opt/homebrew/bin/rg',
-		'/usr/local/bin/rg',
-		'/bin/rg',
-		'/usr/bin/rg',
-	]
-	for p in common_paths {
-		if os.exists(p) {
-			return p
-		}
-	}
-	return 'rg'
+	return simplegui.resolve_tool('rg') or { 'rg' }
 }
 
 struct RgRecipe {

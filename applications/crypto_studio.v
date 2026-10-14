@@ -361,7 +361,7 @@ except Exception:
 
 			// Also try qrencode directly if available
 			mut qr_out := ''
-			if qrencode_path := os.find_abs_path_of_executable('qrencode') {
+			if qrencode_path := simplegui.resolve_tool('qrencode') {
 				res := simplegui.exec_safe(qrencode_path, ['-t', 'UTF8', input_data])
 				if res.exit_code == 0 {
 					qr_out = res.output.trim_space()

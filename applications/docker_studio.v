@@ -6,22 +6,11 @@ import simplegui
 
 // Helper to find docker / podman binary
 fn get_container_bin() string {
-	if path := os.find_abs_path_of_executable('docker') {
+	if path := simplegui.resolve_tool('docker') {
 		return path
 	}
-	if path := os.find_abs_path_of_executable('podman') {
+	if path := simplegui.resolve_tool('podman') {
 		return path
-	}
-	common_paths := [
-		'/usr/local/bin/docker',
-		'/opt/homebrew/bin/docker',
-		'/opt/homebrew/bin/podman',
-		'/usr/bin/docker',
-	]
-	for p in common_paths {
-		if os.exists(p) {
-			return p
-		}
 	}
 	return 'docker'
 }

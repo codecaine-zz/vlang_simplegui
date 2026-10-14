@@ -83,8 +83,9 @@ fn get_installed_voices() []VoiceInfo {
 	lines := res.output.split_into_lines()
 	for l in lines {
 		trimmed := l.trim_space()
-		if trimmed == '' { continue
-		 }
+		if trimmed == '' {
+			continue
+		}
 		// Format: "Name                lang_code    # Description"
 		parts := trimmed.split('#')
 		desc := if parts.len > 1 { parts[1].trim_space() } else { '' }

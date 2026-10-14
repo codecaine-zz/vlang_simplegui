@@ -69,15 +69,7 @@ const sample_xml_data = '<?xml version="1.0" encoding="UTF-8"?>
 
 // Helper to locate yq binary across standard locations
 fn find_yq() string {
-	if path := os.find_abs_path_of_executable('yq') {
-		return path
-	}
-	for p in ['/opt/homebrew/bin/yq', '/usr/local/bin/yq', '/usr/bin/yq'] {
-		if os.exists(p) {
-			return p
-		}
-	}
-	return ''
+	return simplegui.resolve_tool('yq') or { '' }
 }
 
 // Helper converter using yq (primary) and python3 (fallback)

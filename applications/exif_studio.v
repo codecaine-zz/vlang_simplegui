@@ -6,20 +6,7 @@ import simplegui
 
 // Helper to find exiftool path
 fn get_exiftool_bin() string {
-	if path := os.find_abs_path_of_executable('exiftool') {
-		return path
-	}
-	common_paths := [
-		'/opt/homebrew/bin/exiftool',
-		'/usr/local/bin/exiftool',
-		'/usr/bin/exiftool',
-	]
-	for p in common_paths {
-		if os.exists(p) {
-			return p
-		}
-	}
-	return 'exiftool'
+	return simplegui.resolve_tool('exiftool') or { 'exiftool' }
 }
 
 fn main() {

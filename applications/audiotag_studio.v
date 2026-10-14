@@ -6,37 +6,11 @@ import simplegui
 
 // Helper to find ffmpeg / tag tools
 fn get_ffmpeg_bin() string {
-	if path := os.find_abs_path_of_executable('ffmpeg') {
-		return path
-	}
-	common_paths := [
-		'/opt/homebrew/bin/ffmpeg',
-		'/usr/local/bin/ffmpeg',
-		'/usr/bin/ffmpeg',
-	]
-	for p in common_paths {
-		if os.exists(p) {
-			return p
-		}
-	}
-	return 'ffmpeg'
+	return simplegui.resolve_tool('ffmpeg') or { 'ffmpeg' }
 }
 
 fn get_ffprobe_bin() string {
-	if path := os.find_abs_path_of_executable('ffprobe') {
-		return path
-	}
-	common_paths := [
-		'/opt/homebrew/bin/ffprobe',
-		'/usr/local/bin/ffprobe',
-		'/usr/bin/ffprobe',
-	]
-	for p in common_paths {
-		if os.exists(p) {
-			return p
-		}
-	}
-	return 'ffprobe'
+	return simplegui.resolve_tool('ffprobe') or { 'ffprobe' }
 }
 
 fn run_probe_audio(mut w simplegui.SimpleWindow, audio_path string) {

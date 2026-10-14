@@ -6,20 +6,7 @@ import simplegui
 
 // Helper to find nmap / rustscan path
 fn get_nmap_bin() string {
-	if path := os.find_abs_path_of_executable('nmap') {
-		return path
-	}
-	common_paths := [
-		'/opt/homebrew/bin/nmap',
-		'/usr/local/bin/nmap',
-		'/usr/bin/nmap',
-	]
-	for p in common_paths {
-		if os.exists(p) {
-			return p
-		}
-	}
-	return 'nmap'
+	return simplegui.resolve_tool('nmap') or { 'nmap' }
 }
 
 fn main() {

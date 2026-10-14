@@ -6,10 +6,7 @@ import simplegui
 
 // Helper to find whois / curl / theHarvester path
 fn get_whois_bin() string {
-	if path := os.find_abs_path_of_executable('whois') {
-		return path
-	}
-	return '/usr/bin/whois'
+	return simplegui.resolve_tool('whois') or { '/usr/bin/whois' }
 }
 
 fn main() {

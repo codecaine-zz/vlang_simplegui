@@ -6,20 +6,7 @@ import simplegui
 
 // Helper to find sd binary
 fn get_sd_bin() string {
-	if path := os.find_abs_path_of_executable('sd') {
-		return path
-	}
-	common_paths := [
-		'/opt/homebrew/bin/sd',
-		'/usr/local/bin/sd',
-		'/bin/sd',
-	]
-	for p in common_paths {
-		if os.exists(p) {
-			return p
-		}
-	}
-	return 'sd'
+	return simplegui.resolve_tool('sd') or { 'sd' }
 }
 
 struct SdRecipe {

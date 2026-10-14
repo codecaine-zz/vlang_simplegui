@@ -254,8 +254,7 @@ fn markdown_to_html(md string, theme string) string {
 		html += '</code></pre>\n'
 	}
 
-	return
-		'<html><head><meta charset="utf-8"></head><body style="font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Helvetica, Arial, sans-serif; font-size: 14px; background-color: ' +
+	return '<html><head><meta charset="utf-8"></head><body style="font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Helvetica, Arial, sans-serif; font-size: 14px; background-color: ' +
 		body_bg + '; color: ' + body_fg + '; padding: 22px; margin: 0; line-height: 1.6;">' + html +
 		'</body></html>'
 }
@@ -333,8 +332,7 @@ fn generate_unified_diff(original string, modified string, title_a string, title
 		return '✅ Both documents are 100% IDENTICAL. No differences found.\n\n' + out.join('\n')
 	}
 
-	return
-		'⚡ Found differences across documents (${diff_count} line mutations):\n\n' + out.join('\n')
+	return '⚡ Found differences across documents (${diff_count} line mutations):\n\n' + out.join('\n')
 }
 
 // -------------------------------------------------------------

@@ -5,35 +5,21 @@ import simplegui
 
 // Helper to find ffmpeg and ffprobe paths (checking Homebrew and PATH)
 fn get_ffmpeg_bin() string {
-	if path := os.find_abs_path_of_executable('ffmpeg') {
+	if path := simplegui.resolve_tool('ffmpeg') {
 		return path
 	}
-	common_paths := [
-		'/opt/homebrew/bin/ffmpeg',
-		'/opt/homebrew/opt/ffmpeg-full/bin/ffmpeg',
-		'/usr/local/bin/ffmpeg',
-	]
-	for p in common_paths {
-		if os.exists(p) {
-			return p
-		}
+	if os.exists('/opt/homebrew/opt/ffmpeg-full/bin/ffmpeg') {
+		return '/opt/homebrew/opt/ffmpeg-full/bin/ffmpeg'
 	}
 	return 'ffmpeg'
 }
 
 fn get_ffprobe_bin() string {
-	if path := os.find_abs_path_of_executable('ffprobe') {
+	if path := simplegui.resolve_tool('ffprobe') {
 		return path
 	}
-	common_paths := [
-		'/opt/homebrew/bin/ffprobe',
-		'/opt/homebrew/opt/ffmpeg-full/bin/ffprobe',
-		'/usr/local/bin/ffprobe',
-	]
-	for p in common_paths {
-		if os.exists(p) {
-			return p
-		}
+	if os.exists('/opt/homebrew/opt/ffmpeg-full/bin/ffprobe') {
+		return '/opt/homebrew/opt/ffmpeg-full/bin/ffprobe'
 	}
 	return 'ffprobe'
 }
@@ -240,9 +226,8 @@ fn main() {
 
 	win.begin_row('row_flt_2')
 	win.add_label('lbl_transform', 'Rotation / Orientation:')
-	win.add_dropdown('dd_transform', ['None', 'Rotate 90° Clockwise',
-		'Rotate 90° Counter-Clockwise', 'Rotate 180°', 'Flip Horizontal', 'Flip Vertical',
-		'Grayscale / Black & White'], 'None')
+	win.add_dropdown('dd_transform', ['None', 'Rotate 90° Clockwise', 'Rotate 90° Counter-Clockwise',
+		'Rotate 180°', 'Flip Horizontal', 'Flip Vertical', 'Grayscale / Black & White'], 'None')
 	win.add_label('lbl_speed', 'Playback Speed:')
 	win.add_dropdown('dd_speed', ['1.0x (Normal)', '0.5x (Slow Motion)', '1.5x (Speed Up)',
 		'2.0x (Double Speed)', '4.0x (Timelapse)', '8.0x (Hyperlapse)'], '1.0x (Normal)')
@@ -421,9 +406,9 @@ fn main() {
 			max_r := int(f64(v_rate) * 1.4)
 			buf_r := v_rate * 2
 
-			cmd_parts << ['-c:v', 'libx264', '-b:v', '${v_rate}k', '-maxrate', '${max_r}k',
-				'-bufsize', '${buf_r}k', '-preset', 'medium', '-c:a', 'aac', '-b:a', '128k',
-				'-movflags', '+faststart']
+			cmd_parts << ['-c:v', 'libx264', '-b:v', '${v_rate}k', '-maxrate', '${max_r}k', '-bufsize',
+				'${buf_r}k', '-preset', 'medium', '-c:a', 'aac', '-b:a', '128k', '-movflags',
+				'+faststart']
 		} else if current_tab.contains('Audio') {
 			cmd_parts << ['-vn']
 			format_sel := win.get('dd_aformat')
@@ -748,8 +733,8 @@ fn main() {
 						raw_args << ['-vn', '-c:a', 'pcm_s16le', full_out]
 					} else if mode.contains('WebM') {
 						full_out = os.join_path(dir, '${stem}_batch.webm')
-						raw_args << ['-c:v', 'libvpx-vp9', '-crf', '30', '-b:v', '0', '-c:a',
-							'libopus', full_out]
+						raw_args << ['-c:v', 'libvpx-vp9', '-crf', '30', '-b:v', '0', '-c:a', 'libopus',
+							full_out]
 					} else {
 						full_out = os.join_path(dir, '${stem}_batch.mp4')
 						raw_args << ['-c:v', 'libx264', '-crf', '23', '-preset', 'fast', '-c:a',

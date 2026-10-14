@@ -158,10 +158,11 @@ fn get_all_sed_recipes() []SedRecipe {
 }
 
 fn get_sed_bin() string {
-	for candidate in ['/usr/bin/sed', '/bin/sed', '/opt/homebrew/bin/gsed', 'sed'] {
-		if os.exists(candidate) {
-			return candidate
-		}
+	if p := simplegui.resolve_tool('sed') {
+		return p
+	}
+	if p := simplegui.resolve_tool('gsed') {
+		return p
 	}
 	return 'sed'
 }

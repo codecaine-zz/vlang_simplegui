@@ -6,21 +6,7 @@ import simplegui
 
 // Helper to find jq path
 fn get_jq_bin() string {
-	if path := os.find_abs_path_of_executable('jq') {
-		return path
-	}
-	common_paths := [
-		'/opt/homebrew/bin/jq',
-		'/usr/local/bin/jq',
-		'/bin/jq',
-		'/usr/bin/jq',
-	]
-	for p in common_paths {
-		if os.exists(p) {
-			return p
-		}
-	}
-	return 'jq'
+	return simplegui.resolve_tool('jq') or { 'jq' }
 }
 
 const sample_json = '{

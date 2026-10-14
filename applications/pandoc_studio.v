@@ -6,20 +6,7 @@ import simplegui
 
 // Helper to find pandoc binary
 fn get_pandoc_bin() string {
-	if path := os.find_abs_path_of_executable('pandoc') {
-		return path
-	}
-	common_paths := [
-		'/opt/homebrew/bin/pandoc',
-		'/usr/local/bin/pandoc',
-		'/bin/pandoc',
-	]
-	for p in common_paths {
-		if os.exists(p) {
-			return p
-		}
-	}
-	return 'pandoc'
+	return simplegui.resolve_tool('pandoc') or { 'pandoc' }
 }
 
 fn get_sample_markdown() string {
@@ -364,11 +351,11 @@ fn main() {
 		if theme != '' { args << '--highlight-style=${theme}' }
 		// PDF engine check
 		if out_path.ends_with('.pdf') {
-			if _ := os.find_abs_path_of_executable('typst') {
+			if simplegui.has_tool('typst') {
 				args << '--pdf-engine=typst'
-			} else if _ := os.find_abs_path_of_executable('xelatex') {
+			} else if simplegui.has_tool('xelatex') {
 				args << '--pdf-engine=xelatex'
-			} else if _ := os.find_abs_path_of_executable('wkhtmltopdf') {
+			} else if simplegui.has_tool('wkhtmltopdf') {
 				args << '--pdf-engine=wkhtmltopdf'
 			}
 		}

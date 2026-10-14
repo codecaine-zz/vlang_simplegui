@@ -6,20 +6,11 @@ import simplegui
 
 // Helper to find wget2 or wget binary
 fn get_wget2_bin() string {
-	if path := os.find_abs_path_of_executable('wget2') {
+	if path := simplegui.resolve_tool('wget2') {
 		return path
 	}
-	common_paths := [
-		'/opt/homebrew/bin/wget2',
-		'/usr/local/bin/wget2',
-		'/opt/homebrew/bin/wget',
-		'/usr/local/bin/wget',
-		'/usr/bin/wget',
-	]
-	for p in common_paths {
-		if os.exists(p) {
-			return p
-		}
+	if path := simplegui.resolve_tool('wget') {
+		return path
 	}
 	return 'wget2'
 }

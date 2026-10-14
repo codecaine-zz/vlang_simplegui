@@ -131,9 +131,9 @@ fn main() {
 		w.toast('Theme changed to ${selected}')
 	})
 
-	sips_ok := os.find_abs_path_of_executable('sips') or { '' } != ''
-	iconutil_ok := os.find_abs_path_of_executable('iconutil') or { '' } != ''
-	codesign_ok := os.find_abs_path_of_executable('codesign') or { '' } != ''
+	sips_ok := simplegui.has_tool('sips')
+	iconutil_ok := simplegui.has_tool('iconutil')
+	codesign_ok := simplegui.has_tool('codesign')
 
 	win.add_label('lbl_sys_status',
 		'⚡ System Tools: sips (${sips_ok}) | iconutil (${iconutil_ok}) | codesign (${codesign_ok})  •  Target: macOS Aqua Cocoa')

@@ -207,8 +207,9 @@ fn parse_graph(text string) GraphData {
 	lines := text.split_into_lines()
 	for raw_line in lines {
 		line := raw_line.trim_space()
-		if line == '' || line.starts_with('#') || line.starts_with('//') { continue
-		 }
+		if line == '' || line.starts_with('#') || line.starts_with('//') {
+			continue
+		}
 
 		if line.contains('->') {
 			parts := line.split('->')
@@ -1008,8 +1009,9 @@ fn main() {
 
 		for raw_l in lines {
 			l := raw_l.trim_space()
-			if l == '' { continue
-			 }
+			if l == '' {
+				continue
+			}
 			if l.contains(':') {
 				parts := l.split(':')
 				label := parts[0].trim_space()

@@ -104,12 +104,7 @@ fn get_all_ouch_recipes() []OuchRecipe {
 }
 
 fn get_ouch_bin() string {
-	for candidate in ['/opt/homebrew/bin/ouch', '/usr/local/bin/ouch', '/usr/bin/ouch', 'ouch'] {
-		if os.exists(candidate) {
-			return candidate
-		}
-	}
-	return 'ouch'
+	return simplegui.resolve_tool('ouch') or { 'ouch' }
 }
 
 fn main() {
@@ -530,7 +525,7 @@ fn main() {
 				if res.exit_code == 0 {
 					msg :=
 						'✅ Successfully extracted archive in ${elapsed_ms} ms!\n📦 Source: ${src}\n\n' +
-						res.output
+							res.output
 					win_main.set('txt_log', msg)
 					win_main.set_status('Decompression finished.')
 					win_main.toast('Extraction completed!')

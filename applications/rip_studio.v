@@ -29,17 +29,7 @@ struct GraveyardStats {
 // Binary & Graveyard Resolution Helpers
 // -----------------------------------------------------------------------------
 fn get_rip_bin() string {
-	for candidate in [
-		'/opt/homebrew/bin/rip',
-		'/usr/local/bin/rip',
-		'/usr/bin/rip',
-		'rip',
-	] {
-		if os.exists(candidate) {
-			return candidate
-		}
-	}
-	return 'rip'
+	return simplegui.resolve_tool('rip') or { 'rip' }
 }
 
 fn query_graveyard_path(rip_bin string) string {
@@ -621,7 +611,7 @@ fn main() {
 				if res.exit_code == 0 {
 					win_main.set('txt_activity_log',
 						' Successfully resurrected "${name}" in ${elapsed_ms} ms!\n Restored path: ${orig}\n\n' +
-						res.output)
+							res.output)
 					win_main.set_status('Resurrection complete.')
 					win_main.toast('"${name}" resurrected!')
 					refresh_all_views(mut win_main, rip_bin, current_graveyard)
@@ -710,7 +700,7 @@ fn main() {
 			items := os.ls(dest) or { []string{} }
 			msg :=
 				'=== Directory Preview: ${name} ===\nOriginal: ${orig}\nTotal Child Entries: ${items.len}\n' +
-				items.join('\n')
+					items.join('\n')
 			w.set('txt_activity_log', msg)
 			w.toast('Loaded directory listing into console.')
 			return
@@ -754,7 +744,7 @@ fn main() {
 				if res.exit_code == 0 {
 					win_main.set('txt_activity_log',
 						' Graveyard successfully emptied in ${elapsed_ms} ms.\n Space reclaimed.\n\n' +
-						res.output)
+							res.output)
 					win_main.set_status('Graveyard emptied.')
 					win_main.toast('Graveyard emptied!')
 					refresh_all_views(mut win_main, rip_bin, current_graveyard)

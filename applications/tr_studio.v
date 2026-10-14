@@ -6,19 +6,11 @@ import simplegui
 
 // Helper to find tr binary
 fn get_tr_bin() string {
-	if path := os.find_abs_path_of_executable('tr') {
-		return path
+	if p := simplegui.resolve_tool('tr') {
+		return p
 	}
-	common_paths := [
-		'/usr/bin/tr',
-		'/bin/tr',
-		'/opt/homebrew/bin/gtr',
-		'/usr/local/bin/gtr',
-	]
-	for p in common_paths {
-		if os.exists(p) {
-			return p
-		}
+	if p := simplegui.resolve_tool('gtr') {
+		return p
 	}
 	return 'tr'
 }

@@ -6,38 +6,11 @@ import simplegui
 
 // Helper to find dig / openssl path
 fn get_dig_bin() string {
-	if path := os.find_abs_path_of_executable('dig') {
-		return path
-	}
-	common_paths := [
-		'/opt/homebrew/bin/dig',
-		'/usr/local/bin/dig',
-		'/usr/bin/dig',
-		'/bin/dig',
-	]
-	for p in common_paths {
-		if os.exists(p) {
-			return p
-		}
-	}
-	return 'dig'
+	return simplegui.resolve_tool('dig') or { 'dig' }
 }
 
 fn get_openssl_bin() string {
-	if path := os.find_abs_path_of_executable('openssl') {
-		return path
-	}
-	common_paths := [
-		'/opt/homebrew/bin/openssl',
-		'/usr/local/bin/openssl',
-		'/usr/bin/openssl',
-	]
-	for p in common_paths {
-		if os.exists(p) {
-			return p
-		}
-	}
-	return 'openssl'
+	return simplegui.resolve_tool('openssl') or { 'openssl' }
 }
 
 fn main() {

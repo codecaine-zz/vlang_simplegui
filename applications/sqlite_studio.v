@@ -6,20 +6,7 @@ import simplegui
 
 // Helper to find sqlite3 path
 fn get_sqlite_bin() string {
-	if path := os.find_abs_path_of_executable('sqlite3') {
-		return path
-	}
-	common_paths := [
-		'/usr/bin/sqlite3',
-		'/opt/homebrew/bin/sqlite3',
-		'/usr/local/bin/sqlite3',
-	]
-	for p in common_paths {
-		if os.exists(p) {
-			return p
-		}
-	}
-	return 'sqlite3'
+	return simplegui.resolve_tool('sqlite3') or { 'sqlite3' }
 }
 
 const sample_sql_query = 'SELECT 

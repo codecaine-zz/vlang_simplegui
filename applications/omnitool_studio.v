@@ -32,10 +32,8 @@ mut:
 // Modern Binary Discovery & Version Probing
 // -----------------------------------------------------------------------------
 fn discover_tool(name string, fallback_paths []string, desc string) ToolInfo {
-	mut path := ''
-	if p := os.find_abs_path_of_executable(name) {
-		path = p
-	} else {
+	mut path := simplegui.resolve_tool(name) or { '' }
+	if path == '' {
 		for fb in fallback_paths {
 			if os.exists(fb) {
 				path = fb
@@ -96,17 +94,14 @@ fn init_toolchain() map[string]ToolInfo {
 		'/usr/local/bin/wget2',
 		'/usr/bin/wget2',
 	], 'wget2 - multi-threaded accelerated network downloader')
-	tools['rip'] = discover_tool('rip', ['/opt/homebrew/bin/rip', '/usr/local/bin/rip',
-		'/usr/bin/rip'], 'rip - rm-improved safe graveyard trash with undo')
+	tools['rip'] = discover_tool('rip', ['/opt/homebrew/bin/rip', '/usr/local/bin/rip', '/usr/bin/rip'], 'rip - rm-improved safe graveyard trash with undo')
 	tools['ouch'] = discover_tool('ouch', [
 		'/opt/homebrew/bin/ouch',
 		'/usr/local/bin/ouch',
 		'/usr/bin/ouch',
 	], 'ouch - universal painless compression & extraction')
-	tools['bat'] = discover_tool('bat', ['/opt/homebrew/bin/bat', '/usr/local/bin/bat',
-		'/usr/bin/bat'], 'bat - syntax highlighting pager & viewer')
-	tools['eza'] = discover_tool('eza', ['/opt/homebrew/bin/eza', '/usr/local/bin/eza',
-		'/usr/bin/eza'], 'eza - modern tree & directory inspection')
+	tools['bat'] = discover_tool('bat', ['/opt/homebrew/bin/bat', '/usr/local/bin/bat', '/usr/bin/bat'], 'bat - syntax highlighting pager & viewer')
+	tools['eza'] = discover_tool('eza', ['/opt/homebrew/bin/eza', '/usr/local/bin/eza', '/usr/bin/eza'], 'eza - modern tree & directory inspection')
 
 	return tools
 }

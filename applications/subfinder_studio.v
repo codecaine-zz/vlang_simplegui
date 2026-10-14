@@ -6,20 +6,7 @@ import simplegui
 
 // Helper to find subfinder path
 fn get_subfinder_bin() string {
-	if path := os.find_abs_path_of_executable('subfinder') {
-		return path
-	}
-	common_paths := [
-		'/opt/homebrew/bin/subfinder',
-		'/usr/local/bin/subfinder',
-		'/bin/subfinder',
-	]
-	for p in common_paths {
-		if os.exists(p) {
-			return p
-		}
-	}
-	return 'subfinder'
+	return simplegui.resolve_tool('subfinder') or { 'subfinder' }
 }
 
 fn main() {

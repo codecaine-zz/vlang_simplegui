@@ -6,20 +6,7 @@ import simplegui
 
 // Helper to find yt-dlp binary
 fn get_yt_dlp_bin() string {
-	if path := os.find_abs_path_of_executable('yt-dlp') {
-		return path
-	}
-	common_paths := [
-		'/opt/homebrew/bin/yt-dlp',
-		'/usr/local/bin/yt-dlp',
-		'/bin/yt-dlp',
-	]
-	for p in common_paths {
-		if os.exists(p) {
-			return p
-		}
-	}
-	return 'yt-dlp'
+	return simplegui.resolve_tool('yt-dlp') or { 'yt-dlp' }
 }
 
 fn get_default_download_dir() string {

@@ -6,19 +6,11 @@ import simplegui
 
 // Helper to find fd binary
 fn get_fd_bin() string {
-	if path := os.find_abs_path_of_executable('fd') {
+	if path := simplegui.resolve_tool('fd') {
 		return path
 	}
-	common_paths := [
-		'/opt/homebrew/bin/fd',
-		'/usr/local/bin/fd',
-		'/bin/fd',
-		'/usr/bin/fdfind',
-	]
-	for p in common_paths {
-		if os.exists(p) {
-			return p
-		}
+	if path := simplegui.resolve_tool('fdfind') {
+		return path
 	}
 	return 'fd'
 }

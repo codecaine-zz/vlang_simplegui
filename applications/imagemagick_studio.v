@@ -5,38 +5,27 @@ import simplegui
 
 // Helper to find magick / convert and identify binaries
 fn get_magick_bin() string {
-	if path := os.find_abs_path_of_executable('magick') {
+	if path := simplegui.resolve_tool('magick') {
 		return path
 	}
-	common_paths := [
-		'/opt/homebrew/bin/magick',
-		'/opt/homebrew/opt/imagemagick-full/bin/magick',
-		'/usr/local/bin/magick',
-		'/opt/homebrew/bin/convert',
-		'/opt/homebrew/opt/imagemagick-full/bin/convert',
-		'/usr/local/bin/convert',
-	]
-	for p in common_paths {
-		if os.exists(p) {
-			return p
-		}
+	if os.exists('/opt/homebrew/opt/imagemagick-full/bin/magick') {
+		return '/opt/homebrew/opt/imagemagick-full/bin/magick'
+	}
+	if path := simplegui.resolve_tool('convert') {
+		return path
+	}
+	if os.exists('/opt/homebrew/opt/imagemagick-full/bin/convert') {
+		return '/opt/homebrew/opt/imagemagick-full/bin/convert'
 	}
 	return 'magick'
 }
 
 fn get_identify_bin() string {
-	if path := os.find_abs_path_of_executable('identify') {
+	if path := simplegui.resolve_tool('identify') {
 		return path
 	}
-	common_paths := [
-		'/opt/homebrew/bin/identify',
-		'/opt/homebrew/opt/imagemagick-full/bin/identify',
-		'/usr/local/bin/identify',
-	]
-	for p in common_paths {
-		if os.exists(p) {
-			return p
-		}
+	if os.exists('/opt/homebrew/opt/imagemagick-full/bin/identify') {
+		return '/opt/homebrew/opt/imagemagick-full/bin/identify'
 	}
 	return 'identify'
 }
@@ -184,9 +173,8 @@ fn main() {
 	win.begin_group_box('pane_bg_remove', 'Magic Background Color Removal & Transparency')
 	win.begin_row('row_bg_1')
 	win.add_label('lbl_bg_color', 'Color to Make Transparent:')
-	win.add_dropdown('dd_bg_color', ['white (Solid White Background)',
-		'black (Solid Black Background)', '#00ff00 (Chroma Green Screen)',
-		'#0000ff (Chroma Blue Screen)'], 'white (Solid White Background)')
+	win.add_dropdown('dd_bg_color', ['white (Solid White Background)', 'black (Solid Black Background)',
+		'#00ff00 (Chroma Green Screen)', '#0000ff (Chroma Blue Screen)'], 'white (Solid White Background)')
 	win.add_label('lbl_fuzz', 'Color Tolerance (Fuzz):')
 	win.add_dropdown('dd_fuzz', ['5% (Strict Match)', '10% (Recommended)', '20% (Broader)',
 		'35% (Aggressive)'], '10% (Recommended)')

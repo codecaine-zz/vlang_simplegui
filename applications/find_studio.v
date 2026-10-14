@@ -146,10 +146,11 @@ fn get_all_find_recipes() []FindRecipe {
 }
 
 fn get_find_bin() string {
-	for candidate in ['/usr/bin/find', '/bin/find', '/opt/homebrew/bin/gfind'] {
-		if os.exists(candidate) {
-			return candidate
-		}
+	if p := simplegui.resolve_tool('find') {
+		return p
+	}
+	if p := simplegui.resolve_tool('gfind') {
+		return p
 	}
 	return 'find'
 }

@@ -6,20 +6,7 @@ import simplegui
 
 // Helper to find tesseract path
 fn get_tesseract_bin() string {
-	if path := os.find_abs_path_of_executable('tesseract') {
-		return path
-	}
-	common_paths := [
-		'/opt/homebrew/bin/tesseract',
-		'/usr/local/bin/tesseract',
-		'/usr/bin/tesseract',
-	]
-	for p in common_paths {
-		if os.exists(p) {
-			return p
-		}
-	}
-	return 'tesseract'
+	return simplegui.resolve_tool('tesseract') or { 'tesseract' }
 }
 
 fn main() {

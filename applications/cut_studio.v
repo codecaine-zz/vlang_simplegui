@@ -6,19 +6,11 @@ import simplegui
 
 // Helper to find cut binary
 fn get_cut_bin() string {
-	if path := os.find_abs_path_of_executable('cut') {
-		return path
+	if p := simplegui.resolve_tool('cut') {
+		return p
 	}
-	common_paths := [
-		'/usr/bin/cut',
-		'/bin/cut',
-		'/opt/homebrew/bin/gcut',
-		'/usr/local/bin/gcut',
-	]
-	for p in common_paths {
-		if os.exists(p) {
-			return p
-		}
+	if p := simplegui.resolve_tool('gcut') {
+		return p
 	}
 	return 'cut'
 }

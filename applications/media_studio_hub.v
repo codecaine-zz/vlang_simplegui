@@ -4,7 +4,7 @@ import os
 import simplegui
 
 fn check_bin(name string, fallbacks []string) (bool, string) {
-	if path := os.find_abs_path_of_executable(name) {
+	if path := simplegui.resolve_tool(name) {
 		return true, path
 	}
 	for p in fallbacks {
@@ -62,17 +62,14 @@ fn main() {
 		'/bin/pandoc'])
 	has_fd, _ := check_bin('fd', ['/opt/homebrew/bin/fd', '/usr/local/bin/fd', '/bin/fd',
 		'/usr/bin/fdfind'])
-	has_rg, _ := check_bin('rg', ['/opt/homebrew/bin/rg', '/usr/local/bin/rg', '/bin/rg',
-		'/usr/bin/rg'])
+	has_rg, _ := check_bin('rg', ['/opt/homebrew/bin/rg', '/usr/local/bin/rg', '/bin/rg', '/usr/bin/rg'])
 	has_cut, _ := check_bin('cut', ['/usr/bin/cut', '/bin/cut', '/opt/homebrew/bin/gcut'])
 	has_tr, _ := check_bin('tr', ['/usr/bin/tr', '/bin/tr', '/opt/homebrew/bin/gtr'])
 	has_say, _ := check_bin('say', ['/usr/bin/say', '/bin/say'])
 	has_find, _ := check_bin('find', ['/usr/bin/find', '/bin/find', '/opt/homebrew/bin/gfind'])
-	has_ouch, _ := check_bin('ouch', ['/opt/homebrew/bin/ouch', '/usr/local/bin/ouch',
-		'/usr/bin/ouch'])
+	has_ouch, _ := check_bin('ouch', ['/opt/homebrew/bin/ouch', '/usr/local/bin/ouch', '/usr/bin/ouch'])
 	has_sed, _ := check_bin('sed', ['/usr/bin/sed', '/bin/sed', '/opt/homebrew/bin/gsed'])
-	has_qalc, _ := check_bin('qalc', ['/opt/homebrew/bin/qalc', '/usr/local/bin/qalc',
-		'/usr/bin/qalc'])
+	has_qalc, _ := check_bin('qalc', ['/opt/homebrew/bin/qalc', '/usr/local/bin/qalc', '/usr/bin/qalc'])
 	has_numbat, _ := check_bin('numbat', ['/opt/homebrew/bin/numbat', '/usr/local/bin/numbat'])
 	has_kalker, _ := check_bin('kalker', ['/opt/homebrew/bin/kalker', '/usr/local/bin/kalker'])
 	has_watchexec, _ := check_bin('watchexec', ['/opt/homebrew/bin/watchexec',
@@ -872,8 +869,8 @@ fn main() {
 		w.set_status('Extracting MP3 audio...')
 
 		go fn [mut w, ffmpeg_path, file_path, out_file] () {
-			res := simplegui.exec_safe(ffmpeg_path, ['-y', '-i', file_path, '-vn', '-c:a',
-				'libmp3lame', '-b:a', '320k', out_file])
+			res := simplegui.exec_safe(ffmpeg_path, ['-y', '-i', file_path, '-vn', '-c:a', 'libmp3lame',
+				'-b:a', '320k', out_file])
 			w.run_on_main_thread(fn [res, out_file] (mut win_main simplegui.SimpleWindow) {
 				if res.exit_code == 0 {
 					win_main.append_console('hub_log', '✅ Extracted 320kbps MP3: ${out_file}\n',

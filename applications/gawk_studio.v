@@ -6,19 +6,11 @@ import simplegui
 
 // Helper to find gawk and awk paths (Homebrew and PATH)
 fn get_gawk_bin() string {
-	if path := os.find_abs_path_of_executable('gawk') {
-		return path
+	if p := simplegui.resolve_tool('gawk') {
+		return p
 	}
-	common_paths := [
-		'/opt/homebrew/bin/gawk',
-		'/usr/local/bin/gawk',
-		'/usr/bin/awk',
-		'/bin/awk',
-	]
-	for p in common_paths {
-		if os.exists(p) {
-			return p
-		}
+	if p := simplegui.resolve_tool('awk') {
+		return p
 	}
 	return 'gawk'
 }
