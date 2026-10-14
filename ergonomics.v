@@ -1704,9 +1704,9 @@ pub fn (win &SimpleWindow) clear_all_fields() &SimpleWindow {
 		} else if control.kind in ['number', 'slider', 'progress', 'levelindicator', 'stepper',
 			'knob'] {
 			win.set_value_int(control.name, 0)
-		} else if control.kind in ['input', 'password', 'textarea', 'date', 'mode', 'theme',
-			'listbox', 'color', 'search', 'dropdown', 'segmented', 'radiogroup', 'combobox',
-			'pathcontrol', 'tokenfield'] {
+		} else if control.kind in ['input', 'password', 'textarea', 'date', 'mode', 'theme', 'listbox',
+			'color', 'search', 'dropdown', 'segmented', 'radiogroup', 'combobox', 'pathcontrol',
+			'tokenfield'] {
 			win.set_text(control.name, '')
 		}
 	}
@@ -3139,4 +3139,76 @@ pub fn (win &SimpleWindow) editable_label(text string) &SimpleWindow {
 // nav_rail adds an auto-named navigation rail.
 pub fn (win &SimpleWindow) nav_rail(items []SidebarItem) &SimpleWindow {
 	return win.add_nav_rail('', items)
+}
+
+// ==========================================
+// Centralized Tool & Command Verification
+// ==========================================
+
+// ToolRequirement defines an external command-line dependency required by a workstation or tool.
+pub struct ToolRequirement {
+pub:
+	binary_name      string
+	display_name     string
+	homebrew_formula string
+	install_guide    string
+}
+
+// resolve_tool locates the executable path for a CLI tool across standard PATH and common macOS directories.
+pub fn resolve_tool(binary_name string) ?string {
+	if p := os.find_abs_path_of_executable(binary_name) {
+		return p
+	}
+	home := os.home_dir()
+	common_locations := [
+		'/opt/homebrew/bin/' + binary_name,
+		'/usr/local/bin/' + binary_name,
+		'/usr/bin/' + binary_name,
+		'/bin/' + binary_name,
+		os.join_path(home, '.cargo', 'bin', binary_name),
+		os.join_path(home, '.local', 'bin', binary_name),
+		os.join_path(home, '.orbstack', 'bin', binary_name),
+		os.join_path(home, '.docker', 'bin', binary_name),
+		'/opt/homebrew/sbin/' + binary_name,
+		'/usr/local/sbin/' + binary_name,
+	]
+	for loc in common_locations {
+		if os.exists(loc) {
+			return loc
+		}
+	}
+	return none
+}
+
+// has_tool checks whether a CLI tool binary is installed and discoverable.
+pub fn has_tool(binary_name string) bool {
+	if _ := resolve_tool(binary_name) {
+		return true
+	}
+	return false
+}
+
+// verify_tool checks if a required tool exists. Returns path or an error with installation guidance.
+pub fn verify_tool(req ToolRequirement) !string {
+	if path := resolve_tool(req.binary_name) {
+		return path
+	}
+	formula := if req.homebrew_formula != '' { req.homebrew_formula } else { req.binary_name }
+	guide := if req.install_guide != '' {
+		req.install_guide
+	} else {
+		'Install via Homebrew: brew install ' + formula
+	}
+	return error('${req.display_name} ("${req.binary_name}") is not installed or not in PATH.\n${guide}')
+}
+
+// require_tool checks if a tool is installed. If missing, it alerts the user with an actionable installation dialog and returns false.
+pub fn (mut win SimpleWindow) require_tool(binary_name string, display_name string, brew_formula string) bool {
+	if _ := resolve_tool(binary_name) {
+		return true
+	}
+	formula := if brew_formula != '' { brew_formula } else { binary_name }
+	win.alert('Tool Required: ${display_name}',
+		'${display_name} ("${binary_name}") was not found on your system.\n\nTo install it via Homebrew, run in Terminal:\n  brew install ${formula}\n\nOr run `./install_dependencies.vsh` in the project root.')
+	return false
 }

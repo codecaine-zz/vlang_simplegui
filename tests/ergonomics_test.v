@@ -765,8 +765,7 @@ fn test_new_ergonomic_features() {
 
 	assert win.get_table_row_where('scores', 0, 'Grace') == ['Grace', '25']
 	assert win.get_table_row_where('scores', 0, 'Nobody') == []string{}
-	assert win.get_table_rows_where('scores', 1, '25') == [['Grace', '25'],
-		['Linus', '25']]
+	assert win.get_table_rows_where('scores', 1, '25') == [['Grace', '25'], ['Linus', '25']]
 	assert win.get_table_column_sum('scores', 1) == 60.0
 	assert win.get_table_column_average('scores', 1) == 20.0
 
@@ -783,8 +782,7 @@ fn test_new_ergonomic_features() {
 	win.save_table_to_json('scores', table_json_path) or { assert false, err.msg() }
 	win.clear_table('scores')
 	win.load_table_from_json('scores', table_json_path) or { assert false, err.msg() }
-	assert win.get_table_rows('scores') == [['Ada', '10'], ['Grace', '25'],
-		['Linus', '25']]
+	assert win.get_table_rows('scores') == [['Ada', '10'], ['Grace', '25'], ['Linus', '25']]
 
 	os.rm(list_json_path) or {}
 	os.rm(table_json_path) or {}
@@ -1241,5 +1239,35 @@ fn test_recommended_storage_and_app_state() {
 	rel_path := win.get_app_storage_path('rel_save_test.json')
 	if os.exists(rel_path) {
 		os.rm(rel_path) or {}
+	}
+}
+
+fn test_centralized_tool_verification() {
+	// Standard system binary that always exists on macOS
+	sh_path := simplegui.resolve_tool('sh') or { '' }
+	assert sh_path != ''
+	assert simplegui.has_tool('sh') == true
+
+	// Verify ToolRequirement with an existing tool
+	sh_req := simplegui.ToolRequirement{
+		binary_name:      'sh'
+		display_name:     'POSIX Shell'
+		homebrew_formula: 'bash'
+	}
+	verified := simplegui.verify_tool(sh_req) or { '' }
+	assert verified != ''
+
+	// Verify ToolRequirement with a non-existent tool
+	missing_req := simplegui.ToolRequirement{
+		binary_name:      'non_existent_tool_xyz_123'
+		display_name:     'Fictional Tool'
+		homebrew_formula: 'fictional-tool'
+	}
+	assert simplegui.has_tool(missing_req.binary_name) == false
+	if _ := simplegui.verify_tool(missing_req) {
+		assert false, 'should have failed on non-existent tool'
+	} else {
+		assert err.msg().contains('non_existent_tool_xyz_123')
+		assert err.msg().contains('brew install fictional-tool')
 	}
 }
