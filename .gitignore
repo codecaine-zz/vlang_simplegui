@@ -35,3 +35,9 @@ list_windows
 
 practice.v
 test_shot.png
+
+# Compiler artifacts and intermediate files
+.*.v3cc.*
+.*.v.c
+*.dSYM/
+*.tmp
