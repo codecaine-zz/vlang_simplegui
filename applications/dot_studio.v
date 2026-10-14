@@ -329,7 +329,7 @@ fn main() {
 	win.on_click('btn_open_in_viewer', fn (mut w simplegui.SimpleWindow) {
 		tmp_svg := os.join_path(os.temp_dir(), 'diagram_preview.svg')
 		if os.exists(tmp_svg) {
-			os.execute('open "${tmp_svg}"')
+			os.execute('open ${os.quoted_path(tmp_svg)}')
 			w.toast('Opened rendered diagram in macOS viewer!')
 			w.append_console('dot_console', '🌐 Opened diagram: ${tmp_svg}\n', 4)
 		} else {

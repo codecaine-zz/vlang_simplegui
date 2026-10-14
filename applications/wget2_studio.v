@@ -204,7 +204,7 @@ fn main() {
 	win.on_click('btn_open_dir', fn (mut w simplegui.SimpleWindow) {
 		dir := w.get('txt_dest_dir').trim_space()
 		if dir != '' && os.is_dir(dir) {
-			os.execute('open "${dir}"')
+			os.execute('open ${os.quoted_path(dir)}')
 		} else {
 			os.execute('open .')
 		}

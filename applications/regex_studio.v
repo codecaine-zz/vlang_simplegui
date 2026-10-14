@@ -2,6 +2,7 @@ module main
 
 import os
 import time
+import encoding.base64
 import simplegui
 
 const sample_test_text = 'Welcome to SimpleGUI Regex Studio Pro v1.4.0 (2026-08-22)!
@@ -74,10 +75,8 @@ except Exception as e:
 	os.write_file(tmp_py, script) or { return 'Error writing worker script.' }
 	defer { os.rm(tmp_py) or {} }
 
-	b64_pattern := os.execute('python3 -c "import sys, base64; sys.stdout.write(base64.b64encode(sys.argv[1].encode(\'utf-8\')).decode(\'ascii\'))" "${pattern.replace('"',
-		'\\"')}"').output.trim_space()
-	b64_text := os.execute('python3 -c "import sys, base64; sys.stdout.write(base64.b64encode(sys.argv[1].encode(\'utf-8\')).decode(\'ascii\'))" "${text.replace('"',
-		'\\"')}"').output.trim_space()
+	b64_pattern := base64.encode_str(pattern)
+	b64_text := base64.encode_str(text)
 
 	res := simplegui.exec_safe('python3', [
 		tmp_py,
@@ -133,12 +132,9 @@ except Exception as e:
 	os.write_file(tmp_py, script) or { return 'Error writing worker script.' }
 	defer { os.rm(tmp_py) or {} }
 
-	b64_pattern := os.execute('python3 -c "import sys, base64; sys.stdout.write(base64.b64encode(sys.argv[1].encode(\'utf-8\')).decode(\'ascii\'))" "${pattern.replace('"',
-		'\\"')}"').output.trim_space()
-	b64_replacement := os.execute('python3 -c "import sys, base64; sys.stdout.write(base64.b64encode(sys.argv[1].encode(\'utf-8\')).decode(\'ascii\'))" "${replacement.replace('"',
-		'\\"')}"').output.trim_space()
-	b64_text := os.execute('python3 -c "import sys, base64; sys.stdout.write(base64.b64encode(sys.argv[1].encode(\'utf-8\')).decode(\'ascii\'))" "${text.replace('"',
-		'\\"')}"').output.trim_space()
+	b64_pattern := base64.encode_str(pattern)
+	b64_replacement := base64.encode_str(replacement)
+	b64_text := base64.encode_str(text)
 
 	res := simplegui.exec_safe('python3', [
 		tmp_py,

@@ -125,7 +125,7 @@ fn main() {
 
 		go fn [mut w, target_dir] () {
 			t0 := time.ticks()
-			res := os.execute('du -sh "${target_dir}"/* 2>/dev/null | sort -hr | head -n 40')
+			res := os.execute('du -sh ${os.quoted_path(target_dir)}/* 2>/dev/null | sort -hr | head -n 40')
 			elapsed_ms := time.ticks() - t0
 
 			w.run_on_main_thread(fn [res, elapsed_ms, target_dir] (mut win_main simplegui.SimpleWindow) {
@@ -247,7 +247,15 @@ fn main() {
 		}
 		w.append_console('disk_console',
 			'🛠️ Cleaning Xcode DerivedData: ${derived_path}...\n', 1)
-		os.execute('rm -rf "${derived_path}"/*')
+		items := os.ls(derived_path) or { []string{} }
+		for item in items {
+			p := os.join_path(derived_path, item)
+			if os.is_dir(p) {
+				os.rmdir_all(p) or {}
+			} else {
+				os.rm(p) or {}
+			}
+		}
 		w.toast('Xcode DerivedData cleaned!')
 		w.append_console('disk_console', '✅ Xcode DerivedData emptied.\n', 4)
 	})

@@ -192,7 +192,7 @@ fn main() {
 		if coords != '' {
 			clean_coords := coords.replace(' ', '+')
 			maps_url := 'https://maps.apple.com/?q=${clean_coords}'
-			os.execute('open "${maps_url}"')
+			os.execute('open ${os.quoted_path(maps_url)}')
 			w.toast('Opened coordinates in Apple Maps: ${coords}')
 			w.append_console('exif_console',
 				'🗺️ GPS Coordinates: ${coords} ➔ Launched Maps\n', 4)

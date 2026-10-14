@@ -814,7 +814,7 @@ fn main() {
 			w.toast('Output file does not exist yet.')
 			return
 		}
-		os.execute('open -R "${out_path}"')
+		os.execute('open -R ${os.quoted_path(out_path)}')
 		w.toast('Revealed in Finder.')
 	})
 
