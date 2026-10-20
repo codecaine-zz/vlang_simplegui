@@ -1,20 +1,21 @@
 module main
 
+import math
 import os
 import simplegui
 
 fn main() {
-	mut win := simplegui.new_simple_window('GOD-MODE ALL CONTROLS · QT 6 SMART HOUSE · 4D VFX · BUILT-IN SYNTH SFX · WEBVIEW STUDIO',
+	mut win := simplegui.new_simple_window('GOD-MODE ALL CONTROLS · QT 6 SMART HOUSE · HDR/EDR · 4D VFX · SYNTH SFX · WEBVIEW STUDIO',
 		1460,
-		980)
+		1010)
 	win.set_padding(12)
-	win.set_spacing(8)
+	win.set_spacing(7)
 	win.set_sfx_enabled(true)
 	win.set_sfx_volume(0.85)
 
 	// 1. Top Command & Built-in Sound Effects Deck
 	win.begin_row('god_top_bar')
-	win.add_badge('god_badge', 'GOD-TIER OMNI-CONTROL SUITE // QT 6 SMART HOUSE + SFX + WEBVIEW', 'info')
+	win.add_badge('god_badge', 'GOD-TIER OMNI-CONTROL SUITE // QT 6 SMART HOUSE + XDR HDR + SFX', 'info')
 	win.add_theme_menu('god_theme_menu', 'Omega Pantheon 3099 Singularity')
 	win.add_button('btn_sfx_chord', '🔊 Play Synth Chord')
 	win.add_button('btn_sfx_supernova', '💥 Supernova VFX + Boom SFX')
@@ -22,12 +23,19 @@ fn main() {
 	win.add_button('btn_webview_mode', '🌐 Export / Open WebView App')
 	win.end_row()
 
+	// 1b. Apple Silicon Liquid Retina XDR / Pro Display XDR Extended Dynamic Range (EDR) Glow Row
+	win.begin_row('god_hdr_row')
+	win.add_hdr_glow_box('god_hdr_1', 'XDR SMART GRID PEAK', 3.4, '#00F5D4')
+	win.add_hdr_glow_box('god_hdr_2', 'HYPERCAR TELEMETRY HDR', 2.9, '#FF2A85')
+	win.add_hdr_glow_box('god_hdr_3', 'PRO AUDIO SYNTH EDR', 3.8, '#A855F7')
+	win.end_row()
+
 	// 2. Hero Glitch Banner
 	win.add_glitch_banner('god_hero_banner',
-		'CODECAINE GOD-MODE · QT 6 SMART HOUSE · 4D VFX · PRO SYNTH AUDIO',
+		'CODECAINE GOD-MODE · QT 6 SMART HOUSE · 1600-NIT HDR/EDR · 4D VFX · PRO SYNTH AUDIO',
 		'SMART FLOORPLAN · CLIMATE DIAL · DIGITAL COCKPIT · 3D VIEWPORT · MIDI PIANO · 16-STEP SEQUENCER · RADAR · SANKEY',
 		'cyber_glitch',
-		82)
+		76)
 
 	// 3. Row 1: Qt 6 Smart House Floorplan + Qt 6 Smart Thermostat + 3D Architectural Smart House Viewport
 	win.begin_row('row_smart_house')
@@ -134,6 +142,108 @@ fn main() {
 				w.save_screenshot('${out_dir}/god_mode_cyberpunk_cockpit.png')
 			})
 			win.after(2300, fn (mut w simplegui.SimpleWindow) {
+				exit(0)
+			})
+			break
+		} else if args[i] == '--record-video' {
+			out_dir := args[i + 1]
+			os.mkdir_all(out_dir) or {}
+			win.set_sfx_enabled(false)
+			win.after(600, fn [out_dir] (mut w simplegui.SimpleWindow) {
+				notes := [60, 62, 64, 65, 67, 69, 71, 72, 74, 76, 77, 79, 81, 83, 84]
+				room_masks := [0x37, 0x3F, 0x2F, 0x1F, 0x3B, 0x3E]
+
+				// Scene 01: 60 frames — Qt 6 Smart House + 270° HVAC Dial + 3D CAD Viewport + HDR Glow
+				w.set_theme('Omega Pantheon 3099 Singularity')
+				for f := 0; f < 60; f++ {
+					t := f64(f) * 0.18
+					mask := room_masks[(f / 8) % room_masks.len]
+					solar_kw := 5.2 + 2.1 * math.sin(t * 0.8)
+					batt := 88 + (f % 12)
+					w.set_smart_house_state('house_floorplan', mask, solar_kw, batt)
+
+					target_temp := 72.0 + 4.5 * math.sin(t * 0.9)
+					curr_temp := 70.5 + 2.8 * math.cos(t * 0.7)
+					hum := 42 + int(6.0 * math.sin(t))
+					w.set_smart_thermostat('house_thermostat', target_temp, curr_temp, hum,
+						if f % 20 < 10 { 'AUTO-ECO' } else { 'BOOST-COOL' })
+
+					if f == 0 {
+						w.set_mesh_viewport_preset('house_3d_viewport', 'smart_house_3d')
+					} else if f == 30 {
+						w.set_mesh_viewport_preset('house_3d_viewport', 'torus_knot')
+					} else if f == 46 {
+						w.set_mesh_viewport_preset('house_3d_viewport', 'smart_house_3d')
+					}
+
+					w.set_hdr_glow_box_intensity('god_hdr_1', 2.5 + 1.45 * math.sin(t * 1.5))
+					w.set_hdr_glow_box_intensity('god_hdr_2', 2.4 + 1.40 * math.cos(t * 1.3))
+					w.set_hdr_glow_box_intensity('god_hdr_3', 2.6 + 1.35 * math.sin(t * 1.7 + 1.0))
+					w.set_cockpit_telemetry('hyper_cockpit', 142.0 + 38.0 * math.sin(t * 0.6),
+						6.2 + 1.8 * math.sin(t * 0.6), 'S+', 92)
+					w.set_piano_active_note('studio_piano', notes[f % notes.len])
+					w.step_atmosphere_phase(0.18)
+					w.save_screenshot('${out_dir}/scene_01_${f:03d}.png')
+				}
+			})
+			win.after(900, fn [out_dir] (mut w simplegui.SimpleWindow) {
+				notes := [60, 62, 64, 65, 67, 69, 71, 72, 74, 76, 77, 79, 81, 83, 84]
+				// Scene 02: 60 frames — Digital Cockpit Revving + 360° LiDAR Radar + Logic Analyzer + Nixie Counter
+				w.set_theme('Cyberpunk Edgerunner 2099')
+				w.set_mesh_viewport_preset('house_3d_viewport', 'torus_knot')
+				for f := 0; f < 60; f++ {
+					t := f64(f) * 0.18
+					speed := 85.0 + 163.0 * (f64(f) / 59.0)
+					rpm := 3.4 + 6.1 * (f64(f) / 59.0)
+					gear := if f < 16 {
+						'3RD'
+					} else if f < 32 {
+						'4TH'
+					} else if f < 46 {
+						'5TH'
+					} else {
+						'MAX'
+					}
+					w.set_cockpit_telemetry('hyper_cockpit', speed, rpm, gear, 94 - (f / 15))
+					if f % 12 == 0 {
+						w.ping_polar_radar('sonar_radar')
+					}
+					kw_val := 48.62 + f64(f) * 0.74
+					w.set_nixie_display_text('atomic_nixie', '0${kw_val:05.2f} kW')
+					w.set_hdr_glow_box_intensity('god_hdr_1', 2.6 + 1.35 * math.cos(t * 1.6))
+					w.set_hdr_glow_box_intensity('god_hdr_2', 2.7 + 1.25 * math.sin(t * 1.9))
+					w.set_hdr_glow_box_intensity('god_hdr_3', 2.5 + 1.40 * math.cos(t * 1.4 + 0.7))
+					w.set_piano_active_note('studio_piano', notes[(f * 2) % notes.len])
+					w.step_atmosphere_phase(0.18)
+					w.save_screenshot('${out_dir}/scene_02_${f:03d}.png')
+				}
+			})
+			win.after(1200, fn [out_dir] (mut w simplegui.SimpleWindow) {
+				notes := [60, 62, 64, 65, 67, 69, 71, 72, 74, 76, 77, 79, 81, 83, 84]
+				colors := ['#00F5D4', '#FF2A85', '#A855F7', '#FFD166', '#38BDF8', '#10B981']
+				// Scene 04: 60 frames — Pro Audio MIDI Piano Arpeggio + 16-Step Sequencer + Color Wheel + Node Graph
+				w.set_theme('Omega Pantheon 3099 Singularity')
+				w.set_mesh_viewport_preset('house_3d_viewport', 'dna_helix')
+				for f := 0; f < 60; f++ {
+					t := f64(f) * 0.18
+					note := notes[(f / 2) % notes.len]
+					w.set_piano_active_note('studio_piano', note)
+					if f % 6 == 0 {
+						w.set_color_wheel_hex('studio_color_wheel', colors[(f / 6) % colors.len])
+					}
+					bpm := 128 + (f % 16)
+					pat := u32(0xB5AD6B5A) ^ u32(f * 0x1105)
+					w.set_step_sequencer_state('studio_sequencer', bpm, pat)
+					w.set_cockpit_telemetry('hyper_cockpit', 188.0 + 42.0 * math.sin(t),
+						7.8 + 1.4 * math.sin(t), 'S+', 91)
+					w.set_hdr_glow_box_intensity('god_hdr_1', 2.5 + 1.45 * math.sin(t * 1.8))
+					w.set_hdr_glow_box_intensity('god_hdr_2', 2.6 + 1.35 * math.cos(t * 1.5))
+					w.set_hdr_glow_box_intensity('god_hdr_3', 2.8 + 1.18 * math.sin(t * 2.1))
+					kw_val := 96.40 + f64(f) * 0.42
+					w.set_nixie_display_text('atomic_nixie', '${kw_val:06.2f} kW')
+					w.step_atmosphere_phase(0.18)
+					w.save_screenshot('${out_dir}/scene_04_${f:03d}.png')
+				}
 				exit(0)
 			})
 			break

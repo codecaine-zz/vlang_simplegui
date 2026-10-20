@@ -97,6 +97,29 @@ fn main() {
 				exit(0)
 			})
 			break
+		} else if args[i] == '--record-video' {
+			out_dir := args[i + 1]
+			os.mkdir_all(out_dir) or {}
+			win.after(1100, fn [out_dir] (mut w simplegui.SimpleWindow) {
+				for f := 0; f < 60; f++ {
+					if f == 0 {
+						w.set_shader_canvas_preset('preview_shader', 'tesseract_4d')
+						w.set_particle_emitter_type('preview_particles', 'supernova_burst')
+					} else if f == 20 {
+						w.set_shader_canvas_preset('preview_shader', 'plasma_reactor')
+						w.set_particle_emitter_type('preview_particles', 'vortex_galaxy')
+						w.set_theme('Prism Reactor')
+					} else if f == 40 {
+						w.set_shader_canvas_preset('preview_shader', 'synthwave_horizon')
+						w.set_particle_emitter_type('preview_particles', 'quantum_fountain')
+						w.set_theme('Cyberpunk Edgerunner 2099')
+					}
+					w.step_atmosphere_phase(0.18)
+					w.save_screenshot('${out_dir}/scene_05_${f:03d}.png')
+				}
+				exit(0)
+			})
+			break
 		}
 	}
 

@@ -1,14 +1,14 @@
-# Vlang SimpleGUI + Webview RAD Studio — God-Mode YouTube Short (1:14 & 0:57 <60s Cut)
+# Vlang SimpleGUI + Webview RAD Studio — God-Mode YouTube Short (1:15 & <60s Cut)
 
 ## Reference & Hardware Workstation Mark
 - **Workstation Hardware Mark:** `🍎 Mac Studio M4 Ultra · 32c CPU · 80c GPU · 192GB Unified · Pro Display XDR 6K 120Hz`
 - **Primary Repository:** https://github.com/codecaine-zz/vlang_simplegui
 - **Integrated WebView RAD Studio Repository:** https://github.com/codecaine-zz/vlang_webview_rad_studio
 
-## Rendered Video Files (Saved in `youtube_production/` and `~/Downloads/`)
-1. **`youtube_production/vlang_simplegui_youtube_short_under60s_9x16.mp4`** — *Strict <60s Vertical YouTube Short (1080×1920 9:16, 0:57)*
-2. **`youtube_production/vlang_simplegui_youtube_short_9x16.mp4`** — *Standard Pace Vertical YouTube Short (1080×1920 9:16, 1:14)*
-3. **`youtube_production/vlang_simplegui_short_tutorial.mp4`** — *Widescreen 16:9 Short Tour (1920×1080, 1:14)*
+## Rendered Video Files
+1. **`youtube_production/vlang_simplegui_youtube_short_under60s_9x16.mp4`** — *Strict <60s Vertical YouTube Short (1080×1920 9:16)*
+2. **`youtube_production/vlang_simplegui_youtube_short_9x16.mp4`** — *Standard Pace Vertical YouTube Short (1080×1920 9:16, 1:15)*
+3. **`youtube_production/vlang_simplegui_short_tutorial.mp4`** — *Widescreen 16:9 Short Tour (1920×1080, 1:15)*
 
 ## YouTube Short Title (96 chars — under YouTube's 100-char limit, copy and paste)
 ```text
@@ -37,21 +37,13 @@ RECORDING WORKSTATION
 🧠 192 GB Unified LPDDR5X-8533 Memory (819 GB/s Unified Fabric)
 🖥️ Apple Pro Display XDR 6K (6016×3384) @ 120Hz ProMotion · Display-P3 1600-nit HDR
 
-CHAPTERS (Standard 1:14 Version)
+CHAPTERS
 0:00 Native Vlang SimpleGUI + Webview RAD Studio on M4 Ultra 6K
 0:12 Qt 6 Smart House Domotics, 270° HVAC Thermostat & 3D CAD
 0:24 Automotive & Aerospace Digital Cockpit, LiDAR Radar & Nixie Chrono
 0:36 GOAT 4D Tesseract Shaders, Particle Physics & 50 Ultra FX Themes
 0:49 Built-In 16-Preset Procedural PCM Synth, MIDI Piano & 16-Step Sequencer
 1:02 Integrated vlang_webview_rad_studio, Drag & Drop IDE & 47 Workstations
-
-CHAPTERS (Strict <60s Cut — 0:57 Version)
-0:00 Native Vlang SimpleGUI + Webview RAD Studio on M4 Ultra 6K
-0:09 Qt 6 Smart House Domotics, 270° HVAC Thermostat & 3D CAD
-0:18 Automotive & Aerospace Digital Cockpit, LiDAR Radar & Nixie Chrono
-0:28 GOAT 4D Tesseract Shaders, Particle Physics & 50 Ultra FX Themes
-0:37 Built-In 16-Preset Procedural PCM Synth, MIDI Piano & 16-Step Sequencer
-0:48 Integrated vlang_webview_rad_studio, Drag & Drop IDE & 47 Workstations
 
 #Shorts #Vlang #SimpleGUI #Qt6 #MacStudio #M4Ultra #Shaders #SmartHome #Webview #RADStudio #OpenSource
 ```

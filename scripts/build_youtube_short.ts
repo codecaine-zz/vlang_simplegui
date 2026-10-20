@@ -261,6 +261,8 @@ async function narrateSegment(id: string, rawText: string, sfxPreset: string): P
 interface SlideSpec {
   mainImage: string;
   secondaryImage: string;
+  mainClipId: string;
+  secondaryClipId: string;
   badgeTop: string;
   headline: string;
   subline: string;
@@ -295,9 +297,11 @@ const CHAPTERS: ChapterSpec[] = [
       {
         mainImage: "screenshots/god_mode_smart_house_showcase.png",
         secondaryImage: "screenshots/goat_omega_tesseract.png",
+        mainClipId: "scene_00",
+        secondaryClipId: "scene_01",
         badgeTop: "🍎 APPLE MAC STUDIO M4 ULTRA · 32C CPU · 80C GPU · 192GB UNIFIED · 6K 120HZ",
         headline: "VLANG SIMPLEGUI + WEBVIEW RAD STUDIO",
-        subline: "115+ Controls · 50 FX Themes · 140+ Demos · 47 Workstations · 49 CLI Tools",
+        subline: "115+ Controls · 50 FX Themes · 1600-Nit HDR/EDR · 47 Workstations · 49 CLI Tools",
         calloutLeftTitle: "⚡ 100% Native V + Cocoa + Metal EDR",
         calloutLeftDesc: "Zero-bloat native macOS arm64 binary with 120Hz ProMotion & Display-P3 1600-nit HDR.",
         calloutRightTitle: "🌌 Omega Pantheon 4D Shaders & Audio",
@@ -308,9 +312,11 @@ const CHAPTERS: ChapterSpec[] = [
       {
         mainImage: "screenshots/all_controls_demo.png",
         secondaryImage: "screenshots/webview_rad_studio_ide.png",
+        mainClipId: "scene_01",
+        secondaryClipId: "scene_03",
         badgeTop: "⚡ 115+ NATIVE COCOA, SUPER & GOD-MODE CONTROLS",
         headline: "EVERY CONTROL A DEVELOPER COULD EVER WANT",
-        subline: "Standard Inputs · Rich macOS Views · Scientific Charts · Qt 6 Domotics · WebView IDE",
+        subline: "Standard Inputs · Rich macOS Views · XDR HDR Glow · Qt 6 Domotics · WebView IDE",
         calloutLeftTitle: "🧭 20 Control Categories Built In",
         calloutLeftDesc: "Grid & Flexbox auto-layout, struct reflection forms, CRUD tables & tree views.",
         calloutRightTitle: "🌐 Hybrid Native + WebView Engine",
@@ -332,6 +338,8 @@ const CHAPTERS: ChapterSpec[] = [
       {
         mainImage: "screenshots/god_mode_smart_house_showcase.png",
         secondaryImage: "screenshots/webview_god_mode_app.png",
+        mainClipId: "scene_01",
+        secondaryClipId: "scene_00",
         badgeTop: "🏠 QT 6 SMART HOUSE & ARCHITECTURAL DOMOTICS SUITE",
         headline: "6-ROOM FLOORPLAN & 270° HVAC THERMOSTAT",
         subline: "add_smart_house_floorplan · add_smart_thermostat · add_mesh_viewport_3d · add_sankey_chart",
@@ -345,6 +353,8 @@ const CHAPTERS: ChapterSpec[] = [
       {
         mainImage: "screenshots/webview_god_mode_app.png",
         secondaryImage: "screenshots/god_mode_smart_house_showcase.png",
+        mainClipId: "scene_01",
+        secondaryClipId: "scene_02",
         badgeTop: "🧊 3D ARCHITECTURAL CAD MESH & SANKEY ENERGY TELEMETRY",
         headline: "3D HOUSE WIREFRAME & SOLAR POWERWALL FLOW",
         subline: "Perspective 3D Depth Sorting · Solar Array → Powerwall → HVAC & EV Charger",
@@ -361,7 +371,7 @@ const CHAPTERS: ChapterSpec[] = [
     id: "02_digital_cockpit",
     chapterBadge: "DIGITAL COCKPIT",
     title: "Automotive & Aerospace Digital Cockpit, LiDAR Radar & Nixie Chrono",
-    caption: "228 MPH Twin-Dial Cluster · ADAS Corridor · Polar LiDAR Radar · SPI/I2C Logic Scope",
+    caption: "248 MPH Twin-Dial Cluster · ADAS Corridor · Polar LiDAR Radar · SPI/I2C Logic Scope",
     narration:
       "Launch the Digital Cockpit with a 228 mile-per-hour speedometer, tachometer, and ADAS lane HUD, plus a sweeping Polar LiDAR Radar, 8-channel SPI Logic Analyzer, and glowing Nixie Tube display!",
     sfxPreset: "engine_rev",
@@ -369,11 +379,13 @@ const CHAPTERS: ChapterSpec[] = [
       {
         mainImage: "screenshots/god_mode_cyberpunk_cockpit.png",
         secondaryImage: "screenshots/god_mode_smart_house_showcase.png",
+        mainClipId: "scene_02",
+        secondaryClipId: "scene_01",
         badgeTop: "🏎️ QT 6 AUTOMOTIVE & AEROSPACE TELEMETRY COCKPIT",
-        headline: "228 MPH DIGITAL CLUSTER & ADAS LANE HUD",
+        headline: "248 MPH DIGITAL CLUSTER & ADAS LANE HUD",
         subline: "add_cockpit_cluster · Twin Speed/RPM Arcs · Gear PRNDMS · G-Force Meter · Battery SoC",
         calloutLeftTitle: "🏎️ Twin-Dial Speed & RPM Cluster",
-        calloutLeftDesc: "Live 228 MPH / 7,600 RPM redline arcs, 3D perspective ADAS corridor & G-ball.",
+        calloutLeftDesc: "Live 85→248 MPH / 9,500 RPM redline sweep, 3D perspective ADAS corridor & G-ball.",
         calloutRightTitle: "🔥 Cyberpunk Edgerunner 2099 Theme",
         calloutRightDesc: "One-click runtime theme switch with M4 raytrace prism bloom and engine rev audio.",
         accentColor: "#f43f5e",
@@ -382,6 +394,8 @@ const CHAPTERS: ChapterSpec[] = [
       {
         mainImage: "screenshots/god_mode_smart_house_showcase.png",
         secondaryImage: "screenshots/god_mode_cyberpunk_cockpit.png",
+        mainClipId: "scene_02",
+        secondaryClipId: "scene_03",
         badgeTop: "🛰️ HARDWARE INSTRUMENTATION & RETRO-FUTURISTIC TELEMETRY",
         headline: "POLAR LIDAR RADAR, LOGIC SCOPE & NIXIE TUBES",
         subline: "add_polar_radar_sonar · add_logic_analyzer · add_nixie_display",
@@ -398,7 +412,7 @@ const CHAPTERS: ChapterSpec[] = [
     id: "03_4d_shaders_themes",
     chapterBadge: "4D SHADERS & 50 THEMES",
     title: "GOAT 4D Tesseract Shaders, Particle Physics & 50 Ultra FX Themes",
-    caption: "4D Hypercube · Tokamak Plasma · Supernova Particles · 3D Foil Cards · 5-Layer 3D Folders",
+    caption: "4D Hypercube · Tokamak Plasma · Supernova Particles · 1600-Nit HDR/EDR Glow",
     narration:
       "Unleash 6 real-time 4D shaders—including 4D Tesseract hypercubes, Tokamak plasma, and Synthwave horizons—plus supernova particle physics, 3D hologram cards, and 50 themes with Display-P3 HDR!",
     sfxPreset: "supernova_boom",
@@ -406,6 +420,8 @@ const CHAPTERS: ChapterSpec[] = [
       {
         mainImage: "screenshots/goat_omega_tesseract.png",
         secondaryImage: "screenshots/goat_prism_plasma_reactor.png",
+        mainClipId: "scene_03",
+        secondaryClipId: "scene_00",
         badgeTop: "🌌 GOAT 4D MATHEMATICAL SHADERS & PARTICLE PHYSICS ENGINE",
         headline: "4D TESSERACT, PLASMA REACTOR & SUPERNOVA FX",
         subline: "tesseract_4d · plasma_reactor · synthwave_horizon · audio_spectrum_3d · black_hole · neural_plexus",
@@ -419,13 +435,15 @@ const CHAPTERS: ChapterSpec[] = [
       {
         mainImage: "screenshots/goat_cyberpunk_synthwave.png",
         secondaryImage: "screenshots/goat_tokyo_spectrum_3d.png",
+        mainClipId: "scene_00",
+        secondaryClipId: "scene_03",
         badgeTop: "🎨 50 CURATED & ULTRA 6K XDR THEMES + DISPLAY-P3 HDR",
-        headline: "OMEGA PANTHEON, SYNTHWAVE & TOKYO SPECTRUM 3D",
+        headline: "OMEGA PANTHEON, SYNTHWAVE & 1600-NIT XDR GLOW",
         subline: "18 Classic Studio · 12 Flagship FX · 20 Hardware-Tiered Custom Themes (Low–Ultra) · CCFM1 Codes",
         calloutLeftTitle: "🌅 Synthwave Outrun & 3D Spectrum",
         calloutLeftDesc: "Perspective neon grid, twin synthwave suns & 3D isometric FFT spectrum analyzer.",
         calloutRightTitle: "☀️ 1600-Nit Display-P3 EDR Headroom",
-        calloutRightDesc: "64-bit RGBA16Float Metal views, Reinhard/ACES tone-mapping & WCAG contrast guard.",
+        calloutRightDesc: "Live EDR 1.2x→3.9x HDR Glow Boxes, specular sweeps & WCAG AAA contrast guard.",
         accentColor: "#8b5cf6",
         sfxBadge: "🔊 SFX: synth_chord (Polyphonic A-Major)",
       },
@@ -443,6 +461,8 @@ const CHAPTERS: ChapterSpec[] = [
       {
         mainImage: "screenshots/god_mode_cyberpunk_cockpit.png",
         secondaryImage: "screenshots/goat_tokyo_spectrum_3d.png",
+        mainClipId: "scene_04",
+        secondaryClipId: "scene_03",
         badgeTop: "🎹 BUILT-IN PROCEDURAL PCM SYNTHESIZER & PRO AUDIO DAW",
         headline: "MIDI PIANO KEYBOARD & 16-STEP DRUM MATRIX",
         subline: "play_sfx (16 Presets) · play_synth_tone · play_piano_note · add_piano_keyboard · add_step_sequencer",
@@ -451,11 +471,13 @@ const CHAPTERS: ChapterSpec[] = [
         calloutRightTitle: "🥁 4×16 Drum & Synth Matrix",
         calloutRightDesc: "Interactive KICK, SNARE, HIHAT & SYNTH step pads with live playhead sweep.",
         accentColor: "#00f5d4",
-        sfxBadge: "🔊 SFX: synth_chord + play_piano_note(60..83)",
+        sfxBadge: "🔊 SFX: synth_chord + play_piano_note(60..84)",
       },
       {
         mainImage: "screenshots/rad_studio_goat_vfx.png",
         secondaryImage: "screenshots/god_mode_smart_house_showcase.png",
+        mainClipId: "scene_04",
+        secondaryClipId: "scene_02",
         badgeTop: "🕸️ VISUAL NODE SHADER GRAPH & STUDIO VECTORSCOPE COLOR WHEEL",
         headline: "BEZIER BLUEPRINT NODES & HARMONY COLOR WHEEL",
         subline: "add_node_graph · add_color_wheel · add_waveform_synthesizer · Lissajous Phase Scope",
@@ -480,6 +502,8 @@ const CHAPTERS: ChapterSpec[] = [
       {
         mainImage: "screenshots/webview_rad_studio_ide.png",
         secondaryImage: "screenshots/rad_studio_goat_vfx.png",
+        mainClipId: "scene_05",
+        secondaryClipId: "scene_03",
         badgeTop: "🌐 INTEGRATED VLANG_WEBVIEW_RAD_STUDIO + NATIVE RAD DESIGNER",
         headline: "DRAG & DROP IDE: NATIVE COCOA OR HTML5 WEBVIEW",
         subline: "examples/webview_rad_studio.v · examples/rad_studio.v · 70+ Palette Widgets · 17 Presets",
@@ -493,6 +517,8 @@ const CHAPTERS: ChapterSpec[] = [
       {
         mainImage: "screenshots/media_studio_hub.png",
         secondaryImage: "screenshots/ffmpeg_studio.png",
+        mainClipId: "scene_05",
+        secondaryClipId: "scene_01",
         badgeTop: "🖥️ 47 NATIVE STUDIO WORKSTATIONS · 49 CLI APPS · 45 UTILS",
         headline: "DOWNLOAD FREE ON GITHUB — BUILT FOR M4 ULTRA",
         subline: "github.com/codecaine-zz/vlang_simplegui · github.com/codecaine-zz/vlang_webview_rad_studio",
@@ -548,12 +574,11 @@ body{
     linear-gradient(180deg, #050811 0%, #090e1a 52%, #050811 100%);
   font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Roboto,sans-serif;
   color:#f8fafc;
-  display:flex;flex-direction:column;justify-content:space-between;
-  padding:36px 34px 34px;
   position:relative;
 }
 .top-header{
-  display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;
+  position:absolute;left:34px;top:30px;width:1012px;height:178px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:8px;
 }
 .top-pills{
   display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;
@@ -569,17 +594,15 @@ body{
   color:#fde68a;font-weight:800;font-size:16px;padding:6px 15px;border-radius:999px;
 }
 h1{
-  font-size:43px;font-weight:900;line-height:1.05;letter-spacing:-.025em;
+  font-size:42px;font-weight:900;line-height:1.05;letter-spacing:-.025em;
   color:#ffffff;text-shadow:0 4px 20px rgba(0,0,0,0.7);
 }
 .subline{
-  font-size:19.5px;font-weight:700;color:#7dd3fc;line-height:1.22;max-width:990px;
-}
-.stage{
-  display:flex;flex-direction:column;gap:14px;
+  font-size:19px;font-weight:700;color:#7dd3fc;line-height:1.22;max-width:990px;
 }
 .main-shot-wrap{
-  width:1012px;height:710px;border-radius:22px;overflow:hidden;
+  position:absolute;left:34px;top:222px;width:1012px;height:724px;
+  border-radius:22px;overflow:hidden;
   background:radial-gradient(circle at center, #0f172a, #060913);
   border:2.5px solid ${slide.accentColor}aa;
   box-shadow:0 20px 50px rgba(0,0,0,0.75), 0 0 28px ${slide.accentColor}33;
@@ -598,13 +621,14 @@ h1{
   color:#ffffff;font-size:14.5px;font-weight:900;padding:3px 12px;border-radius:8px;
 }
 .main-img-box{
-  flex:1;width:100%;height:668px;padding:6px;display:flex;align-items:center;justify-content:center;
+  flex:1;width:100%;height:682px;padding:6px;display:flex;align-items:center;justify-content:center;
 }
 .main-img-box img{
   width:100%;height:100%;object-fit:contain;border-radius:12px;
 }
 .dual-row{
-  display:grid;grid-template-columns:499px 499px;gap:14px;height:368px;
+  position:absolute;left:34px;top:960px;width:1012px;height:368px;
+  display:grid;grid-template-columns:499px 499px;gap:14px;
 }
 .sec-shot-wrap{
   border-radius:18px;overflow:hidden;
@@ -635,6 +659,7 @@ h1{
   font-size:18px;font-weight:600;color:#cbd5e1;line-height:1.28;
 }
 .bottom-hud{
+  position:absolute;left:34px;bottom:34px;width:1012px;
   background:linear-gradient(180deg, rgba(15,23,42,0.96), rgba(9,13,24,0.98));
   border:2px solid ${slide.accentColor}88;border-radius:22px;
   padding:18px 24px;display:flex;flex-direction:column;gap:10px;
@@ -662,34 +687,32 @@ h1{
     <div class="subline">${esc(slide.subline)}</div>
   </div>
 
-  <div class="stage">
-    <div class="main-shot-wrap">
+  <div class="main-shot-wrap">
+    <div class="shot-bar">
+      <span class="shot-tag">🔴 LIVE 30FPS CAPTURE · ${esc(ch.chapterBadge)} · HDR/EDR ACTIVE</span>
+      <span class="shot-step">Scene ${stepNum} of ${totalSteps}</span>
+    </div>
+    <div class="main-img-box">
+      <img src="${mainAbs}" />
+    </div>
+  </div>
+  <div class="dual-row">
+    <div class="sec-shot-wrap">
       <div class="shot-bar">
-        <span class="shot-tag">⚡ ${esc(ch.chapterBadge)} · FULL UNCROPPED RETINA WINDOW</span>
-        <span class="shot-step">Scene ${stepNum} of ${totalSteps}</span>
+        <span class="shot-tag">🔴 LIVE COMPANION VIEW</span>
       </div>
-      <div class="main-img-box">
-        <img src="${mainAbs}" />
+      <div class="sec-img-box">
+        <img src="${secAbs}" />
       </div>
     </div>
-    <div class="dual-row">
-      <div class="sec-shot-wrap">
-        <div class="shot-bar">
-          <span class="shot-tag">🔥 COMPANION STUDIO VIEW</span>
-        </div>
-        <div class="sec-img-box">
-          <img src="${secAbs}" />
-        </div>
+    <div class="callouts-col">
+      <div class="callout-card">
+        <div class="callout-title">${esc(slide.calloutLeftTitle)}</div>
+        <div class="callout-desc">${esc(slide.calloutLeftDesc)}</div>
       </div>
-      <div class="callouts-col">
-        <div class="callout-card">
-          <div class="callout-title">${esc(slide.calloutLeftTitle)}</div>
-          <div class="callout-desc">${esc(slide.calloutLeftDesc)}</div>
-        </div>
-        <div class="callout-card">
-          <div class="callout-title">${esc(slide.calloutRightTitle)}</div>
-          <div class="callout-desc">${esc(slide.calloutRightDesc)}</div>
-        </div>
+      <div class="callout-card">
+        <div class="callout-title">${esc(slide.calloutRightTitle)}</div>
+        <div class="callout-desc">${esc(slide.calloutRightDesc)}</div>
       </div>
     </div>
   </div>
@@ -847,10 +870,48 @@ h1{font-size:34px;font-weight:900;letter-spacing:-.02em;color:#ffffff;line-heigh
 
 async function main() {
   mkdirSync(PROD, { recursive: true });
+  rmSync(SEG_16x9, { recursive: true, force: true });
+  rmSync(SEG_9x16, { recursive: true, force: true });
   mkdirSync(ASSETS_16x9, { recursive: true });
   mkdirSync(ASSETS_9x16, { recursive: true });
   mkdirSync(SEG_16x9, { recursive: true });
   mkdirSync(SEG_9x16, { recursive: true });
+
+  console.log("● Step 0: Encoding Live 30FPS Moving Window Video Clips (scene_00 .. scene_05)...");
+  const RAW_FRAMES = join(PROD, "raw_frames");
+  const CLIPS_DIR = join(PROD, "live_clips");
+  mkdirSync(CLIPS_DIR, { recursive: true });
+  const clipPaths: Record<string, string> = {};
+  for (const sceneId of ["scene_00", "scene_01", "scene_02", "scene_03", "scene_04", "scene_05"]) {
+    const outClip = join(CLIPS_DIR, `${sceneId}.mp4`);
+    if (existsSync(join(RAW_FRAMES, `${sceneId}_000.png`))) {
+      sh([
+        FFMPEG,
+        "-y",
+        "-framerate",
+        "20",
+        "-i",
+        join(RAW_FRAMES, `${sceneId}_%03d.png`),
+        "-filter_complex",
+        "[0:v]split[f][r];[r]reverse[rev];[f][rev]concat=n=2:v=1:a=0,fps=30[v]",
+        "-map",
+        "[v]",
+        "-c:v",
+        "libx264",
+        "-preset",
+        "fast",
+        "-crf",
+        "13",
+        "-pix_fmt",
+        "yuv420p",
+        outClip,
+      ]);
+    }
+    if (existsSync(outClip)) {
+      clipPaths[sceneId] = outClip;
+      console.log(`  🎥 ${sceneId}.mp4 (${durationOf(outClip).toFixed(1)}s ping-pong 30fps live window stream)`);
+    }
+  }
 
   console.log("● Step 1: Generating Broadcast Neural TTS + SimpleGUI 44.1kHz PCM Sound Effects...");
   const chapterMarks: Array<{ at: number; title: string; badge: string }> = [];
@@ -892,6 +953,9 @@ async function main() {
       const v16 = join(SEG_16x9, `_${ch.id}_s${sIdx}.mp4`);
       const v9 = join(SEG_9x16, `_${ch.id}_s${sIdx}.mp4`);
 
+      const mainClip = clipPaths[slide.mainClipId] ?? clipPaths["scene_00"]!;
+      const secClip = clipPaths[slide.secondaryClipId] ?? clipPaths["scene_01"]!;
+
       sh(
         [
           FFMPEG,
@@ -900,8 +964,21 @@ async function main() {
           "1",
           "-i",
           png16x9,
-          "-vf",
-          `fps=30,fade=t=in:st=0:d=0.16`,
+          "-stream_loop",
+          "-1",
+          "-i",
+          mainClip,
+          "-stream_loop",
+          "-1",
+          "-i",
+          secClip,
+          "-filter_complex",
+          `[1:v]scale=1190:796:force_original_aspect_ratio=decrease,pad=1190:796:(ow-iw)/2:(oh-ih)/2:color=#070b15[m];` +
+            `[2:v]scale=590:410:force_original_aspect_ratio=decrease,pad=590:410:(ow-iw)/2:(oh-ih)/2:color=#070b15[s];` +
+            `[0:v][m]overlay=50:144:shortest=1[bg1];` +
+            `[bg1][s]overlay=1280:144:shortest=1,fps=30,fade=t=in:st=0:d=0.16[v]`,
+          "-map",
+          "[v]",
           "-t",
           perSlideDur.toFixed(3),
           "-c:v",
@@ -917,30 +994,40 @@ async function main() {
         { quiet: true },
       );
 
-      sh(
-        [
-          FFMPEG,
-          "-y",
-          "-loop",
-          "1",
-          "-i",
-          png9x16,
-          "-vf",
-          `fps=30,fade=t=in:st=0:d=0.16`,
-          "-t",
-          perSlideDur.toFixed(3),
-          "-c:v",
-          "libx264",
-          "-preset",
-          "fast",
-          "-crf",
-          "14",
-          "-pix_fmt",
-          "yuv420p",
-          v9,
-        ],
-        { quiet: true },
-      );
+      sh([
+        FFMPEG,
+        "-y",
+        "-loop",
+        "1",
+        "-i",
+        png9x16,
+        "-stream_loop",
+        "-1",
+        "-i",
+        mainClip,
+        "-stream_loop",
+        "-1",
+        "-i",
+        secClip,
+        "-filter_complex",
+        `[1:v]scale=996:668:force_original_aspect_ratio=decrease,pad=996:668:(ow-iw)/2:(oh-ih)/2:color=#070b15,setsar=1[m];` +
+          `[2:v]scale=484:312:force_original_aspect_ratio=decrease,pad=484:312:(ow-iw)/2:(oh-ih)/2:color=#070b15,setsar=1[s];` +
+          `[0:v][m]overlay=42:270:shortest=1[bg1];` +
+          `[bg1][s]overlay=42:1008:shortest=1,fps=30,fade=t=in:st=0:d=0.16[v]`,
+        "-map",
+        "[v]",
+        "-t",
+        perSlideDur.toFixed(3),
+        "-c:v",
+        "libx264",
+        "-preset",
+        "fast",
+        "-crf",
+        "14",
+        "-pix_fmt",
+        "yuv420p",
+        v9,
+      ]);
 
       slideVids16x9.push(`file '${v16}'`);
       slideVids9x16.push(`file '${v9}'`);
