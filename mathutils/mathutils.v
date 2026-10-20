@@ -114,16 +114,23 @@ pub fn rects_intersect[T](r1 Rect[T], r2 Rect[T]) bool {
 // 3. Integer Arithmetic & Number Theory
 // ============================================================================
 
+fn abs_u64(v i64) u64 {
+	return if v < 0 { u64(-(v + 1)) + 1 } else { u64(v) }
+}
+
 // gcd calculates the Greatest Common Divisor of two integers using the Euclidean algorithm.
 pub fn gcd(a i64, b i64) i64 {
-	mut x := if a < 0 { -a } else { a }
-	mut y := if b < 0 { -b } else { b }
+	mut x := abs_u64(a)
+	mut y := abs_u64(b)
 	for y != 0 {
 		temp := y
 		y = x % y
 		x = temp
 	}
-	return x
+	if x > u64(max_i64) {
+		return max_i64
+	}
+	return i64(x)
 }
 
 // lcm calculates the Least Common Multiple of two integers.
@@ -131,9 +138,20 @@ pub fn lcm(a i64, b i64) i64 {
 	if a == 0 || b == 0 {
 		return 0
 	}
-	g := gcd(a, b)
-	val := (a / g) * b
-	return if val < 0 { -val } else { val }
+	ax := abs_u64(a)
+	bx := abs_u64(b)
+	mut x := ax
+	mut y := bx
+	for y != 0 {
+		temp := y
+		y = x % y
+		x = temp
+	}
+	val := (ax / x) * bx
+	if val > u64(max_i64) {
+		return max_i64
+	}
+	return i64(val)
 }
 
 // is_power_of_two returns true if n is an exact power of two (1, 2, 4, 8, ...).

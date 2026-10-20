@@ -1,0 +1,732 @@
+// Everything the person can do to files, with Undo. Each operation calls the server, explains problems in plain
+// words, offers Undo where it is possible, and refreshes the view.
+import { ApiError, call } from "./api.js";
+import { readFromClipboard } from "./copyclip.js";
+import { chooseConflict, confirmBox, problemsBox } from "./dialogs.js";
+import { announce } from "./dom.js";
+import { toast } from "./menus.js";
+import { openInCode } from "./code.js";
+import { hasNoExtension, isKnownTextName } from "./codeLang.js";
+import { openInEditor } from "./fileurl.js";
+import { reviewPlan } from "./planDialog.js";
+import { finishOpen } from "./openwith.js";
+import { busy, goTo, goToIn, refresh, refreshTrashCount, saveSettings, showTrash } from "./nav.js";
+import { bulkRenameDialog } from "./extras.js";
+import { buryItems } from "./graveBury.js";
+import { activePane, currentPath, inTrash, isFolderView } from "./pane.js";
+import { openPower } from "./power.js";
+import { selectKeys, selectedEntries } from "./selection.js";
+import { AUDIO_EXTS, VIDEO_EXTS } from "./mediacore.js";
+import { emit, on, state } from "./state.js";
+import { looksLikeThemeImportPayload, pasteImportThemesFromText } from "./themes.js";
+import { announceVerdict, askOpenAnyway, skipMismatchGuard } from "./typecheck.js";
+import { baseName, extractableEntries, parentOf, plural } from "./util.js";
+import { isLocked, unlockEntries } from "./vault.js";
+
+// ---------------------------------------------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------------------------------------------
+
+function tally(results) {
+  const done = [];
+  const failed = [];
+  for (const r of results) (r.ok ? done : failed).push(r.ok ? r.value : r.message);
+  return { done, failed };
+}
+
+async function reportFailures(failed, doing) {
+  const unique = [...new Set(failed)];
+  if (!unique.length) return;
+  if (failed.length === 1) toast(unique[0], { kind: "error" });
+  else await problemsBox(`${plural(failed.length, "item")} couldn't be ${doing}`, "Here is why:", unique);
+}
+
+function fail(err) {
+  toast(err instanceof ApiError ? err.message : "That didn't work.", { kind: "error" });
+}
+
+const names = (paths) => paths.map((p) => baseName(p, state.sep));
+const canChangeHere = () => isFolderView();
+
+function needFolder(what) {
+  if (!canChangeHere()) {
+    toast(inTrash() ? `Open a folder first: ${what} isn't possible inside the Recycle Bin.` : `Close the search results first: ${what} needs a folder.`, { kind: "info" });
+    return false;
+  }
+  return true;
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Undo
+// ---------------------------------------------------------------------------------------------------------------
+
+export function pushUndo(label, run) {
+  state.undoStack.push({ label, run });
+  if (state.undoStack.length > 50) state.undoStack.shift();
+  emit("undo");
+}
+
+export async function undo() {
+  const entry = state.undoStack.pop();
+  emit("undo");
+  if (!entry) return toast("There is nothing to undo.");
+  try {
+    await busy(() => entry.run());
+    toast(`Undone: ${entry.label}`, { kind: "success" });
+  } catch (err) {
+    toast(`Couldn't undo: ${err instanceof Error ? err.message : "something went wrong"}`, { kind: "error" });
+  }
+  await refresh();
+  await refreshTrashCount();
+}
+
+function ensureOk(results, what) {
+  const { failed } = tally(results);
+  if (failed.length) throw new Error(failed[0] ?? `${what} failed`);
+}
+
+// Windows that sit below this module (the Properties window) can't import it, so they ask for Undo steps by event.
+on("undo-push", ({ label, run }) => pushUndo(label, run));
+on("undo-last", () => undo());
+
+/** Sends items to the Recycle Bin; resolves the records ({ path, id }) for those that worked. */
+async function trashPaths(paths) {
+  const res = await call("trash", { paths });
+  return tally(res.results);
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Open
+// ---------------------------------------------------------------------------------------------------------------
+
+/**
+ * Whether opening this file should use the Code editor (or the editor chosen in Settings) instead of the computer's own
+ * program: plain text and source files, unless Settings says "the program my computer uses". Programs and scripts that
+ * would run still ask first, as before.
+ */
+export function textOpensInEditor(entry) {
+  return !entry.isDir && !entry.program && state.settings.textOpensIn !== "system" && isKnownTextName(entry.name);
+}
+
+// Pictures the File Manager's viewer can show itself (the same list the server previews as pictures).
+const VIEWABLE_PICTURES = new Set(["png", "jpg", "jpeg", "gif", "webp", "bmp", "svg", "ico", "avif"]);
+
+/** Pictures, sound and video open in the File Manager's own viewer and player, unless Settings says "the program my computer uses". */
+export function mediaOpensInManager(entry) {
+  if (entry.isDir || entry.program || state.settings.mediaOpensIn === "system") return false;
+  const dot = entry.name.lastIndexOf(".");
+  const ext = dot > 0 ? entry.name.slice(dot + 1).toLowerCase() : "";
+  return VIEWABLE_PICTURES.has(ext) || AUDIO_EXTS.has(ext) || VIDEO_EXTS.has(ext);
+}
+
+const LOOK_INSIDE_MAX = 2 * 1024 * 1024;
+
+/**
+ * A file with no extension that isn't a well-known text name (NOTICE.third-party, a script without .sh, a data file) could be
+ * anything: the server looks inside it, and it opens in the editor only when it really is text.
+ */
+async function isPlainTextInside(entry) {
+  if (entry.isDir || entry.program || state.settings.textOpensIn === "system" || !hasNoExtension(entry.name)) return false;
+  if (entry.kind && entry.kind !== "file" && entry.kind !== "other" && entry.kind !== "text") return false;
+  if (!(entry.size > 0) || entry.size > LOOK_INSIDE_MAX) return false;
+  try {
+    const { preview } = await call("preview", { path: entry.path });
+    return preview?.type === "text";
+  } catch {
+    return false;
+  }
+}
+
+export function isThemeFileEntry(entry) {
+  if (!entry || entry.isDir || typeof entry.name !== "string") return false;
+  const lower = entry.name.toLowerCase();
+  return (
+    lower.endsWith(".ccfm") ||
+    lower.endsWith(".ccfm.txt") ||
+    lower.endsWith(".theme.json") ||
+    lower.endsWith(".theme-pack.json") ||
+    lower.endsWith(".theme.css")
+  );
+}
+
+/** `viewer: false` (Quick Look's own Open) always hands pictures, sound and video to the computer's program. */
+export async function openEntry(entry, { viewer = true } = {}) {
+  if (inTrash()) return toast("Items in the Recycle Bin can't be opened. Restore one first (right-click, then Restore).");
+  if (entry.isDir) return goToIn(activePane(), entry.path);
+  if (isLocked(entry)) return unlockEntries([entry]);
+  if (isThemeFileEntry(entry)) {
+    try {
+      const { text } = await call("themes/custom/read-file", { path: entry.path });
+      if (text && looksLikeThemeImportPayload(text)) {
+        await pasteImportThemesFromText(text, { applyFirst: true });
+        return;
+      }
+    } catch {
+      /* fall through to standard open if reading as theme fails */
+    }
+  }
+  const entryParent = parentOf(entry.path, state.sep);
+  if (!entry.isDir && state.cliUtilsDir && entryParent === state.cliUtilsDir && /^[A-Za-z0-9._-]+$/.test(entry.name)) {
+    const cmd = `${state.platform === "win32" ? ".\\" : "./"}${entry.name} `;
+    emit("terminal-run-in", { folder: state.cliUtilsDir, command: cmd, submit: false });
+    toast(`Ready in Terminal: ${cmd.trim()} (add arguments or press Enter to run)`, { kind: "info" });
+    return;
+  }
+  if (textOpensInEditor(entry) || (await isPlainTextInside(entry))) {
+    rememberRecent(entry.path);
+    if (state.settings.textOpensIn === "editor") return openInEditor(entry);
+    return openInCode(entry.path);
+  }
+  if (viewer && mediaOpensInManager(entry)) {
+    rememberRecent(entry.path);
+    // Quick Look imports this module, so it listens for the request instead of being imported here.
+    return emit("quicklook-open", entry);
+  }
+  await openFile(entry.path, false);
+}
+
+/** Files opened in the built-in editor are listed under Recent too (the ones opened by another program already are). */
+function rememberRecent(path) {
+  if (state.settings.recentsEnabled === false) return;
+  call("recent/add", { path }).then((r) => { state.settings = r.settings; emit("settings", {}); }).catch(() => {});
+}
+
+on("recent-open", (path) => openPath(path));
+
+/**
+ * Opens an item known only by its path (Recent, Favorites), always inside the File Manager: a folder in the file list,
+ * text in the built-in Code editor (even a file with no extension, like LICENSE), a locked file asks for the vault key,
+ * and any other file is shown selected in its folder with Quick Look on it (pictures, sound, video, PDFs and documents
+ * preview there; its Open button still hands it to another program when wanted). A path that is gone says so.
+ */
+export async function openPath(path) {
+  let entry;
+  try {
+    entry = (await call("entry", { path })).entry;
+  } catch (err) {
+    return fail(err);
+  }
+  if (entry.isDir || isLocked(entry) || isThemeFileEntry(entry) || textOpensInEditor(entry) || (await isPlainTextInside(entry))) return openEntry(entry);
+  const parent = parentOf(entry.path, state.sep);
+  if (!parent) return openEntry(entry);
+  await goTo(parent, { select: entry.path });
+  rememberRecent(entry.path);
+  // Quick Look imports this module, so it listens for the request instead of being imported here.
+  emit("quicklook-open", entry);
+}
+
+async function openFile(path, confirmed, mismatchOk = false) {
+  try {
+    const res = await call("open", { path, confirmProgram: confirmed, confirmMismatch: mismatchOk || skipMismatchGuard() });
+    finishOpen(res, path);
+    call("settings").then((r) => { state.settings = r.settings; emit("settings", {}); }).catch(() => {});
+  } catch (err) {
+    if (err instanceof ApiError && err.code === "TYPE_MISMATCH") {
+      if (await askOpenAnyway(path, err)) await openFile(path, confirmed, true);
+      return;
+    }
+    if (err instanceof ApiError && err.code === "NEEDS_CONFIRM") {
+      const ok = await confirmBox({
+        title: "Run this program?",
+        message: `"${baseName(path, state.sep)}" is a program or installer. Opening it will run it on your computer. Only continue if you trust where it came from.`,
+        confirmLabel: "Run it",
+        danger: true,
+      });
+      if (ok) await openFile(path, true, mismatchOk);
+      return;
+    }
+    fail(err);
+  }
+}
+
+/** From a search result: open the folder it is in, with the item selected. */
+export async function goToContaining(entry) {
+  const parent = parentOf(entry.path, state.sep);
+  if (parent) await goTo(parent, { select: entry.path });
+}
+
+export async function revealEntry(entry) {
+  try {
+    const r = await call("reveal", { path: entry.path });
+    announce(`Showing in ${r.with}`);
+  } catch (err) {
+    fail(err);
+  }
+}
+
+export async function copyPathOf(entries) {
+  const text = entries.map((e) => e.path).join("\n");
+  try {
+    const r = await call("copytext", { text });
+    toast(r.copied ? (entries.length === 1 ? "Path copied." : "Paths copied.") : "Couldn't copy to the clipboard.", { kind: r.copied ? "success" : "error" });
+  } catch (err) {
+    fail(err);
+  }
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// New folder / file, rename
+// ---------------------------------------------------------------------------------------------------------------
+
+/** The most recently created item: renaming it right away is part of creating it, not a separate undo step. */
+let lastCreated = null;
+
+async function createItem(op, label) {
+  if (!needFolder(`creating a ${label}`)) return;
+  const pane = activePane();
+  try {
+    const r = await busy(() => call(op, { parent: currentPath(pane) }));
+    lastCreated = { path: r.path };
+    const tracker = lastCreated;
+    pushUndo(`new ${label}`, async () => ensureOk((await trashPaths([tracker.path])).failed.map((m) => ({ ok: false, message: m })), "undo"));
+    await refresh({ keepSelection: false, pane });
+    selectKeys([r.path], pane);
+    emit("rename-request", { key: r.path, pane });
+    if (op === "newsqlite") {
+      toast(`Created "${baseName(r.path, state.sep)}".`, {
+        kind: "info",
+        action: { label: "Open in SQLite Studio", run: () => openPower("databases", { sqlitePath: tracker.path }) },
+      });
+    }
+  } catch (err) {
+    fail(err);
+  }
+}
+
+export const newFolder = () => createItem("mkdir", "folder");
+export const newFile = () => createItem("newfile", "file");
+export const newSqlite = () => createItem("newsqlite", "SQLite database");
+
+export function localDateStamp(now = new Date()) {
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function uniqueInPane(pane, stem, ext = "") {
+  const taken = new Set((pane.entries ?? []).map((e) => e.name));
+  const first = `${stem}${ext}`;
+  if (!taken.has(first)) return first;
+  for (let i = 2; i < 1000; i++) {
+    const candidate = `${stem} (${i})${ext}`;
+    if (!taken.has(candidate)) return candidate;
+  }
+  return `${stem}-${Date.now()}${ext}`;
+}
+
+/** Creates a folder named after `dateStr` (default: today's YYYY-MM-DD) in the active folder with Undo support. */
+export async function newDatedFolder(dateStr = localDateStamp()) {
+  if (!needFolder("creating a dated folder")) return null;
+  const pane = activePane();
+  const name = uniqueInPane(pane, dateStr);
+  try {
+    const r = await busy(() => call("mkdir", { parent: currentPath(pane), name }));
+    lastCreated = { path: r.path };
+    const tracker = lastCreated;
+    pushUndo(`new folder "${r.name}"`, async () => ensureOk((await trashPaths([tracker.path])).failed.map((m) => ({ ok: false, message: m })), "undo"));
+    await refresh({ keepSelection: false, pane });
+    selectKeys([r.path], pane);
+    toast(`Created folder "${r.name}".`, { kind: "success", action: { label: "Open", run: () => goToIn(pane, r.path) } });
+    return r;
+  } catch (err) {
+    fail(err);
+    return null;
+  }
+}
+
+/** Creates a Markdown note named after `dateStr` (default: today's YYYY-MM-DD.md) in the active folder with Undo support. */
+export async function newDatedNote(dateStr = localDateStamp()) {
+  if (!needFolder("creating a dated note")) return null;
+  const pane = activePane();
+  const name = uniqueInPane(pane, dateStr, ".md");
+  try {
+    const r = await busy(() => call("newfile", { parent: currentPath(pane), name }));
+    lastCreated = { path: r.path };
+    const tracker = lastCreated;
+    pushUndo(`new note "${r.name}"`, async () => ensureOk((await trashPaths([tracker.path])).failed.map((m) => ({ ok: false, message: m })), "undo"));
+    await refresh({ keepSelection: false, pane });
+    selectKeys([r.path], pane);
+    toast(`Created note "${r.name}".`, { kind: "success", action: { label: "Edit in Code", run: () => openInCode(r.path) } });
+    return r;
+  } catch (err) {
+    fail(err);
+    return null;
+  }
+}
+
+export async function newSqliteIn(folderPath) {
+  const pane = activePane();
+  if (!(await goToIn(pane, folderPath))) return;
+  await createItem("newsqlite", "SQLite database");
+}
+
+/** Renames one item; throws an ApiError when the name isn't accepted (the caller shows it next to the name). */
+export async function commitRename(path, newName, pane = activePane()) {
+  const r = await call("rename", { path, name: newName });
+  if (r.from === r.to) return r;
+  if (lastCreated && lastCreated.path === r.from) {
+    lastCreated.path = r.to;
+    const top = state.undoStack.at(-1);
+    if (top) top.label = `new item "${baseName(r.to, state.sep)}"`;
+  } else {
+    pushUndo(`rename "${baseName(r.from, state.sep)}"`, async () => ensureOk((await call("relocate", { pairs: [{ from: r.to, to: r.from }] })).results, "rename"));
+  }
+  await refresh({ keepSelection: false, pane });
+  selectKeys([r.to], pane);
+  announceVerdict(r.to);
+  return r;
+}
+
+/** Rename: in place for one item, a dialog with a preview for several. */
+export async function renameSelection() {
+  const pane = activePane();
+  const items = selectedEntries(pane);
+  if (!items.length || inTrash(pane)) return;
+  if (items.length === 1) return emit("rename-request", { key: items[0].path, pane });
+  const folders = new Set(items.map((e) => parentOf(e.path, state.sep)));
+  if (folders.size !== 1) return toast("To rename several items at once, they need to be in the same folder.");
+  const folder = [...folders][0];
+  // The plan dialog runs the renames in the task queue and reports (with Undo) when they are done.
+  await bulkRenameDialog(folder, items.map((e) => e.name));
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Copy, cut, paste, duplicate, drag and drop
+// ---------------------------------------------------------------------------------------------------------------
+
+export function copySelection() {
+  const items = selectedEntries();
+  if (!items.length || inTrash()) return;
+  state.clipboard = { mode: "copy", paths: items.map((e) => e.path) };
+  emit("clipboard");
+  toast(`${plural(items.length, "item")} ready to paste. Open a folder and press Paste.`, { timeout: 3500 });
+}
+
+export function cutSelection() {
+  const items = selectedEntries();
+  if (!items.length || inTrash()) return;
+  state.clipboard = { mode: "cut", paths: items.map((e) => e.path) };
+  emit("clipboard");
+  toast(`${plural(items.length, "item")} ready to move. Open a folder and press Paste.`, { timeout: 3500 });
+}
+
+export async function paste() {
+  if (!state.clipboard) {
+    try {
+      const clipText = await readFromClipboard();
+      if (clipText && looksLikeThemeImportPayload(clipText)) {
+        await pasteImportThemesFromText(clipText, { applyFirst: true });
+        return;
+      }
+    } catch {
+      /* ignore clipboard read errors and show standard message */
+    }
+    return toast("There's nothing to paste yet. Select items and choose Copy or Cut first (or copy a CCFM-THEME-v1 theme code to import it).");
+  }
+  if (!needFolder("pasting")) return;
+  await pasteInto(currentPath());
+}
+
+/** Pastes the clipboard into `dest` (the open folder, or a folder you right-clicked). */
+export async function pasteInto(dest) {
+  if (!state.clipboard) return;
+  const { mode, paths } = state.clipboard;
+  const moved = await transferInto(dest, paths, mode === "cut" ? "move" : "copy");
+  if (moved && mode === "cut") {
+    state.clipboard = null;
+    emit("clipboard");
+  }
+}
+
+export async function duplicateSelection() {
+  const items = selectedEntries();
+  if (!items.length || !needFolder("duplicating")) return;
+  await transferInto(currentPath(), items.map((e) => e.path), "copy");
+}
+
+/** Jobs this page started, so that when one ends the page knows where to look and what Undo should do. */
+const pendingTransfers = new Map();
+
+/**
+ * Copies or moves `sources` into `dest`, asking what to do about name clashes. The work runs in the tasks tray (so the
+ * rest of the window stays usable); what happens when it ends is in `onFileOpDone`. Resolves true when it was started.
+ * `pane` is the list the person is working in (it loses its selection and shows the new items when they land in it).
+ */
+export async function transferInto(dest, sources, mode, pane = activePane()) {
+  const verb = mode === "copy" ? "Copy" : "Move";
+  try {
+    const { conflicts } = await call("conflicts", { sources, dest });
+    let policy = "rename";
+    if (conflicts.length) {
+      policy = await chooseConflict({ conflicts, verb });
+      if (!policy) return false;
+    }
+    const { job } = await call("fileops/start", { mode, sources, dest, policy });
+    pendingTransfers.set(job.id, { mode, dest, pane });
+    emit("job-started", job);
+    announce(`${verb} started: ${plural(sources.length, "item")}. Progress is in the task list.`);
+    return true;
+  } catch (err) {
+    fail(err);
+    return false;
+  }
+}
+
+/** A copy or move from the queue ended (finished, partly failed or cancelled): refresh, offer Undo for what was done, say what was not. */
+async function onFileOpDone(job) {
+  if (state.planJobs.has(job.id)) return;
+  if (job.kind === "rename") return refresh({ keepSelection: false });
+  const mine = pendingTransfers.get(job.id);
+  pendingTransfers.delete(job.id);
+  const mode = job.kind;
+  const worked = job.steps.filter((s) => s.state === "done" && s.item?.destination).map((s) => ({ source: s.item.source, destination: s.item.destination, replaced: s.item.replacedTrashId ? { trashId: s.item.replacedTrashId } : null }));
+  if (worked.length) {
+    pushUndo(`${mode} of ${plural(worked.length, "item")}`, () => undoTransfer(mode, worked));
+    const skipped = job.steps.filter((s) => s.state === "skipped" && s.skipReason === "policy").length;
+    const problems = job.failed + job.steps.filter((s) => s.skipReason === "cancelled").length;
+    const text = `${mode === "copy" ? "Copied" : "Moved"} ${plural(worked.length, "item")}${skipped ? ` (${skipped} skipped)` : ""}${problems ? `. ${plural(problems, "item")} did not finish: see the task list` : ""}.`;
+    toast(text, { kind: problems ? "info" : "success", action: { label: "Undo", run: undo } });
+  } else if (!job.failed && job.state !== "cancelled") {
+    toast(mode === "move" ? "Those items are already in this folder." : "Nothing was copied.");
+  }
+  const pane = mine?.pane ?? activePane();
+  await refresh({ keepSelection: false, pane });
+  if (mine && worked.length && currentPath(pane) === mine.dest) selectKeys(worked.map((w) => w.destination), pane);
+}
+
+on("fileop-done", (job) => { onFileOpDone(job).catch((err) => fail(err)); });
+
+async function undoTransfer(mode, worked) {
+  if (mode === "copy") {
+    const { failed } = await trashPaths(worked.map((w) => w.destination));
+    if (failed.length) throw new Error(failed[0]);
+  } else {
+    ensureOk((await call("relocate", { pairs: worked.map((w) => ({ from: w.destination, to: w.source })) })).results, "move");
+  }
+  const replaced = worked.filter((w) => w.replaced).map((w) => w.replaced.trashId);
+  if (replaced.length) await call("trash/restore", { ids: replaced });
+}
+
+/** Dropping items onto a folder: moves them (or copies, with the copy key held). */
+export async function dropOnto(destPath, sources, copy) {
+  const real = sources.filter((s) => s !== destPath);
+  if (!real.length) return;
+  await transferInto(destPath, real, copy ? "copy" : "move");
+}
+
+export async function dropOnTrash(sources) {
+  await trashItems(sources);
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Recycle Bin and deleting
+// ---------------------------------------------------------------------------------------------------------------
+
+/** Deleting (the Delete key and button): to the Recycle Bin, or to the Rip graveyard when Settings says so. Both can be undone. */
+export async function trashSelection() {
+  if (inTrash()) return deleteFromTrashForever();
+  if (state.settings.deleteTo === "graveyard") return burySelection();
+  return moveSelectionToBin();
+}
+
+/** Always moves to the app's Recycle Bin, whatever Delete is set to use. */
+export async function moveSelectionToBin() {
+  if (inTrash()) return deleteFromTrashForever();
+  const items = selectedEntries();
+  if (!items.length) return;
+  await trashItems(items.map((e) => e.path));
+}
+
+/** Always buries in the Rip graveyard (shared with Rip Studio and the rip tools). Undo brings it back. */
+export async function burySelection() {
+  if (inTrash()) return toast("Open a folder first: the Recycle Bin can't be buried.", { kind: "info" });
+  const items = selectedEntries();
+  if (!items.length) return;
+  await buryItems(items.map((e) => e.path));
+}
+
+async function trashItems(paths) {
+  try {
+    const { done, failed } = await busy(() => trashPaths(paths));
+    if (done.length) {
+      const ids = done.map((d) => d.id);
+      pushUndo(`delete of ${plural(done.length, "item")}`, async () => ensureOk((await call("trash/restore", { ids })).results, "restore"));
+      toast(`Moved ${plural(done.length, "item")} to the Recycle Bin.`, { kind: "success", action: { label: "Undo", run: undo } });
+    }
+    await refresh({ keepSelection: false });
+    await refreshTrashCount();
+    await reportFailures(failed, "deleted");
+  } catch (err) {
+    fail(err);
+  }
+}
+
+/** Shift+Delete: shows exactly what would be deleted for good, and deletes only after approval. */
+export async function deleteForever() {
+  if (inTrash()) return deleteFromTrashForever();
+  const items = selectedEntries();
+  if (!items.length) return;
+  await reviewPlan({ type: "delete", paths: items.map((e) => e.path), permanent: true }, { applyLabel: "Delete for good" });
+}
+
+export async function restoreFromBin() {
+  const items = selectedEntries();
+  if (!items.length || !inTrash()) return;
+  try {
+    const res = await busy(() => call("trash/restore", { ids: items.map((e) => e.path) }));
+    const { done, failed } = tally(res.results);
+    if (done.length) {
+      const restored = done.map((d) => d.restoredTo);
+      pushUndo(`restore of ${plural(done.length, "item")}`, async () => {
+        const { failed: f } = await trashPaths(restored);
+        if (f.length) throw new Error(f[0]);
+      });
+      const first = restored[0];
+      toast(`Restored ${plural(done.length, "item")}.`, { kind: "success", action: { label: "Show", run: () => goTo(parentOf(first, state.sep) ?? first, { select: first }) } });
+    }
+    await refresh({ keepSelection: false });
+    await refreshTrashCount();
+    await reportFailures(failed, "restored");
+  } catch (err) {
+    fail(err);
+  }
+}
+
+async function deleteFromTrashForever() {
+  const items = selectedEntries();
+  if (!items.length) return;
+  const ok = await confirmBox({
+    title: "Delete forever?",
+    message: `${items.length === 1 ? `"${items[0].name}"` : plural(items.length, "item")} will be deleted permanently from the Recycle Bin. This can't be undone.`,
+    confirmLabel: "Delete forever",
+    danger: true,
+  });
+  if (!ok) return;
+  try {
+    const r = await busy(() => call("trash/delete", { ids: items.map((e) => e.path), confirm: true }));
+    toast(`Deleted ${plural(r.deleted, "item")} permanently.`, { kind: "success" });
+    await refresh({ keepSelection: false });
+    await refreshTrashCount();
+  } catch (err) {
+    fail(err);
+  }
+}
+
+export async function emptyBin() {
+  if (state.trashCount === 0) return toast("The Recycle Bin is already empty.");
+  const ok = await confirmBox({
+    title: "Empty the Recycle Bin?",
+    message: `All ${plural(state.trashCount, "item")} in the Recycle Bin will be deleted permanently. This can't be undone.`,
+    confirmLabel: "Empty Recycle Bin",
+    danger: true,
+  });
+  if (!ok) return;
+  try {
+    const r = await busy(() => call("trash/delete", { confirm: true }));
+    toast(`Emptied the Recycle Bin (${plural(r.deleted, "item")}).`, { kind: "success" });
+    if (inTrash()) await showTrash({ push: false });
+    await refreshTrashCount();
+    state.undoStack = state.undoStack.filter((u) => !/^delete of|^restore of/.test(u.label));
+    emit("undo");
+  } catch (err) {
+    fail(err);
+  }
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Zip
+// ---------------------------------------------------------------------------------------------------------------
+
+export async function zipSelection() {
+  const pane = activePane();
+  const items = selectedEntries(pane);
+  if (!items.length || !needFolder("making a zip file")) return;
+  try {
+    const r = await busy(() => call("zip", { paths: items.map((e) => e.path) }));
+    pushUndo(`zip "${baseName(r.zipPath, state.sep)}"`, async () => {
+      const { failed } = await trashPaths([r.zipPath]);
+      if (failed.length) throw new Error(failed[0]);
+    });
+    const extra = r.skippedLinks ? ` ${plural(r.skippedLinks, "shortcut")} (links) were left out.` : "";
+    toast(`Created "${baseName(r.zipPath, state.sep)}" with ${plural(r.files, "file")}.${extra}`, { kind: "success", action: { label: "Undo", run: undo } });
+    await refresh({ keepSelection: false, pane });
+    selectKeys([r.zipPath], pane);
+  } catch (err) {
+    fail(err);
+  }
+}
+
+export async function unzipEntry(entry) {
+  await extractSelection([entry]);
+}
+
+export async function extractSelection(entriesInput) {
+  if (!needFolder("extracting")) return;
+  const pane = activePane();
+  const raw = Array.isArray(entriesInput) ? entriesInput : selectedEntries(pane);
+  const items = extractableEntries(raw);
+  if (!items.length) {
+    toast(
+      raw.length
+        ? "None of the selected items is a compressed file or archive that can be extracted."
+        : "Select a compressed file or archive to extract.",
+      { kind: "info" },
+    );
+    return;
+  }
+  try {
+    const r = await busy(() => call("extract", { paths: items.map((e) => e.path) }));
+    const results = Array.isArray(r.results) ? r.results : [];
+    const createdPaths = results.map((it) => it.output || it.folder).filter(Boolean);
+    if (createdPaths.length) {
+      const undoLabel = items.length === 1 ? `extract "${items[0].name}"` : `extract ${plural(createdPaths.length, "archive")}`;
+      pushUndo(undoLabel, async () => {
+        const { failed } = await trashPaths(createdPaths);
+        if (failed.length) throw new Error(failed[0]);
+      });
+      if (results.length === 1) {
+        const first = results[0];
+        const targetName = baseName(first.output || first.folder, state.sep);
+        const msg = first.isFolder === false
+          ? `Uncompressed "${targetName}".`
+          : `Extracted ${plural(first.files, "file")} into "${targetName}".`;
+        toast(msg, { kind: "success", action: { label: "Undo", run: undo } });
+      } else {
+        const totalFiles = results.reduce((sum, it) => sum + (Number(it.files) || 0), 0);
+        toast(
+          `Extracted ${plural(results.length, "archive")} (${plural(totalFiles, "file")}).`,
+          { kind: "success", action: { label: "Undo", run: undo } },
+        );
+      }
+      await refresh({ keepSelection: false, pane });
+      selectKeys(createdPaths, pane);
+    }
+    const allSkipped = results.flatMap((it) => it.skipped || []);
+    if (allSkipped.length) {
+      await problemsBox("Some items were skipped", "These items were not extracted, to keep your computer safe:", allSkipped.slice(0, 20));
+    }
+    const errMsgs = Array.isArray(r.errors) ? r.errors.map((e) => `${baseName(e.path, state.sep)}: ${e.message}`) : [];
+    if (errMsgs.length) {
+      await reportFailures(errMsgs, "extracted");
+    }
+  } catch (err) {
+    fail(err);
+  }
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Favorites
+// ---------------------------------------------------------------------------------------------------------------
+
+export const isFavorite = (path) => state.settings.favorites.includes(path);
+
+export async function toggleFavorite(path) {
+  const favorites = isFavorite(path) ? state.settings.favorites.filter((f) => f !== path) : [...state.settings.favorites, path];
+  try {
+    await saveSettings({ favorites });
+    toast(isFavorite(path) ? `Added "${baseName(path, state.sep)}" to Favorites.` : `Removed "${baseName(path, state.sep)}" from Favorites.`, { timeout: 3000 });
+  } catch (err) {
+    fail(err);
+  }
+}

@@ -8,7 +8,7 @@ fn main() {
 		eprintln('Could not find ${script_path}')
 		exit(1)
 	}
-	mut args := os.args[1..].clone()
-	exit_code := os.system('v run ${os.quoted_path(script_path)} ${args.join(' ')}')
+	quoted_args := os.args[1..].map(os.quoted_path(it)).join(' ')
+	exit_code := os.system('v run ${os.quoted_path(script_path)} ${quoted_args}')
 	exit(exit_code)
 }

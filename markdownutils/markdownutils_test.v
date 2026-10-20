@@ -19,6 +19,8 @@ fn test_xss_neutralized() {
 	assert h('[x](javascript:alert(1))') == '<p><a href="#">x</a></p>'
 	assert inline('[V](https://en.wikipedia.org/wiki/V_(language))', Options{}) == '<a href="https://en.wikipedia.org/wiki/V_(language)">V</a>'
 	assert h('[x]( JAVASCRIPT:alert(1))').contains('href="#"')
+	assert h('[x](java\tscript:alert(1))').contains('href="#"')
+	assert h('[x](&#106;avascript:alert(1))').contains('href="#"')
 	assert !h('<img src=x onerror=alert(1)>').contains('<img')
 	assert h('<b>hi</b>').contains('&lt;b&gt;')
 	assert to_html('<b>hi</b>', raw_html: true).contains('<b>hi</b>')

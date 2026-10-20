@@ -504,8 +504,6 @@ fn main() {
 			args << ['--dir', dest_dir]
 		}
 		if w.get_bool('chk_remove_src') { args << '-r' }
-		if w.get_bool('chk_hidden') { args << '-H' }
-		if w.get_bool('chk_gitignore') { args << '-g' }
 
 		pwd := w.get('txt_password').trim_space()
 		if pwd != '' { args << ['-p', pwd] }
@@ -546,7 +544,6 @@ fn main() {
 		}
 
 		mut args := ['list', '--tree', '-y']
-		if w.get_bool('chk_hidden') { args << '-H' }
 
 		pwd := w.get('txt_password').trim_space()
 		if pwd != '' { args << ['-p', pwd] }

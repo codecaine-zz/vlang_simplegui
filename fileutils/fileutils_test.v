@@ -70,7 +70,7 @@ fn test_save_and_load_map() {
 	assert loaded['one'] == 1
 	assert loaded['two'] == 2
 
-	os.rm('/tmp/maps') or {}
+	os.rmdir_all('/tmp/maps') or {}
 }
 
 fn test_ensure_dir_exists() {
@@ -78,7 +78,7 @@ fn test_ensure_dir_exists() {
 	ensure_dir_exists(path) or { panic(err) }
 	assert os.exists('/tmp/rad-demo/nested')
 
-	os.rm('/tmp/rad-demo') or {}
+	os.rmdir_all('/tmp/rad-demo') or {}
 }
 
 fn test_read_lines_from_file() {
@@ -131,7 +131,7 @@ fn test_write_and_read_text_file() {
 
 	assert loaded == content
 
-	os.rm('/tmp/text') or {}
+	os.rmdir_all('/tmp/text') or {}
 }
 
 fn test_load_config_from_file_supports_comments_and_empty_values() {
@@ -164,7 +164,7 @@ fn test_write_and_read_json_file() {
 	assert loaded.name == person.name
 	assert loaded.age == person.age
 
-	os.rm('/tmp/json') or {}
+	os.rmdir_all('/tmp/json') or {}
 }
 
 fn test_append_json_line() {
@@ -187,7 +187,7 @@ fn test_append_json_line() {
 	assert lines[0].contains('Eli')
 	assert lines[1].contains('Fay')
 
-	os.rm('/tmp/jsonl') or {}
+	os.rmdir_all('/tmp/jsonl') or {}
 }
 
 fn test_file_and_dir_operations() {

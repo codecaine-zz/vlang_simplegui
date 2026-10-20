@@ -48,7 +48,7 @@ pub fn sign_jwt(claims JWTClaims, secret string) !string {
 
 // sign_simple_token signs a simple token with subject, secret, and validity TTL in seconds.
 pub fn sign_simple_token(sub string, secret string, ttl_seconds i64) !string {
-	now := time.now().unix()
+	now := time.utc().unix()
 	claims := JWTClaims{
 		sub: sub
 		iat: now
@@ -94,8 +94,11 @@ pub fn verify_jwt(token string, secret string) !JWTClaims {
 		return error('failed to parse claims JSON: ${err}')
 	}
 
-	now := time.now().unix()
-	if claims.exp > 0 && now > claims.exp {
+	if claims.exp < 0 || claims.nbf < 0 || claims.iat < 0 {
+		return error('invalid negative timestamp claim')
+	}
+	now := time.utc().unix()
+	if claims.exp != 0 && now > claims.exp {
 		return error('token has expired (exp: ${claims.exp}, now: ${now})')
 	}
 	if claims.nbf > 0 && now < claims.nbf {

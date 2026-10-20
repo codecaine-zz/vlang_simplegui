@@ -334,14 +334,8 @@ pub fn crypto_decrypt_aes(cipher_hex string, key_hex string) string {
 	mut decrypted := []u8{len: ciphertext.len}
 	dec.decrypt_blocks(mut decrypted, ciphertext)
 
-	if decrypted.len == 0 {
-		return ''
-	}
-	unpadded_len := decrypted.len - int(decrypted.last())
-	if unpadded_len < 0 || unpadded_len > decrypted.len {
-		return decrypted.bytestr()
-	}
-	return decrypted[..unpadded_len].bytestr()
+	unpadded := pkcs7_unpad(decrypted, 16) or { return '' }
+	return unpadded.bytestr()
 }
 
 // crypto_decrypt_aes delegates to standalone crypto_decrypt_aes.
@@ -382,7 +376,7 @@ fn pkcs7_unpad(data []u8, block_size int) ![]u8 {
 	return data[..data.len - pad_len].clone()
 }
 
-// crypto_encrypt_aes_secure encrypts using AES-CBC with random IV and returns hex(iv+ciphertext).
+// crypto_encrypt_aes_secure encrypts using AES-CBC + HMAC-SHA256 (Encrypt-then-MAC) with random IV.
 pub fn crypto_encrypt_aes_secure(plain_text string, key_hex string) !string {
 	key := aes_key_from_hex_strict(key_hex)!
 	iv := crand.bytes(16)!
@@ -391,9 +385,12 @@ pub fn crypto_encrypt_aes_secure(plain_text string, key_hex string) !string {
 	padded := pkcs7_pad(plain_text.bytes(), 16)
 	mut ciphertext := []u8{len: padded.len}
 	enc.encrypt_blocks(mut ciphertext, padded)
-	mut payload := []u8{}
+	mut payload := []u8{cap: 16 + ciphertext.len + 32}
 	payload << iv
 	payload << ciphertext
+	mac_key := hmac.new(key, 'simplegui_mac_subkey'.bytes(), sha256.sum, sha256.block_size)
+	tag := hmac.new(mac_key, payload, sha256.sum, sha256.block_size)
+	payload << tag
 	return hex.encode(payload)
 }
 
@@ -402,15 +399,22 @@ pub fn (win &SimpleWindow) crypto_encrypt_aes_secure(plain_text string, key_hex 
 	return crypto_encrypt_aes_secure(plain_text, key_hex)!
 }
 
-// crypto_decrypt_aes_secure decrypts hex(iv+ciphertext) payloads produced by crypto_encrypt_aes_secure.
+// crypto_decrypt_aes_secure verifies HMAC-SHA256 and decrypts payloads produced by crypto_encrypt_aes_secure.
 pub fn crypto_decrypt_aes_secure(payload_hex string, key_hex string) !string {
 	key := aes_key_from_hex_strict(key_hex)!
 	payload := hex.decode(payload_hex)!
-	if payload.len < 32 || payload.len % 16 != 0 {
-		return error('payload must include 16-byte IV plus aligned ciphertext')
+	if payload.len < 64 || (payload.len - 32) % 16 != 0 {
+		return error('payload must include 16-byte IV, aligned ciphertext, and 32-byte HMAC-SHA256 tag')
 	}
-	iv := payload[..16].clone()
-	ciphertext := payload[16..]
+	body := payload[..payload.len - 32]
+	tag := payload[payload.len - 32..]
+	mac_key := hmac.new(key, 'simplegui_mac_subkey'.bytes(), sha256.sum, sha256.block_size)
+	expected_tag := hmac.new(mac_key, body, sha256.sum, sha256.block_size)
+	if !hmac.equal(tag, expected_tag) {
+		return error('HMAC-SHA256 authentication failed')
+	}
+	iv := body[..16].clone()
+	ciphertext := body[16..]
 	block := aes.new_cipher(key)!
 	mut dec := cipher.new_cbc(block, iv)
 	mut decrypted := []u8{len: ciphertext.len}
@@ -640,6 +644,8 @@ pub fn (win &SimpleWindow) url_decode(text string) string {
 // ==========================================
 // 8. TOML Configuration Parser Wrapper (Chapter 13: toml)
 // ==========================================
+
+// TOMLWrapperDoc wraps a parsed TOML document with ergonomic key-path lookup helpers.
 pub struct TOMLWrapperDoc {
 mut:
 	doc toml.Doc
@@ -744,8 +750,10 @@ pub fn (win &SimpleWindow) json_decode_map_strict(json_str string) !map[string]s
 // 11. Custom Simple WebSocket Client (Chapter 13: net.websocket)
 // ==========================================
 
+// SimpleWSMessageCallback is a function callback signature invoked when a WebSocket client receives a text message.
 pub type SimpleWSMessageCallback = fn (msg string)
 
+// SimpleWSClient wraps a WebSocket client connection and its incoming message callback.
 pub struct SimpleWSClient {
 pub mut:
 	client        &websocket.Client       = unsafe { nil }
@@ -2872,7 +2880,9 @@ pub fn json_pretty_print(json_str string) string {
 	for k, v in m {
 		count++
 		comma := if count < m.len { ',' } else { '' }
-		sb.writeln('  "${k}": "${v}"${comma}')
+		esc_k := k.replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n').replace('\r', '\\r').replace('\t', '\\t')
+		esc_v := v.replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n').replace('\r', '\\r').replace('\t', '\\t')
+		sb.writeln('  "${esc_k}": "${esc_v}"${comma}')
 	}
 	sb.writeln('}')
 	return sb.str()
@@ -2995,8 +3005,16 @@ pub fn is_valid_ip(ip_str string) bool {
 		return false
 	}
 	for p in parts {
+		if p.len == 0 || p.len > 3 || (p.len > 1 && p.starts_with('0')) {
+			return false
+		}
+		for c in p {
+			if !c.is_digit() {
+				return false
+			}
+		}
 		n := p.int()
-		if p.len == 0 || n < 0 || n > 255 || (p.len > 1 && p.starts_with('0')) {
+		if n < 0 || n > 255 {
 			return false
 		}
 	}
@@ -3011,8 +3029,16 @@ pub fn (win &SimpleWindow) is_valid_ip(ip_str string) bool {
 // is_valid_phone checks if a string is a valid phone number.
 pub fn is_valid_phone(phone string) bool {
 	clean :=
-		phone.replace(' ', '').replace('-', '').replace('(', '').replace(')', '').replace('+', '')
-	return clean.len >= 7 && clean.len <= 15 && clean.int() > 0
+		phone.replace(' ', '').replace('-', '').replace('(', '').replace(')', '').replace('+', '').replace('.', '')
+	if clean.len < 7 || clean.len > 15 {
+		return false
+	}
+	for c in clean {
+		if !c.is_digit() {
+			return false
+		}
+	}
+	return true
 }
 
 // is_valid_phone delegates to standalone is_valid_phone.

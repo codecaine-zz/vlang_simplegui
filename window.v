@@ -1250,6 +1250,192 @@ fn C.window_set_hdr_glow_box_label(&WindowInfo, &u8, &u8)
 fn C.window_get_hdr_glow_box_intensity(&WindowInfo, &u8) f64
 fn C.window_set_control_hdr_color(&WindowInfo, &u8, &u8, f64, f64, f64, f64, f64)
 
+// 24 New RAD Studio, Analytics, Audio, Collaboration & Developer Controls C declarations
+fn C.window_add_gantt_chart_control(&WindowInfo, &u8, &u8, &&u8, &f64, &f64, &f64, &&u8, int, int) voidptr
+fn C.window_set_gantt_chart_tasks(&WindowInfo, &u8, &&u8, &f64, &f64, &f64, &&u8, int)
+fn C.window_add_funnel_chart_control(&WindowInfo, &u8, &u8, &&u8, &f64, &&u8, int, int) voidptr
+fn C.window_set_funnel_chart_data(&WindowInfo, &u8, &&u8, &f64, int)
+fn C.window_add_candlestick_chart_control(&WindowInfo, &u8, &u8, &f64, &f64, &f64, &f64, int, int) voidptr
+fn C.window_set_candlestick_chart_data(&WindowInfo, &u8, &f64, &f64, &f64, &f64, int)
+fn C.window_add_radar_chart_control(&WindowInfo, &u8, &u8, &&u8, &f64, int, int) voidptr
+fn C.window_set_radar_chart_values(&WindowInfo, &u8, &f64, int)
+fn C.window_add_bullet_chart_control(&WindowInfo, &u8, &u8, &u8, f64, f64, f64) voidptr
+fn C.window_set_bullet_chart_value(&WindowInfo, &u8, f64, f64)
+fn C.window_get_bullet_chart_value(&WindowInfo, &u8) f64
+fn C.window_add_waterfall_chart_control(&WindowInfo, &u8, &u8, &&u8, &f64, int, int) voidptr
+fn C.window_set_waterfall_chart_data(&WindowInfo, &u8, &&u8, &f64, int)
+fn C.window_add_equalizer_control(&WindowInfo, &u8, &u8, &&u8, &f64, int, int) voidptr
+fn C.window_set_equalizer_bands(&WindowInfo, &u8, &f64, int)
+fn C.window_get_equalizer_bands(&WindowInfo, &u8) &char
+fn C.window_add_vu_meter_control(&WindowInfo, &u8, &u8, f64, f64) voidptr
+fn C.window_set_vu_meter_levels(&WindowInfo, &u8, f64, f64)
+fn C.window_get_vu_meter_left(&WindowInfo, &u8) f64
+fn C.window_get_vu_meter_right(&WindowInfo, &u8) f64
+fn C.window_add_xy_pad_control(&WindowInfo, &u8, &u8, f64, f64, int) voidptr
+fn C.window_set_xy_pad_position(&WindowInfo, &u8, f64, f64)
+fn C.window_get_xy_pad_x(&WindowInfo, &u8) f64
+fn C.window_get_xy_pad_y(&WindowInfo, &u8) f64
+fn C.window_add_stopwatch_control(&WindowInfo, &u8, &u8, int) voidptr
+fn C.window_set_stopwatch_seconds(&WindowInfo, &u8, int)
+fn C.window_get_stopwatch_seconds(&WindowInfo, &u8) int
+fn C.window_reset_stopwatch(&WindowInfo, &u8)
+fn C.window_add_chat_view_control(&WindowInfo, &u8, &u8, int) voidptr
+fn C.window_add_chat_message(&WindowInfo, &u8, &u8, &u8, &u8, int)
+fn C.window_clear_chat_view(&WindowInfo, &u8)
+fn C.window_get_chat_message_count(&WindowInfo, &u8) int
+fn C.window_add_notification_list_control(&WindowInfo, &u8, &u8, int) voidptr
+fn C.window_add_notification_item(&WindowInfo, &u8, &u8, &u8, &u8, &u8)
+fn C.window_clear_notification_list(&WindowInfo, &u8)
+fn C.window_get_notification_count(&WindowInfo, &u8) int
+fn C.window_add_pricing_card_control(&WindowInfo, &u8, &u8, &u8, &u8, &u8, &&u8, int, &u8) voidptr
+fn C.window_set_pricing_card_price(&WindowInfo, &u8, &u8, &u8)
+fn C.window_add_empty_state_control(&WindowInfo, &u8, &u8, &u8, &u8, &u8) voidptr
+fn C.window_set_empty_state(&WindowInfo, &u8, &u8, &u8)
+fn C.window_add_skeleton_loader_control(&WindowInfo, &u8, int, int) voidptr
+fn C.window_set_skeleton_active(&WindowInfo, &u8, int)
+fn C.window_get_skeleton_active(&WindowInfo, &u8) int
+fn C.window_add_comparison_card_control(&WindowInfo, &u8, &u8, &u8, &&u8, &&u8, &&u8, int) voidptr
+fn C.window_set_comparison_card(&WindowInfo, &u8, &u8, &u8)
+fn C.window_add_avatar_group_control(&WindowInfo, &u8, &&u8, &&u8, int, int, &u8) voidptr
+fn C.window_set_avatar_group(&WindowInfo, &u8, &&u8, int, &u8)
+fn C.window_add_checkout_steps_control(&WindowInfo, &u8, &&u8, int, int) voidptr
+fn C.window_set_checkout_step(&WindowInfo, &u8, int)
+fn C.window_get_checkout_step(&WindowInfo, &u8) int
+fn C.window_add_cron_editor_control(&WindowInfo, &u8, &u8) voidptr
+fn C.window_set_cron_expression(&WindowInfo, &u8, &u8)
+fn C.window_get_cron_expression(&WindowInfo, &u8) &char
+fn C.window_add_regex_tester_control(&WindowInfo, &u8, &u8, &u8) voidptr
+fn C.window_set_regex_pattern(&WindowInfo, &u8, &u8)
+fn C.window_get_regex_pattern(&WindowInfo, &u8) &char
+fn C.window_set_regex_test_text(&WindowInfo, &u8, &u8)
+fn C.window_get_regex_match_count(&WindowInfo, &u8) int
+fn C.window_add_hex_viewer_control(&WindowInfo, &u8, &u8, int) voidptr
+fn C.window_set_hex_viewer_data(&WindowInfo, &u8, &u8)
+fn C.window_get_hex_viewer_data(&WindowInfo, &u8) &char
+fn C.window_add_password_strength_control(&WindowInfo, &u8, &u8) voidptr
+fn C.window_set_password_strength_value(&WindowInfo, &u8, &u8)
+fn C.window_get_password_strength_value(&WindowInfo, &u8) &char
+fn C.window_get_password_strength_score(&WindowInfo, &u8) int
+fn C.window_add_signature_pad_control(&WindowInfo, &u8, &u8, int) voidptr
+fn C.window_clear_signature_pad(&WindowInfo, &u8)
+fn C.window_has_signature(&WindowInfo, &u8) int
+fn C.window_add_number_spinner_control(&WindowInfo, &u8, int, int, int, int) voidptr
+fn C.window_set_number_spinner_value(&WindowInfo, &u8, int)
+fn C.window_get_number_spinner_value(&WindowInfo, &u8) int
+
+// 25. Codecaine File Manager Theme FX & Atmosphere Shaders + 3D Sculpted Folder Grid
+fn C.window_apply_theme_fx(&WindowInfo, &u8, &u8, &u8, &u8, &u8, &u8, &u8, &u8, int, int, int, int, int, int, int, int, int, &u8, &u8, &u8, int, int, int, int)
+fn C.window_set_theme_atmosphere(&WindowInfo, &u8, &u8, &u8, int)
+fn C.window_add_themed_folder_grid_control(&WindowInfo, &u8, &&u8, &&u8, &&u8, &&u8, int, int, int) voidptr
+fn C.window_set_themed_folder_grid_fx(&WindowInfo, &u8, &u8, &u8, &u8, &u8, &u8, &u8, int, int)
+fn C.window_get_themed_folder_grid_selected(&WindowInfo, &u8) int
+fn C.window_set_themed_folder_grid_selected(&WindowInfo, &u8, int)
+fn C.window_set_atmosphere_animated(&WindowInfo, int)
+fn C.window_step_atmosphere_phase(&WindowInfo, f64)
+
+// 26-31. Master VFX Shader Canvas, Particle Emitter, 3D Hologram Card, Waveform Synthesizer, Glitch Banner & Special FX Animations
+fn C.window_add_shader_canvas_control(&WindowInfo, &u8, &u8, int) voidptr
+fn C.window_set_shader_canvas_preset(&WindowInfo, &u8, &u8)
+fn C.window_get_shader_canvas_preset(&WindowInfo, &u8) &char
+fn C.window_set_shader_canvas_speed(&WindowInfo, &u8, f64)
+fn C.window_step_shader_canvas(&WindowInfo, &u8, f64)
+
+fn C.window_add_particle_emitter_control(&WindowInfo, &u8, &u8, int, int) voidptr
+fn C.window_set_particle_emitter_type(&WindowInfo, &u8, &u8)
+fn C.window_get_particle_emitter_type(&WindowInfo, &u8) &char
+fn C.window_emit_particle_burst(&WindowInfo, &u8, f64, f64, int)
+
+fn C.window_add_hologram_card_control(&WindowInfo, &u8, &u8, &u8, &u8, &u8, &u8, int) voidptr
+fn C.window_set_hologram_card_value(&WindowInfo, &u8, &u8, &u8)
+fn C.window_get_hologram_card_value(&WindowInfo, &u8) &char
+
+fn C.window_add_waveform_synthesizer_control(&WindowInfo, &u8, &u8, f64, f64, int) voidptr
+fn C.window_set_waveform_synthesizer_params(&WindowInfo, &u8, &u8, f64, f64)
+fn C.window_get_waveform_synthesizer_type(&WindowInfo, &u8) &char
+
+fn C.window_add_glitch_banner_control(&WindowInfo, &u8, &u8, &u8, &u8, int) voidptr
+fn C.window_set_glitch_banner_text(&WindowInfo, &u8, &u8, &u8)
+fn C.window_get_glitch_banner_text(&WindowInfo, &u8) &char
+fn C.window_trigger_glitch_pulse(&WindowInfo, &u8)
+
+fn C.window_animate_control_pulse(&WindowInfo, &u8, &u8, int)
+fn C.window_animate_control_flip(&WindowInfo, &u8, int)
+fn C.window_animate_control_float(&WindowInfo, &u8, int)
+
+// 32. Built-in Procedural Sound Effects & Audio Synthesizer Engine
+fn C.window_play_sfx(&u8)
+fn C.window_play_synth_tone(f64, int, &u8, f64)
+fn C.window_play_piano_note(int, int, &u8)
+fn C.window_set_sfx_enabled(int)
+fn C.window_is_sfx_enabled() int
+fn C.window_set_sfx_volume(f64)
+fn C.window_get_sfx_volume() f64
+
+// 33. Expanded Special-FX Control Animations & Webview Enhancements
+fn C.window_animate_control_bounce(&WindowInfo, &u8, f64, int)
+fn C.window_animate_control_glitch(&WindowInfo, &u8, int)
+fn C.window_set_control_neon_glow(&WindowInfo, &u8, &u8, f64, f64)
+fn C.window_webview_load_url(&WindowInfo, &u8, &u8)
+fn C.window_webview_eval_js(&WindowInfo, &u8, &u8)
+
+// 34. Qt 6 Smart House / Domotics Floorplan & IoT Room Controller
+fn C.window_add_smart_house_floorplan_control(&WindowInfo, &u8, &u8, int, f64, int, int) voidptr
+fn C.window_set_smart_house_state(&WindowInfo, &u8, int, f64, int)
+fn C.window_get_smart_house_active_mask(&WindowInfo, &u8) int
+
+// 35. Qt 6 Smart Climate Thermostat & Environmental Dial
+fn C.window_add_smart_thermostat_control(&WindowInfo, &u8, &u8, f64, f64, int, &u8, int) voidptr
+fn C.window_set_smart_thermostat(&WindowInfo, &u8, f64, f64, int, &u8)
+fn C.window_get_smart_thermostat_target(&WindowInfo, &u8) f64
+
+// 36. Qt 6 Automotive & Aerospace Digital Cockpit Cluster
+fn C.window_add_cockpit_cluster_control(&WindowInfo, &u8, f64, f64, &u8, int, int) voidptr
+fn C.window_set_cockpit_telemetry(&WindowInfo, &u8, f64, f64, &u8, int)
+fn C.window_get_cockpit_speed(&WindowInfo, &u8) f64
+
+// 37. Visual Node Graph / Blueprint Shader & Logic Editor
+fn C.window_add_node_graph_control(&WindowInfo, &u8, &u8, &&u8, int, int) voidptr
+fn C.window_set_node_graph_nodes(&WindowInfo, &u8, &&u8, int)
+fn C.window_get_node_graph_selected(&WindowInfo, &u8) int
+
+// 38. Interactive Piano / MIDI Synthesizer Studio Keyboard
+fn C.window_add_piano_keyboard_control(&WindowInfo, &u8, int, &u8, int) voidptr
+fn C.window_set_piano_active_note(&WindowInfo, &u8, int)
+fn C.window_get_piano_active_note(&WindowInfo, &u8) int
+
+// 39. 16-Step Pro Audio Drum & Synth Matrix Sequencer
+fn C.window_add_step_sequencer_control(&WindowInfo, &u8, &u8, int, u32, int) voidptr
+fn C.window_set_step_sequencer_state(&WindowInfo, &u8, int, u32)
+fn C.window_get_step_sequencer_pattern(&WindowInfo, &u8) u32
+
+// 40. Real-Time 3D Wireframe & Shaded Mesh Viewport
+fn C.window_add_mesh_viewport_3d_control(&WindowInfo, &u8, &u8, int) voidptr
+fn C.window_set_mesh_viewport_preset(&WindowInfo, &u8, &u8)
+fn C.window_get_mesh_viewport_preset(&WindowInfo, &u8) &char
+
+// 41. Sweeping Polar Radar, Sonar & RF Smith Scope
+fn C.window_add_polar_radar_sonar_control(&WindowInfo, &u8, &u8, f64, int, int) voidptr
+fn C.window_set_polar_radar_params(&WindowInfo, &u8, f64, int)
+fn C.window_ping_polar_radar(&WindowInfo, &u8)
+
+// 42. Digital Logic Analyzer & Bus Protocol Timing Scope
+fn C.window_add_logic_analyzer_control(&WindowInfo, &u8, &u8, int, int, int) voidptr
+fn C.window_set_logic_analyzer_seed(&WindowInfo, &u8, int)
+
+// 43. Sci-Fi Nixie Tube & Plasma Counter Display
+fn C.window_add_nixie_display_control(&WindowInfo, &u8, &u8, &u8, &u8, int) voidptr
+fn C.window_set_nixie_display_text(&WindowInfo, &u8, &u8)
+fn C.window_get_nixie_display_text(&WindowInfo, &u8) &char
+
+// 44. Sankey Energy & Data Flow Diagram
+fn C.window_add_sankey_chart_control(&WindowInfo, &u8, &u8, &&u8, &&u8, &f64, int, int) voidptr
+fn C.window_set_sankey_chart_data(&WindowInfo, &u8, &&u8, &&u8, &f64, int)
+
+// 45. Studio Color Wheel & Vectorscope Harmonies
+fn C.window_add_color_wheel_control(&WindowInfo, &u8, &u8, &u8, int) voidptr
+fn C.window_set_color_wheel_hex(&WindowInfo, &u8, &u8)
+fn C.window_get_color_wheel_hex(&WindowInfo, &u8) &char
+
 // new_simple_window creates and initializes a new native SimpleWindow instance with the specified title, width, and height.
 pub fn new_simple_window(title string, width int, height int) &SimpleWindow {
 	mut win := &SimpleWindow{
@@ -1282,6 +1468,10 @@ pub fn new_simple_window(title string, width int, height int) &SimpleWindow {
 	win.grid_selected_columns = map[string]int{}
 	win.state_store = map[string]string{}
 	win.state_listeners = map[string][]StringEventCallback{}
+	win.commands = map[string]CommandEntry{}
+	win.wizard_pages = map[string][]string{}
+	win.wizard_steps = map[string]int{}
+	win.crud_bindings = map[string][]string{}
 	win.auto_save_state = true
 	win.theme = get_theme(get_saved_theme())
 	win.ensure_window()
@@ -1396,8 +1586,7 @@ pub fn (win &SimpleWindow) clear_console(name string) &SimpleWindow {
 	return win
 }
 
-// add_chart adds a beautiful native line or area chart control.
-// chart_type: "line" or "area"
+// set_chart_data updates the numeric data series drawn in the named chart control.
 pub fn (win &SimpleWindow) set_chart_data(name string, values []f64) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		if values.len > 0 {
@@ -1407,8 +1596,7 @@ pub fn (win &SimpleWindow) set_chart_data(name string, values []f64) &SimpleWind
 	return win
 }
 
-// add_shortcut_recorder adds a key combination recording control.
-// When focused, the user can press a shortcut which triggers the "change" callback.
+// set_circular_progress sets the current progress value (0-100) of a circular progress indicator control.
 pub fn (win &SimpleWindow) set_circular_progress(name string, value int) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_set_circular_progress_value(win.window_info, name.str, f64(value))
@@ -1416,9 +1604,7 @@ pub fn (win &SimpleWindow) set_circular_progress(name string, value int) &Simple
 	return win
 }
 
-// add_breadcrumbs adds a breadcrumb / path navigation control.
-// The list of segments contains the path elements (e.g. ['Home', 'Projects', 'simplegui']).
-// You can handle segment click events by registering an `on_click(name, callback)` event.
+// set_breadcrumbs updates the path segments displayed in a breadcrumbs navigation control.
 pub fn (win &SimpleWindow) set_breadcrumbs(name string, segments []string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		mut c_segs := []&u8{}
@@ -1430,7 +1616,7 @@ pub fn (win &SimpleWindow) set_breadcrumbs(name string, segments []string) &Simp
 	return win
 }
 
-// add_property_grid adds a property inspector grid containing key-value rows.
+// set_property_grid_value sets the value of a specific property key row in a property grid control.
 pub fn (win &SimpleWindow) set_property_grid_value(name string, key string, value string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_set_property_grid_value(win.window_info, name.str, key.str, value.str)
@@ -1438,7 +1624,7 @@ pub fn (win &SimpleWindow) set_property_grid_value(name string, key string, valu
 	return win
 }
 
-// add_color_grid adds an interactive grid of color swatches.
+// set_color_grid_selected sets the currently selected hex color in a color grid control.
 pub fn (win &SimpleWindow) set_color_grid_selected(name string, color string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_set_color_grid_selected(win.window_info, name.str, color.str)
@@ -1446,7 +1632,7 @@ pub fn (win &SimpleWindow) set_color_grid_selected(name string, color string) &S
 	return win
 }
 
-// add_grid adds a grid control with Excel-like editability and CRUD support.
+// grid_delete_row deletes the row at `row_idx` from the named grid control.
 pub fn (mut win SimpleWindow) grid_delete_row(name string, row_idx int) &SimpleWindow {
 	mut rows := win.grid_rows[name]
 	if row_idx >= 0 && row_idx < rows.len {
@@ -1459,7 +1645,7 @@ pub fn (mut win SimpleWindow) grid_delete_row(name string, row_idx int) &SimpleW
 	return &win
 }
 
-// grid_add_column appends a new column header.
+// grid_delete_column deletes the column at `col_idx` from the named grid control.
 pub fn (mut win SimpleWindow) grid_delete_column(name string, col_idx int) &SimpleWindow {
 	mut rows := win.grid_rows[name]
 	for i in 0 .. rows.len {
@@ -1501,7 +1687,7 @@ pub fn (win &SimpleWindow) grid_get_cell(name string, row int, col int) string {
 	if win.window_info != unsafe { nil } {
 		res := C.window_grid_get_cell(win.window_info, name.str, row, col)
 		if res != unsafe { nil } {
-			return unsafe { tos_clone(res) }
+			return consume_c_str(res)
 		}
 	}
 	rows := win.grid_rows[name]
@@ -1813,7 +1999,7 @@ pub fn (win &SimpleWindow) grid_get_filter(name string) string {
 	if win.window_info != unsafe { nil } {
 		res := C.window_grid_get_filter(win.window_info, name.str)
 		if res != unsafe { nil } {
-			return unsafe { tos_clone(res) }
+			return consume_c_str(res)
 		}
 	}
 	return ''
@@ -1890,7 +2076,7 @@ pub fn (mut win SimpleWindow) grid_set_column_values(name string, col_idx int, v
 	return &win
 }
 
-// grid_set_column_type sets the type of a column (e.g. 'text' or 'checkbox').
+// grid_set_column_width resizes a specific grid column at `col_idx` to a fixed pixel width.
 pub fn (win &SimpleWindow) grid_set_column_width(name string, col_idx int, width int) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_grid_set_column_width(win.window_info, name.str, col_idx, width)
@@ -2056,8 +2242,7 @@ pub fn (win &SimpleWindow) grid_set_cell_enabled(name string, row int, col int, 
 	return win
 }
 
-// add_stepper inserts a standalone native NSStepper (up/down arrows) with a live value label.
-// Use get_value_int/set_value_int to read or write the current value.
+// configure applies batch configuration mutations to the window via a WindowConfig callback.
 pub fn (win &SimpleWindow) configure(callback fn (mut cfg WindowConfig)) &SimpleWindow {
 	mut cfg := WindowConfig{
 		title:                        win.title
@@ -2192,13 +2377,19 @@ pub fn (win &SimpleWindow) set_default_button(name string) &SimpleWindow {
 // on_shortcut registers a global keyboard shortcut event handler for the window.
 pub fn (win &SimpleWindow) on_shortcut(shortcut string, callback VoidEventCallback) &SimpleWindow {
 	norm_shortcut := normalize_key_shortcut(shortcut)
+	idx := win.find_handler_by_filter('window', 'key', norm_shortcut)
+	handler := ControlEventHandler{
+		control_name: 'window'
+		event_name:   'key'
+		filter_value: norm_shortcut
+		void_cb:      callback
+	}
 	unsafe {
 		mut w := &SimpleWindow(win)
-		w.handlers << ControlEventHandler{
-			control_name: 'window'
-			event_name:   'key'
-			filter_value: norm_shortcut
-			void_cb:      callback
+		if idx >= 0 {
+			w.handlers[idx] = handler
+		} else {
+			w.handlers << handler
 		}
 	}
 	return win
@@ -2223,10 +2414,7 @@ pub fn (win &SimpleWindow) copy_to_clipboard(text string) &SimpleWindow {
 // clipboard_text returns UTF-8 text from the system clipboard.
 pub fn clipboard_text() string {
 	res := C.window_get_clipboard_text()
-	if res != unsafe { nil } {
-		return unsafe { tos3(res) }
-	}
-	return ''
+	return consume_c_str(res)
 }
 
 // reveal_in_finder asks Finder to reveal an existing path.
@@ -2237,7 +2425,7 @@ pub fn reveal_in_finder(path string) bool {
 	return C.window_reveal_in_finder(path.str) == 1
 }
 
-// get_clipboard_text returns UTF-8 text from the system clipboard.
+// get_title retrieves the current title of the window.
 pub fn (win &SimpleWindow) get_title() string {
 	return win.title
 }
@@ -2834,7 +3022,7 @@ pub fn (win &SimpleWindow) set_window_level(level string) &SimpleWindow {
 	return win
 }
 
-// set_level_type sets the window level type ("normal", "floating", "modal", etc.).
+// get_window_level retrieves the current window level ("normal", "floating", "modal", etc.).
 pub fn (win &SimpleWindow) get_window_level() string {
 	if win.window_info != unsafe { nil } {
 		res := C.window_get_window_level(win.window_info)
@@ -3099,11 +3287,7 @@ pub fn (win &SimpleWindow) set_prevents_app_termination(enabled bool) &SimpleWin
 // get_prevents_app_termination checks if closing this window prevents app termination.
 pub fn (win &SimpleWindow) get_prevents_app_termination() bool {
 	if win.window_info != unsafe { nil } {
-		native_val := C.window_get_prevents_app_termination(win.window_info) == 1
-		if native_val != win.prevents_app_termination {
-			return win.prevents_app_termination
-		}
-		return native_val
+		return C.window_get_prevents_app_termination(win.window_info) == 1
 	}
 	return win.prevents_app_termination
 }
@@ -3273,7 +3457,7 @@ pub fn (win &SimpleWindow) toggle_visibility() &SimpleWindow {
 	}
 }
 
-// set_background_color sets the background color of the window or target control.
+// set_status sets the status bar message text at the bottom of the window.
 pub fn (win &SimpleWindow) set_status(text string) &SimpleWindow {
 	unsafe {
 		mut w := &SimpleWindow(win)
@@ -3345,7 +3529,7 @@ pub fn (win &SimpleWindow) update_list_items(name string, items []string) &Simpl
 	return win
 }
 
-// set_list_selected sets the list selected of the window or target control.
+// tree_node creates a TreeNode with explicit id, parent_id, and display text.
 pub fn tree_node(id string, parent_id string, text string) TreeNode {
 	return TreeNode{
 		id:        id
@@ -3421,7 +3605,7 @@ fn clone_tree_nodes(nodes []TreeNode) []TreeNode {
 	return copied
 }
 
-// add_tree_view adds a tree view control to the window layout.
+// set_tree_nodes replaces the hierarchical nodes displayed in the named tree view control.
 pub fn (win &SimpleWindow) set_tree_nodes(name string, nodes []TreeNode) &SimpleWindow {
 	unsafe {
 		mut w := &SimpleWindow(win)
@@ -3443,7 +3627,7 @@ pub fn (win &SimpleWindow) set_tree_nodes(name string, nodes []TreeNode) &Simple
 	return win
 }
 
-// get_tree_selected retrieves the tree selected of the window or target control.
+// expand_tree expands all nodes in the named tree view control.
 pub fn (win &SimpleWindow) expand_tree(name string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_tree_expand_all(win.window_info, name.str)
@@ -3498,7 +3682,7 @@ pub fn (win &SimpleWindow) clear_tree(name string) &SimpleWindow {
 	return win.set_tree_nodes(name, []TreeNode{})
 }
 
-// clear_tree_selection clears selection for the target tree control.
+// get_tree_nodes returns a copy of all tree nodes registered for the named tree control.
 pub fn (win &SimpleWindow) get_tree_nodes(name string) []TreeNode {
 	if name in win.tree_nodes {
 		return clone_tree_nodes(win.tree_nodes[name])
@@ -3526,7 +3710,7 @@ pub fn (win &SimpleWindow) get_tree_node(name string, node_id string) ?TreeNode 
 	return none
 }
 
-// add_tree_node inserts or updates one node and refreshes the control.
+// remove_tree_node removes a node by `node_id` (and optionally its children) from the named tree view control.
 pub fn (win &SimpleWindow) remove_tree_node(name string, node_id string, remove_children bool) &SimpleWindow {
 	if node_id == '' {
 		return win
@@ -3635,7 +3819,7 @@ pub fn (win &SimpleWindow) set_tree_paths_with_separator(name string, paths []st
 	return win.set_tree_nodes(name, nodes)
 }
 
-// add_table adds a table control to the window layout.
+// set_table_rows updates the 2D array of string rows displayed in the named table control.
 pub fn (win &SimpleWindow) set_table_rows(name string, rows [][]string) &SimpleWindow {
 	win.set_table_rows_strict(name, rows) or {
 		// Backward-compatible no-op on invalid targets in non-strict API.
@@ -3702,8 +3886,7 @@ pub fn (win &SimpleWindow) get_table_selected_column_values(name string) []strin
 	return values
 }
 
-// remove_table_column_strict removes a table column at a 0-based index.
-// Returns all removed cell values in row order.
+// remove_selected_table_column_strict removes the currently selected table column and returns its index and cell values.
 pub fn (win &SimpleWindow) remove_selected_table_column_strict(name string) !(int, []string) {
 	selected := win.get_table_selected_column(name)
 	if selected < 0 {
@@ -3733,7 +3916,7 @@ pub fn (win &SimpleWindow) load_table_from_structs[T](name string, items []T) &S
 	return win
 }
 
-// get_values retrieves the values of the window or target control.
+// validate_struct validates that all controls corresponding to fields in struct T pass validation.
 pub fn (win &SimpleWindow) validate_struct[T]() bool {
 	mut all_valid := true
 	$for field in T.fields {
@@ -3874,7 +4057,7 @@ pub fn (win &SimpleWindow) get_table_column_count(name string) int {
 	return table_infer_column_count(win.table_rows[name] or { [][]string{} })
 }
 
-// set_table_rows_strict validates the target control and normalizes row width.
+// insert_table_row_strict inserts a row at `index` in the named table control after validating the index and normalizing row width.
 pub fn (win &SimpleWindow) insert_table_row_strict(name string, index int, row []string) ! {
 	mut rows := win.table_rows[name] or { [][]string{} }
 	if index < 0 || index > rows.len {
@@ -3934,6 +4117,7 @@ pub fn (win &SimpleWindow) find_table_row_strict(name string, column int, value 
 }
 
 // Layout Rows and Form Generation Helpers
+// enable_status_bar enables a macOS system menu bar status item with the specified icon path.
 pub fn (win &SimpleWindow) enable_status_bar(icon_path string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_enable_status_bar(win.window_info, icon_path.str)
@@ -3941,7 +4125,7 @@ pub fn (win &SimpleWindow) enable_status_bar(icon_path string) &SimpleWindow {
 	return win
 }
 
-// add_toolbar_item adds a toolbar item control to the window layout.
+// set_toolbar_style sets the macOS window toolbar display style (e.g. 'unified', 'expanded', 'preference').
 pub fn (win &SimpleWindow) set_toolbar_style(style string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_set_toolbar_style(win.window_info, style.str)
@@ -3949,7 +4133,7 @@ pub fn (win &SimpleWindow) set_toolbar_style(style string) &SimpleWindow {
 	return win
 }
 
-// on_toolbar_click registers an event handler for on toolbar click events.
+// show_window brings the native window to the front and makes it visible.
 pub fn (win &SimpleWindow) show_window() &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_show(win.window_info)
@@ -4128,7 +4312,7 @@ pub fn (win &SimpleWindow) show_popover(anchor_name string, title string, messag
 	return win
 }
 
-// add_calendar adds a calendar control to the window layout.
+// draw_line draws a line segment on the specified canvas control.
 pub fn (win &SimpleWindow) draw_line(canvas_name string, x1 f64, y1 f64, x2 f64, y2 f64, color string, stroke_width f64) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_draw_line(win.window_info, canvas_name.str, x1, y1, x2, y2, color.str,
@@ -4165,7 +4349,7 @@ pub fn (win &SimpleWindow) clear_canvas(canvas_name string) &SimpleWindow {
 	return win
 }
 
-// begin_glass_box begins a glass box container in the layout.
+// banner inserts an auto-named banner control with the specified text and style.
 pub fn (win &SimpleWindow) banner(text string, style string) &SimpleWindow {
 	return win.add_banner('', text, style)
 }
@@ -4178,11 +4362,7 @@ pub fn (win &SimpleWindow) add_section_header(name string, title string, subtitl
 	}
 	unsafe {
 		mut w := &SimpleWindow(win)
-		w.controls << ControlEntry{
-			name:  real_name
-			kind:  'section_header'
-			value: title
-		}
+		w.upsert_control(real_name, 'section_header', '', title, false, 0)
 	}
 	if win.window_info != unsafe { nil } {
 		C.window_add_section_header_control(win.window_info, real_name.str, title.str, subtitle.str)
@@ -4195,7 +4375,7 @@ pub fn (win &SimpleWindow) section_header(title string, subtitle string) &Simple
 	return win.add_section_header('', title, subtitle)
 }
 
-// add_vertical_slider adds a vertical slider to the layout.
+// metric_meter inserts an auto-named metric meter control into the layout.
 pub fn (win &SimpleWindow) metric_meter(title string, value int, min_val int, max_val int, unit string) &SimpleWindow {
 	return win.add_metric_meter('', title, value, min_val, max_val, unit)
 }
@@ -4208,11 +4388,7 @@ pub fn (win &SimpleWindow) add_avatar_card(name string, title string, subtitle s
 	}
 	unsafe {
 		mut w := &SimpleWindow(win)
-		w.controls << ControlEntry{
-			name:  real_name
-			kind:  'avatar_card'
-			value: title
-		}
+		w.upsert_control(real_name, 'avatar_card', '', title, false, 0)
 	}
 	if win.window_info != unsafe { nil } {
 		C.window_add_avatar_card_control(win.window_info, real_name.str, title.str, subtitle.str,
@@ -4226,7 +4402,7 @@ pub fn (win &SimpleWindow) avatar_card(title string, subtitle string, status str
 	return win.add_avatar_card('', title, subtitle, status)
 }
 
-// add_time_picker adds a standalone time picker control (clock/time selector) to the layout.
+// set_star_rating_value sets the selected rating value for a star rating control.
 pub fn (win &SimpleWindow) set_star_rating_value(name string, value int) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_set_rating_value(win.window_info, name.str, value)
@@ -4242,7 +4418,7 @@ pub fn (win &SimpleWindow) get_star_rating_value(name string) int {
 	return 0
 }
 
-// add_range_slider adds a dual-thumb range selector slider widget.
+// set_range_slider_values updates the low and high thumb values of a dual-thumb range slider control.
 pub fn (win &SimpleWindow) set_range_slider_values(name string, low_val int, high_val int) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_set_range_slider_values(win.window_info, name.str, low_val, high_val)
@@ -4266,7 +4442,7 @@ pub fn (win &SimpleWindow) get_range_slider_high(name string) int {
 	return 0
 }
 
-// add_split_button adds a primary action button paired with a secondary drop-down popup menu.
+// set_tag_cloud_tags updates the list of tags displayed in a tag cloud control.
 pub fn (win &SimpleWindow) set_tag_cloud_tags(name string, tags []string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		c_tags := tags.map(it.str)
@@ -4275,7 +4451,7 @@ pub fn (win &SimpleWindow) set_tag_cloud_tags(name string, tags []string) &Simpl
 	return win
 }
 
-// add_wizard_stepper adds a multi-step process flow indicator bar.
+// set_wizard_stepper_step sets the active step index on a wizard stepper indicator bar.
 pub fn (win &SimpleWindow) set_wizard_stepper_step(name string, step int) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_set_wizard_stepper_step(win.window_info, name.str, step)
@@ -4283,7 +4459,7 @@ pub fn (win &SimpleWindow) set_wizard_stepper_step(name string, step int) &Simpl
 	return win
 }
 
-// add_gauge adds a progress/level gauge indicator widget.
+// clear_activity_feed removes all items from an activity feed control.
 pub fn (win &SimpleWindow) clear_activity_feed(name string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_clear_activity_feed(win.window_info, name.str)
@@ -4291,7 +4467,7 @@ pub fn (win &SimpleWindow) clear_activity_feed(name string) &SimpleWindow {
 	return win
 }
 
-// add_markdown_view adds a formatted Markdown text viewer widget.
+// set_sparkline_data updates the numeric data points rendered in a sparkline chart control.
 pub fn (win &SimpleWindow) set_sparkline_data(name string, values []f64) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_set_sparkline_data(win.window_info, name.str, values.data, values.len)
@@ -4299,7 +4475,7 @@ pub fn (win &SimpleWindow) set_sparkline_data(name string, values []f64) &Simple
 	return win
 }
 
-// add_pin_code adds a digit verification PIN/OTP code input widget.
+// add_timeline_item appends a timeline event item to the named timeline control.
 pub fn (win &SimpleWindow) add_timeline_item(name string, title string, subtitle string, time_str string, status string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_add_timeline_item(win.window_info, name.str, title.str, subtitle.str,
@@ -4316,11 +4492,7 @@ pub fn (win &SimpleWindow) add_metric_card(name string, title string, value stri
 	}
 	unsafe {
 		mut w := &SimpleWindow(win)
-		w.controls << ControlEntry{
-			name:  real_name
-			kind:  'metric_card'
-			value: value
-		}
+		w.upsert_control(real_name, 'metric_card', '', value, false, 0)
 	}
 	if win.window_info != unsafe { nil } {
 		C.window_add_metric_card_control(win.window_info, real_name.str, title.str, value.str,
@@ -4343,7 +4515,7 @@ pub fn (win &SimpleWindow) set_rating_breakdown_data(name string, avg_score f64,
 	return win
 }
 
-// add_code_view adds a dark monospaced code snippet viewer with language header.
+// set_alert_banner_value updates the title, message, and style of an alert banner control.
 pub fn (win &SimpleWindow) set_alert_banner_value(name string, title string, message string, style string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_set_alert_banner_value(win.window_info, name.str, title.str, message.str,
@@ -4352,7 +4524,7 @@ pub fn (win &SimpleWindow) set_alert_banner_value(name string, title string, mes
 	return win
 }
 
-// add_step_tracker adds a horizontal process step progress bar with interactive step nodes.
+// set_key_value_card_data updates the key-value pairs displayed in a key-value card control.
 pub fn (win &SimpleWindow) set_key_value_card_data(name string, keys []string, values []string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		mut c_keys := []&u8{cap: keys.len}
@@ -4369,7 +4541,7 @@ pub fn (win &SimpleWindow) set_key_value_card_data(name string, keys []string, v
 	return win
 }
 
-// add_diff_view adds a side-by-side / unified code diff comparison view widget.
+// set_diff_view updates the old and new text compared in a diff view control.
 pub fn (win &SimpleWindow) set_diff_view(name string, old_text string, new_text string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_set_diff_view_text(win.window_info, name.str, old_text.str, new_text.str)
@@ -4377,7 +4549,7 @@ pub fn (win &SimpleWindow) set_diff_view(name string, old_text string, new_text 
 	return win
 }
 
-// add_json_tree adds a JSON / structured data syntax-highlighted inspector control.
+// set_json_tree updates the JSON string displayed in a JSON tree inspector control.
 pub fn (win &SimpleWindow) set_json_tree(name string, json_str string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_set_json_tree_data(win.window_info, name.str, json_str.str)
@@ -4385,7 +4557,7 @@ pub fn (win &SimpleWindow) set_json_tree(name string, json_str string) &SimpleWi
 	return win
 }
 
-// add_http_request_card adds an API / HTTP request status & metric inspector card.
+// set_http_request_card updates the HTTP method, URL, status code, and response time on an HTTP request card.
 pub fn (win &SimpleWindow) set_http_request_card(name string, method string, url string, status_code int, response_time_ms int) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_set_http_request_card_data(win.window_info, name.str, method.str, url.str,
@@ -4394,7 +4566,7 @@ pub fn (win &SimpleWindow) set_http_request_card(name string, method string, url
 	return win
 }
 
-// add_terminal_view adds a shell / terminal command output view widget.
+// clear_terminal clears all output lines from the named terminal view control.
 pub fn (win &SimpleWindow) clear_terminal(name string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_clear_terminal(win.window_info, name.str)
@@ -4402,7 +4574,7 @@ pub fn (win &SimpleWindow) clear_terminal(name string) &SimpleWindow {
 	return win
 }
 
-// add_resource_monitor adds a system resource & telemetry monitor dashboard control.
+// set_resource_monitor updates CPU, memory, disk, and network telemetry metrics on a resource monitor control.
 pub fn (win &SimpleWindow) set_resource_monitor(name string, cpu_pct int, mem_pct int, disk_pct int, net_kbps int) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_set_resource_monitor_metrics(win.window_info, name.str, cpu_pct, mem_pct,
@@ -4411,7 +4583,7 @@ pub fn (win &SimpleWindow) set_resource_monitor(name string, cpu_pct int, mem_pc
 	return win
 }
 
-// add_env_vars adds an environment & config variables viewer/editor card.
+// set_env_vars updates the environment variable keys and values displayed in an env vars control.
 pub fn (win &SimpleWindow) set_env_vars(name string, keys []string, values []string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		mut c_keys := []&u8{cap: keys.len}
@@ -4428,7 +4600,7 @@ pub fn (win &SimpleWindow) set_env_vars(name string, keys []string, values []str
 	return win
 }
 
-// add_badge_button adds an action button with an attached notification counter badge.
+// set_badge_button_count updates the notification counter badge on a badge button control.
 pub fn (win &SimpleWindow) set_badge_button_count(name string, count int) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_set_badge_button_count(win.window_info, name.str, count)
@@ -4436,7 +4608,7 @@ pub fn (win &SimpleWindow) set_badge_button_count(name string, count int) &Simpl
 	return win
 }
 
-// add_command_palette adds a search / command palette bar with search icon & shortcut hint.
+// set_command_palette_text sets the query text in a command palette bar control.
 pub fn (win &SimpleWindow) set_command_palette_text(name string, text string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_set_command_palette_text(win.window_info, name.str, text.str)
@@ -4444,7 +4616,7 @@ pub fn (win &SimpleWindow) set_command_palette_text(name string, text string) &S
 	return win
 }
 
-// add_status_banner adds an alert message strip banner with icon and accent border.
+// set_pill_toggle_selected sets the active option index on a pill toggle bar control.
 pub fn (win &SimpleWindow) set_pill_toggle_selected(name string, selected_index int) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_set_pill_toggle_selected(win.window_info, name.str, selected_index)
@@ -4452,7 +4624,7 @@ pub fn (win &SimpleWindow) set_pill_toggle_selected(name string, selected_index 
 	return win
 }
 
-// add_color_swatch_panel adds a palette panel with circular color swatches.
+// set_color_swatch_selected sets the selected hex color in a color swatch panel control.
 pub fn (win &SimpleWindow) set_color_swatch_selected(name string, hex_color string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_set_color_swatch_selected(win.window_info, name.str, hex_color.str)
@@ -4460,7 +4632,7 @@ pub fn (win &SimpleWindow) set_color_swatch_selected(name string, hex_color stri
 	return win
 }
 
-// add_hotkey_badge adds a macOS metallic keycap hotkey display badge with description.
+// set_hotkey_badge_shortcut updates the shortcut keycap text and description on a hotkey badge control.
 pub fn (win &SimpleWindow) set_hotkey_badge_shortcut(name string, shortcut_str string, description string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_set_hotkey_badge_shortcut(win.window_info, name.str, shortcut_str.str,
@@ -4469,7 +4641,7 @@ pub fn (win &SimpleWindow) set_hotkey_badge_shortcut(name string, shortcut_str s
 	return win
 }
 
-// add_quick_action_bar adds a quick action bar control with interactive action buttons.
+// set_quick_action_enabled enables or disables an individual action button at `index` in a quick action bar.
 pub fn (win &SimpleWindow) set_quick_action_enabled(name string, index int, enabled bool) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_set_quick_action_enabled(win.window_info, name.str, index, if enabled {
@@ -4481,7 +4653,7 @@ pub fn (win &SimpleWindow) set_quick_action_enabled(name string, index int, enab
 	return win
 }
 
-// add_accordion_group adds a multi-section expandable accordion group widget.
+// set_accordion_expanded expands or collapses a section at `index` in an accordion group control.
 pub fn (win &SimpleWindow) set_accordion_expanded(name string, index int, expanded bool) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_set_accordion_expanded(win.window_info, name.str, index, if expanded {
@@ -4493,7 +4665,7 @@ pub fn (win &SimpleWindow) set_accordion_expanded(name string, index int, expand
 	return win
 }
 
-// add_segment_distribution_bar adds a proportional segment distribution bar displaying breakdown ratios.
+// set_segment_distribution_values updates the numeric segment proportions in a segment distribution bar.
 pub fn (win &SimpleWindow) set_segment_distribution_values(name string, values []f64) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_set_segment_distribution_values(win.window_info, name.str, values.data, values.len)
@@ -4501,7 +4673,7 @@ pub fn (win &SimpleWindow) set_segment_distribution_values(name string, values [
 	return win
 }
 
-// add_tag_input_field adds an interactive tag pill field with add/remove capability.
+// set_tag_input_tags updates the list of tag pills in a tag input field control.
 pub fn (win &SimpleWindow) set_tag_input_tags(name string, tags []string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		mut c_tags := []&u8{cap: tags.len}
@@ -4518,13 +4690,13 @@ pub fn (win &SimpleWindow) get_tag_input_tags(name string) string {
 	if win.window_info != unsafe { nil } {
 		res := C.window_get_tag_input_tags(win.window_info, name.str)
 		if res != unsafe { nil } {
-			return unsafe { tos3(res) }
+			return unsafe { cstring_to_vstring(res) }
 		}
 	}
 	return ''
 }
 
-// add_status_dock adds a window footer status dock control with status dot, status text, and count badge.
+// set_status_dock_info updates the status text, indicator dot color, and count badge on a status dock control.
 pub fn (win &SimpleWindow) set_status_dock_info(name string, status_text string, dot_color string, count_text string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_set_status_dock_info(win.window_info, name.str, status_text.str, dot_color.str,
@@ -4533,7 +4705,7 @@ pub fn (win &SimpleWindow) set_status_dock_info(name string, status_text string,
 	return win
 }
 
-// add_info_callout adds a styled info/alert callout card with accent border and optional action button.
+// set_info_callout_text updates the title and message text of an info callout card control.
 pub fn (win &SimpleWindow) set_info_callout_text(name string, title string, message string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_set_info_callout_text(win.window_info, name.str, title.str, message.str)
@@ -4610,7 +4782,7 @@ pub fn (win &SimpleWindow) get_tabbing_mode() string {
 	if win.window_info != unsafe { nil } {
 		res := C.window_get_tabbing_mode(win.window_info)
 		if res != unsafe { nil } {
-			return unsafe { tos3(res) }
+			return unsafe { cstring_to_vstring(res) }
 		}
 	}
 	return 'automatic'
@@ -4629,7 +4801,7 @@ pub fn (win &SimpleWindow) get_tabbing_identifier() string {
 	if win.window_info != unsafe { nil } {
 		res := C.window_get_tabbing_identifier(win.window_info)
 		if res != unsafe { nil } {
-			return unsafe { tos3(res) }
+			return unsafe { cstring_to_vstring(res) }
 		}
 	}
 	return ''
@@ -4673,7 +4845,7 @@ pub fn (win &SimpleWindow) set_sharing_type(sharing string) &SimpleWindow {
 
 // set_content_protection prevents window contents from being captured by screen recordings or screen sharing when enabled.
 pub fn (win &SimpleWindow) set_content_protection(enabled bool) &SimpleWindow {
-	return win.set_sharing_type(if enabled { 'none' } else { 'read_write' })
+	return win.set_sharing_type(if enabled { 'none' } else { 'read_only' })
 }
 
 // get_content_protection checks if content protection (screen sharing restriction) is currently active.
@@ -4760,7 +4932,7 @@ pub fn (win &SimpleWindow) get_window_appearance() string {
 	if win.window_info != unsafe { nil } {
 		res := C.window_get_window_appearance(win.window_info)
 		if res != unsafe { nil } {
-			return unsafe { tos3(res) }
+			return unsafe { cstring_to_vstring(res) }
 		}
 	}
 	return 'auto'
@@ -4817,7 +4989,7 @@ pub fn (win &SimpleWindow) get_cursor() string {
 	if win.window_info != unsafe { nil } {
 		res := C.window_get_cursor(win.window_info)
 		if res != unsafe { nil } {
-			return unsafe { tos3(res) }
+			return consume_c_str(res)
 		}
 	}
 	return 'arrow'
@@ -5021,7 +5193,7 @@ pub fn (win &SimpleWindow) get_window_color_space() string {
 	if win.window_info != unsafe { nil } {
 		res := C.window_get_window_color_space(win.window_info)
 		if res != unsafe { nil } {
-			return unsafe { tos3(res) }
+			return consume_c_str(res)
 		}
 	}
 	return 'sRGB'

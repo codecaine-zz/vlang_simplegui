@@ -5,11 +5,9 @@ import simplegui
 fn main() {
 	mut win := simplegui.new_simple_window('Dialogs & File Panels Demo', 550, 600)
 		.add_label('lbl_title', 'Click a button to trigger native macOS dialogs:')
-		.add_separator().begin_row
-
-	// 1. Alert & Prompt Dialog Buttons
-
-	('row_dialogs1')
+		.add_separator()
+		// 1. Alert & Prompt Dialog Buttons
+		.begin_row('row_dialogs1')
 		.add_button('btn_info', 'Info Alert')
 		.add_button('btn_warn', 'Warn Alert')
 		.add_button('btn_error', 'Error Dialog')
@@ -19,11 +17,9 @@ fn main() {
 		.add_button('btn_choose', 'Choose Option')
 		.add_button('btn_ask_text', 'Ask Text')
 		.end_row()
-		.add_separator().begin_row
-
-	// 2. File & Directory Picker Buttons
-
-	('row_files1')
+		.add_separator()
+		// 2. File & Directory Picker Buttons
+		.begin_row('row_files1')
 		.add_button('btn_file', 'Choose Any File')
 		.add_button('btn_file_ext', 'Choose Image (PNG/JPG)')
 		.end_row()

@@ -65,11 +65,11 @@ fn test_file_drop_events_are_forwarded_to_window_handlers() {
 	assert state.called == true
 }
 
-fn on_test_change(mut win simplegui.SimpleWindow, value string) {
+fn on_test_change(mut _ simplegui.SimpleWindow, value string) {
 	println('test change: ${value}')
 }
 
-fn on_test_click(mut win simplegui.SimpleWindow) {
+fn on_test_click(mut _ simplegui.SimpleWindow) {
 	println('test click')
 }
 

@@ -22,6 +22,10 @@ bin/
 # vweb and database
 *.db
 *.js
+!resources/**/*.js
+
+# Video build intermediates (keep final youtube_production/*.mp4 and *.md)
+youtube_production/vlang_simplegui_short_build/
 
 # Ignore installed modules through `v install --local`:
 modules/
@@ -39,5 +43,7 @@ test_shot.png
 # Compiler artifacts and intermediate files
 .*.v3cc.*
 .*.v.c
+output.c
+*.patch
 *.dSYM/
 *.tmp

@@ -1,5 +1,8 @@
 # V Developer Utility Suite (`vlang_utils`) - Complete API Reference
 
+> **📚 Master Documentation Navigation:**
+> [🏠 Main README](README.md) • [📘 GUI API Reference (`docs/API.md`)](docs/API.md) • [🎨 Custom Themes Vault (`custom_themes/README.md`)](custom_themes/README.md) • [🖥️ 47 GUI Workstations (`applications/README.md`)](applications/README.md) • [⌨️ SimpleCLI Reference (`CLI_API.md`)](CLI_API.md) • [🛠️ 49 CLI Apps (`cli_apps/README.md`)](cli_apps/README.md) • [🧰 45 Utility Modules (`UTILS_API.md`)](UTILS_API.md) • [📝 Changelog](CHANGELOG.md)
+
 Welcome to the comprehensive API reference manual for the **45 production-grade developer utility modules** in `vlang_utils`.
 
 Every module is zero-dependency, self-contained, and designed for Rapid Application Development (RAD). You can import any module directly across GUI apps, CLI tools, services, and background workers (e.g. `import strutils`, `import sqliteutils`, `import cacheutils`).
@@ -6069,9 +6072,9 @@ sliceutils.shuffle(mut items)
 
 ---
 
-### `sum_int(arr []int) int` and `average_int(arr []int) f64`
+### `sum_int(arr []int) i64` and `average_int(arr []int) f64`
 
-Calculates the arithmetic sum and average of integer slices.
+Calculates the 64-bit overflow-safe arithmetic sum (`i64`) and floating-point average (`f64`) of integer slices.
 
 ```v
 assert sliceutils.sum_int([1, 2, 3, 4]) == 10

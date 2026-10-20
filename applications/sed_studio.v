@@ -58,7 +58,7 @@ fn get_all_sed_recipes() []SedRecipe {
 		SedRecipe{
 			title:    '🪟 Convert Windows CRLF (\\r\\n) to Unix LF'
 			category: 'Normalization'
-			script:   's/\\r$//'
+			script:   's/[[:cntrl:]]$//'
 			extended: false
 			quiet:    false
 			desc:     'Strips trailing carriage returns (\\r) from Windows format files.'
@@ -158,10 +158,15 @@ fn get_all_sed_recipes() []SedRecipe {
 }
 
 fn get_sed_bin() string {
-	if p := simplegui.resolve_tool('sed') {
-		return p
+	for candidate in ['/opt/homebrew/bin/gsed', '/usr/local/bin/gsed'] {
+		if os.exists(candidate) {
+			return candidate
+		}
 	}
 	if p := simplegui.resolve_tool('gsed') {
+		return p
+	}
+	if p := simplegui.resolve_tool('sed') {
 		return p
 	}
 	return 'sed'

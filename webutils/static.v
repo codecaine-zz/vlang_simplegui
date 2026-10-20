@@ -52,6 +52,7 @@ pub fn mime_type(name string) string {
 	return mime_types[ext.to_lower()] or { 'application/octet-stream' }
 }
 
+// StaticConfig configures URL prefix, index file, caching, and security options for static file serving.
 @[params]
 pub struct StaticConfig {
 pub:
@@ -92,7 +93,7 @@ pub fn static_files(root string, cfg StaticConfig) Handler {
 			}
 			if os.is_file(full) {
 				real := os.real_path(full)
-				if real.starts_with(real_root + os.path_separator) {
+				if is_within_root(real, real_root) {
 					if os.file_size(real) > u64(cfg.max_file_bytes) {
 						return http_error(413, 'File Too Large')
 					}
@@ -114,6 +115,16 @@ pub fn static_files(root string, cfg StaticConfig) Handler {
 		}
 		return http_error(404, 'Not Found')
 	}
+}
+
+fn is_within_root(real_path string, real_root string) bool {
+	if real_path == real_root {
+		return true
+	}
+	if real_root == os.path_separator {
+		return real_path.starts_with(os.path_separator)
+	}
+	return real_path.starts_with(real_root + os.path_separator)
 }
 
 fn serve_file(mut c Context, path string, max_age int) ! {
@@ -165,10 +176,24 @@ pub fn safe_join(root string, rel string) !string {
 	full := if parts.len == 0 { real_root } else { os.join_path(real_root, ...parts) }
 	if os.exists(full) {
 		real := os.real_path(full)
-		if real != real_root && !real.starts_with(real_root + os.path_separator) {
+		if !is_within_root(real, real_root) {
 			return error('path escapes root')
 		}
 		return real
+	}
+	mut ancestor := os.dir(full)
+	for ancestor.len > 0 && !os.exists(ancestor) {
+		parent := os.dir(ancestor)
+		if parent == ancestor {
+			break
+		}
+		ancestor = parent
+	}
+	if os.exists(ancestor) {
+		real_anc := os.real_path(ancestor)
+		if !is_within_root(real_anc, real_root) {
+			return error('path escapes root')
+		}
 	}
 	return full
 }

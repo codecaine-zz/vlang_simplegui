@@ -48,12 +48,14 @@ fn main() {
 	win.add_label('lbl_engine_info',
 		'⚡ Engine: ${sqlite_path}  |  Platform: macOS Cocoa  |  Mode: Async Worker')
 
+	demo_db_path := os.join_path(os.temp_dir(), 'simplegui_demo_store.sqlite')
+
 	// Database File Selection & Schema Browser
 	win.begin_group_box('grp_db_config', '📁 Database Connection & Schema Explorer')
 
 	win.begin_row('row_db_file')
 	win.add_label('lbl_db_path', 'Database File:')
-	win.add_input('txt_db_path', ':memory:')
+	win.add_input('txt_db_path', demo_db_path)
 	win.set_control_width('txt_db_path', 380)
 
 	win.add_button('btn_open_db', '📂 Open Database...')
@@ -120,15 +122,14 @@ fn main() {
 	// Status Row
 	win.begin_row('row_stats')
 	win.add_label('lbl_stats',
-		'📊 Stats: Ready  |  Database: :memory:  |  Rows: 0  |  Duration: 0 ms')
+		'📊 Stats: Ready  |  Database: ${os.file_name(demo_db_path)}  |  Rows: 0  |  Duration: 0 ms')
 	win.end_row()
 
 	win.append_console('sqlite_console', '🗄️ SQLite Studio Pro Initialized.\n', 1)
 	win.append_console('sqlite_console',
-		'⚡ Ready to run queries against SQLite / In-Memory databases.\n', 4)
+		'⚡ Ready to run queries against SQLite databases.\n', 4)
 
 	// Demo Database Initializer Script
-	demo_db_path := os.join_path(os.temp_dir(), 'simplegui_demo_store.sqlite')
 	init_demo_db := fn [demo_db_path] () {
 		init_sql := '
 		DROP TABLE IF EXISTS products;

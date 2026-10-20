@@ -40,7 +40,9 @@ fn main() {
 
 	del_set := app.get_flag_string('delete')
 	if del_set.len > 0 {
-		out, _ := app.exec("echo '${raw_input}' | tr -d '${del_set}'")
+		q_in := simplecli.quote_arg(raw_input)
+		q_del := simplecli.quote_arg(del_set)
+		out, _ := app.exec('printf "%s" ${q_in} | tr -d ${q_del}')
 		app.success('After Deletion:\n${out}')
 		return
 	}
@@ -48,7 +50,10 @@ fn main() {
 	from_set := app.get_flag_string('from')
 	to_set := app.get_flag_string('to')
 	if from_set.len > 0 && to_set.len > 0 {
-		out, _ := app.exec("echo '${raw_input}' | tr '${from_set}' '${to_set}'")
+		q_in := simplecli.quote_arg(raw_input)
+		q_from := simplecli.quote_arg(from_set)
+		q_to := simplecli.quote_arg(to_set)
+		out, _ := app.exec('printf "%s" ${q_in} | tr ${q_from} ${q_to}')
 		app.success('Translation:\n${out}')
 		return
 	}

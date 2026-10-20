@@ -26,33 +26,57 @@ fn main() {
 	url := app.get_flag_string('url')
 	method := app.get_flag_string('method').to_upper()
 	body := app.get_flag_string('body')
+	header := app.get_flag_string('header')
 
-	send_api_request(mut app, method, url, body)
+	send_api_request(mut app, method, url, body, header)
 }
 
-fn send_api_request(mut app simplecli.SimpleCli, method string, url string, body string) {
+fn send_api_request(mut app simplecli.SimpleCli, method string, url string, body string, header string) {
 	app.info('Sending ${method} ${url}...')
 	app.reset_timer()
 
-	res := app.http_request(method, url, body) or {
-		app.error('HTTP Request failed: ${err}')
-		return
+	mut status_code := 0
+	mut resp_body := ''
+
+	if header.len > 0 {
+		mut args := ['-s', '-X', method, '-H', header]
+		if body.len > 0 {
+			args << ['-d', body]
+		}
+		args << ['-w', '\n%{http_code}', url]
+		out, code := app.exec_safe('curl', args)
+		if code != 0 {
+			app.error('HTTP Request failed via curl (exit ${code}): ${out}')
+			return
+		}
+		lines := out.split_into_lines()
+		if lines.len > 0 {
+			status_code = lines.last().trim_space().int()
+			resp_body = if lines.len > 1 { lines[..lines.len - 1].join('\n') } else { '' }
+		}
+	} else {
+		res := app.http_request(method, url, body) or {
+			app.error('HTTP Request failed: ${err}')
+			return
+		}
+		status_code = res.status_code
+		resp_body = res.body
 	}
 
 	elapsed := app.elapsed_ms()
-	status_color := if res.status_code >= 200 && res.status_code < 300 {
-		app.green('HTTP ${res.status_code}')
+	status_color := if status_code >= 200 && status_code < 300 {
+		app.green('HTTP ${status_code}')
 	} else {
-		app.yellow('HTTP ${res.status_code}')
+		app.yellow('HTTP ${status_code}')
 	}
 
 	app.print_kv({
 		'Status':    status_color
 		'Latency':   '${elapsed} ms'
-		'Body Size': '${res.body.len} bytes'
+		'Body Size': '${resp_body.len} bytes'
 	})
 
-	app.panel('Response Body', res.body)
+	app.panel('Response Body', resp_body)
 }
 
 fn run_interactive(mut app simplecli.SimpleCli) {
@@ -60,11 +84,12 @@ fn run_interactive(mut app simplecli.SimpleCli) {
 	for {
 		method := app.select('HTTP Method:', ['GET', 'POST', 'PUT', 'DELETE', 'HEAD'])
 		url := app.prompt('Request URL', 'https://httpbin.org/get')
+		header := app.prompt('Custom Header (optional)', '')
 		mut body := ''
 		if method == 'POST' || method == 'PUT' || method == 'PATCH' {
 			body = app.prompt('Request JSON Body', '{"test": true}')
 		}
-		send_api_request(mut app, method, url, body)
+		send_api_request(mut app, method, url, body, header)
 		if !app.confirm('Send another request?', true) {
 			break
 		}

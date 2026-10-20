@@ -7,7 +7,7 @@ fn test_sign_and_verify_jwt() {
 	claims := JWTClaims{
 		sub:    'user_123'
 		iss:    'vlang_utils'
-		exp:    time.now().unix() + 3600
+		exp:    time.utc().unix() + 3600
 		custom: {
 			'role':  'admin'
 			'scope': 'read:all write:all'
@@ -34,7 +34,7 @@ fn test_expired_jwt() {
 	secret := 'key_123'
 	claims := JWTClaims{
 		sub: 'expired_user'
-		exp: time.now().unix() - 100 // Expired in past
+		exp: time.utc().unix() - 100 // Expired in past
 	}
 
 	token := sign_jwt(claims, secret) or { panic(err) }

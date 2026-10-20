@@ -33,7 +33,7 @@ fn main() {
 	win.run()
 }
 
-fn on_filter_changed(mut win simplegui.SimpleWindow, value string) {
+fn on_filter_changed(mut win simplegui.SimpleWindow, _ string) {
 	category := win.get_text('category')
 	id := win.get_value_int('filter_id')
 	win.set_status('Active filter: Category=${category}, ID=${id}')

@@ -213,7 +213,7 @@ fn main() {
 
 		go fn [mut w, openssl_bin, target_host, domain] () {
 			t0 := time.ticks()
-			cmd := 'echo | ${openssl_bin} s_client -connect ${target_host} -servername ${domain} 2>/dev/null | ${openssl_bin} x509 -text -noout'
+			cmd := 'echo | ${simplegui.quote_arg(openssl_bin)} s_client -connect ${simplegui.quote_arg(target_host)} -servername ${simplegui.quote_arg(domain)} 2>/dev/null | ${simplegui.quote_arg(openssl_bin)} x509 -text -noout'
 			res := os.execute(cmd)
 			elapsed_ms := time.ticks() - t0
 

@@ -22,7 +22,7 @@ fn main() {
 	app.set_description('Enterprise Infrastructure Sentinel & System Health Guardian')
 
 	// CLI Flags
-	app.add_flag_int('interval', 'i', 3, 'Health check interval in seconds')
+	app.add_flag_int('interval', 'i', 0, 'Health check interval in seconds (0 = single check)')
 	app.add_flag_bool('alert', 'a', false, 'Enable desktop audio and popup alerts on high load')
 	app.add_flag_string('export', 'e', '', 'Export health snapshot to JSON file')
 	app.add_flag_string('log', 'l', '', 'Save continuous structured log to file')
@@ -48,6 +48,19 @@ fn main() {
 }
 
 fn run_sentinel_monitor(mut app simplecli.SimpleCli) {
+	interval := app.get_flag_int('interval')
+	for {
+		run_sentinel_check(mut app)
+		if interval <= 0 {
+			break
+		}
+		app.info('Next health check in ${interval}s (press Ctrl+C to stop)...')
+		time.sleep(interval * time.second)
+		app.reset_timer()
+	}
+}
+
+fn run_sentinel_check(mut app simplecli.SimpleCli) {
 	enable_alerts := app.get_flag_bool('alert')
 	export_file := app.get_flag_string('export')
 

@@ -173,12 +173,18 @@ pub fn (cli &SimpleCli) exec_timeout(command string, timeout_ms int) (string, in
 // exec_retry executes a command with retry attempts and exponential backoff.
 pub fn (cli &SimpleCli) exec_retry(command string, max_retries int, initial_delay_ms int, backoff_factor f64) ExecResult {
 	start := time.now()
-	mut delay := initial_delay_ms
+	max_attempts := if max_retries < 1 { 1 } else { max_retries }
+	mut delay := if initial_delay_ms < 1 { 100 } else { initial_delay_ms }
+	factor := if backoff_factor < 1.0 { 1.0 } else { backoff_factor }
 	mut attempts := 0
+	mut last_out := ''
+	mut last_code := -1
 
-	for attempts < max_retries {
+	for attempts < max_attempts {
 		attempts++
 		out, code := cli.exec(command)
+		last_out = out
+		last_code = code
 		if code == 0 {
 			return ExecResult{
 				output:      out
@@ -188,16 +194,15 @@ pub fn (cli &SimpleCli) exec_retry(command string, max_retries int, initial_dela
 				attempts:    attempts
 			}
 		}
-		if attempts < max_retries {
+		if attempts < max_attempts {
 			time.sleep(delay * time.millisecond)
-			delay = int(f64(delay) * backoff_factor)
+			delay = int(f64(delay) * factor)
 		}
 	}
 
-	out, code := cli.exec(command)
 	return ExecResult{
-		output:      out
-		exit_code:   code
+		output:      last_out
+		exit_code:   last_code
 		duration_ms: time.since(start).milliseconds()
 		timed_out:   false
 		attempts:    attempts
@@ -292,12 +297,12 @@ pub fn (cli &SimpleCli) require_command(cmd_name string) !string {
 // find_executable resolves the absolute file path of an executable in system PATH.
 pub fn (cli &SimpleCli) find_executable(cmd_name string) string {
 	$if windows {
-		out, code := cli.exec('where ${cmd_name}')
+		out, code := cli.exec('where ${quote_arg(cmd_name)}')
 		if code == 0 && out.len > 0 {
 			return out.split_into_lines()[0].trim_space()
 		}
 	} $else {
-		out, code := cli.exec('which ${cmd_name}')
+		out, code := cli.exec('which -- ${quote_arg(cmd_name)}')
 		if code == 0 && out.len > 0 {
 			return out.trim_space()
 		}
@@ -313,10 +318,11 @@ pub fn (cli &SimpleCli) has_command(cmd_name string) bool {
 // is_process_running checks if a process with the given name is currently active.
 pub fn (cli &SimpleCli) is_process_running(proc_name string) bool {
 	$if windows {
-		out, code := cli.exec('tasklist /FI "IMAGENAME eq ${proc_name}"')
+		safe_proc := proc_name.replace('"', '')
+		out, code := cli.exec('tasklist /FI "IMAGENAME eq ${safe_proc}"')
 		return code == 0 && out.contains(proc_name)
 	} $else {
-		out, code := cli.exec('pgrep -x "${proc_name}"')
+		out, code := cli.exec('pgrep -x -- ${quote_arg(proc_name)}')
 		return code == 0 && out.trim_space().len > 0
 	}
 }
@@ -324,10 +330,11 @@ pub fn (cli &SimpleCli) is_process_running(proc_name string) bool {
 // kill_process terminates processes matching the given name.
 pub fn (cli &SimpleCli) kill_process(proc_name string) bool {
 	$if windows {
-		_, code := cli.exec('taskkill /F /IM "${proc_name}"')
+		safe_proc := proc_name.replace('"', '')
+		_, code := cli.exec('taskkill /F /IM "${safe_proc}"')
 		return code == 0
 	} $else {
-		_, code := cli.exec('pkill -9 "${proc_name}"')
+		_, code := cli.exec('pkill -9 -- ${quote_arg(proc_name)}')
 		return code == 0
 	}
 }
@@ -574,7 +581,7 @@ pub fn (cli &SimpleCli) get_disk_usage(path string) !DiskStats {
 			}
 		}
 	} $else {
-		out, code := cli.exec('df -k "${target}"')
+		out, code := cli.exec('df -k ${quote_arg(target)}')
 		if code == 0 {
 			lines := out.split_into_lines()
 			if lines.len > 1 {
@@ -711,80 +718,85 @@ pub fn get_user_home_dir() string {
 
 // get_app_config_dir returns the standard directory for application configs.
 pub fn get_app_config_dir(app_name string) string {
+	safe_name := sanitize_filename(app_name)
 	$if macos {
-		return os.join_path(os.home_dir(), 'Library', 'Application Support', app_name)
+		return os.join_path(os.home_dir(), 'Library', 'Application Support', safe_name)
 	} $else $if windows {
 		app_data := os.getenv('APPDATA')
 		if app_data.len > 0 {
-			return os.join_path(app_data, app_name)
+			return os.join_path(app_data, safe_name)
 		}
-		return os.join_path(os.home_dir(), 'AppData', 'Roaming', app_name)
+		return os.join_path(os.home_dir(), 'AppData', 'Roaming', safe_name)
 	} $else {
 		xdg := os.getenv('XDG_CONFIG_HOME')
 		if xdg.len > 0 {
-			return os.join_path(xdg, app_name)
+			return os.join_path(xdg, safe_name)
 		}
-		return os.join_path(os.home_dir(), '.config', app_name)
+		return os.join_path(os.home_dir(), '.config', safe_name)
 	}
 }
 
 // get_app_data_dir returns the standard directory for persistent application data.
 pub fn get_app_data_dir(app_name string) string {
+	safe_name := sanitize_filename(app_name)
 	$if macos {
-		return os.join_path(os.home_dir(), 'Library', 'Application Support', app_name)
+		return os.join_path(os.home_dir(), 'Library', 'Application Support', safe_name)
 	} $else $if windows {
 		local_app_data := os.getenv('LOCALAPPDATA')
 		if local_app_data.len > 0 {
-			return os.join_path(local_app_data, app_name)
+			return os.join_path(local_app_data, safe_name)
 		}
-		return os.join_path(os.home_dir(), 'AppData', 'Local', app_name)
+		return os.join_path(os.home_dir(), 'AppData', 'Local', safe_name)
 	} $else {
 		xdg := os.getenv('XDG_DATA_HOME')
 		if xdg.len > 0 {
-			return os.join_path(xdg, app_name)
+			return os.join_path(xdg, safe_name)
 		}
-		return os.join_path(os.home_dir(), '.local', 'share', app_name)
+		return os.join_path(os.home_dir(), '.local', 'share', safe_name)
 	}
 }
 
 // get_app_cache_dir returns the standard directory for cache files.
 pub fn get_app_cache_dir(app_name string) string {
+	safe_name := sanitize_filename(app_name)
 	$if macos {
-		return os.join_path(os.home_dir(), 'Library', 'Caches', app_name)
+		return os.join_path(os.home_dir(), 'Library', 'Caches', safe_name)
 	} $else $if windows {
-		return os.join_path(get_app_data_dir(app_name), 'Cache')
+		return os.join_path(get_app_data_dir(safe_name), 'Cache')
 	} $else {
 		xdg := os.getenv('XDG_CACHE_HOME')
 		if xdg.len > 0 {
-			return os.join_path(xdg, app_name)
+			return os.join_path(xdg, safe_name)
 		}
-		return os.join_path(os.home_dir(), '.cache', app_name)
+		return os.join_path(os.home_dir(), '.cache', safe_name)
 	}
 }
 
 // get_app_state_dir returns the standard directory for runtime state files.
 pub fn get_app_state_dir(app_name string) string {
+	safe_name := sanitize_filename(app_name)
 	$if macos {
-		return os.join_path(os.home_dir(), 'Library', 'Application Support', app_name, 'State')
+		return os.join_path(os.home_dir(), 'Library', 'Application Support', safe_name, 'State')
 	} $else $if windows {
-		return os.join_path(get_app_data_dir(app_name), 'State')
+		return os.join_path(get_app_data_dir(safe_name), 'State')
 	} $else {
 		xdg := os.getenv('XDG_STATE_HOME')
 		if xdg.len > 0 {
-			return os.join_path(xdg, app_name)
+			return os.join_path(xdg, safe_name)
 		}
-		return os.join_path(os.home_dir(), '.local', 'state', app_name)
+		return os.join_path(os.home_dir(), '.local', 'state', safe_name)
 	}
 }
 
 // get_app_log_dir returns the standard directory for application logs.
 pub fn get_app_log_dir(app_name string) string {
+	safe_name := sanitize_filename(app_name)
 	$if macos {
-		return os.join_path(os.home_dir(), 'Library', 'Logs', app_name)
+		return os.join_path(os.home_dir(), 'Library', 'Logs', safe_name)
 	} $else $if windows {
-		return os.join_path(get_app_data_dir(app_name), 'Logs')
+		return os.join_path(get_app_data_dir(safe_name), 'Logs')
 	} $else {
-		return os.join_path(get_app_state_dir(app_name), 'logs')
+		return os.join_path(get_app_state_dir(safe_name), 'logs')
 	}
 }
 
@@ -810,6 +822,9 @@ pub fn (cli &SimpleCli) get_system_path(name string) string {
 
 // resolve_user_path expands '~' to user's home directory.
 pub fn resolve_user_path(raw_path string) string {
+	if raw_path == '~' {
+		return os.home_dir()
+	}
 	if raw_path.starts_with('~/') {
 		return os.join_path(os.home_dir(), raw_path[2..])
 	}
@@ -916,6 +931,7 @@ pub fn (cli &SimpleCli) get_file_metadata(path string) !FileMetadata {
 	is_dir_flag := os.is_dir(resolved)
 	is_link_flag := os.is_link(resolved)
 	size := if is_dir_flag { u64(0) } else { u64(os.file_size(resolved)) }
+	mtime := os.file_last_mod_unix(resolved)
 
 	return FileMetadata{
 		path:          resolved
@@ -925,8 +941,8 @@ pub fn (cli &SimpleCli) get_file_metadata(path string) !FileMetadata {
 		is_link:       is_link_flag
 		is_readable:   os.is_readable(resolved)
 		is_writable:   os.is_writable(resolved)
-		created_time:  0
-		modified_time: 0
+		created_time:  mtime
+		modified_time: mtime
 	}
 }
 
@@ -934,11 +950,12 @@ pub fn (cli &SimpleCli) get_file_metadata(path string) !FileMetadata {
 pub fn (cli &SimpleCli) reveal_in_file_manager(path string) &SimpleCli {
 	resolved := resolve_user_path(path)
 	$if macos {
-		os.execute('open -R "${resolved}"')
+		os.execute('open -R ${quote_arg(resolved)}')
 	} $else $if windows {
-		os.execute('explorer.exe /select,"${resolved}"')
+		safe_res := resolved.replace('"', '')
+		os.execute('explorer.exe /select,"${safe_res}"')
 	} $else {
-		os.execute('xdg-open "${os.dir(resolved)}" 2>/dev/null')
+		os.execute('xdg-open ${quote_arg(os.dir(resolved))} 2>/dev/null')
 	}
 	return cli
 }
@@ -946,16 +963,17 @@ pub fn (cli &SimpleCli) reveal_in_file_manager(path string) &SimpleCli {
 // open_in_browser opens the specified URL in the default web browser.
 pub fn (cli &SimpleCli) open_in_browser(url string) &SimpleCli {
 	$if macos {
-		os.execute('open "${url}"')
+		os.execute('open ${quote_arg(url)}')
 	} $else $if windows {
-		os.execute('start "" "${url}"')
+		safe_url := url.replace('"', '')
+		os.execute('start "" "${safe_url}"')
 	} $else {
 		for opener in ['xdg-open', 'gio', 'gnome-open', 'kde-open5', 'kde-open'] {
 			if os.find_abs_path_of_executable(opener) or { '' } != '' {
 				cmd := if opener == 'gio' {
-					'gio open "${url}" 2>/dev/null'
+					'gio open ${quote_arg(url)} 2>/dev/null'
 				} else {
-					'${opener} "${url}" 2>/dev/null'
+					'${opener} ${quote_arg(url)} 2>/dev/null'
 				}
 				os.execute(cmd)
 				return cli
@@ -1111,16 +1129,20 @@ pub fn (cli &SimpleCli) get_listening_ports() []int {
 // show_system_notification triggers a native OS desktop notification banner.
 pub fn (cli &SimpleCli) show_system_notification(title string, message string) &SimpleCli {
 	$if macos {
-		script := 'display notification "${message}" with title "${title}"'
-		os.execute("osascript -e '${script}'")
+		title_esc := title.replace('\\', '\\\\').replace('"', '\\"')
+		msg_esc := message.replace('\\', '\\\\').replace('"', '\\"')
+		script := 'display notification "${msg_esc}" with title "${title_esc}"'
+		os.execute('osascript -e ${quote_arg(script)}')
 	} $else $if windows {
-		script := "[reflection.assembly]::loadwithpartialname('System.Windows.Forms'); [reflection.assembly]::loadwithpartialname('System.Drawing'); \$notify = new-object system.windows.forms.notifyicon; \$notify.icon = [system.drawing.systemicons]::information; \$notify.visible = \$true; \$notify.showballoontip(0, '${title}', '${message}', [system.windows.forms.tooltipicon]::None)"
+		t_ps := title.replace("'", "''").replace('"', '')
+		m_ps := message.replace("'", "''").replace('"', '')
+		script := "[reflection.assembly]::loadwithpartialname('System.Windows.Forms'); [reflection.assembly]::loadwithpartialname('System.Drawing'); \$notify = new-object system.windows.forms.notifyicon; \$notify.icon = [system.drawing.systemicons]::information; \$notify.visible = \$true; \$notify.showballoontip(0, '${t_ps}', '${m_ps}', [system.windows.forms.tooltipicon]::None)"
 		os.execute('powershell -Command "${script}"')
 	} $else {
 		for cmd in [
-			'notify-send "${title}" "${message}" 2>/dev/null',
-			'kdialog --title "${title}" --passivepopup "${message}" 2>/dev/null',
-			'zenity --notification --window-icon=info --text="${message}" 2>/dev/null',
+			'notify-send -- ${quote_arg(title)} ${quote_arg(message)} 2>/dev/null',
+			'kdialog --title ${quote_arg(title)} --passivepopup ${quote_arg(message)} 2>/dev/null',
+			'zenity --notification --window-icon=info --text=${quote_arg(message)} 2>/dev/null',
 		] {
 			prog := cmd.split(' ')[0]
 			if os.find_abs_path_of_executable(prog) or { '' } != '' {
@@ -1148,7 +1170,9 @@ pub fn (cli &SimpleCli) bounce_dock() &SimpleCli {
 // set_dock_badge sets a text badge on the macOS Dock application icon.
 pub fn (cli &SimpleCli) set_dock_badge(badge string) &SimpleCli {
 	$if macos {
-		os.execute('osascript -e \'tell application "Finder" to set badge of current application to "${badge}"\' 2>/dev/null')
+		badge_esc := badge.replace('\\', '\\\\').replace('"', '\\"')
+		script := 'tell application "Finder" to set badge of current application to "${badge_esc}"'
+		os.execute('osascript -e ${quote_arg(script)} 2>/dev/null')
 	}
 	return cli
 }
@@ -1171,10 +1195,12 @@ pub fn (cli &SimpleCli) beep_n(count int) &SimpleCli {
 
 // play_system_sound plays a built-in OS sound effect (e.g. Ping, Glass, Hero).
 pub fn (cli &SimpleCli) play_system_sound(sound_name string) &SimpleCli {
+	safe_name := sanitize_filename(sound_name)
 	$if macos {
-		os.execute('afplay /System/Library/Sounds/${sound_name}.aiff &')
+		sound_path := '/System/Library/Sounds/${safe_name}.aiff'
+		os.execute('afplay ${quote_arg(sound_path)} &')
 	} $else $if windows {
-		os.execute('powershell -c "[System.Media.SystemSounds]::${sound_name}.Play()"')
+		os.execute('powershell -c "[System.Media.SystemSounds]::${safe_name}.Play()"')
 	} $else {
 		cli.beep()
 	}
@@ -1184,11 +1210,12 @@ pub fn (cli &SimpleCli) play_system_sound(sound_name string) &SimpleCli {
 // say speaks text aloud using the OS Text-to-Speech synthesizer.
 pub fn (cli &SimpleCli) say(text string) &SimpleCli {
 	$if macos {
-		os.execute('say "${text}" &')
+		os.execute('say ${quote_arg(text)} &')
 	} $else $if windows {
-		os.execute('powershell -Command "Add-Type -AssemblyName System.Speech; (New-Object System.Speech.Synthesis.SpeechSynthesizer).Speak(\'${text}\')"')
+		t_ps := text.replace("'", "''").replace('"', '')
+		os.execute('powershell -Command "Add-Type -AssemblyName System.Speech; (New-Object System.Speech.Synthesis.SpeechSynthesizer).Speak(\'${t_ps}\')"')
 	} $else {
-		os.execute('spd-say "${text}" 2>/dev/null &')
+		os.execute('spd-say -- ${quote_arg(text)} 2>/dev/null &')
 	}
 	return cli
 }
@@ -1196,7 +1223,7 @@ pub fn (cli &SimpleCli) say(text string) &SimpleCli {
 // speak_with_voice speaks text using a specific synthesizer voice name.
 pub fn (cli &SimpleCli) speak_with_voice(text string, voice string) &SimpleCli {
 	$if macos {
-		os.execute('say -v "${voice}" "${text}" &')
+		os.execute('say -v ${quote_arg(voice)} ${quote_arg(text)} &')
 	} $else {
 		cli.say(text)
 	}
@@ -1411,18 +1438,22 @@ pub fn (cli &SimpleCli) clear_clipboard() &SimpleCli {
 // ask displays a native OS confirmation popup dialog ("OK" / "Cancel").
 pub fn (cli &SimpleCli) ask(title string, question string) bool {
 	$if macos {
-		script := 'button returned of (display dialog "${question}" with title "${title}" buttons {"Cancel", "OK"} default button "OK")'
-		res := os.execute("osascript -e '${script}'")
+		title_esc := title.replace('\\', '\\\\').replace('"', '\\"')
+		q_esc := question.replace('\\', '\\\\').replace('"', '\\"')
+		script := 'button returned of (display dialog "${q_esc}" with title "${title_esc}" buttons {"Cancel", "OK"} default button "OK")'
+		res := os.execute('osascript -e ${quote_arg(script)}')
 		return res.exit_code == 0 && res.output.trim_space() == 'OK'
 	} $else $if windows {
-		script := "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('${question}', '${title}', 'YesNo') -eq 'Yes'"
+		t_ps := title.replace("'", "''").replace('"', '')
+		q_ps := question.replace("'", "''").replace('"', '')
+		script := "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('${q_ps}', '${t_ps}', 'YesNo') -eq 'Yes'"
 		res := os.execute('powershell -Command "${script}"')
 		return res.exit_code == 0 && res.output.trim_space() == 'True'
 	} $else {
 		for cmd in [
-			'zenity --question --title="${title}" --text="${question}" 2>/dev/null',
-			'kdialog --yesno "${question}" 2>/dev/null',
-			'yad --question --title="${title}" --text="${question}" 2>/dev/null',
+			'zenity --question --title=${quote_arg(title)} --text=${quote_arg(question)} 2>/dev/null',
+			'kdialog --yesno ${quote_arg(question)} 2>/dev/null',
+			'yad --question --title=${quote_arg(title)} --text=${quote_arg(question)} 2>/dev/null',
 		] {
 			prog := cmd.split(' ')[0]
 			if os.find_abs_path_of_executable(prog) or { '' } != '' {
@@ -1439,8 +1470,10 @@ pub fn (cli &SimpleCli) ask(title string, question string) bool {
 // osascript_dialog displays a native input dialog on macOS.
 pub fn (cli &SimpleCli) osascript_dialog(prompt_text string, default_answer string) string {
 	$if macos {
-		script := 'text returned of (display dialog "${prompt_text}" default answer "${default_answer}")'
-		res := os.execute("osascript -e '${script}'")
+		p_esc := prompt_text.replace('\\', '\\\\').replace('"', '\\"')
+		d_esc := default_answer.replace('\\', '\\\\').replace('"', '\\"')
+		script := 'text returned of (display dialog "${p_esc}" default answer "${d_esc}")'
+		res := os.execute('osascript -e ${quote_arg(script)}')
 		if res.exit_code == 0 {
 			return res.output.trim_space()
 		}
@@ -1516,7 +1549,7 @@ pub fn say(text string) {
 	cli.say(text)
 }
 
-// beep emits a terminal bell beep.
+// sys_beep emits a terminal bell beep.
 pub fn sys_beep() {
 	print('\x07')
 	os.flush()

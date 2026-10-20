@@ -154,9 +154,13 @@ pub fn shuffle[T](mut arr []T) {
 	rand.shuffle(mut arr) or {}
 }
 
-// sum_int returns the sum of all elements in an integer slice using V's built-in arrays.sum.
-pub fn sum_int(arr []int) int {
-	return arrays.sum(arr) or { 0 }
+// sum_int returns the sum of all elements in an integer slice as i64 to avoid 32-bit int overflow.
+pub fn sum_int(arr []int) i64 {
+	mut total := i64(0)
+	for x in arr {
+		total += i64(x)
+	}
+	return total
 }
 
 // average_int returns the arithmetic mean of an integer slice, or 0.0 if empty.

@@ -116,12 +116,15 @@ pub fn verify_jwt_with(token string, secret string, opts VerifyOptions) !JWTClai
 	claims := json2.decode[JWTClaims](base64.url_decode_str(parts[1])) or {
 		return error('failed to parse claims JSON: ${err}')
 	}
-	now := if opts.now_unix > 0 { opts.now_unix } else { time.now().unix() }
+	if claims.exp < 0 || claims.nbf < 0 || claims.iat < 0 {
+		return error('invalid negative timestamp claim')
+	}
+	now := if opts.now_unix > 0 { opts.now_unix } else { time.utc().unix() }
 	leeway := if opts.leeway_seconds > 0 { opts.leeway_seconds } else { i64(0) }
-	if opts.require_exp && claims.exp == 0 {
+	if opts.require_exp && claims.exp <= 0 {
 		return error('token is missing required exp claim')
 	}
-	if claims.exp > 0 && now > claims.exp + leeway {
+	if claims.exp != 0 && now > claims.exp + leeway {
 		return error('token has expired (exp: ${claims.exp}, now: ${now})')
 	}
 	if claims.nbf > 0 && now + leeway < claims.nbf {
@@ -131,7 +134,7 @@ pub fn verify_jwt_with(token string, secret string, opts VerifyOptions) !JWTClai
 		return error('token issued in the future (iat: ${claims.iat}, now: ${now})')
 	}
 	if opts.max_age_seconds > 0
-		&& (claims.iat == 0 || now - claims.iat > opts.max_age_seconds + leeway) {
+		&& (claims.iat <= 0 || now - claims.iat > opts.max_age_seconds + leeway) {
 		return error('token exceeds max age of ${opts.max_age_seconds}s')
 	}
 	if opts.issuer != '' && claims.iss != opts.issuer {
@@ -146,7 +149,7 @@ pub fn verify_jwt_with(token string, secret string, opts VerifyOptions) !JWTClai
 // refresh_jwt verifies `token` and re-issues it with a fresh iat/exp of `ttl_seconds`.
 pub fn refresh_jwt(token string, secret string, ttl_seconds i64, opts VerifyOptions) !string {
 	mut claims := verify_jwt_with(token, secret, opts)!
-	now := if opts.now_unix > 0 { opts.now_unix } else { time.now().unix() }
+	now := if opts.now_unix > 0 { opts.now_unix } else { time.utc().unix() }
 	claims.iat = now
 	claims.exp = now + ttl_seconds
 	return sign_jwt_with(claims, secret, opts.algorithm)

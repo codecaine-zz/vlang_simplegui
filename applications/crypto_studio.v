@@ -338,7 +338,7 @@ except Exception as e:
 			t0 := time.ticks()
 
 			script := '
-import sys
+import sys, io
 data = sys.argv[1]
 try:
     import qrcode
@@ -353,7 +353,7 @@ except Exception:
     print(f"Data: {data}\\n")
     print("To render visual QR code images directly:")
     print("brew install qrencode")
-    print(f"qrencode -t UTF8 "{data}"")
+    print(f"qrencode -t UTF8 \\"{data}\\"")
 '
 			tmp_py := os.join_path(os.temp_dir(), 'qr_${time.ticks()}.py')
 			os.write_file(tmp_py, script) or { return }
@@ -421,7 +421,7 @@ out.append("   " + secrets.token_urlsafe(32))
 
 print("\\n".join(out))
 '
-		res := os.execute('python3 -c "${script.replace('"', '\\"')}"')
+		res := simplegui.exec_safe('python3', ['-c', script])
 		w.set('txt_crypto_output', res.output.trim_space())
 		w.append_console('crypto_console', '✅ Generated cryptographically secure secrets.\n', 4)
 		w.toast('Generated secure passwords!')

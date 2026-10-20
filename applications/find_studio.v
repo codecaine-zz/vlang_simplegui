@@ -479,8 +479,8 @@ fn main() {
 		w.toast('Scope set to /tmp.')
 	})
 	win.on_click('btn_reveal_dir', fn (mut w simplegui.SimpleWindow) {
-		dir := w.get('txt_target_dir').trim_space()
-		if dir != '' && os.exists(dir) {
+		dir := simplegui.expand_tilde(w.get('txt_target_dir'))
+		if dir != '' && os.is_dir(dir) {
 			simplegui.reveal_in_finder(dir)
 			w.toast('Revealed in Finder.')
 		}

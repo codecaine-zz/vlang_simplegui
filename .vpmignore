@@ -20,6 +20,8 @@ list_windows
 # Development-only directories (not needed in installed module)
 # Excluding these prevents VLS/v-analyzer from picking up `module main`
 # demo files, which cause struct name conflicts and break code completion.
+applications/
+cli_apps/
 demos/
 examples/
 tests/
@@ -28,3 +30,7 @@ tools/
 docs/
 screenshots/
 resources/
+youtube_production/
+output.c
+*.patch
+

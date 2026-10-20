@@ -109,11 +109,7 @@ fn main() {
 	// Directory Breakdown Action
 	win.on_click('btn_analyze_usage', fn (mut w simplegui.SimpleWindow) {
 		raw_target := w.get('txt_target_dir').trim_space()
-		target_dir := if raw_target.starts_with('~') {
-			raw_target.replace('~', os.home_dir())
-		} else {
-			raw_target
-		}
+		target_dir := simplegui.expand_tilde(raw_target)
 		if target_dir == '' || !os.exists(target_dir) {
 			w.alert('Directory Required', 'Please select a valid directory on disk.')
 			return
@@ -125,7 +121,7 @@ fn main() {
 
 		go fn [mut w, target_dir] () {
 			t0 := time.ticks()
-			res := os.execute('du -sh ${os.quoted_path(target_dir)}/* 2>/dev/null | sort -hr | head -n 40')
+			res := os.execute('du -sh ${simplegui.quote_path(target_dir)}/* 2>/dev/null | sort -hr | head -n 40')
 			elapsed_ms := time.ticks() - t0
 
 			w.run_on_main_thread(fn [res, elapsed_ms, target_dir] (mut win_main simplegui.SimpleWindow) {
@@ -146,7 +142,7 @@ fn main() {
 
 	// Top 30 Largest Files Action
 	win.on_click('btn_largest_files', fn (mut w simplegui.SimpleWindow) {
-		target_dir := w.get('txt_target_dir').trim_space()
+		target_dir := simplegui.expand_tilde(w.get('txt_target_dir'))
 		if target_dir == '' || !os.exists(target_dir) {
 			w.alert('Directory Required', 'Please select a valid directory on disk.')
 			return
@@ -159,7 +155,7 @@ fn main() {
 
 		go fn [mut w, target_dir] () {
 			t0 := time.ticks()
-			cmd := 'find "${target_dir}" -type f -exec ls -lh {} + 2>/dev/null | awk \'{print $5, $9}\' | sort -hr | head -n 30'
+			cmd := 'find ${simplegui.quote_path(target_dir)} -type f -exec ls -lh {} + 2>/dev/null | awk \'{out=$5; for(i=9;i<=NF;i++) out=out" "$i; print out}\' | sort -hr | head -n 30'
 			res := os.execute(cmd)
 			elapsed_ms := time.ticks() - t0
 
@@ -201,7 +197,7 @@ fn main() {
 
 	// Scan Developer Junk
 	win.on_click('btn_scan_dev_junk', fn (mut w simplegui.SimpleWindow) {
-		target_dir := w.get('txt_target_dir').trim_space()
+		target_dir := simplegui.expand_tilde(w.get('txt_target_dir'))
 		if target_dir == '' || !os.exists(target_dir) {
 			w.alert('Directory Required', 'Please select a directory to scan.')
 			return
@@ -213,7 +209,7 @@ fn main() {
 
 		go fn [mut w, target_dir] () {
 			t0 := time.ticks()
-			cmd := 'find "${target_dir}" -maxdepth 4 -type d \\( -name "node_modules" -o -name "target" -o -name ".cache" -o -name "__pycache__" -o -name ".build" \\) -exec du -sh {} + 2>/dev/null'
+			cmd := 'find ${simplegui.quote_path(target_dir)} -maxdepth 4 -type d \\( -name "node_modules" -o -name "target" -o -name ".cache" -o -name "__pycache__" -o -name ".build" \\) -exec du -sh {} + 2>/dev/null'
 			res := os.execute(cmd)
 			elapsed_ms := time.ticks() - t0
 

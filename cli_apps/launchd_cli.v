@@ -33,8 +33,11 @@ fn main() {
 	}
 
 	filter_kw := app.get_flag_string('filter').to_lower()
+	user_only := app.get_flag_bool('user')
+	system_only := app.get_flag_bool('system')
+
 	app.info('Querying launchctl services...')
-	out, _ := app.exec('launchctl list')
+	out, _ := app.exec_safe('launchctl', ['list'])
 	lines := out.split_into_lines().filter(it.len > 0)
 
 	mut rows := [][]string{}
@@ -44,6 +47,14 @@ fn main() {
 			pid := parts[0].trim_space()
 			status := parts[1].trim_space()
 			label := parts[2].trim_space()
+			is_apple := label.starts_with('com.apple.')
+
+			if user_only && !system_only && is_apple {
+				continue
+			}
+			if system_only && !user_only && !is_apple {
+				continue
+			}
 
 			if filter_kw.len == 0 || label.to_lower().contains(filter_kw) {
 				rows << [pid, status, label]
@@ -73,8 +84,12 @@ fn run_interactive(mut app simplecli.SimpleCli) {
 				app.warn('No user crontab configured.')
 			}
 		}
+		'List Active User LaunchAgents' {
+			out, _ := app.exec('launchctl list | grep -v "com.apple." | head -n 25')
+			println(out)
+		}
 		else {
-			out, _ := app.exec('launchctl list | head -n 25')
+			out, _ := app.exec('launchctl list | grep "com.apple." | head -n 25')
 			println(out)
 		}
 	}

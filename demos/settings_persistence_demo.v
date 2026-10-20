@@ -14,6 +14,7 @@ mut:
 }
 
 fn main() {
+	// 1. Controls Setup
 	mut win := simplegui.new_simple_window('Settings Persistence Demo', 550, 550)
 		.add_form_field('Server Address', 'server_host', '127.0.0.1')
 		.add_form_number('Port Number', 'server_port', 8080)
@@ -21,11 +22,9 @@ fn main() {
 			'Development')
 		.add_form_switch('Enable Logging', 'log_switch', 'Verbose Logs', true)
 		.add_form_slider('Max Connections', 'max_conn', 50)
-		.add_separator().begin_row
-
-	// 2. Action Buttons
-
-	('btn_row1')
+		.add_separator()
+		// 2. Action Buttons
+		.begin_row('btn_row1')
 		.add_button('btn_save_struct', '1. Save (Struct)')
 		.add_button('btn_load_struct', '2. Load (Struct)')
 		.end_row()
@@ -49,8 +48,7 @@ fn main() {
 
 	win.on_click('btn_load_struct', fn (mut win simplegui.SimpleWindow) {
 		content := win.read_file('app_settings.json')
-		if content == '' // 1. Controls Setup
-		  {
+		if content == '' {
 			win.set_status('No app_settings.json file found!')
 			return
 		}

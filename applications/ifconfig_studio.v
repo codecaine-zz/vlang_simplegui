@@ -931,7 +931,7 @@ fn main() {
 	win.on_click('btn_prettify_raw_json', fn (mut w simplegui.SimpleWindow) {
 		j := w.get('txt_raw_json').trim_space()
 		if j == '' { return }
-		res := simplegui.exec_safe_stdin('python3', ['-m', 'json.tool'], j)
+		res := simplegui.exec_safe_input('python3', ['-m', 'json.tool'], j)
 		if res.exit_code == 0 && res.output.trim_space() != '' {
 			w.set('txt_raw_json', res.output)
 			w.toast('Prettified JSON structure!')
@@ -941,7 +941,7 @@ fn main() {
 	win.on_click('btn_minify_raw_json', fn (mut w simplegui.SimpleWindow) {
 		j := w.get('txt_raw_json').trim_space()
 		if j == '' { return }
-		res := simplegui.exec_safe_stdin('python3', ['-c',
+		res := simplegui.exec_safe_input('python3', ['-c',
 			'import sys, json; print(json.dumps(json.loads(sys.stdin.read()), separators=(",", ":")))'], j)
 		if res.exit_code == 0 && res.output.trim_space() != '' {
 			w.set('txt_raw_json', res.output.trim_space())

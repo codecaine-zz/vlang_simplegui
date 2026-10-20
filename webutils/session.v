@@ -45,6 +45,7 @@ pub fn new_memory_store() &MemoryStore {
 	return &MemoryStore{}
 }
 
+// load retrieves a session map by `id` if it exists and has not expired.
 pub fn (mut s MemoryStore) load(id string) ?map[string]string {
 	s.mu.lock()
 	defer {
@@ -58,6 +59,7 @@ pub fn (mut s MemoryStore) load(id string) ?map[string]string {
 	return e.data.clone()
 }
 
+// save stores a copy of `data` under session `id` with an expiration of `ttl_secs` seconds.
 pub fn (mut s MemoryStore) save(id string, data map[string]string, ttl_secs int) {
 	s.mu.lock()
 	defer {
@@ -79,6 +81,7 @@ pub fn (mut s MemoryStore) save(id string, data map[string]string, ttl_secs int)
 	}
 }
 
+// destroy deletes the session identified by `id` from the in-memory store.
 pub fn (mut s MemoryStore) destroy(id string) {
 	s.mu.lock()
 	s.items.delete(id)
@@ -93,6 +96,7 @@ pub fn (mut s MemoryStore) len() int {
 	return n
 }
 
+// SessionConfig configures cookie attributes and idle lifetime for server-side sessions.
 @[params]
 pub struct SessionConfig {
 pub:

@@ -171,6 +171,9 @@ pub fn fibonacci(n int) ?u64 {
 }
 
 fn mul_mod(a u64, b u64, m u64) u64 {
+	if m <= 1 {
+		return 0
+	}
 	hi, lo := bits.mul_64(a % m, b % m)
 	_, rem := bits.div_64(hi, lo, m)
 	return rem
@@ -178,7 +181,7 @@ fn mul_mod(a u64, b u64, m u64) u64 {
 
 // mod_pow computes (base ^ exp) mod m without overflow (square-and-multiply).
 pub fn mod_pow(base u64, exp u64, m u64) u64 {
-	if m == 1 {
+	if m <= 1 {
 		return 0
 	}
 	mut result := u64(1)

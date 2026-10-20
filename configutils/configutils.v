@@ -19,6 +19,7 @@ fn toml_any_to_str(a toml.Any) string {
 	}
 }
 
+// ConfigOptions defines the cascading sources for loading application configuration.
 pub struct ConfigOptions {
 pub:
 	config_path string
@@ -27,12 +28,14 @@ pub:
 	defaults    map[string]string
 }
 
+// ConfigStore holds resolved configuration key-value pairs and tracks the origin source of each key.
 pub struct ConfigStore {
 pub mut:
 	values  map[string]string
 	sources map[string]string
 }
 
+// new_config_store creates and initializes an empty ConfigStore.
 pub fn new_config_store() &ConfigStore {
 	return &ConfigStore{
 		values:  map[string]string{}
@@ -199,8 +202,11 @@ pub fn (s &ConfigStore) get_bool(key string, default_val bool) bool {
 
 // get_f64 returns the float value or default_val
 pub fn (s &ConfigStore) get_f64(key string, default_val f64) f64 {
-	val := s.values[key] or { return default_val }
-	return strconv.atof_quick(val)
+	val := (s.values[key] or { return default_val }).trim_space()
+	if val.len == 0 {
+		return default_val
+	}
+	return strconv.atof64(val) or { default_val }
 }
 
 // get_strings returns a comma-separated or space-separated list of strings

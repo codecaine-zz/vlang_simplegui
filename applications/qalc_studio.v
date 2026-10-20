@@ -258,9 +258,21 @@ fn main() {
 	win.begin_row('row_calc_input')
 	win.add_label('lbl_calc_func', 'Function f(x):')
 	win.add_input('txt_calc_func', 'x^3 * sin(x) + exp(-x)')
-	win.set_control_width('txt_calc_func', 380)
+	win.set_control_width('txt_calc_func', 320)
 	win.set_control_font_name('txt_calc_func', 'Menlo')
 
+	win.add_label('lbl_calc_from', 'From:')
+	win.add_input('txt_calc_from', '0')
+	win.set_control_width('txt_calc_from', 50)
+	win.add_label('lbl_calc_to', 'To:')
+	win.add_input('txt_calc_to', '1')
+	win.set_control_width('txt_calc_to', 50)
+	win.add_label('lbl_calc_order', 'Order:')
+	win.add_input('txt_calc_order', '5')
+	win.set_control_width('txt_calc_order', 45)
+	win.end_row()
+
+	win.begin_row('row_calc_btns')
 	win.add_button('btn_calc_diff', 'd/dx Derivative')
 	win.add_button('btn_calc_integ', '∫ Indefinite Integral')
 	win.add_button('btn_calc_def_integ', '∫ Definite Integral')
@@ -577,8 +589,13 @@ fn main() {
 				out << line
 				continue
 			}
-			res := eval_expr_fn(mut w, trimmed, 'Scratchpad')
-			out << trimmed + ' = ' + res
+			expr_part := if trimmed.contains(' = ') {
+				trimmed.all_before(' = ').trim_space()
+			} else {
+				trimmed
+			}
+			res := eval_expr_fn(mut w, expr_part, 'Scratchpad')
+			out << expr_part + ' = ' + res
 		}
 		w.set('txt_scratchpad', out.join('\n'))
 		w.toast('Evaluated all scratchpad lines!')
@@ -645,16 +662,23 @@ fn main() {
 
 	win.on_click('btn_calc_def_integ', fn [eval_expr_fn] (mut w simplegui.SimpleWindow) {
 		func := w.get('txt_calc_func').trim_space()
-		query := 'integrate(${func})'
+		raw_from := w.get('txt_calc_from').trim_space()
+		raw_to := w.get('txt_calc_to').trim_space()
+		from_val := if raw_from != '' { raw_from } else { '0' }
+		to_val := if raw_to != '' { raw_to } else { '1' }
+		query := 'integrate(${func}, ${from_val}, ${to_val})'
 		res := eval_expr_fn(mut w, query, 'Definite Integral')
-		w.set('txt_calc_output', 'Integral of [ ${func} ]:\n\n' + res)
+		w.set('txt_calc_output', 'Definite Integral ∫[${from_val} to ${to_val}] ( ${func} ) dx:\n\n' +
+			res)
 	})
 
 	win.on_click('btn_calc_taylor', fn [eval_expr_fn] (mut w simplegui.SimpleWindow) {
 		func := w.get('txt_calc_func').trim_space()
-		query := 'diff(diff(${func}))'
-		res := eval_expr_fn(mut w, query, 'Higher Derivative')
-		w.set('txt_calc_output', 'Second Derivative d²f/dx²:\n\n' + res)
+		raw_order := w.get('txt_calc_order').trim_space()
+		order_val := if raw_order != '' { raw_order } else { '5' }
+		query := 'taylor(${func}, ${order_val})'
+		res := eval_expr_fn(mut w, query, 'Taylor Series')
+		w.set('txt_calc_output', 'Taylor Series (order ${order_val}) of [ ${func} ]:\n\n' + res)
 	})
 
 	// -------------------------------------------------------------

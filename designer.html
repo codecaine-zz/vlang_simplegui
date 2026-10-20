@@ -883,6 +883,7 @@
 		<aside class="palette-sidebar">
 			<span class="sidebar-heading">Form Layout Templates</span>
 			<div class="templates-row" style="flex-wrap: wrap; gap: 4px;">
+				<span class="template-chip" onclick="loadTemplate('vfx_studio')" style="border-color: #d946ef; color: #f0abfc; background: rgba(217, 70, 239, 0.14);" title="Load GOAT 4D Shaders, Particle Physics & Holographic VFX Studio preset layout">🌌 GOAT VFX Studio</span>
 				<span class="template-chip" onclick="loadTemplate('default')" title="Load Customer Account Registration preset form layout">Customer</span>
 				<span class="template-chip" onclick="loadTemplate('login')" title="Load User Authentication Sign-In Dialog preset form layout">Auth Login</span>
 				<span class="template-chip" onclick="loadTemplate('dash')" title="Load Executive KPI Analytics Dashboard preset form layout">Dashboard</span>
@@ -899,6 +900,37 @@
 
 			<span class="sidebar-heading">Component Palette</span>
 			<input type="text" class="search-box" placeholder="Filter controls..." oninput="filterPalette(this.value)" title="Filter palette components by name">
+
+			<!-- Category 0: GOAT VFX & 3D Shaders -->
+			<div class="palette-category">
+				<div class="palette-cat-header" style="color: #e879f9;">🌌 GOAT VFX & 3D Shaders</div>
+				<div class="palette-grid">
+					<div class="palette-item" draggable="true" onclick="spawnControl('shader_canvas')" ondragstart="onDragStart(event, 'shader_canvas')" title="4D Shader Canvas: Interactive 60 FPS GPU-style procedural shader viewport (tesseract_4d, plasma_reactor, synthwave_horizon, audio_spectrum_3d, black_hole_singularity, neural_plexus) (win.add_shader_canvas)">
+						<span class="palette-icon">🪐</span>
+						<span>4D Shader</span>
+					</div>
+					<div class="palette-item" draggable="true" onclick="spawnControl('particle_emitter')" ondragstart="onDragStart(event, 'particle_emitter')" title="Particle Emitter: Real-time physics particle simulation with interactive click burst emission (supernova_burst, vortex_galaxy, quantum_fountain, cyber_sparks) (win.add_particle_emitter)">
+						<span class="palette-icon">🎆</span>
+						<span>Particles</span>
+					</div>
+					<div class="palette-item" draggable="true" onclick="spawnControl('hologram_card')" ondragstart="onDragStart(event, 'hologram_card')" title="3D Hologram Card: Mouse-reactive 3D perspective tilt card with iridescent rainbow foil sweep & HUD targeting brackets (win.add_hologram_card)">
+						<span class="palette-icon">🔮</span>
+						<span>Hologram Card</span>
+					</div>
+					<div class="palette-item" draggable="true" onclick="spawnControl('waveform_synth')" ondragstart="onDragStart(event, 'waveform_synth')" title="Waveform Synthesizer: Multi-harmonic neon oscilloscope with phosphor persistence trails & phase modulation (win.add_waveform_synthesizer)">
+						<span class="palette-icon">〰️</span>
+						<span>Waveform Synth</span>
+					</div>
+					<div class="palette-item" draggable="true" onclick="spawnControl('glitch_banner')" ondragstart="onDragStart(event, 'glitch_banner')" title="Cyber Glitch Banner: RGB chromatic aberration hero banner with horizontal slice displacement & CRT scanlines (win.add_glitch_banner)">
+						<span class="palette-icon">⚡</span>
+						<span>Glitch Banner</span>
+					</div>
+					<div class="palette-item" draggable="true" onclick="spawnControl('themed_folder_grid')" ondragstart="onDragStart(event, 'themed_folder_grid')" title="3D Holographic Folders: 5-layer sculpted 3D folder grid with glowing floor pedestals, recessed docs & hover elevation (win.add_themed_folder_grid)">
+						<span class="palette-icon">📁</span>
+						<span>3D Folders</span>
+					</div>
+				</div>
+			</div>
 
 			<!-- Category 1: Standard Controls -->
 			<div class="palette-category">
@@ -1906,21 +1938,26 @@
 			document.addEventListener("DOMContentLoaded", initDesignerApp);
 		}
 
+		function escHtml(s) {
+			return String(s == null ? "" : s)
+				.replace(/&/g, "&amp;")
+				.replace(/</g, "&lt;")
+				.replace(/>/g, "&gt;")
+				.replace(/"/g, "&quot;")
+				.replace(/'/g, "&#39;");
+		}
+
 		function bindLivePropertyEditors() {
 			const propIds = ["propId", "propText", "propTooltip", "propX", "propY", "propWidth", "propHeight", "propFontSize", "propFontColor", "propBgColor", "propHoverBgColor", "propHoverFgColor", "propCursor"];
 			propIds.forEach((id) => {
 				const el = document.getElementById(id);
 				if (!el) return;
-				["input", "keyup", "change"].forEach((evt) => {
-					el.addEventListener(evt, updateSelectedControl);
-				});
+				el.addEventListener("input", updateSelectedControl);
 			});
 
 			const formTitleEl = document.getElementById("propFormTitle");
 			if (formTitleEl) {
-				["input", "keyup", "change"].forEach((evt) => {
-					formTitleEl.addEventListener(evt, updateFormSpec);
-				});
+				formTitleEl.addEventListener("input", updateFormSpec);
 			}
 		}
 
@@ -2060,18 +2097,19 @@
 			const winH = formSpec.height || 560;
 
 			formSpec.controls.forEach((c, idx) => {
+				const safeId = escHtml(c.id);
 				if (idMap[c.id]) {
-					issues.push("❌ <b>Duplicate ID:</b> <code>" + c.id + "</code> is used by multiple controls.");
+					issues.push("❌ <b>Duplicate ID:</b> <code>" + safeId + "</code> is used by multiple controls.");
 				} else {
 					idMap[c.id] = true;
 				}
 
 				if (c.x + c.width > winW || c.y + c.height > winH) {
-					issues.push("⚠️ <b>Out of Bounds:</b> Control <code>" + c.id + "</code> (" + c.x + ", " + c.y + ") exceeds form bounds (" + winW + "x" + winH + ").");
+					issues.push("⚠️ <b>Out of Bounds:</b> Control <code>" + safeId + "</code> (" + c.x + ", " + c.y + ") exceeds form bounds (" + winW + "x" + winH + ").");
 				}
 
 				if (!c.text || !c.text.trim()) {
-					issues.push("ℹ️ <b>Empty Caption:</b> Control <code>" + c.id + "</code> has an empty text string.");
+					issues.push("ℹ️ <b>Empty Caption:</b> Control <code>" + safeId + "</code> has an empty text string.");
 				}
 
 				formSpec.controls.forEach((other, oIdx) => {
@@ -2079,13 +2117,13 @@
 					if (c.control_type === "panel" || other.control_type === "panel") return;
 					if (c.x < other.x + other.width && c.x + c.width > other.x &&
 						c.y < other.y + other.height && c.y + c.height > other.y) {
-						issues.push("⚠️ <b>Overlap Detected:</b> <code>" + c.id + "</code> overlaps with <code>" + other.id + "</code>.");
+						issues.push("⚠️ <b>Overlap Detected:</b> <code>" + safeId + "</code> overlaps with <code>" + escHtml(other.id) + "</code>.");
 					}
 				});
 			});
 
 			if (issues.length === 0) {
-				summary.innerHTML = "<div style='color:var(--success); font-weight:bold; font-size:12px;'>🎉 Perfect! No layout collisions or structural issues detected.</div><div style='margin-top:6px; opacity:0.8;'>Form: " + formSpec.title + " | Controls: " + formSpec.controls.length + "</div>";
+				summary.innerHTML = "<div style='color:var(--success); font-weight:bold; font-size:12px;'>🎉 Perfect! No layout collisions or structural issues detected.</div><div style='margin-top:6px; opacity:0.8;'>Form: " + escHtml(formSpec.title) + " | Controls: " + formSpec.controls.length + "</div>";
 			} else {
 				summary.innerHTML = "<div style='color:var(--warning); font-weight:bold; margin-bottom:8px;'>Found " + issues.length + " item(s) requiring attention:</div>" + issues.map(i => "<div style='margin-bottom:4px;'>" + i + "</div>").join("");
 			}
@@ -2195,6 +2233,10 @@
 			if (type === "badge" || type === "status_indicator" || type === "form_link") { defaultW = 140; defaultH = 26; }
 			if (type === "radio" || type === "switch" || type === "date" || type === "date_picker") { defaultW = 180; defaultH = 28; }
 			if (type === "rating" || type === "stepper") { defaultW = 120; defaultH = 32; }
+			if (type === "shader_canvas" || type === "particle_emitter") { defaultW = 360; defaultH = 190; }
+			if (type === "hologram_card" || type === "waveform_synth") { defaultW = 340; defaultH = 135; }
+			if (type === "glitch_banner") { defaultW = 480; defaultH = 88; }
+			if (type === "themed_folder_grid") { defaultW = 480; defaultH = 140; }
 
 			const themeSelect = document.getElementById("propFormTheme");
 			const activeTheme = themeSelect ? themeSelect.value : "Dark";
@@ -2590,6 +2632,20 @@
 					{ id: "slider_volume", control_type: "slider", x: 24, y: 205, width: 360, height: 28, value: 80, text: "Volume Level" },
 					{ id: "rating_track", control_type: "rating", x: 24, y: 245, width: 140, height: 32, text: "Favorite Rating" }
 				];
+			} else if (name === "vfx_studio") {
+				formSpec.title = "GOAT Master Graphics, 4D Shaders & Particle VFX Studio";
+				formSpec.width = 960;
+				formSpec.height = 660;
+				formSpec.background_color = "#060312";
+				formSpec.font_color = "#fdf4ff";
+				formSpec.controls = [
+					{ id: "vfx_glitch_hero", control_type: "glitch_banner", x: 24, y: 20, width: 900, height: 92, text: "CODECAINE GOAT VFX ENGINE", placeholder: "4D TESSERACT · PLASMA REACTOR · PARTICLE PHYSICS · HOLOGRAMS" },
+					{ id: "vfx_shader_viewport", control_type: "shader_canvas", x: 24, y: 126, width: 440, height: 210, text: "tesseract_4d", placeholder: "tesseract_4d" },
+					{ id: "vfx_particle_chamber", control_type: "particle_emitter", x: 484, y: 126, width: 440, height: 210, text: "supernova_burst", placeholder: "supernova_burst", value: 110 },
+					{ id: "vfx_holo_gpu", control_type: "hologram_card", x: 24, y: 350, width: 440, height: 140, text: "RAYMARCH SHADER CORE", placeholder: "4D TESSERACT · 60 FPS REALTIME" },
+					{ id: "vfx_wave_osc", control_type: "waveform_synth", x: 484, y: 350, width: 440, height: 140, text: "HARMONIC SYNTHESIZER", placeholder: "harmonic_chord" },
+					{ id: "vfx_folder_vault", control_type: "themed_folder_grid", x: 24, y: 504, width: 900, height: 140, text: "3D Holographic Folder Vault" }
+				];
 			} else if (name === "checkout") {
 				formSpec.title = "E-Commerce Multi-Column Checkout";
 				formSpec.width = 960;
@@ -2630,14 +2686,6 @@
 			renderTree();
 			populateInspector();
 			document.getElementById("statusMsg").textContent = "Loaded " + name + " template layout.";
-		}
-
-		function setBgColor(hex) {
-			const bgEl = document.getElementById("propBgColor");
-			if (bgEl) {
-				bgEl.value = hex;
-				updateSelectedControl();
-			}
 		}
 
 		function capitalize(str) {
@@ -2815,7 +2863,8 @@
 		function renderControlContent(ctrl, div) {
 			div.innerHTML = "";
 			const type = ctrl.control_type || "button";
-			const text = ctrl.text || ctrl.id;
+			const rawText = ctrl.text || ctrl.id;
+			const text = escHtml(rawText);
 
 			if (type === "color") {
 				const col = ctrl.font_color && ctrl.font_color !== "#ffffff" ? ctrl.font_color : (ctrl.background_color && ctrl.background_color !== "#1e293b" ? ctrl.background_color : "#38bdf8");
@@ -2863,7 +2912,7 @@
 				fill.style.backgroundColor = bg;
 				const txt = document.createElement("span");
 				txt.className = "ctrl-progress-text";
-				txt.textContent = text + ": " + val + "%";
+				txt.textContent = rawText + ": " + val + "%";
 				const track = document.createElement("div");
 				track.className = "ctrl-progress-track";
 				track.appendChild(fill);
@@ -3055,6 +3104,33 @@
 				div.style.padding = "6px";
 				div.style.alignItems = "flex-start";
 				div.innerHTML = "<span style='color:#ff79c6;'>fn</span> <span style='color:#50fa7b;'>main</span>() {\n  <span style='color:#f1fa8c;'>println(\"Hello\")</span>\n}";
+			} else if (type === "shader_canvas") {
+				div.style.background = "radial-gradient(circle at 50% 50%, rgba(217,70,239,0.35), rgba(6,3,18,0.95) 75%)";
+				div.style.border = "1px solid #d946ef";
+				div.style.boxShadow = "inset 0 0 24px rgba(217,70,239,0.25)";
+				div.innerHTML = "<div style='display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%; height:100%; gap:4px;'><div style='font-size:18px; color:#f0abfc; text-shadow:0 0 10px #d946ef;'>🪐 4D SHADER VIEWPORT</div><div style='font-size:10px; color:#38bdf8; font-family:monospace; background:rgba(0,0,0,0.5); padding:2px 8px; border-radius:4px; border:1px solid rgba(56,189,248,0.4);'>PRESET: " + text + " · 60 FPS</div></div>";
+			} else if (type === "particle_emitter") {
+				div.style.background = "radial-gradient(circle at 50% 50%, rgba(56,189,248,0.32), rgba(9,13,22,0.95) 75%)";
+				div.style.border = "1px solid #38bdf8";
+				div.style.boxShadow = "inset 0 0 24px rgba(56,189,248,0.22)";
+				div.innerHTML = "<div style='display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%; height:100%; gap:4px;'><div style='font-size:18px; color:#7dd3fc; text-shadow:0 0 10px #38bdf8;'>🎆 PARTICLE PHYSICS CHAMBER</div><div style='font-size:10px; color:#f472b6; font-family:monospace; background:rgba(0,0,0,0.5); padding:2px 8px; border-radius:4px; border:1px solid rgba(244,114,182,0.4);'>EMITTER: " + text + " · CLICK BURST</div></div>";
+			} else if (type === "hologram_card") {
+				div.style.background = "linear-gradient(135deg, rgba(19,9,36,0.92), rgba(56,189,248,0.18), rgba(217,70,239,0.22))";
+				div.style.border = "1px solid #e879f9";
+				div.style.padding = "10px 14px";
+				div.innerHTML = "<div style='display:flex; flex-direction:column; justify-content:space-between; width:100%; height:100%;'><div style='display:flex; justify-content:space-between; align-items:center;'><span style='font-size:10px; font-weight:800; color:#cbd5e1; letter-spacing:0.8px;'>🔮 " + text + "</span><span style='font-size:9px; background:rgba(217,70,239,0.25); color:#f0abfc; padding:2px 6px; border-radius:4px; border:1px solid #d946ef;'>HOLO 3D</span></div><div style='font-size:20px; font-weight:900; color:#ffffff; text-shadow:0 0 12px #d946ef;'>60 FPS GPU</div><div style='font-size:9px; color:#38bdf8;'>4D TESSERACT · IRIDESCENT FOIL</div></div>";
+			} else if (type === "waveform_synth") {
+				div.style.background = "linear-gradient(180deg, rgba(6,11,25,0.95), rgba(15,23,42,0.95))";
+				div.style.border = "1px solid #22d3ee";
+				div.innerHTML = "<div style='display:flex; flex-direction:column; justify-content:space-between; width:100%; height:100%; padding:8px 12px;'><div style='display:flex; justify-content:space-between; font-size:10px; color:#22d3ee; font-weight:bold;'><span>〰️ " + text + "</span><span style='font-family:monospace;'>4.0Hz · 85% AMP</span></div><div style='text-align:center; color:#ec4899; font-size:18px; letter-spacing:2px; text-shadow:0 0 8px #ec4899;'>∿∿∿∿∿∿∿∿∿∿∿∿</div><div style='font-size:9px; color:#94a3b8; font-family:monospace;'>HARMONIC CHORD · PHOSPHOR RIBBON</div></div>";
+			} else if (type === "glitch_banner") {
+				div.style.background = "linear-gradient(90deg, rgba(13,2,33,0.95), rgba(36,9,74,0.92), rgba(13,2,33,0.95))";
+				div.style.border = "1px solid #ff007f";
+				div.innerHTML = "<div style='display:flex; flex-direction:column; justify-content:center; width:100%; height:100%; padding:0 16px; gap:2px;'><div style='font-size:18px; font-weight:900; color:#ffffff; text-shadow:-2px 0 #ff0055, 2px 0 #00f0ff; letter-spacing:1px;'>⚡ " + text + "</div><div style='font-size:9px; color:#00f0ff; font-family:monospace;'>CHROMATIC ABERRATION · SCANLINE GLITCH MATRIX</div></div>";
+			} else if (type === "themed_folder_grid") {
+				div.style.background = "rgba(15, 23, 42, 0.85)";
+				div.style.border = "1px solid #8b5cf6";
+				div.innerHTML = "<div style='display:flex; align-items:center; justify-content:space-around; width:100%; height:100%; padding:8px;'><div style='background:rgba(139,92,246,0.18); border:1px solid #8b5cf6; border-radius:8px; padding:8px 14px; text-align:center;'><div style='font-size:16px;'>📁⚡</div><div style='font-size:10px; font-weight:bold; color:#e2e8f0;'>src</div></div><div style='background:rgba(217,70,239,0.18); border:1px solid #d946ef; border-radius:8px; padding:8px 14px; text-align:center;'><div style='font-size:16px;'>📁🌌</div><div style='font-size:10px; font-weight:bold; color:#e2e8f0;'>shaders</div></div><div style='background:rgba(56,189,248,0.18); border:1px solid #38bdf8; border-radius:8px; padding:8px 14px; text-align:center;'><div style='font-size:16px;'>📁🧪</div><div style='font-size:10px; font-weight:bold; color:#e2e8f0;'>tests</div></div></div>";
 			} else {
 				if (ctrl.background_color) div.style.backgroundColor = ctrl.background_color;
 				const fg = ctrl.font_color || "#ffffff";
@@ -3658,6 +3734,8 @@
 				}
 				sel.appendChild(opt);
 			});
+		}
+
 		function showToast(msg) {
 			let toast = document.getElementById("designerToastOverlay");
 			if (!toast) {
@@ -4035,7 +4113,23 @@
 				if (isMulti) vcode += "  win.begin_row('row_" + (rIdx + 1) + "')\n";
 				row.forEach(c => {
 					const cleanText = c.text ? c.text.replace(/'/g, "\\'") : c.id;
-					vcode += "  win.add_" + (c.control_type || "button") + "('" + c.id + "', '" + cleanText + "')\n";
+					if (c.control_type === "shader_canvas") {
+						const preset = (cleanText && !cleanText.includes(" ")) ? cleanText : "tesseract_4d";
+						vcode += "  win.add_shader_canvas('" + c.id + "', '" + preset + "', " + (c.height || 210) + ")\n";
+					} else if (c.control_type === "particle_emitter") {
+						const ptype = (cleanText && !cleanText.includes(" ")) ? cleanText : "supernova_burst";
+						vcode += "  win.add_particle_emitter('" + c.id + "', '" + ptype + "', 96, " + (c.height || 210) + ")\n";
+					} else if (c.control_type === "hologram_card") {
+						vcode += "  win.add_hologram_card('" + c.id + "', '" + cleanText + "', '4D TESSERACT · AURORA', '60 FPS GPU', 'ACTIVE', 'rainbow_foil', " + (c.height || 140) + ")\n";
+					} else if (c.control_type === "waveform_synth") {
+						vcode += "  win.add_waveform_synthesizer('" + c.id + "', 'harmonic_chord', 4.0, 0.85, " + (c.height || 140) + ")\n";
+					} else if (c.control_type === "glitch_banner") {
+						vcode += "  win.add_glitch_banner('" + c.id + "', '" + cleanText + "', '4D SHADERS · PARTICLE PHYSICS · HOLOGRAMS', 'cyber_glitch', " + (c.height || 92) + ")\n";
+					} else if (c.control_type === "themed_folder_grid") {
+						vcode += "  win.add_themed_folder_grid('" + c.id + "', [simplegui.FolderTileItem{name: 'src', subtitle: 'Core Engine', folder_type: 'src', badge: '⚡'}, simplegui.FolderTileItem{name: 'shaders', subtitle: 'Theme FX', folder_type: 'shaders', badge: '🌌'}, simplegui.FolderTileItem{name: 'tests', subtitle: 'Unit Suite', folder_type: 'tests', badge: '🧪'}], 3, " + (c.height || 140) + ")\n";
+					} else {
+						vcode += "  win.add_" + (c.control_type || "button") + "('" + c.id + "', '" + cleanText + "')\n";
+					}
 					if (c.width) vcode += "  win.set_control_width('" + c.id + "', " + c.width + ")\n";
 					if (c.height) vcode += "  win.set_control_height('" + c.id + "', " + c.height + ")\n";
 					if (c.font_color && c.font_color !== "#ffffff") vcode += "  win.set_control_font_color('" + c.id + "', '" + c.font_color + "')\n";

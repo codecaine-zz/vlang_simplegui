@@ -301,7 +301,7 @@ fn main() {
 	win.end_row()
 
 	win.begin_row('row_bury_options')
-	win.add_checkbox('chk_inspect_before_bury', 'Pre-flight metadata inspection (-i)', true)
+	win.add_checkbox('chk_inspect_before_bury', 'Pre-flight metadata inspection (-i)', false)
 	win.add_checkbox('chk_force_mode', 'Force / Non-interactive mode (-f)', false)
 	win.add_checkbox('chk_backup_notice', 'Log operation to audit trail', true)
 	win.end_row()
@@ -467,6 +467,17 @@ fn main() {
 		}
 
 		win.set_table_rows('tbl_graveyard', rows)
+		if rows.len > 0 {
+			r0 := rows[0]
+			win.set('lbl_intel_name', 'Selected Item: ${r0[0]} (${r0[3]}, ${r0[4]}, ${r0[5]})')
+			win.set('lbl_intel_orig', 'Original Location: ${r0[1]}')
+			win.set('lbl_intel_dest', 'Tomb Location: ${r0[6]}')
+		} else {
+			win.set('lbl_intel_name',
+				'Selected Item: (Click an item in the tomb above to inspect details)')
+			win.set('lbl_intel_orig', 'Original Location: --')
+			win.set('lbl_intel_dest', 'Tomb Location: --')
+		}
 
 		// Update KPI Stat Cards
 		win.set_stat_card('card_buried_count', '${stats.active_cnt} Active Items',
@@ -496,6 +507,9 @@ fn main() {
 	get_selected_record := fn (mut win simplegui.SimpleWindow) (string, string, string, string, string) {
 		row := win.get_table_selected_row('tbl_graveyard')
 		if row.len >= 7 {
+			win.set('lbl_intel_name', 'Selected Item: ${row[0]} (${row[3]}, ${row[4]}, ${row[5]})')
+			win.set('lbl_intel_orig', 'Original Location: ${row[1]}')
+			win.set('lbl_intel_dest', 'Tomb Location: ${row[6]}')
 			return row[0], row[1], row[2], row[4], row[6]
 		}
 		return '', '', '', '', ''
@@ -507,6 +521,11 @@ fn main() {
 	// -------------------------------------------------------------
 	// Event Bindings & Actions
 	// -------------------------------------------------------------
+
+	// Table selection updates intelligence labels
+	win.on_change('tbl_graveyard', fn [get_selected_record] (mut w simplegui.SimpleWindow, _ string) {
+		get_selected_record(mut w)
+	})
 
 	// Theme Selection
 	win.on_change('dd_theme_selector', fn (mut w simplegui.SimpleWindow, selected string) {
@@ -875,10 +894,17 @@ fn main() {
 			return
 		}
 
-		mut args := []string{}
 		if w.get_bool('chk_inspect_before_bury') {
-			args << '-i'
+			is_d := os.is_dir(target)
+			sz := if is_d { get_dir_size_recursive(target) } else { os.file_size(target) }
+			if !w.confirm('Pre-Flight Inspection',
+				'Target: ${target}\nSize: ${format_bytes(sz)}\n\nProceed with burying this item into the graveyard?') {
+				w.toast('Bury cancelled.')
+				return
+			}
 		}
+
+		mut args := []string{}
 		if w.get_bool('chk_force_mode') {
 			args << '-f'
 		}
@@ -936,22 +962,17 @@ fn main() {
 
 	// Run Séance
 	win.on_click('btn_summon_ghosts', fn [rip_bin] (mut w simplegui.SimpleWindow) {
-		target_dir := w.get('txt_seance_dir').trim_space()
+		target_dir := simplegui.expand_tilde(w.get('txt_seance_dir'))
 		effective_dir := if target_dir == '' { '.' } else { target_dir }
 
 		w.set('txt_activity_log',
-			' Summoning séance ghost records for: ${effective_dir}...\n Command: cd "${effective_dir}" && ${rip_bin} -s\n')
+			' Summoning séance ghost records for: ${effective_dir}...\n Command: ${rip_bin} -s "${effective_dir}"\n')
 		w.set_status('Summoning ghost records...')
 		w.toast('Summoning ghosts...')
 
 		go fn [mut w, rip_bin, effective_dir] () {
 			t0 := time.ticks()
-			saved_dir := os.getwd()
-			if os.is_dir(effective_dir) {
-				os.chdir(effective_dir) or {}
-			}
-			res := simplegui.exec_safe(rip_bin, ['-s'])
-			os.chdir(saved_dir) or {}
+			res := simplegui.exec_safe(rip_bin, ['-s', effective_dir])
 			elapsed_ms := time.ticks() - t0
 
 			w.run_on_main_thread(fn [res, elapsed_ms, effective_dir] (mut win_main simplegui.SimpleWindow) {

@@ -350,11 +350,11 @@ fn main() {
 		out_file := win.get('txt_output').trim_space()
 
 		if in_file == '' {
-			return '${magick} <input_file> <output_file>'
+			return '${simplegui.quote_arg(magick)} <input_file> <output_file>'
 		}
 
 		current_tab := win.get('tabs_mode')
-		mut cmd_parts := [magick, '"${in_file}"']
+		mut cmd_parts := [simplegui.quote_arg(magick), simplegui.quote_path(in_file)]
 
 		if current_tab.contains('Resize') || current_tab == '' {
 			preset := win.get('dd_res_preset')
@@ -365,23 +365,23 @@ fn main() {
 			} else if preset.contains('200%') {
 				cmd_parts << ['-resize', '200%']
 			} else if preset.contains('1920x1080') {
-				cmd_parts << ['-resize', '1920x1080\\>']
+				cmd_parts << ['-resize', simplegui.quote_arg('1920x1080>')]
 			} else if preset.contains('1280x720') {
-				cmd_parts << ['-resize', '1280x720\\>']
+				cmd_parts << ['-resize', simplegui.quote_arg('1280x720>')]
 			} else if preset.contains('3840x2160') {
-				cmd_parts << ['-resize', '3840x2160\\>']
+				cmd_parts << ['-resize', simplegui.quote_arg('3840x2160>')]
 			} else if preset.contains('Custom') {
 				w := win.get('txt_custom_w').trim_space()
 				h := win.get('txt_custom_h').trim_space()
 				aspect := win.get('dd_aspect_mode')
 				if w != '' && h != '' {
 					if aspect.contains('Fit') {
-						cmd_parts << ['-resize', '${w}x${h}\\>']
+						cmd_parts << ['-resize', simplegui.quote_arg('${w}x${h}>')]
 					} else if aspect.contains('Exact') {
-						cmd_parts << ['-resize', '${w}x${h}!']
+						cmd_parts << ['-resize', simplegui.quote_arg('${w}x${h}!')]
 					} else {
-						cmd_parts << ['-resize', '${w}x${h}^', '-gravity', 'center', '-extent',
-							'${w}x${h}']
+						cmd_parts << ['-resize', simplegui.quote_arg('${w}x${h}^'), '-gravity',
+							'center', '-extent', simplegui.quote_arg('${w}x${h}')]
 					}
 				}
 			}
@@ -411,26 +411,43 @@ fn main() {
 			if fmt.contains('ico') {
 				cmd_parts << ['-define', 'icon:auto-resize=64,48,32,16']
 			} else {
-				cmd_parts << ['-quality', q, '-strip', '-interlace', 'Plane']
+				cmd_parts << ['-quality', q]
+				if win.get_bool('chk_strip') {
+					cmd_parts << '-strip'
+				}
+				if win.get_bool('chk_interlace') {
+					cmd_parts << ['-interlace', 'Plane']
+				}
 			}
 		} else if current_tab.contains('Social') {
 			soc_preset := win.get('dd_soc_preset')
+			pad_black := win.get_bool('chk_pad_black')
+			mut dims := ''
 			if soc_preset.contains('1080x1080') {
-				cmd_parts << ['-resize', '1080x1080^', '-gravity', 'center', '-extent', '1080x1080']
+				dims = '1080x1080'
 			} else if soc_preset.contains('1080x1920') {
-				cmd_parts << ['-resize', '1080x1920^', '-gravity', 'center', '-extent', '1080x1920']
+				dims = '1080x1920'
 			} else if soc_preset.contains('1280x720') {
-				cmd_parts << ['-resize', '1280x720^', '-gravity', 'center', '-extent', '1280x720']
+				dims = '1280x720'
 			} else if soc_preset.contains('1200x675') {
-				cmd_parts << ['-resize', '1200x675^', '-gravity', 'center', '-extent', '1200x675']
+				dims = '1200x675'
 			} else if soc_preset.contains('1500x500') {
-				cmd_parts << ['-resize', '1500x500^', '-gravity', 'center', '-extent', '1500x500']
+				dims = '1500x500'
 			} else if soc_preset.contains('1200x630') {
-				cmd_parts << ['-resize', '1200x630^', '-gravity', 'center', '-extent', '1200x630']
+				dims = '1200x630'
 			} else if soc_preset.contains('1584x396') {
-				cmd_parts << ['-resize', '1584x396^', '-gravity', 'center', '-extent', '1584x396']
+				dims = '1584x396'
+			}
+			if dims != '' {
+				if pad_black {
+					cmd_parts << ['-resize', dims, '-background', 'black', '-gravity', 'center',
+						'-extent', dims]
+				} else {
+					cmd_parts << ['-resize', simplegui.quote_arg('${dims}^'), '-gravity', 'center',
+						'-extent', dims]
+				}
 			} else if soc_preset.contains('1024x1024') {
-				cmd_parts << ['-resize', '1024x1024!']
+				cmd_parts << ['-resize', simplegui.quote_arg('1024x1024!')]
 			} else if soc_preset.contains('Favicon') {
 				cmd_parts << ['-define', 'icon:auto-resize=64,48,32,16']
 			}
@@ -452,8 +469,10 @@ fn main() {
 				'10%'
 			}
 
-			cmd_parts << ['-fuzz', fuzz_val, '-transparent', bg_col]
-			cmd_parts << ['-trim', '+repage']
+			cmd_parts << ['-fuzz', fuzz_val, '-transparent', simplegui.quote_arg(bg_col)]
+			if win.get_bool('chk_trim_alpha') {
+				cmd_parts << ['-trim', '+repage']
+			}
 		} else if current_tab.contains('Crop') || current_tab.contains('Shadow') {
 			cw := win.get('txt_crop_w').trim_space()
 			ch := win.get('txt_crop_h').trim_space()
@@ -476,7 +495,10 @@ fn main() {
 
 			cmd_parts << ['-gravity', g]
 			if cw != '' && ch != '' {
-				cmd_parts << ['-crop', '${cw}x${ch}+0+0', '+repage']
+				cmd_parts << ['-crop', simplegui.quote_arg('${cw}x${ch}+0+0'), '+repage']
+			}
+			if win.get_bool('chk_autotrim') {
+				cmd_parts << ['-trim', '+repage']
 			}
 		} else if current_tab.contains('Filters') || current_tab.contains('Enhance') {
 			filt := win.get('dd_filter')
@@ -531,7 +553,7 @@ fn main() {
 					'40x40'
 				}
 				bcol := win.get('dd_border_col').all_before(' ')
-				cmd_parts << ['-bordercolor', bcol, '-border', bpx]
+				cmd_parts << ['-bordercolor', simplegui.quote_arg(bcol), '-border', bpx]
 			}
 		} else if current_tab.contains('Text Watermark') {
 			text := win.get('txt_wm_text').trim_space()
@@ -552,21 +574,26 @@ fn main() {
 			col := win.get('dd_wm_color').all_before(' ')
 
 			if text != '' {
-				cmd_parts << ['-gravity', g, '-pointsize', pt, '-fill', '"${col}"', '-annotate',
-					'+20+20', '"${text}"']
+				cmd_parts << ['-gravity', g, '-pointsize', simplegui.quote_arg(pt), '-fill',
+					simplegui.quote_arg(col), '-annotate', '+20+20', simplegui.quote_arg(text)]
 			}
 		} else if current_tab.contains('PDF') {
 			mode := win.get('dd_pdf_mode')
 			if mode.contains('Convert PDF') {
-				cmd_parts = [magick, '-density', '300', '"${in_file}"', '-quality', '100']
+				cmd_parts = [simplegui.quote_arg(magick), '-density', '300',
+					simplegui.quote_path(in_file), '-quality', '100']
 			} else if mode.contains('Stitch Images Horizontally') {
-				cmd_parts = [magick, '+append', '"${in_file}"']
+				cmd_parts = [simplegui.quote_arg(magick), '+append', simplegui.quote_path(in_file)]
 			} else if mode.contains('Stitch Images Vertically') {
-				cmd_parts = [magick, '-append', '"${in_file}"']
+				cmd_parts = [simplegui.quote_arg(magick), '-append', simplegui.quote_path(in_file)]
 			}
 		}
 
-		target_out := if out_file != '' { '"${out_file}"' } else { '"output.webp"' }
+		target_out := if out_file != '' {
+			simplegui.quote_path(out_file)
+		} else {
+			simplegui.quote_path('output.webp')
+		}
 		cmd_parts << target_out
 		return cmd_parts.join(' ')
 	}

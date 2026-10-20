@@ -1,5 +1,6 @@
 module main
 
+import os
 import simplecli
 
 fn main() {
@@ -24,14 +25,23 @@ fn main() {
 	delim := app.get_flag_string('delimiter')
 	input_file := app.get_flag_string('input')
 
+	if input_file.len == 0 {
+		app.warn('No input file specified. Run with -i <file> or -x for interactive mode.')
+		app.print_help()
+		return
+	}
+
+	if !app.file_exists(input_file) {
+		app.error('Input file not found: ${input_file}')
+		return
+	}
+
 	mut args := []string{}
 	if delim.len > 0 {
 		args << ['-F', delim]
 	}
 	args << awk_script
-	if input_file.len > 0 {
-		args << input_file
-	}
+	args << input_file
 
 	app_cmd := if app.command_exists('gawk') { 'gawk' } else { 'awk' }
 	out, code := app.exec_safe(app_cmd, args)
@@ -55,23 +65,21 @@ fn run_interactive(mut app simplecli.SimpleCli) {
 	app.info('Sample Data:\n${sample}')
 	cmd := if app.command_exists('gawk') { 'gawk' } else { 'awk' }
 
-	match choice {
-		'Print Column 1 ($1)' {
-			out, _ := app.exec("echo '${sample}' | ${cmd} '{print \$1}'")
-			println(out)
-		}
-		'Sum Numeric Values in Column 2' {
-			out, _ :=
-				app.exec("echo '${sample}' | ${cmd} '{sum += \$2} END {print \"Total Sum:\", sum}'")
-			println(out)
-		}
-		'Count Total Number of Lines (NR)' {
-			out, _ := app.exec('echo \'${sample}\' | ${cmd} \'END {print NR, "lines"}\'')
-			println(out)
-		}
-		else {
-			out, _ := app.exec("echo '${sample}' | ${cmd} '/active/ {print \$0}'")
-			println(out)
-		}
+	tmp_file := os.join_path(os.temp_dir(), 'simplecli_gawk_${os.getpid()}.txt')
+	os.write_file(tmp_file, sample + '\n') or {
+		app.error('Failed to write temporary sample file: ${err}')
+		return
 	}
+	defer {
+		os.rm(tmp_file) or {}
+	}
+
+	script := match choice {
+		'Print Column 1 ($1)' { '{print $1}' }
+		'Sum Numeric Values in Column 2' { '{sum += $2} END {print "Total Sum:", sum}' }
+		'Count Total Number of Lines (NR)' { 'END {print NR, "lines"}' }
+		else { '/active/ {print $0}' }
+	}
+	out, _ := app.exec_safe(cmd, [script, tmp_file])
+	println(out)
 }

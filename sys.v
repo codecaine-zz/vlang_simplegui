@@ -11,10 +11,53 @@ import crypto.md5
 #include <sys/types.h>
 #include <sys/sysctl.h>
 #include <sys/time.h>
+$if macos {
+	#include <sys/clonefile.h>
+	#include <copyfile.h>
+}
 
 // C function declarations for direct POSIX/BSD system calls used in this file.
 fn C.getloadavg(loadavg &f64, nelem int) int
 fn C.sysctl(name &int, namelen u32, oldp voidptr, oldlenp &usize, newp voidptr, newlen usize) int
+fn C.sysctlbyname(name &char, oldp voidptr, oldlenp &usize, newp voidptr, newlen usize) int
+fn C.clonefile(&char, &char, u32) int
+fn C.copyfile(&char, &char, voidptr, u32) int
+
+fn sg_sysctl_u64(name string) ?u64 {
+	$if macos {
+		mut val := u64(0)
+		mut sz := usize(sizeof(u64))
+		if C.sysctlbyname(&char(name.str), &val, &sz, unsafe { nil }, 0) == 0 {
+			return val
+		}
+	}
+	return none
+}
+
+fn sg_sysctl_i32(name string) ?int {
+	$if macos {
+		mut val := int(0)
+		mut sz := usize(sizeof(int))
+		if C.sysctlbyname(&char(name.str), &val, &sz, unsafe { nil }, 0) == 0 {
+			return val
+		}
+	}
+	return none
+}
+
+fn sg_sysctl_string(name string) ?string {
+	$if macos {
+		mut sz := usize(0)
+		if C.sysctlbyname(&char(name.str), unsafe { nil }, &sz, unsafe { nil }, 0) == 0 && sz > 0
+			&& sz < 4096 {
+			mut buf := []u8{len: int(sz)}
+			if C.sysctlbyname(&char(name.str), buf.data, &sz, unsafe { nil }, 0) == 0 {
+				return unsafe { tos_clone(buf.data) }.trim_space()
+			}
+		}
+	}
+	return none
+}
 
 // sys.v - Neutralino-inspired System Call and OS API Extensions for SimpleGUI
 // Extends the `SimpleWindow` struct with direct, fluent methods for executing
@@ -94,11 +137,11 @@ pub fn (win &SimpleWindow) show_system_notification(title string, message string
 	if win.debug_mode {
 		println('[simplegui SYSTEM] Triggering system notification: "${title}" - "${message}"')
 	}
-	// Escape double quotes for execution safety
-	title_escaped := title.replace('"', '\\"')
-	msg_escaped := message.replace('"', '\\"')
-	cmd := 'osascript -e \'display notification "${msg_escaped}" with title "${title_escaped}"\''
-	win.exec_bg(cmd)
+	// Escape backslashes and double quotes for AppleScript, then shell-quote with quote_arg
+	title_escaped := title.replace('\\', '\\\\').replace('"', '\\"')
+	msg_escaped := message.replace('\\', '\\\\').replace('"', '\\"')
+	script := 'display notification "${msg_escaped}" with title "${title_escaped}"'
+	win.exec_bg('osascript -e ${quote_arg(script)}')
 	return win
 }
 
@@ -109,11 +152,21 @@ pub fn (win &SimpleWindow) show_system_notification(title string, message string
 // get_cpu_info retrieves the local computer's processor information.
 // Equivalent to Neutralino's `computer.getCPUInfo`.
 pub fn (win &SimpleWindow) get_cpu_info() string {
+	if brand := sg_sysctl_string('machdep.cpu.brand_string') {
+		if brand != '' {
+			return brand
+		}
+	}
 	return win.exec_or('sysctl -n machdep.cpu.brand_string', 'Unknown macOS CPU')
 }
 
 // get_cpu_cores retrieves the total CPU core count (physical + virtual).
 pub fn (win &SimpleWindow) get_cpu_cores() int {
+	if ncpu := sg_sysctl_i32('hw.ncpu') {
+		if ncpu > 0 {
+			return ncpu
+		}
+	}
 	cores_str := win.exec_or('sysctl -n hw.ncpu', '0')
 	return cores_str.int()
 }
@@ -121,6 +174,12 @@ pub fn (win &SimpleWindow) get_cpu_cores() int {
 // get_memory_info retrieves physical RAM details on the machine.
 // Equivalent to Neutralino's `computer.getMemoryInfo`.
 pub fn (win &SimpleWindow) get_memory_info() string {
+	if bytes := sg_sysctl_u64('hw.memsize') {
+		if bytes > 0 {
+			gb := f64(bytes) / (1024.0 * 1024.0 * 1024.0)
+			return '${gb:.1f} GB RAM'
+		}
+	}
 	bytes_str := win.exec_or('sysctl -n hw.memsize', '')
 	if bytes_str.len > 0 {
 		bytes := bytes_str.u64()
@@ -179,7 +238,7 @@ pub fn (win &SimpleWindow) read_file_opt(path string) !string {
 				return error('File does not exist: ' + path)
 			}
 		} else if path.starts_with('~') {
-			target_path = path.replace('~', os.home_dir())
+			target_path = expand_tilde(path)
 			if !os.exists(target_path) {
 				return error('File does not exist: ' + target_path)
 			}
@@ -201,7 +260,7 @@ pub fn (win &SimpleWindow) read_file(path string) string {
 // Automatically ensures parent directory exists and expands ~ paths.
 pub fn (win &SimpleWindow) write_file_opt(path string, content string) !&SimpleWindow {
 	target_path := if path.starts_with('~') {
-		path.replace('~', os.home_dir())
+		expand_tilde(path)
 	} else {
 		path
 	}
@@ -458,7 +517,16 @@ pub fn (win &SimpleWindow) delete_directory(path string) !&SimpleWindow {
 }
 
 // copy_file copies a file from a source path to a destination path.
+// On macOS APFS volumes, uses zero-copy `clonefile` / `copyfile(COPYFILE_CLONE)` first.
 pub fn (win &SimpleWindow) copy_file(src string, dest string) !&SimpleWindow {
+	$if macos {
+		if !os.exists(dest) && C.clonefile(&char(src.str), &char(dest.str), u32(0x0001)) == 0 {
+			return win
+		}
+		if C.copyfile(&char(src.str), &char(dest.str), unsafe { nil }, u32(15 | (1 << 24))) == 0 {
+			return win
+		}
+	}
 	os.cp(src, dest)!
 	return win
 }
@@ -811,7 +879,7 @@ pub fn (win &SimpleWindow) reveal_in_finder(path string) &SimpleWindow {
 	if win.debug_mode {
 		println('[simplegui SYSTEM] Revealing in Finder: ${path}')
 	}
-	win.exec_bg('open -R "${path}"')
+	win.exec_bg('open -R ${quote_path(path)}')
 	return win
 }
 
@@ -820,7 +888,7 @@ pub fn (win &SimpleWindow) open_in_default_app(path string) &SimpleWindow {
 	if win.debug_mode {
 		println('[simplegui SYSTEM] Opening file with default app: ${path}')
 	}
-	win.exec_bg('open "${path}"')
+	win.exec_bg('open ${quote_path(path)}')
 	return win
 }
 
@@ -830,7 +898,7 @@ pub fn (win &SimpleWindow) open_with_app(path string, app_id string) &SimpleWind
 	if win.debug_mode {
 		println('[simplegui SYSTEM] Opening "${path}" with app: ${app_id}')
 	}
-	win.exec_bg('open -a "${app_id}" "${path}"')
+	win.exec_bg('open -a ${quote_arg(app_id)} ${quote_path(path)}')
 	return win
 }
 
@@ -886,12 +954,13 @@ pub fn (win &SimpleWindow) get_external_ip() string {
 // Uses macOS netcat with a 1-second connection timeout — non-blocking and fast.
 pub fn (win &SimpleWindow) ping(host string, count int) bool {
 	iterations := if count < 1 { 1 } else { count }
+	safe_host := quote_arg(host)
 	for _ in 0 .. iterations {
-		_, code80 := win.exec('nc -z -G 1 "${host}" 80 2>/dev/null')
+		_, code80 := win.exec('nc -z -G 1 -- ${safe_host} 80 2>/dev/null')
 		if code80 == 0 {
 			return true
 		}
-		_, code443 := win.exec('nc -z -G 1 "${host}" 443 2>/dev/null')
+		_, code443 := win.exec('nc -z -G 1 -- ${safe_host} 443 2>/dev/null')
 		if code443 == 0 {
 			return true
 		}
@@ -1018,10 +1087,10 @@ pub fn (win &SimpleWindow) beep_n(n int) &SimpleWindow {
 // osascript_dialog shows a native macOS input dialog box and returns what the user typed.
 // Returns an empty string if the user cancels.
 pub fn (win &SimpleWindow) osascript_dialog(prompt string, default_value string) string {
-	prompt_esc := prompt.replace('"', '\\"')
-	default_esc := default_value.replace('"', '\\"')
-	script := 'osascript -e \'set ans to text returned of (display dialog "${prompt_esc}" default answer "${default_esc}" buttons {"Cancel","OK"} default button "OK")\''
-	output, code := win.exec(script)
+	prompt_esc := prompt.replace('\\', '\\\\').replace('"', '\\"')
+	default_esc := default_value.replace('\\', '\\\\').replace('"', '\\"')
+	script := 'set ans to text returned of (display dialog "${prompt_esc}" default answer "${default_esc}" buttons {"Cancel","OK"} default button "OK")'
+	output, code := win.exec('osascript -e ${quote_arg(script)}')
 	if code == 0 {
 		return output.trim_space()
 	}
@@ -1031,10 +1100,10 @@ pub fn (win &SimpleWindow) osascript_dialog(prompt string, default_value string)
 // osascript_alert shows a native macOS alert dialog with a message.
 // Blocks until the user clicks OK or Cancel. Returns true if OK was clicked.
 pub fn (win &SimpleWindow) osascript_alert(title string, message string) bool {
-	title_esc := title.replace('"', '\\"')
-	msg_esc := message.replace('"', '\\"')
-	script := 'osascript -e \'button returned of (display alert "${title_esc}" message "${msg_esc}" buttons {"Cancel","OK"} default button "OK")\''
-	output, code := win.exec(script)
+	title_esc := title.replace('\\', '\\\\').replace('"', '\\"')
+	msg_esc := message.replace('\\', '\\\\').replace('"', '\\"')
+	script := 'button returned of (display alert "${title_esc}" message "${msg_esc}" buttons {"Cancel","OK"} default button "OK")'
+	output, code := win.exec('osascript -e ${quote_arg(script)}')
 	if code == 0 {
 		return output.trim_space() == 'OK'
 	}
@@ -1065,8 +1134,7 @@ pub fn (win &SimpleWindow) osascript_choose_folder() string {
 
 // say uses macOS text-to-speech to speak a message out loud.
 pub fn (win &SimpleWindow) say(text string) &SimpleWindow {
-	escaped := text.replace('"', '\\"')
-	win.exec_bg('say "${escaped}"')
+	win.exec_bg('say ${quote_arg(text)}')
 	return win
 }
 
@@ -1230,17 +1298,17 @@ pub fn (win &SimpleWindow) get_timezone() string {
 // launch_at_login_add registers the current application with macOS Login Items so it
 // auto-launches when the user logs in. Uses osascript/launchctl (best-effort).
 pub fn (win &SimpleWindow) launch_at_login_add(app_name_or_path string) &SimpleWindow {
-	escaped := app_name_or_path.replace('"', '\\"')
-	script := 'osascript -e \'tell application "System Events" to make login item at end with properties {path:"${escaped}", hidden:false}\''
-	win.exec_bg(script)
+	escaped := app_name_or_path.replace('\\', '\\\\').replace('"', '\\"')
+	script := 'tell application "System Events" to make login item at end with properties {path:"${escaped}", hidden:false}'
+	win.exec_bg('osascript -e ${quote_arg(script)}')
 	return win
 }
 
 // launch_at_login_remove removes the application from macOS Login Items.
 pub fn (win &SimpleWindow) launch_at_login_remove(app_name string) &SimpleWindow {
-	escaped := app_name.replace('"', '\\"')
-	script := 'osascript -e \'tell application "System Events" to delete login item "${escaped}"\''
-	win.exec_bg(script)
+	escaped := app_name.replace('\\', '\\\\').replace('"', '\\"')
+	script := 'tell application "System Events" to delete login item "${escaped}"'
+	win.exec_bg('osascript -e ${quote_arg(script)}')
 	return win
 }
 
@@ -1379,9 +1447,9 @@ pub fn (win &SimpleWindow) trash_file(path string) !&SimpleWindow {
 	if !os.exists(abs_path) {
 		return error('File does not exist: ${path}')
 	}
-	escaped := abs_path.replace('"', '\\"')
-	script := 'osascript -e \'tell application "Finder" to delete POSIX file "${escaped}"\''
-	output, code := win.exec(script)
+	escaped := abs_path.replace('\\', '\\\\').replace('"', '\\"')
+	script := 'tell application "Finder" to delete POSIX file "${escaped}"'
+	output, code := win.exec('osascript -e ${quote_arg(script)}')
 	if code != 0 {
 		return error('Failed to move to Trash: ${output}')
 	}
@@ -1397,7 +1465,7 @@ pub fn (win &SimpleWindow) zip_directory(dir_path string, zip_path string) !&Sim
 	parent := os.dir(abs_dir)
 	base := os.base(abs_dir)
 	target_zip := os.real_path(zip_path)
-	output, code := win.exec('cd "${parent}" && zip -r "${target_zip}" "${base}"')
+	output, code := win.exec('cd ${quote_path(parent)} && zip -r ${quote_path(target_zip)} ${quote_arg(base)}')
 	if code != 0 {
 		return error('Failed to create zip archive: ${output}')
 	}
@@ -1412,7 +1480,7 @@ pub fn (win &SimpleWindow) unzip_archive(zip_path string, dest_dir string) !&Sim
 	}
 	os.mkdir_all(dest_dir)!
 	abs_dest := os.real_path(dest_dir)
-	output, code := win.exec('unzip -o "${abs_zip}" -d "${abs_dest}"')
+	output, code := win.exec('unzip -o ${quote_path(abs_zip)} -d ${quote_path(abs_dest)}')
 	if code != 0 {
 		return error('Failed to extract zip archive: ${output}')
 	}
@@ -1421,19 +1489,28 @@ pub fn (win &SimpleWindow) unzip_archive(zip_path string, dest_dir string) !&Sim
 
 // create_temp_file generates and creates a unique temporary file with given prefix and suffix.
 pub fn (win &SimpleWindow) create_temp_file(prefix string, suffix string) !string {
-	rand_num := time.now().unix_milli()
-	file_name := '${prefix}_${rand_num}${suffix}'
+	safe_prefix := sanitize_filename(prefix)
+	safe_suffix := sanitize_filename(suffix)
+	rand_num := time.now().unix_nano()
+	file_name := '${safe_prefix}_${os.getpid()}_${rand_num}${safe_suffix}'
 	temp_path := os.join_path(os.temp_dir(), file_name)
 	os.write_file(temp_path, '')!
+	$if !windows {
+		os.chmod(temp_path, 0o600) or {}
+	}
 	return temp_path
 }
 
 // create_temp_dir generates and creates a unique temporary directory with given prefix.
 pub fn (win &SimpleWindow) create_temp_dir(prefix string) !string {
-	rand_num := time.now().unix_milli()
-	dir_name := '${prefix}_${rand_num}'
+	safe_prefix := sanitize_filename(prefix)
+	rand_num := time.now().unix_nano()
+	dir_name := '${safe_prefix}_${os.getpid()}_${rand_num}'
 	temp_path := os.join_path(os.temp_dir(), dir_name)
 	os.mkdir_all(temp_path)!
+	$if !windows {
+		os.chmod(temp_path, 0o700) or {}
+	}
 	return temp_path
 }
 
@@ -1473,7 +1550,7 @@ pub fn (win &SimpleWindow) is_retina_display() bool {
 
 // is_port_open checks if a TCP port on a given host is accepting connections.
 pub fn (win &SimpleWindow) is_port_open(host string, port int) bool {
-	_, code := win.exec('nc -z -G 1 "${host}" ${port} 2>/dev/null')
+	_, code := win.exec('nc -z -G 1 -- ${quote_arg(host)} ${port} 2>/dev/null')
 	return code == 0
 }
 
@@ -1548,7 +1625,8 @@ fn power_caffeinate_pid_file_for_process(pid int) string {
 pub fn (win &SimpleWindow) start_prevent_sleep() &SimpleWindow {
 	win.stop_prevent_sleep()
 	pid_file := power_caffeinate_pid_file_for_process(win.get_pid())
-	win.exec_bg('sh -c \'caffeinate -dimsu >/dev/null 2>&1 & echo $! > "${pid_file}"\'')
+	inner := 'caffeinate -dimsu >/dev/null 2>&1 & echo $! > ${quote_path(pid_file)}'
+	win.exec_bg('sh -c ${quote_arg(inner)}')
 	return win
 }
 
@@ -1559,9 +1637,9 @@ pub fn (win &SimpleWindow) stop_prevent_sleep() &SimpleWindow {
 		return win
 	}
 	pid_raw := os.read_file(pid_file) or { '' }
-	pid := pid_raw.trim_space()
-	if pid != '' {
-		win.exec('kill ${pid} >/dev/null 2>&1')
+	pid_int := pid_raw.trim_space().int()
+	if pid_int > 0 {
+		win.exec('kill ${pid_int} >/dev/null 2>&1')
 	}
 	os.rm(pid_file) or {}
 	return win
@@ -1574,12 +1652,12 @@ pub fn (win &SimpleWindow) is_preventing_sleep() bool {
 		return false
 	}
 	pid_raw := os.read_file(pid_file) or { '' }
-	pid := pid_raw.trim_space()
-	if pid == '' {
+	pid_int := pid_raw.trim_space().int()
+	if pid_int <= 0 {
 		os.rm(pid_file) or {}
 		return false
 	}
-	_, code := win.exec('kill -0 ${pid} >/dev/null 2>&1')
+	_, code := win.exec('kill -0 ${pid_int} >/dev/null 2>&1')
 	if code != 0 {
 		os.rm(pid_file) or {}
 		return false
@@ -1623,7 +1701,7 @@ pub fn (win &SimpleWindow) touch_file(path string) !&SimpleWindow {
 	if !os.exists(path) {
 		os.write_file(path, '')!
 	} else {
-		win.exec('touch "${path}"')
+		win.exec('touch ${quote_path(path)}')
 	}
 	return win
 }
@@ -1647,18 +1725,18 @@ pub fn (win &SimpleWindow) get_directory_size(path string) u64 {
 // exec_in_dir executes a command synchronously inside a specific working directory.
 pub fn (win &SimpleWindow) exec_in_dir(dir_path string, command string) (string, int) {
 	abs_dir := os.real_path(dir_path)
-	return win.exec('cd "${abs_dir}" && ${command}')
+	return win.exec('cd ${quote_path(abs_dir)} && ${command}')
 }
 
 // is_process_running checks if a process matching the given name is currently active.
 pub fn (win &SimpleWindow) is_process_running(proc_name string) bool {
-	_, code := win.exec('pgrep -f "${proc_name}" 2>/dev/null')
+	_, code := win.exec('pgrep -f -- ${quote_arg(proc_name)} 2>/dev/null')
 	return code == 0
 }
 
 // kill_process terminates processes matching the given name (`pkill -f`).
 pub fn (win &SimpleWindow) kill_process(proc_name string) bool {
-	_, code := win.exec('pkill -f "${proc_name}" 2>/dev/null')
+	_, code := win.exec('pkill -f -- ${quote_arg(proc_name)} 2>/dev/null')
 	return code == 0
 }
 
@@ -1696,12 +1774,18 @@ pub fn (win &SimpleWindow) get_running_app_names() []string {
 
 // is_apple_silicon returns true if the machine CPU architecture is Apple Silicon (ARM64).
 pub fn (win &SimpleWindow) is_apple_silicon() bool {
+	$if arm64 {
+		return true
+	}
 	arch := win.exec_or('uname -m', '').trim_space()
 	return arch == 'arm64'
 }
 
 // is_rosetta_emulation returns true if the process is executing under Rosetta 2 binary translation.
 pub fn (win &SimpleWindow) is_rosetta_emulation() bool {
+	if translated := sg_sysctl_i32('sysctl.proc_translated') {
+		return translated == 1
+	}
 	val := win.exec_or('sysctl -n sysctl.proc_translated 2>/dev/null', '0').trim_space()
 	return val == '1'
 }
@@ -1727,7 +1811,7 @@ pub fn (win &SimpleWindow) is_low_power_mode() bool {
 // take_screenshot captures a screenshot of the entire primary display and saves it to a file.
 pub fn (win &SimpleWindow) take_screenshot(target_path string) !&SimpleWindow {
 	abs_path := os.real_path(target_path)
-	output, code := win.exec('screencapture -x "${abs_path}"')
+	output, code := win.exec('screencapture -x ${quote_path(abs_path)}')
 	if code != 0 {
 		return error('screencapture failed: ${output}')
 	}
@@ -1737,7 +1821,7 @@ pub fn (win &SimpleWindow) take_screenshot(target_path string) !&SimpleWindow {
 // take_screenshot_window captures a screenshot of the active window and saves it to a file.
 pub fn (win &SimpleWindow) take_screenshot_window(target_path string) !&SimpleWindow {
 	abs_path := os.real_path(target_path)
-	output, code := win.exec('screencapture -cw "${abs_path}"')
+	output, code := win.exec('screencapture -cw ${quote_path(abs_path)}')
 	if code != 0 {
 		return error('screencapture window failed: ${output}')
 	}
@@ -1746,25 +1830,25 @@ pub fn (win &SimpleWindow) take_screenshot_window(target_path string) !&SimpleWi
 
 // defaults_read reads a preference value from a macOS defaults domain.
 pub fn (win &SimpleWindow) defaults_read(domain string, key string) string {
-	return win.exec_or('defaults read "${domain}" "${key}" 2>/dev/null', '').trim_space()
+	return win.exec_or('defaults read ${quote_arg(domain)} ${quote_arg(key)} 2>/dev/null', '').trim_space()
 }
 
 // defaults_write writes a preference key/value pair into a macOS defaults domain.
 pub fn (win &SimpleWindow) defaults_write(domain string, key string, val string) &SimpleWindow {
-	win.exec('defaults write "${domain}" "${key}" "${val}"')
+	win.exec('defaults write ${quote_arg(domain)} ${quote_arg(key)} ${quote_arg(val)}')
 	return win
 }
 
 // defaults_delete deletes a preference key from a macOS defaults domain.
 pub fn (win &SimpleWindow) defaults_delete(domain string, key string) &SimpleWindow {
-	win.exec('defaults delete "${domain}" "${key}"')
+	win.exec('defaults delete ${quote_arg(domain)} ${quote_arg(key)}')
 	return win
 }
 
 // open_in_finder opens a folder directly in macOS Finder.
 pub fn (win &SimpleWindow) open_in_finder(folder_path string) &SimpleWindow {
 	abs_path := os.real_path(folder_path)
-	win.exec_bg('open "${abs_path}"')
+	win.exec_bg('open ${quote_path(abs_path)}')
 	return win
 }
 
@@ -1846,8 +1930,8 @@ pub fn (win &SimpleWindow) get_boot_timestamp() i64 {
 // Returns (output, exit_code, timed_out).
 pub fn (win &SimpleWindow) exec_timeout(command string, timeout_ms int) (string, int, bool) {
 	ms := if timeout_ms <= 0 { 1000 } else { timeout_ms }
-	sec := f64(ms) / 1000.0
-	cmd := "perl -e 'alarm ${sec}; exec @ARGV' ${command}"
+	usec := i64(ms) * 1000
+	cmd := 'perl -MTime::HiRes=ualarm -e "ualarm(${usec}); exec @ARGV" -- /bin/sh -c ${quote_arg(command)}'
 	res := os.execute(cmd)
 	if res.exit_code == 142 || res.exit_code == 124 {
 		return '', -1, true
@@ -1925,30 +2009,51 @@ pub fn (win &SimpleWindow) exec_retry(command string, max_attempts int, initial_
 
 // get_total_memory_bytes returns total physical RAM in bytes.
 pub fn (win &SimpleWindow) get_total_memory_bytes() u64 {
+	if mem_bytes := sg_sysctl_u64('hw.memsize') {
+		return mem_bytes
+	}
 	bytes_str := win.exec_or('sysctl -n hw.memsize 2>/dev/null', '0')
 	return bytes_str.trim_space().u64()
 }
 
 // get_physical_cpu_cores returns the number of physical CPU cores.
 pub fn (win &SimpleWindow) get_physical_cpu_cores() int {
+	if pcpu := sg_sysctl_i32('hw.physicalcpu') {
+		if pcpu > 0 {
+			return pcpu
+		}
+	}
 	cores_str := win.exec_or('sysctl -n hw.physicalcpu 2>/dev/null', '0')
 	return cores_str.trim_space().int()
 }
 
 // get_logical_cpu_cores returns the number of logical CPU cores.
 pub fn (win &SimpleWindow) get_logical_cpu_cores() int {
+	if lcpu := sg_sysctl_i32('hw.logicalcpu') {
+		if lcpu > 0 {
+			return lcpu
+		}
+	}
 	cores_str := win.exec_or('sysctl -n hw.logicalcpu 2>/dev/null', '0')
 	return cores_str.trim_space().int()
 }
 
 // get_cpu_frequency_hz returns the CPU clock speed frequency in Hz (if available).
 pub fn (win &SimpleWindow) get_cpu_frequency_hz() u64 {
+	if freq := sg_sysctl_u64('hw.cpufreq') {
+		return freq
+	}
 	freq_str := win.exec_or('sysctl -n hw.cpufreq 2>/dev/null', '0')
 	return freq_str.trim_space().u64()
 }
 
 // get_cpu_architecture returns the machine CPU architecture string (e.g. "arm64", "x86_64").
 pub fn (win &SimpleWindow) get_cpu_architecture() string {
+	$if arm64 {
+		return 'arm64'
+	} $else $if amd64 {
+		return 'x86_64'
+	}
 	return win.exec_or('uname -m 2>/dev/null', 'unknown').trim_space()
 }
 
@@ -2153,7 +2258,7 @@ pub fn (win &SimpleWindow) get_app_storage_path(filename string, app_name ...str
 		return filename
 	}
 	if filename.starts_with('~') {
-		expanded := filename.replace('~', os.home_dir())
+		expanded := expand_tilde(filename)
 		dir := os.dir(expanded)
 		if !os.exists(dir) {
 			os.mkdir_all(dir) or {}
@@ -2224,7 +2329,7 @@ pub fn (win &SimpleWindow) copy_directory(src string, dest string) !&SimpleWindo
 	}
 	os.mkdir_all(dest)!
 	abs_dest := os.real_path(dest)
-	output, code := win.exec('cp -R "${abs_src}/." "${abs_dest}/"')
+	output, code := win.exec('cp -R ${quote_path(abs_src + '/.')} ${quote_path(abs_dest + '/')}')
 	if code != 0 {
 		return error('Failed to copy directory: ${output}')
 	}
@@ -2287,9 +2392,10 @@ pub fn (win &SimpleWindow) wait_for_port(host string, port int, timeout_ms int, 
 
 // play_system_sound plays a macOS system alert sound (e.g. "Glass", "Ping", "Hero", "Pop", "Tink", "Submarine").
 pub fn (win &SimpleWindow) play_system_sound(sound_name string) &SimpleWindow {
-	sound_path := '/System/Library/Sounds/${sound_name}.aiff'
+	safe_name := sanitize_filename(sound_name)
+	sound_path := '/System/Library/Sounds/${safe_name}.aiff'
 	if os.exists(sound_path) {
-		win.exec_bg('afplay "${sound_path}"')
+		win.exec_bg('afplay ${quote_path(sound_path)}')
 	} else {
 		win.beep()
 	}
@@ -2298,9 +2404,7 @@ pub fn (win &SimpleWindow) play_system_sound(sound_name string) &SimpleWindow {
 
 // speak_with_voice speaks text out loud using a specific macOS voice name (e.g. "Samantha", "Alex", "Fred", "Victoria").
 pub fn (win &SimpleWindow) speak_with_voice(text string, voice string) &SimpleWindow {
-	escaped := text.replace('"', '\\"')
-	v_esc := voice.replace('"', '\\"')
-	win.exec_bg('say -v "${v_esc}" "${escaped}"')
+	win.exec_bg('say -v ${quote_arg(voice)} ${quote_arg(text)}')
 	return win
 }
 
@@ -2329,7 +2433,7 @@ pub fn (win &SimpleWindow) kill_process_exact(proc_name string) bool {
 	if proc_name.len == 0 {
 		return false
 	}
-	_, code := win.exec('pkill -x "${proc_name}" 2>/dev/null')
+	_, code := win.exec('pkill -x -- ${quote_arg(proc_name)} 2>/dev/null')
 	return code == 0
 }
 
@@ -2339,9 +2443,10 @@ pub fn (win &SimpleWindow) kill_process_exact(proc_name string) bool {
 
 // play_system_sound plays a native macOS system sound by name (e.g. "Glass", "Ping", "Hero", "Pop", "Tink", "Submarine").
 pub fn play_system_sound(sound_name string) {
-	sound_path := '/System/Library/Sounds/${sound_name}.aiff'
+	safe_name := sanitize_filename(sound_name)
+	sound_path := '/System/Library/Sounds/${safe_name}.aiff'
 	if os.exists(sound_path) {
-		os.execute_opt('afplay "${sound_path}" &') or {}
+		os.execute_opt('afplay ${quote_path(sound_path)} &') or {}
 	} else {
 		beep()
 	}
@@ -2349,9 +2454,7 @@ pub fn play_system_sound(sound_name string) {
 
 // speak_with_voice speaks text out loud using a specific macOS voice (e.g. "Samantha", "Alex", "Fred").
 pub fn speak_with_voice(text string, voice string) {
-	escaped := text.replace('"', '\\"')
-	v_esc := voice.replace('"', '\\"')
-	os.execute_opt('say -v "${v_esc}" "${escaped}" &') or {}
+	os.execute_opt('say -v ${quote_arg(voice)} ${quote_arg(text)} &') or {}
 }
 
 // toggle_dark_mode toggles macOS system appearance mode between Light Mode and Dark Mode.
@@ -2534,28 +2637,22 @@ pub mut:
 
 // sys_list_external_apps lists all running GUI applications on macOS.
 pub fn sys_list_external_apps() []ExternalAppInfo {
-	unsafe {
-		json_ptr := C.window_list_external_apps()
-		json_str := json_ptr.vstring()
-		if json_str.len == 0 || json_str == '[]' {
-			return []ExternalAppInfo{}
-		}
-		res := json2.decode[[]ExternalAppInfo](json_str) or { return []ExternalAppInfo{} }
-		return res
+	json_str := consume_c_str(C.window_list_external_apps())
+	if json_str.len == 0 || json_str == '[]' {
+		return []ExternalAppInfo{}
 	}
+	res := json2.decode[[]ExternalAppInfo](json_str) or { return []ExternalAppInfo{} }
+	return res
 }
 
 // sys_spy_external_app inspects windows and controls of an external application by PID using macOS AXUIElement.
 pub fn sys_spy_external_app(pid int) []ExternalControlInfo {
-	unsafe {
-		json_ptr := C.window_spy_external_app(pid)
-		json_str := json_ptr.vstring()
-		if json_str.len == 0 || json_str == '[]' {
-			return []ExternalControlInfo{}
-		}
-		res := json2.decode[[]ExternalControlInfo](json_str) or { return []ExternalControlInfo{} }
-		return res
+	json_str := consume_c_str(C.window_spy_external_app(pid))
+	if json_str.len == 0 || json_str == '[]' {
+		return []ExternalControlInfo{}
 	}
+	res := json2.decode[[]ExternalControlInfo](json_str) or { return []ExternalControlInfo{} }
+	return res
 }
 
 // sys_set_external_control_value sets text or value on a control of an external application by PID.
@@ -2745,13 +2842,25 @@ pub fn resolve_user_path(raw_path string) string {
 
 	mut p := trimmed
 
-	// 1. Expand environment variables: ${VAR}, %VAR%, $VAR
-	for p.contains(r'${') {
-		start := p.index(r'${') or { break }
-		end := p.index_after(r'}', start) or { break }
-		var_name := p[start + 2..end]
-		env_val := os.getenv(var_name)
-		p = p[..start] + env_val + p[end + 1..]
+	// 1. Expand environment variables: ${VAR}, %VAR%, $VAR (single-pass to prevent self-referential loops)
+	if p.contains(r'${') {
+		mut sb := []string{}
+		mut search_pos := 0
+		for search_pos < p.len {
+			start := p.index_after(r'${', search_pos) or {
+				sb << p[search_pos..]
+				break
+			}
+			end := p.index_after(r'}', start + 2) or {
+				sb << p[search_pos..]
+				break
+			}
+			sb << p[search_pos..start]
+			var_name := p[start + 2..end]
+			sb << os.getenv(var_name)
+			search_pos = end + 1
+		}
+		p = sb.join('')
 	}
 
 	if p.contains('%') {

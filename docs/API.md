@@ -1,8 +1,40 @@
 # SimpleGUI API Documentation
 
+> **📚 Master Documentation Navigation:**
+> [🏠 Main README](../README.md) • [📘 GUI API Reference (`docs/API.md`)](API.md) • [🎨 Custom Themes Vault (`custom_themes/README.md`)](../custom_themes/README.md) • [🖥️ 47 GUI Workstations (`applications/README.md`)](../applications/README.md) • [⌨️ SimpleCLI Reference (`CLI_API.md`)](../CLI_API.md) • [🛠️ 49 CLI Apps (`cli_apps/README.md`)](../cli_apps/README.md) • [🧰 45 Utility Modules (`UTILS_API.md`)](../UTILS_API.md) • [📖 V Language Textbook](<The V Programming Language: A Comprehensive Textbook Guide.md>) • [📝 Changelog](../CHANGELOG.md)
+
 SimpleGUI is a beginner-friendly framework for building native macOS Cocoa applications in V. It combines a lightweight V-side API with a native bridge for real macOS windows and controls, so you can create polished desktop apps with very little boilerplate.
 
-This guide is organized for fast scanning on GitHub and for quick reference while coding. The most common patterns are grouped first, followed by detailed API entries for individual controls and window actions.
+This guide is written in **plain, everyday words** and organized for fast scanning on GitHub and quick lookup while coding. Common patterns and a **"What Do You Want to Build?" Quick Finder** come first, followed by detailed API entries with copy-pasteable examples for every control and window action.
+
+---
+
+## 🧭 "What Do You Want to Build?" — Quick-Find Guide (In Plain Words)
+
+Not sure what a control or function is called? Find what you want to do in plain words below and jump straight to the right section:
+
+| What You Want to Do (In Plain Words) | Best Function / Control to Use | Jump to Section |
+| :--- | :--- | :--- |
+| **Open a new app window on screen** | `simplegui.new_simple_window('My App', 800, 600)` | [1. Window Operations](#1-window-operations) |
+| **Put controls side-by-side or in columns** | `win.row(...)`, `win.grid(...)`, `win.flex_box(...)` | [2. Control Layout & Grid Rows](#2-control-layout--grid-rows) |
+| **Add a text box, password box, or search bar** | `win.add_input`, `win.add_password`, `win.add_search_field` | [3.1 Text & Input Controls](#31-text--input-controls) |
+| **Add a clickable button or run code on click** | `win.add_button`, `win.add_action`, `win.on_click` | [3.3 Buttons & Interactive Triggers](#33-buttons--interactive-triggers) |
+| **Add a checkbox, ON/OFF switch, or dropdown** | `win.add_checkbox`, `win.add_switch`, `win.add_dropdown` | [3.4 Selection, Toggles & Selectors](#34-selection-toggles--multi-option-selectors) |
+| **Add a slider, number box, or rotary knob** | `win.add_slider`, `win.add_number`, `win.add_knob` | [3.5 Numbers, Steppers, Knobs & Sliders](#35-numbers-steppers-knobs--sliders) |
+| **Show a progress bar, speedometer, or star rating** | `win.add_progress_indicator`, `win.add_radial_gauge`, `win.add_rating` | [3.6 Progress, Meters, Gauges & Ratings](#36-progress-indicators-meters-gauges--ratings) |
+| **Pick a calendar date, clock time, or color** | `win.add_date_picker`, `win.add_time_picker`, `win.add_color_well` | [3.7 Date, Time, Color & File Pickers](#37-date-time-color--file-pickers) |
+| **Show a code editor, terminal, PDF, video, or map** | `win.add_code_studio`, `win.add_terminal_view`, `win.add_pdf_view`, `win.add_map_view` | [3.8 Rich Media, Code & Terminal Views](#38-rich-media-markdown-code--terminal-views) |
+| **Change colors, fonts, sizes, or 50+ built-in themes** | `win.set_theme(...)`, `.width(...)`, `.color(...)` | [4. Control Sizing, Styling & Themes](#4-control-sizing--styling) |
+| **Pop up an alert message or a file open/save box** | `win.alert(...)`, `win.ask(...)`, `win.choose_file()` | [5. Dialogs, Popups & File Pickers](#5-dialogs-popups--file-pickers) |
+| **Read or change what the user typed or selected** | `win.get_text(name)`, `win.set_text(name, val)`, `win.get_checked(name)` | [9. Reading & Writing Values](#9-reading--writing-values) |
+| **Show a multi-column table or spreadsheet grid** | `win.add_table(...)`, `win.add_grid(...)`, `win.crud_bind_table_to_form(...)` | [12. Multi-Column Table / Data Grid](#12-multi-column-table--data-grid) |
+| **Auto-link controls (e.g., checkbox enables input)** | `win.bind_checkbox_enables(...)`, `win.bind_search_to_list(...)` | [17. Ergonomic Helpers](#17-ergonomic-helpers) |
+| **Design a form visually with Drag & Drop (like Delphi/VB)** | `v run tools/ui_designer.v`, `win.add_webview_rad_studio(...)` | [18. RAD Visual UI Designer & WebView Studio](#18-rad-visual-ui-designer--code-generator-api) |
+| **Add business/finance charts (Gantt, Candlestick, Radar, Sankey)** | `win.add_gantt_chart`, `win.add_candlestick_chart`, `win.add_sankey_chart` | [💎 Modern Super Controls Suite](#-modern-super-controls--ergonomic-ui-suite-hardware--rad-ideals) |
+| **Add 4D shaders, particle bursts, Smart House, or Cockpit gauges** | `win.add_shader_canvas`, `win.add_smart_house_floorplan`, `win.add_cockpit_cluster` | [24. God-Mode, GOAT VFX & Smart House Suite](#24-god-mode-goat-4d-shaders-procedural-synth-audio--qt-6-smart-house--digital-cockpit-suite) |
+| **Play zero-file procedural sound effects or piano notes** | `win.play_sfx('cyber_click')`, `win.play_piano_note(60, 220)` | [24.8 Built-In Procedural Sound Effects Engine](#248-built-in-procedural-sound-effects--audio-synthesizer-engine) |
+| **Save & restore form settings automatically on app restart** | `win.save_app_state()`, `win.enable_auto_save_state(true)` | [21. Reactive State & Auto-Persistence](#21-reactive-state-management--auto-persistence-api) |
+| **Use the Dual-Pane File Manager, WebView, or OS Hardware API** | `import filemanager`, `import webview`, `import system` | [25. Cross-Platform & Studio Sub-Modules](#25-cross-platform--studio-sub-modules-webview-filemanager-system-custom_themes) |
 
 ---
 
@@ -27,6 +59,7 @@ If you are new to programming or desktop app creation, here are simple definitio
 
 ## Table of contents
 
+- [🧭 "What Do You Want to Build?" — Quick-Find Guide (In Plain Words)](#-what-do-you-want-to-build--quick-find-guide-in-plain-words)
 - [📘 Beginner's Core Concepts & Jargon-Free Glossary](#-beginners-core-concepts--jargon-free-glossary)
 - [Quick Start](#quick-start)
 - [Common Patterns](#common-patterns)
@@ -70,10 +103,35 @@ If you are new to programming or desktop app creation, here are simple definitio
 - [15. System Status Tray Mode & Thread Safety](#15-system-status-tray-mode--thread-safety)
 - [16. Form Change & Dirty Tracking](#16-form-change--dirty-tracking)
 - [17. Ergonomic Helpers](#17-ergonomic-helpers)
+  - [External CLI Tool Verification (`resolve_tool`, `has_tool`, `verify_tool`, `require_tool`)](#external-cli-tool-verification)
+  - [RAD CRUD Table-to-Form Automatic Binding (`crud_*`)](#rad-crud-table-to-form-automatic-binding)
+  - [Multi-Page Wizard Stepper Binding (`bind_wizard_pages`, `wizard_*`)](#multi-page-wizard-stepper-binding)
+  - [Form Snapshot Undo & Redo History (`push_form_snapshot`, `undo_form`, `redo_form`)](#form-snapshot-undo--redo-history)
+  - [RAD Command Palette & Action Registry (`register_command`, `execute_command`)](#rad-command-palette--action-registry)
 - [18. RAD Visual UI Designer & Code Generator API](#18-rad-visual-ui-designer--code-generator-api)
+  - [17 Pre-Loaded Form Template Presets](#form-template-preset-helpers-17-presets)
+  - [Programmatic FormSpec Builder & Layout Alignment Tools](#programmatic-formspec-builder--layout-alignment-tools)
+  - [Integrated `vlang_webview_rad_studio` & WebView App Compiler](#integrated-vlang_webview_rad_studio--webview-app-compiler)
+- [💎 Modern Super Controls & Ergonomic UI Suite (Hardware & RAD Ideals)](#-modern-super-controls--ergonomic-ui-suite-hardware--rad-ideals)
 - [19. Security, Sanitization & Safe Subshell Execution API](#19-security-sanitization--safe-subshell-execution-api)
 - [20. Production Workstation Applications Suite](#20-production-workstation-applications-suite)
 - [21. Reactive State Management & Auto-Persistence API](#21-reactive-state-management--auto-persistence-api)
+- [22. High-Level Composite Controls](#22-high-level-composite-controls)
+- [23. High Dynamic Range (HDR) & Extended Dynamic Range (EDR) Architecture](#23-high-dynamic-range-hdr--extended-dynamic-range-edr-architecture)
+- [24. God-Mode, GOAT 4D Shaders, Procedural Synth Audio & Qt 6 Smart House / Digital Cockpit Suite](#24-god-mode-goat-4d-shaders-procedural-synth-audio--qt-6-smart-house--digital-cockpit-suite)
+  - [24.1 Sculpted 3D Folder Grid & Atmosphere Engine](#241-sculpted-3d-folder-grid--atmosphere-engine)
+  - [24.2 Master VFX 4D/3D Shader Canvas (6 Presets)](#242-master-vfx-4d3d-shader-canvas-6-presets)
+  - [24.3 Particle Physics & Fireworks Burst Emitter (4 Modes)](#243-particle-physics--fireworks-burst-emitter-4-modes)
+  - [24.4 3D Hologram Foil & Cyber HUD Card](#244-3d-hologram-foil--cyber-hud-card)
+  - [24.5 Multi-Harmonic Waveform & Lissajous Synthesizer](#245-multi-harmonic-waveform--lissajous-synthesizer)
+  - [24.6 Cyberpunk Chromatic Glitch & Neon Hero Banner](#246-cyberpunk-chromatic-glitch--neon-hero-banner)
+  - [24.7 Special-FX Control Animations, Neon Glow & WebView Bridge Helpers](#247-special-fx-control-animations-neon-glow--webview-bridge-helpers)
+  - [24.8 Built-In Procedural Sound Effects & Audio Synthesizer Engine (16 Presets)](#248-built-in-procedural-sound-effects--audio-synthesizer-engine-16-presets)
+  - [24.9 Qt 6 Smart House / Domotics Floorplan & Climate Thermostat](#249-qt-6-smart-house--domotics-floorplan--climate-thermostat)
+  - [24.10 Qt 6 Automotive & Aerospace Digital Cockpit Cluster](#2410-qt-6-automotive--aerospace-digital-cockpit-cluster)
+  - [24.11 Visual Node Graph, Piano Keyboard & 16-Step Drum/Synth Sequencer](#2411-visual-node-graph-piano-keyboard--16-step-drumsynth-sequencer)
+  - [24.12 3D Wireframe/Shaded Mesh Viewport, Polar Radar/Sonar, Logic Analyzer, Nixie Display, Sankey & Color Wheel](#2412-3d-wireframeshaded-mesh-viewport-polar-radarsonar-logic-analyzer-nixie-display-sankey--color-wheel)
+- [25. Cross-Platform & Studio Sub-Modules (`webview`, `filemanager`, `system`, `custom_themes`)](#25-cross-platform--studio-sub-modules-webview-filemanager-system-custom_themes)
 
 ## Quick start
 
@@ -180,101 +238,202 @@ Returns whether the window is currently configured to stay on top.
 on_top := win.get_always_on_top()
 ```
 
-### `win.set_background_color(hex_color string) &SimpleWindow`
+### `win.set_background_color(hex_color string) &SimpleWindow` / `win.get_background_color() string`
 
-Applies a background theme color to the window content view.
+Applies or retrieves the background theme color of the window content view.
 
 - **Format**: `#RRGGBB` or `#RGB`.
 
 ```v
 win.set_background_color('#1c1c1e')
+bg := win.get_background_color()
 ```
 
-### `win.set_font_color(color string) &SimpleWindow`
+### `win.set_font_color(color string) &SimpleWindow` / `win.get_font_color() string`
 
-Sets the default font text color for labels and form controls.
+Sets or retrieves the default font text color for labels and form controls.
 
 - **Values**: `'white'`, `'black'`, or hex format.
 
 ```v
 win.set_font_color('#ffffff')
+fg := win.get_font_color()
 ```
 
 ### `simplegui.list_themes() []string`
 
-Returns all 17 built-in production theme preset names:
+Returns all 50 built-in production, Flagship FX, and Master Designer custom theme names across Low, Medium, High, and Ultra hardware tiers:
 
-- **Apple Light**: Clean macOS Aqua system light canvas (`#ffffff` bg, `#1c1c1e` fg, `#007aff` accent).
-- **Apple Dark**: Vibrant macOS Dark Mode surface (`#1c1c1e` bg, `#f2f2f7` fg, `#0a84ff` accent).
-- **Midnight Space Gray**: Pro dark titanium space gray theme (`#161618` bg, `#ebebf5` fg, `#0a84ff` accent).
-- **Apple Sunset**: Warm macOS Mojave twilight sunset hues (`#281a24` bg, `#fdf7f4` fg, `#ff6b00` accent).
-- **Sonoma Emerald**: macOS Sonoma dark forest glass palette (`#0d1f18` bg, `#f0fdf4` fg, `#30d158` accent).
-- **Ventura Amber**: macOS Ventura golden sunset dark hues (`#211815` bg, `#fff8f0` fg, `#ff9500` accent).
-- **Soft Pastel**: Apple Studio warm soft light theme (`#faf6f0` bg, `#2d2b2a` fg, `#e07a5f` accent).
-- **Catppuccin Mocha**: Soothing lavender catppuccin dark mode (`#1e1e2e` bg, `#cdd6f4` fg, `#cba6f7` accent).
-- **Nord**: Arctic frost nord developer palette (`#2e3440` bg, `#eceff4` fg, `#88c0d0` accent).
-- **Dracula**: High-contrast vampire purple palette (`#282a36` bg, `#f8f8f2` fg, `#bd93f9` accent).
-- **Cyberpunk**: Neon glow dark contrast palette (`#0d0d15` bg, `#00f5d4` fg, `#ff007f` accent).
-- **Solarized Light**: Precision engineered light palette (`#fdf6e3` bg, `#657b83` fg, `#268bd2` accent).
-- **Solarized Dark**: Precision engineered dark palette (`#002b36` bg, `#839496` fg, `#2aa198` accent).
-- **GitHub Dark**: Official GitHub dark interface palette (`#0d1117` bg, `#c9d1d9` fg, `#58a6ff` accent).
-- **GitHub Light**: Clean GitHub light canvas palette (`#ffffff` bg, `#24292f` fg, `#0969da` accent).
-- **Navy Blue**: Deep slate navy dark theme (`#0f172a` bg, `#f8fafc` fg, `#38bdf8` accent).
-- **Forest Green**: Rich emerald green dark theme (`#14532d` bg, `#f0fdf4` fg, `#4ade80` accent).
+#### Classic SimpleGUI Studio Themes (18)
+- **GitHub Dark** (`medium` tier): Official GitHub Dark Dimmed developer canvas (Default) (`#22272e` bg, `#adbac7` fg, `#539bf5` accent).
+- **Apple Dark** (`medium` tier): Refined Apple macOS Pro Dark Titanium surface (`#1c1c1e` bg, `#f5f5f7` fg, `#0a84ff` accent).
+- **Apple Light** (`medium` tier): Clean Apple macOS Aqua studio interface (`#f6f6f7` bg, `#1d1d1f` fg, `#0071e3` accent).
+- **Deep Space OLED** (`high` tier): Ultra-deep pitch OLED dark theme with electric indigo accents (`#090a0f` bg, `#e2e8f0` fg, `#6366f1` accent).
+- **Tokyo Night** (`medium` tier): Iconic Japanese twilight deep indigo theme (`#1a1b26` bg, `#c0caf5` fg, `#7aa2f7` accent).
+- **Nord Arctic** (`medium` tier): Arctic polar night slate with frosty cyan contrast (`#2e3440` bg, `#eceff4` fg, `#88c0d0` accent).
+- **Dracula Vampire** (`medium` tier): High-contrast gothic slate purple developer theme (`#282a36` bg, `#f8f8f2` fg, `#bd93f9` accent).
+- **Cyberpunk Neon** (`high` tier): Electric midnight purple with hot cyan text and neon pink accents (`#120e24` bg, `#00f0ff` fg, `#ff007f` accent).
+- **Catppuccin Mocha** (`medium` tier): Soothing modern lavender pastel dark mode (`#1e1e2e` bg, `#cdd6f4` fg, `#f5c2e7` accent).
+- **Monokai Pro** (`medium` tier): Warm dark charcoal with radiant Monokai yellow/gold accents (`#2d2a2e` bg, `#fcfcfa` fg, `#ffd866` accent).
+- **Gruvbox Dark** (`low` tier): Warm retro earthy dark canvas with burnt orange accents (`#282828` bg, `#ebdbb2` fg, `#fe8019` accent).
+- **Cobalt Blue** (`medium` tier): Deep submarine oceanic navy with glowing aqua teal accents (`#0a192f` bg, `#ccd6f6` fg, `#64ffda` accent).
+- **Emerald Forest** (`medium` tier): Deep evergreen botanical pine with vivid emerald accents (`#062319` bg, `#ecfdf5` fg, `#10b981` accent).
+- **Sunset Dusk** (`medium` tier): Rich twilight velvet plum with warm sunset coral accents (`#231123` bg, `#fff1f2` fg, `#f43f5e` accent).
+- **GitHub Light** (`low` tier): Crisp high-contrast GitHub light interface (`#ffffff` bg, `#1f2328` fg, `#0969da` accent).
+- **Solarized Dark** (`low` tier): Precision engineered scientific teal dark theme (`#002b36` bg, `#93a1a1` fg, `#268bd2` accent).
+- **Solarized Light** (`low` tier): Warm linen parchment precision light palette (`#fdf6e3` bg, `#586e75` fg, `#b58900` accent).
+- **Warm Paper & Ink** (`low` tier): Tactile Japanese fine washi paper with deep sumi ink text (`#fbf8f2` bg, `#18181b` fg, `#78716c` accent).
+
+#### Codecaine Flagship FX Themes (12)
+- **Prism Reactor** (`ultra` tier): Prismatic spectral core with dual-glow edge dispersion, aurora ribbons, and glass refraction (`#04060e` bg, `#f8fafc` fg, `#22d3ee` accent).
+- **Orbital Ice** (`high` tier): Cryogenic orbital station glass with diamond-frost rim highlights and arctic specular sheen (`#07111e` bg, `#f0f9ff` fg, `#38bdf8` accent).
+- **Ember Grid** (`high` tier): Volcanic carbon lattice with smoldering orange-crimson plasma glow and tactical scanlines (`#110705` bg, `#fff7ed` fg, `#fb923c` accent).
+- **Cyberpunk Hologram** (`high` tier): High-tech holographic projection with cyan/magenta neon chromatic dispersion (`#060913` bg, `#e2f1ff` fg, `#00f0ff` accent).
+- **Neon HUD** (`high` tier): Tactical emerald command HUD with crisp telemetry grid and radar scanlines (`#040d0a` bg, `#d1fae5` fg, `#10b981` accent).
+- **Quantum Obsidian** (`high` tier): Pitch-black volcanic obsidian glass with ultraviolet quantum glow (`#050508` bg, `#f3f4f6` fg, `#8b5cf6` accent).
+- **Deep Space** (`medium` tier): Zero-gravity starfield dark theme with crisp orbital blue telemetry (`#080b12` bg, `#e2e8f0` fg, `#38bdf8` accent).
+- **Liquid Metal** (`medium` tier): Machined anodized titanium with specular metallic sheen and micro-grain (`#0f1217` bg, `#f1f5f9` fg, `#94a3b8` accent).
+- **Titanium Aurora** (`medium` tier): Anodized titanium with aurora glass highlights (`#0f1217` bg, `#f1f5f9` fg, `#94a3b8` accent).
+- **Neo-Tokyo Dark** (`high` tier): Synthwave midnight skyline with crimson-violet neon reflections (`#0d0914` bg, `#fae8ff` fg, `#f43f5e` accent).
+- **Aurora Glass** (`high` tier): Frosted aurora glass with crimson-violet prism reflections (`#0d0914` bg, `#fae8ff` fg, `#f43f5e` accent).
+- **Plasma Violet** (`high` tier): High-contrast violet plasma glass surface (`#0d0914` bg, `#fae8ff` fg, `#f43f5e` accent).
+
+#### Codecaine Master Designer Custom Themes (20 — Low to Ultra Hardware Tiers)
+- **E-Ink Paper Daylight** (`01_low_featherweight_eink_paper_daylight`, `low` tier): Zero-GPU-overhead warm archival paper palette with razor-sharp 1px ink borders (`#f4f1ea` bg, `#18181b` fg, `#2563eb` accent).
+- **Amber CRT Terminal** (`02_low_featherweight_amber_crt_terminal`, `low` tier): Classic P3 phosphor amber monochrome mainframe terminal with zero blur overhead (`#0c0904` bg, `#ffb000` fg, `#ff8800` accent).
+- **Nordic Slate Lite** (`03_low_featherweight_nordic_slate_lite`, `low` tier): Ultra-clean Scandinavian dark slate engineered for 120Hz responsiveness on integrated graphics (`#242933` bg, `#eceff4` fg, `#88c0d0` accent).
+- **Solarized Studio Lite** (`04_low_featherweight_solarized_studio_lite`, `low` tier): Ethan Schoonover precision spectral contrast tuned for zero eye fatigue and instant repaints (`#002b36` bg, `#eee8d5` fg, `#2aa198` accent).
+- **Midnight Carbon Matte** (`05_low_featherweight_midnight_carbon_matte`, `low` tier): Stealth matte carbon fiber dark mode with zero GPU shaders and maximum OLED battery savings (`#090a0d` bg, `#e4e4e7` fg, `#3b82f6` accent).
+- **Mac Studio Frosted Pro** (`06_medium_balanced_mac_studio_frosted_pro`, `medium` tier): Native macOS Sequoia / Sonoma frosted vibrant glass with subtle specular inner rims (`#111318` bg, `#f5f5f7` fg, `#0a84ff` accent).
+- **Emerald Botanical Glass** (`07_medium_balanced_emerald_botanical_glass`, `medium` tier): Organic Pacific Northwest rainforest glass with soothing bioluminescent firefly spores (`#061510` bg, `#ecfdf5` fg, `#10b981` accent).
+- **Tokyo Twilight Aero** (`08_medium_balanced_tokyo_twilight_aero`, `medium` tier): Shibuya twilight indigo glass with soft cinema bokeh orbs and lavender rim lighting (`#13141f` bg, `#e0e7ff` fg, `#7aa2f7` accent).
+- **Autumn Maple Warm Glass** (`09_medium_balanced_autumn_maple_warm_glass`, `medium` tier): Kyoto autumn maple courtyard with drifting crimson-gold foliage and warm amber glass (`#180d09` bg, `#fff7ed` fg, `#f97316` accent).
+- **Deep Ocean Bioluminescence** (`10_medium_balanced_deep_ocean_bioluminescence`, `medium` tier): Abyssal Mariana Trench slate illuminated by pelagic cyan-teal bioluminescent plankton (`#04101c` bg, `#e0f2fe` fg, `#06b6d4` accent).
+- **Arctic Aurora Borealis** (`11_high_fx_arctic_aurora_borealis`, `high` tier): Tromso polar night sky with sweeping multi-band geomagnetic aurora ribbons and crystal glass (`#050b16` bg, `#f0fdf4` fg, `#2dd4bf` accent).
+- **Cyberpunk Edgerunner 2099** (`12_high_fx_cyberpunk_edgerunner_2099`, `high` tier): Night City high-voltage yellow & cyber-cyan neural interface with neon rain and holographic grid (`#080510` bg, `#fef08a` fg, `#fcee09` accent).
+- **Winter Solstice Blizzard** (`13_high_fx_winter_solstice_blizzard`, `high` tier): Sub-zero alpine glacier glass with live multi-depth parallax snowfall and frost-rim refraction (`#06101e` bg, `#f8fafc` fg, `#7dd3fc` accent).
+- **Hollow Hallows Eve** (`14_high_fx_hollow_hallows_eve`, `high` tier): Haunted pumpkin-spice & eldritch violet gothic manor with floating lantern embers and creeping mist (`#0b0510` bg, `#ffedd5` fg, `#f97316` accent).
+- **Crimson Dragon Forge** (`15_high_fx_crimson_dragon_forge`, `high` tier): Obsidian volcanic anvil with rising molten gold-crimson forge sparks and heat-shimmer glass (`#0f0404` bg, `#fef2f2` fg, `#ef4444` accent).
+- **Matrix Architect Construct** (`16_ultra_matrix_architect_construct`, `ultra` tier): Full-screen emerald & gold katakana digital rain construct with CRT curvature and phosphor bloom (`#020804` bg, `#dcfce7` fg, `#22c55e` accent).
+- **Tactical SpecOps NightVision** (`17_ultra_tactical_specops_nightvision`, `ultra` tier): Gen-4 white-phosphor & thermal lime tactical radar HUD with rotating sweep rings and telemetry reticle (`#030906` bg, `#ecfccb` fg, `#84cc16` accent).
+- **Nebula Supernova Raytrace** (`18_ultra_nebula_supernova_raytrace`, `ultra` tier): James Webb deep-field stellar nursery with volumetric supernova shockwaves and chromatic lens flare (`#05030d` bg, `#fdf4ff` fg, `#e879f9` accent).
+- **Quantum Tesseract 4D** (`19_ultra_quantum_tesseract_4d`, `ultra` tier): 4D hypercube projection chamber with rotating geometric tesseract lattices and quantum wave interference (`#030712` bg, `#f0f9ff` fg, `#22d3ee` accent).
+- **Omega Pantheon 3099 Singularity** (`20_ultra_omega_pantheon_3099_singularity`, `ultra` tier): The pinnacle 3099 singularity showcase: dual-coronal plasma storm, raytraced prism dispersion, and full holographic HUD (`#04020a` bg, `#ffffff` fg, `#f43f5e` accent).
 
 ```v
 themes := simplegui.list_themes()
 ```
 
-### `simplegui.get_theme(theme_name string) Theme`
+### `simplegui.list_themes_by_tier(tier string) []Theme`
 
-Retrieves a `Theme` struct configuration matching `theme_name`. Normalization allows flexible lookup (case-insensitive, space/hyphen/underscore tolerant). Unknown names fall back to `GitHub Dark`.
-
-- **`Theme` fields**: `name string`, `background_color string`, `font_color string`, `accent_color string`, `description string`, `is_dark bool`.
-- **Aliases**: short forms work too, e.g. `'default'` → GitHub Dark, `'light'` → Apple Light, `'dark'` → Apple Dark, `'nord'`, `'dracula'`, `'catppuccin'`.
+Returns all `Theme` configurations matching the requested hardware performance tier (`'low'`, `'medium'`, `'high'`, `'ultra'`, or `'all'`).
 
 ```v
-theme := simplegui.get_theme('GitHub Dark')
+ultra_themes := simplegui.list_themes_by_tier('ultra')
+```
+
+### `simplegui.normalize_theme(t Theme) Theme`
+
+Fills in any missing semantic color tokens (`card_background`, `card_border`, `danger_color`, `warning_color`, `success_color`, `info_color`) and `ThemeFx` shader defaults on a `Theme` struct.
+
+```v
+norm := simplegui.normalize_theme(my_theme)
+```
+
+### `simplegui.get_theme(theme_name string) Theme` / `win.get_theme() Theme` / `win.get_theme_name() string`
+
+Retrieves a `Theme` struct configuration matching `theme_name` (or queries the window's active `Theme` / theme name). Normalization allows flexible lookup (case-insensitive, space/hyphen/underscore tolerant). Unknown names fall back to `GitHub Dark`.
+
+- **`Theme` fields**: `name string`, `short_name string`, `tier string`, `tier_label string`, `target_hardware string`, `background_color string`, `font_color string`, `accent_color string`, `secondary_accent string`, `card_background string`, `card_border string`, `danger_color string`, `warning_color string`, `success_color string`, `info_color string`, `description string`, `is_dark bool`, `fx ThemeFx`.
+- **`ThemeFx` fields**: `glow bool`, `glow_color string`, `glow_color2 string`, `glow_intensity int`, `blur int`, `glass int`, `radius int`, `border int`, `border_opacity int`, `motion string`, `grain int`, `scanlines bool`, `vignette int`, `backdrop_style string`, `atmosphere string`, `ui_element_fx string`, `icon_pack_style string`, `font_profile string`, `corner_profile string`, `icon_glow bool`, `icon_animation string`, `sheen bool`, `noise bool`, `chromatic bool`, `ambient bool`, `prism_edge bool`, `inner_glow bool`, `frosted_rim bool`, `neon_pulse bool`, `parallax bool`.
+- **Aliases**: short forms work too, e.g. `'default'` → GitHub Dark, `'light'` → Apple Light, `'dark'` → Apple Dark, `'nord'`, `'dracula'`, `'catppuccin'`, or any of the 20 Master Designer IDs (`'01_low_featherweight_eink_paper_daylight'` .. `'20_ultra_omega_pantheon_3099_singularity'`).
+
+```v
+theme := simplegui.get_theme('Prism Reactor')
+current := win.get_theme()
+current_name := win.get_theme_name()
 ```
 
 ### `win.apply_theme(t Theme) &SimpleWindow`
 
-Applies a `Theme` struct configuration directly to the window and controls. Accepts custom `Theme` values, so you can define your own palettes.
+Applies a `Theme` struct configuration (including `ThemeFx` shaders, atmosphere, elevated card surfaces, and glow tokens) directly to the window and controls.
 
 ```v
-theme := simplegui.get_theme('Nord')
+theme := simplegui.get_theme('Nord Arctic')
 win.apply_theme(theme)
 ```
 
 ### `win.set_theme(theme_name string) &SimpleWindow`
 
-Looks up a built-in production theme by name (or alias) and applies its background and font styling to the window and controls.
+Looks up any of the 50 built-in Studio, Flagship FX, or Master Designer themes by name (or alias) and applies its background, font styling, and `ThemeFx` shaders to the window and controls.
 
-- **Values**: Accepts any of the 18 built-in production theme names:
-  - `GitHub Dark` (Default)
-  - `Apple Dark`
-  - `Apple Light`
-  - `Deep Space OLED`
-  - `Tokyo Night`
-  - `Nord Arctic`
-  - `Dracula Vampire`
-  - `Cyberpunk Neon`
-  - `Catppuccin Mocha`
-  - `Monokai Pro`
-  - `Gruvbox Dark`
-  - `Cobalt Blue`
-  - `Emerald Forest`
-  - `Sunset Dusk`
-  - `GitHub Light`
-  - `Solarized Dark`
-  - `Solarized Light`
-  - `Warm Paper & Ink`
 - **Control styling**: applying a theme restyles every control — buttons, dropdowns, text inputs, textareas, and date pickers derive their light/dark surface colors from the theme's background luminance, not from the macOS system appearance. A light theme therefore renders light controls even on a Mac running system Dark Mode (and vice versa).
 - **Window appearance**: the window's `NSAppearance` (Aqua / Dark Aqua) is switched automatically to match the theme background, so native bezels, menus, and scrollers stay consistent.
 - **Explicit overrides**: per-control colors set with `win.set_control_background_color()` / `win.set_control_font_color()` complement the theme — setting one property never resets the other. Applying a new theme restyles all controls, so re-apply per-control overrides after `set_theme()` when switching palettes at runtime (see [demos/form_color_theme_demo.v](../demos/form_color_theme_demo.v)).
 
 ```v
-win.set_theme('GitHub Dark')
+win.set_theme('Omega Pantheon 3099 Singularity')
+```
+
+### `win.set_theme_atmosphere(atmosphere string, glow_color string, glow_color2 string, intensity int) &SimpleWindow`
+
+Dynamically updates the window's procedural atmosphere shader (`'none'`, `'starfield'`, `'aurora'`, `'nebula'`, `'cyber_rain'`, `'matrix_rain'`, `'snowfall'`, `'embers'`, `'fireflies'`, `'autumn_leaves'`, `'tactical_hud'`, `'tesseract_4d'`, `'omega_singularity'`, etc.) and dual-glow lighting tokens.
+
+```v
+win.set_theme_atmosphere('aurora', '#2dd4bf', '#38bdf8', 85)
+```
+
+### `win.set_atmosphere_animated(enabled bool) &SimpleWindow` / `win.step_atmosphere_phase(delta f64) &SimpleWindow`
+
+Enables or disables the real-time 30 FPS procedural shader animation loop on the window's atmosphere backdrop, or manually advances the atmosphere shader phase uniform by `delta` radians.
+
+```v
+win.set_atmosphere_animated(true)
+win.step_atmosphere_phase(0.08)
+```
+
+### WCAG 2.1 Theme Contrast Auditing (`ThemeContrastItem`)
+
+- **`simplegui.relative_luminance(hex string) f64`**: Computes the WCAG 2.1 relative luminance (`0.0` .. `1.0`) for a hex/rgb color string.
+- **`simplegui.contrast_ratio(fg string, bg string) f64`**: Computes the WCAG 2.1 contrast ratio (`1.0` .. `21.0`) between two color strings.
+- **`simplegui.ensure_readable_color(fg string, bg string, min_ratio f64) string`**: Automatically nudges `fg` toward white or black until it meets `min_ratio` against `bg`.
+- **`simplegui.audit_theme_contrast(t Theme) []ThemeContrastItem`**: Evaluates WCAG 2.1 AA (`4.5:1` / `3.0:1`) and AAA (`7.0:1`) compliance across a `Theme`'s semantic color pairs. Each `ThemeContrastItem` contains `label string`, `fg string`, `bg string`, `ratio f64`, `aa bool`, `aaa bool`, and `nudged string`.
+
+```v
+items := simplegui.audit_theme_contrast(simplegui.get_theme('GitHub Dark'))
+ratio := simplegui.contrast_ratio('#ffffff', '#0b0f19')
+lum := simplegui.relative_luminance('#0b0f19')
+safe_fg := simplegui.ensure_readable_color('#64748b', '#0b0f19', 4.5)
+```
+
+### Codecaine File Manager (`CCFM-THEME-v1`) JSON & Share Code Import / Export
+
+- **`simplegui.import_ccfm_theme_json(raw_json string) !Theme`**: Parses a Codecaine File Manager theme JSON string into a normalized `Theme`.
+- **`simplegui.export_ccfm_theme_json(t Theme) string`**: Serializes a `Theme` into `codecaine-filemanager-theme-v1` JSON format.
+- **`simplegui.export_ccfm_share_code(t Theme) string`**: Encodes a `Theme` into a portable `CCFM-THEME-v1:<base64>` share code string.
+- **`simplegui.import_ccfm_share_code(code string) !Theme`**: Decodes a `CCFM-THEME-v1:<base64>` share code (or raw JSON) into a `Theme`.
+- **`simplegui.load_ccfm_theme_file(path string) !Theme`**: Loads a `.json` theme file from disk (such as `bun_rad_studio/custom_themes/*.json`).
+- **`win.apply_ccfm_share_code(code string) !&SimpleWindow`**: Decodes a `CCFM-THEME-v1:` share code and immediately applies it to the window.
+- **`win.load_ccfm_theme(path string) !&SimpleWindow`**: Loads a `.json` theme file from disk and immediately applies it to the window.
+
+```v
+code := simplegui.export_ccfm_share_code(simplegui.get_theme('Prism Reactor'))
+loaded_theme := simplegui.import_ccfm_share_code(code)!
+json_str := simplegui.export_ccfm_theme_json(loaded_theme)
+_ := simplegui.import_ccfm_theme_json(json_str)!
+_ := simplegui.load_ccfm_theme_file('bun_rad_studio/custom_themes/19_ultra_quantum_tesseract_4d.json')!
+win.apply_ccfm_share_code(code)!
+win.load_ccfm_theme('bun_rad_studio/custom_themes/20_ultra_omega_pantheon_3099_singularity.json')!
+```
+
+### `win.is_system_dark_mode() bool`
+
+Returns `true` if macOS system-wide Dark Mode appearance is currently active.
+
+```v
+if win.is_system_dark_mode() {
+    println('macOS is in Dark Mode')
+}
 ```
 
 ### `win.save_theme(theme_name string) &SimpleWindow`
@@ -1166,17 +1325,188 @@ win.shake_on_error()
 win.center_and_focus()
 ```
 
-### `win.run()`
+### Window Configuration & Lifecycle Structs (`WindowConfig`, `WindowParams`, `WindowInfo`, `CloseRequestedCallback`)
 
-Launches the native NSApplication event loop and displays the centered window.
+- **`WindowConfig`**: Declarative configuration struct passed to `win.configure(...)` with fields: `title`, `width`, `height`, `padding`, `spacing`, `background_color`, `font_color`, `always_on_top`, `responsive_layout`, `resizable`, `minimizable`, `maximizable`, `closable`, `has_shadow`, `movable_by_window_background`, `titlebar_visible`, `title_visible`.
+- **`WindowParams`**: Native bridge initialization parameter struct used to configure the Cocoa `NSWindow` delegate.
+- **`WindowInfo`**: Opaque native handle struct holding `app` and `app_delegate` pointers for the underlying Cocoa `NSApplication` / `NSWindow`.
+- **`CloseRequestedCallback`**: `pub type CloseRequestedCallback = fn (mut win SimpleWindow) bool` — callback signature invoked before closing the window; return `false` to veto closing.
 
-#### Keyboard Shortcuts (Global Window Actions)
+### `win.configure(callback fn (mut cfg WindowConfig)) &SimpleWindow`
+
+Configures multiple window properties in a single declarative block using `WindowConfig`.
+
+```v
+win.configure(fn (mut cfg simplegui.WindowConfig) {
+    cfg.title = 'Configured App'
+    cfg.padding = 24
+    cfg.spacing = 12
+    cfg.always_on_top = true
+})
+```
+
+### `win.set_width(width int) &SimpleWindow` / `win.set_height(height int) &SimpleWindow`
+
+Updates the window's width or height independently while preserving the other dimension.
+
+```v
+win.set_width(960)
+win.set_height(640)
+```
+
+### `win.get_titlebar_visible() bool` / `win.is_movable() bool`
+
+Queries whether the window titlebar is currently visible or whether the window is movable.
+
+```v
+tb_vis := win.get_titlebar_visible()
+movable := win.is_movable()
+```
+
+### `win.set_frame_autosave_name(autosave_name string) &SimpleWindow` / `win.get_frame_autosave_name() string` / `win.save_frame() bool` / `win.restore_frame() bool`
+
+Configures an `NSWindow` frame autosave identifier and saves/restores the window's frame geometry in `NSUserDefaults`.
+
+```v
+win.set_frame_autosave_name('MainWorkspaceWindow')
+name := win.get_frame_autosave_name()
+win.save_frame()
+win.restore_frame()
+```
+
+### `win.save_geometry(key string) &SimpleWindow` / `win.restore_geometry(key string) &SimpleWindow`
+
+Persists or restores the window position, width, height, and display frame under `key` with fluent chaining.
+
+```v
+win.save_geometry('editor_bounds')
+win.restore_geometry('editor_bounds')
+```
+
+### `win.capture_screenshot(file_path string) bool` / `win.save_screenshot(filepath string) &SimpleWindow`
+
+Captures the current window contents and writes a PNG screenshot to `file_path` (`capture_screenshot` returns a `bool` success flag; `save_screenshot` returns `&SimpleWindow` for fluent chaining).
+
+```v
+ok := win.capture_screenshot('/tmp/window.png')
+win.save_screenshot('/tmp/snapshot.png')
+```
+
+### `win.set_content_insets(top int, left int, bottom int, right int) &SimpleWindow`
+
+Sets safe-area margins/insets `(top, left, bottom, right)` on the window content view.
+
+```v
+win.set_content_insets(16, 20, 16, 20)
+```
+
+### Native macOS Window Tabbing (`set_tabbing_mode`, `set_tabbing_identifier`, `toggle_tab_bar`, `select_next_tab`, `select_previous_tab`, `get_tab_count`)
+
+- **`win.set_tabbing_mode(mode string) &SimpleWindow`** / **`win.get_tabbing_mode() string`**: Sets or retrieves the macOS native window tabbing mode (`'automatic'`, `'preferred'`, `'disallowed'`).
+- **`win.set_tabbing_identifier(identifier string) &SimpleWindow`** / **`win.get_tabbing_identifier() string`**: Groups windows together under the same macOS window tab bar identifier.
+- **`win.toggle_tab_bar() &SimpleWindow`**: Toggles visibility of the native macOS window tab bar.
+- **`win.select_next_tab() &SimpleWindow`** / **`win.select_previous_tab() &SimpleWindow`**: Switches focus to the next or previous native window tab.
+- **`win.get_tab_count() int`**: Returns the number of native window tabs in the current tab group.
+
+```v
+win.set_tabbing_mode('preferred')
+win.set_tabbing_identifier('workspace_tabs')
+mode := win.get_tabbing_mode()
+id := win.get_tabbing_identifier()
+win.toggle_tab_bar()
+win.select_next_tab()
+win.select_previous_tab()
+count := win.get_tab_count()
+```
+
+### Screen Capture Sharing & Content Protection (`set_sharing_type`, `set_content_protection`, `get_content_protection`)
+
+- **`win.set_sharing_type(sharing string) &SimpleWindow`**: Configures window screen-capture sharing access (`'none'`, `'read_only'`, `'read_write'`).
+- **`win.set_content_protection(enabled bool) &SimpleWindow`** / **`win.get_content_protection() bool`**: Prevents window contents from being captured by screen recordings or screen sharing when enabled.
+
+```v
+win.set_sharing_type('read_only')
+win.set_content_protection(true)
+protected := win.get_content_protection()
+```
+
+### `win.unminimize() &SimpleWindow` / `win.unmaximize() &SimpleWindow` / `win.request_user_attention(critical bool) &SimpleWindow`
+
+Restores a minimized window from the Dock, restores a maximized window to normal size, or bounces the Dock icon to request user attention.
+
+```v
+win.unminimize()
+win.unmaximize()
+win.request_user_attention(false)
+```
+
+### `win.on_close_requested(callback CloseRequestedCallback) &SimpleWindow` / `win.can_close() bool`
+
+Registers a close-confirmation callback that can veto closing the window by returning `false` (for example, when unsaved changes exist), and evaluates whether closing is permitted.
+
+```v
+win.on_close_requested(fn (mut win simplegui.SimpleWindow) bool {
+    return !win.is_dirty()
+})
+allowed := win.can_close()
+```
+
+### Window Appearance, Display Info, Cursor Visibility & Content Size Constraints
+
+- **`win.set_window_appearance(appearance string) &SimpleWindow`** / **`win.get_window_appearance() string`**: Overrides or queries per-window macOS appearance (`'dark'`, `'light'`, or `'auto'`).
+- **`win.get_screen_full_frame() (int, int, int, int)`**: Returns the full physical `(x, y, width, height)` frame of the screen containing the window.
+- **`win.get_screen_scale_factor() f64`**: Returns the Retina backing scale factor (`1.0` standard, `2.0`+ Retina).
+- **`win.move_to_screen(screen_index int) &SimpleWindow`**: Centers the window on the display monitor at `screen_index`.
+- **`win.set_cursor_hidden(hidden bool) &SimpleWindow`**: Hides or restores the macOS system cursor.
+- **`win.set_shows_resize_indicator(show bool) &SimpleWindow`** / **`win.get_shows_resize_indicator() bool`**: Shows or hides the window resize indicator and queries its state.
+- **`win.set_content_min_size(width int, height int) &SimpleWindow`** / **`win.get_content_min_size() (int, int)`**: Sets or queries minimum content view dimensions.
+- **`win.set_content_max_size(width int, height int) &SimpleWindow`** / **`win.get_content_max_size() (int, int)`**: Sets or queries maximum content view dimensions.
+
+```v
+win.set_window_appearance('dark')
+app_mode := win.get_window_appearance()
+sx, sy, sw, sh := win.get_screen_full_frame()
+scale := win.get_screen_scale_factor()
+win.move_to_screen(0)
+win.set_cursor_hidden(false)
+win.set_shows_resize_indicator(true)
+_ := win.get_shows_resize_indicator()
+win.set_content_min_size(400, 300)
+win.set_content_max_size(1920, 1080)
+min_cw, min_ch := win.get_content_min_size()
+max_cw, max_ch := win.get_content_max_size()
+```
+
+### Window & Control Frame Animations (`animate_opacity`, `fade_in_window`, `fade_out_window`, `animate_window_size`, `animate_window_position`, `animate_window_bounds`)
+
+- **`win.animate_opacity(opacity f64, duration_ms int) &SimpleWindow`**: Smoothly animates the window's opacity to `opacity` (`0.0` .. `1.0`) over `duration_ms`.
+- **`win.fade_in_window(duration_ms int) &SimpleWindow`** / **`win.fade_out_window(duration_ms int) &SimpleWindow`**: Fades the window in to `1.0` or out to `0.0` over `duration_ms`.
+- **`win.animate_window_size(width int, height int, duration_ms int) &SimpleWindow`**: Smoothly animates the window's width and height over `duration_ms`.
+- **`win.animate_window_position(x int, y int, duration_ms int) &SimpleWindow`**: Smoothly animates the window's screen position over `duration_ms`.
+- **`win.animate_window_bounds(x int, y int, width int, height int, duration_ms int) &SimpleWindow`**: Smoothly animates both window position and size simultaneously over `duration_ms`.
+
+```v
+win.animate_opacity(0.95, 250)
+win.fade_in_window(300)
+win.fade_out_window(300)
+win.animate_window_size(960, 640, 300)
+win.animate_window_position(120, 120, 250)
+win.animate_window_bounds(100, 100, 1024, 720, 350)
+```
+
+### `win.run()` / `win.start() &SimpleWindow`
+
+Launches the native NSApplication event loop and displays the centered window (`win.start()` is a fluent alias for `win.run()`).
+
+ #### Keyboard Shortcuts (Global Window Actions)
 
 - **`CMD + F`**: Toggles native full screen mode.
 - **`CMD + Q`**: Quits the application immediately.
 
 ```v
 win.run()
+// or fluent alias:
+win.start()
 ```
 
 ---
@@ -1212,10 +1542,12 @@ Starts a CSS-like multi-column grid layout container with specified column count
 win.begin_grid('grid_1', 2, 10)
 win.add_button('b1', 'Box 1')
 win.add_button('b2', 'Box 2')
+win.end_grid()
+```
 
 ### `win.split_view(name string, vertical bool, pane1_fn fn (), pane2_fn fn ()) &SimpleWindow`
 
-Creates a draggable, resizable split view (NSSplitView) container consisting of two panes. If `vertical` is true, the panes are placed side-by-side (left/right). Otherwise, they are stacked top/bottom.
+Creates a draggable, resizable split view (`NSSplitView`) container consisting of two panes. If `vertical` is true, the panes are placed side-by-side (left/right). Otherwise, they are stacked top/bottom.
 
 ```v
 win.split_view('my_split', true, fn [mut win] () {
@@ -1225,6 +1557,18 @@ win.split_view('my_split', true, fn [mut win] () {
 })
 ```
 
+### `win.begin_split_view(name string, vertical bool) &SimpleWindow` / `win.split_view_next_pane() &SimpleWindow` / `win.end_split_view() &SimpleWindow`
+
+Imperative multi-pane split view container delimiters. Call `begin_split_view` to open the first pane, `split_view_next_pane` to advance insertion to the second pane, and `end_split_view` to close the split container.
+
+```v
+win.begin_split_view('main_split', true)
+win.add_label('left_lbl', 'Left Sidebar')
+win.split_view_next_pane()
+win.add_label('right_lbl', 'Main Editor')
+win.end_split_view()
+```
+
 ### `win.set_split_position(name string, divider_index int, position f64) &SimpleWindow`
 
 Programmatically adjusts the location of the splitter handle in pixels.
@@ -1232,8 +1576,6 @@ Programmatically adjusts the location of the splitter handle in pixels.
 ### `win.set_split_divider_style(name string, style string) &SimpleWindow`
 
 Sets the visual style of the splitter line (`'thin'`, `'thick'`, `'pane_splitter'`).
-win.end_grid()
-```
 
 ### `win.end_grid() &SimpleWindow`
 
@@ -1489,6 +1831,82 @@ Dynamically sets, updates, or removes the caption header title of an existing gr
 win.set_group_caption('account_group', 'Updated Account Settings')
 ```
 
+### `win.begin_group_box(name string, title string) &SimpleWindow` / `win.begin_group_box_with_options(name string, title string, border bool) &SimpleWindow` / `win.end_group_box() &SimpleWindow`
+
+Imperative group box container delimiters. Controls added between `begin_group_box` (or `begin_group_box_with_options`) and `end_group_box` are nested inside the group box.
+
+```v
+win.begin_group_box('prefs_group', 'Preferences')
+win.add_checkbox('notify', 'Enable Notifications', true)
+win.end_group_box()
+
+win.begin_group_box_with_options('clean_group', 'Clean Section', false)
+win.add_label('info', 'Borderless container')
+win.end_group_box()
+```
+
+### `win.add_group_box_with_config(name string, cfg GroupConfig) &SimpleWindow` / `win.begin_group_box_with_config(name string, cfg GroupConfig) &SimpleWindow`
+
+Creates or begins a group box container configured via a `GroupConfig` struct.
+
+```v
+win.add_group_box_with_config('card_box', simplegui.GroupConfig{ title: 'Summary', border: true })
+win.begin_group_box_with_config('nested_cfg_box', simplegui.GroupConfig{ title: 'Details', padding: 16 })
+win.add_label('detail_lbl', 'Nested inside configured group box')
+win.end_group_box()
+```
+
+### `win.section(title string, callback VoidEventCallback) &SimpleWindow`
+
+Fluent section builder that begins an auto-named group box with `title`, executes `callback(mut win)` to populate child controls, and automatically calls `end_group_box()`.
+
+```v
+win.section('Network Configuration', fn (mut win simplegui.SimpleWindow) {
+    win.add_input('host', '127.0.0.1')
+})
+```
+
+### `win.begin_tab_container(name string, titles []string) &SimpleWindow` / `win.end_tab_container() &SimpleWindow` / `win.begin_tab_page(name string, tab_index int) &SimpleWindow` / `win.end_tab_page() &SimpleWindow`
+
+Imperative tabbed container and tab page block helpers for structuring multi-tab layouts.
+
+```v
+win.begin_tab_container('settings_tabs', ['General', 'Advanced'])
+win.begin_tab_page('settings_tabs', 0)
+win.add_checkbox('launch_login', 'Launch at Login', false)
+win.end_tab_page()
+win.end_tab_container()
+```
+
+### `win.select_tab(name string, index int) &SimpleWindow` / `win.select_tab_by_title(name string, title string) &SimpleWindow` / `win.get_tab_index(name string) int`
+
+Programmatically switches the active tab of a tab container by 0-based `index` or tab `title`, or queries the currently selected 0-based tab index.
+
+```v
+win.select_tab('main_tabs', 1)
+win.select_tab_by_title('main_tabs', 'Security')
+active_idx := win.get_tab_index('main_tabs')
+```
+
+### `win.scroll_to_top(name string) &SimpleWindow` / `win.scroll_to_bottom(name string) &SimpleWindow`
+
+Scrolls a scrollable view or container (`scroll_view`, `textarea`, etc.) to the top or bottom.
+
+```v
+win.scroll_to_top('scroll_panel')
+win.scroll_to_bottom('scroll_panel')
+```
+
+### `win.begin_glass_box(name string, material string) &SimpleWindow` / `win.end_glass_box() &SimpleWindow`
+
+Begins and ends a translucent macOS `NSVisualEffectView` glassmorphic container with the specified vibrancy `material` (e.g. `'sidebar'`, `'hud'`, `'header'`, `'popover'`).
+
+```v
+win.begin_glass_box('hud_card', 'hud')
+win.add_label('hud_title', 'Frosted Glass Card')
+win.end_glass_box()
+```
+
 ---
 
 ## 3. Adding Controls
@@ -1572,11 +1990,13 @@ Adds a scrollable multi-line rich text area (`NSTextView` enclosed in `NSScrollV
   - `win.textarea_set_selected_range(name string, start int, length int) &SimpleWindow`: Selects a specific range of text.
   - `win.textarea_scroll_to_end(name string) &SimpleWindow`: Scrolls to the bottom of the content.
   - `win.textarea_clear(name string) &SimpleWindow`: Clears the text area entirely.
+  - `win.textarea_goto_line(name string, line int) &SimpleWindow`: Scrolls and moves the cursor to the 1-based line number `line`.
 
 ```v
 win.add_textarea('user_bio', 'Mathematician and writer, known for her work on Charles Babbage\'s early mechanical general-purpose computer.')
    .height(100)
    .font_size(13)
+win.textarea_goto_line('user_bio', 1)
 ```
 
 #### `win.add_search_field(name string, placeholder string) &SimpleWindow`
@@ -1585,7 +2005,7 @@ Adds a native macOS search field (`NSSearchField`) with a magnifying glass icon,
 - **Parameters**:
   - `name`: Unique identifier.
   - `placeholder`: Hint text shown when field is empty.
-- **Getters & Setters**: `win.get_text(name)`, `win.set_text(name, val)`
+- **Getters & Setters**: `win.get_text(name)`, `win.set_text(name, val)`, `win.set_search_recent_searches_key(name string, autosave_name string) &SimpleWindow`, `win.clear_search_history(name string) &SimpleWindow`
 - **Events**: `.on_change(name, cb)`, `.on_enter(name, cb)`
 
 ```v
@@ -1594,6 +2014,8 @@ win.add_search_field('doc_search', 'Search documentation, functions, modules...'
    .onchange(fn (mut win simplegui.SimpleWindow, query string) {
        win.set_status('Searching for: ${query}')
    })
+win.set_search_recent_searches_key('doc_search', 'DocSearchRecents')
+win.clear_search_history('doc_search')
 ```
 
 #### `win.add_pin_code(name string, digits int) &SimpleWindow`
@@ -1621,12 +2043,13 @@ Adds a quick-action command palette bar with a prompt input and visual shortcut 
   - `name`: Unique identifier.
   - `placeholder`: Search placeholder prompt (e.g. `'Type a command or search...'`).
   - `shortcut_hint`: Key hint displayed on the right (e.g. `'⌘K'`).
-- **Getters & Setters**: `win.get_text(name)`, `win.set_text(name, text)`
+- **Getters & Setters**: `win.get_text(name)`, `win.set_text(name, text)`, `win.set_command_palette_text(name string, text string) &SimpleWindow`
 - **Events**: `.on_change(name, cb)`, `.on_enter(name, cb)`
 
 ```v
 win.add_command_palette('cmd_pal', 'Type a command or search...', '⌘K')
    .width(400)
+win.set_command_palette_text('cmd_pal', '>theme')
 ```
 
 #### `win.add_token_field(name string, value string) &SimpleWindow`
@@ -1635,12 +2058,14 @@ Adds a token bubble tags editor input field (`NSTokenField`). Converts comma-sep
 - **Parameters**:
   - `name`: Unique identifier.
   - `value`: Initial comma-separated tokens (e.g. `'gui, macos, native'`).
-- **Getters & Setters**: `win.get_text(name) string`, `win.set_text(name, text string)`
+- **Getters & Setters**: `win.get_text(name) string`, `win.set_text(name, text string)`, `win.set_token_field_tokens(name string, tokens []string) &SimpleWindow`, `win.get_token_field_tokens(name string) []string`
 - **Ergonomic Helpers**: `win.add_token(name, token string)`
 
 ```v
 win.add_token_field('tags_editor', 'vlang, macos, native')
    .width(300)
+win.set_token_field_tokens('tags_editor', ['vlang', 'macos', 'cocoa'])
+tokens := win.get_token_field_tokens('tags_editor')
 ```
 
 #### `win.add_tag_input_field(name string, tags []string) &SimpleWindow`
@@ -1649,10 +2074,23 @@ Adds an interactive tag input field with removable pill tokens and inline additi
 - **Parameters**:
   - `name`: Unique identifier.
   - `tags`: Array of initial tag labels.
-- **Getters & Setters**: `win.set_tag_input_tags(name, tags []string)`, `win.get_text(name)`
+- **Getters & Setters**: `win.set_tag_input_tags(name, tags []string)`, `win.get_tag_input_tags(name string) []string`, `win.get_text(name)`
 
 ```v
 win.add_tag_input_field('project_tags', ['Release', 'v1.0', 'Desktop'])
+active_tags := win.get_tag_input_tags('project_tags')
+```
+
+#### `win.add_shortcut_recorder(name string, initial_shortcut string) &SimpleWindow`
+Adds an interactive keyboard shortcut recorder control that captures key combinations pressed by the user (e.g. `'⌘+Shift+K'`).
+- **Parameters**:
+  - `name`: Unique identifier.
+  - `initial_shortcut`: Default key combination string.
+- **Getters & Setters**: `win.get_text(name) string`, `win.set_text(name, shortcut string)`
+- **Events**: `.on_change(name, cb)`
+
+```v
+win.add_shortcut_recorder('global_hotkey', '⌘+Shift+Space')
 ```
 
 ---
@@ -1701,9 +2139,11 @@ Adds a styled keyboard shortcut badge display item pairing a key combination wit
   - `name`: Unique identifier.
   - `shortcut_str`: Shortcut representation (e.g. `'⌘ + Shift + P'`).
   - `description`: Action description (e.g. `'Open Command Palette'`).
+- **Getters & Setters**: `win.set_hotkey_badge_shortcut(name string, shortcut_str string) &SimpleWindow`
 
 ```v
 win.add_hotkey_badge('hk_save', '⌘ + S', 'Save current document')
+win.set_hotkey_badge_shortcut('hk_save', '⌘ + Shift + S')
 ```
 
 ---
@@ -1805,10 +2245,12 @@ Adds a horizontal toolbar of quick-action icon buttons with labels.
   - `name`: Unique identifier.
   - `labels`: Array of button text labels.
   - `symbols`: Array of corresponding SF Symbol icon names.
+- **Getters & Setters**: `win.set_quick_action_enabled(name string, index int, enabled bool) &SimpleWindow`
 - **Events**: `.on_click(name, cb)` / `.on_change(name, cb)` with clicked action label.
 
 ```v
 win.add_quick_action_bar('action_bar', ['Cut', 'Copy', 'Paste'], ['scissors', 'doc.on.doc', 'doc.on.clipboard'])
+win.set_quick_action_enabled('action_bar', 2, false)
 ```
 
 #### `win.add_link(name string, text string, url string) &SimpleWindow`
@@ -2046,9 +2488,20 @@ win.on_click_tag('tech_tags', fn (mut win simplegui.SimpleWindow, tag string) {
 })
 ```
 
+#### `win.add_chip_group(name string, chips []string) &SimpleWindow`
+Adds a horizontal row of selectable filter chips (`win.chip_group(chips []string)` nameless shorthand).
+- **Nameless Shorthand**: `win.chip_group(chips []string) &SimpleWindow`
+- **Getters & Setters**: `win.get_chip_selected(name string) int`, `win.set_chip_selected(name string, index int) &SimpleWindow`
+
+```v
+win.add_chip_group('status_chips', ['All', 'Open', 'In Review', 'Closed'])
+win.set_chip_selected('status_chips', 1)
+sel_chip := win.get_chip_selected('status_chips')
+```
+
 #### `win.add_transfer_list(name string, available []string, selected []string) &SimpleWindow`
 Adds a dual-column item transfer list picker (single-select transfer by default).
-- **Nameless Shorthand**: `win.transfer_list(available []string, selected []string)`
+- **Nameless Shorthand**: `win.transfer_list(available []string, selected []string)`, `win.transfer_list_opts(available []string, selected []string, multi_select bool)`
 - **Variant**: `win.add_transfer_list_opts(name, available, selected, multi_select bool)`
 - **Parameters**:
   - `name`: Unique identifier.
@@ -2058,6 +2511,7 @@ Adds a dual-column item transfer list picker (single-select transfer by default)
 
 ```v
 win.add_transfer_list('perm_transfer', ['Read', 'Write', 'Execute', 'Delete', 'Admin'], ['Read'])
+win.transfer_list_opts(['Read', 'Write'], ['Read'], true)
 ```
 
 ---
@@ -2105,7 +2559,7 @@ Adds a horizontal continuous slider control (`NSSlider`, range 0 to 100 by defau
   - `name`: Unique identifier.
   - `value`: Initial integer slider position.
 - **Getters & Setters**: `win.get_value_int(name) int`, `win.set_value_int(name, val int)`
-- **Range Configuration**: `win.set_slider_range(name, min, max)` or chainable `.range(min, max)`
+- **Range & Tick Configuration**: `win.set_slider_range(name, min, max)` or chainable `.range(min, max)`, `win.set_slider_tick_marks(name string, count int, snap bool) &SimpleWindow`
 - **Events**: `.on_change(name, cb)` / `.onchange(cb)`
 
 ```v
@@ -2114,6 +2568,7 @@ win.add_slider('volume_slider', 75)
    .onchange(fn (mut win simplegui.SimpleWindow, val string) {
        win.set_status('Volume: ${val}%')
    })
+win.set_slider_tick_marks('volume_slider', 11, true)
 ```
 
 #### `win.add_vertical_slider(name string, value int, min_val int, max_val int, height int) &SimpleWindow`
@@ -2172,11 +2627,14 @@ Adds a horizontal deterministic progress bar loader (`NSProgressIndicator`, rang
 - **Parameters**:
   - `name`: Unique identifier.
   - `value`: Initial progress percentage (0–100).
-- **Getters & Setters**: `win.get_value_int(name) int`, `win.set_value_int(name, val int)`
+- **Getters & Setters**: `win.get_value_int(name) int`, `win.set_value_int(name, val int)`, `win.set_progress_indeterminate(name string, indeterminate bool) &SimpleWindow`, `win.start_progress_animation(name string) &SimpleWindow`, `win.stop_progress_animation(name string) &SimpleWindow`
 
 ```v
 win.add_progress_indicator('sync_progress', 45)
    .width(280)
+win.set_progress_indeterminate('sync_progress', true)
+win.start_progress_animation('sync_progress')
+win.stop_progress_animation('sync_progress')
 ```
 
 #### `win.add_circular_progress(name string, value int, min_val int, max_val int) &SimpleWindow`
@@ -2299,6 +2757,7 @@ win.add_rating_breakdown('product_reviews', 4.8, 1250, [75.0, 18.0, 4.0, 2.0, 1.
 #### `win.add_segment_distribution_bar(name string, labels []string, values []f64, hex_colors []string, height int) &SimpleWindow`
 Adds a multi-segment horizontal distribution bar chart (like disk storage breakdown in macOS Settings).
 - **Nameless Shorthand**: `win.segment_distribution_bar(labels, values, hex_colors, height)`
+- **Getters & Setters**: `win.set_segment_distribution_values(name string, values []f64) &SimpleWindow`
 - **Parameters**:
   - `name`: Unique identifier.
   - `labels`: Array of segment category names.
@@ -2308,6 +2767,7 @@ Adds a multi-segment horizontal distribution bar chart (like disk storage breakd
 
 ```v
 win.add_segment_distribution_bar('storage_bar', ['Apps', 'Documents', 'System', 'Free'], [45.0, 30.0, 15.0, 10.0], ['#007aff', '#ff9500', '#5856d6', '#8e8e93'], 24)
+win.set_segment_distribution_values('storage_bar', [50.0, 25.0, 15.0, 10.0])
 ```
 
 ---
@@ -2354,6 +2814,17 @@ Adds a combined date and time picker input control.
 win.add_date_time_picker('meeting_slot', '2026-08-21 14:30:00')
 ```
 
+#### `win.add_calendar(name string) &SimpleWindow`
+Adds a graphical monthly grid calendar view (`NSDatePicker` in graphical calendar mode).
+- **Parameters**:
+  - `name`: Unique identifier.
+- **Getters & Setters**: `win.get_text(name)`, `win.set_text(name, date string)`
+- **Events**: `.on_change(name, cb)`
+
+```v
+win.add_calendar('month_calendar')
+```
+
 #### `win.add_color_well(name string, color string) &SimpleWindow`
 Adds a native macOS color well block (`NSColorWell`). Clicking it launches the system Color Picker.
 - **Nameless Shorthand**: `win.color_well(color string) &SimpleWindow`
@@ -2384,12 +2855,15 @@ Adds a swatch color palette picker widget with round color swatches.
 win.add_color_palette('theme_palette', ['#007aff', '#34c759', '#ff9500', '#ff3b30', '#af52de'], '#007aff')
 ```
 
-#### `win.add_color_grid(name string, colors []string) &SimpleWindow` / `win.add_color_swatch_panel(...)`
+#### `win.add_color_grid(name string, colors []string) &SimpleWindow` / `win.add_color_swatch_panel(name string, hex_colors []string, selected string) &SimpleWindow`
 Adds a grid of selectable color swatch squares.
-- **Getters & Setters**: `win.set_color_grid_selected(name, hex string)`
+- **Nameless Shorthand**: `win.color_swatch_panel(hex_colors []string, selected string) &SimpleWindow`
+- **Getters & Setters**: `win.set_color_grid_selected(name, hex string)`, `win.set_color_swatch_selected(name string, hex string) &SimpleWindow`
 
 ```v
 win.add_color_grid('palette_grid', ['#1c1c1e', '#2c2c2e', '#3a3a3c', '#48484a', '#636366'])
+win.add_color_swatch_panel('swatch_panel', ['#007aff', '#34c759', '#ff9500'], '#007aff')
+win.set_color_swatch_selected('swatch_panel', '#34c759')
 ```
 
 #### `win.add_file_picker_field(name string, initial_path string, button_title string, folder_only bool) &SimpleWindow`
@@ -2414,10 +2888,13 @@ Adds a modern breadcrumb folder track path control (`NSPathControl`) with system
 - **Parameters**:
   - `name`: Unique identifier.
   - `path`: Target file or directory path.
-- **Getters & Setters**: `win.get_text(name)`, `win.set_text(name, path)`
+- **Getters & Setters**: `win.get_text(name)`, `win.set_text(name, path)`, `win.set_path_control_path(name string, path string) &SimpleWindow`, `win.get_path_control_path(name string) string`, `win.set_path_control_style(name string, style string) &SimpleWindow`
 
 ```v
 win.add_path_control('active_doc_path', '/Users/ada/Projects/SimpleGUI/main.v')
+win.set_path_control_path('active_doc_path', '/Users/ada/Projects')
+win.set_path_control_style('active_doc_path', 'pop_up')
+curr_path := win.get_path_control_path('active_doc_path')
 ```
 
 #### `win.add_drop_zone(name string, label string) &SimpleWindow`
@@ -2478,6 +2955,22 @@ Adds a classic macOS multi-column hierarchical browser view (`NSBrowser`), visua
 ```v
 win.add_html_view('html_preview', '<div style="font-family: -apple-system; padding: 12px;"><h2 style="color: #007aff;">WebKit HTML Panel</h2><p>Embedded rich web content in SimpleGUI.</p></div>')
    .height(180)
+```
+
+#### `win.add_canvas(name string, width int, height int) &SimpleWindow`
+Adds a 2D vector drawing canvas widget supporting immediate-mode line, rectangle, and circle primitives.
+- **Drawing Operations**:
+  - `win.draw_line(name string, x1 f64, y1 f64, x2 f64, y2 f64, hex_color string, line_width f64) &SimpleWindow`
+  - `win.draw_rect(name string, x f64, y f64, w f64, h f64, hex_color string, filled bool) &SimpleWindow`
+  - `win.draw_circle(name string, cx f64, cy f64, radius f64, hex_color string, filled bool) &SimpleWindow`
+  - `win.clear_canvas(name string) &SimpleWindow`
+
+```v
+win.add_canvas('sketch_pad', 400, 240)
+win.draw_rect('sketch_pad', 10, 10, 120, 80, '#007aff', true)
+win.draw_circle('sketch_pad', 220, 60, 40, '#34c759', true)
+win.draw_line('sketch_pad', 10, 140, 380, 140, '#ff9500', 2.0)
+win.clear_canvas('sketch_pad')
 ```
 
 #### `win.add_markdown_view(name string, markdown_text string, height int) &SimpleWindow`
@@ -2541,12 +3034,13 @@ Adds an interactive dark-themed terminal view widget for logging CLI output and 
   - `name`: Unique identifier.
   - `prompt_text`: Initial prompt banner text.
   - `height`: Height in pixels.
-- **Appenders**: `win.append_terminal_line(name string, line string, line_type int)` (0=prompt, 1=stdout, 2=stderr, 3=success)
+- **Appenders & Clearers**: `win.append_terminal_line(name string, line string, line_type int)` (0=prompt, 1=stdout, 2=stderr, 3=success), `win.clear_terminal(name string) &SimpleWindow`
 
 ```v
 win.add_terminal_view('term', 'SimpleGUI Shell v1.0', 180)
 win.append_terminal_line('term', 'Compiling main.v...', 0)
 win.append_terminal_line('term', 'Build complete (0 warnings).', 3)
+win.clear_terminal('term')
 ```
 
 #### `win.add_console(name string, height int) &SimpleWindow`
@@ -2617,6 +3111,7 @@ win.add_stat_card('stat_sales', 'TOTAL SALES', '$128,450', '+18.4% vs last month
 
 #### `win.add_metric_card(name string, title string, value string, change_badge string, subtitle string) &SimpleWindow`
 Displays a KPI statistics card with title, large value, trend change badge, and footer subtitle.
+- **Nameless Shorthand**: `win.metric_card(title string, value string, change_badge string, subtitle string) &SimpleWindow`
 - **Parameters**:
   - `name`: Unique identifier.
   - `title`: Header title text.
@@ -2627,6 +3122,7 @@ Displays a KPI statistics card with title, large value, trend change badge, and 
 
 ```v
 win.add_metric_card('kpi_active_users', 'Active Users', '14,892', '+8.1%', 'Daily active operators')
+win.metric_card('Sessions', '42,100', '+5.4%', 'Last 24h')
 ```
 
 #### `win.add_key_value_card(name string, title string, keys []string, values []string) &SimpleWindow`
@@ -2687,6 +3183,7 @@ win.add_resource_monitor('res_mon', 24, 48, 62, 1240)
 #### `win.add_env_vars(name string, title string, keys []string, values []string) &SimpleWindow`
 Adds a collapsible environment variables summary card widget.
 - **Nameless Shorthand**: `win.env_vars(title, keys, values)`
+- **Getters & Setters**: `win.set_env_vars(name string, keys []string, values []string) &SimpleWindow`
 - **Parameters**:
   - `name`: Unique identifier.
   - `title`: Header title.
@@ -2695,11 +3192,13 @@ Adds a collapsible environment variables summary card widget.
 
 ```v
 win.add_env_vars('env_card', 'Environment Variables', ['PATH', 'SHELL', 'USER'], ['/usr/bin:/bin', '/bin/zsh', 'ada'])
+win.set_env_vars('env_card', ['PATH', 'HOME'], ['/usr/local/bin', '/Users/ada'])
 ```
 
 #### `win.add_banner(name string, text string, style string) &SimpleWindow`
 Adds an alert message banner strip across the window layout.
 - **Nameless Shorthand**: `win.banner(text string, style string)`
+- **Getters & Setters**: `win.set_banner(name string, text string, style string) &SimpleWindow`
 - **Parameters**:
   - `name`: Unique identifier.
   - `text`: Message body text.
@@ -2707,10 +3206,13 @@ Adds an alert message banner strip across the window layout.
 
 ```v
 win.add_banner('maint_banner', 'System maintenance is scheduled for midnight UTC.', 'warning')
+win.set_banner('maint_banner', 'Maintenance complete.', 'success')
 ```
 
 #### `win.add_alert_banner(name string, title string, message string, style string) &SimpleWindow`
 Adds a dismissible notification banner with an icon, title, message, and close (x) button.
+- **Nameless Shorthand**: `win.alert_banner(title string, message string, style string) &SimpleWindow`
+- **Getters & Setters**: `win.set_alert_banner_value(name string, title string, message string, style string) &SimpleWindow`
 - **Parameters**:
   - `name`: Unique identifier.
   - `title`: Alert title.
@@ -2719,6 +3221,8 @@ Adds a dismissible notification banner with an icon, title, message, and close (
 
 ```v
 win.add_alert_banner('sec_alert', 'Security Update Available', 'Version 2.4 contains critical patches.', 'info')
+win.set_alert_banner_value('sec_alert', 'Updated', 'All security patches applied.', 'success')
+win.alert_banner('Notice', 'Auto-save enabled.', 'info')
 ```
 
 #### `win.add_status_banner(name string, title string, message string, style_type string) &SimpleWindow`
@@ -2732,6 +3236,8 @@ win.add_status_banner('db_status', 'Database Connected', 'Latency: 1.2ms to prim
 
 #### `win.add_info_callout(name string, title string, message string, style_type string, button_text string) &SimpleWindow`
 Adds an actionable info callout card with a title, message, and action button.
+- **Nameless Shorthand**: `win.info_callout(title string, message string, style_type string, button_text string) &SimpleWindow`
+- **Getters & Setters**: `win.set_info_callout_text(name string, title string, message string) &SimpleWindow`
 - **Parameters**:
   - `name`: Unique identifier.
   - `title`: Callout title.
@@ -2741,6 +3247,8 @@ Adds an actionable info callout card with a title, message, and action button.
 
 ```v
 win.add_info_callout('trial_callout', 'Pro Trial Active', 'Your trial expires in 7 days.', 'warning', 'Upgrade Now')
+win.set_info_callout_text('trial_callout', 'Pro Plan Unlocked', 'Thank you for upgrading.')
+win.info_callout('Tip', 'Press ⌘K to open the Command Palette.', 'info', 'Got It')
 ```
 
 #### `win.add_status_indicator(name string, label string, status string) &SimpleWindow`
@@ -2947,8 +3455,22 @@ win.add_property_grid('obj_inspector', {
 })
 ```
 
+#### `win.add_collection_view(name string, items []string) &SimpleWindow`
+Adds a native grid collection view (`NSCollectionView`) displaying selectable tile items.
+- **Getters & Setters**: `win.set_collection_items(name string, items []string) &SimpleWindow`
+
+```v
+win.add_collection_view('media_grid', ['Photo 1', 'Photo 2', 'Photo 3', 'Photo 4'])
+win.set_collection_items('media_grid', ['Asset A', 'Asset B', 'Asset C'])
+```
+
 #### `win.add_toolbar_item(name string, label string, tooltip string, symbol string) &SimpleWindow`
 Adds a native macOS window titlebar `NSToolbar` item with an SF Symbol icon, label text, and hover tooltip.
+- **Toolbar Spacing & Appearance Helpers**:
+  - `win.add_toolbar_space() &SimpleWindow`: Inserts a fixed-width space into the window toolbar.
+  - `win.add_toolbar_flexible_space() &SimpleWindow`: Inserts an expanding flexible space into the window toolbar.
+  - `win.set_toolbar_style(style string) &SimpleWindow`: Sets the macOS toolbar display style (`'unified'`, `'expanded'`, `'preference'`, `'automatic'`).
+  - `win.set_toolbar_visible(visible bool) &SimpleWindow`: Shows or hides the window toolbar.
 - **Parameters**:
   - `name`: Unique identifier.
   - `label`: Title label under icon.
@@ -2958,6 +3480,10 @@ Adds a native macOS window titlebar `NSToolbar` item with an SF Symbol icon, lab
 
 ```v
 win.add_toolbar_item('tb_refresh', 'Refresh', 'Reload workspace data', 'arrow.clockwise')
+win.add_toolbar_flexible_space()
+win.add_toolbar_space()
+win.set_toolbar_style('unified')
+win.set_toolbar_visible(true)
 win.on_toolbar_click('tb_refresh', fn (mut win simplegui.SimpleWindow) {
     win.toast('Workspace refreshed!')
 })
@@ -3080,7 +3606,20 @@ These helpers lay out a label and control side-by-side in a horizontal row conta
 | `win.add_form_date_time_picker(label, name, datetime)` | Label + date-time picker |
 | `win.add_form_progress(label, name, value)` / `win.add_labeled_progress(...)` | Label + progress indicator bar |
 | `win.add_form_switch(label, name, switch_label, checked)` / `win.add_labeled_switch(...)` | Label + toggle switch |
-| `win.add_labeled_checkbox(label, name, chk_text, checked)` | Label + checkbox |
+| `win.add_form_checkbox(label, name, chk_text, checked)` / `win.add_labeled_checkbox(...)` | Label + checkbox |
+| `win.add_form_radio_group(label, name, items, selected)` | Label + radio group |
+| `win.add_form_segmented(label, name, items, selected)` | Label + segmented control |
+| `win.add_form_color_well(label, name, color)` | Label + color well picker |
+| `win.add_form_time_picker(label, name, time)` | Label + clock time picker |
+| `win.add_form_stepper(label, name, min_val, max_val, step, value)` | Label + numeric stepper |
+| `win.add_form_search(label, name, placeholder)` | Label + search field |
+| `win.add_form_token_field(label, name, value)` | Label + token tag field |
+| `win.add_form_combo_box(label, name, items, selected)` | Label + editable combobox |
+| `win.add_form_rating(label, name, value)` | Label + 5-star rating selector |
+| `win.add_form_range_slider(label, name, min_val, max_val, low_val, high_val)` | Label + dual-thumb range slider |
+| `win.add_form_number_spinner(label, name, min_val, max_val, step, value)` | Label + compact `[-][val][+]` number spinner |
+| `win.add_form_password_strength(label, name, initial_password)` | Label + password field with live entropy strength meter |
+| `win.add_form_masked_input(label, name, mask, initial_value)` | Label + pattern-masked text field |
 | `win.add_form_link(label, name, link_text, url)` | Label + hyperlink text button |
 | `win.add_labeled_file_picker(label, name, initial_path, button_title, folder_only)` | Label + file path input & browse button |
 | `win.add_action(name, title, callback)` | Push button with wired click callback |
@@ -3122,19 +3661,23 @@ win.add_form_from_struct(UserProfile{
 
 ### 3.12 Nameless Default Control Helpers
 
-When building simple dialogs or single-control utility tools where you do not need to invent control names, use nameless helpers. They automatically assign sensible default keys (`'default_input'`, `'default_button'`, etc.):
+When building simple dialogs or single-control utility tools where you do not need to invent control names, use nameless helpers. They automatically assign sensible default keys (`'default_input'`, `'default_button'`, etc.) and provide matching getters and setters:
 
 ```v
 win.input('Ada Lovelace')
+win.set_input('Charles Babbage')
 println(win.get_input())
 
 win.textarea('Notes content')
+win.set_textarea('Updated notes')
 println(win.get_textarea())
 
 win.checkbox('Accept terms', true)
+win.set_checkbox(false)
 println(win.get_checkbox())
 
 win.number(42)
+win.set_number(100)
 println(win.get_number())
 
 win.button('Submit')
@@ -3241,26 +3784,26 @@ fg := win.get_control_font_color('btn_primary')
 
 ### 4.4 Visibility & Interactivity
 
-#### `win.set_control_visible(name string, visible bool) &SimpleWindow` / `win.get_control_visible(name string) bool`
+#### `win.set_control_visible(name string, visible bool) &SimpleWindow` / `win.get_control_visible(name string) bool` / `win.is_control_visible(name string) bool`
 Shows or hides the specified control. Hidden controls automatically collapse inside layout stacks (`NSStackView`), smoothly shifting surrounding elements.
 - **Fluent Modifier**: `.visible(visible bool) &SimpleWindow`
 - **Ergonomic Helpers**: `win.show_control(name)`, `win.hide_control(name)`, `win.toggle_control_visible(name) bool`, `win.show_controls(names []string)`, `win.hide_controls(names []string)`
 
 ```v
 win.set_control_visible('advanced_settings_group', false)
-if win.get_control_visible('advanced_settings_group') {
+if win.get_control_visible('advanced_settings_group') && win.is_control_visible('advanced_settings_group') {
     println('Advanced panel is visible')
 }
 ```
 
-#### `win.set_control_enabled(name string, enabled bool) &SimpleWindow` / `win.get_control_enabled(name string) bool`
+#### `win.set_control_enabled(name string, enabled bool) &SimpleWindow` / `win.get_control_enabled(name string) bool` / `win.is_control_enabled(name string) bool`
 Enables or disables user interaction on the control. Disabled controls render greyed out according to macOS standard appearance.
 - **Fluent Modifier**: `.enabled(enabled bool) &SimpleWindow`
 - **Ergonomic Helpers**: `win.enable_control(name)`, `win.disable_control(name)`, `win.toggle_control_enabled(name) bool`, `win.enable_controls(names []string)`, `win.disable_controls(names []string)`, `win.enable_all_controls()`, `win.disable_all_controls()`
 
 ```v
 win.set_control_enabled('btn_save', false)
-if win.get_control_enabled('btn_save') {
+if win.get_control_enabled('btn_save') && win.is_control_enabled('btn_save') {
     println('Save button is interactive')
 }
 ```
@@ -3327,10 +3870,12 @@ win.clear_error('email_input')
 win.clear_errors()
 ```
 
-#### `win.validate_controls(validators map[string]ControlValidator) map[string]string`
-Validates a map of controls using custom validator callbacks `fn (value string) string` (returning empty string `""` if valid, or error message). Automatically sets inline errors on invalid controls and clears errors on valid ones.
+#### `win.validate_controls(validators map[string]ControlValidator) map[string]string` / `win.validate_not_empty(name string, error_msg string) bool` / `win.validate_struct[T](data T) map[string]string`
+Validates controls using custom validator callbacks `pub type ControlValidator = fn (value string) string` (returning empty string `""` if valid, or error message), single-field non-empty validation, or compile-time struct attribute validation (`@[required]`, `@[email]`, `@[min]`, `@[max]`). Automatically sets inline errors on invalid controls and clears errors on valid ones.
 
 ```v
+ok := win.validate_not_empty('username', 'Username is required')
+struct_errs := win.validate_struct(UserProfile{ name: 'Ada', email: 'ada@vlang.io', age: 36 })
 errors := win.validate_controls({
     'username': fn (val string) string {
         if val.trim_space().len < 3 {
@@ -3349,7 +3894,24 @@ errors := win.validate_controls({
 
 ---
 
-### 4.7 Inspection, Diagnostics & Spy++ Controls API
+### 4.7 Inspection, Diagnostics, `ControlEntry` Methods & Spy++ Controls API
+
+#### `ControlEntry` Direct Handle Methods
+When retrieving a control pointer via `mut ctrl := win.control(name)` or `win.get_control_ptr(name)!`, you can call direct mutator methods on `&ControlEntry`:
+- **`ctrl.set_width(w int) &ControlEntry`** / **`ctrl.set_height(h int) &ControlEntry`** / **`ctrl.set_size(w int, h int) &ControlEntry`**: Updates control width, height, or both dimensions.
+- **`ctrl.set_elevation(level int) &ControlEntry`**: Applies a material drop-shadow elevation tier (`0`–`5`) to the control's layer.
+- **`ctrl.set_vector_icon(icon_type string, hex_color string) &ControlEntry`**: Attaches a vector icon symbol with custom tint color.
+- **`ctrl.set_visible(vis bool) &ControlEntry`** / **`ctrl.set_enabled(en bool) &ControlEntry`**: Updates visibility or interactivity on the control handle.
+- **`ctrl.set_tooltip(text string) &ControlEntry`**: Updates the control's tooltip text.
+- **`ctrl.set_font_size(size int) &ControlEntry`** / **`ctrl.set_font_color(hex string) &ControlEntry`** / **`ctrl.set_bg_color(hex string) &ControlEntry`**: Updates typography size, text color, or background color directly on `&ControlEntry`.
+
+```v
+mut ctrl := win.control('btn_save')
+ctrl.set_width(180).set_height(36).set_size(180, 36)
+ctrl.set_elevation(2).set_vector_icon('checkmark.circle', '#34c759')
+ctrl.set_visible(true).set_enabled(true).set_tooltip('Save changes')
+ctrl.set_font_size(14).set_font_color('#ffffff').set_bg_color('#007aff')
+```
 
 #### `win.spy_control(name string) ?ControlInfo`
 Inspects and returns a snapshot struct of all metadata for a single control:
@@ -3448,12 +4010,21 @@ Shows a native modal information alert dialog with an OK button.
 win.alert('Success', 'File saved successfully!')
 ```
 
-### `win.alert_with_style(title string, message string, style string) &SimpleWindow`
+### `win.alert_with_style(title string, message string, style string) &SimpleWindow` / `win.show_sheet_alert(title string, message string, style string) &SimpleWindow`
 
-Shows a native modal alert dialog with a specific visual severity style preset (options: `'info'`, `'warning'`, `'critical'`).
+Shows a native modal alert dialog (`alert_with_style`) or a window-attached sheet alert (`show_sheet_alert`) with a specific visual severity style preset (options: `'info'`, `'warning'`, `'critical'`).
 
 ```v
 win.alert_with_style('Warning', 'Low disk space remaining', 'warning')
+win.show_sheet_alert('Saved', 'Your project was saved.', 'info')
+```
+
+### `win.show_popover(control_name string, text string) &SimpleWindow`
+
+Displays a native macOS `NSPopover` anchored to `control_name` displaying `text`.
+
+```v
+win.show_popover('btn_help', 'Click here to view keyboard shortcuts.')
 ```
 
 ### `win.confirm(title string, message string) bool`
@@ -3676,12 +4247,14 @@ Opens a web URL in the user's default web browser.
 win.open_url('https://vlang.io')
 ```
 
-### `win.copy_to_clipboard(text string) &SimpleWindow`
+### `win.copy_to_clipboard(text string) &SimpleWindow` / `win.clipboard_text() string` / `win.get_clipboard_text() string`
 
-Copies the specified text to the macOS system clipboard.
+Copies the specified text to the macOS system clipboard, or reads the current text string from the system clipboard (`get_clipboard_text()` is an alias for `clipboard_text()`).
 
 ```v
 win.copy_to_clipboard('Copied text content')
+clip := win.clipboard_text()
+clip2 := win.get_clipboard_text()
 ```
 
 ---
@@ -3690,7 +4263,7 @@ win.copy_to_clipboard('Copied text content')
 
 ## 6b. Neutralino-Inspired System Calls & Platform API
 
-To simplify system integrations and mirror key features from NeutralinoJS, `simplegui` includes fluent-style wrappers around the V standard library's `os` and core system actions. These methods extend `SimpleWindow` and are readily available inside event handlers.
+To simplify system integrations and mirror key features from NeutralinoJS, `simplegui` includes fluent-style wrappers around the V standard library's `os` and core system actions. Every helper is exposed both as a `win.*` method on `SimpleWindow` and as a package-level `simplegui.*` function.
 
 ```v
 out, code := win.exec('uname -a')
@@ -3700,20 +4273,24 @@ win.show_system_notification('SimpleGUI', 'System integration active')
 
 ### Shell Execution (`NL_OS`)
 
-- `win.exec(command string) (string, int)`: Runs a command synchronously in the system terminal and returns a tuple of `(output, exit_code)`.
-- `win.exec_or(command string, fallback string) string`: Runs a command, returning its stdout if successful (code 0) or the `fallback` value if it failed.
-- `win.exec_bg(command string) &SimpleWindow`: Spawns a shell command in the background (asynchronous concurrent thread) so the application GUI doesn't block or freeze.
-- `win.exec_timeout(command string, timeout_ms int) (string, int, bool)`: Runs a command synchronously with a maximum timeout in milliseconds, returning `(output, exit_code, timed_out)`.
-- `win.exec_result(command string) CommandResult`: Runs a command and returns structured metadata (`output`, `exit_code`, `duration_ms`, `attempts`, timeout flag) for production diagnostics.
-- `win.exec_timeout_result(command string, timeout_ms int) CommandResult`: Timeout-aware variant of `exec_result`.
-- `win.exec_retry(command string, max_attempts int, initial_delay_ms int, backoff_factor f64) CommandResult`: Retries failed commands using exponential backoff.
+- `win.exec(command string) (string, int)` / `simplegui.exec(command string) (string, int)`: Runs a command synchronously in the system terminal and returns a tuple of `(output, exit_code)`.
+- `win.exec_or(command string, fallback string) string` / `simplegui.exec_or(command string, fallback string) string`: Runs a command, returning its stdout if successful (code 0) or the `fallback` value if it failed.
+- `win.exec_bg(command string) &SimpleWindow` / `simplegui.exec_bg(command string)`: Spawns a shell command in the background (asynchronous concurrent thread) so the application GUI doesn't block or freeze.
+- `win.exec_timeout(command string, timeout_ms int) (string, int, bool)` / `simplegui.exec_timeout(command string, timeout_ms int) (string, int, bool)`: Runs a command synchronously with a maximum timeout in milliseconds, returning `(output, exit_code, timed_out)`.
+- `win.exec_result(command string) CommandResult` / `simplegui.exec_result(command string) CommandResult`: Runs a command and returns structured metadata (`output`, `exit_code`, `duration_ms`, `attempts`, timeout flag) for production diagnostics.
+- `win.exec_timeout_result(command string, timeout_ms int) CommandResult` / `simplegui.exec_timeout_result(command string, timeout_ms int) CommandResult`: Timeout-aware variant of `exec_result`.
+- `win.exec_retry(command string, max_attempts int, initial_delay_ms int, backoff_factor f64) CommandResult` / `simplegui.exec_retry(...)`: Retries failed commands using exponential backoff.
   - **Returned Type**: `CommandResult` contains `command`, `output`, `exit_code`, `timed_out`, `duration_ms`, and `attempts`.
+- `win.exec_ex(command string) ExecResult` / `simplegui.exec_ex(command string) ExecResult`: Executes a command and returns `ExecResult` (`stdout string`, `stderr string`, `exit_code int`).
+- `win.exec_lines(command string) []string` / `simplegui.exec_lines(command string) []string`: Executes a command and splits stdout into an array of trimmed lines.
 
 ```v
 out, code := win.exec('ls -la')
 val := win.exec_or('which git', '/usr/bin/git')
 win.exec_bg('long_running_task.sh')
 res := win.exec_result('v version')
+ex := win.exec_ex('uname -a')
+lines := win.exec_lines('ls')
 ```
 
 ### Environment Variables
@@ -3778,49 +4355,51 @@ win.show_system_notification('Notification Title', 'Message content body')
 
 ### macOS Native Speech (Text-to-Speech)
 - `win.speak_native(text string, voice string) &SimpleWindow`: Speaks text using macOS default synthesizer.
-- `win.stop_speech() &SimpleWindow`: Stops active speech.
-- `win.is_speaking() bool`: Returns true if speech is playing.
-- `simplegui.speak_native(text string)`: Package level wrapper for default voice speech.
-- `simplegui.get_speech_voices() []SpeechVoice`: Returns available system voices.
+- `win.stop_speech() &SimpleWindow` / `simplegui.stop_speech()`: Stops active speech.
+- `win.is_speaking() bool` / `simplegui.is_speaking() bool`: Returns true if speech is playing.
+- `simplegui.speak_native(text string)` / `simplegui.speak_native_with_voice(text string, voice string)`: Package level wrappers for default or named voice speech.
+- `simplegui.get_speech_voices() []SpeechVoice` / `win.get_speech_voices() []SpeechVoice`: Returns available system voices (`SpeechVoice` struct: `id`, `name`, `lang`).
 
 ### macOS Multimedia & Audio
-- `win.play_sound_file(file_path string) bool`: Plays an audio file via NSSound asynchronously.
-- `win.stop_sound_file() &SimpleWindow`: Stops the audio playing.
-- `win.is_sound_file_playing() bool`: Returns true if audio is actively playing.
+- `win.play_sound_file(file_path string) bool` / `simplegui.play_sound_file(file_path string) bool`: Plays an audio file via NSSound asynchronously.
+- `win.stop_sound_file() &SimpleWindow` / `simplegui.stop_sound_file()`: Stops the audio playing.
+- `win.is_sound_file_playing() bool` / `simplegui.is_sound_file_playing() bool`: Returns true if audio is actively playing.
 
 ### macOS Haptic Feedback
-- `win.haptic_feedback(pattern string) &SimpleWindow`: Triggers Force Touch trackpad feedback ('generic', 'alignment', 'level_change').
+- `win.haptic_feedback(pattern string) &SimpleWindow` / `simplegui.haptic_feedback(pattern string)`: Triggers Force Touch trackpad feedback ('generic', 'alignment', 'level_change').
 
 ### macOS App & Workspace Automation
-- `win.recycle_to_trash(file_path string) bool`: Moves a file to the macOS Trash using NSFileManager.
-- `simplegui.get_running_apps() []MacAppInfo`: Returns a list of running macOS applications.
-- `simplegui.activate_app(bundle_id_or_name string) bool`: Activates a running app.
-- `simplegui.terminate_app(pid int) bool`: Terminates a running app gracefully.
-- `simplegui.hide_other_apps()`: Hides all applications except the frontmost.
-- `simplegui.unhide_all_apps()`: Unhides all applications.
-- `simplegui.get_frontmost_app() string`: Gets the name of the currently focused app.
-- `simplegui.open_with_app(file_path string, app_name string) bool`: Opens a file with a specific app.
+- `win.recycle_to_trash(file_path string) bool` / `simplegui.recycle_to_trash(file_path string) bool`: Moves a file to the macOS Trash using NSFileManager.
+- `simplegui.get_running_apps() []MacAppInfo` / `win.get_running_apps() []MacAppInfo`: Returns a list of running macOS applications (`MacAppInfo` struct: `pid`, `name`, `bundle_id`).
+- `simplegui.activate_app(bundle_id_or_name string) bool` / `win.activate_app(bundle_id_or_name string) bool`: Activates a running app.
+- `simplegui.terminate_app(pid int) bool` / `win.terminate_app(pid int) bool`: Terminates a running app gracefully.
+- `simplegui.hide_other_apps()` / `win.hide_other_apps() &SimpleWindow`: Hides all applications except the frontmost.
+- `simplegui.unhide_all_apps()` / `win.unhide_all_apps() &SimpleWindow`: Unhides all applications.
+- `simplegui.get_frontmost_app() string` / `win.get_frontmost_app() string`: Gets the name of the currently focused app.
+- `simplegui.open_with_app(file_path string, app_name string) bool` / `win.open_with_app(path string, app_id string) &SimpleWindow`: Opens a file with a specific app.
 
 ### macOS Clipboard & Files
-- `simplegui.copy_image_to_clipboard(path string) bool`: Copies an image file to the macOS clipboard.
-- `simplegui.get_clipboard_image(dest_png_path string) bool`: Saves clipboard image to disk.
-- `simplegui.copy_files_to_clipboard(paths []string) bool`: Copies files to clipboard for Finder pasting.
-- `simplegui.get_clipboard_files() []string`: Retrieves paths of files in clipboard.
-- `simplegui.clear_clipboard()`: Clears clipboard contents.
+- `simplegui.copy_image_to_clipboard(path string) bool` / `win.copy_image_to_clipboard(path string) bool`: Copies an image file to the macOS clipboard.
+- `simplegui.get_clipboard_image(dest_png_path string) bool` / `win.get_clipboard_image(dest_png_path string) bool`: Saves clipboard image to disk.
+- `simplegui.copy_files_to_clipboard(paths []string) bool` / `win.copy_files_to_clipboard(paths []string) bool`: Copies files to clipboard for Finder pasting.
+- `simplegui.get_clipboard_files() []string` / `win.get_clipboard_files() []string`: Retrieves paths of files in clipboard.
+- `simplegui.clear_clipboard()` / `win.clear_clipboard() &SimpleWindow`: Clears clipboard contents.
 
 ### macOS Battery & Power Management
-- `simplegui.get_battery_percentage() f64`: Gets exact battery capacity.
-- `simplegui.is_battery_charging() bool`: Returns true if plugged in and charging.
-- `simplegui.is_on_battery_power() bool`: Returns true if not connected to AC.
-- `simplegui.get_battery_time_remaining_minutes() int`: Returns estimated remaining time on battery.
+- `simplegui.get_battery_percentage() f64` / `win.get_battery_percentage() f64`: Gets exact battery capacity.
+- `simplegui.is_battery_charging() bool` / `win.is_battery_charging() bool`: Returns true if plugged in and charging.
+- `simplegui.is_on_battery_power() bool` / `win.is_on_battery_power() bool`: Returns true if not connected to AC.
+- `simplegui.get_battery_time_remaining_minutes() int` / `win.get_battery_time_remaining_minutes() int`: Returns estimated remaining time on battery.
 
 ### macOS User Defaults (Preferences)
-- `simplegui.defaults_set_string(key string, val string)`: Saves a string to UserDefaults.
-- `simplegui.defaults_get_string(key string) string`: Retrieves a string.
-- `simplegui.defaults_set_bool(key string, val bool)`: Saves a boolean.
-- `simplegui.defaults_get_bool(key string) bool`: Retrieves a boolean.
-- `simplegui.defaults_set_int(key string, val int)`: Saves an integer.
-- `simplegui.defaults_get_int(key string) int`: Retrieves an integer.
+- `simplegui.defaults_set_string(key string, val string)` / `win.defaults_set_string(key string, val string) &SimpleWindow`: Saves a string to UserDefaults.
+- `simplegui.defaults_get_string(key string) string` / `win.defaults_get_string(key string) string`: Retrieves a string.
+- `simplegui.defaults_set_bool(key string, val bool)` / `win.defaults_set_bool(key string, val bool) &SimpleWindow`: Saves a boolean.
+- `simplegui.defaults_get_bool(key string) bool` / `win.defaults_get_bool(key string) bool`: Retrieves a boolean.
+- `simplegui.defaults_set_int(key string, val int)` / `win.defaults_set_int(key string, val int) &SimpleWindow`: Saves an integer.
+- `simplegui.defaults_get_int(key string) int` / `win.defaults_get_int(key string) int`: Retrieves an integer.
+- `simplegui.defaults_remove(key string)` / `win.defaults_remove(key string) &SimpleWindow`: Removes a key from UserDefaults.
+- `simplegui.defaults_synchronize()` / `win.defaults_synchronize() &SimpleWindow`: Flushes pending UserDefaults modifications to disk.
 - `win.start_screen_saver() &SimpleWindow`: Starts the macOS screen saver engine.
 - `win.log_out_user() &SimpleWindow`: Logs out the current user.
 - `win.restart_computer() &SimpleWindow`: Restarts the Mac.
@@ -3832,6 +4411,21 @@ win.show_system_notification('Notification Title', 'Message content body')
 - `win.stop_prevent_sleep() &SimpleWindow`: Stops the tracked `caffeinate` guard started by `start_prevent_sleep()`.
 - `win.is_preventing_sleep() bool`: Reports whether the tracked sleep-prevention guard is currently active.
 - `win.prevent_sleep_while_process_running(target_pid int) &SimpleWindow`: Prevents sleep while the specified PID is alive (`caffeinate -w`).
+
+### macOS Display Geometry, Pixel Sampling, Text Panels & `.app` Bundler (`macos.v`)
+- `simplegui.get_screens_info() []MacScreenInfo` / `win.get_screens_info() []MacScreenInfo`: Returns geometry and scale factor metadata (`MacScreenInfo` struct: `index`, `x`, `y`, `width`, `height`, `scale_factor`) for all connected displays.
+- `simplegui.get_cursor_position() (int, int)` / `win.get_cursor_position() (int, int)`: Returns current global mouse cursor `(x, y)` coordinates.
+- `simplegui.get_pixel_color(x int, y int) string` / `win.get_pixel_color(x int, y int) string`: Samples the screen pixel at `(x, y)` and returns its `#RRGGBB` hex color.
+- `simplegui.get_os_version_string() string` / `win.get_os_version_string() string`: Returns localized macOS version description from `NSProcessInfo`.
+- `simplegui.get_Active_Space_ID() int` / `win.get_active_space_id() int`: Returns the active macOS Mission Control Space identifier.
+- `simplegui.save_text_file(default_name string, content string) string` / `win.save_text_file(default_name string, content string) string`: Opens a save dialog and writes `content` directly to the chosen file path.
+- `simplegui.open_text_file(extensions string) (string, string)` / `win.open_text_file(extensions string) (string, string)`: Opens a file picker and returns `(chosen_path, file_contents)`.
+- **Native macOS `.app` Bundle Packaging (`MacBundleConfig`, `MacBundleResult`, `IconDimension`)**:
+  - `simplegui.normalize_bundle_id(raw string, fallback_name string) string`: Normalizes a reverse-DNS bundle identifier (e.g. `'com.codecaine.myapp'`).
+  - `simplegui.sanitize_bundle_name(name string) string`: Sanitizes an application display name for `.app` bundle creation.
+  - `simplegui.generate_info_plist(cfg MacBundleConfig) string`: Generates a complete macOS `Info.plist` XML manifest from `MacBundleConfig`.
+  - `simplegui.generate_icns_from_png(png_path string, output_icns_path string) !`: Converts a source PNG into a multi-resolution `.icns` iconset using `IconDimension` tiers.
+  - `simplegui.package_macos_app(cfg MacBundleConfig) !MacBundleResult` / `win.package_app_bundle(cfg MacBundleConfig) !MacBundleResult`: Compiles and packages a V source file or binary into a standalone macOS `.app` bundle, returning `MacBundleResult`.
 
 Notes:
 
@@ -4224,11 +4818,44 @@ win.play_system_sound('Glass')
 - `win.launch_at_login_add(app_path string) &SimpleWindow`: Registers application in macOS Login Items.
 - `win.launch_at_login_remove(app_name string) &SimpleWindow`: Removes application from macOS Login Items.
 
+### macOS Keychain, Touch ID Biometrics, Spotlight, Extended Attributes (`xattr`) & Power Events
+- **System Sleep / Wake / Lock Listeners (`SystemEventCallback`)**:
+  - `pub type SystemEventCallback = fn (info string)`
+  - `win.on_system_sleep(cb SystemEventCallback) &SimpleWindow`: Invoked when macOS prepares to sleep.
+  - `win.on_system_wake(cb SystemEventCallback) &SimpleWindow`: Invoked when macOS wakes from sleep.
+  - `win.on_screen_lock(cb SystemEventCallback) &SimpleWindow`: Invoked when the user session screen locks.
+  - `win.on_screen_unlock(cb SystemEventCallback) &SimpleWindow`: Invoked when the user session screen unlocks.
+  - `win.on_power_source_change(cb SystemEventCallback) &SimpleWindow`: Invoked when switching between AC and battery power.
+  - `vlang_dispatch_system_event(event_type &char, info &char)`: Native Objective-C bridge dispatcher for system power/lock notifications.
+- **Idle Time, Thermal State & Process Termination Guard**:
+  - `win.get_idle_seconds() f64`: Returns seconds elapsed since the last user keyboard or mouse input event (`CGEventSourceSecondsSinceLastEventType`).
+  - `win.get_thermal_state() string`: Returns macOS thermal pressure state (`'nominal'`, `'fair'`, `'serious'`, `'critical'`).
+  - `win.set_Prevent_Automatic_Termination(prevent bool) &SimpleWindow`: Prevents macOS from automatically terminating the app when backgrounded.
+- **Touch ID / Biometric Authentication (`LocalAuthentication`)**:
+  - `win.authenticate_biometrics(reason string) bool`: Prompts the user with native macOS Touch ID / Apple Watch / Administrator authentication for `reason`, returning `true` if authorized.
+- **macOS Keychain Credentials (`Security.framework`)**:
+  - `win.keychain_set(service string, account string, password string) bool`: Stores or updates a secret in the macOS Keychain.
+  - `win.keychain_get(service string, account string) ?string`: Retrieves a secret from the macOS Keychain (or `none` if not found).
+  - `win.keychain_delete(service string, account string) bool`: Removes a secret from the macOS Keychain.
+- **Spotlight Search (`NSMetadataQuery` / `mdfind`) & Extended File Attributes (`xattr`)**:
+  - `win.find_files_spotlight(query string) []string`: Executes a fast macOS Spotlight metadata query and returns matching file paths.
+  - `win.get_file_extended_attribute(path string, attr_name string) ?string`: Reads a POSIX/macOS extended file attribute (`xattr`).
+  - `win.set_file_extended_attribute(path string, attr_name string, value string) bool`: Writes a POSIX/macOS extended file attribute (`xattr`).
+  - `win.remove_file_extended_attribute(path string, attr_name string) bool`: Removes an extended file attribute from `path`.
+- **Uniform Type Identifiers (UTI) & URL Query Builder**:
+  - `win.open_url_with_params(base_url string, params map[string]string) &SimpleWindow`: Appends URL-encoded query parameters to `base_url` and opens it in the default browser.
+  - `win.get_file_UTI(path string) string`: Returns the macOS Uniform Type Identifier (e.g. `'public.png'`, `'com.adobe.pdf'`) for `path`.
+  - `win.get_default_app_for_file(path string) string`: Returns the path to the default application registered to open `path`.
+
 ```v
 ver := win.get_macos_version()
 is_arm := win.is_apple_silicon()
 win.open_in_finder('/Users/username/Downloads')
 win.set_dock_badge(3)
+win.keychain_set('MyApp', 'api_token', 'secret_xyz')
+if token := win.keychain_get('MyApp', 'api_token') {
+    println('Loaded token (${token.len} chars)')
+}
 ```
 
 ---
@@ -4239,15 +4866,15 @@ win.set_dock_badge(3)
 
 ### HTTP Client (`net.http`)
 
-- `win.http_get(url string) string`: Sends a synchronous GET request and returns the response body (empty on failure).
-- `win.http_post(url string, data string) string`: Sends a synchronous POST request with the specified body, returning the response (empty on failure).
+- `win.http_get(url string) string` / `simplegui.http_get(url string) string`: Sends a synchronous GET request and returns the response body (empty on failure).
+- `win.http_post(url string, data string) string` / `simplegui.http_post(url string, data string) string`: Sends a synchronous POST request with the specified body, returning the response (empty on failure).
 - `simplegui.SimpleHttpResponse`: Structured response metadata used by strict HTTP helpers.
   - Fields: `status_code int`, `body string`, `raw_headers string`, `url string`.
 - `simplegui.SimpleHttpRequestOptions`: Request options used by strict HTTP helpers.
   - Fields: `headers map[string]string`, `user_agent string`, `retries int`, `retry_delay_ms int`, `expect_success bool`.
-- `simplegui.http_request(method http.Method, url string, data string, options SimpleHttpRequestOptions) !SimpleHttpResponse`: Executes an HTTP request with configurable headers, retries, retry delay, user-agent, and strict success-status enforcement.
-- `win.http_get_strict(url string) !string`: Sends a strict GET request and returns response body or explicit error.
-- `win.http_post_strict(url string, data string) !string`: Sends a strict POST request and returns response body or explicit error.
+- `simplegui.http_request(method http.Method, url string, data string, options SimpleHttpRequestOptions) !SimpleHttpResponse` / `win.http_request(method http.Method, url string, data string, options SimpleHttpRequestOptions) !SimpleHttpResponse`: Executes an HTTP request with configurable headers, retries, retry delay, user-agent, and strict success-status enforcement.
+- `win.http_get_strict(url string) !string` / `simplegui.http_get_strict(url string) !string`: Sends a strict GET request and returns response body or explicit error.
+- `win.http_post_strict(url string, data string) !string` / `simplegui.http_post_strict(url string, data string) !string`: Sends a strict POST request and returns response body or explicit error.
 
 ```v
 body := win.http_get('https://api.github.com/zen')
@@ -4324,18 +4951,23 @@ orig_text := win.decompress_gzip(gz_bytes)
 ### Random Numbers (`rand`, `crypto.rand`)
 
 - `win.rand_int(min int, max int) int`: Generates a secure random integer between min (inclusive) and max (exclusive).
+- `win.rand_f64(min f64, max f64) f64`: Generates a random floating-point number in `[min, max)`.
+- `win.rand_uuid() string`: Generates a random v4 UUID string.
 - `win.rand_string(length int) string`: Produces a random alphanumeric string token of target length.
 - `win.rand_shuffle_strings(mut arr []string) &SimpleWindow`: Shuffles the items within a string array in-place.
 - `win.rand_choice_strings(items []string) string`: Selects a random string from an array with uniform probability.
 - `win.rand_choice_ints(items []int) int`: Selects a random integer from an array with uniform probability.
 - `win.rand_weighted_choice_strings(items []string, weights []f64) string`: Selects a string element from an array proportional to relative non-negative probabilities in `weights`.
 - `win.rand_weighted_choice_ints(items []int, weights []f64) int`: Selects an integer element from an array proportional to relative weights.
+- `win.crypto_rand_u64() u64`: Generates a cryptographically secure random 64-bit unsigned integer.
+- `win.crypto_rand_int(max u64) u64`: Generates a cryptographically secure random integer in `[0, max)`.
 - `win.crypto_rand_bytes(length int) []u8`: Returns a slice of cryptographically secure random bytes of specified length.
 - `win.crypto_rand_hex(length int) string`: Produces a cryptographically secure hex string token.
 - `win.crypto_rand_uuid() string`: Generates a cryptographically secure UUID v4 string (`8-4-4-4-12` hex format).
 
 ```v
 rand_num := win.rand_int(1, 100)
+rand_flt := win.rand_f64(0.0, 1.0)
 token := win.rand_string(16)
 uuid_str := win.crypto_rand_uuid()
 ```
@@ -4343,6 +4975,7 @@ uuid_str := win.crypto_rand_uuid()
 ### Time & Calendar Calculations (`time`)
 
 - `win.time_now() string`: Returns the formatted current timestamp (`YYYY-MM-DD HH:MM:SS`).
+- `win.time_now_iso() string`: Returns the current timestamp in ISO-8601 format.
 - `win.time_elapsed(ms int) string`: Formats a millisecond counter into a friendly custom duration (e.g. `1200ms` or `1.20s`).
 - `win.time_unix_timestamp() i64`: Returns current Unix epoch timestamp in seconds.
 - `win.time_from_unix(timestamp i64) string`: Formats a Unix epoch timestamp (seconds) into standard `YYYY-MM-DD HH:MM:SS` string.
@@ -4351,6 +4984,7 @@ uuid_str := win.crypto_rand_uuid()
 
 ```v
 now_str := win.time_now()
+iso_str := win.time_now_iso()
 is_leap := win.time_is_leap_year(2028)
 days := win.time_days_in_month(2026, 7)
 ```
@@ -4374,6 +5008,7 @@ println(parsed.host) // 'vlang.io'
 
 - `win.toml_parse(content string) &TOMLWrapperDoc`: Parses TOML text and wraps query details inside an easy helper.
   - **Returned Type**: `TOMLWrapperDoc` supports `doc.get_string(key)`, `doc.get_string_default(key, def)`, `doc.get_int(key)`, and `doc.get_bool(key)`.
+- `win.json_encode_map(m map[string]string) string`: Serializes a flat key-value string map into a JSON string.
 - `win.json_decode_map(json_str string) map[string]string`: Deserializes a JSON string into a flat key-value map.
 - `win.json_decode_map_strict(json_str string) !map[string]string`: Deserializes a JSON string into a flat key-value map and returns explicit errors for malformed JSON.
 - `win.json_encode_map_list(m []map[string]string) string`: Serializes an array of maps into a JSON string.
@@ -4382,7 +5017,8 @@ println(parsed.host) // 'vlang.io'
 - `win.json_pretty_print(json_str string) string`: Formats a flat key-value map JSON string with clean line indents.
 
 ```v
-json_map := win.json_decode_map('{"name": "Ada", "role": "Dev"}')
+encoded_json := win.json_encode_map({'name': 'Ada', 'role': 'Dev'})
+json_map := win.json_decode_map(encoded_json)
 pretty_json := win.json_pretty_print('{"a":"1","b":"2"}')
 ```
 
@@ -4515,21 +5151,21 @@ styled := win.term_color('Success!', 'green')
 
 `simplegui` provides high-level generic LIFO (Stack), FIFO (Queue), Set, Ring Buffer, and MinHeap collections:
 
-- `simplegui.new_stack[T]() SimpleStack[T]`: Instantiates a new LIFO stack.
+- `simplegui.new_stack[T]() SimpleStack[T]` / `win.new_stack[T]() SimpleStack[T]`: Instantiates a new LIFO stack.
   - `stack.push(item T)`: Pushes an element onto the stack.
   - `stack.pop() !T`: Pops and returns the top element from the stack.
   - `stack.peek() !T`: Returns the top element without removing it.
   - `stack.len() int`: Returns the number of items in the stack.
   - `stack.is_empty() bool`: Reports whether the stack has no items.
 
-- `simplegui.new_queue[T]() SimpleQueue[T]`: Instantiates a new FIFO queue.
+- `simplegui.new_queue[T]() SimpleQueue[T]` / `win.new_queue[T]() SimpleQueue[T]`: Instantiates a new FIFO queue.
   - `queue.push(item T)`: Enqueues an element.
   - `queue.pop() !T`: Dequeues and returns the front element.
   - `queue.peek() !T`: Returns the front element without removing it.
   - `queue.len() int`: Returns the number of items in the queue.
   - `queue.is_empty() bool`: Reports whether the queue has no items.
 
-- `simplegui.new_set[T]() SimpleSet[T]`: Instantiates a new unique set collection.
+- `simplegui.new_set[T]() SimpleSet[T]` / `win.new_set[T]() SimpleSet[T]`: Instantiates a new unique set collection.
   - `set.add(item T)`: Adds an item to the set if not already present.
   - `set.remove(item T)`: Removes an item from the set.
   - `set.exists(item T) bool`: Reports whether an item is in the set.
@@ -4537,7 +5173,7 @@ styled := win.term_color('Success!', 'green')
   - `set.is_empty() bool`: Reports whether the set has no items.
   - `set.to_array() []T`: Exports set items as a standard V array.
 
-- `simplegui.new_ringbuffer[T](capacity int) SimpleRingBuffer[T]`: Instantiates a new ring buffer with a fixed capacity.
+- `simplegui.new_ringbuffer[T](capacity int) SimpleRingBuffer[T]` / `win.new_ringbuffer[T](capacity int) SimpleRingBuffer[T]`: Instantiates a new ring buffer with a fixed capacity.
   - `rb.push(item T) !`: Pushes an item to the buffer, returning an error if full.
   - `rb.pop() !T`: Pops and returns the oldest item, returning an error if empty.
   - `rb.len() int`: Returns the number of occupied slots in the buffer.
@@ -4545,7 +5181,7 @@ styled := win.term_color('Success!', 'green')
   - `rb.is_empty() bool`: Reports whether the buffer has no items.
   - `rb.is_full() bool`: Reports whether the buffer is fully occupied.
 
-- `simplegui.new_min_heap[T]() SimpleMinHeap[T]`: Instantiates a new generic min-heap priority queue.
+- `simplegui.new_min_heap[T]() SimpleMinHeap[T]` / `win.new_min_heap[T]() SimpleMinHeap[T]`: Instantiates a new generic min-heap priority queue.
   - `smh.push(item T)`: Inserts an item into the min-heap.
   - `smh.pop() !T`: Removes and returns the smallest item from the min-heap.
   - `smh.peek() !T`: Returns the smallest item without removing it.
@@ -4620,6 +5256,7 @@ clamped := win.math_clamp(150.0, 0.0, 100.0) // 100.0
 - `win.stats_harmonic_mean(data []f64) f64`: Computes the harmonic mean of a dataset.
 - `win.stats_rms(data []f64) f64`: Computes the Root Mean Square (quadratic mean) of a dataset.
 - `win.stats_mode(data []f64) f64`: Returns the most frequent value in a dataset.
+- `win.stats_min(data []f64) f64` / `win.stats_max(data []f64) f64`: Returns the minimum or maximum value in a floating-point dataset.
 - `win.stats_range(data []f64) f64`: Returns the difference between maximum and minimum values in a dataset.
 - `win.stats_kurtosis(data []f64) f64`: Computes the sample kurtosis of a dataset.
 - `win.stats_skew(data []f64) f64`: Computes the sample skewness of a dataset.
@@ -4634,6 +5271,8 @@ data := [10.0, 20.0, 30.0, 40.0, 50.0]
 mean := win.stats_mean(data)
 med := win.stats_median(data)
 std_dev := win.stats_sample_std_dev(data)
+min_d := win.stats_min(data)
+max_d := win.stats_max(data)
 ```
 
 ### Arbitrary-Precision BigInteger Math (`math.big`)
@@ -4646,12 +5285,14 @@ std_dev := win.stats_sample_std_dev(data)
   - `b.mul(other SimpleBigInt) SimpleBigInt`: Returns the product of two BigInts.
   - `b.div(other SimpleBigInt) SimpleBigInt`: Returns the quotient of two BigInts.
   - `b.mod(other SimpleBigInt) SimpleBigInt`: Returns the remainder of two BigInts.
+  - `b.cmp(other SimpleBigInt) int`: Compares two BigInts (`-1`, `0`, or `1`).
   - `b.str() string`: Formats the BigInt as a decimal string representation.
 
 ```v
 b1 := win.big_int_from_str('1000000000000000000000')
 b2 := win.big_int_from_str('2000000000000000000000')
 sum := b1.add(b2)
+cmp_res := b1.cmp(b2)
 println(sum.str())
 ```
 
@@ -4663,27 +5304,36 @@ println(sum.str())
 - `win.array_max_f64(arr []f64) f64`: Returns the maximum value in a float array (or `0.0` if empty).
 - `win.array_sum(arr []int) int`: Computes the sum of all elements in an integer array.
 - `win.array_sum_f64(arr []f64) f64`: Computes the sum of all elements in a float array.
+- `win.array_chunk[T](arr []T, size int) [][]T` / `simplegui.array_chunk[T](arr []T, size int) [][]T`: Splits an array into sub-arrays of length `size`.
 - `win.array_unique_strings(arr []string) []string`: Deduplicates string array values while preserving original insertion order.
 
 ```v
 min_v := win.array_min([10, 5, 20, 3])
 max_v := win.array_max([10, 5, 20, 3])
+chunks := win.array_chunk([1, 2, 3, 4], 2)
 unique_list := win.array_unique_strings(['a', 'b', 'a', 'c'])
 ```
 
 ### UTF-8 String Utilities (`encoding.utf8`)
 
 - `win.utf8_len(text string) int`: Returns the total number of UTF-8 code points/characters in a string.
+- `win.utf8_to_upper(text string) string` / `win.utf8_to_lower(text string) string`: Converts a UTF-8 string to uppercase or lowercase across full Unicode code points.
+- `win.utf8_reverse(text string) string`: Reverses a UTF-8 string by Unicode code points.
 - `win.utf8_is_valid(text string) bool`: Validates whether a string contains valid UTF-8 character encoding.
 
 ```v
 char_len := win.utf8_len('Hello 🚀') // 7
+upper := win.utf8_to_upper('café')
+lower := win.utf8_to_lower('CAFÉ')
+rev := win.utf8_reverse('abc')
 is_valid := win.utf8_is_valid('Valid UTF-8')
 ```
 
 ### String Distance, Metrics & Utilities (`strings`)
 
 - `win.string_levenshtein(s1 string, s2 string) int`: Computes the Levenshtein edit distance between two strings.
+- `win.string_levenshtein_similarity(s1 string, s2 string) f64`: Computes normalized Levenshtein similarity score (`0.0` to `1.0`).
+- `win.string_dice_coefficient(s1 string, s2 string) f64`: Computes Sørensen–Dice bigram similarity coefficient (`0.0` to `1.0`).
 - `win.string_jaro_similarity(s1 string, s2 string) f64`: Computes Jaro distance similarity between two strings (0.0 to 1.0).
 - `win.string_jaro_winkler_similarity(s1 string, s2 string) f64`: Computes Jaro-Winkler distance similarity (0.0 to 1.0).
 - `win.string_hamming_distance(s1 string, s2 string) int`: Computes Hamming distance between two equal-length strings.
@@ -4698,9 +5348,12 @@ is_valid := win.utf8_is_valid('Valid UTF-8')
   - `sb.write_line(text string)`: Appends text followed by a newline.
   - `sb.str() string`: Returns the complete accumulated string content.
   - `sb.len() int`: Returns the byte length of accumulated content.
+  - `sb.clear()`: Resets and empties the string builder buffer.
 
 ```v
 dist := win.string_levenshtein('kitten', 'sitting') // 3
+lev_sim := win.string_levenshtein_similarity('kitten', 'sitting')
+dice := win.string_dice_coefficient('night', 'nacht')
 sim := win.string_jaro_winkler_similarity('martha', 'marhta')
 word_cnt := win.string_count_words('The quick brown fox')
 ```
@@ -6328,11 +6981,118 @@ win.on_shortcut('cmd+shift+p', fn (mut win simplegui.SimpleWindow, key string) {
 })
 ```
 
+### External CLI Tool Verification
+
+**What it does in plain words:** Many desktop apps wrap command-line programs (such as `ffmpeg`, `jq`, `ripgrep`, or `docker`). These helpers check if a tool is installed on the user's Mac (searching `PATH`, Homebrew `/opt/homebrew/bin`, `/usr/local/bin`, Cargo, OrbStack, and Docker folders) and display a friendly pop-up showing the exact `brew install` command if it is missing.
+
+- `ToolRequirement` struct: `{ binary_name string, display_name string, homebrew_formula string, install_guide string }`
+- `simplegui.resolve_tool(binary_name string) ?string` locates the full executable path for a CLI binary across standard `PATH` and macOS Homebrew/user directories, or returns `none`.
+- `simplegui.has_tool(binary_name string) bool` returns `true` if the CLI binary is installed and discoverable.
+- `simplegui.verify_tool(req ToolRequirement) !string` returns the executable path or an error containing actionable Homebrew installation instructions.
+- `win.require_tool(binary_name string, display_name string, brew_formula string) bool` checks if a tool exists; if missing, pops up a native alert dialog with the `brew install` command and returns `false`.
+
+```v
+if !win.require_tool('ffmpeg', 'FFmpeg Media Engine', 'ffmpeg') {
+    return
+}
+if ffmpeg_path := simplegui.resolve_tool('ffmpeg') {
+    println('Found FFmpeg at: ${ffmpeg_path}')
+}
+```
+
+### RAD CRUD Table-to-Form Automatic Binding
+
+**What it does in plain words:** Instead of writing boilerplate code to copy cells between a table and input boxes, you bind a table to your form field names once. Clicking any row in the table automatically fills the text boxes, and adding, updating, or deleting a record takes a single function call.
+
+- `win.crud_bind_table_to_form(table_name string, field_names []string) &SimpleWindow` links a table control to a list of form input names so selecting a row automatically populates those fields.
+- `win.crud_load_row_to_form(table_name string, row_index int) &SimpleWindow` copies a specific row's cells into the bound form fields.
+- `win.crud_load_selected_to_form(table_name string) &SimpleWindow` copies the currently selected table row into the bound form fields.
+- `win.crud_add_from_form(table_name string, field_names ...string) &SimpleWindow` reads the current values from the bound form fields and appends a new row to the table.
+- `win.crud_update_selected_from_form(table_name string, field_names ...string) &SimpleWindow` updates the currently selected table row using the values in the bound form fields.
+- `win.crud_delete_selected_row(table_name string) &SimpleWindow` deletes the currently selected row from the table.
+
+```v
+win.add_table('users_tbl', ['Name', 'Email', 'Role'])
+win.add_input('inp_name', '')
+win.add_input('inp_email', '')
+win.add_dropdown('inp_role', ['Admin', 'Developer', 'Viewer'], 'Developer')
+
+// Bind once: clicking a row in 'users_tbl' auto-populates the 3 inputs!
+win.crud_bind_table_to_form('users_tbl', ['inp_name', 'inp_email', 'inp_role'])
+
+// 1-line Create / Update / Delete button handlers:
+win.add_action('btn_add', 'Add Record', fn (mut w simplegui.SimpleWindow) {
+    w.crud_add_from_form('users_tbl')
+})
+win.add_action('btn_update', 'Update Selected', fn (mut w simplegui.SimpleWindow) {
+    w.crud_update_selected_from_form('users_tbl')
+})
+win.add_action('btn_del', 'Delete Selected', fn (mut w simplegui.SimpleWindow) {
+    w.crud_delete_selected_row('users_tbl')
+})
+```
+
+### Multi-Page Wizard Stepper Binding
+
+**What it does in plain words:** Connects a step bar (`wizard_stepper`, `step_tracker`, or `checkout_steps`) to an array of page containers so moving forward or backward automatically shows the active page and hides all other pages.
+
+- `win.bind_wizard_pages(stepper_name string, page_names []string) &SimpleWindow` links a stepper control to page container names and starts at step `0`.
+- `win.wizard_goto_step(stepper_name string, step int) &SimpleWindow` jumps to a 0-based step index (clamped safely to valid bounds) and updates page visibility.
+- `win.wizard_next_step(stepper_name string) &SimpleWindow` advances to the next wizard page.
+- `win.wizard_prev_step(stepper_name string) &SimpleWindow` returns to the previous wizard page.
+- `win.get_wizard_step(stepper_name string) int` returns the current 0-based active step index.
+
+```v
+win.add_wizard_stepper('setup_steps', ['1. Account', '2. Workspace', '3. Finish'], 0)
+win.bind_wizard_pages('setup_steps', ['page_account', 'page_workspace', 'page_finish'])
+
+win.add_action('btn_back', '◀ Back', fn (mut w simplegui.SimpleWindow) {
+    w.wizard_prev_step('setup_steps')
+})
+win.add_action('btn_next', 'Next ▶', fn (mut w simplegui.SimpleWindow) {
+    w.wizard_next_step('setup_steps')
+})
+```
+
+### Form Snapshot Undo & Redo History
+
+**What it does in plain words:** Gives any window or form a multi-step Undo/Redo history stack (just like `Cmd+Z` / `Cmd+Shift+Z` in a document editor). Save a snapshot before making edits, then undo or redo with one call.
+
+- `win.push_form_snapshot() &SimpleWindow` saves a snapshot of all current form values onto the window's undo stack and clears the redo stack.
+- `win.can_undo_form() bool` / `win.can_redo_form() bool` reports whether an undo or redo snapshot is available.
+- `win.undo_form() bool` restores the most recent snapshot from the undo stack (pushing the current values onto the redo stack).
+- `win.redo_form() bool` reapplies the most recently undone snapshot.
+- `win.clear_form_history() &SimpleWindow` empties both the undo and redo stacks.
+
+```v
+win.push_form_snapshot()
+win.set_text('username', 'new_handle')
+if win.can_undo_form() {
+    win.undo_form() // Restores previous 'username' value
+}
+```
+
+### RAD Command Palette & Action Registry
+
+**What it does in plain words:** Lets you register named commands (with a human-readable title, keyboard shortcut, description, and callback function) in a central registry so menus, buttons, hotkeys, and command palettes can all trigger the same action by ID.
+
+- `CommandEntry` struct: `{ id string, title string, shortcut string, description string, callback VoidEventCallback }`
+- `win.register_command(id string, title string, shortcut string, description string, callback VoidEventCallback) &SimpleWindow` registers a command and automatically binds `shortcut` if non-empty.
+- `win.execute_command(id string) bool` runs a registered command by its `id`, returning `true` if found.
+- `win.list_commands() []CommandEntry` returns all registered commands on the window.
+
+```v
+win.register_command('cmd.save', 'Save Project', 'cmd+s', 'Saves current project state', fn (mut w simplegui.SimpleWindow) {
+    w.toast('Project saved!')
+})
+win.execute_command('cmd.save')
+```
+
 ---
 
 ## 18. RAD Visual UI Designer & Code Generator API
 
-SimpleGUI includes a Delphi/VB/Lazarus-inspired **Visual UI Designer Engine** ([designer.v](../designer.v)) and executable RAD Studio workspace ([tools/ui_designer.v](../tools/ui_designer.v)).
+SimpleGUI includes a Delphi/VB/Lazarus-inspired **Visual UI Designer Engine** ([designer.v](../designer.v)), an executable native RAD Studio workspace ([tools/ui_designer.v](../tools/ui_designer.v)), and an integrated **WebView RAD Studio IDE & Control Showcase** ([examples/rad_studio.v](../examples/rad_studio.v) & [webview/](../webview/)).
 
 ### Structs
 
@@ -6343,7 +7103,7 @@ Represents a single GUI control component on the visual design canvas.
 pub struct ControlSpec {
 pub mut:
 	id               string
-	control_type     string // 'button', 'label', 'input', 'password', 'textarea', 'checkbox', 'switch', 'slider', 'mode', 'number', 'date', 'color', 'progress', 'image', 'table', 'panel', 'radio', 'divider', 'badge', 'search'
+	control_type     string // 'button', 'label', 'input', 'password', 'textarea', 'checkbox', 'switch', 'slider', 'mode', 'number', 'date', 'color', 'progress', 'image', 'table', 'panel', 'radio', 'divider', 'badge', 'search', 'shader_canvas', 'particle_emitter', 'hologram_card', 'waveform_synthesizer', 'glitch_banner', 'smart_house_floorplan', 'smart_thermostat', 'cockpit_cluster', 'node_graph', 'piano_keyboard', 'step_sequencer', 'mesh_viewport_3d', 'polar_radar_sonar', 'logic_analyzer', 'nixie_display', 'sankey_chart', 'color_wheel', etc.
 	x                int
 	y                int
 	width            int    = 140
@@ -6412,22 +7172,21 @@ Compiles an interactive HTML5/CSS3/JavaScript visual design studio canvas contai
 - **Custom Right-Click Context Menu**: Right-click canvas controls for instant Cut, Copy, Paste, Duplicate, Delete, Lock/Unlock, Bring to Front, Send to Back, and Alignment actions.
 - **Canvas Rulers & Pan/Zoom Workspace**: Top and left pixel rulers, `Space + Mouse Drag` canvas panning, and smooth `Ctrl/Cmd + Wheel` canvas zooming (50% to 200%).
 - **Distance & Gap Measuring Guides**: Smart snap lines paired with real-time numeric distance gap badges (`16px` gap overlays between adjacent controls).
-- **Categorized Component Palette & Search Filter**: 25+ controls organized into 6 collapsible categories with live search filtering (`filterPalette`):
-  - 🚀 **Standard Controls**: Button, Label, Input, Password, Text Area
-  - 🎛️ **Toggles & Options**: Checkbox, Switch, Radio Button, Slider, Mode Toggle
-  - 📊 **Pickers & Displays**: Number, Date Picker, Color Well, Progress Bar, Image, Badge, Search
-  - 📝 **Labeled Form Controls**: Form Field, Form Textarea, Form Password, Form Number, Form Slider, Form Dropdown, Form Date, Form Progress, Form Switch, Form Link
-  - ⚡ **Gauges, Cards & Widgets**: Star Rating, Stepper, Tag Field, Path Bar, Drop Zone, Circular Progress, Metric Meter, Status Light, Metric Card, Alert Banner, Code View
-  - 📦 **Containers & Layout**: Data Grid, Panel Box, Separator
+- **Categorized Component Palette & Search Filter**: 70+ controls organized into collapsible categories with live search filtering (`filterPalette`).
 - **Component Tree Inspector Tab**: Hierarchical control tree for layer z-index depth re-ordering (`Bring to Front`, `Send to Back`, `Move Up`, `Move Down`) and locking (`Lock`/`Unlock`).
-- **Multi-Selection & Simultaneous Move/Resize**: Marquee drag selection box, `Shift`/`Cmd`-click selection, and `Cmd+A` / `Ctrl+A` Select All with simultaneous multi-control drag moving and multi-control handle resizing, plus batch property updates (width, height, text/caption, font size, font/background colors, color swatch presets, hover styles, cursor styles, position, and RAD event callbacks).
+- **Multi-Selection & Simultaneous Move/Resize**: Marquee drag selection box, `Shift`/`Cmd`-click selection, and `Cmd+A` / `Ctrl+A` Select All with simultaneous multi-control drag moving and multi-control handle resizing, plus batch property updates.
 - **Interactive Hotkeys Modal (`⌨️ Hotkeys`)**: Quick reference cheat-sheet detailing all keyboard shortcuts.
 - **New Form Creation**: Non-blocking `📄 New` form reset button (`clearForm()`) restoring title, canvas geometry (`840x560`), and controls.
 - **Alignment & Distribute Tools**: `Align Left`, `Center`, `Right`, `Top`, `Middle`, `Bottom`, `Center H Form`, `Center V Form`, `Distribute Horizontally/Vertically`, `Equal Width/Height`, `Fit Text Size`.
 - **Layout JSON Import / Export**: Import custom JSON layout specs or copy generated V code.
 - **Live V Engine Sync**: Real-time two-way synchronization (`syncSpecToV()`) with V runtime state and live preview execution (`launch_preview_window`).
 
-#### Form Template Preset Helpers
+#### Form Template Preset Helpers (17 Presets)
+
+**What it does in plain words:** Gives you 17 ready-made, professionally designed window layouts (from Login screens and CRUD Data Grids to a Smart House Domotics Studio and God-Mode GOAT VFX Studio) that you can load into a window or customize in the Visual Designer with a single function call.
+
+- `simplegui.list_form_templates() []string`: Returns the names of all 17 built-in form presets (`['default', 'profile', 'crud', 'ticket', 'api', 'media', 'login', 'dashboard', 'settings', 'checkout', 'devops', 'ai_studio', 'audio_studio', 'crm', 'vfx_studio', 'smart_house', 'god_mode']`).
+- `simplegui.get_form_template(name string) FormSpec`: Returns the `FormSpec` for any preset name above.
 - `simplegui.get_default_form_spec() FormSpec`: Customer Account Registration 2-Column Form layout preset.
 - `simplegui.get_login_form_spec() FormSpec`: User Authentication Sign-In Dialog layout preset.
 - `simplegui.get_dashboard_form_spec() FormSpec`: Executive KPI Performance Dashboard 3-Column layout preset.
@@ -6438,13 +7197,45 @@ Compiles an interactive HTML5/CSS3/JavaScript visual design studio canvas contai
 - `simplegui.get_api_form_spec() FormSpec`: REST API Client & Endpoint Tester layout preset.
 - `simplegui.get_media_form_spec() FormSpec`: Hi-Fi Audio Media Player & Controls layout preset.
 - `simplegui.get_profile_form_spec() FormSpec`: User Profile & Account Settings layout preset.
+- `simplegui.get_devops_form_spec() FormSpec`: DevOps Kubernetes Cluster & Telemetry Monitor layout preset.
+- `simplegui.get_ai_studio_form_spec() FormSpec`: AI Prompt Engineering & LLM Chat Workbench layout preset.
+- `simplegui.get_audio_form_spec() FormSpec` / `simplegui.get_audio_studio_form_spec() FormSpec`: Pro Audio Mastering, Equalizer & VU Studio layout preset.
+- `simplegui.get_crm_form_spec() FormSpec`: Enterprise Sales CRM Pipeline & Deal Tracker layout preset.
+- `simplegui.get_vfx_studio_form_spec() FormSpec`: Node-Based VFX Shader & Compositing Studio layout preset.
+- `simplegui.get_smart_house_form_spec() FormSpec`: Qt 6 Smart House Domotics Floorplan, Climate Thermostat, Digital Cockpit & 3D Architecture Studio preset.
+- `simplegui.get_god_mode_form_spec() FormSpec`: Ultimate GOAT 4D Tesseract Shader, Particle Physics, Hologram Foil, Waveform Synth & Cyberpunk Glitch Studio preset.
+
+#### Programmatic FormSpec Builder & Layout Alignment Tools
+
+- `win.load_form_spec(spec FormSpec) &SimpleWindow`: Materializes all controls from a `FormSpec` directly onto an existing `SimpleWindow`.
+- `simplegui.build_window_from_spec(spec FormSpec) &SimpleWindow`: Creates and configures a brand-new `SimpleWindow` populated from a `FormSpec`.
+- `win.export_form_spec() FormSpec`: Exports the current window's registered controls into a `FormSpec` struct.
+- `simplegui.validate_form_spec(spec FormSpec) []string`: Audits a `FormSpec` for duplicate IDs, out-of-bounds coordinates, or invalid dimensions, returning a list of warnings/errors (empty if valid).
+- `simplegui.snap_to_grid(mut spec FormSpec, grid_size int)`: Snaps all unlocked control `x`/`y` coordinates to the nearest multiple of `grid_size`.
+- `simplegui.align_controls(mut spec FormSpec, ids []string, edge string)`: Aligns the specified controls along `'left'`, `'center'`, `'right'`, `'top'`, `'middle'`, or `'bottom'`.
+- `simplegui.distribute_controls(mut spec FormSpec, ids []string, axis string, gap int)`: Evenly spaces controls along `'horizontal'` or `'vertical'` axis.
+- `simplegui.auto_assign_tab_order(mut spec FormSpec)`: Automatically assigns `tab_order` (`0..N-1`) sorted top-to-bottom, left-to-right.
+- `simplegui.duplicate_control(mut spec FormSpec, id string, new_id string) bool`: Clones an existing control on the `FormSpec` with a `+16px` offset.
+
+#### Integrated `vlang_webview_rad_studio` & WebView App Compiler
+
+**What it does in plain words:** Lets you embed the full drag-and-drop WebView RAD Studio IDE inside any window, or compile any `SimpleWindow` or `FormSpec` into a self-contained, zero-dependency HTML5 + WebAudio + 60fps Canvas application.
+
+- `simplegui.compile_webview_rad_studio_html(spec FormSpec) string`: Compiles the full interactive `vlang_webview_rad_studio` IDE HTML5 bundle (palette, WYSIWYG canvas, Object Inspector, 50 themes, WebAudio synth SFX, and V/HTML code generator).
+- `simplegui.compile_webview_all_controls_showcase_html() string`: Compiles an interactive HTML5 showcase gallery of every control, chart, 4D shader, and Qt 6 Smart House widget.
+- `win.add_webview_rad_studio(name string, spec FormSpec, height int) &SimpleWindow`: Adds an interactive WebView RAD Studio IDE control directly inside a `SimpleWindow`.
+- `win.add_webview_all_controls_showcase(name string, height int) &SimpleWindow`: Adds the interactive all-controls WebView showcase gallery inside a `SimpleWindow`.
+- `win.compile_webview_app_html() string`: Compiles the current `SimpleWindow` and all of its controls into a standalone interactive HTML5 application string.
+- `simplegui.compile_webview_spec_html(spec FormSpec) string`: Compiles a `FormSpec` into a standalone interactive HTML5 application string.
+- `win.export_webview_app_html(path string) !`: Writes the compiled standalone HTML5 application for `win` to disk at `path`.
+- `simplegui.generate_webview_v_code(spec FormSpec) string`: Generates a complete V source file using the `webview` module for the given `FormSpec`.
 
 ```v
-spec := simplegui.get_default_form_spec()
+spec := simplegui.get_god_mode_form_spec()
 json_str := spec.to_json()
 reconstructed := simplegui.form_spec_from_json(json_str)
 v_code := simplegui.generate_v_code(spec)
-html_code := simplegui.generate_html_code(spec)
+html_code := simplegui.compile_webview_spec_html(spec)
 ```
 
 ---
@@ -6601,6 +7392,285 @@ nav_items := [
     simplegui.SidebarItem{ id: 'settings', title: 'Settings', icon: '⚙' },
 ]
 win.add_nav_rail('rail', nav_items)
+```
+
+### 14. Gantt Project Timeline Chart
+#### `win.add_gantt_chart(name string, title string, tasks []GanttTask, height int) &SimpleWindow`
+**What it does in plain words:** Displays a project schedule timeline bar chart showing tasks, start/duration slots, completion percentages, and color-coded status bars.
+- **Struct**: `GanttTask { name string, start_slot int, duration int, progress int, hex_color string }`
+- **Nameless Shorthand**: `win.gantt_chart(title string, tasks []GanttTask, height int)`
+- **Runtime Mutators**: `win.set_gantt_chart_tasks(name string, tasks []GanttTask)`
+
+```v
+tasks := [
+    simplegui.GanttTask{ name: 'UI Architecture', start_slot: 0, duration: 4, progress: 100, hex_color: '#10b981' },
+    simplegui.GanttTask{ name: '4D Shader Engine', start_slot: 3, duration: 5, progress: 80, hex_color: '#38bdf8' },
+]
+win.add_gantt_chart('roadmap', 'Q4 Engineering Roadmap', tasks, 180)
+```
+
+### 15. Conversion Funnel Chart
+#### `win.add_funnel_chart(name string, title string, stages []string, values []f64, height int) &SimpleWindow`
+**What it does in plain words:** Renders a tapering conversion funnel chart (great for sales pipelines, sign-up drop-offs, or filtering stages).
+- **Nameless Shorthand**: `win.funnel_chart(title string, stages []string, values []f64, height int)`
+- **Runtime Mutators**: `win.set_funnel_chart_data(name string, stages []string, values []f64)`
+
+```v
+win.add_funnel_chart('sales_funnel', 'Conversion Pipeline', ['Visitors', 'Signups', 'Trials', 'Pro Customers'], [10000.0, 3200.0, 1400.0, 620.0], 190)
+```
+
+### 16. Financial OHLC Candlestick Chart
+#### `win.add_candlestick_chart(name string, title string, candles []CandleBar, height int) &SimpleWindow`
+**What it does in plain words:** Draws a stock/crypto market candlestick chart showing Open, High, Low, and Close prices with bullish green and bearish red wicks.
+- **Struct**: `CandleBar { label string, open f64, high f64, low f64, close f64 }`
+- **Nameless Shorthand**: `win.candlestick_chart(title string, candles []CandleBar, height int)`
+- **Runtime Mutators**: `win.set_candlestick_chart_data(name string, candles []CandleBar)`
+
+```v
+candles := [
+    simplegui.CandleBar{ label: 'Mon', open: 140.0, high: 158.0, low: 136.0, close: 152.0 },
+    simplegui.CandleBar{ label: 'Tue', open: 152.0, high: 164.0, low: 148.0, close: 149.0 },
+]
+win.add_candlestick_chart('btc_chart', 'Market OHLC', candles, 200)
+```
+
+### 17. Multi-Axis Spider / Radar Chart
+#### `win.add_radar_chart(name string, title string, axes []string, values []f64, max_val f64, hex_color string, height int) &SimpleWindow`
+**What it does in plain words:** Draws a polygon spider/radar chart comparing multiple skill or performance metrics around a center hub.
+- **Nameless Shorthand**: `win.radar_chart(title string, axes []string, values []f64, max_val f64, hex_color string, height int)`
+- **Runtime Mutators**: `win.set_radar_chart_values(name string, values []f64)`
+
+```v
+win.add_radar_chart('perf_radar', 'System Profile', ['CPU', 'GPU', 'RAM', 'Disk', 'Net'], [92.0, 98.0, 85.0, 88.0, 95.0], 100.0, '#00e5ff', 220)
+```
+
+### 18. KPI Target Bullet Chart
+#### `win.add_bullet_chart(name string, title string, actual f64, target f64, max_val f64, unit string) &SimpleWindow`
+**What it does in plain words:** A compact horizontal KPI progress bar with a vertical target marker line so you can see at a glance if a metric beat its goal.
+- **Nameless Shorthand**: `win.bullet_chart(title string, actual f64, target f64, max_val f64, unit string)`
+- **Getters & Setters**: `win.set_bullet_chart_value(name string, actual f64, target f64)`, `win.get_bullet_chart_value(name string) f64`
+
+```v
+win.add_bullet_chart('rev_kpi', 'Monthly Revenue', 94.5, 85.0, 120.0, 'K')
+```
+
+### 19. Financial & Resource Waterfall Chart
+#### `win.add_waterfall_chart(name string, title string, labels []string, deltas []f64, height int) &SimpleWindow`
+**What it does in plain words:** Shows how a starting value grows or shrinks through a series of positive (`+`) and negative (`-`) steps to reach a final total.
+- **Nameless Shorthand**: `win.waterfall_chart(title string, labels []string, deltas []f64, height int)`
+- **Runtime Mutators**: `win.set_waterfall_chart_data(name string, labels []string, deltas []f64)`
+
+```v
+win.add_waterfall_chart('pnl_chart', 'Net Profit Bridge', ['Gross', 'Services', 'COGS', 'R&D', 'Taxes'], [120.0, 35.0, -45.0, -28.0, -14.0], 190)
+```
+
+### 20. Multi-Band Graphic Equalizer
+#### `win.add_equalizer(name string, title string, band_labels []string, band_values []f64, height int) &SimpleWindow`
+**What it does in plain words:** An interactive multi-band audio frequency equalizer with glowing vertical level bars.
+- **Nameless Shorthand**: `win.equalizer(title string, band_labels []string, band_values []f64, height int)`
+- **Getters & Setters**: `win.set_equalizer_bands(name string, band_values []f64)`, `win.get_equalizer_bands(name string) []f64`
+
+```v
+win.add_equalizer('master_eq', '10-Band Mastering EQ', ['32', '64', '125', '250', '500', '1k', '2k', '4k', '8k', '16k'], [65.0, 72.0, 58.0, 50.0, 48.0, 55.0, 68.0, 76.0, 82.0, 70.0], 180)
+```
+
+### 21. Stereo Peak VU Meter
+#### `win.add_vu_meter(name string, title string, left_pct f64, right_pct f64) &SimpleWindow`
+**What it does in plain words:** Dual-channel Left/Right stereo audio level meter with green, amber, and red peak zones.
+- **Nameless Shorthand**: `win.vu_meter(title string, left_pct f64, right_pct f64)`
+- **Getters & Setters**: `win.set_vu_meter_levels(name string, left_pct f64, right_pct f64)`, `win.get_vu_meter_levels(name string) (f64, f64)`
+
+```v
+win.add_vu_meter('stereo_vu', 'Master Bus L/R', 78.0, 82.0)
+```
+
+### 22. Interactive 2D XY Controller Pad
+#### `win.add_xy_pad(name string, title string, x_pct f64, y_pct f64, size int) &SimpleWindow`
+**What it does in plain words:** A 2D crosshair touchpad for controlling two parameters at once (such as audio filter Cutoff + Resonance, or camera Pan + Tilt).
+- **Nameless Shorthand**: `win.xy_pad(title string, x_pct f64, y_pct f64, size int)`
+- **Getters & Setters**: `win.set_xy_pad_position(name string, x_pct f64, y_pct f64)`, `win.get_xy_pad_position(name string) (f64, f64)`
+
+```v
+win.add_xy_pad('synth_xy', 'Cutoff / Resonance', 64.0, 42.0, 180)
+```
+
+### 23. Precision Stopwatch / Elapsed Timer Widget
+#### `win.add_stopwatch(name string, title string, initial_seconds int) &SimpleWindow`
+**What it does in plain words:** A digital `HH:MM:SS` stopwatch display card with interactive Start/Stop/Reset controls.
+- **Nameless Shorthand**: `win.stopwatch(title string, initial_seconds int)`
+- **Getters & Setters**: `win.set_stopwatch_seconds(name string, seconds int)`, `win.get_stopwatch_seconds(name string) int`, `win.reset_stopwatch(name string)`
+
+```v
+win.add_stopwatch('build_timer', 'Active Session', 125)
+```
+
+### 24. AI & Team Chat Conversation View
+#### `win.add_chat_view(name string, placeholder string, height int) &SimpleWindow`
+**What it does in plain words:** A scrollable chat bubble conversation view for AI assistants, customer support, or team messaging.
+- **Nameless Shorthand**: `win.chat_view(placeholder string, height int)`
+- **Message Management**: `win.add_chat_message(name, sender, message, timestamp, is_outgoing)`, `win.clear_chat_view(name)`, `win.get_chat_message_count(name) int`
+
+```v
+win.add_chat_view('ai_chat', 'Ask anything...', 240)
+win.add_chat_message('ai_chat', 'Ada', 'Compile the 4D shader preset', '09:41', true)
+win.add_chat_message('ai_chat', 'SimpleGUI AI', 'Tesseract 4D shader compiled at 120fps.', '09:41', false)
+```
+
+### 25. Notification Center Inbox List
+#### `win.add_notification_list(name string, title string, height int) &SimpleWindow`
+**What it does in plain words:** An alert and activity inbox widget that lists severity-coded notifications (`'info'`, `'success'`, `'warning'`, `'error'`) with timestamps.
+- **Nameless Shorthand**: `win.notification_list(title string, height int)`
+- **Item Helpers**: `win.add_notification_item(name, title, message, time_str, level)`, `win.clear_notification_list(name)`, `win.get_notification_count(name) int`
+
+```v
+win.add_notification_list('alerts', 'System Notifications', 200)
+win.add_notification_item('alerts', 'Deploy Complete', 'Cluster v2.4 is live', 'Just now', 'success')
+```
+
+### 26. SaaS Pricing Tier Card
+#### `win.add_pricing_card(name string, plan_name string, price string, period string, features []string, cta_label string, is_featured bool) &SimpleWindow`
+**What it does in plain words:** Displays a subscription plan card with price, billing period, checkmark feature list, highlighted badge, and call-to-action button.
+- **Nameless Shorthand**: `win.pricing_card(plan_name, price, period, features, cta_label, is_featured)`
+- **Runtime Mutators**: `win.set_pricing_card_price(name string, price string, period string)`
+
+```v
+win.add_pricing_card('pro_plan', 'Studio Ultra', '$29', '/month', ['All 50 FX Themes', '4D Shader Canvas', 'Unlimited Exports'], 'Upgrade Now', true)
+```
+
+### 27. Empty State Placeholder Card
+#### `win.add_empty_state(name string, icon string, title string, subtitle string, action_label string) &SimpleWindow`
+**What it does in plain words:** A friendly placeholder box shown when a list, search result, or folder has no items yet, complete with an icon and action button.
+- **Nameless Shorthand**: `win.empty_state(icon, title, subtitle, action_label)`
+- **Runtime Mutators**: `win.set_empty_state(name string, title string, subtitle string)`
+
+```v
+win.add_empty_state('no_files', '📂', 'No Projects Found', 'Create a new form or import a JSON layout to begin.', '+ New Project')
+```
+
+### 28. Animated Shimmer Skeleton Loader
+#### `win.add_skeleton_loader(name string, lines int, height int) &SimpleWindow`
+**What it does in plain words:** Shows placeholder shimmer bars while data is loading from disk or the network.
+- **Nameless Shorthand**: `win.skeleton_loader(lines int, height int)`
+- **Getters & Setters**: `win.set_skeleton_active(name string, active bool)`, `win.is_skeleton_active(name string) bool`
+
+```v
+win.add_skeleton_loader('feed_loader', 4, 110)
+```
+
+### 29. Side-by-Side Metric Comparison Card
+#### `win.add_comparison_card(name string, title string, left_header string, right_header string, rows []ComparisonRow) &SimpleWindow`
+**What it does in plain words:** Compares two versions, plans, or benchmarks side-by-side across multiple labeled rows.
+- **Struct**: `ComparisonRow { metric string, left_val string, right_val string }`
+- **Nameless Shorthand**: `win.comparison_card(title, left_header, right_header, rows)`
+- **Runtime Mutators**: `win.set_comparison_card(name string, rows []ComparisonRow)`
+
+```v
+rows := [
+    simplegui.ComparisonRow{ metric: 'Frame Rate', left_val: '60 FPS', right_val: '120 FPS ProMotion' },
+    simplegui.ComparisonRow{ metric: 'Color Depth', left_val: '8-bit SDR', right_val: '16-bit Float EDR' },
+]
+win.add_comparison_card('gpu_cmp', 'Renderer Comparison', 'Standard', 'Ultra XDR', rows)
+```
+
+### 30. Overlapping Team Avatar Group
+#### `win.add_avatar_group(name string, title string, initials []string, overflow_count int) &SimpleWindow`
+**What it does in plain words:** Renders a horizontal stack of overlapping circular team member avatars with a `+N` overflow badge.
+- **Nameless Shorthand**: `win.avatar_group(title string, initials []string, overflow_count int)`
+- **Runtime Mutators**: `win.set_avatar_group(name string, initials []string, overflow_count int)`
+
+```v
+win.add_avatar_group('active_devs', 'Online Collaborators', ['AL', 'GH', 'ac', 'KT'], 5)
+```
+
+### 31. E-Commerce & Setup Checkout Steps Bar
+#### `win.add_checkout_steps(name string, steps []string, current_step int) &SimpleWindow`
+**What it does in plain words:** A numbered multi-step progress bar with checkmarks for completed steps.
+- **Nameless Shorthand**: `win.checkout_steps(steps []string, current_step int)`
+- **Getters & Setters**: `win.set_checkout_step(name string, step int)`, `win.get_checkout_step(name string) int`
+
+```v
+win.add_checkout_steps('order_flow', ['Cart', 'Shipping', 'Payment', 'Confirmation'], 1)
+```
+
+### 32. Visual Cron Schedule Expression Editor
+#### `win.add_cron_editor(name string, expression string, description string) &SimpleWindow`
+**What it does in plain words:** A 5-field cron schedule editor (`minute hour day month weekday`) with a human-readable schedule summary.
+- **Nameless Shorthand**: `win.cron_editor(expression string, description string)`
+- **Getters & Setters**: `win.set_cron_expression(name string, expression string, description string)`, `win.get_cron_expression(name string) string`
+
+```v
+win.add_cron_editor('backup_cron', '0 2 * * *', 'Runs every day at 02:00 AM')
+```
+
+### 33. Interactive Regular Expression Tester
+#### `win.add_regex_tester(name string, pattern string, test_text string, height int) &SimpleWindow`
+**What it does in plain words:** An inline regex workbench that highlights matches in real time and counts total matches.
+- **Nameless Shorthand**: `win.regex_tester(pattern string, test_text string, height int)`
+- **Getters & Setters**: `win.set_regex_pattern(name, pattern)`, `win.get_regex_pattern(name) string`, `win.set_regex_test_text(name, test_text)`, `win.get_regex_match_count(name) int`
+
+```v
+win.add_regex_tester('email_rx', r'[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}', 'Contact ada@vlang.io or support@example.com', 140)
+```
+
+### 34. Monospaced Hexadecimal & ASCII Binary Inspector
+#### `win.add_hex_viewer(name string, data string, height int) &SimpleWindow`
+**What it does in plain words:** Displays raw data as a classic 3-column Hex Viewer (byte offset, hex pairs, and printable ASCII characters).
+- **Nameless Shorthand**: `win.hex_viewer(data string, height int)`
+- **Getters & Setters**: `win.set_hex_viewer_data(name string, data string)`, `win.get_hex_viewer_data(name string) string`
+
+```v
+win.add_hex_viewer('bin_inspect', 'SimpleGUI Mach-O 64-bit Header', 150)
+```
+
+### 35. Live Password Entropy & Strength Meter
+#### `win.add_password_strength(name string, value string) &SimpleWindow`
+**What it does in plain words:** A password input paired with a 0–4 security score bar (`Weak`, `Fair`, `Good`, `Strong`, `Very Strong`).
+- **Nameless Shorthand**: `win.password_strength(value string)`
+- **Getters & Setters**: `win.set_password_strength_value(name, value)`, `win.get_password_strength_value(name) string`, `win.get_password_strength_score(name) int`
+
+```v
+win.add_password_strength('user_pwd', 'Vlang#2026!Ultra')
+score := win.get_password_strength_score('user_pwd') // 0..4
+```
+
+### 36. Digital Signature Drawing Pad
+#### `win.add_signature_pad(name string, signer_name string, height int) &SimpleWindow`
+**What it does in plain words:** A signature box where users can sign agreements or approvals with the mouse or trackpad.
+- **Nameless Shorthand**: `win.signature_pad(signer_name string, height int)`
+- **Helpers**: `win.clear_signature_pad(name string)`, `win.has_signature(name string) bool`
+
+```v
+win.add_signature_pad('contract_sig', 'Ada Lovelace', 120)
+```
+
+### 37. Compact Bounds-Checked Number Spinner
+#### `win.add_number_spinner(name string, value int, min_val int, max_val int, step int) &SimpleWindow`
+**What it does in plain words:** A compact `-` / `+` numeric spinner input with automatic min/max clamping.
+- **Nameless Shorthand**: `win.number_spinner(value int, min_val int, max_val int, step int)`
+- **Getters & Setters**: `win.set_number_spinner_value(name string, value int)`, `win.get_number_spinner_value(name string) int`
+
+```v
+win.add_number_spinner('threads_spin', 8, 1, 64, 1)
+```
+
+### 38. One-Call Labeled Form Row Builders (`add_form_*`)
+**What it does in plain words:** Creates a neatly aligned `Label + Control` row in a single call without needing `begin_row` / `end_row`.
+- `win.add_form_checkbox(label_text string, name string, text string, checked bool) &SimpleWindow`
+- `win.add_form_radio_group(label_text string, name string, options []string, selected string) &SimpleWindow`
+- `win.add_form_segmented(label_text string, name string, items []string, selected string) &SimpleWindow`
+- `win.add_form_color_well(label_text string, name string, hex_color string) &SimpleWindow`
+- `win.add_form_time_picker(label_text string, name string, time_str string) &SimpleWindow`
+- `win.add_form_stepper(label_text string, name string, min_val int, max_val int, step int, value int) &SimpleWindow`
+- `win.add_form_search(label_text string, name string, placeholder string) &SimpleWindow`
+- `win.add_form_combo_box(label_text string, name string, items []string, text string) &SimpleWindow`
+- `win.add_form_token_field(label_text string, name string, tokens string) &SimpleWindow`
+- `win.add_form_rating(label_text string, name string, value int) &SimpleWindow`
+- `win.add_form_masked_input(label_text string, name string, mask string, value string) &SimpleWindow`
+
+```v
+win.add_form_segmented('Render Tier:', 'tier_seg', ['Low', 'Medium', 'High', 'Ultra'], 'Ultra')
+win.add_form_color_well('Accent Glow:', 'glow_col', '#00e5ff')
+win.add_form_rating('Quality Score:', 'q_rating', 5)
 ```
 
 ---
@@ -6876,3 +7946,286 @@ The `colorutils` module provides the `HDRColor` struct, mirroring Cocoa's `NSCol
 - **SDR Recovery**: `c.standard_dynamic_range()` safely recovers standard `[0..255]` RGB values (mirrors `-[NSColor standardDynamicRange]`).
 - **Linear Exposure**: `c.linear_exposure()` computes effective multiplier relative to 1.0 SDR white (mirrors `-[NSColor linearExposure]`).
 - **Filmic Tone Mapping**: `c.tone_map_reinhard()` and `c.tone_map_aces()` tone-map HDR colors to SDR.
+
+---
+
+## 24. God-Mode, GOAT 4D Shaders, Procedural Synth Audio & Qt 6 Smart House / Digital Cockpit Suite
+
+**What this section is in plain words:** SimpleGUI includes a collection of next-generation visual and audio controls ("God-Mode / GOAT Suite") inspired by Qt 6 Design Studio, sci-fi HUDs, pro audio DAWs, and real-time 4D/3D GPU shaders. You can see all of them in action by running:
+- `v run examples/god_mode_showcase.v`
+- `v run examples/rad_studio.v`
+- `v run examples/codecaine_fx_themes_showcase.v`
+
+### 24.1 Sculpted 3D Folder Grid & Atmosphere Engine
+
+**What it does in plain words:** Displays an interactive grid of 3D-sculpted macOS folders with custom surface shaders, icon packs, and animated background atmosphere particles (aurora, blizzard, embers, matrix rain, or tesseract).
+
+- **Struct**: `FolderTileItem { title string, subtitle string, item_count string, badge string }`
+- `win.add_themed_folder_grid(name string, items []FolderTileItem, height int) &SimpleWindow` (shorthand: `win.themed_folder_grid(items, height)`)
+- `win.set_themed_folder_grid_fx(name string, ui_element_fx string, icon_pack_style string, icon_animation string, glow_color string, secondary_color string, is_dark bool) &SimpleWindow`
+- `win.get_themed_folder_grid_selected(name string) int` / `win.set_themed_folder_grid_selected(name string, idx int) &SimpleWindow`
+- `win.set_atmosphere_animated(enabled bool) &SimpleWindow` / `win.step_atmosphere_phase(delta f64) &SimpleWindow`
+
+```v
+folders := [
+    simplegui.FolderTileItem{ title: 'Projects', subtitle: 'V Workspaces', item_count: '42 items', badge: 'PRO' },
+    simplegui.FolderTileItem{ title: 'Shaders', subtitle: '4D & Metal', item_count: '18 items', badge: 'XDR' },
+]
+win.add_themed_folder_grid('vault_grid', folders, 220)
+win.set_atmosphere_animated(true)
+```
+
+### 24.2 Master VFX 4D/3D Shader Canvas (6 Presets)
+
+**What it does in plain words:** Adds a real-time 60–120fps animated 4D/3D mathematical shader viewport right inside your window.
+
+- `win.add_shader_canvas(name string, preset string, title string, height int) &SimpleWindow` (shorthand: `win.shader_canvas(preset, title, height)`)
+- `win.set_shader_canvas_preset(name string, preset string) &SimpleWindow` / `win.get_shader_canvas_preset(name string) string`
+- `win.set_shader_canvas_speed(name string, speed f64) &SimpleWindow` / `win.step_shader_canvas(name string, delta f64) &SimpleWindow`
+- **6 Built-In Shader Presets**:
+  - `'tesseract_4d'` — Rotating 4D hypercube (16 vertices, 32 edges) projected into 3D/2D space
+  - `'plasma_reactor'` — Swirling fusion plasma core with concentric energy rings
+  - `'synthwave_horizon'` — Outrun neon sunset sun with 3D perspective wireframe grid
+  - `'audio_spectrum_3d'` — 3D isometric frequency equalizer bars with peak hold
+  - `'black_hole_singularity'` — Relativistic accretion disk and gravitational lensing halo
+  - `'neural_plexus'` — Interactive glowing AI neural network constellation
+
+```v
+win.add_shader_canvas('hero_shader', 'tesseract_4d', '4D Quantum Hypercube', 260)
+win.set_shader_canvas_preset('hero_shader', 'plasma_reactor')
+```
+
+### 24.3 Particle Physics & Fireworks Burst Emitter (4 Modes)
+
+**What it does in plain words:** Renders an interactive physics particle emitter where clicking or calling `emit_particle_burst` launches glowing fireworks, sparks, or galaxy vortices.
+
+- `win.add_particle_emitter(name string, emitter_type string, particle_count int, height int) &SimpleWindow` (shorthand: `win.particle_emitter(emitter_type, particle_count, height)`)
+- `win.set_particle_emitter_type(name string, emitter_type string) &SimpleWindow` / `win.get_particle_emitter_type(name string) string`
+- `win.emit_particle_burst(name string) &SimpleWindow`
+- **4 Emitter Modes**: `'supernova_burst'`, `'vortex_galaxy'`, `'cyber_sparks'`, `'quantum_fountain'`
+
+```v
+win.add_particle_emitter('fx_emitter', 'supernova_burst', 140, 220)
+win.emit_particle_burst('fx_emitter')
+```
+
+### 24.4 3D Hologram Foil & Cyber HUD Card
+
+**What it does in plain words:** A collector-grade holographic foil card with rainbow prism sheen, security watermark, and live telemetry readout.
+
+- `win.add_hologram_card(name string, title string, subtitle string, value string, badge string, height int) &SimpleWindow` (shorthand: `win.hologram_card(title, subtitle, value, badge, height)`)
+- `win.set_hologram_card_value(name string, value string, badge string) &SimpleWindow` / `win.get_hologram_card_value(name string) string`
+
+```v
+win.add_hologram_card('gpu_holo', 'M4 ULTRA SINGULARITY', '80-Core Raytracing Engine', '120 FPS XDR', 'GOAT TIER', 180)
+```
+
+### 24.5 Multi-Harmonic Waveform & Lissajous Synthesizer
+
+**What it does in plain words:** Visualizes live multi-harmonic audio waves, FM synthesis curves, or 2D Lissajous phase scopes.
+
+- `win.add_waveform_synthesizer(name string, wave_type string, frequency f64, amplitude f64, harmonics int, height int) &SimpleWindow` (shorthand: `win.waveform_synthesizer(wave_type, frequency, amplitude, harmonics, height)`)
+- `win.set_waveform_synthesizer_params(name string, wave_type string, frequency f64, amplitude f64, harmonics int) &SimpleWindow`
+- `win.get_waveform_synthesizer_type(name string) string`
+- **Wave Types**: `'lissajous'`, `'fm_synth'`, `'harmonic_chord'`, `'cyber_pulse'`
+
+```v
+win.add_waveform_synthesizer('osc_scope', 'lissajous', 3.5, 0.85, 5, 200)
+```
+
+### 24.6 Cyberpunk Chromatic Glitch & Neon Hero Banner
+
+**What it does in plain words:** An animated neon hero headline banner with RGB chromatic aberration split, CRT scanlines, and on-demand glitch shockwaves.
+
+- `win.add_glitch_banner(name string, title string, subtitle string, intensity f64, height int) &SimpleWindow` (shorthand: `win.glitch_banner(title, subtitle, intensity, height)`)
+- `win.set_glitch_banner_text(name string, title string, subtitle string) &SimpleWindow` / `win.get_glitch_banner_text(name string) string`
+- `win.trigger_glitch_pulse(name string) &SimpleWindow`
+
+```v
+win.add_glitch_banner('cyber_hero', 'OMEGA PANTHEON 3099', '6K ProMotion XDR Shader Engine', 0.85, 130)
+win.trigger_glitch_pulse('cyber_hero')
+```
+
+### 24.7 Special-FX Control Animations, Neon Glow & WebView Bridge Helpers
+
+**What it does in plain words:** Apply 1-line visual animations (pulse, 3D flip, levitation float, elastic bounce, glitch shake, or neon halo glow) to **any** control on the window, or drive embedded WebView controls with URLs and JavaScript.
+
+- `win.animate_control_pulse(name string, hex_color string, duration_ms int) &SimpleWindow`
+- `win.animate_control_flip(name string, duration_ms int) &SimpleWindow`
+- `win.animate_control_float(name string, enabled bool) &SimpleWindow`
+- `win.animate_control_bounce(name string, scale f64, duration_ms int) &SimpleWindow`
+- `win.animate_control_glitch(name string, duration_ms int) &SimpleWindow`
+- `win.set_control_neon_glow(name string, hex_color string, radius f64, opacity f64) &SimpleWindow`
+- `win.webview_load_url(name string, url string) &SimpleWindow`
+- `win.webview_eval_js(name string, js_code string) &SimpleWindow`
+
+```v
+win.set_control_neon_glow('btn_launch', '#00e5ff', 18.0, 0.9)
+win.animate_control_bounce('btn_launch', 1.15, 350)
+```
+
+### 24.8 Built-In Procedural Sound Effects & Audio Synthesizer Engine (16 Presets)
+
+**What it does in plain words:** Synthesizes crisp, zero-latency 44.1 kHz 16-bit PCM sound effects, musical notes, and custom waveforms directly in memory — **no external `.wav` or `.mp3` files required**.
+
+- `simplegui.list_sfx_presets() []string`: Returns all 16 built-in procedural sound effect presets:
+  - `'cyber_click'`, `'neon_hover'`, `'laser_pulse'`, `'power_up'`, `'supernova_boom'`, `'quantum_warp'`, `'success_chime'`, `'error_buzz'`, `'radar_ping'`, `'synth_chord'`, `'coin_pickup'`, `'mech_key'`, `'smart_home_chime'`, `'thermostat_tick'`, `'engine_rev'`, `'glitch_zap'`
+- `win.play_sfx(preset string) &SimpleWindow` / `simplegui.play_sfx_preset(preset string)`: Plays one of the 16 procedural sound effects.
+- `win.play_synth_tone(freq_hz f64, duration_ms int, wave_type string, volume f64) &SimpleWindow` / `simplegui.synth_tone(freq_hz, duration_ms, wave_type, volume)`: Synthesizes a custom tone (`'sine'`, `'square'`, `'saw'`, `'triangle'`, `'fm'`, `'chord'`).
+- `win.play_piano_note(midi_note int, duration_ms int) &SimpleWindow`: Converts a MIDI note number (`60` = Middle C, `69` = A4 440Hz) to frequency and plays a rich harmonic piano/synth tone.
+- `win.set_sfx_enabled(enabled bool) &SimpleWindow` / `win.is_sfx_enabled() bool`
+- `win.set_sfx_volume(volume f64) &SimpleWindow` / `win.get_sfx_volume() f64` (`0.0` to `1.0`)
+
+```v
+win.set_sfx_enabled(true)
+win.set_sfx_volume(0.85)
+win.play_sfx('power_up')
+win.play_piano_note(60, 250) // Plays Middle C (261.63 Hz)
+```
+
+### 24.9 Qt 6 Smart House / Domotics Floorplan & Climate Thermostat
+
+**What it does in plain words:** Interactive architectural Smart Home widgets inspired by Qt 6 Outrun / Smart Home HMI demos: a clickable 6-room floorplan showing lighting, temperature, solar/grid/EV power flow, and a circular rotary HVAC thermostat dial.
+
+- `win.add_smart_house_floorplan(name string, title string, active_rooms_mask int, target_temp_f f64, solar_kw f64, height int) &SimpleWindow` (shorthand: `win.smart_house_floorplan(...)`)
+  - `win.set_smart_house_state(name string, active_rooms_mask int, target_temp_f f64, solar_kw f64, security_armed bool) &SimpleWindow`
+  - `win.get_smart_house_active_mask(name string) int` (6-bit room bitmask `0..63`)
+- `win.add_smart_thermostat(name string, zone_name string, current_temp f64, target_temp f64, humidity_pct int, mode string, height int) &SimpleWindow` (shorthand: `win.smart_thermostat(...)`)
+  - `win.set_smart_thermostat(name string, current_temp f64, target_temp f64, humidity_pct int, mode string) &SimpleWindow`
+  - `win.get_smart_thermostat_target(name string) f64`
+
+```v
+win.add_smart_house_floorplan('home_map', 'Smart Residence Blueprint', 0b101101, 71.5, 8.4, 280)
+win.add_smart_thermostat('main_hvac', 'Living Suite', 70.0, 72.0, 44, 'COOL', 240)
+```
+
+### 24.10 Qt 6 Automotive & Aerospace Digital Cockpit Cluster
+
+**What it does in plain words:** A widescreen EV / hypercar / flight digital instrument cluster with twin tachometer + speedometer arcs, gear indicator, battery SoC, G-force meter, and ADAS lane visualization.
+
+- `win.add_cockpit_cluster(name string, speed_mph int, rpm int, battery_pct int, gear string, nav_hint string, height int) &SimpleWindow` (shorthand: `win.cockpit_cluster(...)`)
+- `win.set_cockpit_telemetry(name string, speed_mph int, rpm int, battery_pct int, gear string, nav_hint string) &SimpleWindow`
+- `win.get_cockpit_speed(name string) int`
+
+```v
+win.add_cockpit_cluster('ev_dash', 88, 6400, 91, 'S+', 'Autopilot Locked • Next Exit 2.4 mi', 250)
+```
+
+### 24.11 Visual Node Graph, Piano Keyboard & 16-Step Drum/Synth Sequencer
+
+**What it does in plain words:** Pro creative studio widgets: a Unreal/Blender-style visual node graph with cubic Bezier wires, a playable multi-octave piano/MIDI keyboard, and a 4-track × 16-step TR-808 style drum & synth matrix sequencer.
+
+- **Visual Node Graph**:
+  - `win.add_node_graph(name string, title string, node_titles []string, height int) &SimpleWindow` (shorthand: `win.node_graph(...)`)
+  - `win.set_node_graph_nodes(name string, node_titles []string) &SimpleWindow`
+  - `win.get_node_graph_selected(name string) int`
+- **Interactive Piano / MIDI Synthesizer Keyboard**:
+  - `win.add_piano_keyboard(name string, octaves int, active_midi_note int, height int) &SimpleWindow` (shorthand: `win.piano_keyboard(...)`)
+  - `win.set_piano_active_note(name string, midi_note int) &SimpleWindow` / `win.get_piano_active_note(name string) int`
+- **16-Step Pro Audio Drum & Synth Matrix Sequencer**:
+  - `win.add_step_sequencer(name string, title string, bpm int, pattern_mask u64, active_step int, height int) &SimpleWindow` (shorthand: `win.step_sequencer(...)`)
+  - `win.set_step_sequencer_state(name string, bpm int, pattern_mask u64, active_step int) &SimpleWindow`
+  - `win.get_step_sequencer_pattern(name string) u64`
+
+```v
+win.add_node_graph('shader_graph', 'PBR Material Pipeline', ['UV Coord', 'Simplex Noise 4D', 'Chromatic Split', 'XDR Output'], 240)
+win.add_piano_keyboard('midi_keys', 2, 60, 150)
+win.add_step_sequencer('tr808', 'Analog Beat Matrix', 128, 0x9090_F0F0_AAAA_5555, 0, 210)
+```
+
+### 24.12 3D Wireframe/Shaded Mesh Viewport, Polar Radar/Sonar, Logic Analyzer, Nixie Display, Sankey & Color Wheel
+
+**What it does in plain words:** Engineering, scientific, and retro-futuristic instrumentation controls:
+
+- **Real-Time 3D Wireframe & Shaded Mesh Viewport** (`'smart_house_3d'`, `'dna_double_helix'`, `'torus_knot'`):
+  - `win.add_mesh_viewport_3d(name string, preset string, pitch_deg f64, yaw_deg f64, height int) &SimpleWindow` (shorthand: `win.mesh_viewport_3d(...)`)
+  - `win.set_mesh_viewport_preset(name string, preset string, pitch_deg f64, yaw_deg f64) &SimpleWindow`
+  - `win.get_mesh_viewport_preset(name string) string`
+- **Sweeping Polar Radar, Sonar & RF Smith Scope**:
+  - `win.add_polar_radar_sonar(name string, title string, mode string, sweep_deg f64, blip_count int, height int) &SimpleWindow` (shorthand: `win.polar_radar_sonar(...)`)
+  - `win.set_polar_radar_params(name string, mode string, sweep_deg f64, blip_count int) &SimpleWindow`
+  - `win.ping_polar_radar(name string) &SimpleWindow`
+- **Digital Logic Analyzer & Bus Protocol Timing Scope**:
+  - `win.add_logic_analyzer(name string, title string, channels []string, pattern_seed int, height int) &SimpleWindow` (shorthand: `win.logic_analyzer(...)`)
+  - `win.set_logic_analyzer_seed(name string, pattern_seed int) &SimpleWindow`
+- **Sci-Fi Nixie Tube & Plasma Counter Display** (`'amber_tube'`, `'plasma_cyan'`):
+  - `win.add_nixie_display(name string, title string, digits_text string, style string, height int) &SimpleWindow` (shorthand: `win.nixie_display(...)`)
+  - `win.set_nixie_display_text(name string, digits_text string, style string) &SimpleWindow` / `win.get_nixie_display_text(name string) string`
+- **Sankey Energy & Data Flow Diagram**:
+  - `win.add_sankey_chart(name string, title string, flows []string, height int) &SimpleWindow` (shorthand: `win.sankey_chart(...)`)
+  - `win.set_sankey_chart_data(name string, flows []string) &SimpleWindow` (format: `'Source|Target|Value'`)
+- **Studio Color Wheel & Vectorscope Harmonies**:
+  - `win.add_color_wheel(name string, title string, hex_color string, harmony_mode string, height int) &SimpleWindow` (shorthand: `win.color_wheel(...)`)
+  - `win.set_color_wheel_hex(name string, hex_color string, harmony_mode string) &SimpleWindow` / `win.get_color_wheel_hex(name string) string`
+
+```v
+win.add_mesh_viewport_3d('arch_3d', 'smart_house_3d', 22.0, 38.0, 250)
+win.add_polar_radar_sonar('sonar', 'Tactical Perimeter Radar', 'radar_sweep', 45.0, 7, 230)
+win.add_logic_analyzer('spi_bus', 'SPI / I2C Protocol Timing', ['CLK', 'MOSI', 'MISO', 'CS#'], 42, 180)
+win.add_nixie_display('divergence', 'Divergence Meter', '1.048596', 'amber_tube', 110)
+win.add_sankey_chart('power_flow', 'Smart Grid Energy Flow', ['Solar 8.4kW|Home Load|4.2', 'Solar 8.4kW|Powerwall|2.8', 'Solar 8.4kW|EV Charger|1.4'], 210)
+win.add_color_wheel('grade_wheel', 'DaVinci Color Harmonies', '#00e5ff', 'triadic', 220)
+```
+
+---
+
+## 25. Cross-Platform & Studio Sub-Modules (`webview`, `filemanager`, `system`, `custom_themes`)
+
+In addition to the root `simplegui` module, the repository includes four modular sub-packages for specialized desktop and cross-platform workflows:
+
+### 25.1 `webview` — Native WebView Window Controller & RAD Studio Bridge ([`webview/`](../webview/))
+
+**What it does in plain words:** Wraps a native macOS `WKWebView` / cross-platform webview window with two-way V ⇄ JavaScript IPC bindings (`bind`, `eval_js`), 9-point screen alignment, stay-on-top pinning, and 1-call constructors for the full `vlang_webview_rad_studio` IDE.
+
+```v
+import webview
+
+mut wv := webview.new_rad_studio_window('RAD Studio Pro', 1480, 920)
+wv.bind('onSaveSpec', fn (req string) string {
+    println('Saved spec from JS: ${req}')
+    return '{"ok":true}'
+})
+wv.run()
+```
+
+### 25.2 `filemanager` — Codecaine Dual-Pane File Manager v1.3.0 ([`filemanager/`](../filemanager/))
+
+**What it does in plain words:** A reusable dual-pane file manager application package featuring 50 themes, `CCFM1:` theme share-code import/export, quick-jump bookmarks, batch rename, SHA-256 checksum verification, duplicate file finder, and `.zip`/`.tar.gz` archiving.
+
+```v
+import filemanager
+
+mut app := filemanager.new_file_manager()
+app.run()
+```
+
+### 25.3 `system` — Cross-Platform OS, Process & Hardware Telemetry ([`system/`](../system/))
+
+**What it does in plain words:** Standalone system diagnostics module (`import system`) providing CPU, RAM, disk, battery, network interface, and process inspection across macOS, Linux, and Windows.
+
+- `system.get_os_name() string`, `system.get_arch() string`, `system.get_cpu_model() string`, `system.get_cpu_count() int`
+- `system.get_memory_stats() MemoryStats`, `system.get_disk_usage(path string) DiskStats`, `system.get_battery_info() BatteryInfo`
+- `system.get_network_interfaces() []NetInterface`, `system.list_processes(limit int) []ProcessEntry`, `system.run_command(cmd string) CommandOutput`
+
+### 25.4 `custom_themes` — Master Custom Themes Vault & Style Guide ([`custom_themes/`](../custom_themes/))
+
+**What it does in plain words:** A curated vault of 20 hardware-tiered themes (`low`, `medium`, `high`, `ultra`), 3 Polar Night themes, and 18 US Holiday Celebration themes stored as `.json` and `.ccfm.txt` 1-click share codes, accompanied by [`custom_themes/README.md`](../custom_themes/README.md) and [`custom_themes/THEME_DESIGN_STYLE_GUIDE.md`](../custom_themes/THEME_DESIGN_STYLE_GUIDE.md).
+
+### 25.5 Video Tutorials & M4 Ultra 6K 120Hz YouTube Short (With Timestamps) ([`youtube_production/`](../youtube_production/))
+
+**What it does in plain words:** Narrated vertical `9:16` (`1080×1920`) YouTube Shorts and widescreen `16:9` (`1920×1080`) video tours recorded on our flagship **Apple Mac Studio M4 Ultra (`32c CPU · 80c GPU · 192GB Unified · Pro Display XDR 6K 120Hz`)**, mixing broadcast `-16 LUFS` neural voiceover with SimpleGUI's built-in 44.1 kHz 16-bit procedural PCM sound effects.
+
+- **Strict `<60s` Vertical 9:16 YouTube Short (`0:57`)**: [`youtube_production/vlang_simplegui_youtube_short_under60s_9x16.mp4`](../youtube_production/vlang_simplegui_youtube_short_under60s_9x16.mp4)
+- **Standard Vertical 9:16 YouTube Short (`1:14`)**: [`youtube_production/vlang_simplegui_youtube_short_9x16.mp4`](../youtube_production/vlang_simplegui_youtube_short_9x16.mp4)
+- **Widescreen 16:9 Short Tour (`1:14`)**: [`youtube_production/vlang_simplegui_short_tutorial.mp4`](../youtube_production/vlang_simplegui_short_tutorial.mp4)
+- **Copy-Paste YouTube Upload Guide & Notes**: [`youtube_production/VLANG_SIMPLEGUI_SHORT_TUTORIAL_NOTES.md`](../youtube_production/VLANG_SIMPLEGUI_SHORT_TUTORIAL_NOTES.md)
+- **Reproducible Video Builder Script**: [`scripts/build_youtube_short.ts`](../scripts/build_youtube_short.ts) (`bun scripts/build_youtube_short.ts`)
+
+| Standard (`1:14`) | `<60s` Short (`0:57`) | Chapter Title | Key APIs & Controls Demonstrated |
+| :--- | :--- | :--- | :--- |
+| **`0:00`** | **`0:00`** | **Native Vlang SimpleGUI + Webview RAD Studio on M4 Ultra 6K** | `new_simple_window`, 115+ Cocoa & God-Mode controls, `begin_grid`, `begin_flex_box`, 50 themes, `play_sfx('power_up')` |
+| **`0:12`** | **`0:09`** | **Qt 6 Smart House Domotics, 270° HVAC Thermostat & 3D CAD** | `add_smart_house_floorplan`, `add_smart_thermostat`, `add_mesh_viewport_3d`, `add_sankey_chart`, `play_sfx('smart_home_chime')` |
+| **`0:24`** | **`0:18`** | **Automotive & Aerospace Digital Cockpit, LiDAR Radar & Nixie Chrono** | `add_cockpit_cluster`, `add_polar_radar_sonar`, `add_logic_analyzer`, `add_nixie_display`, `play_sfx('engine_rev')` |
+| **`0:36`** | **`0:28`** | **GOAT 4D Tesseract Shaders, Particle Physics & 50 Ultra FX Themes** | `add_shader_canvas`, `add_particle_emitter`, `add_hologram_card`, `add_themed_folder_grid`, `play_sfx('supernova_boom')` |
+| **`0:49`** | **`0:37`** | **Built-In 16-Preset Procedural PCM Synth, MIDI Piano & 16-Step Sequencer** | `play_sfx`, `play_synth_tone`, `play_piano_note`, `add_piano_keyboard`, `add_step_sequencer`, `add_node_graph`, `add_color_wheel` |
+| **`1:02`** | **`0:48`** | **Integrated `vlang_webview_rad_studio`, Drag & Drop IDE & 47 Workstations** | `add_webview_rad_studio`, `compile_webview_app_html`, `export_webview_app_html`, `generate_webview_v_code`, `play_sfx('quantum_warp')` |

@@ -272,6 +272,10 @@ fn compile_app(t Task, cached_icns_path string) TaskResult {
 	}
 
 	// 2. Generate Info.plist
+	safe_app_id := t.app_id.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+	safe_bundle_id := t.bundle_id.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+	safe_display_name := t.display_name.replace('&', '&amp;').replace('<', '&lt;').replace('>',
+		'&gt;')
 	mut plist_content := '<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.txt">
 <plist version="1.0">
@@ -279,7 +283,7 @@ fn compile_app(t Task, cached_icns_path string) TaskResult {
     <key>CFBundleDevelopmentRegion</key>
     <string>English</string>
     <key>CFBundleExecutable</key>
-    <string>${t.app_id}</string>
+    <string>${safe_app_id}</string>
 '
 	if has_icon {
 		plist_content += '    <key>CFBundleIconFile</key>
@@ -287,13 +291,13 @@ fn compile_app(t Task, cached_icns_path string) TaskResult {
 '
 	}
 	plist_content += '    <key>CFBundleIdentifier</key>
-    <string>${t.bundle_id}</string>
+    <string>${safe_bundle_id}</string>
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>
-    <string>${t.display_name}</string>
+    <string>${safe_display_name}</string>
     <key>CFBundleDisplayName</key>
-    <string>${t.display_name}</string>
+    <string>${safe_display_name}</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>

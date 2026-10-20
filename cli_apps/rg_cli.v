@@ -32,15 +32,28 @@ fn main() {
 	file_type := app.get_flag_string('type')
 	ignore_case := app.get_flag_bool('ignore-case')
 
-	mut args := [query, target_path]
-	if file_type.len > 0 {
-		args << ['--type', file_type]
-	}
-	if ignore_case {
-		args << '-i'
+	has_rg := app.command_exists('rg')
+	cmd := if has_rg { 'rg' } else { 'grep' }
+	mut args := []string{}
+	if has_rg {
+		if file_type.len > 0 {
+			args << ['--type', file_type]
+		}
+		if ignore_case {
+			args << '-i'
+		}
+		args << [query, target_path]
+	} else {
+		args << ['-r', '-n']
+		if file_type.len > 0 {
+			args << '--include=*.${file_type}'
+		}
+		if ignore_case {
+			args << '-i'
+		}
+		args << [query, target_path]
 	}
 
-	cmd := if app.command_exists('rg') { 'rg' } else { 'grep' }
 	app.info('Searching with ${cmd}...')
 	app.reset_timer()
 	out, code := app.exec_safe(cmd, args)
@@ -58,6 +71,11 @@ fn run_interactive(mut app simplecli.SimpleCli) {
 	app.panel('Ripgrep Search Explorer', 'Perform lightning-fast searches across codebases.')
 	q := app.prompt('Search query', 'simplecli')
 	p := app.prompt('Search path', '.')
-	out, _ := app.exec_safe('rg', ['-n', q, p])
-	println(out)
+	if app.command_exists('rg') {
+		out, _ := app.exec_safe('rg', ['-n', q, p])
+		println(out)
+	} else {
+		out, _ := app.exec_safe('grep', ['-r', '-n', q, p])
+		println(out)
+	}
 }

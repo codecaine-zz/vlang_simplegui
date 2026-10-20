@@ -97,8 +97,7 @@ fn test_grid_state_getters_and_setters_are_available() {
 
 fn test_grid_sort_api_is_available() {
 	mut win := simplegui.SimpleWindow{}
-	win.add_grid('inventory', ['ID', 'Task'], [['3', 'Ship'],
-		['1', 'Build'], ['2', 'Test']])
+	win.add_grid('inventory', ['ID', 'Task'], [['3', 'Ship'], ['1', 'Build'], ['2', 'Test']])
 
 	win.grid_sort_by_column('inventory', 0, true)
 }
@@ -626,13 +625,11 @@ fn test_list_sort_move_and_search_binding() {
 fn test_table_sort_move_and_csv_roundtrip() {
 	mut win := simplegui.SimpleWindow{}
 	win.add_table('inv', ['Name', 'Qty'])
-	win.set_table_rows('inv', [['bolt', '2'], ['Anchor', '10'],
-		['clip', '1']])
+	win.set_table_rows('inv', [['bolt', '2'], ['Anchor', '10'], ['clip', '1']])
 
 	// Numeric-aware column sort
 	win.sort_table_by_column('inv', 1, true)
-	assert win.get_table_rows('inv') == [['clip', '1'], ['bolt', '2'],
-		['Anchor', '10']]
+	assert win.get_table_rows('inv') == [['clip', '1'], ['bolt', '2'], ['Anchor', '10']]
 
 	// Case-insensitive text sort, descending
 	win.sort_table_by_column('inv', 0, false)
@@ -1694,5 +1691,593 @@ fn test_simple_gg_ideals_ui_suite_and_ergonomics() {
 	]
 	win.add_nav_rail('app_rail', nav_items)
 	assert win.has_control('app_rail')
+	assert win.get_nav_rail_selected('app_rail') == 'dash'
+	win.set_nav_rail_selected('app_rail', 'cluster')
+	assert win.get_nav_rail_selected('app_rail') == 'cluster'
 	win.nav_rail(nav_items)
+}
+
+fn test_expanded_24_gui_controls_and_form_rows() {
+	mut win := simplegui.SimpleWindow{}
+
+	// 1. Gantt Chart
+	win.add_gantt_chart('gantt_1', 'Project Roadmap', [
+		simplegui.GanttTask{
+			name:         'Architecture'
+			start_pct:    0.0
+			duration_pct: 35.0
+			progress_pct: 100.0
+		},
+		simplegui.GanttTask{
+			name:         'Implementation'
+			start_pct:    30.0
+			duration_pct: 50.0
+			progress_pct: 60.0
+		},
+	], 140)
+	assert win.has_control('gantt_1')
+	win.set_gantt_chart_tasks('gantt_1', [
+		simplegui.GanttTask{
+			name:         'Release'
+			start_pct:    80.0
+			duration_pct: 20.0
+			progress_pct: 0.0
+		},
+	])
+	win.gantt_chart('Quick Gantt', [
+		simplegui.GanttTask{
+			name:         'Sprint 1'
+			start_pct:    0.0
+			duration_pct: 100.0
+			progress_pct: 100.0
+		},
+	], 120)
+
+	// 2. Funnel Chart
+	win.add_funnel_chart('funnel_1', 'Conversion Funnel', ['Visits', 'Signups', 'Paid'], [
+		1000.0,
+		250.0,
+		60.0,
+	], ['#6366f1', '#3b82f6', '#10b981'], 140)
+	assert win.has_control('funnel_1')
+	win.set_funnel_chart_data('funnel_1', ['Visits', 'Paid'], [500.0, 50.0])
+	win.funnel_chart('Quick Funnel', ['A', 'B'], [100.0, 40.0], ['#6366f1', '#10b981'], 120)
+
+	// 3. Candlestick Chart
+	win.add_candlestick_chart('candles_1', 'BTC/USD', [
+		simplegui.CandleBar{
+			open:  62000
+			high:  64000
+			low:   61500
+			close: 63500
+		},
+	], 150)
+	assert win.has_control('candles_1')
+	win.set_candlestick_chart_data('candles_1', [
+		simplegui.CandleBar{
+			open:  63500
+			high:  65000
+			low:   63000
+			close: 64800
+		},
+	])
+	win.candlestick_chart('ETH/USD', [
+		simplegui.CandleBar{
+			open:  3100
+			high:  3250
+			low:   3050
+			close: 3200
+		},
+	], 130)
+
+	// 4. Radar Chart
+	win.add_radar_chart('radar_1', 'Skill Matrix', ['Speed', 'Safety', 'UI', 'Concurrency', 'Build'],
+		[95.0, 90.0, 88.0, 92.0, 98.0], 160)
+	assert win.has_control('radar_1')
+	win.set_radar_chart_values('radar_1', [99.0, 95.0, 100.0, 90.0, 95.0])
+	win.radar_chart('Quick Radar', ['A', 'B', 'C'], [80.0, 70.0, 90.0], 140)
+
+	// 5. Bullet Chart
+	win.add_bullet_chart('bullet_1', 'Q4 Revenue', '$92K', 92.0, 85.0, 100.0)
+	assert win.has_control('bullet_1')
+	win.set_bullet_chart_value('bullet_1', 96.0, 90.0)
+	assert win.get_bullet_chart_value('bullet_1') == 96.0
+	win.bullet_chart('SLO Target', '99.9%', 99.9, 99.5, 100.0)
+
+	// 6. Waterfall Chart
+	win.add_waterfall_chart('wf_1', 'Net Income Bridge', ['Gross', 'COGS', 'OpEx', 'Tax'], [
+		500.0,
+		-150.0,
+		-120.0,
+		-45.0,
+	], 150)
+	assert win.has_control('wf_1')
+	win.set_waterfall_chart_data('wf_1', ['Rev', 'Cost'], [200.0, -80.0])
+	win.waterfall_chart('Quick Waterfall', ['In', 'Out'], [100.0, -30.0], 130)
+
+	// 7. Equalizer
+	win.add_equalizer('eq_1', 'Master EQ', ['60Hz', '250Hz', '1kHz', '4kHz', '16kHz'], [
+		2.0,
+		-1.5,
+		3.5,
+		1.0,
+		4.0,
+	], 120)
+	assert win.has_control('eq_1')
+	win.set_equalizer_bands('eq_1', [0.0, 1.0, 2.0, 1.0, 0.0])
+	bands := win.get_equalizer_bands('eq_1')
+	assert bands.len == 5
+	win.equalizer('Sub EQ', ['100Hz', '1kHz', '10kHz'], [1.0, 2.0, -1.0], 100)
+
+	// 8. VU Meter
+	win.add_vu_meter('vu_1', 'Main Bus', 78.0, 82.0)
+	assert win.has_control('vu_1')
+	win.set_vu_meter_levels('vu_1', 65.0, 70.0)
+	v_l, v_r := win.get_vu_meter_levels('vu_1')
+	assert v_l == 65.0
+	assert v_r == 70.0
+	win.vu_meter('Aux Bus', 40.0, 45.0)
+
+	// 9. XY Pad
+	win.add_xy_pad('xy_1', 'Filter Cutoff / Resonance', 0.45, 0.75, 130)
+	assert win.has_control('xy_1')
+	x0, y0 := win.get_xy_pad_position('xy_1')
+	assert x0 > 0.44 && x0 < 0.46
+	assert y0 > 0.74 && y0 < 0.76
+	win.set_xy_pad_position('xy_1', 0.25, 0.85)
+	x1, y1 := win.get_xy_pad_position('xy_1')
+	assert x1 > 0.24 && x1 < 0.26
+	assert y1 > 0.84 && y1 < 0.86
+	win.xy_pad('Quick XY', 0.5, 0.5, 110)
+
+	// 10. Stopwatch
+	win.add_stopwatch('sw_1', 'Build Timer', 125)
+	assert win.has_control('sw_1')
+	assert win.get_stopwatch_seconds('sw_1') == 125
+	win.set_stopwatch_seconds('sw_1', 300)
+	assert win.get_stopwatch_seconds('sw_1') == 300
+	win.reset_stopwatch('sw_1')
+	assert win.get_stopwatch_seconds('sw_1') == 0
+	win.stopwatch('Quick Timer', 60)
+
+	// 11. Chat View
+	win.add_chat_view('chat_1', 'Type a message...', 180)
+	assert win.has_control('chat_1')
+	win.add_chat_message('chat_1', 'Ada', 'System online', '10:00', false)
+	win.add_chat_message('chat_1', 'You', 'Running diagnostics', '10:01', true)
+	assert win.get_chat_message_count('chat_1') == 2
+	win.clear_chat_view('chat_1')
+	assert win.get_chat_message_count('chat_1') == 0
+	win.chat_view('Ask AI...', 140)
+
+	// 12. Notification List
+	win.add_notification_list('notif_1', 'System Alerts', 150)
+	assert win.has_control('notif_1')
+	win.add_notification_item('notif_1', 'Deploy Complete', 'v2.4 live in us-east', '1m ago',
+		'success')
+	assert win.get_notification_count('notif_1') == 1
+	win.clear_notification_list('notif_1')
+	assert win.get_notification_count('notif_1') == 0
+	win.notification_list('Inbox', 120)
+
+	// 13. Pricing Card
+	win.add_pricing_card('plan_pro', 'Pro Plan', '$29', '/month', 'POPULAR', [
+		'Unlimited Projects',
+		'Priority Support',
+		'Custom Domains',
+	], 'Upgrade Now')
+	assert win.has_control('plan_pro')
+	win.set_pricing_card_price('plan_pro', '$24', '/month')
+	win.pricing_card('Starter', '$0', '/mo', 'FREE', ['3 Projects', 'Community Support'],
+		'Start Free')
+
+	// 14. Empty State
+	win.add_empty_state('empty_1', '📭', 'No Messages Yet', 'Start a conversation to see messages here.',
+		'New Message')
+	assert win.has_control('empty_1')
+	win.set_empty_state('empty_1', 'No Results', 'Try adjusting your filters.')
+	assert win.get_text('empty_1').contains('Try adjusting')
+	win.empty_state('📂', 'Empty Folder', 'Drop files here', 'Browse')
+
+	// 15. Skeleton Loader
+	win.add_skeleton_loader('skel_1', 4, 100)
+	assert win.has_control('skel_1')
+	assert win.is_skeleton_active('skel_1') == true
+	win.set_skeleton_active('skel_1', false)
+	assert win.is_skeleton_active('skel_1') == false
+	win.skeleton_loader(3, 80)
+
+	// 16. Comparison Card
+	win.add_comparison_card('cmp_1', 'Community', 'Enterprise', [
+		simplegui.ComparisonRow{
+			feature:   'SSO / SAML'
+			left_val:  'No'
+			right_val: 'Yes'
+		},
+		simplegui.ComparisonRow{
+			feature:   'SLA'
+			left_val:  '99.0%'
+			right_val: '99.99%'
+		},
+	])
+	assert win.has_control('cmp_1')
+	win.set_comparison_card('cmp_1', 'Free Tier', 'Pro Tier')
+	win.comparison_card('Basic', 'Pro', [
+		simplegui.ComparisonRow{
+			feature:   'Exports'
+			left_val:  'CSV'
+			right_val: 'CSV + Parquet'
+		},
+	])
+
+	// 17. Avatar Group
+	win.add_avatar_group('team_avatars', ['AL', 'BC', 'CD', 'DE'], ['#3b82f6', '#10b981', '#8b5cf6',
+		'#f59e0b'],
+		3, 'Core Team')
+	assert win.has_control('team_avatars')
+	win.set_avatar_group('team_avatars', ['XY', 'ZW'], 'On-Call')
+	assert win.get_value_int('team_avatars') == 2
+	win.avatar_group(['AA', 'BB'], ['#3b82f6', '#10b981'], 2, 'Reviewers')
+
+	// 18. Checkout Steps
+	win.add_checkout_steps('chk_steps', ['Cart', 'Shipping', 'Payment', 'Confirm'], 2)
+	assert win.has_control('chk_steps')
+	assert win.get_checkout_step('chk_steps') == 2
+	win.set_checkout_step('chk_steps', 3)
+	assert win.get_checkout_step('chk_steps') == 3
+	win.checkout_steps(['Step 1', 'Step 2'], 0)
+
+	// 19. Cron Editor
+	win.add_cron_editor('cron_1', '0 9 * * 1-5')
+	assert win.has_control('cron_1')
+	assert win.get_cron_expression('cron_1') == '0 9 * * 1-5'
+	win.set_cron_expression('cron_1', '*/15 * * * *')
+	assert win.get_cron_expression('cron_1') == '*/15 * * * *'
+	win.cron_editor('0 0 * * *')
+
+	// 20. Regex Tester
+	win.add_regex_tester('rx_1', 'slug', 'valid_slug_123')
+	assert win.has_control('rx_1')
+	assert win.get_regex_pattern('rx_1') == 'slug'
+	assert win.get_regex_match_count('rx_1') == 1
+	win.set_regex_pattern('rx_1', '2026')
+	win.set_regex_test_text('rx_1', 'Year 2026')
+	assert win.get_regex_pattern('rx_1') == '2026'
+	assert win.get_regex_match_count('rx_1') == 1
+	win.regex_tester('[A-Z]+', 'HELLO')
+
+	// 21. Hex Viewer
+	win.add_hex_viewer('hex_1', 'Hello V!', 110)
+	assert win.has_control('hex_1')
+	win.set_hex_viewer_data('hex_1', 'SimpleGUI RAD')
+	assert win.get_hex_viewer_data('hex_1') == 'SimpleGUI RAD'
+	win.hex_viewer('Binary payload', 90)
+
+	// 22. Password Strength Input
+	win.add_password_strength('pwd_s1', 'Sup3r$ecret!2026')
+	assert win.has_control('pwd_s1')
+	assert win.get_password_strength_value('pwd_s1') == 'Sup3r$ecret!2026'
+	assert win.get_password_strength_score('pwd_s1') == 4
+	win.set_password_strength_value('pwd_s1', 'abc')
+	assert win.get_password_strength_score('pwd_s1') == 1
+	win.password_strength('InitPass#1')
+
+	// 23. Signature Pad
+	win.add_signature_pad('sig_1', 'Authorized Signatory', 100)
+	assert win.has_control('sig_1')
+	assert win.has_signature('sig_1') == false
+	win.clear_signature_pad('sig_1')
+	assert win.has_signature('sig_1') == false
+	win.signature_pad('Customer Signature', 90)
+
+	// 24. Number Spinner
+	win.add_number_spinner('spin_1', 42, 0, 100, 1)
+	assert win.has_control('spin_1')
+	assert win.get_number_spinner_value('spin_1') == 42
+	win.set_number_spinner_value('spin_1', 75)
+	assert win.get_number_spinner_value('spin_1') == 75
+	win.number_spinner(10, 0, 50, 5)
+
+	// Test 14 new add_form_* row builders
+	win.add_form_checkbox('Notifications', 'f_chk', true)
+	win.add_form_radio_group('Environment', 'f_env', ['Dev', 'Staging', 'Prod'], 'Prod')
+	win.add_form_segmented('Mode', 'f_mode', ['Fast', 'Balanced', 'Safe'], 'Balanced')
+	win.add_form_color_well('Accent Color', 'f_color', '#3B82F6')
+	win.add_form_time_picker('Reminder Time', 'f_time', '09:30')
+	win.add_form_stepper('Retries', 'f_retries', 3, 0, 10, 1)
+	win.add_form_search('Filter', 'f_search', 'Search logs...')
+	win.add_form_token_field('Tags', 'f_tags', 'vlang,gui')
+	win.add_form_combo_box('Preset', 'f_preset', ['Default', 'Custom'], 'Default')
+	win.add_form_rating('Quality', 'f_rating', 4, 5)
+	win.add_form_range_slider('Price Band', 'f_band', 20, 80, 0, 100)
+	win.add_form_number_spinner('Workers', 'f_workers', 8, 1, 64, 1)
+	win.add_form_password_strength('New Password', 'f_pwd_str', 'Str0ng!Pass')
+	win.add_form_masked_input('Phone', 'f_phone_mask', '(###) ###-####', '5550192834')
+
+	assert win.has_control('f_chk')
+	assert win.has_control('f_env')
+	assert win.has_control('f_mode')
+	assert win.has_control('f_color')
+	assert win.has_control('f_time')
+	assert win.has_control('f_retries')
+	assert win.has_control('f_search')
+	assert win.has_control('f_tags')
+	assert win.has_control('f_preset')
+	assert win.has_control('f_rating')
+	assert win.has_control('f_band')
+	assert win.has_control('f_workers')
+	assert win.has_control('f_pwd_str')
+	assert win.has_control('f_phone_mask')
+}
+
+fn test_codecaine_themes_fx_and_3d_folder_grid() {
+	mut win := simplegui.SimpleWindow{}
+
+	// 1. Verify all 50 themes (18 classic + 12 FX_THEMES + 20 Master Designer Custom Themes)
+	all_themes := simplegui.list_themes()
+	assert all_themes.len >= 50
+	assert 'Prism Reactor' in all_themes
+	assert 'Orbital Ice' in all_themes
+	assert 'Ember Grid' in all_themes
+	assert 'Cyberpunk Edgerunner 2099' in all_themes
+	assert 'Omega Pantheon 3099 Singularity' in all_themes
+
+	// 2. Verify hardware tier filtering (low, medium, high, ultra)
+	low_themes := simplegui.list_themes_by_tier('low')
+	med_themes := simplegui.list_themes_by_tier('medium')
+	high_themes := simplegui.list_themes_by_tier('high')
+	ultra_themes := simplegui.list_themes_by_tier('ultra')
+	assert low_themes.len >= 5
+	assert med_themes.len >= 5
+	assert high_themes.len >= 5
+	assert ultra_themes.len >= 5
+
+	// 3. Verify Master Designer Theme #20 (Omega Pantheon 3099 Singularity) FX tokens
+	omega := simplegui.get_theme('Omega Pantheon 3099 Singularity')
+	assert omega.tier == 'ultra'
+	assert omega.fx.glow == true
+	assert omega.fx.glow_intensity == 100
+	assert omega.fx.atmosphere == 'm4_raytrace_prism'
+	assert omega.fx.ui_element_fx == 'crystal_prism'
+	assert omega.fx.prism_edge == true
+	assert omega.fx.frosted_rim == true
+
+	// 4. Verify WCAG 2.1 contrast auditing & auto-nudge
+	ratio := simplegui.contrast_ratio('#ffffff', '#000000')
+	assert ratio >= 20.9
+	nudged := simplegui.ensure_readable_color('#222222', '#111111', 4.5)
+	assert simplegui.contrast_ratio(nudged, '#111111') >= 4.5
+	audit := simplegui.audit_theme_contrast(omega)
+	assert audit.len == 6
+	assert audit[0].aa == true
+
+	// 5. Verify CCFM-THEME-v1 Share Code & JSON round-trip import/export
+	prism := simplegui.get_theme('Prism Reactor')
+	share_code := simplegui.export_ccfm_share_code(prism)
+	assert share_code.starts_with('CCFM-THEME-v1:')
+	imported := simplegui.import_ccfm_share_code(share_code) or { panic(err) }
+	assert imported.name == 'Prism Reactor'
+	assert imported.accent_color == '#22d3ee'
+	assert imported.secondary_accent == '#e879f9'
+	assert imported.fx.atmosphere == 'aurora'
+	assert imported.fx.ui_element_fx == 'crystal_prism'
+
+	// 6. Apply theme & atmosphere on window
+	win.apply_theme(omega)
+	assert win.get_theme_name() == '20_ultra_omega_pantheon_3099_singularity'
+	win.set_theme_atmosphere('aurora', '#22d3ee', '#e879f9', 90)
+	assert win.get_theme().fx.atmosphere == 'aurora'
+
+	// 7. Verify Codecaine Sculpted 3D Folder Grid control
+	win.add_themed_folder_grid('ccfm_grid', [
+		simplegui.FolderTileItem{
+			name:        'src'
+			subtitle:    'Core Engine'
+			folder_type: 'src'
+			badge:       '⚡'
+		},
+		simplegui.FolderTileItem{
+			name:        'shaders'
+			subtitle:    'Metal Raytrace'
+			folder_type: 'shaders'
+			badge:       '🌌'
+		},
+		simplegui.FolderTileItem{
+			name:        'security-vault'
+			subtitle:    'AES-256 Keys'
+			folder_type: 'security-vault'
+			badge:       '🛡️'
+		},
+	], 3, 180)
+	assert win.has_control('ccfm_grid')
+	win.set_themed_folder_grid_selected('ccfm_grid', 2)
+	assert win.get_themed_folder_grid_selected('ccfm_grid') == 2
+	win.set_themed_folder_grid_fx('ccfm_grid', 'crystal_prism', 'macos_3d', '#22d3ee',
+		'#e879f9', '#0b1124', 'rgba(34, 211, 238, 0.55)', 16, true)
+}
+
+fn test_master_goat_vfx_shaders_particles_holograms_and_animations() {
+	mut win := simplegui.SimpleWindow{}
+
+	// 1. Master VFX Shader Canvas Viewport
+	win.add_shader_canvas('vfx_shader', 'tesseract_4d', 190)
+	assert win.has_control('vfx_shader')
+	assert win.get_shader_canvas_preset('vfx_shader') == 'tesseract_4d'
+	win.set_shader_canvas_preset('vfx_shader', 'plasma_reactor')
+	assert win.get_shader_canvas_preset('vfx_shader') == 'plasma_reactor'
+	win.set_shader_canvas_speed('vfx_shader', 1.5)
+	win.step_shader_canvas('vfx_shader', 0.4)
+
+	// 2. Interactive Particle Physics & Fireworks Emitter
+	win.add_particle_emitter('vfx_particles', 'supernova_burst', 72, 180)
+	assert win.has_control('vfx_particles')
+	assert win.get_particle_emitter_type('vfx_particles') == 'supernova_burst'
+	win.set_particle_emitter_type('vfx_particles', 'vortex_galaxy')
+	assert win.get_particle_emitter_type('vfx_particles') == 'vortex_galaxy'
+	win.emit_particle_burst('vfx_particles', 0.5, 0.5, 96)
+
+	// 3. 3D Hologram Foil & Cyber HUD Showcase Card
+	win.add_hologram_card('vfx_holo', 'GPU PIPELINE', 'ProMotion 120Hz', '0.38 ms', 'METAL-FX',
+		'iridescent_foil', 110)
+	assert win.has_control('vfx_holo')
+	assert win.get_hologram_card_value('vfx_holo') == '0.38 ms'
+	win.set_hologram_card_value('vfx_holo', '0.31 ms', 'ULTRA-FX')
+	assert win.get_hologram_card_value('vfx_holo') == '0.31 ms'
+
+	// 4. Multi-Harmonic Glowing Waveform & Lissajous Synthesizer
+	win.add_waveform_synthesizer('vfx_synth', 'harmonic_chord', 3.8, 0.85, 110)
+	assert win.has_control('vfx_synth')
+	assert win.get_waveform_synthesizer_type('vfx_synth') == 'harmonic_chord'
+	win.set_waveform_synthesizer_params('vfx_synth', 'fm_modulation', 5.2, 0.92)
+	assert win.get_waveform_synthesizer_type('vfx_synth') == 'fm_modulation'
+
+	// 5. Cyberpunk Chromatic Glitch & Neon Hero Banner
+	win.add_glitch_banner('vfx_glitch', 'CODECAINE FX ENGINE', 'GOAT EDITION', 'cyber_glitch',
+		68)
+	assert win.has_control('vfx_glitch')
+	assert win.get_glitch_banner_text('vfx_glitch') == 'CODECAINE FX ENGINE'
+	win.set_glitch_banner_text('vfx_glitch', 'OMEGA PANTHEON 3099', 'SINGULARITY ACTIVE')
+	assert win.get_glitch_banner_text('vfx_glitch') == 'OMEGA PANTHEON 3099'
+	win.trigger_glitch_pulse('vfx_glitch')
+
+	// 6. Special-FX Control Animations & Live Atmosphere Clock
+	win.set_atmosphere_animated(true)
+	win.step_atmosphere_phase(0.75)
+	win.animate_control_pulse('vfx_holo', '#00f5d4', 450)
+	win.animate_control_flip('vfx_holo', 400)
+	win.animate_control_float('vfx_holo', true)
+}
+
+fn test_god_mode_controls_sfx_and_webview_rad_studio() {
+	mut win := simplegui.SimpleWindow{}
+
+	// 1. Built-in Procedural Sound Effects & Audio Synthesizer Engine
+	win.set_sfx_enabled(false) // disable audio output during unit test run
+	assert win.is_sfx_enabled() == false
+	win.set_sfx_volume(0.65)
+	vol := win.get_sfx_volume()
+	assert vol > 0.64 && vol < 0.66
+	win.play_sfx('cyber_click')
+	win.play_synth_tone(440.0, 40, 'sine', 0.25)
+	win.play_piano_note(60, 40, 'cyber_lead')
+
+	// 2. Qt 6 Smart House / Domotics Floorplan
+	win.add_smart_house_floorplan('house_fp', 'QT 6 SMART HOUSE', 0x2F, 4.8, 92, 185)
+	assert win.has_control('house_fp')
+	assert win.get_smart_house_active_mask('house_fp') == 0x2F
+	win.set_smart_house_state('house_fp', 0x3F, 6.1, 99)
+	assert win.get_smart_house_active_mask('house_fp') == 0x3F
+
+	// 3. Qt 6 Smart Climate Thermostat Dial
+	win.add_smart_thermostat('house_therm', 'CLIMATE ZONE', 72.0, 70.5, 44, 'AUTO-ECO', 185)
+	assert win.has_control('house_therm')
+	assert win.get_smart_thermostat_target('house_therm') == 72.0
+	win.set_smart_thermostat('house_therm', 68.5, 69.0, 40, 'COOL')
+	assert win.get_smart_thermostat_target('house_therm') == 68.5
+
+	// 4. Automotive & Aerospace Digital Cockpit Cluster
+	win.add_cockpit_cluster('cockpit_1', 142.0, 6.8, 'S+', 92, 165)
+	assert win.has_control('cockpit_1')
+	assert win.get_cockpit_speed('cockpit_1') == 142.0
+	win.set_cockpit_telemetry('cockpit_1', 198.5, 8.2, 'M7', 88)
+	assert win.get_cockpit_speed('cockpit_1') == 198.5
+
+	// 5. Visual Node Graph / Blueprint Shader & Logic Editor
+	win.add_node_graph('node_g', 'SHADER GRAPH', ['Input', 'Rotor', 'Shader', 'Output'], 140)
+	assert win.has_control('node_g')
+	assert win.get_node_graph_selected('node_g') == 0
+	win.set_node_graph_nodes('node_g', ['A', 'B', 'C'])
+
+	// 6. Interactive Piano / MIDI Synthesizer Studio Keyboard
+	win.add_piano_keyboard('piano_1', 64, 'cyber_lead', 120)
+	assert win.has_control('piano_1')
+	assert win.get_piano_active_note('piano_1') == 64
+	win.set_piano_active_note('piano_1', 72)
+	assert win.get_piano_active_note('piano_1') == 72
+
+	// 7. 16-Step Pro Audio Drum & Synth Matrix Sequencer
+	win.add_step_sequencer('seq_1', 'DRUM MATRIX', 128, u32(0x12345678), 130)
+	assert win.has_control('seq_1')
+	assert win.get_step_sequencer_pattern('seq_1') == u32(0x12345678)
+	win.set_step_sequencer_state('seq_1', 140, u32(0x0F0F0F0F))
+	assert win.get_step_sequencer_pattern('seq_1') == u32(0x0F0F0F0F)
+
+	// 8. Real-Time 3D Wireframe & Shaded Mesh Viewport
+	win.add_mesh_viewport_3d('mesh_3d', 'smart_house_3d', 175)
+	assert win.has_control('mesh_3d')
+	assert win.get_mesh_viewport_preset('mesh_3d') == 'smart_house_3d'
+	win.set_mesh_viewport_preset('mesh_3d', 'torus_knot')
+	assert win.get_mesh_viewport_preset('mesh_3d') == 'torus_knot'
+
+	// 9. Sweeping Polar Radar, Sonar & RF Smith Scope
+	win.add_polar_radar_sonar('radar_sonar', 'SONAR SCOPE', 1.2, 5, 175)
+	assert win.has_control('radar_sonar')
+	win.set_polar_radar_params('radar_sonar', 2.0, 8)
+	win.ping_polar_radar('radar_sonar')
+
+	// 10. Digital Logic Analyzer & Bus Protocol Timing Scope
+	win.add_logic_analyzer('logic_1', 'SPI BUS', 500, 1, 115)
+	assert win.has_control('logic_1')
+	win.set_logic_analyzer_seed('logic_1', 42)
+
+	// 11. Sci-Fi Nixie Tube & Plasma Counter Display
+	win.add_nixie_display('nixie_1', 'CHRONO', '10:42:59', 'amber_tube', 82)
+	assert win.has_control('nixie_1')
+	assert win.get_nixie_display_text('nixie_1') == '10:42:59'
+	win.set_nixie_display_text('nixie_1', '99:99:99')
+	assert win.get_nixie_display_text('nixie_1') == '99:99:99'
+
+	// 12. Sankey Energy & Data Flow Diagram
+	win.add_sankey_chart('sankey_1', 'SOLAR FLOW', ['Solar', 'Grid'], ['HVAC', 'EV'], [
+		3.4,
+		2.1,
+	], 135)
+	assert win.has_control('sankey_1')
+	win.set_sankey_chart_data('sankey_1', ['Solar', 'Battery'], ['Home', 'Garage'], [
+		4.2,
+		1.8,
+	])
+
+	// 13. Studio Color Wheel & Vectorscope Harmonies
+	win.add_color_wheel('cwheel_1', '#00F5D4', 'TRIADIC', 175)
+	assert win.has_control('cwheel_1')
+	assert win.get_color_wheel_hex('cwheel_1') == '#00F5D4'
+	win.set_color_wheel_hex('cwheel_1', '#FF007F')
+	assert win.get_color_wheel_hex('cwheel_1') == '#FF007F'
+
+	// 14. Expanded Special-FX Animations
+	win.animate_control_bounce('cockpit_1', 1.08, 420)
+	win.animate_control_glitch('mesh_3d', 380)
+	win.set_control_neon_glow('house_fp', '#00f5d4', 16.0, 0.8)
+
+	// 15. Templates & Integrated vlang_webview_rad_studio Compiler
+	templates := simplegui.list_form_templates()
+	assert 'smart_house' in templates
+	assert 'god_mode' in templates
+
+	house_spec := simplegui.get_smart_house_form_spec()
+	assert house_spec.controls.len >= 7
+	house_v_code := simplegui.generate_v_code(house_spec)
+	assert house_v_code.contains('add_smart_house_floorplan')
+	assert house_v_code.contains('add_smart_thermostat')
+
+	god_spec := simplegui.get_god_mode_form_spec()
+	assert god_spec.controls.len >= 10
+	god_v_code := simplegui.generate_v_code(god_spec)
+	assert god_v_code.contains('add_cockpit_cluster')
+	assert god_v_code.contains('add_piano_keyboard')
+
+	wv_ide_html := simplegui.compile_webview_rad_studio_html(house_spec)
+	assert wv_ide_html.contains('<!DOCTYPE html>')
+	assert wv_ide_html.contains('RESIDENCE MATRIX ALPHA')
+
+	wv_showcase_html := simplegui.compile_webview_all_controls_showcase_html()
+	assert wv_showcase_html.len > 1000
+
+	wv_app_html := simplegui.compile_webview_spec_html(god_spec)
+	assert wv_app_html.contains('WEBAUDIO SFX READY')
+	assert wv_app_html.contains('playSfx')
+
+	wv_v_code := simplegui.generate_webview_v_code(house_spec)
+	assert wv_v_code.contains('import webview')
 }

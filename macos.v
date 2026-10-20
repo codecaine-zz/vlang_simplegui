@@ -128,7 +128,7 @@ pub fn get_speech_voices() []SpeechVoice {
 	if res == unsafe { nil } {
 		return []
 	}
-	s := unsafe { tos3(res) }
+	s := consume_c_str(&u8(res))
 	if s == '' || s == '[]' {
 		return []
 	}
@@ -142,7 +142,7 @@ pub fn get_default_speech_voice() string {
 	if res == unsafe { nil } {
 		return ''
 	}
-	return unsafe { tos3(res) }
+	return consume_c_str(&u8(res))
 }
 
 // --- Trackpad Haptics (NSHapticFeedbackManager) ---
@@ -182,7 +182,7 @@ pub fn get_clipboard_files() []string {
 	if res == unsafe { nil } {
 		return []
 	}
-	s := unsafe { tos3(res) }
+	s := consume_c_str(&u8(res))
 	if s == '' || s == '[]' {
 		return []
 	}
@@ -213,7 +213,7 @@ pub fn get_running_apps() []MacAppInfo {
 	if res == unsafe { nil } {
 		return []
 	}
-	s := unsafe { tos3(res) }
+	s := consume_c_str(&u8(res))
 	if s == '' || s == '[]' {
 		return []
 	}
@@ -247,7 +247,7 @@ pub fn get_frontmost_app() string {
 	if res == unsafe { nil } {
 		return ''
 	}
-	return unsafe { tos3(res) }
+	return consume_c_str(&u8(res))
 }
 
 // open_with_app opens a file using a specific application (e.g. "TextEdit", "Safari").
@@ -261,7 +261,7 @@ pub fn get_default_app_for_extension(ext string) string {
 	if res == unsafe { nil } {
 		return ''
 	}
-	return unsafe { tos3(res) }
+	return consume_c_str(&u8(res))
 }
 
 // --- Sound Playback (NSSound) ---
@@ -327,7 +327,7 @@ pub fn defaults_get_string(key string) string {
 	if res == unsafe { nil } {
 		return ''
 	}
-	return unsafe { tos3(res) }
+	return consume_c_str(&u8(res))
 }
 
 // defaults_set_bool stores a boolean in macOS NSUserDefaults.
@@ -368,7 +368,7 @@ pub fn get_macos_version() string {
 	if res == unsafe { nil } {
 		return ''
 	}
-	return unsafe { tos3(res) }
+	return consume_c_str(&u8(res))
 }
 
 // get_macos_version_major returns the major macOS version (e.g. 14, 15).
@@ -398,7 +398,7 @@ pub fn get_computer_name() string {
 	if res == unsafe { nil } {
 		return ''
 	}
-	return unsafe { tos3(res) }
+	return consume_c_str(&u8(res))
 }
 
 // get_user_full_name returns the full name of the currently logged-in macOS user.
@@ -407,7 +407,7 @@ pub fn get_user_full_name() string {
 	if res == unsafe { nil } {
 		return ''
 	}
-	return unsafe { tos3(res) }
+	return consume_c_str(&u8(res))
 }
 
 // is_apple_silicon returns true if the application is executing on Apple Silicon (M1/M2/M3/M4/arm64).
@@ -433,7 +433,7 @@ pub fn get_screens() []MacScreenInfo {
 	if res == unsafe { nil } {
 		return []
 	}
-	s := unsafe { tos3(res) }
+	s := consume_c_str(&u8(res))
 	if s == '' || s == '[]' {
 		return []
 	}
@@ -473,7 +473,7 @@ pub fn get_dock_badge() string {
 	if res == unsafe { nil } {
 		return ''
 	}
-	return unsafe { tos3(res) }
+	return consume_c_str(&u8(res))
 }
 
 // set_activation_policy configures the application activation policy ("regular", "accessory", "prohibited").
@@ -488,7 +488,7 @@ pub fn get_activation_policy() string {
 	if res == unsafe { nil } {
 		return 'regular'
 	}
-	return unsafe { tos3(res) }
+	return consume_c_str(&u8(res))
 }
 
 // get_app_bundle_path returns the filesystem path of the application bundle.
@@ -497,7 +497,7 @@ pub fn get_app_bundle_path() string {
 	if res == unsafe { nil } {
 		return ''
 	}
-	return unsafe { tos3(res) }
+	return consume_c_str(&u8(res))
 }
 
 // ============================================================================
@@ -573,38 +573,48 @@ pub fn format_display_title(raw string) string {
 	return result.join(' ')
 }
 
+fn escape_plist_xml(s string) string {
+	return s.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('"',
+		'&quot;').replace("'", '&apos;')
+}
+
 // build_macos_info_plist creates standard Apple-compliant Info.plist XML content.
 pub fn build_macos_info_plist(app_name string, exe_name string, bundle_id string, version string, category string, high_dpi bool, dark_mode bool) string {
 	cat_str := if category.len > 0 { category } else { 'public.app-category.utilities' }
 	dpi_str := if high_dpi { 'true' } else { 'false' }
 	dark_str := if dark_mode { 'false' } else { 'true' }
+	safe_app := escape_plist_xml(app_name)
+	safe_exe := escape_plist_xml(exe_name)
+	safe_bundle := escape_plist_xml(bundle_id)
+	safe_ver := escape_plist_xml(version)
+	safe_cat := escape_plist_xml(cat_str)
 
 	return '<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
 	<key>CFBundleExecutable</key>
-	<string>${exe_name}</string>
+	<string>${safe_exe}</string>
 	<key>CFBundleIconFile</key>
 	<string>AppIcon</string>
 	<key>CFBundleIdentifier</key>
-	<string>${bundle_id}</string>
+	<string>${safe_bundle}</string>
 	<key>CFBundleName</key>
-	<string>${app_name}</string>
+	<string>${safe_app}</string>
 	<key>CFBundleDisplayName</key>
-	<string>${app_name}</string>
+	<string>${safe_app}</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleShortVersionString</key>
-	<string>${version}</string>
+	<string>${safe_ver}</string>
 	<key>CFBundleVersion</key>
-	<string>${version}</string>
+	<string>${safe_ver}</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>11.0</string>
 	<key>LSApplicationCategoryType</key>
-	<string>${cat_str}</string>
+	<string>${safe_cat}</string>
 	<key>NSHighResolutionCapable</key>
 	<${dpi_str}/>
 	<key>NSRequiresAquaSystemAppearance</key>
@@ -689,13 +699,15 @@ pub fn package_macos_app_bundle(cfg MacBundleConfig) MacBundleResult {
 		}
 	}
 
-	mut exe_name := cfg.exe_name.trim_space()
+	mut exe_name := sanitize_filename(cfg.exe_name.trim_space())
 	if exe_name == '' {
 		exe_name = clean_bundle_identifier(cfg.app_name)
 	}
 	if exe_name == '' {
 		exe_name = 'app'
 	}
+
+	safe_app_name := sanitize_filename(cfg.app_name)
 
 	bundle_id := if cfg.bundle_id.trim_space() != '' {
 		cfg.bundle_id.trim_space()
@@ -719,7 +731,7 @@ pub fn package_macos_app_bundle(cfg MacBundleConfig) MacBundleResult {
 		}
 	}
 
-	app_bundle := os.join_path(resolved_out_dir, '${cfg.app_name}.app')
+	app_bundle := os.join_path(resolved_out_dir, '${safe_app_name}.app')
 	contents_dir := os.join_path(app_bundle, 'Contents')
 	macos_dir := os.join_path(contents_dir, 'MacOS')
 	resources_dir := os.join_path(contents_dir, 'Resources')
@@ -727,7 +739,7 @@ pub fn package_macos_app_bundle(cfg MacBundleConfig) MacBundleResult {
 	logs << '======================================================================'
 	logs << '🚀 Starting macOS .app Packaging Pipeline'
 	logs << '======================================================================'
-	logs << '• Target Application : ${cfg.app_name}.app'
+	logs << '• Target Application : ${safe_app_name}.app'
 	logs << '• Executable Name    : ${exe_name}'
 	logs << '• Bundle Identifier  : ${bundle_id}'
 	logs << '• Version String     : ${version}'
@@ -769,10 +781,12 @@ pub fn package_macos_app_bundle(cfg MacBundleConfig) MacBundleResult {
 
 	// 3. Process & Copy Executable
 	target_bin := os.join_path(macos_dir, exe_name)
+	mut real_bin_for_size := target_bin
 
 	if cfg.is_terminal_wrapper {
 		logs << '💻 Creating Terminal.app launcher wrapper...'
 		cli_bin := os.join_path(resources_dir, exe_name)
+		real_bin_for_size = cli_bin
 		os.cp(cfg.bin_path, cli_bin) or {
 			logs << '❌ Failed to copy CLI binary to Resources: ${err}'
 			return MacBundleResult{
@@ -783,7 +797,8 @@ pub fn package_macos_app_bundle(cfg MacBundleConfig) MacBundleResult {
 		}
 		os.chmod(cli_bin, 0o755) or {}
 
-		wrapper_script := '#!/bin/bash\nDIR="\$(cd "\$(dirname "\$0")/../Resources" && pwd)"\nosascript -e "tell application \\"Terminal\\" to do script \\"\'\${cli_bin}\' ; exit\\""\n'
+		safe_exe_name := sanitize_filename(exe_name)
+		wrapper_script := '#!/bin/bash\nDIR="\$(cd "\$(dirname "\$0")/../Resources" && pwd)"\nBIN_PATH="\$DIR/${safe_exe_name}"\nosascript -e \'on run argv\' -e \'tell application "Terminal" to do script (quoted form of item 1 of argv) & " ; exit"\' -e \'end run\' -- "\$BIN_PATH"\n'
 		os.write_file(target_bin, wrapper_script) or {
 			logs << '❌ Failed to write wrapper script: ${err}'
 			return MacBundleResult{
@@ -882,7 +897,7 @@ pub fn package_macos_app_bundle(cfg MacBundleConfig) MacBundleResult {
 	}
 
 	elapsed := time.since(t0)
-	total_size := os.file_size(target_bin)
+	total_size := os.file_size(real_bin_for_size)
 
 	logs << '----------------------------------------------------------------------'
 	logs << '🎉 BUILD COMPLETE: ${cfg.app_name}.app'

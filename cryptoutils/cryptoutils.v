@@ -13,7 +13,7 @@ import encoding.base64
 import encoding.hex
 import hash.crc32
 import hash.fnv1a
-import rand
+import time
 
 // sha256 returns the hexadecimal SHA-256 hash of a string.
 pub fn sha256(s string) string {
@@ -266,7 +266,17 @@ const ulid_encoding = '0123456789ABCDEFGHJKMNPQRSTVWXYZ'
 
 // generate_ulid generates a 26-character Universally Unique Lexicographically Sortable Identifier.
 pub fn generate_ulid() string {
-	return rand.ulid()
+	mut ts := u64(time.utc().unix_milli())
+	mut out := []u8{len: 26}
+	for i := 9; i >= 0; i-- {
+		out[i] = ulid_encoding[int(ts & 0x1f)]
+		ts >>= 5
+	}
+	rnd := csprng_bytes(16)
+	for i in 0 .. 16 {
+		out[10 + i] = ulid_encoding[int(rnd[i] & 0x1f)]
+	}
+	return out.bytestr()
 }
 
 // generate_totp produces a Time-based One-Time Password (RFC 6238) from a secret and counter step.

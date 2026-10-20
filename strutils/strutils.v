@@ -438,10 +438,11 @@ pub fn ordinal(n int) string {
 // truncate_middle truncates a string in the middle if it exceeds max_len (e.g. "0x123456789abcdef", 10, "...") -> "0x12...cdef".
 pub fn truncate_middle(s string, max_len int, ellipsis string) string {
 	runes := s.runes()
-	if runes.len <= max_len || max_len <= ellipsis.len {
+	ell_runes := ellipsis.runes()
+	if runes.len <= max_len || max_len <= ell_runes.len {
 		return s
 	}
-	avail := max_len - ellipsis.len
+	avail := max_len - ell_runes.len
 	left_len := avail / 2 + avail % 2
 	right_len := avail / 2
 	mut sb := strings.new_builder(max_len)

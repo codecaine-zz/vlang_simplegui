@@ -615,7 +615,7 @@ pub fn (win &SimpleWindow) load_values_from_file(path string) ! {
 			target_path = win.resolve_storage_path(path)
 		}
 	} else if path.starts_with('~') {
-		target_path = path.replace('~', os.home_dir())
+		target_path = expand_tilde(path)
 	}
 	content := os.read_file(target_path)!
 	values := json_decode_map(content)
@@ -954,12 +954,18 @@ pub fn (win &SimpleWindow) on_table_double_click(name string, callback StringEve
 // selected while column selection mode is enabled. The callback value is the
 // 0-based selected column index as a string.
 pub fn (win &SimpleWindow) on_table_column_select(name string, callback StringEventCallback) &SimpleWindow {
+	idx := win.find_handler(name, 'column_change')
+	handler := ControlEventHandler{
+		control_name: name
+		event_name:   'column_change'
+		string_cb:    callback
+	}
 	unsafe {
 		mut w := &SimpleWindow(win)
-		w.handlers << ControlEventHandler{
-			control_name: name
-			event_name:   'column_change'
-			string_cb:    callback
+		if idx >= 0 {
+			w.handlers[idx] = handler
+		} else {
+			w.handlers << handler
 		}
 	}
 	return win
@@ -1171,7 +1177,7 @@ pub fn (win &SimpleWindow) load_table_from_csv(name string, path string) ! {
 			target_path = win.resolve_storage_path(path)
 		}
 	} else if path.starts_with('~') {
-		target_path = path.replace('~', os.home_dir())
+		target_path = expand_tilde(path)
 	}
 	content := os.read_file(target_path)!
 	mut reader := csv.new_reader(content)
@@ -1228,7 +1234,7 @@ pub fn (win &SimpleWindow) get_int_or(name string, fallback int) int {
 		if val == '' {
 			return fallback
 		}
-		return val.int()
+		return strconv.atoi(val) or { fallback }
 	}
 	return win.get_number_value(name)
 }
@@ -1362,7 +1368,7 @@ pub fn (win &SimpleWindow) load_list_from_file(name string, path string) ! {
 			target_path = win.resolve_storage_path(path)
 		}
 	} else if path.starts_with('~') {
-		target_path = path.replace('~', os.home_dir())
+		target_path = expand_tilde(path)
 	}
 	content := os.read_file(target_path)!
 	mut items := []string{}
@@ -1540,7 +1546,7 @@ pub fn (win &SimpleWindow) load_table_from_json(name string, path string) ! {
 			target_path = win.resolve_storage_path(path)
 		}
 	} else if path.starts_with('~') {
-		target_path = path.replace('~', os.home_dir())
+		target_path = expand_tilde(path)
 	}
 	content := os.read_file(target_path)!
 	rows := json2.decode[[][]string](content)!
@@ -1565,7 +1571,7 @@ pub fn (win &SimpleWindow) load_list_from_json(name string, path string) ! {
 			target_path = win.resolve_storage_path(path)
 		}
 	} else if path.starts_with('~') {
-		target_path = path.replace('~', os.home_dir())
+		target_path = expand_tilde(path)
 	}
 	content := os.read_file(target_path)!
 	items := json2.decode[[]string](content)!
@@ -2897,7 +2903,7 @@ pub fn (win &SimpleWindow) load_values_if_exists(path string) bool {
 			target_path = win.resolve_storage_path(path)
 		}
 	} else if path.starts_with('~') {
-		target_path = path.replace('~', os.home_dir())
+		target_path = expand_tilde(path)
 	}
 	if !os.exists(target_path) {
 		return false
@@ -2968,9 +2974,9 @@ pub fn (win &SimpleWindow) clear_form() &SimpleWindow {
 	return win
 }
 
-// reset_to_defaults is an alias for clear_form.
+// reset_to_defaults resets form controls back to their initial default values.
 pub fn (win &SimpleWindow) reset_to_defaults() &SimpleWindow {
-	return win.clear_form()
+	return win.reset_form()
 }
 
 // set_status_temporary displays a temporary status message and restores the previous message after duration_ms.
@@ -3054,12 +3060,12 @@ pub fn (win &SimpleWindow) restore_layout(app_name string) &SimpleWindow {
 	m := json2.decode[map[string]string](content) or { return win }
 	w := m['width'] or { '' }.int()
 	h := m['height'] or { '' }.int()
-	x := m['x'] or { '' }.int()
-	y := m['y'] or { '' }.int()
 	if w > 0 && h > 0 {
 		win.set_size(w, h)
 	}
-	if x > 0 || y > 0 {
+	if 'x' in m && 'y' in m {
+		x := strconv.atoi(m['x'] or { '' }) or { return win }
+		y := strconv.atoi(m['y'] or { '' }) or { return win }
 		win.set_position(x, y)
 	}
 	return win
@@ -3212,3 +3218,253 @@ pub fn (mut win SimpleWindow) require_tool(binary_name string, display_name stri
 		'${display_name} ("${binary_name}") was not found on your system.\n\nTo install it via Homebrew, run in Terminal:\n  brew install ${formula}\n\nOr run `./install_dependencies.vsh` in the project root.')
 	return false
 }
+
+// ============================================================================
+// 16. RAD Workflow Controllers: CRUD Binding, Wizard Pages, Form Undo/Redo & Command Registry
+// ============================================================================
+
+// crud_bind_table_to_form binds a table control to a list of form field control names.
+// When a row is selected in the table, its cells are automatically populated into the bound form fields.
+pub fn (win &SimpleWindow) crud_bind_table_to_form(table_name string, field_names []string) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.crud_bindings[table_name] = field_names.clone()
+	}
+	win.on_table_select(table_name, fn [table_name] (mut w SimpleWindow, _ string) {
+		w.crud_load_selected_to_form(table_name)
+	})
+	return win
+}
+
+// crud_load_row_to_form copies the cell values of a specific table row into the bound form fields.
+pub fn (win &SimpleWindow) crud_load_row_to_form(table_name string, row_index int) &SimpleWindow {
+	fields := win.crud_bindings[table_name] or { []string{} }
+	row := win.get_table_row(table_name, row_index)
+	for i, fname in fields {
+		val := if i < row.len { row[i] } else { '' }
+		win.set_text(fname, val)
+	}
+	return win
+}
+
+// crud_load_selected_to_form copies the currently selected table row into the bound form fields.
+pub fn (win &SimpleWindow) crud_load_selected_to_form(table_name string) &SimpleWindow {
+	sel := win.get_table_selected(table_name)
+	if sel >= 0 {
+		win.crud_load_row_to_form(table_name, sel)
+	}
+	return win
+}
+
+// crud_add_from_form reads the current values from the bound form fields (or explicit field_names) and appends a new row to the table.
+pub fn (win &SimpleWindow) crud_add_from_form(table_name string, field_names ...string) &SimpleWindow {
+	fields := if field_names.len > 0 {
+		field_names
+	} else {
+		win.crud_bindings[table_name] or { []string{} }
+	}
+	if fields.len == 0 {
+		return win
+	}
+	mut row := []string{cap: fields.len}
+	for fname in fields {
+		row << win.get_text(fname)
+	}
+	win.add_table_row(table_name, row)
+	return win
+}
+
+// crud_update_selected_from_form updates the currently selected table row using the values from the bound form fields.
+pub fn (win &SimpleWindow) crud_update_selected_from_form(table_name string, field_names ...string) &SimpleWindow {
+	sel := win.get_table_selected(table_name)
+	if sel < 0 {
+		return win
+	}
+	fields := if field_names.len > 0 {
+		field_names
+	} else {
+		win.crud_bindings[table_name] or { []string{} }
+	}
+	if fields.len == 0 {
+		return win
+	}
+	mut row := []string{cap: fields.len}
+	for fname in fields {
+		row << win.get_text(fname)
+	}
+	win.update_table_row(table_name, sel, row)
+	return win
+}
+
+// crud_delete_selected_row deletes the currently selected row from the table.
+pub fn (win &SimpleWindow) crud_delete_selected_row(table_name string) &SimpleWindow {
+	sel := win.get_table_selected(table_name)
+	if sel >= 0 {
+		win.remove_table_row(table_name, sel)
+	}
+	return win
+}
+
+// bind_wizard_pages links a wizard_stepper, step_tracker, or checkout_steps control to an array of page container control names,
+// showing only the active step's container and hiding all others.
+pub fn (win &SimpleWindow) bind_wizard_pages(stepper_name string, page_names []string) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.wizard_pages[stepper_name] = page_names.clone()
+		w.wizard_steps[stepper_name] = 0
+	}
+	win.wizard_goto_step(stepper_name, 0)
+	return win
+}
+
+// wizard_goto_step switches the bound wizard stepper and page visibility to the given 0-based step index.
+pub fn (win &SimpleWindow) wizard_goto_step(stepper_name string, step int) &SimpleWindow {
+	pages := win.wizard_pages[stepper_name] or { []string{} }
+	mut clamped := step
+	if pages.len > 0 {
+		if clamped < 0 {
+			clamped = 0
+		}
+		if clamped >= pages.len {
+			clamped = pages.len - 1
+		}
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.wizard_steps[stepper_name] = clamped
+	}
+	kind := win.get_control_kind(stepper_name)
+	if kind == 'checkout_steps' {
+		win.set_checkout_step(stepper_name, clamped)
+	} else if kind == 'step_tracker' {
+		win.set_step_tracker_step(stepper_name, clamped)
+	} else {
+		win.set_wizard_stepper_step(stepper_name, clamped)
+	}
+	for i, page in pages {
+		win.set_control_visible(page, i == clamped)
+	}
+	return win
+}
+
+// wizard_next_step advances the bound wizard to the next step.
+pub fn (win &SimpleWindow) wizard_next_step(stepper_name string) &SimpleWindow {
+	cur := win.get_wizard_step(stepper_name)
+	return win.wizard_goto_step(stepper_name, cur + 1)
+}
+
+// wizard_prev_step moves the bound wizard back to the previous step.
+pub fn (win &SimpleWindow) wizard_prev_step(stepper_name string) &SimpleWindow {
+	cur := win.get_wizard_step(stepper_name)
+	return win.wizard_goto_step(stepper_name, cur - 1)
+}
+
+// get_wizard_step returns the current 0-based step index for a bound wizard stepper.
+pub fn (win &SimpleWindow) get_wizard_step(stepper_name string) int {
+	return win.wizard_steps[stepper_name] or { 0 }
+}
+
+// push_form_snapshot saves a snapshot of all current form values onto the window's undo history stack.
+pub fn (win &SimpleWindow) push_form_snapshot() &SimpleWindow {
+	snap := win.get_values()
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.form_undo_stack << snap
+		w.form_redo_stack.clear()
+	}
+	return win
+}
+
+// can_undo_form returns true if there is at least one saved form snapshot in the undo stack.
+pub fn (win &SimpleWindow) can_undo_form() bool {
+	return win.form_undo_stack.len > 0
+}
+
+// can_redo_form returns true if there is at least one form snapshot in the redo stack.
+pub fn (win &SimpleWindow) can_redo_form() bool {
+	return win.form_redo_stack.len > 0
+}
+
+// undo_form restores the most recent form snapshot from the undo stack and pushes the current state to redo.
+pub fn (win &SimpleWindow) undo_form() bool {
+	if win.form_undo_stack.len == 0 {
+		return false
+	}
+	current := win.get_values()
+	mut target := map[string]string{}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.form_redo_stack << current
+		target = w.form_undo_stack.pop()
+	}
+	win.set_values(target)
+	return true
+}
+
+// redo_form reapplies the most recently undone form snapshot from the redo stack.
+pub fn (win &SimpleWindow) redo_form() bool {
+	if win.form_redo_stack.len == 0 {
+		return false
+	}
+	current := win.get_values()
+	mut target := map[string]string{}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.form_undo_stack << current
+		target = w.form_redo_stack.pop()
+	}
+	win.set_values(target)
+	return true
+}
+
+// clear_form_history clears both the form undo and redo stacks.
+pub fn (win &SimpleWindow) clear_form_history() &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.form_undo_stack.clear()
+		w.form_redo_stack.clear()
+	}
+	return win
+}
+
+// register_command registers a named RAD command with title, optional keyboard shortcut, description, and callback.
+pub fn (win &SimpleWindow) register_command(id string, title string, shortcut string, description string, callback VoidEventCallback) &SimpleWindow {
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.commands[id] = CommandEntry{
+			id:          id
+			title:       title
+			shortcut:    shortcut
+			description: description
+			callback:    callback
+		}
+	}
+	if shortcut.trim_space() != '' {
+		win.on_shortcut(shortcut, callback)
+	}
+	return win
+}
+
+// execute_command invokes a registered command by its ID. Returns true if found and executed.
+pub fn (win &SimpleWindow) execute_command(id string) bool {
+	if cmd := win.commands[id] {
+		if cmd.callback != unsafe { nil } {
+			unsafe {
+				mut w := &SimpleWindow(win)
+				cmd.callback(mut w)
+			}
+		}
+		return true
+	}
+	return false
+}
+
+// list_commands returns all registered CommandEntry items on the window.
+pub fn (win &SimpleWindow) list_commands() []CommandEntry {
+	mut out := []CommandEntry{cap: win.commands.len}
+	for _, cmd in win.commands {
+		out << cmd
+	}
+	return out
+}
+

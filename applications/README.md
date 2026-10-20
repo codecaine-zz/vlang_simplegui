@@ -1,5 +1,8 @@
 # SimpleGUI Applications Suite
 
+> **📚 Master Documentation Navigation:**
+> [🏠 Main README](../README.md) • [📘 GUI API Reference (`docs/API.md`)](../docs/API.md) • [🎨 Custom Themes Vault (`custom_themes/README.md`)](../custom_themes/README.md) • [🖥️ 47 GUI Workstations (`applications/README.md`)](README.md) • [⌨️ SimpleCLI Reference (`CLI_API.md`)](../CLI_API.md) • [🛠️ 49 CLI Apps (`cli_apps/README.md`)](../cli_apps/README.md) • [🧰 45 Utility Modules (`UTILS_API.md`)](../UTILS_API.md) • [📝 Changelog](../CHANGELOG.md)
+
 Native macOS GUI applications built with **SimpleGUI** for V, providing high-performance graphical workstations for media, security, data engineering, developer utilities, and mathematical computing tools installed via Homebrew or macOS subsystems.
 
 ---
@@ -316,6 +319,18 @@ Native macOS GUI applications built with **SimpleGUI** for V, providing high-per
 
 ![💻 Programmer Calculator](../screenshots/programmer_calculator.png)
 
+### ⚰️ Rip Studio Pro
+> **Source**: [`applications/rip_studio.v`](rip_studio.v)
+> **Focus**: Safe deletion & graveyard recovery workbench powered by `rip2`: non-destructive `rm` alternative, tomb browser, directory séance ghost summoning, selective restoration, and purge telemetry.
+
+### ⚡ Watchexec Studio Pro
+> **Source**: [`applications/watchexec_studio.v`](watchexec_studio.v)
+> **Focus**: Real-time filesystem event monitor & automated task runner powered by `watchexec`: live daemon lifecycle, debounce configuration, path filters, and background execution console.
+
+### 🛠️ Omnitool Studio Pro
+> **Source**: [`applications/omnitool_studio.v`](omnitool_studio.v)
+> **Focus**: Universal Unix toolchain & developer workbench orchestrator: unified control center for `fd`, `sd`, `watchexec`, `wget2`, `rg`, `rip`, `ouch`, `bat`, and `eza`.
+
 ### 🚀 Media & Data Studio Hub
 > **Source**: [`applications/media_studio_hub.v`](media_studio_hub.v)
 > **Focus**: Master workstation with system environment diagnostics, instant one-click quick tools (Discord <10MB, TikTok 9:16, Loudnorm, Favicon, Remove White BG, 2-Pass GIF, WebP), and sub-app launchers.
@@ -328,29 +343,74 @@ Native macOS GUI applications built with **SimpleGUI** for V, providing high-per
 
 - **Default Theme**: **GitHub Dark** (`#22272e` canvas, `#adbac7` text, `#539bf5` GitHub Blue accent).
 - **Persistent State Across Apps**: When you select any theme in any application, your choice is instantly saved to `~/.config/simplegui/theme.txt`. All studio applications automatically load and apply your saved theme upon launch!
+- **Codecaine FX & Share Codes**: Supports 50 built-in themes tiered by hardware profile (`low`, `medium`, `high`, `ultra`), WCAG 2.1 contrast auditing (`simplegui.audit_theme_contrast`), and portable `CCFM1:` theme share codes (`simplegui.export_ccfm_share_code` / `win.apply_ccfm_share_code`).
 
-### Available 18 Curated Themes
+### Available 50 Curated Themes
 
-| Theme Name | Background | Text Color | Accent | Signature Personality |
-| :--- | :--- | :--- | :--- | :--- |
-| **🐙 GitHub Dark** | `#22272e` | `#adbac7` | `#539bf5` | Official GitHub Dark Dimmed developer canvas (Default) |
-| **🍏 Apple Light** | `#f6f6f7` | `#1d1d1f` | `#0071e3` | Clean Apple macOS Aqua studio interface |
-| **🌙 Apple Dark** | `#1c1c1e` | `#f5f5f7` | `#0a84ff` | Refined Apple macOS Pro Dark Titanium surface |
-| **🌌 Deep Space OLED** | `#090a0f` | `#e2e8f0` | `#6366f1` | Ultra-deep pitch OLED dark theme with electric indigo |
-| **🏮 Tokyo Night** | `#1a1b26` | `#c0caf5` | `#7aa2f7` | Iconic Japanese twilight deep indigo theme |
-| **❄️ Nord Arctic** | `#2e3440` | `#eceff4` | `#88c0d0` | Arctic polar night slate with frosty cyan contrast |
-| **🧛 Dracula Vampire** | `#282a36` | `#f8f8f2` | `#bd93f9` | High-contrast gothic slate purple developer theme |
-| **⚡ Cyberpunk Neon** | `#120e24` | `#00f0ff` | `#ff007f` | Electric midnight purple with hot cyan & neon pink |
-| **☕ Catppuccin Mocha**| `#1e1e2e` | `#cdd6f4` | `#f5c2e7` | Soothing modern lavender pastel dark mode |
-| **🟡 Monokai Pro** | `#2d2a2e` | `#fcfcfa` | `#ffd866` | Warm dark charcoal with radiant gold accents |
-| **🍂 Gruvbox Dark** | `#282828` | `#ebdbb2` | `#fe8019` | Warm retro earthy dark canvas with burnt orange |
-| **🌊 Cobalt Blue** | `#0a192f` | `#ccd6f6` | `#64ffda` | Deep submarine oceanic navy with glowing aqua teal |
-| **🌲 Emerald Forest** | `#062319` | `#ecfdf5` | `#10b981` | Deep evergreen botanical pine with vivid emerald |
-| **🌅 Sunset Dusk** | `#231123` | `#fff1f2` | `#f43f5e` | Rich twilight velvet plum with warm sunset coral |
-| **📄 GitHub Light** | `#ffffff` | `#1f2328` | `#0969da` | Crisp high-contrast GitHub light interface |
-| **🌘 Solarized Dark** | `#002b36` | `#93a1a1` | `#268bd2` | Precision engineered scientific teal dark theme |
-| **☀️ Solarized Light**| `#fdf6e3` | `#586e75` | `#b58900` | Warm linen parchment precision light palette |
-| **📜 Warm Paper & Ink**| `#fbf8f2` | `#18181b` | `#78716c` | Tactile Japanese fine washi paper with sumi ink text |
+#### 1. Classic SimpleGUI Studio Themes (18 Themes)
+
+| Theme Name | Background | Text Color | Accent | Tier | Signature Personality |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **🐙 GitHub Dark** | `#22272e` | `#adbac7` | `#539bf5` | `medium` | Official GitHub Dark Dimmed developer canvas (Default) |
+| **🍏 Apple Light** | `#f6f6f7` | `#1d1d1f` | `#0071e3` | `medium` | Clean Apple macOS Aqua studio interface |
+| **🌙 Apple Dark** | `#1c1c1e` | `#f5f5f7` | `#0a84ff` | `medium` | Refined Apple macOS Pro Dark Titanium surface |
+| **🌌 Deep Space OLED** | `#090a0f` | `#e2e8f0` | `#6366f1` | `high` | Ultra-deep pitch OLED dark theme with electric indigo |
+| **🏮 Tokyo Night** | `#1a1b26` | `#c0caf5` | `#7aa2f7` | `medium` | Iconic Japanese twilight deep indigo theme |
+| **❄️ Nord Arctic** | `#2e3440` | `#eceff4` | `#88c0d0` | `medium` | Arctic polar night slate with frosty cyan contrast |
+| **🧛 Dracula Vampire** | `#282a36` | `#f8f8f2` | `#bd93f9` | `medium` | High-contrast gothic slate purple developer theme |
+| **⚡ Cyberpunk Neon** | `#120e24` | `#00f0ff` | `#ff007f` | `high` | Electric midnight purple with hot cyan & neon pink |
+| **☕ Catppuccin Mocha**| `#1e1e2e` | `#cdd6f4` | `#f5c2e7` | `medium` | Soothing modern lavender pastel dark mode |
+| **🟡 Monokai Pro** | `#2d2a2e` | `#fcfcfa` | `#ffd866` | `medium` | Warm dark charcoal with radiant gold accents |
+| **🍂 Gruvbox Dark** | `#282828` | `#ebdbb2` | `#fe8019` | `low` | Warm retro earthy dark canvas with burnt orange |
+| **🌊 Cobalt Blue** | `#0a192f` | `#ccd6f6` | `#64ffda` | `medium` | Deep submarine oceanic navy with glowing aqua teal |
+| **🌲 Emerald Forest** | `#062319` | `#ecfdf5` | `#10b981` | `medium` | Deep evergreen botanical pine with vivid emerald |
+| **🌅 Sunset Dusk** | `#231123` | `#fff1f2` | `#f43f5e` | `medium` | Rich twilight velvet plum with warm sunset coral |
+| **📄 GitHub Light** | `#ffffff` | `#1f2328` | `#0969da` | `low` | Crisp high-contrast GitHub light interface |
+| **🌘 Solarized Dark** | `#002b36` | `#93a1a1` | `#268bd2` | `low` | Precision engineered scientific teal dark theme |
+| **☀️ Solarized Light**| `#fdf6e3` | `#586e75` | `#b58900` | `low` | Warm linen parchment precision light palette |
+| **📜 Warm Paper & Ink**| `#fbf8f2` | `#18181b` | `#78716c` | `low` | Tactile Japanese fine washi paper with sumi ink text |
+
+#### 2. Codecaine Flagship FX Themes (12 Themes)
+
+| Theme Name | Background | Text Color | Accent | Tier | Signature Personality |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **💎 Prism Reactor** | `#04060e` | `#f8fafc` | `#22d3ee` | `ultra` | Prismatic spectral core with dual-glow edge dispersion & aurora ribbons |
+| **🧊 Orbital Ice** | `#07111e` | `#f0f9ff` | `#38bdf8` | `high` | Cryogenic orbital station glass with diamond-frost rim highlights |
+| **🔥 Ember Grid** | `#110705` | `#fff7ed` | `#fb923c` | `high` | Volcanic carbon lattice with smoldering orange-crimson plasma glow |
+| **🔮 Cyberpunk Hologram** | `#060913` | `#e2f1ff` | `#00f0ff` | `high` | High-tech holographic projection with cyan/magenta neon dispersion |
+| **🎯 Neon HUD** | `#040d0a` | `#d1fae5` | `#10b981` | `high` | Tactical emerald command HUD with crisp telemetry grid & scanlines |
+| **🖤 Quantum Obsidian** | `#050508` | `#f3f4f6` | `#8b5cf6` | `high` | Pitch-black volcanic obsidian glass with ultraviolet quantum glow |
+| **🌠 Deep Space** | `#080b12` | `#e2e8f0` | `#38bdf8` | `medium` | Zero-gravity starfield dark theme with crisp orbital blue telemetry |
+| **⚙️ Liquid Metal** | `#0f1217` | `#f1f5f9` | `#94a3b8` | `medium` | Machined anodized titanium with specular metallic sheen |
+| **🌌 Titanium Aurora** | `#0f1217` | `#f1f5f9` | `#94a3b8` | `medium` | Brushed titanium chassis with aurora cyan secondary accents |
+| **🌃 Neo-Tokyo Dark** | `#0d0914` | `#fae8ff` | `#f43f5e` | `high` | Synthwave midnight skyline with crimson-violet neon reflections |
+| **✨ Aurora Glass** | `#0d0914` | `#fae8ff` | `#f43f5e` | `high` | Translucent aurora glass surface with rose-violet refraction |
+| **⚡ Plasma Violet** | `#0d0914` | `#fae8ff` | `#f43f5e` | `high` | High-energy violet plasma core with neon magenta highlights |
+
+#### 3. Codecaine Master Designer Custom Themes (20 Hardware-Tiered Themes)
+
+| Theme Name | Background | Text Color | Accent | Tier | Hardware Tier Profile |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **E-Ink Paper Daylight** | `#f4f1ea` | `#18181b` | `#2563eb` | `low` | Featherweight Zero-FX |
+| **Amber CRT Terminal** | `#0c0904` | `#ffb000` | `#ff8800` | `low` | Featherweight Zero-FX |
+| **Nordic Slate Lite** | `#242933` | `#eceff4` | `#88c0d0` | `low` | Featherweight Zero-FX |
+| **Solarized Studio Lite** | `#002b36` | `#eee8d5` | `#2aa198` | `low` | Featherweight Zero-FX |
+| **Midnight Carbon Matte** | `#090a0d` | `#e4e4e7` | `#3b82f6` | `low` | Featherweight Zero-FX |
+| **Mac Studio Frosted Pro** | `#111318` | `#f5f5f7` | `#0a84ff` | `medium` | Balanced Glass |
+| **Emerald Botanical Glass** | `#061510` | `#ecfdf5` | `#10b981` | `medium` | Balanced Glass |
+| **Tokyo Twilight Aero** | `#13141f` | `#e0e7ff` | `#7aa2f7` | `medium` | Balanced Glass |
+| **Autumn Maple Warm Glass** | `#180d09` | `#fff7ed` | `#f97316` | `medium` | Balanced Glass |
+| **Deep Ocean Bioluminescence** | `#04101c` | `#e0f2fe` | `#06b6d4` | `medium` | Balanced Glass |
+| **Arctic Aurora Borealis** | `#050b16` | `#f0fdf4` | `#2dd4bf` | `high` | High-Refresh FX |
+| **Cyberpunk Edgerunner 2099** | `#080510` | `#fef08a` | `#fcee09` | `high` | High-Refresh FX |
+| **Winter Solstice Blizzard** | `#06101e` | `#f8fafc` | `#7dd3fc` | `high` | High-Refresh FX |
+| **Hollow Hallows Eve** | `#0b0510` | `#ffedd5` | `#f97316` | `high` | High-Refresh FX |
+| **Crimson Dragon Forge** | `#0f0404` | `#fef2f2` | `#ef4444` | `high` | High-Refresh FX |
+| **Matrix Architect Construct** | `#020804` | `#dcfce7` | `#22c55e` | `ultra` | Extreme Shader Showcase |
+| **Tactical SpecOps NightVision** | `#030906` | `#ecfccb` | `#84cc16` | `ultra` | Extreme Shader Showcase |
+| **Nebula Supernova Raytrace** | `#05030d` | `#fdf4ff` | `#e879f9` | `ultra` | Extreme Shader Showcase |
+| **Quantum Tesseract 4D** | `#030712` | `#f0f9ff` | `#22d3ee` | `ultra` | Extreme Shader Showcase |
+| **Omega Pantheon 3099 Singularity** | `#04020a` | `#ffffff` | `#f43f5e` | `ultra` | Extreme Shader Showcase |
 
 ---
 
@@ -389,6 +449,7 @@ v run applications/sqlite_studio.v
 v run applications/regex_studio.v
 v run applications/gawk_studio.v
 v run applications/sed_studio.v
+v run applications/sd_studio.v
 v run applications/cut_studio.v
 v run applications/tr_studio.v
 
@@ -399,6 +460,7 @@ v run applications/dns_studio.v
 v run applications/recon_studio.v
 v run applications/subfinder_studio.v
 v run applications/ifconfig_studio.v
+v run applications/wget2_studio.v
 
 # Media, Graphics & OCR
 v run applications/ffmpeg_studio.v
@@ -413,6 +475,7 @@ v run applications/say_studio.v
 v run applications/media_studio_hub.v
 
 # System & DevOps
+v run applications/app_bundler_studio.v
 v run applications/brew_studio.v
 v run applications/docker_studio.v
 v run applications/disk_studio.v
@@ -422,6 +485,9 @@ v run applications/rg_studio.v
 v run applications/fd_studio.v
 v run applications/find_studio.v
 v run applications/ouch_studio.v
+v run applications/rip_studio.v
+v run applications/watchexec_studio.v
+v run applications/omnitool_studio.v
 
 # Mathematics, Science & Cryptography
 v run applications/crypto_studio.v

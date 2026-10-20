@@ -288,9 +288,10 @@ fn main() {
 			res := simplegui.exec_safe(ffmpeg_bin, args)
 			w.run_on_main_thread(fn [res, tmp_out, path] (mut win_main simplegui.SimpleWindow) {
 				if res.exit_code == 0 && os.exists(tmp_out) {
-					os.rm(path) or {}
-					os.cp(tmp_out, path) or {}
-					os.rm(tmp_out) or {}
+					os.mv(tmp_out, path) or {
+						os.cp(tmp_out, path) or {}
+						os.rm(tmp_out) or {}
+					}
 
 					win_main.append_console('audio_console',
 						'✅ Audio tags written successfully!\n', 4)
@@ -353,9 +354,10 @@ fn main() {
 				'copy', tmp_out])
 			w.run_on_main_thread(fn [res, tmp_out, path] (mut win_main simplegui.SimpleWindow) {
 				if res.exit_code == 0 && os.exists(tmp_out) {
-					os.rm(path) or {}
-					os.cp(tmp_out, path) or {}
-					os.rm(tmp_out) or {}
+					os.mv(tmp_out, path) or {
+						os.cp(tmp_out, path) or {}
+						os.rm(tmp_out) or {}
+					}
 
 					win_main.append_console('audio_console', '✅ All tags removed.\n', 4)
 					win_main.toast('Metadata removed!')

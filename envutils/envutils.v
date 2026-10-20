@@ -82,12 +82,11 @@ pub fn get_bool(key string, default_val bool) bool {
 
 // get_f64 returns the f64 value of the environment variable key, or default_val if unset or invalid.
 pub fn get_f64(key string, default_val f64) f64 {
-	val := os.getenv(key)
+	val := os.getenv(key).trim_space()
 	if val.len == 0 {
 		return default_val
 	}
-	f := val.f64()
-	return if f == 0.0 && val != '0' && val != '0.0' { default_val } else { f }
+	return strconv.atof64(val) or { default_val }
 }
 
 // get_required returns the string value of key, or an error if unset or empty.
@@ -226,12 +225,11 @@ pub fn get_opt(key string) ?string {
 
 // get_i64 returns the 64-bit integer value of key, or default_val if unset or invalid.
 pub fn get_i64(key string, default_val i64) i64 {
-	val := os.getenv(key)
+	val := os.getenv(key).trim_space()
 	if val.len == 0 {
 		return default_val
 	}
-	n := val.i64()
-	return if n == 0 && val != '0' { default_val } else { n }
+	return strconv.parse_int(val, 10, 64) or { default_val }
 }
 
 // get_list returns the environment variable split by delimiter into trimmed non-empty tokens,

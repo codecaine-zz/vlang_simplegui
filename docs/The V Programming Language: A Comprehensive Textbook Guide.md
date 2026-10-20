@@ -403,6 +403,13 @@ To get the most from this book:
   - [String Utilities Boilerplate](#string-utilities-boilerplate)
   - [Math and Statistics Boilerplate](#math-and-statistics-boilerplate)
   - [Array Utilities Boilerplate](#array-utilities-boilerplate)
+  - [Configuration Management Boilerplate](#configuration-management-boilerplate)
+  - [JSON File Store Boilerplate](#json-file-store-boilerplate)
+  - [Retry and Backoff Boilerplate](#retry-and-backoff-boilerplate)
+  - [HTTP Client Boilerplate](#http-client-boilerplate)
+  - [CSV Processor Boilerplate](#csv-processor-boilerplate)
+  - [macOS Native GUI Boilerplate](#macos-native-gui-boilerplate)
+  - [Logging Boilerplate](#logging-boilerplate)
 - [Chapter 15: Comprehensive Practice Exercises](#chapter-15-comprehensive-practice-exercises)
   - [Practice Exercises Overview](#practice-exercises-overview)
 
@@ -1415,7 +1422,7 @@ pub:
 ```
 
 Key architectural benefits of this design:
-- **Zero-Copy C Interoperability**: Because the underlying `str` byte buffer is guaranteed to be null-terminated (` `), passing a V string to any C library function (`printf`, `sqlite3_open`, `fopen`) requires only `s.str`—with **zero memory allocation or copying**.
+- **Zero-Copy C Interoperability**: Because the underlying `str` byte buffer is guaranteed to be null-terminated (`\0`), passing a V string to any C library function (`printf`, `sqlite3_open`, `fopen`) requires only `s.str`—with **zero memory allocation or copying**.
 - **Immutability & Safety**: V strings are immutable. Slicing a string (`s[0..5]`) creates a new string header pointing to the same memory segment without deep copying.
 
 ### Byte Indexing (`s[i]`) vs Unicode Runes (`s.runes()`)
@@ -4664,7 +4671,7 @@ Below is an index of all code examples in this chapter. You can use these links 
 
 - [Function Returns Value Example 1](#function-returns-value-example-1)
 - [Function Returns Value Example 2](#function-returns-value-example-2)
-- [Funtions Without Return Type](#funtions-without-return-type)
+- [Functions Without Return Type](#functions-without-return-type)
 - [Function With Input Arguments](#function-with-input-arguments)
 - [Function Return Multiple Values](#function-return-multiple-values)
 - [Ignore Function Return Value](#ignore-function-return-value)
@@ -22479,11 +22486,11 @@ fn on_run_clicked(mut win &simplegui.SimpleWindow) {
 }
 ```
 
-The full project in this repository includes multiple demos and a reusable module implementation in [boilerplate_templates/13_simplegui/simplegui/simplegui.v](boilerplate_templates/13_simplegui/simplegui/simplegui.v), making it an excellent example for learners who want to move from console programs into desktop interfaces.
+The full project in this repository includes 135+ demos, 36 studio applications, 45 utility modules, and a modular core implementation across the root `simplegui` module (`controls.v`, `window.v`, `theming.v`, `layout.v`, `events.v`, `dialogs.v`, `state.v`, `ergonomics.v`, `macos.v`, `sys.v`, `stdlib.v`, `security.v`, and `designer.v`), making it an excellent example for learners who want to move from console programs into desktop interfaces.
 
 For the complete source, demo list, screenshots, and setup instructions, visit the original GitHub repository: https://github.com/codecaine-zz/vlang_simplegui/tree/master
 
-To use the project end to end, open the folder at [boilerplate_templates/13_simplegui](boilerplate_templates/13_simplegui) and change into that directory first so it becomes the current working directory, then run the main demo with `v run main.v`. This matters because the example expects to be launched from its own folder. You can also explore the other demo files in the same directory to see the available UI patterns.
+To use the project end to end from the `vlang_simplegui` repository root, run the main showcase demo with `v run demos/main.v` (or package a native `.app` bundle with `v run scripts/build.vsh`). If using the standalone textbook boilerplate layout (`boilerplate_templates/13_simplegui`), change into that directory first and run `v run main.v`.
 
 ---
 

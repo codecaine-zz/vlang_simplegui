@@ -21,28 +21,30 @@ fn main() {
 	}
 
 	target := app.get_flag_string('target')
+	q_target := simplecli.quote_arg(target)
+	q_url := simplecli.quote_arg('https://${target}')
 
 	if app.get_flag_bool('whois') {
 		app.info('Performing WHOIS lookup for "${target}"...')
 		out, _ :=
-			app.exec('whois ${target} | grep -E "Registrar:|Creation Date:|Registry Expiry Date:|Domain Name:" | head -n 10')
+			app.exec('whois ${q_target} | grep -E "Registrar:|Creation Date:|Registry Expiry Date:|Domain Name:" | head -n 10')
 		println(out)
 		return
 	}
 
 	if app.get_flag_bool('headers') {
 		app.info('Probing HTTP security headers for https://${target}...')
-		out, _ := app.exec('curl -s -I -L https://${target} | head -n 25')
+		out, _ := app.exec('curl -s -I -L ${q_url} | head -n 25')
 		println(out)
 		return
 	}
 
 	// Full comprehensive recon
 	app.info('Running baseline intelligence audit on ${target}...')
-	ip_out, _ := app.exec('dig +short ${target}')
+	ip_out, _ := app.exec_safe('dig', ['+short', target])
 	primary_ip := ip_out.split_into_lines().filter(it.len > 0)[0] or { 'Unknown' }
 
-	headers_out, _ := app.exec('curl -s -I -L https://${target} | head -n 10')
+	headers_out, _ := app.exec('curl -s -I -L ${q_url} | head -n 10')
 
 	app.print_kv({
 		'Target Host':         target
@@ -57,6 +59,7 @@ fn main() {
 fn run_interactive(mut app simplecli.SimpleCli) {
 	app.panel('Recon Wizard', 'Discover host DNS, WHOIS registration, and security headers.')
 	target := app.prompt('Enter target domain', 'vlang.io')
+	q_target := simplecli.quote_arg(target)
 	choice := app.select('Recon Activity:', [
 		'Comprehensive Audit',
 		'WHOIS Registration Lookup',
@@ -65,15 +68,15 @@ fn run_interactive(mut app simplecli.SimpleCli) {
 
 	match choice {
 		'WHOIS Registration Lookup' {
-			out, _ := app.exec('whois ${target} | head -n 30')
+			out, _ := app.exec('whois ${q_target} | head -n 30')
 			println(out)
 		}
 		'HTTP Security Headers Check' {
-			out, _ := app.exec('curl -s -I -L https://${target}')
+			out, _ := app.exec_safe('curl', ['-s', '-I', '-L', 'https://${target}'])
 			println(out)
 		}
 		else {
-			out, _ := app.exec('dig +short ${target}')
+			out, _ := app.exec_safe('dig', ['+short', target])
 			app.success('Resolved IPs:\n${out}')
 		}
 	}

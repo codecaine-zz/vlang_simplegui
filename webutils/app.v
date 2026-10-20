@@ -62,12 +62,13 @@ pub fn error_status(err IError) int {
 	return 0
 }
 
+// AppConfig holds configuration options for initializing a webutils App.
 @[params]
 pub struct AppConfig {
 pub:
 	views_dir        string = 'views' // template directory
 	view_ext         string = '.html' // template extension
-	view_cache       bool   = true    // cache compiled templates (false = live reload while developing)
+	view_cache       bool   = true  // cache compiled templates (false = live reload while developing)
 	secret           string // HMAC key for signed cookies, sessions and CSRF; random per process when empty
 	max_body_bytes   int  = 1024 * 1024 // larger request bodies get 413
 	security_headers bool = true        // helmet-style headers on every response
@@ -186,30 +187,37 @@ pub fn (mut app App) route(method string, pattern string, handlers ...Handler) {
 	}
 }
 
+// get registers handlers for HTTP GET requests matching `pattern`.
 pub fn (mut app App) get(pattern string, handlers ...Handler) {
 	app.route('GET', pattern, ...handlers)
 }
 
+// post registers handlers for HTTP POST requests matching `pattern`.
 pub fn (mut app App) post(pattern string, handlers ...Handler) {
 	app.route('POST', pattern, ...handlers)
 }
 
+// put registers handlers for HTTP PUT requests matching `pattern`.
 pub fn (mut app App) put(pattern string, handlers ...Handler) {
 	app.route('PUT', pattern, ...handlers)
 }
 
+// patch registers handlers for HTTP PATCH requests matching `pattern`.
 pub fn (mut app App) patch(pattern string, handlers ...Handler) {
 	app.route('PATCH', pattern, ...handlers)
 }
 
+// delete registers handlers for HTTP DELETE requests matching `pattern`.
 pub fn (mut app App) delete(pattern string, handlers ...Handler) {
 	app.route('DELETE', pattern, ...handlers)
 }
 
+// options registers handlers for HTTP OPTIONS requests matching `pattern`.
 pub fn (mut app App) options(pattern string, handlers ...Handler) {
 	app.route('OPTIONS', pattern, ...handlers)
 }
 
+// head registers handlers for HTTP HEAD requests matching `pattern`.
 pub fn (mut app App) head(pattern string, handlers ...Handler) {
 	app.route('HEAD', pattern, ...handlers)
 }
@@ -253,32 +261,39 @@ pub fn (mut g Group) use(handlers ...Handler) {
 	g.mws << handlers
 }
 
+// route registers handlers on the group for `method` and `pattern` prefixed by the group's prefix.
 pub fn (mut g Group) route(method string, pattern string, handlers ...Handler) {
 	mut all := g.mws.clone()
 	all << handlers
 	g.app.route(method, join_prefix(g.prefix, pattern), ...all)
 }
 
+// get registers handlers on the group for HTTP GET requests matching `pattern`.
 pub fn (mut g Group) get(pattern string, handlers ...Handler) {
 	g.route('GET', pattern, ...handlers)
 }
 
+// post registers handlers on the group for HTTP POST requests matching `pattern`.
 pub fn (mut g Group) post(pattern string, handlers ...Handler) {
 	g.route('POST', pattern, ...handlers)
 }
 
+// put registers handlers on the group for HTTP PUT requests matching `pattern`.
 pub fn (mut g Group) put(pattern string, handlers ...Handler) {
 	g.route('PUT', pattern, ...handlers)
 }
 
+// patch registers handlers on the group for HTTP PATCH requests matching `pattern`.
 pub fn (mut g Group) patch(pattern string, handlers ...Handler) {
 	g.route('PATCH', pattern, ...handlers)
 }
 
+// delete registers handlers on the group for HTTP DELETE requests matching `pattern`.
 pub fn (mut g Group) delete(pattern string, handlers ...Handler) {
 	g.route('DELETE', pattern, ...handlers)
 }
 
+// all registers handlers on the group for every HTTP method matching `pattern`.
 pub fn (mut g Group) all(pattern string, handlers ...Handler) {
 	g.route('*', pattern, ...handlers)
 }
@@ -549,6 +564,7 @@ fn (mut h AppHandler) handle(req http.Request) http.Response {
 	return h.app.handle(req)
 }
 
+// ListenOptions configures worker count and startup banner behavior when starting an HTTP server.
 @[params]
 pub struct ListenOptions {
 pub:

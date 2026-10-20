@@ -3,6 +3,7 @@ module jsonutils
 import json2
 import strings
 
+// Any is a type alias for json2.Any representing any dynamic JSON value.
 pub type Any = json2.Any
 
 // parse decodes any JSON document into a dynamic json2.Any tree.

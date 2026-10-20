@@ -319,11 +319,11 @@ fn main() {
 		copy_code_to_clipboard(mut w)
 	})
 
-	win.on_toolbar_click('tb_fmt', fn (mut w simplegui.SimpleWindow) {
-		format_code_with_vfmt(mut w)
+	win.on_toolbar_click('tb_fmt', fn [state] (mut w simplegui.SimpleWindow) {
+		format_code_with_vfmt(state, mut w)
 	})
-	win.on_click('btn_fmt', fn (mut w simplegui.SimpleWindow) {
-		format_code_with_vfmt(mut w)
+	win.on_click('btn_fmt', fn [state] (mut w simplegui.SimpleWindow) {
+		format_code_with_vfmt(state, mut w)
 	})
 
 	win.on_toolbar_click('tb_reset', fn [mut state] (mut w simplegui.SimpleWindow) {
@@ -433,20 +433,31 @@ fn main() {
 // Line Numbering & Navigation Helpers
 // ----------------------------------------------------
 
+fn is_line_numbered_line(line string) bool {
+	if !line.contains(' | ') {
+		return false
+	}
+	parts := line.split_nth(' | ', 2)
+	if parts.len != 2 || parts[0].len < 3 {
+		return false
+	}
+	left := parts[0].trim_space()
+	return left.len > 0 && left.bytes().all(it >= `0` && it <= `9`)
+}
+
 fn strip_line_numbers(code string) string {
+	raw_lines := code.split_into_lines()
+	if raw_lines.len == 0 || !is_line_numbered_line(raw_lines[0]) {
+		return code
+	}
 	mut lines := []string{}
-	for line in code.split_into_lines() {
-		mut clean := line
-		if line.contains(' | ') {
+	for line in raw_lines {
+		if is_line_numbered_line(line) {
 			parts := line.split_nth(' | ', 2)
-			if parts.len == 2 {
-				left := parts[0].trim_space()
-				if left.bytes().all(it >= `0` && it <= `9`) {
-					clean = parts[1]
-				}
-			}
+			lines << parts[1]
+		} else {
+			lines << line
 		}
-		lines << clean
 	}
 	return lines.join('\n')
 }
@@ -704,8 +715,12 @@ fn copy_code_to_clipboard(mut w simplegui.SimpleWindow) {
 	w.set_status('V source code (${raw_code.len} chars) successfully copied to system clipboard.')
 }
 
-fn format_code_with_vfmt(mut w simplegui.SimpleWindow) {
-	raw_code := strip_line_numbers(w.get_text('code_editor'))
+fn format_code_with_vfmt(state &PreviewerState, mut w simplegui.SimpleWindow) {
+	raw_code := if state.show_line_numbers {
+		strip_line_numbers(w.get_text('code_editor'))
+	} else {
+		w.get_text('code_editor')
+	}
 	if raw_code.trim_space().len == 0 {
 		return
 	}
@@ -724,13 +739,23 @@ fn format_code_with_vfmt(mut w simplegui.SimpleWindow) {
 	if res.exit_code == 0 {
 		formatted := os.read_file(tmp_path) or { raw_code }
 		if formatted.trim_space().len > 0 {
-			w.set_text('code_editor', formatted)
+			display_code := if state.show_line_numbers {
+				add_line_numbers(formatted)
+			} else {
+				formatted
+			}
+			w.set_text('code_editor', display_code)
 			w.append_console('output_console', '⚡ Code formatted cleanly with `v fmt`.', 4)
 			w.set_status('Code formatted cleanly with `v fmt`.')
 		}
 	} else {
 		if res.output.trim_space().len > 0 && !res.output.contains('error:') {
-			w.set_text('code_editor', res.output)
+			display_code := if state.show_line_numbers {
+				add_line_numbers(res.output)
+			} else {
+				res.output
+			}
+			w.set_text('code_editor', display_code)
 			w.append_console('output_console', '⚡ Code formatted with `v fmt`.', 4)
 			w.set_status('Code formatted cleanly with `v fmt`.')
 		} else {
@@ -742,7 +767,11 @@ fn format_code_with_vfmt(mut w simplegui.SimpleWindow) {
 }
 
 fn save_editor_code(mut state PreviewerState, mut w simplegui.SimpleWindow) {
-	raw_code := strip_line_numbers(w.get_text('code_editor'))
+	raw_code := if state.show_line_numbers {
+		strip_line_numbers(w.get_text('code_editor'))
+	} else {
+		w.get_text('code_editor')
+	}
 	if state.current_file_path != '' && os.exists(state.current_file_path) {
 		os.write_file(state.current_file_path, raw_code) or {
 			w.append_console('output_console',
@@ -865,61 +894,130 @@ fn main() {
 fn get_template_snippet(tpl_name string) string {
 	match tpl_name {
 		'1', 'Minimal Window' {
-			return '// Minimal SimpleGUI Window Template
-mut win := simplegui.new_simple_window("Minimal App", 500, 350)
-win.add_heading("Hello World")
-win.add_button("btn_ok", "OK")
-win.on_click("btn_ok", fn (mut w simplegui.SimpleWindow) {
-	w.set_status("Clicked OK")
-})
-win.run()'
+			return 'module main
+
+import simplegui
+
+fn main() {
+	// Minimal SimpleGUI Window Template
+	mut win := simplegui.new_simple_window("Minimal App", 500, 350)
+	win.add_heading("Hello World")
+	win.add_button("btn_ok", "OK")
+	win.on_click("btn_ok", fn (mut w simplegui.SimpleWindow) {
+		w.set_status("Clicked OK")
+	})
+	win.run()
+}'
 		}
 		'2', 'Form & Input Row' {
-			return '// Form Controls & Input Row Template
-win.begin_row("form_row")
+			return 'module main
+
+import simplegui
+
+fn main() {
+	// Form Controls & Input Row Template
+	mut win := simplegui.new_simple_window("Form & Input Row", 560, 360)
+	win.add_heading("User Registration")
+	win.begin_row("form_row")
 	win.add_label("lbl_name", "User Name:")
 	win.add_input("txt_name", "Jane Doe")
 	win.add_checkbox("chk_remember", "Remember Me", true)
-win.end_row()'
+	win.end_row()
+	win.add_button("btn_save", "Save")
+	win.on_click("btn_save", fn (mut w simplegui.SimpleWindow) {
+		w.set_status("Saved user: \${w.get_text(\'txt_name\')}")
+	})
+	win.run()
+}'
 		}
 		'3', 'Multi-Column Grid Table' {
-			return '// Multi-Column Data Grid Table Template
-win.add_grid("data_table", ["ID", "Name", "Role", "Status"], [
-	["101", "Alice Smith", "Engineer", "Active"],
-	["102", "Bob Johnson", "Designer", "Pending"],
-	["103", "Carol White", "Manager", "Active"]
-])'
+			return 'module main
+
+import simplegui
+
+fn main() {
+	// Multi-Column Data Grid Table Template
+	mut win := simplegui.new_simple_window("Multi-Column Grid Table", 620, 420)
+	win.add_heading("Team Directory")
+	win.add_grid("data_table", ["ID", "Name", "Role", "Status"], [
+		["101", "Alice Smith", "Engineer", "Active"],
+		["102", "Bob Johnson", "Designer", "Pending"],
+		["103", "Carol White", "Manager", "Active"],
+	])
+	win.run()
+}'
 		}
 		'4', 'Tabbed Layout View' {
-			return '// Tabbed Segmented View Template
-win.add_segmented_control("view_tabs", ["Dashboard", "Analytics", "Settings"], "Dashboard")
-win.on_change("view_tabs", fn (mut w simplegui.SimpleWindow, val string) {
-	w.set_status("Switched tab view to: \${val}")
-})'
+			return 'module main
+
+import simplegui
+
+fn main() {
+	// Tabbed Segmented View Template
+	mut win := simplegui.new_simple_window("Tabbed Layout View", 560, 380)
+	win.add_heading("Workspace Views")
+	win.add_segmented_control("view_tabs", ["Dashboard", "Analytics", "Settings"], "Dashboard")
+	win.on_change("view_tabs", fn (mut w simplegui.SimpleWindow, val string) {
+		w.set_status("Switched tab view to: \${val}")
+	})
+	win.run()
+}'
 		}
 		'5', 'Interactive Event Handlers' {
-			return '// Event Handler Callbacks Template
-win.on_hover("btn_action", fn (mut w simplegui.SimpleWindow) {
-	w.set_status("Mouse hovered over action button")
-})
-win.on_change("txt_search", fn (mut w simplegui.SimpleWindow, text string) {
-	w.set_status("Search query changed: \${text}")
-})'
+			return 'module main
+
+import simplegui
+
+fn main() {
+	// Event Handler Callbacks Template
+	mut win := simplegui.new_simple_window("Interactive Event Handlers", 560, 380)
+	win.add_heading("Interactive Events")
+	win.add_input("txt_search", "")
+	win.add_button("btn_action", "Hover or Click Me")
+	win.on_hover("btn_action", fn (mut w simplegui.SimpleWindow) {
+		w.set_status("Mouse hovered over action button")
+	})
+	win.on_change("txt_search", fn (mut w simplegui.SimpleWindow, text string) {
+		w.set_status("Search query changed: \${text}")
+	})
+	win.run()
+}'
 		}
 		'6', 'Canvas & Custom Drawing' {
-			return '// Canvas & Custom Drawing Template
-win.add_canvas("my_canvas", 400, 250)
-win.on_canvas_draw("my_canvas", fn (mut w simplegui.SimpleWindow) {
-	// Custom graphics drawing code
-	w.set_status("Canvas redrawn")
-})'
+			return 'module main
+
+import simplegui
+
+fn main() {
+	// Canvas & Custom Drawing Template
+	mut win := simplegui.new_simple_window("Canvas & Custom Drawing", 520, 420)
+	win.add_heading("Custom Canvas Drawing")
+	win.add_canvas("my_canvas", 250)
+	win.add_button("btn_draw", "Draw Shapes")
+	win.on_click("btn_draw", fn (mut w simplegui.SimpleWindow) {
+		w.clear_canvas("my_canvas")
+		w.draw_rect("my_canvas", 20, 20, 120, 80, "#88c0d0", true, 2.0)
+		w.draw_circle("my_canvas", 240, 60, 40, "#a3be8c", true, 2.0)
+		w.set_status("Canvas redrawn")
+	})
+	win.run()
+}'
 		}
 		'7', 'Toolbar & Dialog Alerts' {
-			return '// Toolbar & Action Dialogs Template
-win.add_toolbar_item("tb_info", "Info", "Show Info Alert", "info.circle")
-win.on_toolbar_click("tb_info", fn (mut w simplegui.SimpleWindow) {
-	w.show_message("SimpleGUI Alert", "Hello from native Cocoa toolbar dialog!")
-})'
+			return 'module main
+
+import simplegui
+
+fn main() {
+	// Toolbar & Action Dialogs Template
+	mut win := simplegui.new_simple_window("Toolbar & Dialog Alerts", 520, 360)
+	win.add_heading("Toolbar & Alerts")
+	win.add_toolbar_item("tb_info", "Info", "Show Info Alert", "info.circle")
+	win.on_toolbar_click("tb_info", fn (mut w simplegui.SimpleWindow) {
+		w.alert("SimpleGUI Alert", "Hello from native Cocoa toolbar dialog!")
+	})
+	win.run()
+}'
 		}
 		else {
 			return ''

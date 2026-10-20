@@ -1171,6 +1171,10 @@ fn test_ergonomic_window_apis() {
 
 	form_win.save_layout('unit_test_app')
 	form_win.restore_layout('unit_test_app')
+	layout_path := os.join_path(os.home_dir(), '.simplegui_unit_test_app_layout.txt')
+	if os.exists(layout_path) {
+		os.rm(layout_path) or {}
+	}
 }
 
 fn test_recommended_storage_and_app_state() {
@@ -1190,6 +1194,15 @@ fn test_recommended_storage_and_app_state() {
 	cache_dir := win.get_app_cache_dir()
 	assert cache_dir.len > 0
 	assert os.exists(cache_dir) == true
+
+	defer {
+		if os.exists(storage_dir) {
+			os.rmdir_all(storage_dir) or {}
+		}
+		if os.exists(cache_dir) {
+			os.rmdir_all(cache_dir) or {}
+		}
+	}
 
 	// Test storage path resolution
 	state_path := win.get_app_storage_path('test_state.json')
@@ -1271,3 +1284,161 @@ fn test_centralized_tool_verification() {
 		assert err.msg().contains('brew install fictional-tool')
 	}
 }
+
+struct RadAccountModel {
+mut:
+	username string @[label: 'Account Handle'; placeholder: 'e.g. ada_l'; tooltip: 'Primary handle']
+	secret   string @[control: 'password'; label: 'API Secret']
+	bio      string @[control: 'textarea'; label: 'Biography']
+	quota    int    @[control: 'slider'; label: 'Storage Quota']
+	stars    int    @[control: 'rating'; label: 'Trust Rating']
+	workers  int    @[control: 'spinner'; label: 'Worker Threads']
+	score    f64    @[label: 'Quality Score']
+	active   bool   @[label: 'Active Account']
+	internal string @[hidden]
+	audit_id string @[readonly]
+}
+
+fn test_rad_struct_reflection_crud_wizard_undo_commands_and_designer() {
+	mut win := simplegui.SimpleWindow{}
+
+	// 1. Struct Reflection with Attributes & f64
+	initial_model := RadAccountModel{
+		username: 'ada_lovelace'
+		secret:   's3cr3t!'
+		bio:      'Analytical Engine pioneer'
+		quota:    75
+		stars:    5
+		workers:  12
+		score:    98.5
+		active:   true
+		internal: 'do_not_render'
+		audit_id: 'AUD-9001'
+	}
+	win.add_form_from_struct(initial_model)
+	assert win.has_control('username') == true
+	assert win.has_control('secret') == true
+	assert win.has_control('bio') == true
+	assert win.has_control('quota') == true
+	assert win.has_control('stars') == true
+	assert win.has_control('workers') == true
+	assert win.has_control('score') == true
+	assert win.has_control('active') == true
+	assert win.has_control('internal') == false
+	assert win.has_control('audit_id') == true
+
+	win.set_text('username', 'grace_hopper')
+	win.set_value_int('quota', 90)
+	win.set_number_spinner_value('workers', 24)
+	win.set_text('score', '99.75')
+	win.set_checked('active', false)
+
+	mut bound_model := RadAccountModel{}
+	win.bind_to_struct(mut bound_model)
+	assert bound_model.username == 'grace_hopper'
+	assert bound_model.quota == 90
+	assert bound_model.workers == 24
+	assert bound_model.score == 99.75
+	assert bound_model.active == false
+
+	// 2. Form Undo / Redo Stack
+	win.clear_form_history()
+	assert win.can_undo_form() == false
+	win.push_form_snapshot()
+	win.set_text('username', 'margaret_hamilton')
+	assert win.can_undo_form() == true
+	assert win.undo_form() == true
+	assert win.get_text('username') == 'grace_hopper'
+	assert win.can_redo_form() == true
+	assert win.redo_form() == true
+	assert win.get_text('username') == 'margaret_hamilton'
+
+	// 3. Multi-Step Wizard Page Controller
+	win.add_step_tracker('onboard_steps', ['Profile', 'Security', 'Confirm'], 0)
+	win.add_label('page_profile', 'Profile')
+	win.add_label('page_security', 'Security')
+	win.add_label('page_confirm', 'Confirm')
+	win.bind_wizard_pages('onboard_steps', ['page_profile', 'page_security', 'page_confirm'])
+	assert win.get_wizard_step('onboard_steps') == 0
+	win.wizard_next_step('onboard_steps')
+	assert win.get_wizard_step('onboard_steps') == 1
+	win.wizard_prev_step('onboard_steps')
+	assert win.get_wizard_step('onboard_steps') == 0
+
+	// 4. CRUD Table-to-Form Data Binding
+	win.add_table('users_tbl', ['Name', 'Role'])
+	win.set_table_rows('users_tbl', [['Ada', 'Admin'], ['Grace', 'Architect']])
+	win.add_input('crud_name', '')
+	win.add_input('crud_role', '')
+	win.crud_bind_table_to_form('users_tbl', ['crud_name', 'crud_role'])
+	win.crud_load_row_to_form('users_tbl', 1)
+	assert win.get_text('crud_name') == 'Grace'
+	assert win.get_text('crud_role') == 'Architect'
+
+	win.set_text('crud_name', 'Katherine')
+	win.set_text('crud_role', 'Mathematician')
+	win.crud_add_from_form('users_tbl')
+	rows_after_add := win.get_table_rows('users_tbl')
+	assert rows_after_add.len == 3
+	assert rows_after_add[2][0] == 'Katherine'
+
+	// 5. Command Registry
+	win.register_command('app.deploy', 'Deploy Production Cluster', 'Cmd+Shift+D',
+		'Deploys active build to cluster', fn (mut w simplegui.SimpleWindow) {
+		w.set_text('crud_role', 'Deployed')
+	})
+	cmds := win.list_commands()
+	assert cmds.len == 1
+	assert cmds[0].id == 'app.deploy'
+	assert win.execute_command('app.deploy') == true
+	assert win.get_text('crud_role') == 'Deployed'
+	assert win.execute_command('non_existent_cmd') == false
+
+	// 6. Designer FormSpec Runtime Loader, Exporter, Linter & Layout Tools
+	templates := simplegui.list_form_templates()
+	assert templates.contains('devops')
+	assert templates.contains('ai_studio')
+	assert templates.contains('audio_studio')
+	assert templates.contains('crm')
+	assert templates.contains('vfx_studio')
+
+	vfx_spec := simplegui.get_form_template('vfx_studio')
+	assert vfx_spec.controls.len == 6
+	vfx_code := simplegui.generate_v_code(vfx_spec)
+	assert vfx_code.contains('win.add_shader_canvas')
+	assert vfx_code.contains('win.add_particle_emitter')
+	assert vfx_code.contains('win.add_hologram_card')
+	assert vfx_code.contains('win.add_waveform_synthesizer')
+	assert vfx_code.contains('win.add_glitch_banner')
+	assert vfx_code.contains('win.add_themed_folder_grid')
+
+	mut vfx_win := simplegui.SimpleWindow{}
+	vfx_win.load_form_spec(vfx_spec)
+	assert vfx_win.has_control('vfx_glitch_hero') == true
+	assert vfx_win.has_control('vfx_shader_viewport') == true
+	assert vfx_win.has_control('vfx_particle_chamber') == true
+	assert vfx_win.has_control('vfx_holo_gpu') == true
+	assert vfx_win.has_control('vfx_wave_osc') == true
+	assert vfx_win.has_control('vfx_folder_vault') == true
+
+	mut spec := simplegui.get_form_template('devops')
+	assert spec.controls.len > 0
+	issues := simplegui.validate_form_spec(spec)
+	assert issues.len == 0
+
+	simplegui.snap_to_grid(mut spec, 10)
+	simplegui.auto_assign_tab_order(mut spec)
+	assert simplegui.duplicate_control(mut spec, spec.controls[0].id, 'duplicated_ctrl') == true
+
+	mut spec_win := simplegui.SimpleWindow{}
+	spec_win.load_form_spec(spec)
+	assert spec_win.has_control('duplicated_ctrl') == true
+
+	exported := spec_win.export_form_spec()
+	assert exported.controls.len > 0
+
+	generated_v := simplegui.generate_v_code(spec)
+	assert generated_v.contains('import simplegui')
+}
+
+

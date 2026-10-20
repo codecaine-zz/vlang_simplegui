@@ -38,12 +38,33 @@ fn main() {
 		}
 	}
 
+	resume := app.get_flag_bool('continue')
 	app.info('Downloading ${url} -> ${out_file}...')
 	app.reset_timer()
 
-	app.http_download(url, out_file) or {
-		app.error('Download failed: ${err}')
-		return
+	if resume {
+		cmd := if app.command_exists('wget2') {
+			'wget2'
+		} else if app.command_exists('wget') {
+			'wget'
+		} else {
+			'curl'
+		}
+		args := if cmd == 'curl' {
+			['-s', '-L', '-C', '-', '-o', out_file, url]
+		} else {
+			['-c', '-O', out_file, url]
+		}
+		out, code := app.exec_safe(cmd, args)
+		if code != 0 {
+			app.error('Download failed (exit ${code}):\n${out}')
+			return
+		}
+	} else {
+		app.http_download(url, out_file) or {
+			app.error('Download failed: ${err}')
+			return
+		}
 	}
 
 	app.success('Download completed in ${app.elapsed_ms()} ms -> ${out_file}')

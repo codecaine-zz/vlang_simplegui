@@ -282,7 +282,7 @@ pub fn parse_color(input string) !RGB {
 		if p.len < 3 {
 			return error('invalid hsl() color "${input}"')
 		}
-		return hsl_to_rgb(HSL{p[0].trim_right('deg').f64(), p[1].trim_right('%').f64() / 100.0, p[2].trim_right('%').f64() / 100.0})
+		return hsl_to_rgb(HSL{p[0].trim_string_right('deg').f64(), p[1].trim_right('%').f64() / 100.0, p[2].trim_right('%').f64() / 100.0})
 	}
 	if v := css_names[s] {
 		return hex_to_rgb(v)

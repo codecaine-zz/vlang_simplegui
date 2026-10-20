@@ -23,7 +23,7 @@ static NSString *nsstring(const char *s) {
   if (!s) {
     s = "";
   }
-  return [[NSString alloc] initWithBytes:s length:strlen(s) encoding:NSUTF8StringEncoding];
+  return [[[NSString alloc] initWithBytes:s length:strlen(s) encoding:NSUTF8StringEncoding] autorelease];
 }
 
 static const void *SGNumberFieldStepperAssocKey = &SGNumberFieldStepperAssocKey;
@@ -692,6 +692,21 @@ extern BOOL vlang_is_window_valid(void *win_ptr);
 @property (nonatomic, strong) NSMutableDictionary *linkUrls;
 @property (nonatomic, strong) NSColor *currentBackgroundColor;
 @property (nonatomic, strong) NSColor *currentFontColor;
+@property (nonatomic, strong) NSColor *currentAccentColor;
+@property (nonatomic, strong) NSColor *currentSecondaryAccentColor;
+@property (nonatomic, strong) NSColor *currentCardBackgroundColor;
+@property (nonatomic, strong) NSColor *currentCardBorderColor;
+@property (nonatomic, strong) NSColor *currentGlowColor;
+@property (nonatomic, strong) NSColor *currentGlowColor2;
+@property (nonatomic, assign) int currentCornerRadius;
+@property (nonatomic, assign) int currentGlowIntensity;
+@property (nonatomic, assign) int currentGlassOpacity;
+@property (nonatomic, assign) int currentBlurRadius;
+@property (nonatomic, assign) BOOL currentPrismEdge;
+@property (nonatomic, assign) BOOL currentFrostedRim;
+@property (nonatomic, assign) BOOL currentInnerGlow;
+@property (nonatomic, copy) NSString *currentUiElementFx;
+@property (nonatomic, strong) NSView *atmosphereView;
 @property (nonatomic, strong) NSStatusItem *statusItem;
 @property (nonatomic, strong) NSMenu *statusBarMenu;
 @property (nonatomic, assign) BOOL responsiveLayoutEnabled;
@@ -1922,6 +1937,23 @@ static NSColor *colorFromString(const char *colorString) {
         return [NSColor colorWithCalibratedRed:r green:g blue:b alpha:a];
       }
     }
+  } else if ([normalized hasPrefix:@"rgba("] || [normalized hasPrefix:@"rgb("]) {
+    NSRange openRange = [normalized rangeOfString:@"("];
+    NSRange closeRange = [normalized rangeOfString:@")"];
+    if (openRange.location != NSNotFound && closeRange.location != NSNotFound && closeRange.location > openRange.location) {
+      NSString *inner = [normalized substringWithRange:NSMakeRange(openRange.location + 1, closeRange.location - openRange.location - 1)];
+      NSArray<NSString *> *parts = [inner componentsSeparatedByString:@","];
+      if (parts.count >= 3) {
+        CGFloat r = [parts[0] doubleValue] / 255.0;
+        CGFloat g = [parts[1] doubleValue] / 255.0;
+        CGFloat b = [parts[2] doubleValue] / 255.0;
+        CGFloat a = (parts.count >= 4) ? [parts[3] doubleValue] : 1.0;
+        return [NSColor colorWithSRGBRed:MIN(1.0, MAX(0.0, r))
+                                   green:MIN(1.0, MAX(0.0, g))
+                                    blue:MIN(1.0, MAX(0.0, b))
+                                   alpha:MIN(1.0, MAX(0.0, a))];
+      }
+    }
   }
 
   return [NSColor controlAccentColor];
@@ -2665,29 +2697,62 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
     }
   } else if ([view isKindOfClass:[NSBox class]]) {
     NSBox *box = (NSBox *)view;
-    if (box.wantsLayer && box.layer && backgroundColor) {
-      CGFloat r=0, g=0, b=0, a=0;
-      NSColor *srgb = [backgroundColor colorUsingColorSpace:[NSColorSpace sRGBColorSpace]];
-      if (srgb) {
-        [srgb getRed:&r green:&g blue:&b alpha:&a];
-        double lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-        NSColor *cardBg = nil;
-        NSColor *cardBorder = nil;
-        if (lum < 0.5) {
-          cardBg = [NSColor colorWithSRGBRed:MIN(1.0, r + 0.05) green:MIN(1.0, g + 0.05) blue:MIN(1.0, b + 0.06) alpha:0.75];
-          cardBorder = [NSColor colorWithSRGBRed:MIN(1.0, r + 0.16) green:MIN(1.0, g + 0.16) blue:MIN(1.0, b + 0.18) alpha:0.4];
-        } else {
-          cardBg = [NSColor colorWithSRGBRed:MAX(0.0, r - 0.04) green:MAX(0.0, g - 0.04) blue:MAX(0.0, b - 0.04) alpha:0.85];
-          cardBorder = [NSColor colorWithSRGBRed:MAX(0.0, r - 0.2) green:MAX(0.0, g - 0.2) blue:MAX(0.0, b - 0.2) alpha:0.35];
+    if (box.wantsLayer && box.layer && (backgroundColor || self.currentCardBackgroundColor)) {
+      NSColor *cardBg = self.currentCardBackgroundColor;
+      NSColor *cardBorder = self.currentCardBorderColor;
+      if (!cardBg && backgroundColor) {
+        CGFloat r=0, g=0, b=0, a=0;
+        NSColor *srgb = [backgroundColor colorUsingColorSpace:[NSColorSpace sRGBColorSpace]];
+        if (srgb) {
+          [srgb getRed:&r green:&g blue:&b alpha:&a];
+          double lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+          if (lum < 0.5) {
+            cardBg = [NSColor colorWithSRGBRed:MIN(1.0, r + 0.05) green:MIN(1.0, g + 0.05) blue:MIN(1.0, b + 0.06) alpha:0.75];
+            if (!cardBorder) cardBorder = [NSColor colorWithSRGBRed:MIN(1.0, r + 0.16) green:MIN(1.0, g + 0.16) blue:MIN(1.0, b + 0.18) alpha:0.4];
+          } else {
+            cardBg = [NSColor colorWithSRGBRed:MAX(0.0, r - 0.04) green:MAX(0.0, g - 0.04) blue:MAX(0.0, b - 0.04) alpha:0.85];
+            if (!cardBorder) cardBorder = [NSColor colorWithSRGBRed:MAX(0.0, r - 0.2) green:MAX(0.0, g - 0.2) blue:MAX(0.0, b - 0.2) alpha:0.35];
+          }
         }
-        box.layer.backgroundColor = cardBg.CGColor;
-        if (box.layer.borderWidth > 0.0) {
-          box.layer.borderColor = cardBorder.CGColor;
-        }
+      }
+      if (cardBg) {
+        CGFloat glassAlpha = (self.currentGlassOpacity > 0) ? MIN(1.0, MAX(0.35, self.currentGlassOpacity / 100.0)) : cardBg.alphaComponent;
+        box.layer.backgroundColor = [cardBg colorWithAlphaComponent:glassAlpha].CGColor;
+      }
+      if (self.currentCornerRadius > 0) {
+        box.layer.cornerRadius = (CGFloat)self.currentCornerRadius;
+      }
+      if (cardBorder && (box.layer.borderWidth > 0.0 || self.currentFrostedRim)) {
+        if (box.layer.borderWidth <= 0.0) box.layer.borderWidth = 1.0;
+        box.layer.borderColor = cardBorder.CGColor;
+      }
+      if ((self.currentInnerGlow || self.currentFrostedRim) && self.currentGlowColor && self.currentGlowIntensity > 0) {
+        box.layer.shadowColor = self.currentGlowColor.CGColor;
+        box.layer.shadowOffset = CGSizeZero;
+        box.layer.shadowRadius = MAX(4.0, self.currentGlowIntensity / 10.0);
+        box.layer.shadowOpacity = MIN(0.45, self.currentGlowIntensity / 180.0);
       }
     }
     if (box.contentView) {
       [self applyColorsRecursively:box.contentView backgroundColor:backgroundColor fontColor:fontColor];
+    }
+  } else if ([view isKindOfClass:[ModernButton class]]) {
+    ModernButton *modButton = (ModernButton *)view;
+    if (self.currentCornerRadius > 0) {
+      modButton.layer.cornerRadius = MIN(14.0, MAX(4.0, self.currentCornerRadius * 0.75));
+    }
+    BOOL isDefaultButton = [[modButton keyEquivalent] isEqualToString:@"\r"];
+    if (isDefaultButton && self.currentAccentColor) {
+      modButton.baseBackgroundColor = self.currentAccentColor;
+      modButton.baseTextColor = getContrastColor(self.currentAccentColor);
+      [modButton updateVisuals];
+    } else if (self.currentCardBackgroundColor && !objc_getAssociatedObject(modButton, "sg_explicit_bg")) {
+      modButton.baseBackgroundColor = [self.currentCardBackgroundColor colorWithAlphaComponent:0.92];
+      if (self.currentCardBorderColor) {
+        modButton.layer.borderWidth = 1.0;
+        modButton.layer.borderColor = self.currentCardBorderColor.CGColor;
+      }
+      [modButton updateVisuals];
     }
   }
 
@@ -3482,21 +3547,33 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
 
 - (void)userContentController:(WKUserContentController *)userContentController didReceiveScriptMessage:(WKScriptMessage *)message {
   (void)userContentController;
+  NSString *ctrlName = (message.webView ? [self nameForControl:message.webView] : nil) ?: @"designer_canvas";
+  NSString *evtType = @"change";
   NSString *val = @"";
   if ([message.body isKindOfClass:[NSDictionary class]]) {
     NSDictionary *dict = (NSDictionary *)message.body;
-    val = dict[@"value"] ?: @"";
+    if (dict[@"sfx"]) {
+      window_play_sfx([dict[@"sfx"] description].UTF8String);
+    }
+    if (dict[@"control"] && [dict[@"control"] description].length > 0) {
+      ctrlName = [dict[@"control"] description];
+    }
+    if (dict[@"event"] && [dict[@"event"] description].length > 0) {
+      evtType = [dict[@"event"] description];
+    }
+    val = [dict[@"value"] description] ?: @"";
   } else if ([message.body isKindOfClass:[NSString class]]) {
     val = (NSString *)message.body;
   }
-  vlang_dispatch_event(self.win_ptr, "designer_canvas", "change", [val UTF8String]);
+  vlang_dispatch_event(self.win_ptr, [ctrlName UTF8String], [evtType UTF8String], [val UTF8String]);
 }
 
 - (void)webView:(WKWebView *)webView decidePolicyForNavigationAction:(WKNavigationAction *)navigationAction decisionHandler:(void (^)(WKNavigationActionPolicy))decisionHandler {
   NSURL *url = navigationAction.request.URL;
   if ([url.scheme isEqualToString:@"simplegui"]) {
+    NSString *ctrlName = (webView ? [self nameForControl:webView] : nil) ?: @"designer_canvas";
     NSString *path = [url.path stringByTrimmingCharactersInSet:[NSCharacterSet characterSetWithCharactersInString:@"/"]];
-    vlang_dispatch_event(self.win_ptr, "designer_canvas", "change", [path UTF8String]);
+    vlang_dispatch_event(self.win_ptr, [ctrlName UTF8String], "change", [path UTF8String]);
     decisionHandler(WKNavigationActionPolicyCancel);
     return;
   }
@@ -3731,9 +3808,52 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
 
 - (NSView *)makePopUpButtonWithName:(NSString *)name selected:(NSString *)selected {
   NSPopUpButton *popup = [[NSPopUpButton alloc] initWithFrame:NSZeroRect pullsDown:NO];
-  [popup addItemWithTitle:@"Light"];
-  [popup addItemWithTitle:@"Dark"];
-  [popup addItemWithTitle:@"System"];
+  NSArray<NSString *> *presetThemes = @[
+    @"Light",
+    @"Dark",
+    @"System",
+    @"GitHub Dark",
+    @"Apple Dark",
+    @"Apple Light",
+    @"Prism Reactor",
+    @"Orbital Ice",
+    @"Ember Grid",
+    @"Cyberpunk Hologram",
+    @"Neon HUD",
+    @"Quantum Obsidian",
+    @"Deep Space",
+    @"Liquid Metal",
+    @"Titanium Aurora",
+    @"Neo-Tokyo Dark",
+    @"Aurora Glass",
+    @"Plasma Violet",
+    @"E-Ink Paper Daylight",
+    @"Amber CRT Terminal",
+    @"Nordic Slate Lite",
+    @"Solarized Studio Lite",
+    @"Midnight Carbon Matte",
+    @"Mac Studio Frosted Pro",
+    @"Emerald Botanical Glass",
+    @"Tokyo Twilight Aero",
+    @"Autumn Maple Warm Glass",
+    @"Deep Ocean Bioluminescence",
+    @"Arctic Aurora Borealis",
+    @"Cyberpunk Edgerunner 2099",
+    @"Winter Solstice Blizzard",
+    @"Hollow Hallows Eve",
+    @"Crimson Dragon Forge",
+    @"Matrix Architect Construct",
+    @"Tactical SpecOps NightVision",
+    @"Nebula Supernova Raytrace",
+    @"Quantum Tesseract 4D",
+    @"Omega Pantheon 3099 Singularity"
+  ];
+  for (NSString *tName in presetThemes) {
+    [popup addItemWithTitle:tName];
+  }
+  if (selected && selected.length > 0 && [popup itemWithTitle:selected] == nil) {
+    [popup addItemWithTitle:selected];
+  }
   [popup selectItemWithTitle:selected];
   [popup setTarget:self];
   [popup setAction:@selector(handlePopUpChanged:)];
@@ -11996,18 +12116,21 @@ void window_set_error_by_name(main__WindowInfo *info, const char *name, const ch
 
 void window_set_tooltip_by_name(main__WindowInfo *info, const char *name, const char *text) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *ctrlName = nsstring(name);
+  NSString *tipText = nsstring(text);
   dispatch_async(dispatch_get_main_queue(), ^{
-    NSView *view = [delegate viewForControlName:nsstring(name)];
+    NSView *view = [delegate viewForControlName:ctrlName];
     if (view) {
-      [view setToolTip:nsstring(text)];
+      [view setToolTip:tipText];
     }
   });
 }
 
 void window_set_default_button_by_name(main__WindowInfo *info, const char *name) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *ctrlName = nsstring(name);
   dispatch_async(dispatch_get_main_queue(), ^{
-    NSView *view = [delegate viewForControlName:nsstring(name)];
+    NSView *view = [delegate viewForControlName:ctrlName];
     if ([view isKindOfClass:[NSButton class]]) {
       NSButton *button = (NSButton *)view;
       [button setKeyEquivalent:@"\r"];
@@ -12033,7 +12156,7 @@ void window_show_toast(main__WindowInfo *info, const char *message) {
     NSView *contentView = delegate.window.contentView;
     NSRect contentBounds = contentView.bounds;
 
-    SimpleToastView *toastView = [[SimpleToastView alloc] init];
+    SimpleToastView *toastView = [[[SimpleToastView alloc] init] autorelease];
     toastView.wantsLayer = YES;
     toastView.layer.cornerRadius = 14.0;
     toastView.layer.backgroundColor = [NSColor colorWithCalibratedWhite:0.12 alpha:0.90].CGColor;
@@ -12096,16 +12219,23 @@ void window_show_toast(main__WindowInfo *info, const char *message) {
 
 
 void window_open_url(main__WindowInfo *info, const char *url) {
+  if (!url || !*url) return;
+  NSString *urlStr = nsstring(url);
   dispatch_async(dispatch_get_main_queue(), ^{
-    [[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:nsstring(url)]];
+    NSURL *nsUrl = [NSURL URLWithString:urlStr];
+    NSString *scheme = [nsUrl.scheme lowercaseString];
+    if (nsUrl && ([scheme isEqualToString:@"http"] || [scheme isEqualToString:@"https"] || [scheme isEqualToString:@"mailto"])) {
+      [[NSWorkspace sharedWorkspace] openURL:nsUrl];
+    }
   });
 }
 
 void window_copy_to_clipboard(main__WindowInfo *info, const char *text) {
+  NSString *copyText = nsstring(text);
   dispatch_async(dispatch_get_main_queue(), ^{
     NSPasteboard *pasteboard = [NSPasteboard generalPasteboard];
     [pasteboard clearContents];
-    [pasteboard setString:nsstring(text) forType:NSPasteboardTypeString];
+    [pasteboard setString:copyText forType:NSPasteboardTypeString];
   });
 }
 
@@ -12172,9 +12302,10 @@ void window_textarea_goto_line(main__WindowInfo *info, const char *name, int lin
   if (!info || !name) return;
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
   if (!delegate) return;
+  NSString *ctrlKey = [nsstring(name) lowercaseString];
 
   void (^block)(void) = ^{
-    NSView *view = delegate.controlsByName[[nsstring(name) lowercaseString]];
+    NSView *view = delegate.controlsByName[ctrlKey];
     NSTextView *textView = nil;
     if ([view isKindOfClass:[NSTextView class]]) {
       textView = (NSTextView *)view;
@@ -12427,7 +12558,7 @@ void window_set_control_text(void *control, const char *text) {
     [(NSColorWell *)view setColor:colorFromString(text)];
   } else if ([view isKindOfClass:[NSDatePicker class]]) {
     NSDatePicker *picker = (NSDatePicker *)view;
-    NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+    NSDateFormatter *formatter = [[[NSDateFormatter alloc] init] autorelease];
     NSDatePickerElementFlags elements = [picker datePickerElements];
     BOOL hasDate = (elements & NSYearMonthDayDatePickerElementFlag) != 0;
     BOOL hasTime = (elements & (NSHourMinuteDatePickerElementFlag | NSHourMinuteSecondDatePickerElementFlag)) != 0;
@@ -12563,7 +12694,7 @@ char *window_get_control_text(void *control) {
     result = [NSString stringWithFormat:@"#%02x%02x%02x", (int)(r * 255.99), (int)(g * 255.99), (int)(b * 255.99)];
   } else if ([view isKindOfClass:[NSDatePicker class]]) {
     NSDatePicker *picker = (NSDatePicker *)view;
-    NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+    NSDateFormatter *formatter = [[[NSDateFormatter alloc] init] autorelease];
     NSDatePickerElementFlags elements = [picker datePickerElements];
     BOOL hasDate = (elements & NSYearMonthDayDatePickerElementFlag) != 0;
     BOOL hasTime = (elements & (NSHourMinuteDatePickerElementFlag | NSHourMinuteSecondDatePickerElementFlag)) != 0;
@@ -16534,6 +16665,7 @@ void window_grid_set_cell(main__WindowInfo *info, const char *name, int row, int
 }
 
 const char *window_grid_get_cell(main__WindowInfo *info, const char *name, int row, int col) {
+  if (!info || !info->app_delegate) return strdup("");
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
   NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
   __block NSString *result = @"";
@@ -16542,7 +16674,7 @@ const char *window_grid_get_cell(main__WindowInfo *info, const char *name, int r
     if (rows && row >= 0 && row < rows.count) {
       NSArray *cols = rows[row];
       if (col >= 0 && col < cols.count) {
-        result = [cols[col] retain];
+        result = cols[col] ?: @"";
       }
     }
   };
@@ -16551,7 +16683,7 @@ const char *window_grid_get_cell(main__WindowInfo *info, const char *name, int r
   } else {
     dispatch_sync(dispatch_get_main_queue(), runBlock);
   }
-  return [result autorelease].UTF8String;
+  return strdup([result UTF8String]);
 }
 
 int window_grid_get_selected_row(main__WindowInfo *info, const char *name) {
@@ -16764,6 +16896,7 @@ int window_grid_get_cell_enabled(main__WindowInfo *info, const char *name, int r
 }
 
 const char *window_grid_get_filter(main__WindowInfo *info, const char *name) {
+  if (!info || !info->app_delegate) return strdup("");
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
   NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
   __block NSString *result = @"";
@@ -16777,7 +16910,7 @@ const char *window_grid_get_filter(main__WindowInfo *info, const char *name) {
   } else {
     dispatch_sync(dispatch_get_main_queue(), runBlock);
   }
-  return [result autorelease].UTF8String;
+  return strdup([result UTF8String]);
 }
 
 int window_grid_get_row_count(main__WindowInfo *info, const char *name) {
@@ -17870,13 +18003,13 @@ void window_set_markdown_view_text(main__WindowInfo *info, const char *name, con
 
 const char *window_get_markdown_view_text(main__WindowInfo *info, const char *name) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
-  __block const char *res = "";
+  __block const char *res = NULL;
   void (^runBlock)(void) = ^{
     NSString *str = [delegate markdownViewTextForName:nsstring(name)];
     if (str) res = strdup([str UTF8String]);
   };
   if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
-  return res;
+  return res ? res : strdup("");
 }
 
 void *window_add_sparkline_control(main__WindowInfo *info, const char *name, const double *values, int count, int height) {
@@ -17925,13 +18058,13 @@ void window_set_pin_code_value(main__WindowInfo *info, const char *name, const c
 
 const char *window_get_pin_code_value(main__WindowInfo *info, const char *name) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
-  __block const char *res = "";
+  __block const char *res = NULL;
   void (^runBlock)(void) = ^{
     NSString *str = [delegate pinCodeValueForName:nsstring(name)];
     if (str) res = strdup([str UTF8String]);
   };
   if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
-  return res;
+  return res ? res : strdup("");
 }
 
 void *window_add_color_palette_control(main__WindowInfo *info, const char *name, const char **hex_colors, int count, const char *selected) {
@@ -17958,13 +18091,13 @@ void window_set_color_palette_selected(main__WindowInfo *info, const char *name,
 
 const char *window_get_color_palette_selected(main__WindowInfo *info, const char *name) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
-  __block const char *res = "";
+  __block const char *res = NULL;
   void (^runBlock)(void) = ^{
     NSString *str = [delegate colorPaletteSelectedForName:nsstring(name)];
     if (str) res = strdup([str UTF8String]);
   };
   if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
-  return res;
+  return res ? res : strdup("");
 }
 
 void *window_add_timeline_control(main__WindowInfo *info, const char *name, int height) {
@@ -18028,13 +18161,13 @@ void window_set_tab_pills_active(main__WindowInfo *info, const char *name, const
 
 const char *window_get_tab_pills_active(main__WindowInfo *info, const char *name) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
-  __block const char *res = "";
+  __block const char *res = NULL;
   void (^runBlock)(void) = ^{
     NSString *str = [delegate tabPillsActiveForName:nsstring(name)];
     if (str) res = strdup([str UTF8String]);
   };
   if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
-  return res;
+  return res ? res : strdup("");
 }
 
 void *window_add_transfer_list_control(main__WindowInfo *info, const char *name, const char **available, int avail_count, const char **selected, int sel_count, bool multi_select) {
@@ -18136,13 +18269,13 @@ void window_set_code_view_text(main__WindowInfo *info, const char *name, const c
 
 const char *window_get_code_view_text(main__WindowInfo *info, const char *name) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
-  __block const char *res = "";
+  __block const char *res = NULL;
   void (^runBlock)(void) = ^{
     NSString *str = [delegate codeViewTextForName:nsstring(name)];
     if (str) res = strdup([str UTF8String]);
   };
   if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
-  return res;
+  return res ? res : strdup("");
 }
 
 // Alert Banner C Bridge
@@ -18223,13 +18356,13 @@ void window_set_filter_chips_selected(main__WindowInfo *info, const char *name, 
 
 const char *window_get_filter_chips_selected(main__WindowInfo *info, const char *name) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
-  __block const char *res = "";
+  __block const char *res = NULL;
   void (^runBlock)(void) = ^{
     NSString *str = [delegate filterChipsSelectedForName:nsstring(name)];
     if (str) res = strdup([str UTF8String]);
   };
   if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
-  return res;
+  return res ? res : strdup("");
 }
 
 // File Picker Field C Bridge
@@ -18253,13 +18386,13 @@ void window_set_file_picker_path(main__WindowInfo *info, const char *name, const
 
 const char *window_get_file_picker_path(main__WindowInfo *info, const char *name) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
-  __block const char *res = "";
+  __block const char *res = NULL;
   void (^runBlock)(void) = ^{
     NSString *str = [delegate filePickerPathForName:nsstring(name)];
     if (str) res = strdup([str UTF8String]);
   };
   if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
-  return res;
+  return res ? res : strdup("");
 }
 
 // Radial Gauge C Bridge
@@ -18730,11 +18863,16 @@ int window_get_hides_on_deactivate(main__WindowInfo *info) {
   return res ? 1 : 0;
 }
 
+static char kPreventsAppTermKey;
+
 void window_set_prevents_app_termination(main__WindowInfo *info, int enabled) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
   void (^runBlock)(void) = ^{
-    if ([NSApp respondsToSelector:@selector(setPreventsApplicationTerminationWhenUnenrolled:)]) {
-      [NSApp setPreventsApplicationTerminationWhenUnenrolled:(enabled != 0)];
+    if (delegate.window) {
+      objc_setAssociatedObject(delegate.window, &kPreventsAppTermKey, @(enabled != 0), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+      if ([delegate.window respondsToSelector:@selector(setPreventsApplicationTerminationWhenModal:)]) {
+        delegate.window.preventsApplicationTerminationWhenModal = (enabled != 0);
+      }
     }
   };
   if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
@@ -18744,8 +18882,13 @@ int window_get_prevents_app_termination(main__WindowInfo *info) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
   __block BOOL res = YES;
   void (^runBlock)(void) = ^{
-    if ([NSApp respondsToSelector:@selector(preventsApplicationTerminationWhenUnenrolled)]) {
-      res = [NSApp preventsApplicationTerminationWhenUnenrolled];
+    if (delegate.window) {
+      NSNumber *val = objc_getAssociatedObject(delegate.window, &kPreventsAppTermKey);
+      if (val != nil) {
+        res = [val boolValue];
+      } else if ([delegate.window respondsToSelector:@selector(preventsApplicationTerminationWhenModal)]) {
+        res = delegate.window.preventsApplicationTerminationWhenModal;
+      }
     }
   };
   if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
@@ -19228,17 +19371,19 @@ void window_select_previous_tab(main__WindowInfo *info) {
   if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
 }
 
+static char kSharingProtectedKey;
+
 void window_set_sharing_type(main__WindowInfo *info, const char *sharing) {
   AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *s = [nsstring(sharing) lowercaseString];
+  BOOL isProtected = [s isEqualToString:@"none"];
   void (^runBlock)(void) = ^{
     if (!delegate.window) return;
-    NSString *s = [nsstring(sharing) lowercaseString];
-    if ([s isEqualToString:@"none"]) {
+    objc_setAssociatedObject(delegate.window, &kSharingProtectedKey, @(isProtected), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    if (isProtected) {
       delegate.window.sharingType = NSWindowSharingNone;
-    } else if ([s isEqualToString:@"read_only"]) {
-      delegate.window.sharingType = NSWindowSharingReadOnly;
     } else {
-      delegate.window.sharingType = NSWindowSharingReadWrite;
+      delegate.window.sharingType = NSWindowSharingReadOnly;
     }
   };
   if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
@@ -19249,7 +19394,10 @@ int window_get_sharing_type(main__WindowInfo *info) {
   __block int result = 0;
   void (^runBlock)(void) = ^{
     if (!delegate.window) return;
-    if (delegate.window.sharingType == NSWindowSharingNone) {
+    NSNumber *prot = objc_getAssociatedObject(delegate.window, &kSharingProtectedKey);
+    if (prot != nil) {
+      result = [prot boolValue] ? 1 : 0;
+    } else if (delegate.window.sharingType == NSWindowSharingNone) {
       result = 1;
     }
   };
@@ -22256,6 +22404,7 @@ void *window_add_nav_rail_control(main__WindowInfo *info, const char *name, cons
       
       if (active) {
         [btn setContentTintColor:[NSColor controlAccentColor]];
+        objc_setAssociatedObject(railBox, "selectedItemId", itemId, OBJC_ASSOCIATION_COPY_NONATOMIC);
       }
       [vRail addArrangedSubview:btn];
       
@@ -22276,10 +22425,33 @@ void *window_add_nav_rail_control(main__WindowInfo *info, const char *name, cons
 }
 
 const char *window_get_nav_rail_selected(main__WindowInfo *info, const char *name) {
-  return "";
+  if (!info || !info->app_delegate || !name) return strdup("");
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  __block NSString *selected = @"";
+  void (^runBlock)(void) = ^{
+    NSView *v = delegate.controlsByName[key];
+    if (v) {
+      NSString *assoc = objc_getAssociatedObject(v, "selectedItemId");
+      if (assoc) selected = assoc;
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
+  return strdup([selected UTF8String]);
 }
 
 void window_set_nav_rail_selected(main__WindowInfo *info, const char *name, const char *item_id) {
+  if (!info || !info->app_delegate || !name || !item_id) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  NSString *targetId = nsstring(item_id);
+  void (^runBlock)(void) = ^{
+    NSView *v = delegate.controlsByName[key];
+    if (v) {
+      objc_setAssociatedObject(v, "selectedItemId", targetId, OBJC_ASSOCIATION_COPY_NONATOMIC);
+    }
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
 }
 
 // Additional Split View Control APIs
@@ -22754,7 +22926,7 @@ char *window_select_multiple_files(main__WindowInfo *info, const char *extension
       }
       NSData *data = [NSJSONSerialization dataWithJSONObject:paths options:0 error:nil];
       if (data) {
-        json = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+        json = [[[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding] autorelease];
       }
     }
   };
@@ -22847,7 +23019,7 @@ char *window_speech_get_voices(void) {
     }
     NSData *data = [NSJSONSerialization dataWithJSONObject:voices options:0 error:nil];
     if (data) {
-      json = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+      json = [[[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding] autorelease];
     }
   };
   if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
@@ -22883,7 +23055,7 @@ int window_clipboard_copy_image(const char *image_path) {
   NSString *path = nsstring(image_path);
   __block BOOL ok = NO;
   void (^runBlock)(void) = ^{
-    NSImage *img = [[NSImage alloc] initWithContentsOfFile:path];
+    NSImage *img = [[[NSImage alloc] initWithContentsOfFile:path] autorelease];
     if (img) {
       NSPasteboard *pb = [NSPasteboard generalPasteboard];
       [pb clearContents];
@@ -22952,7 +23124,7 @@ char *window_clipboard_get_files(void) {
       }
       NSData *data = [NSJSONSerialization dataWithJSONObject:paths options:0 error:nil];
       if (data) {
-        json = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+        json = [[[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding] autorelease];
       }
     }
   };
@@ -23001,7 +23173,8 @@ char *window_get_running_apps(void) {
     }
     NSData *data = [NSJSONSerialization dataWithJSONObject:arr options:0 error:nil];
     if (!data) return strdup("[]");
-    return strdup([[[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding] UTF8String]);
+    NSString *jsonStr = [[[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding] autorelease];
+    return strdup([jsonStr UTF8String]);
   }
 }
 
@@ -23093,6 +23266,7 @@ int window_play_sound_file(const char *file_path) {
   void (^runBlock)(void) = ^{
     if (sharedSoundPlayer) {
       [sharedSoundPlayer stop];
+      [sharedSoundPlayer release];
       sharedSoundPlayer = nil;
     }
     sharedSoundPlayer = [[NSSound alloc] initWithContentsOfFile:path byReference:YES];
@@ -23108,6 +23282,7 @@ void window_stop_sound_file(void) {
   void (^runBlock)(void) = ^{
     if (sharedSoundPlayer) {
       [sharedSoundPlayer stop];
+      [sharedSoundPlayer release];
       sharedSoundPlayer = nil;
     }
   };
@@ -23332,7 +23507,8 @@ char *window_get_screens_info(void) {
   }
   NSData *data = [NSJSONSerialization dataWithJSONObject:arr options:0 error:nil];
   if (!data) return strdup("[]");
-  return strdup([[[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding] UTF8String]);
+  NSString *jsonStr = [[[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding] autorelease];
+  return strdup([jsonStr UTF8String]);
 }
 
 void window_move_to_screen(main__WindowInfo *info, int screen_index) {
@@ -23359,6 +23535,10 @@ char *window_get_dock_badge(void) {
 }
 
 void window_cancel_dock_bounce(void) {
+  void (^runBlock)(void) = ^{
+    [NSApp cancelUserAttentionRequest:0];
+  };
+  if ([NSThread isMainThread]) { runBlock(); } else { dispatch_sync(dispatch_get_main_queue(), runBlock); }
 }
 
 void window_set_activation_policy(const char *policy) {
@@ -23944,6 +24124,6313 @@ void window_set_control_hdr_color(main__WindowInfo *info, const char *name, cons
     }
   });
 }
+
+// ============================================================================
+// 24 New RAD Studio, Analytics, Audio, Collaboration & Developer Controls
+// ============================================================================
+
+static NSString *sgNormKey(const char *name) {
+  if (!name) return @"";
+  return [[nsstring(name) lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+}
+
+static void sgRunOnMainSync(void (^block)(void)) {
+  if ([NSThread isMainThread]) {
+    block();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), block);
+  }
+}
+
+// 1. Gantt Chart View
+@interface SGGanttChartView : NSView
+@property (nonatomic, copy) NSString *chartTitle;
+@property (nonatomic, strong) NSArray<NSString *> *taskNames;
+@property (nonatomic, strong) NSArray<NSNumber *> *startPcts;
+@property (nonatomic, strong) NSArray<NSNumber *> *durationPcts;
+@property (nonatomic, strong) NSArray<NSNumber *> *progressPcts;
+@property (nonatomic, strong) NSArray<NSString *> *hexColors;
+@end
+
+@implementation SGGanttChartView
+- (BOOL)isFlipped { return YES; }
+- (void)drawRect:(NSRect)dirtyRect {
+  [super drawRect:dirtyRect];
+  NSRect b = self.bounds;
+  [[NSColor colorWithCalibratedWhite:0.12 alpha:0.95] setFill];
+  NSBezierPath *bg = [NSBezierPath bezierPathWithRoundedRect:b xRadius:8 yRadius:8];
+  [bg fill];
+
+  NSDictionary *titleAttrs = @{
+    NSFontAttributeName: [NSFont boldSystemFontOfSize:12],
+    NSForegroundColorAttributeName: [NSColor whiteColor]
+  };
+  NSDictionary *labelAttrs = @{
+    NSFontAttributeName: [NSFont systemFontOfSize:11],
+    NSForegroundColorAttributeName: [NSColor colorWithCalibratedWhite:0.88 alpha:1.0]
+  };
+  if (self.chartTitle.length > 0) {
+    [self.chartTitle drawAtPoint:NSMakePoint(12, 8) withAttributes:titleAttrs];
+  }
+  NSUInteger n = self.taskNames.count;
+  if (n == 0) return;
+  CGFloat topOffset = 32.0;
+  CGFloat labelColW = 120.0;
+  CGFloat trackW = MAX(40.0, b.size.width - labelColW - 20.0);
+  CGFloat rowH = MAX(18.0, (b.size.height - topOffset - 10.0) / (CGFloat)n);
+
+  for (NSUInteger i = 0; i < n; i++) {
+    CGFloat y = topOffset + i * rowH;
+    NSString *tName = self.taskNames[i];
+    [tName drawInRect:NSMakeRect(12, y + 2, labelColW - 16, rowH) withAttributes:labelAttrs];
+
+    [[NSColor colorWithCalibratedWhite:0.22 alpha:1.0] setFill];
+    NSRect trackRect = NSMakeRect(labelColW, y + 3, trackW, MAX(10.0, rowH - 8.0));
+    [[NSBezierPath bezierPathWithRoundedRect:trackRect xRadius:4 yRadius:4] fill];
+
+    double st = (i < self.startPcts.count) ? [self.startPcts[i] doubleValue] : 0.0;
+    double dur = (i < self.durationPcts.count) ? [self.durationPcts[i] doubleValue] : 25.0;
+    double prog = (i < self.progressPcts.count) ? [self.progressPcts[i] doubleValue] : 50.0;
+    NSString *hex = (i < self.hexColors.count) ? self.hexColors[i] : @"#3b82f6";
+    NSColor *barColor = colorFromHexString(hex) ?: [NSColor systemBlueColor];
+
+    CGFloat barX = labelColW + (CGFloat)(MAX(0.0, MIN(100.0, st)) / 100.0) * trackW;
+    CGFloat barW = MAX(6.0, (CGFloat)(MAX(1.0, MIN(100.0 - st, dur)) / 100.0) * trackW);
+    NSRect barRect = NSMakeRect(barX, y + 3, barW, MAX(10.0, rowH - 8.0));
+    [[barColor colorWithAlphaComponent:0.45] setFill];
+    [[NSBezierPath bezierPathWithRoundedRect:barRect xRadius:4 yRadius:4] fill];
+
+    CGFloat progW = barW * (CGFloat)(MAX(0.0, MIN(100.0, prog)) / 100.0);
+    if (progW > 1.0) {
+      [barColor setFill];
+      [[NSBezierPath bezierPathWithRoundedRect:NSMakeRect(barX, y + 3, progW, MAX(10.0, rowH - 8.0)) xRadius:4 yRadius:4] fill];
+    }
+  }
+}
+@end
+
+void *window_add_gantt_chart_control(main__WindowInfo *info, const char *name, const char *title, const char **task_names, const double *start_pcts, const double *duration_pcts, const double *progress_pcts, const char **hex_colors, int count, int height) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSString *titleStr = nsstring(title);
+  NSMutableArray *namesArr = [NSMutableArray array];
+  NSMutableArray *startsArr = [NSMutableArray array];
+  NSMutableArray *dursArr = [NSMutableArray array];
+  NSMutableArray *progsArr = [NSMutableArray array];
+  NSMutableArray *colorsArr = [NSMutableArray array];
+  for (int i = 0; i < count; i++) {
+    [namesArr addObject:(task_names && task_names[i]) ? nsstring(task_names[i]) : [NSString stringWithFormat:@"Task %d", i + 1]];
+    [startsArr addObject:@(start_pcts ? start_pcts[i] : 0.0)];
+    [dursArr addObject:@(duration_pcts ? duration_pcts[i] : 25.0)];
+    [progsArr addObject:@(progress_pcts ? progress_pcts[i] : 50.0)];
+    [colorsArr addObject:(hex_colors && hex_colors[i]) ? nsstring(hex_colors[i]) : @"#3b82f6"];
+  }
+  int h = height > 40 ? height : 180;
+  __block SGGanttChartView *view = nil;
+  sgRunOnMainSync(^{
+    view = [[SGGanttChartView alloc] initWithFrame:NSMakeRect(0, 0, 440, h)];
+    view.chartTitle = titleStr;
+    view.taskNames = namesArr;
+    view.startPcts = startsArr;
+    view.durationPcts = dursArr;
+    view.progressPcts = progsArr;
+    view.hexColors = colorsArr;
+    [view setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [view.widthAnchor constraintGreaterThanOrEqualToConstant:360].active = YES;
+    [view.heightAnchor constraintEqualToConstant:h].active = YES;
+    delegate.controlsByName[key] = view;
+    [delegate addControlToLayout:view];
+  });
+  return (__bridge void *)view;
+}
+
+void window_set_gantt_chart_tasks(main__WindowInfo *info, const char *name, const char **task_names, const double *start_pcts, const double *duration_pcts, const double *progress_pcts, const char **hex_colors, int count) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSMutableArray *namesArr = [NSMutableArray array];
+  NSMutableArray *startsArr = [NSMutableArray array];
+  NSMutableArray *dursArr = [NSMutableArray array];
+  NSMutableArray *progsArr = [NSMutableArray array];
+  NSMutableArray *colorsArr = [NSMutableArray array];
+  for (int i = 0; i < count; i++) {
+    [namesArr addObject:(task_names && task_names[i]) ? nsstring(task_names[i]) : [NSString stringWithFormat:@"Task %d", i + 1]];
+    [startsArr addObject:@(start_pcts ? start_pcts[i] : 0.0)];
+    [dursArr addObject:@(duration_pcts ? duration_pcts[i] : 25.0)];
+    [progsArr addObject:@(progress_pcts ? progress_pcts[i] : 50.0)];
+    [colorsArr addObject:(hex_colors && hex_colors[i]) ? nsstring(hex_colors[i]) : @"#3b82f6"];
+  }
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGGanttChartView class]]) {
+      SGGanttChartView *gv = (SGGanttChartView *)v;
+      gv.taskNames = namesArr;
+      gv.startPcts = startsArr;
+      gv.durationPcts = dursArr;
+      gv.progressPcts = progsArr;
+      gv.hexColors = colorsArr;
+      [gv setNeedsDisplay:YES];
+    }
+  });
+}
+
+// 2. Funnel Chart View
+@interface SGFunnelChartView : NSView
+@property (nonatomic, copy) NSString *chartTitle;
+@property (nonatomic, strong) NSArray<NSString *> *stages;
+@property (nonatomic, strong) NSArray<NSNumber *> *values;
+@property (nonatomic, strong) NSArray<NSString *> *hexColors;
+@end
+
+@implementation SGFunnelChartView
+- (BOOL)isFlipped { return YES; }
+- (void)drawRect:(NSRect)dirtyRect {
+  [super drawRect:dirtyRect];
+  NSRect b = self.bounds;
+  [[NSColor colorWithCalibratedWhite:0.12 alpha:0.95] setFill];
+  [[NSBezierPath bezierPathWithRoundedRect:b xRadius:8 yRadius:8] fill];
+
+  if (self.chartTitle.length > 0) {
+    [self.chartTitle drawAtPoint:NSMakePoint(12, 8) withAttributes:@{
+      NSFontAttributeName: [NSFont boldSystemFontOfSize:12],
+      NSForegroundColorAttributeName: [NSColor whiteColor]
+    }];
+  }
+  NSUInteger n = self.stages.count;
+  if (n == 0) return;
+  double maxVal = 1.0;
+  for (NSNumber *num in self.values) {
+    if ([num doubleValue] > maxVal) maxVal = [num doubleValue];
+  }
+  CGFloat topY = 32.0;
+  CGFloat availH = MAX(30.0, b.size.height - topY - 10.0);
+  CGFloat stageH = availH / (CGFloat)n;
+  CGFloat maxW = MAX(60.0, b.size.width - 40.0);
+  CGFloat centerX = b.size.width * 0.5;
+
+  for (NSUInteger i = 0; i < n; i++) {
+    double v = (i < self.values.count) ? [self.values[i] doubleValue] : 0.0;
+    CGFloat w = MAX(40.0, (CGFloat)(v / maxVal) * maxW);
+    NSRect r = NSMakeRect(centerX - w * 0.5, topY + i * stageH + 2, w, MAX(12.0, stageH - 4.0));
+    NSString *hex = (i < self.hexColors.count) ? self.hexColors[i] : @"#6366f1";
+    NSColor *col = colorFromHexString(hex) ?: [NSColor systemIndigoColor];
+    [col setFill];
+    [[NSBezierPath bezierPathWithRoundedRect:r xRadius:5 yRadius:5] fill];
+
+    NSString *lbl = [NSString stringWithFormat:@"%@ (%.0f)", self.stages[i], v];
+    NSDictionary *attrs = @{
+      NSFontAttributeName: [NSFont systemFontOfSize:11 weight:NSFontWeightMedium],
+      NSForegroundColorAttributeName: [NSColor whiteColor]
+    };
+    NSSize sz = [lbl sizeWithAttributes:attrs];
+    [lbl drawAtPoint:NSMakePoint(centerX - sz.width * 0.5, NSMidY(r) - sz.height * 0.5) withAttributes:attrs];
+  }
+}
+@end
+
+void *window_add_funnel_chart_control(main__WindowInfo *info, const char *name, const char *title, const char **stages, const double *values, const char **hex_colors, int count, int height) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSString *titleStr = nsstring(title);
+  NSMutableArray *stArr = [NSMutableArray array];
+  NSMutableArray *valArr = [NSMutableArray array];
+  NSMutableArray *colArr = [NSMutableArray array];
+  for (int i = 0; i < count; i++) {
+    [stArr addObject:(stages && stages[i]) ? nsstring(stages[i]) : [NSString stringWithFormat:@"Stage %d", i + 1]];
+    [valArr addObject:@(values ? values[i] : (double)(100 - i * 20))];
+    [colArr addObject:(hex_colors && hex_colors[i]) ? nsstring(hex_colors[i]) : @"#6366f1"];
+  }
+  int h = height > 40 ? height : 180;
+  __block SGFunnelChartView *view = nil;
+  sgRunOnMainSync(^{
+    view = [[SGFunnelChartView alloc] initWithFrame:NSMakeRect(0, 0, 360, h)];
+    view.chartTitle = titleStr;
+    view.stages = stArr;
+    view.values = valArr;
+    view.hexColors = colArr;
+    [view setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [view.widthAnchor constraintGreaterThanOrEqualToConstant:300].active = YES;
+    [view.heightAnchor constraintEqualToConstant:h].active = YES;
+    delegate.controlsByName[key] = view;
+    [delegate addControlToLayout:view];
+  });
+  return (__bridge void *)view;
+}
+
+void window_set_funnel_chart_data(main__WindowInfo *info, const char *name, const char **stages, const double *values, int count) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSMutableArray *stArr = [NSMutableArray array];
+  NSMutableArray *valArr = [NSMutableArray array];
+  for (int i = 0; i < count; i++) {
+    [stArr addObject:(stages && stages[i]) ? nsstring(stages[i]) : [NSString stringWithFormat:@"Stage %d", i + 1]];
+    [valArr addObject:@(values ? values[i] : 0.0)];
+  }
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGFunnelChartView class]]) {
+      SGFunnelChartView *fv = (SGFunnelChartView *)v;
+      fv.stages = stArr;
+      fv.values = valArr;
+      [fv setNeedsDisplay:YES];
+    }
+  });
+}
+
+// 3. Candlestick Chart View
+@interface SGCandlestickChartView : NSView
+@property (nonatomic, copy) NSString *symbol;
+@property (nonatomic, strong) NSArray<NSNumber *> *opens;
+@property (nonatomic, strong) NSArray<NSNumber *> *highs;
+@property (nonatomic, strong) NSArray<NSNumber *> *lows;
+@property (nonatomic, strong) NSArray<NSNumber *> *closes;
+@end
+
+@implementation SGCandlestickChartView
+- (void)drawRect:(NSRect)dirtyRect {
+  [super drawRect:dirtyRect];
+  NSRect b = self.bounds;
+  [[NSColor colorWithCalibratedWhite:0.10 alpha:0.98] setFill];
+  [[NSBezierPath bezierPathWithRoundedRect:b xRadius:8 yRadius:8] fill];
+
+  if (self.symbol.length > 0) {
+    [self.symbol drawAtPoint:NSMakePoint(12, b.size.height - 24) withAttributes:@{
+      NSFontAttributeName: [NSFont boldSystemFontOfSize:12],
+      NSForegroundColorAttributeName: [NSColor whiteColor]
+    }];
+  }
+  NSUInteger n = self.opens.count;
+  if (n == 0) return;
+  double minP = DBL_MAX, maxP = -DBL_MAX;
+  for (NSUInteger i = 0; i < n; i++) {
+    double hi = [self.highs[i] doubleValue];
+    double lo = [self.lows[i] doubleValue];
+    if (hi > maxP) maxP = hi;
+    if (lo < minP) minP = lo;
+  }
+  if (maxP <= minP) maxP = minP + 1.0;
+  CGFloat padX = 16.0, padBottom = 14.0, padTop = 30.0;
+  CGFloat plotW = MAX(40.0, b.size.width - padX * 2);
+  CGFloat plotH = MAX(30.0, b.size.height - padBottom - padTop);
+  CGFloat stepX = plotW / (CGFloat)n;
+
+  for (NSUInteger i = 0; i < n; i++) {
+    double op = [self.opens[i] doubleValue];
+    double hi = [self.highs[i] doubleValue];
+    double lo = [self.lows[i] doubleValue];
+    double cl = [self.closes[i] doubleValue];
+    BOOL bull = (cl >= op);
+    NSColor *col = bull ? [NSColor systemGreenColor] : [NSColor systemRedColor];
+    [col setStroke];
+    [col setFill];
+
+    CGFloat cx = padX + (i + 0.5) * stepX;
+    CGFloat yHi = padBottom + (CGFloat)((hi - minP) / (maxP - minP)) * plotH;
+    CGFloat yLo = padBottom + (CGFloat)((lo - minP) / (maxP - minP)) * plotH;
+    CGFloat yOp = padBottom + (CGFloat)((op - minP) / (maxP - minP)) * plotH;
+    CGFloat yCl = padBottom + (CGFloat)((cl - minP) / (maxP - minP)) * plotH;
+
+    NSBezierPath *wick = [NSBezierPath bezierPath];
+    [wick setLineWidth:1.5];
+    [wick moveToPoint:NSMakePoint(cx, yLo)];
+    [wick lineToPoint:NSMakePoint(cx, yHi)];
+    [wick stroke];
+
+    CGFloat bodyBottom = MIN(yOp, yCl);
+    CGFloat bodyH = MAX(3.0, fabs(yCl - yOp));
+    CGFloat bodyW = MAX(4.0, stepX * 0.6);
+    NSRect bodyRect = NSMakeRect(cx - bodyW * 0.5, bodyBottom, bodyW, bodyH);
+    [[NSBezierPath bezierPathWithRoundedRect:bodyRect xRadius:1.5 yRadius:1.5] fill];
+  }
+}
+@end
+
+void *window_add_candlestick_chart_control(main__WindowInfo *info, const char *name, const char *symbol, const double *opens, const double *highs, const double *lows, const double *closes, int count, int height) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSString *symStr = nsstring(symbol);
+  NSMutableArray *oArr = [NSMutableArray array];
+  NSMutableArray *hArr = [NSMutableArray array];
+  NSMutableArray *lArr = [NSMutableArray array];
+  NSMutableArray *cArr = [NSMutableArray array];
+  for (int i = 0; i < count; i++) {
+    [oArr addObject:@(opens ? opens[i] : 100.0)];
+    [hArr addObject:@(highs ? highs[i] : 105.0)];
+    [lArr addObject:@(lows ? lows[i] : 95.0)];
+    [cArr addObject:@(closes ? closes[i] : 102.0)];
+  }
+  int h = height > 40 ? height : 180;
+  __block SGCandlestickChartView *view = nil;
+  sgRunOnMainSync(^{
+    view = [[SGCandlestickChartView alloc] initWithFrame:NSMakeRect(0, 0, 380, h)];
+    view.symbol = symStr;
+    view.opens = oArr;
+    view.highs = hArr;
+    view.lows = lArr;
+    view.closes = cArr;
+    [view setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [view.widthAnchor constraintGreaterThanOrEqualToConstant:320].active = YES;
+    [view.heightAnchor constraintEqualToConstant:h].active = YES;
+    delegate.controlsByName[key] = view;
+    [delegate addControlToLayout:view];
+  });
+  return (__bridge void *)view;
+}
+
+void window_set_candlestick_chart_data(main__WindowInfo *info, const char *name, const double *opens, const double *highs, const double *lows, const double *closes, int count) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSMutableArray *oArr = [NSMutableArray array];
+  NSMutableArray *hArr = [NSMutableArray array];
+  NSMutableArray *lArr = [NSMutableArray array];
+  NSMutableArray *cArr = [NSMutableArray array];
+  for (int i = 0; i < count; i++) {
+    [oArr addObject:@(opens ? opens[i] : 100.0)];
+    [hArr addObject:@(highs ? highs[i] : 105.0)];
+    [lArr addObject:@(lows ? lows[i] : 95.0)];
+    [cArr addObject:@(closes ? closes[i] : 102.0)];
+  }
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGCandlestickChartView class]]) {
+      SGCandlestickChartView *cv = (SGCandlestickChartView *)v;
+      cv.opens = oArr;
+      cv.highs = hArr;
+      cv.lows = lArr;
+      cv.closes = cArr;
+      [cv setNeedsDisplay:YES];
+    }
+  });
+}
+
+// 4. Radar / Spider Chart View
+@interface SGRadarChartView : NSView
+@property (nonatomic, copy) NSString *chartTitle;
+@property (nonatomic, strong) NSArray<NSString *> *axes;
+@property (nonatomic, strong) NSArray<NSNumber *> *values;
+@end
+
+@implementation SGRadarChartView
+- (void)drawRect:(NSRect)dirtyRect {
+  [super drawRect:dirtyRect];
+  NSRect b = self.bounds;
+  [[NSColor colorWithCalibratedWhite:0.12 alpha:0.95] setFill];
+  [[NSBezierPath bezierPathWithRoundedRect:b xRadius:8 yRadius:8] fill];
+
+  if (self.chartTitle.length > 0) {
+    [self.chartTitle drawAtPoint:NSMakePoint(12, b.size.height - 24) withAttributes:@{
+      NSFontAttributeName: [NSFont boldSystemFontOfSize:12],
+      NSForegroundColorAttributeName: [NSColor whiteColor]
+    }];
+  }
+  NSUInteger n = self.axes.count;
+  if (n < 3) return;
+  CGFloat cx = b.size.width * 0.5;
+  CGFloat cy = (b.size.height - 20.0) * 0.5;
+  CGFloat radius = MIN(b.size.width, b.size.height - 36.0) * 0.35;
+
+  [[NSColor colorWithCalibratedWhite:0.3 alpha:0.8] setStroke];
+  for (int ring = 1; ring <= 3; ring++) {
+    CGFloat r = radius * (ring / 3.0);
+    NSBezierPath *ringPath = [NSBezierPath bezierPath];
+    for (NSUInteger i = 0; i < n; i++) {
+      double angle = M_PI_2 - (2.0 * M_PI * i) / (double)n;
+      NSPoint pt = NSMakePoint(cx + r * cos(angle), cy + r * sin(angle));
+      if (i == 0) [ringPath moveToPoint:pt]; else [ringPath lineToPoint:pt];
+    }
+    [ringPath closePath];
+    [ringPath stroke];
+  }
+
+  NSBezierPath *poly = [NSBezierPath bezierPath];
+  for (NSUInteger i = 0; i < n; i++) {
+    double val = (i < self.values.count) ? [self.values[i] doubleValue] : 50.0;
+    double norm = MAX(0.0, MIN(100.0, val)) / 100.0;
+    double angle = M_PI_2 - (2.0 * M_PI * i) / (double)n;
+    NSPoint pt = NSMakePoint(cx + radius * norm * cos(angle), cy + radius * norm * sin(angle));
+    if (i == 0) [poly moveToPoint:pt]; else [poly lineToPoint:pt];
+
+    NSPoint lblPt = NSMakePoint(cx + (radius + 16) * cos(angle) - 18, cy + (radius + 16) * sin(angle) - 6);
+    [self.axes[i] drawAtPoint:lblPt withAttributes:@{
+      NSFontAttributeName: [NSFont systemFontOfSize:10],
+      NSForegroundColorAttributeName: [NSColor lightGrayColor]
+    }];
+  }
+  [poly closePath];
+  [[[NSColor systemCyanColor] colorWithAlphaComponent:0.35] setFill];
+  [poly fill];
+  [[NSColor systemCyanColor] setStroke];
+  [poly setLineWidth:2.0];
+  [poly stroke];
+}
+@end
+
+void *window_add_radar_chart_control(main__WindowInfo *info, const char *name, const char *title, const char **axes, const double *values, int count, int size) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSString *titleStr = nsstring(title);
+  NSMutableArray *axArr = [NSMutableArray array];
+  NSMutableArray *valArr = [NSMutableArray array];
+  for (int i = 0; i < count; i++) {
+    [axArr addObject:(axes && axes[i]) ? nsstring(axes[i]) : [NSString stringWithFormat:@"Axis %d", i + 1]];
+    [valArr addObject:@(values ? values[i] : 50.0)];
+  }
+  int sz = size > 80 ? size : 220;
+  __block SGRadarChartView *view = nil;
+  sgRunOnMainSync(^{
+    view = [[SGRadarChartView alloc] initWithFrame:NSMakeRect(0, 0, sz, sz)];
+    view.chartTitle = titleStr;
+    view.axes = axArr;
+    view.values = valArr;
+    [view setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [view.widthAnchor constraintEqualToConstant:sz].active = YES;
+    [view.heightAnchor constraintEqualToConstant:sz].active = YES;
+    delegate.controlsByName[key] = view;
+    [delegate addControlToLayout:view];
+  });
+  return (__bridge void *)view;
+}
+
+void window_set_radar_chart_values(main__WindowInfo *info, const char *name, const double *values, int count) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSMutableArray *valArr = [NSMutableArray array];
+  for (int i = 0; i < count; i++) {
+    [valArr addObject:@(values ? values[i] : 50.0)];
+  }
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGRadarChartView class]]) {
+      SGRadarChartView *rv = (SGRadarChartView *)v;
+      rv.values = valArr;
+      [rv setNeedsDisplay:YES];
+    }
+  });
+}
+
+// 5. Bullet Chart View
+@interface SGBulletChartView : NSView
+@property (nonatomic, copy) NSString *chartTitle;
+@property (nonatomic, copy) NSString *subtitle;
+@property (nonatomic, assign) double value;
+@property (nonatomic, assign) double target;
+@property (nonatomic, assign) double maxVal;
+@end
+
+@implementation SGBulletChartView
+- (void)drawRect:(NSRect)dirtyRect {
+  [super drawRect:dirtyRect];
+  NSRect b = self.bounds;
+  [[NSColor colorWithCalibratedWhite:0.13 alpha:0.95] setFill];
+  [[NSBezierPath bezierPathWithRoundedRect:b xRadius:6 yRadius:6] fill];
+
+  [self.chartTitle drawAtPoint:NSMakePoint(10, b.size.height - 22) withAttributes:@{
+    NSFontAttributeName: [NSFont boldSystemFontOfSize:11],
+    NSForegroundColorAttributeName: [NSColor whiteColor]
+  }];
+  if (self.subtitle.length > 0) {
+    [self.subtitle drawAtPoint:NSMakePoint(10, 6) withAttributes:@{
+      NSFontAttributeName: [NSFont systemFontOfSize:10],
+      NSForegroundColorAttributeName: [NSColor grayColor]
+    }];
+  }
+  CGFloat barX = 120.0;
+  CGFloat barW = MAX(60.0, b.size.width - barX - 16.0);
+  CGFloat barY = (b.size.height - 18.0) * 0.5;
+  [[NSColor colorWithCalibratedWhite:0.25 alpha:1.0] setFill];
+  [[NSBezierPath bezierPathWithRoundedRect:NSMakeRect(barX, barY, barW, 18.0) xRadius:4 yRadius:4] fill];
+
+  double mx = self.maxVal > 0.0 ? self.maxVal : 100.0;
+  CGFloat valW = (CGFloat)(MAX(0.0, MIN(mx, self.value)) / mx) * barW;
+  [[NSColor systemBlueColor] setFill];
+  [[NSBezierPath bezierPathWithRoundedRect:NSMakeRect(barX, barY + 4, valW, 10.0) xRadius:3 yRadius:3] fill];
+
+  CGFloat targetX = barX + (CGFloat)(MAX(0.0, MIN(mx, self.target)) / mx) * barW;
+  [[NSColor systemYellowColor] setFill];
+  NSRectFill(NSMakeRect(targetX - 1.5, barY + 1, 3.0, 16.0));
+}
+@end
+
+void *window_add_bullet_chart_control(main__WindowInfo *info, const char *name, const char *title, const char *subtitle, double value, double target, double max_val) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSString *tStr = nsstring(title);
+  NSString *subStr = nsstring(subtitle);
+  __block SGBulletChartView *view = nil;
+  sgRunOnMainSync(^{
+    view = [[SGBulletChartView alloc] initWithFrame:NSMakeRect(0, 0, 360, 44)];
+    view.chartTitle = tStr;
+    view.subtitle = subStr;
+    view.value = value;
+    view.target = target;
+    view.maxVal = max_val > 0 ? max_val : 100.0;
+    [view setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [view.widthAnchor constraintGreaterThanOrEqualToConstant:300].active = YES;
+    [view.heightAnchor constraintEqualToConstant:44].active = YES;
+    delegate.controlsByName[key] = view;
+    [delegate addControlToLayout:view];
+  });
+  return (__bridge void *)view;
+}
+
+void window_set_bullet_chart_value(main__WindowInfo *info, const char *name, double value, double target) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGBulletChartView class]]) {
+      SGBulletChartView *bv = (SGBulletChartView *)v;
+      bv.value = value;
+      bv.target = target;
+      [bv setNeedsDisplay:YES];
+    }
+  });
+}
+
+double window_get_bullet_chart_value(main__WindowInfo *info, const char *name) {
+  if (!info || !info->app_delegate) return 0.0;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  __block double res = 0.0;
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGBulletChartView class]]) {
+      res = [(SGBulletChartView *)v value];
+    }
+  });
+  return res;
+}
+
+// 6. Waterfall Chart View
+@interface SGWaterfallChartView : NSView
+@property (nonatomic, copy) NSString *chartTitle;
+@property (nonatomic, strong) NSArray<NSString *> *labels;
+@property (nonatomic, strong) NSArray<NSNumber *> *deltas;
+@end
+
+@implementation SGWaterfallChartView
+- (void)drawRect:(NSRect)dirtyRect {
+  [super drawRect:dirtyRect];
+  NSRect b = self.bounds;
+  [[NSColor colorWithCalibratedWhite:0.12 alpha:0.95] setFill];
+  [[NSBezierPath bezierPathWithRoundedRect:b xRadius:8 yRadius:8] fill];
+  if (self.chartTitle.length > 0) {
+    [self.chartTitle drawAtPoint:NSMakePoint(12, b.size.height - 24) withAttributes:@{
+      NSFontAttributeName: [NSFont boldSystemFontOfSize:12],
+      NSForegroundColorAttributeName: [NSColor whiteColor]
+    }];
+  }
+  NSUInteger n = self.deltas.count;
+  if (n == 0) return;
+  double running = 0.0, minV = 0.0, maxV = 0.0;
+  for (NSNumber *d in self.deltas) {
+    running += [d doubleValue];
+    if (running < minV) minV = running;
+    if (running > maxV) maxV = running;
+  }
+  if (maxV <= minV) maxV = minV + 1.0;
+  CGFloat padX = 16.0, padBottom = 22.0, padTop = 30.0;
+  CGFloat plotW = MAX(40.0, b.size.width - padX * 2);
+  CGFloat plotH = MAX(30.0, b.size.height - padBottom - padTop);
+  CGFloat stepX = plotW / (CGFloat)n;
+
+  double cur = 0.0;
+  for (NSUInteger i = 0; i < n; i++) {
+    double delta = [self.deltas[i] doubleValue];
+    double next = cur + delta;
+    CGFloat y1 = padBottom + (CGFloat)((cur - minV) / (maxV - minV)) * plotH;
+    CGFloat y2 = padBottom + (CGFloat)((next - minV) / (maxV - minV)) * plotH;
+    NSColor *col = (delta >= 0) ? [NSColor systemGreenColor] : [NSColor systemRedColor];
+    [col setFill];
+    CGFloat bx = padX + i * stepX + stepX * 0.15;
+    CGFloat bw = MAX(6.0, stepX * 0.7);
+    NSRect br = NSMakeRect(bx, MIN(y1, y2), bw, MAX(3.0, fabs(y2 - y1)));
+    [[NSBezierPath bezierPathWithRoundedRect:br xRadius:3 yRadius:3] fill];
+    cur = next;
+  }
+}
+@end
+
+void *window_add_waterfall_chart_control(main__WindowInfo *info, const char *name, const char *title, const char **labels, const double *deltas, int count, int height) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSString *titleStr = nsstring(title);
+  NSMutableArray *lArr = [NSMutableArray array];
+  NSMutableArray *dArr = [NSMutableArray array];
+  for (int i = 0; i < count; i++) {
+    [lArr addObject:(labels && labels[i]) ? nsstring(labels[i]) : [NSString stringWithFormat:@"Step %d", i + 1]];
+    [dArr addObject:@(deltas ? deltas[i] : 10.0)];
+  }
+  int h = height > 40 ? height : 180;
+  __block SGWaterfallChartView *view = nil;
+  sgRunOnMainSync(^{
+    view = [[SGWaterfallChartView alloc] initWithFrame:NSMakeRect(0, 0, 380, h)];
+    view.chartTitle = titleStr;
+    view.labels = lArr;
+    view.deltas = dArr;
+    [view setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [view.widthAnchor constraintGreaterThanOrEqualToConstant:320].active = YES;
+    [view.heightAnchor constraintEqualToConstant:h].active = YES;
+    delegate.controlsByName[key] = view;
+    [delegate addControlToLayout:view];
+  });
+  return (__bridge void *)view;
+}
+
+void window_set_waterfall_chart_data(main__WindowInfo *info, const char *name, const char **labels, const double *deltas, int count) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSMutableArray *lArr = [NSMutableArray array];
+  NSMutableArray *dArr = [NSMutableArray array];
+  for (int i = 0; i < count; i++) {
+    [lArr addObject:(labels && labels[i]) ? nsstring(labels[i]) : [NSString stringWithFormat:@"Step %d", i + 1]];
+    [dArr addObject:@(deltas ? deltas[i] : 0.0)];
+  }
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGWaterfallChartView class]]) {
+      SGWaterfallChartView *wv = (SGWaterfallChartView *)v;
+      wv.labels = lArr;
+      wv.deltas = dArr;
+      [wv setNeedsDisplay:YES];
+    }
+  });
+}
+
+// 7. Equalizer (Multi-Band Audio EQ)
+@interface SGEqualizerView : NSView
+@property (nonatomic, copy) NSString *eqTitle;
+@property (nonatomic, strong) NSArray<NSString *> *freqLabels;
+@property (nonatomic, strong) NSMutableArray<NSNumber *> *dbValues;
+@end
+
+@implementation SGEqualizerView
+- (void)drawRect:(NSRect)dirtyRect {
+  [super drawRect:dirtyRect];
+  NSRect b = self.bounds;
+  [[NSColor colorWithCalibratedWhite:0.11 alpha:0.96] setFill];
+  [[NSBezierPath bezierPathWithRoundedRect:b xRadius:8 yRadius:8] fill];
+  if (self.eqTitle.length > 0) {
+    [self.eqTitle drawAtPoint:NSMakePoint(12, b.size.height - 22) withAttributes:@{
+      NSFontAttributeName: [NSFont boldSystemFontOfSize:11],
+      NSForegroundColorAttributeName: [NSColor whiteColor]
+    }];
+  }
+  NSUInteger n = self.dbValues.count;
+  if (n == 0) return;
+  CGFloat padX = 16.0, padBottom = 22.0, padTop = 26.0;
+  CGFloat trackH = MAX(30.0, b.size.height - padBottom - padTop);
+  CGFloat stepX = MAX(24.0, (b.size.width - padX * 2) / (CGFloat)n);
+
+  for (NSUInteger i = 0; i < n; i++) {
+    double db = [self.dbValues[i] doubleValue];
+    double norm = (MAX(-12.0, MIN(12.0, db)) + 12.0) / 24.0;
+    CGFloat cx = padX + (i + 0.5) * stepX;
+    [[NSColor colorWithCalibratedWhite:0.25 alpha:1.0] setFill];
+    NSRectFill(NSMakeRect(cx - 2, padBottom, 4, trackH));
+    CGFloat knobY = padBottom + (CGFloat)norm * trackH;
+    [[NSColor systemTealColor] setFill];
+    [[NSBezierPath bezierPathWithRoundedRect:NSMakeRect(cx - 8, knobY - 5, 16, 10) xRadius:3 yRadius:3] fill];
+    if (i < self.freqLabels.count) {
+      [self.freqLabels[i] drawAtPoint:NSMakePoint(cx - 12, 4) withAttributes:@{
+        NSFontAttributeName: [NSFont systemFontOfSize:9],
+        NSForegroundColorAttributeName: [NSColor lightGrayColor]
+      }];
+    }
+  }
+}
+@end
+
+void *window_add_equalizer_control(main__WindowInfo *info, const char *name, const char *title, const char **freq_labels, const double *db_values, int count, int height) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSString *titleStr = nsstring(title);
+  NSMutableArray *fArr = [NSMutableArray array];
+  NSMutableArray *vArr = [NSMutableArray array];
+  for (int i = 0; i < count; i++) {
+    [fArr addObject:(freq_labels && freq_labels[i]) ? nsstring(freq_labels[i]) : [NSString stringWithFormat:@"B%d", i + 1]];
+    [vArr addObject:@(db_values ? db_values[i] : 0.0)];
+  }
+  int h = height > 50 ? height : 150;
+  __block SGEqualizerView *view = nil;
+  sgRunOnMainSync(^{
+    view = [[SGEqualizerView alloc] initWithFrame:NSMakeRect(0, 0, 340, h)];
+    view.eqTitle = titleStr;
+    view.freqLabels = fArr;
+    view.dbValues = vArr;
+    [view setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [view.widthAnchor constraintGreaterThanOrEqualToConstant:280].active = YES;
+    [view.heightAnchor constraintEqualToConstant:h].active = YES;
+    delegate.controlsByName[key] = view;
+    [delegate addControlToLayout:view];
+  });
+  return (__bridge void *)view;
+}
+
+void window_set_equalizer_bands(main__WindowInfo *info, const char *name, const double *db_values, int count) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSMutableArray *vArr = [NSMutableArray array];
+  for (int i = 0; i < count; i++) {
+    [vArr addObject:@(db_values ? db_values[i] : 0.0)];
+  }
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGEqualizerView class]]) {
+      SGEqualizerView *ev = (SGEqualizerView *)v;
+      ev.dbValues = vArr;
+      [ev setNeedsDisplay:YES];
+    }
+  });
+}
+
+const char *window_get_equalizer_bands(main__WindowInfo *info, const char *name) {
+  if (!info || !info->app_delegate) return strdup("");
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  __block NSString *res = @"";
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGEqualizerView class]]) {
+      SGEqualizerView *ev = (SGEqualizerView *)v;
+      NSMutableArray *parts = [NSMutableArray array];
+      for (NSNumber *num in ev.dbValues) {
+        [parts addObject:[NSString stringWithFormat:@"%.1f", [num doubleValue]]];
+      }
+      res = [parts componentsJoinedByString:@","];
+    }
+  });
+  return strdup([res UTF8String]);
+}
+
+// 8. VU Meter (Stereo LED Level Meter)
+@interface SGVUMeterView : NSView
+@property (nonatomic, copy) NSString *meterTitle;
+@property (nonatomic, assign) double leftPct;
+@property (nonatomic, assign) double rightPct;
+@end
+
+@implementation SGVUMeterView
+- (void)drawRect:(NSRect)dirtyRect {
+  [super drawRect:dirtyRect];
+  NSRect b = self.bounds;
+  [[NSColor colorWithCalibratedWhite:0.09 alpha:0.96] setFill];
+  [[NSBezierPath bezierPathWithRoundedRect:b xRadius:6 yRadius:6] fill];
+  [self.meterTitle drawAtPoint:NSMakePoint(10, b.size.height - 20) withAttributes:@{
+    NSFontAttributeName: [NSFont boldSystemFontOfSize:10],
+    NSForegroundColorAttributeName: [NSColor lightGrayColor]
+  }];
+  double vals[2] = { self.leftPct, self.rightPct };
+  int segments = 20;
+  CGFloat padX = 28.0;
+  CGFloat availW = MAX(60.0, b.size.width - padX - 12.0);
+  CGFloat segW = (availW - (segments - 1) * 2.0) / segments;
+  for (int ch = 0; ch < 2; ch++) {
+    CGFloat y = (ch == 0) ? 20.0 : 6.0;
+    NSString *chLbl = (ch == 0) ? @"L" : @"R";
+    [chLbl drawAtPoint:NSMakePoint(10, y - 1) withAttributes:@{
+      NSFontAttributeName: [NSFont boldSystemFontOfSize:10],
+      NSForegroundColorAttributeName: [NSColor whiteColor]
+    }];
+    int lit = (int)round((MAX(0.0, MIN(100.0, vals[ch])) / 100.0) * segments);
+    for (int s = 0; s < segments; s++) {
+      NSColor *c = (s < 13) ? [NSColor systemGreenColor] : ((s < 17) ? [NSColor systemYellowColor] : [NSColor systemRedColor]);
+      if (s >= lit) c = [c colorWithAlphaComponent:0.18];
+      [c setFill];
+      NSRectFill(NSMakeRect(padX + s * (segW + 2.0), y, MAX(2.0, segW), 10.0));
+    }
+  }
+}
+@end
+
+void *window_add_vu_meter_control(main__WindowInfo *info, const char *name, const char *title, double left_pct, double right_pct) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSString *tStr = nsstring(title);
+  __block SGVUMeterView *view = nil;
+  sgRunOnMainSync(^{
+    view = [[SGVUMeterView alloc] initWithFrame:NSMakeRect(0, 0, 280, 52)];
+    view.meterTitle = tStr;
+    view.leftPct = left_pct;
+    view.rightPct = right_pct;
+    [view setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [view.widthAnchor constraintGreaterThanOrEqualToConstant:240].active = YES;
+    [view.heightAnchor constraintEqualToConstant:52].active = YES;
+    delegate.controlsByName[key] = view;
+    [delegate addControlToLayout:view];
+  });
+  return (__bridge void *)view;
+}
+
+void window_set_vu_meter_levels(main__WindowInfo *info, const char *name, double left_pct, double right_pct) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGVUMeterView class]]) {
+      SGVUMeterView *mv = (SGVUMeterView *)v;
+      mv.leftPct = left_pct;
+      mv.rightPct = right_pct;
+      [mv setNeedsDisplay:YES];
+    }
+  });
+}
+
+double window_get_vu_meter_left(main__WindowInfo *info, const char *name) {
+  if (!info || !info->app_delegate) return 0.0;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  __block double res = 0.0;
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGVUMeterView class]]) res = [(SGVUMeterView *)v leftPct];
+  });
+  return res;
+}
+
+double window_get_vu_meter_right(main__WindowInfo *info, const char *name) {
+  if (!info || !info->app_delegate) return 0.0;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  __block double res = 0.0;
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGVUMeterView class]]) res = [(SGVUMeterView *)v rightPct];
+  });
+  return res;
+}
+
+// 9. XY Pad (2D Vector Controller)
+@interface SGXYPadView : NSView
+@property (nonatomic, copy) NSString *padTitle;
+@property (nonatomic, assign) double xVal;
+@property (nonatomic, assign) double yVal;
+@end
+
+@implementation SGXYPadView
+- (void)drawRect:(NSRect)dirtyRect {
+  [super drawRect:dirtyRect];
+  NSRect b = self.bounds;
+  [[NSColor colorWithCalibratedWhite:0.11 alpha:0.96] setFill];
+  [[NSBezierPath bezierPathWithRoundedRect:b xRadius:8 yRadius:8] fill];
+
+  [[NSColor colorWithCalibratedWhite:0.25 alpha:1.0] setStroke];
+  NSBezierPath *grid = [NSBezierPath bezierPath];
+  [grid moveToPoint:NSMakePoint(b.size.width * 0.5, 0)];
+  [grid lineToPoint:NSMakePoint(b.size.width * 0.5, b.size.height)];
+  [grid moveToPoint:NSMakePoint(0, b.size.height * 0.5)];
+  [grid lineToPoint:NSMakePoint(b.size.width, b.size.height * 0.5)];
+  [grid stroke];
+
+  CGFloat px = (CGFloat)MAX(0.0, MIN(1.0, self.xVal)) * b.size.width;
+  CGFloat py = (CGFloat)MAX(0.0, MIN(1.0, self.yVal)) * b.size.height;
+  [[NSColor systemCyanColor] setFill];
+  [[NSBezierPath bezierPathWithOvalInRect:NSMakeRect(px - 7, py - 7, 14, 14)] fill];
+
+  if (self.padTitle.length > 0) {
+    [self.padTitle drawAtPoint:NSMakePoint(8, b.size.height - 18) withAttributes:@{
+      NSFontAttributeName: [NSFont systemFontOfSize:10 weight:NSFontWeightSemibold],
+      NSForegroundColorAttributeName: [NSColor whiteColor]
+    }];
+  }
+}
+@end
+
+void *window_add_xy_pad_control(main__WindowInfo *info, const char *name, const char *title, double x_val, double y_val, int size) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSString *tStr = nsstring(title);
+  int sz = size > 60 ? size : 160;
+  __block SGXYPadView *view = nil;
+  sgRunOnMainSync(^{
+    view = [[SGXYPadView alloc] initWithFrame:NSMakeRect(0, 0, sz, sz)];
+    view.padTitle = tStr;
+    view.xVal = x_val;
+    view.yVal = y_val;
+    [view setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [view.widthAnchor constraintEqualToConstant:sz].active = YES;
+    [view.heightAnchor constraintEqualToConstant:sz].active = YES;
+    delegate.controlsByName[key] = view;
+    [delegate addControlToLayout:view];
+  });
+  return (__bridge void *)view;
+}
+
+void window_set_xy_pad_position(main__WindowInfo *info, const char *name, double x_val, double y_val) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGXYPadView class]]) {
+      SGXYPadView *xv = (SGXYPadView *)v;
+      xv.xVal = x_val;
+      xv.yVal = y_val;
+      [xv setNeedsDisplay:YES];
+    }
+  });
+}
+
+double window_get_xy_pad_x(main__WindowInfo *info, const char *name) {
+  if (!info || !info->app_delegate) return 0.0;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  __block double res = 0.0;
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGXYPadView class]]) res = [(SGXYPadView *)v xVal];
+  });
+  return res;
+}
+
+double window_get_xy_pad_y(main__WindowInfo *info, const char *name) {
+  if (!info || !info->app_delegate) return 0.0;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  __block double res = 0.0;
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGXYPadView class]]) res = [(SGXYPadView *)v yVal];
+  });
+  return res;
+}
+
+// 10. Stopwatch / Lap Timer
+@interface SGStopwatchView : NSView
+@property (nonatomic, copy) NSString *swTitle;
+@property (nonatomic, assign) int seconds;
+@property (nonatomic, strong) NSTextField *timeLabel;
+- (void)refreshTimeDisplay;
+@end
+
+@implementation SGStopwatchView
+- (void)refreshTimeDisplay {
+  int s = MAX(0, self.seconds);
+  int hrs = s / 3600;
+  int mins = (s % 3600) / 60;
+  int secs = s % 60;
+  self.timeLabel.stringValue = [NSString stringWithFormat:@"%@: %02d:%02d:%02d", self.swTitle.length ? self.swTitle : @"Timer", hrs, mins, secs];
+}
+@end
+
+void *window_add_stopwatch_control(main__WindowInfo *info, const char *name, const char *title, int initial_seconds) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSString *tStr = nsstring(title);
+  __block SGStopwatchView *view = nil;
+  sgRunOnMainSync(^{
+    view = [[SGStopwatchView alloc] initWithFrame:NSMakeRect(0, 0, 220, 36)];
+    view.swTitle = tStr;
+    view.seconds = initial_seconds;
+    NSTextField *lbl = [NSTextField labelWithString:@""];
+    lbl.font = [NSFont monospacedDigitSystemFontOfSize:14 weight:NSFontWeightBold];
+    lbl.frame = NSMakeRect(8, 8, 204, 20);
+    [view addSubview:lbl];
+    view.timeLabel = lbl;
+    [view refreshTimeDisplay];
+    [view setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [view.widthAnchor constraintGreaterThanOrEqualToConstant:200].active = YES;
+    [view.heightAnchor constraintEqualToConstant:36].active = YES;
+    delegate.controlsByName[key] = view;
+    [delegate addControlToLayout:view];
+  });
+  return (__bridge void *)view;
+}
+
+void window_set_stopwatch_seconds(main__WindowInfo *info, const char *name, int seconds) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGStopwatchView class]]) {
+      SGStopwatchView *sw = (SGStopwatchView *)v;
+      sw.seconds = seconds;
+      [sw refreshTimeDisplay];
+    }
+  });
+}
+
+int window_get_stopwatch_seconds(main__WindowInfo *info, const char *name) {
+  if (!info || !info->app_delegate) return 0;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  __block int res = 0;
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGStopwatchView class]]) res = [(SGStopwatchView *)v seconds];
+  });
+  return res;
+}
+
+void window_reset_stopwatch(main__WindowInfo *info, const char *name) {
+  window_set_stopwatch_seconds(info, name, 0);
+}
+
+// 11. Chat / Conversation View
+@interface SGChatView : NSView
+@property (nonatomic, copy) NSString *placeholder;
+@property (nonatomic, strong) NSMutableArray<NSDictionary *> *messages;
+@property (nonatomic, strong) NSStackView *messageStack;
+@end
+
+@implementation SGChatView
+@end
+
+void *window_add_chat_view_control(main__WindowInfo *info, const char *name, const char *placeholder, int height) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSString *phStr = nsstring(placeholder);
+  int h = height > 60 ? height : 220;
+  __block SGChatView *view = nil;
+  sgRunOnMainSync(^{
+    view = [[SGChatView alloc] initWithFrame:NSMakeRect(0, 0, 360, h)];
+    view.placeholder = phStr;
+    view.messages = [NSMutableArray array];
+    NSStackView *stack = [[NSStackView alloc] initWithFrame:view.bounds];
+    stack.orientation = NSUserInterfaceLayoutOrientationVertical;
+    stack.alignment = NSLayoutAttributeLeading;
+    stack.spacing = 6.0;
+    [view addSubview:stack];
+    view.messageStack = stack;
+    [view setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [view.widthAnchor constraintGreaterThanOrEqualToConstant:300].active = YES;
+    [view.heightAnchor constraintEqualToConstant:h].active = YES;
+    delegate.controlsByName[key] = view;
+    [delegate addControlToLayout:view];
+  });
+  return (__bridge void *)view;
+}
+
+void window_add_chat_message(main__WindowInfo *info, const char *name, const char *sender, const char *message, const char *timestamp, int is_outgoing) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSString *sStr = nsstring(sender);
+  NSString *mStr = nsstring(message);
+  NSString *tStr = nsstring(timestamp);
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGChatView class]]) {
+      SGChatView *cv = (SGChatView *)v;
+      [cv.messages addObject:@{ @"sender": sStr, @"message": mStr, @"time": tStr, @"out": @(is_outgoing != 0) }];
+      NSTextField *bubble = [NSTextField labelWithString:[NSString stringWithFormat:@"[%@] %@: %@", tStr, sStr, mStr]];
+      bubble.font = [NSFont systemFontOfSize:11];
+      [cv.messageStack addArrangedSubview:bubble];
+    }
+  });
+}
+
+void window_clear_chat_view(main__WindowInfo *info, const char *name) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGChatView class]]) {
+      SGChatView *cv = (SGChatView *)v;
+      [cv.messages removeAllObjects];
+      for (NSView *sub in [cv.messageStack.arrangedSubviews copy]) {
+        [cv.messageStack removeArrangedSubview:sub];
+        [sub removeFromSuperview];
+      }
+    }
+  });
+}
+
+int window_get_chat_message_count(main__WindowInfo *info, const char *name) {
+  if (!info || !info->app_delegate) return 0;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  __block int res = 0;
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGChatView class]]) res = (int)[[(SGChatView *)v messages] count];
+  });
+  return res;
+}
+
+// 12. Notification List / Inbox
+@interface SGNotificationListView : NSView
+@property (nonatomic, copy) NSString *listTitle;
+@property (nonatomic, strong) NSMutableArray<NSDictionary *> *items;
+@property (nonatomic, strong) NSStackView *itemStack;
+@end
+
+@implementation SGNotificationListView
+@end
+
+void *window_add_notification_list_control(main__WindowInfo *info, const char *name, const char *title, int height) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSString *tStr = nsstring(title);
+  int h = height > 60 ? height : 180;
+  __block SGNotificationListView *view = nil;
+  sgRunOnMainSync(^{
+    view = [[SGNotificationListView alloc] initWithFrame:NSMakeRect(0, 0, 340, h)];
+    view.listTitle = tStr;
+    view.items = [NSMutableArray array];
+    NSStackView *stack = [[NSStackView alloc] initWithFrame:view.bounds];
+    stack.orientation = NSUserInterfaceLayoutOrientationVertical;
+    stack.alignment = NSLayoutAttributeLeading;
+    stack.spacing = 4.0;
+    [view addSubview:stack];
+    view.itemStack = stack;
+    [view setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [view.widthAnchor constraintGreaterThanOrEqualToConstant:280].active = YES;
+    [view.heightAnchor constraintEqualToConstant:h].active = YES;
+    delegate.controlsByName[key] = view;
+    [delegate addControlToLayout:view];
+  });
+  return (__bridge void *)view;
+}
+
+void window_add_notification_item(main__WindowInfo *info, const char *name, const char *title, const char *message, const char *time_str, const char *level) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSString *tStr = nsstring(title);
+  NSString *mStr = nsstring(message);
+  NSString *tmStr = nsstring(time_str);
+  NSString *lvStr = nsstring(level);
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGNotificationListView class]]) {
+      SGNotificationListView *nv = (SGNotificationListView *)v;
+      [nv.items addObject:@{ @"title": tStr, @"message": mStr, @"time": tmStr, @"level": lvStr }];
+      NSTextField *row = [NSTextField labelWithString:[NSString stringWithFormat:@"[%@] %@ — %@ (%@)", lvStr, tStr, mStr, tmStr]];
+      row.font = [NSFont systemFontOfSize:11];
+      [nv.itemStack addArrangedSubview:row];
+    }
+  });
+}
+
+void window_clear_notification_list(main__WindowInfo *info, const char *name) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGNotificationListView class]]) {
+      SGNotificationListView *nv = (SGNotificationListView *)v;
+      [nv.items removeAllObjects];
+      for (NSView *sub in [nv.itemStack.arrangedSubviews copy]) {
+        [nv.itemStack removeArrangedSubview:sub];
+        [sub removeFromSuperview];
+      }
+    }
+  });
+}
+
+int window_get_notification_count(main__WindowInfo *info, const char *name) {
+  if (!info || !info->app_delegate) return 0;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  __block int res = 0;
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGNotificationListView class]]) res = (int)[[(SGNotificationListView *)v items] count];
+  });
+  return res;
+}
+
+// 13. Pricing / Subscription Tier Card
+@interface SGPricingCardView : NSBox
+@property (nonatomic, strong) NSTextField *priceField;
+@end
+
+@implementation SGPricingCardView
+@end
+
+void *window_add_pricing_card_control(main__WindowInfo *info, const char *name, const char *plan_name, const char *price_text, const char *period_text, const char *badge_text, const char **features, int feature_count, const char *button_text) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSString *planStr = nsstring(plan_name);
+  NSString *priceStr = nsstring(price_text);
+  NSString *perStr = nsstring(period_text);
+  NSString *badgeStr = nsstring(badge_text);
+  NSString *btnStr = nsstring(button_text);
+  NSMutableArray *fArr = [NSMutableArray array];
+  for (int i = 0; i < feature_count; i++) {
+    if (features && features[i]) [fArr addObject:nsstring(features[i])];
+  }
+  __block SGPricingCardView *box = nil;
+  sgRunOnMainSync(^{
+    box = [[SGPricingCardView alloc] initWithFrame:NSMakeRect(0, 0, 240, 220)];
+    box.boxType = NSBoxCustom;
+    box.cornerRadius = 10.0;
+    box.borderWidth = 1.0;
+    box.borderColor = [NSColor separatorColor];
+    box.fillColor = [NSColor controlBackgroundColor];
+
+    NSStackView *stack = [[NSStackView alloc] initWithFrame:NSZeroRect];
+    stack.orientation = NSUserInterfaceLayoutOrientationVertical;
+    stack.alignment = NSLayoutAttributeLeading;
+    stack.spacing = 6.0;
+    stack.edgeInsets = NSEdgeInsetsMake(12, 12, 12, 12);
+
+    NSString *hdr = badgeStr.length > 0 ? [NSString stringWithFormat:@"%@ [%@]", planStr, badgeStr] : planStr;
+    NSTextField *planLbl = [NSTextField labelWithString:hdr];
+    planLbl.font = [NSFont boldSystemFontOfSize:13];
+    [stack addArrangedSubview:planLbl];
+
+    NSTextField *prLbl = [NSTextField labelWithString:[NSString stringWithFormat:@"%@ %@", priceStr, perStr]];
+    prLbl.font = [NSFont boldSystemFontOfSize:18];
+    box.priceField = prLbl;
+    [stack addArrangedSubview:prLbl];
+
+    for (NSString *ft in fArr) {
+      NSTextField *fLbl = [NSTextField labelWithString:[NSString stringWithFormat:@"✓ %@", ft]];
+      fLbl.font = [NSFont systemFontOfSize:11];
+      [stack addArrangedSubview:fLbl];
+    }
+
+    NSButton *cta = [NSButton buttonWithTitle:(btnStr.length ? btnStr : @"Select") target:delegate action:@selector(handleButtonClicked:)];
+    cta.identifier = nsstring(name);
+    [stack addArrangedSubview:cta];
+
+    [box setContentView:stack];
+    [box setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [box.widthAnchor constraintGreaterThanOrEqualToConstant:220].active = YES;
+    delegate.controlsByName[key] = box;
+    [delegate addControlToLayout:box];
+  });
+  return (__bridge void *)box;
+}
+
+void window_set_pricing_card_price(main__WindowInfo *info, const char *name, const char *price_text, const char *period_text) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSString *pStr = nsstring(price_text);
+  NSString *perStr = nsstring(period_text);
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGPricingCardView class]]) {
+      SGPricingCardView *pc = (SGPricingCardView *)v;
+      pc.priceField.stringValue = [NSString stringWithFormat:@"%@ %@", pStr, perStr];
+    }
+  });
+}
+
+// 14. Empty State Placeholder
+@interface SGEmptyStateView : NSBox
+@property (nonatomic, strong) NSTextField *titleField;
+@property (nonatomic, strong) NSTextField *subtitleField;
+@end
+
+@implementation SGEmptyStateView
+@end
+
+void *window_add_empty_state_control(main__WindowInfo *info, const char *name, const char *icon_text, const char *title, const char *subtitle, const char *button_text) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSString *icStr = nsstring(icon_text);
+  NSString *tStr = nsstring(title);
+  NSString *subStr = nsstring(subtitle);
+  NSString *btnStr = nsstring(button_text);
+  __block SGEmptyStateView *box = nil;
+  sgRunOnMainSync(^{
+    box = [[SGEmptyStateView alloc] initWithFrame:NSMakeRect(0, 0, 320, 150)];
+    box.boxType = NSBoxCustom;
+    box.cornerRadius = 8.0;
+    box.borderWidth = 1.0;
+    box.borderColor = [NSColor separatorColor];
+
+    NSStackView *stack = [[NSStackView alloc] initWithFrame:NSZeroRect];
+    stack.orientation = NSUserInterfaceLayoutOrientationVertical;
+    stack.alignment = NSLayoutAttributeCenterX;
+    stack.spacing = 6.0;
+    stack.edgeInsets = NSEdgeInsetsMake(16, 16, 16, 16);
+
+    if (icStr.length > 0) {
+      NSTextField *ic = [NSTextField labelWithString:icStr];
+      ic.font = [NSFont systemFontOfSize:24];
+      [stack addArrangedSubview:ic];
+    }
+    NSTextField *tl = [NSTextField labelWithString:tStr];
+    tl.font = [NSFont boldSystemFontOfSize:13];
+    box.titleField = tl;
+    [stack addArrangedSubview:tl];
+
+    NSTextField *sl = [NSTextField labelWithString:subStr];
+    sl.font = [NSFont systemFontOfSize:11];
+    sl.textColor = [NSColor secondaryLabelColor];
+    box.subtitleField = sl;
+    [stack addArrangedSubview:sl];
+
+    if (btnStr.length > 0) {
+      NSButton *btn = [NSButton buttonWithTitle:btnStr target:delegate action:@selector(handleButtonClicked:)];
+      btn.identifier = nsstring(name);
+      [stack addArrangedSubview:btn];
+    }
+
+    [box setContentView:stack];
+    [box setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [box.widthAnchor constraintGreaterThanOrEqualToConstant:260].active = YES;
+    delegate.controlsByName[key] = box;
+    [delegate addControlToLayout:box];
+  });
+  return (__bridge void *)box;
+}
+
+void window_set_empty_state(main__WindowInfo *info, const char *name, const char *title, const char *subtitle) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSString *tStr = nsstring(title);
+  NSString *subStr = nsstring(subtitle);
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGEmptyStateView class]]) {
+      SGEmptyStateView *ev = (SGEmptyStateView *)v;
+      ev.titleField.stringValue = tStr;
+      ev.subtitleField.stringValue = subStr;
+    }
+  });
+}
+
+// 15. Skeleton Loader
+@interface SGSkeletonLoaderView : NSView
+@property (nonatomic, assign) int lines;
+@property (nonatomic, assign) int active;
+@end
+
+@implementation SGSkeletonLoaderView
+- (BOOL)isFlipped { return YES; }
+- (void)drawRect:(NSRect)dirtyRect {
+  [super drawRect:dirtyRect];
+  NSRect b = self.bounds;
+  int n = MAX(1, self.lines);
+  CGFloat rowH = MAX(12.0, (b.size.height - 8.0) / n);
+  NSColor *col = self.active ? [NSColor colorWithCalibratedWhite:0.35 alpha:0.65] : [NSColor colorWithCalibratedWhite:0.22 alpha:0.35];
+  [col setFill];
+  for (int i = 0; i < n; i++) {
+    CGFloat wFactor = (i == n - 1 && n > 1) ? 0.65 : 0.95;
+    NSRect r = NSMakeRect(8, 4 + i * rowH, (b.size.width - 16) * wFactor, MAX(8.0, rowH - 6.0));
+    [[NSBezierPath bezierPathWithRoundedRect:r xRadius:4 yRadius:4] fill];
+  }
+}
+@end
+
+void *window_add_skeleton_loader_control(main__WindowInfo *info, const char *name, int lines, int height) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  int h = height > 24 ? height : 72;
+  __block SGSkeletonLoaderView *view = nil;
+  sgRunOnMainSync(^{
+    view = [[SGSkeletonLoaderView alloc] initWithFrame:NSMakeRect(0, 0, 300, h)];
+    view.lines = lines > 0 ? lines : 3;
+    view.active = 1;
+    [view setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [view.widthAnchor constraintGreaterThanOrEqualToConstant:240].active = YES;
+    [view.heightAnchor constraintEqualToConstant:h].active = YES;
+    delegate.controlsByName[key] = view;
+    [delegate addControlToLayout:view];
+  });
+  return (__bridge void *)view;
+}
+
+void window_set_skeleton_active(main__WindowInfo *info, const char *name, int active) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGSkeletonLoaderView class]]) {
+      SGSkeletonLoaderView *sv = (SGSkeletonLoaderView *)v;
+      sv.active = (active != 0) ? 1 : 0;
+      [sv setNeedsDisplay:YES];
+    }
+  });
+}
+
+int window_get_skeleton_active(main__WindowInfo *info, const char *name) {
+  if (!info || !info->app_delegate) return 0;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  __block int res = 0;
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGSkeletonLoaderView class]]) res = [(SGSkeletonLoaderView *)v active];
+  });
+  return res;
+}
+
+// 16. Comparison / Feature Matrix Card
+@interface SGComparisonCardView : NSBox
+@property (nonatomic, strong) NSTextField *headerField;
+@end
+
+@implementation SGComparisonCardView
+@end
+
+void *window_add_comparison_card_control(main__WindowInfo *info, const char *name, const char *left_title, const char *right_title, const char **features, const char **left_vals, const char **right_vals, int count) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSString *lTitle = nsstring(left_title);
+  NSString *rTitle = nsstring(right_title);
+  NSMutableArray *rows = [NSMutableArray array];
+  for (int i = 0; i < count; i++) {
+    NSString *f = (features && features[i]) ? nsstring(features[i]) : @"";
+    NSString *lv = (left_vals && left_vals[i]) ? nsstring(left_vals[i]) : @"";
+    NSString *rv = (right_vals && right_vals[i]) ? nsstring(right_vals[i]) : @"";
+    [rows addObject:[NSString stringWithFormat:@"%@: %@ vs %@", f, lv, rv]];
+  }
+  __block SGComparisonCardView *box = nil;
+  sgRunOnMainSync(^{
+    box = [[SGComparisonCardView alloc] initWithFrame:NSMakeRect(0, 0, 340, 140)];
+    box.boxType = NSBoxCustom;
+    box.cornerRadius = 8.0;
+    box.borderWidth = 1.0;
+    box.borderColor = [NSColor separatorColor];
+
+    NSStackView *stack = [[NSStackView alloc] initWithFrame:NSZeroRect];
+    stack.orientation = NSUserInterfaceLayoutOrientationVertical;
+    stack.alignment = NSLayoutAttributeLeading;
+    stack.spacing = 4.0;
+    stack.edgeInsets = NSEdgeInsetsMake(10, 10, 10, 10);
+
+    NSTextField *hdr = [NSTextField labelWithString:[NSString stringWithFormat:@"%@  vs  %@", lTitle, rTitle]];
+    hdr.font = [NSFont boldSystemFontOfSize:12];
+    box.headerField = hdr;
+    [stack addArrangedSubview:hdr];
+
+    for (NSString *rText in rows) {
+      NSTextField *rl = [NSTextField labelWithString:rText];
+      rl.font = [NSFont systemFontOfSize:11];
+      [stack addArrangedSubview:rl];
+    }
+
+    [box setContentView:stack];
+    [box setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [box.widthAnchor constraintGreaterThanOrEqualToConstant:280].active = YES;
+    delegate.controlsByName[key] = box;
+    [delegate addControlToLayout:box];
+  });
+  return (__bridge void *)box;
+}
+
+void window_set_comparison_card(main__WindowInfo *info, const char *name, const char *left_title, const char *right_title) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSString *lTitle = nsstring(left_title);
+  NSString *rTitle = nsstring(right_title);
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGComparisonCardView class]]) {
+      SGComparisonCardView *cv = (SGComparisonCardView *)v;
+      cv.headerField.stringValue = [NSString stringWithFormat:@"%@  vs  %@", lTitle, rTitle];
+    }
+  });
+}
+
+// 17. Avatar Group / Overlapping Stack
+@interface SGAvatarGroupView : NSView
+@property (nonatomic, strong) NSArray<NSString *> *initials;
+@property (nonatomic, strong) NSArray<NSString *> *hexColors;
+@property (nonatomic, assign) int maxVisible;
+@property (nonatomic, copy) NSString *caption;
+@end
+
+@implementation SGAvatarGroupView
+- (void)drawRect:(NSRect)dirtyRect {
+  [super drawRect:dirtyRect];
+  NSUInteger total = self.initials.count;
+  NSUInteger vis = (self.maxVisible > 0 && (NSUInteger)self.maxVisible < total) ? (NSUInteger)self.maxVisible : total;
+  CGFloat x = 6.0;
+  CGFloat sz = 28.0;
+  for (NSUInteger i = 0; i < vis; i++) {
+    NSString *hex = (i < self.hexColors.count) ? self.hexColors[i] : @"#3b82f6";
+    NSColor *col = colorFromHexString(hex) ?: [NSColor systemBlueColor];
+    [col setFill];
+    NSRect r = NSMakeRect(x, 4, sz, sz);
+    [[NSBezierPath bezierPathWithOvalInRect:r] fill];
+    [self.initials[i] drawAtPoint:NSMakePoint(x + 6, 10) withAttributes:@{
+      NSFontAttributeName: [NSFont boldSystemFontOfSize:10],
+      NSForegroundColorAttributeName: [NSColor whiteColor]
+    }];
+    x += 20.0;
+  }
+  if (self.caption.length > 0) {
+    [self.caption drawAtPoint:NSMakePoint(x + 12.0, 10) withAttributes:@{
+      NSFontAttributeName: [NSFont systemFontOfSize:11],
+      NSForegroundColorAttributeName: [NSColor secondaryLabelColor]
+    }];
+  }
+}
+@end
+
+void *window_add_avatar_group_control(main__WindowInfo *info, const char *name, const char **initials, const char **hex_colors, int count, int max_visible, const char *caption) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSString *capStr = nsstring(caption);
+  NSMutableArray *inArr = [NSMutableArray array];
+  NSMutableArray *colArr = [NSMutableArray array];
+  for (int i = 0; i < count; i++) {
+    [inArr addObject:(initials && initials[i]) ? nsstring(initials[i]) : @"U"];
+    [colArr addObject:(hex_colors && hex_colors[i]) ? nsstring(hex_colors[i]) : @"#3b82f6"];
+  }
+  __block SGAvatarGroupView *view = nil;
+  sgRunOnMainSync(^{
+    view = [[SGAvatarGroupView alloc] initWithFrame:NSMakeRect(0, 0, 260, 36)];
+    view.initials = inArr;
+    view.hexColors = colArr;
+    view.maxVisible = max_visible > 0 ? max_visible : count;
+    view.caption = capStr;
+    [view setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [view.widthAnchor constraintGreaterThanOrEqualToConstant:200].active = YES;
+    [view.heightAnchor constraintEqualToConstant:36].active = YES;
+    delegate.controlsByName[key] = view;
+    [delegate addControlToLayout:view];
+  });
+  return (__bridge void *)view;
+}
+
+void window_set_avatar_group(main__WindowInfo *info, const char *name, const char **initials, int count, const char *caption) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSString *capStr = nsstring(caption);
+  NSMutableArray *inArr = [NSMutableArray array];
+  for (int i = 0; i < count; i++) {
+    [inArr addObject:(initials && initials[i]) ? nsstring(initials[i]) : @"U"];
+  }
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGAvatarGroupView class]]) {
+      SGAvatarGroupView *av = (SGAvatarGroupView *)v;
+      av.initials = inArr;
+      av.caption = capStr;
+      [av setNeedsDisplay:YES];
+    }
+  });
+}
+
+// 18. Checkout Steps / Connected Progress Bar
+@interface SGCheckoutStepsView : NSView
+@property (nonatomic, strong) NSArray<NSString *> *steps;
+@property (nonatomic, assign) int currentStep;
+@end
+
+@implementation SGCheckoutStepsView
+- (void)drawRect:(NSRect)dirtyRect {
+  [super drawRect:dirtyRect];
+  NSUInteger n = self.steps.count;
+  if (n == 0) return;
+  NSRect b = self.bounds;
+  CGFloat stepW = b.size.width / (CGFloat)n;
+  for (NSUInteger i = 0; i < n; i++) {
+    CGFloat cx = (i + 0.5) * stepW;
+    BOOL done = ((int)i <= self.currentStep);
+    NSColor *col = done ? [NSColor systemGreenColor] : [NSColor grayColor];
+    [col setFill];
+    [[NSBezierPath bezierPathWithOvalInRect:NSMakeRect(cx - 10, 18, 20, 20)] fill];
+    [self.steps[i] drawAtPoint:NSMakePoint(cx - 24, 2) withAttributes:@{
+      NSFontAttributeName: [NSFont systemFontOfSize:10 weight:done ? NSFontWeightBold : NSFontWeightRegular],
+      NSForegroundColorAttributeName: col
+    }];
+  }
+}
+@end
+
+void *window_add_checkout_steps_control(main__WindowInfo *info, const char *name, const char **steps, int count, int current_step) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSMutableArray *sArr = [NSMutableArray array];
+  for (int i = 0; i < count; i++) {
+    [sArr addObject:(steps && steps[i]) ? nsstring(steps[i]) : [NSString stringWithFormat:@"Step %d", i + 1]];
+  }
+  __block SGCheckoutStepsView *view = nil;
+  sgRunOnMainSync(^{
+    view = [[SGCheckoutStepsView alloc] initWithFrame:NSMakeRect(0, 0, 360, 44)];
+    view.steps = sArr;
+    view.currentStep = current_step;
+    [view setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [view.widthAnchor constraintGreaterThanOrEqualToConstant:300].active = YES;
+    [view.heightAnchor constraintEqualToConstant:44].active = YES;
+    delegate.controlsByName[key] = view;
+    [delegate addControlToLayout:view];
+  });
+  return (__bridge void *)view;
+}
+
+void window_set_checkout_step(main__WindowInfo *info, const char *name, int current_step) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGCheckoutStepsView class]]) {
+      SGCheckoutStepsView *cv = (SGCheckoutStepsView *)v;
+      cv.currentStep = current_step;
+      [cv setNeedsDisplay:YES];
+    }
+  });
+}
+
+int window_get_checkout_step(main__WindowInfo *info, const char *name) {
+  if (!info || !info->app_delegate) return 0;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  __block int res = 0;
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGCheckoutStepsView class]]) res = [(SGCheckoutStepsView *)v currentStep];
+  });
+  return res;
+}
+
+// 19. Cron Expression Editor
+@interface SGCronEditorView : NSView
+@property (nonatomic, copy) NSString *expression;
+@property (nonatomic, strong) NSTextField *inputField;
+@end
+
+@implementation SGCronEditorView
+@end
+
+void *window_add_cron_editor_control(main__WindowInfo *info, const char *name, const char *expression) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSString *exprStr = nsstring(expression);
+  __block SGCronEditorView *view = nil;
+  sgRunOnMainSync(^{
+    view = [[SGCronEditorView alloc] initWithFrame:NSMakeRect(0, 0, 300, 32)];
+    view.expression = exprStr.length ? exprStr : @"* * * * *";
+    NSTextField *tf = [NSTextField textFieldWithString:view.expression];
+    tf.font = [NSFont monospacedSystemFontOfSize:12 weight:NSFontWeightRegular];
+    tf.frame = NSMakeRect(0, 2, 290, 26);
+    [view addSubview:tf];
+    view.inputField = tf;
+    [view setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [view.widthAnchor constraintGreaterThanOrEqualToConstant:260].active = YES;
+    [view.heightAnchor constraintEqualToConstant:32].active = YES;
+    delegate.controlsByName[key] = view;
+    [delegate addControlToLayout:view];
+  });
+  return (__bridge void *)view;
+}
+
+void window_set_cron_expression(main__WindowInfo *info, const char *name, const char *expression) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSString *exprStr = nsstring(expression);
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGCronEditorView class]]) {
+      SGCronEditorView *cv = (SGCronEditorView *)v;
+      cv.expression = exprStr;
+      cv.inputField.stringValue = exprStr;
+    }
+  });
+}
+
+const char *window_get_cron_expression(main__WindowInfo *info, const char *name) {
+  if (!info || !info->app_delegate) return strdup("");
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  __block NSString *res = @"";
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGCronEditorView class]]) {
+      SGCronEditorView *cv = (SGCronEditorView *)v;
+      res = cv.inputField ? cv.inputField.stringValue : (cv.expression ?: @"");
+    }
+  });
+  return strdup([res UTF8String]);
+}
+
+// 20. Regex Tester Bar
+@interface SGRegexTesterView : NSView
+@property (nonatomic, copy) NSString *pattern;
+@property (nonatomic, copy) NSString *testText;
+- (int)computeMatches;
+@end
+
+@implementation SGRegexTesterView
+- (int)computeMatches {
+  if (!self.pattern || self.pattern.length == 0 || !self.testText) return 0;
+  NSError *err = nil;
+  NSRegularExpression *re = [NSRegularExpression regularExpressionWithPattern:self.pattern options:0 error:&err];
+  if (err || !re) return 0;
+  NSUInteger cnt = [re numberOfMatchesInString:self.testText options:0 range:NSMakeRange(0, self.testText.length)];
+  return (int)cnt;
+}
+@end
+
+void *window_add_regex_tester_control(main__WindowInfo *info, const char *name, const char *pattern, const char *test_text) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSString *pStr = nsstring(pattern);
+  NSString *tStr = nsstring(test_text);
+  __block SGRegexTesterView *view = nil;
+  sgRunOnMainSync(^{
+    view = [[SGRegexTesterView alloc] initWithFrame:NSMakeRect(0, 0, 340, 56)];
+    view.pattern = pStr;
+    view.testText = tStr;
+    [view setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [view.widthAnchor constraintGreaterThanOrEqualToConstant:280].active = YES;
+    [view.heightAnchor constraintEqualToConstant:56].active = YES;
+    delegate.controlsByName[key] = view;
+    [delegate addControlToLayout:view];
+  });
+  return (__bridge void *)view;
+}
+
+void window_set_regex_pattern(main__WindowInfo *info, const char *name, const char *pattern) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSString *pStr = nsstring(pattern);
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGRegexTesterView class]]) {
+      [(SGRegexTesterView *)v setPattern:pStr];
+    }
+  });
+}
+
+const char *window_get_regex_pattern(main__WindowInfo *info, const char *name) {
+  if (!info || !info->app_delegate) return strdup("");
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  __block NSString *res = @"";
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGRegexTesterView class]]) {
+      res = [(SGRegexTesterView *)v pattern] ?: @"";
+    }
+  });
+  return strdup([res UTF8String]);
+}
+
+void window_set_regex_test_text(main__WindowInfo *info, const char *name, const char *test_text) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSString *tStr = nsstring(test_text);
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGRegexTesterView class]]) {
+      [(SGRegexTesterView *)v setTestText:tStr];
+    }
+  });
+}
+
+int window_get_regex_match_count(main__WindowInfo *info, const char *name) {
+  if (!info || !info->app_delegate) return 0;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  __block int res = 0;
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGRegexTesterView class]]) {
+      res = [(SGRegexTesterView *)v computeMatches];
+    }
+  });
+  return res;
+}
+
+// 21. Hex / Byte Inspector Viewer
+@interface SGHexViewerView : NSView
+@property (nonatomic, copy) NSString *rawData;
+@property (nonatomic, strong) NSTextField *hexLabel;
+- (void)refreshHex;
+@end
+
+@implementation SGHexViewerView
+- (void)refreshHex {
+  NSData *data = [self.rawData dataUsingEncoding:NSUTF8StringEncoding];
+  const unsigned char *bytes = (const unsigned char *)[data bytes];
+  NSUInteger len = [data length];
+  NSMutableString *hexOut = [NSMutableString string];
+  for (NSUInteger i = 0; i < len; i++) {
+    [hexOut appendFormat:@"%02X ", bytes[i]];
+  }
+  self.hexLabel.stringValue = [NSString stringWithFormat:@"%@ | %@", hexOut, self.rawData ?: @""];
+}
+@end
+
+void *window_add_hex_viewer_control(main__WindowInfo *info, const char *name, const char *raw_data, int height) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSString *rawStr = nsstring(raw_data);
+  int h = height > 40 ? height : 100;
+  __block SGHexViewerView *view = nil;
+  sgRunOnMainSync(^{
+    view = [[SGHexViewerView alloc] initWithFrame:NSMakeRect(0, 0, 360, h)];
+    view.rawData = rawStr;
+    NSTextField *lbl = [NSTextField labelWithString:@""];
+    lbl.font = [NSFont monospacedSystemFontOfSize:11 weight:NSFontWeightRegular];
+    lbl.frame = NSMakeRect(8, 8, 344, h - 16);
+    [view addSubview:lbl];
+    view.hexLabel = lbl;
+    [view refreshHex];
+    [view setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [view.widthAnchor constraintGreaterThanOrEqualToConstant:300].active = YES;
+    [view.heightAnchor constraintEqualToConstant:h].active = YES;
+    delegate.controlsByName[key] = view;
+    [delegate addControlToLayout:view];
+  });
+  return (__bridge void *)view;
+}
+
+void window_set_hex_viewer_data(main__WindowInfo *info, const char *name, const char *raw_data) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSString *rawStr = nsstring(raw_data);
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGHexViewerView class]]) {
+      SGHexViewerView *hv = (SGHexViewerView *)v;
+      hv.rawData = rawStr;
+      [hv refreshHex];
+    }
+  });
+}
+
+const char *window_get_hex_viewer_data(main__WindowInfo *info, const char *name) {
+  if (!info || !info->app_delegate) return strdup("");
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  __block NSString *res = @"";
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGHexViewerView class]]) {
+      res = [(SGHexViewerView *)v rawData] ?: @"";
+    }
+  });
+  return strdup([res UTF8String]);
+}
+
+// 22. Password Strength Input
+@interface SGPasswordStrengthView : NSView
+@property (nonatomic, copy) NSString *passwordValue;
+- (int)computeScore;
+@end
+
+@implementation SGPasswordStrengthView
+- (int)computeScore {
+  NSString *pw = self.passwordValue ?: @"";
+  if (pw.length == 0) return 0;
+  int score = 0;
+  if (pw.length >= 8) score++;
+  if ([pw rangeOfCharacterFromSet:[NSCharacterSet uppercaseLetterCharacterSet]].location != NSNotFound &&
+      [pw rangeOfCharacterFromSet:[NSCharacterSet lowercaseLetterCharacterSet]].location != NSNotFound) score++;
+  if ([pw rangeOfCharacterFromSet:[NSCharacterSet decimalDigitCharacterSet]].location != NSNotFound) score++;
+  if ([pw rangeOfCharacterFromSet:[[NSCharacterSet alphanumericCharacterSet] invertedSet]].location != NSNotFound || pw.length >= 12) score++;
+  return MIN(4, MAX(1, score));
+}
+@end
+
+void *window_add_password_strength_control(main__WindowInfo *info, const char *name, const char *value) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSString *vStr = nsstring(value);
+  __block SGPasswordStrengthView *view = nil;
+  sgRunOnMainSync(^{
+    view = [[SGPasswordStrengthView alloc] initWithFrame:NSMakeRect(0, 0, 260, 44)];
+    view.passwordValue = vStr;
+    [view setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [view.widthAnchor constraintGreaterThanOrEqualToConstant:220].active = YES;
+    [view.heightAnchor constraintEqualToConstant:44].active = YES;
+    delegate.controlsByName[key] = view;
+    [delegate addControlToLayout:view];
+  });
+  return (__bridge void *)view;
+}
+
+void window_set_password_strength_value(main__WindowInfo *info, const char *name, const char *value) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSString *vStr = nsstring(value);
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGPasswordStrengthView class]]) {
+      [(SGPasswordStrengthView *)v setPasswordValue:vStr];
+    }
+  });
+}
+
+const char *window_get_password_strength_value(main__WindowInfo *info, const char *name) {
+  if (!info || !info->app_delegate) return strdup("");
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  __block NSString *res = @"";
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGPasswordStrengthView class]]) {
+      res = [(SGPasswordStrengthView *)v passwordValue] ?: @"";
+    }
+  });
+  return strdup([res UTF8String]);
+}
+
+int window_get_password_strength_score(main__WindowInfo *info, const char *name) {
+  if (!info || !info->app_delegate) return 0;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  __block int res = 0;
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGPasswordStrengthView class]]) {
+      res = [(SGPasswordStrengthView *)v computeScore];
+    }
+  });
+  return res;
+}
+
+// 23. Signature Pad
+@interface SGSignaturePadView : NSView
+@property (nonatomic, copy) NSString *padLabel;
+@property (nonatomic, assign) int signedFlag;
+@end
+
+@implementation SGSignaturePadView
+- (void)drawRect:(NSRect)dirtyRect {
+  [super drawRect:dirtyRect];
+  NSRect b = self.bounds;
+  [[NSColor colorWithCalibratedWhite:0.98 alpha:1.0] setFill];
+  [[NSBezierPath bezierPathWithRoundedRect:b xRadius:6 yRadius:6] fill];
+  [[NSColor lightGrayColor] setStroke];
+  [[NSBezierPath bezierPathWithRoundedRect:NSInsetRect(b, 1, 1) xRadius:6 yRadius:6] stroke];
+  if (self.padLabel.length > 0) {
+    [self.padLabel drawAtPoint:NSMakePoint(10, 6) withAttributes:@{
+      NSFontAttributeName: [NSFont systemFontOfSize:10],
+      NSForegroundColorAttributeName: [NSColor grayColor]
+    }];
+  }
+}
+@end
+
+void *window_add_signature_pad_control(main__WindowInfo *info, const char *name, const char *label, int height) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSString *lblStr = nsstring(label);
+  int h = height > 40 ? height : 100;
+  __block SGSignaturePadView *view = nil;
+  sgRunOnMainSync(^{
+    view = [[SGSignaturePadView alloc] initWithFrame:NSMakeRect(0, 0, 280, h)];
+    view.padLabel = lblStr;
+    view.signedFlag = 0;
+    [view setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [view.widthAnchor constraintGreaterThanOrEqualToConstant:240].active = YES;
+    [view.heightAnchor constraintEqualToConstant:h].active = YES;
+    delegate.controlsByName[key] = view;
+    [delegate addControlToLayout:view];
+  });
+  return (__bridge void *)view;
+}
+
+void window_clear_signature_pad(main__WindowInfo *info, const char *name) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGSignaturePadView class]]) {
+      SGSignaturePadView *sv = (SGSignaturePadView *)v;
+      sv.signedFlag = 0;
+      [sv setNeedsDisplay:YES];
+    }
+  });
+}
+
+int window_has_signature(main__WindowInfo *info, const char *name) {
+  if (!info || !info->app_delegate) return 0;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  __block int res = 0;
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGSignaturePadView class]]) res = [(SGSignaturePadView *)v signedFlag];
+  });
+  return res;
+}
+
+// 24. Number Spinner Pill
+@interface SGNumberSpinnerView : NSView
+@property (nonatomic, assign) int value;
+@property (nonatomic, assign) int minVal;
+@property (nonatomic, assign) int maxVal;
+@property (nonatomic, assign) int stepVal;
+@property (nonatomic, strong) NSTextField *valField;
+@end
+
+@implementation SGNumberSpinnerView
+@end
+
+void *window_add_number_spinner_control(main__WindowInfo *info, const char *name, int value, int min_val, int max_val, int step) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  __block SGNumberSpinnerView *view = nil;
+  sgRunOnMainSync(^{
+    view = [[SGNumberSpinnerView alloc] initWithFrame:NSMakeRect(0, 0, 120, 30)];
+    view.minVal = min_val;
+    view.maxVal = max_val >= min_val ? max_val : min_val + 100;
+    view.stepVal = step > 0 ? step : 1;
+    view.value = MAX(view.minVal, MIN(view.maxVal, value));
+    NSTextField *tf = [NSTextField labelWithString:[NSString stringWithFormat:@"%d", view.value]];
+    tf.alignment = NSTextAlignmentCenter;
+    tf.frame = NSMakeRect(28, 5, 64, 20);
+    [view addSubview:tf];
+    view.valField = tf;
+    [view setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [view.widthAnchor constraintEqualToConstant:120].active = YES;
+    [view.heightAnchor constraintEqualToConstant:30].active = YES;
+    delegate.controlsByName[key] = view;
+    [delegate addControlToLayout:view];
+  });
+  return (__bridge void *)view;
+}
+
+void window_set_number_spinner_value(main__WindowInfo *info, const char *name, int value) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGNumberSpinnerView class]]) {
+      SGNumberSpinnerView *sv = (SGNumberSpinnerView *)v;
+      sv.value = MAX(sv.minVal, MIN(sv.maxVal, value));
+      sv.valField.stringValue = [NSString stringWithFormat:@"%d", sv.value];
+    }
+  });
+}
+
+int window_get_number_spinner_value(main__WindowInfo *info, const char *name) {
+  if (!info || !info->app_delegate) return 0;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  __block int res = 0;
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGNumberSpinnerView class]]) res = [(SGNumberSpinnerView *)v value];
+  });
+  return res;
+}
+
+// 25. Codecaine File Manager Theme FX & Atmosphere Shaders + 3D Sculpted Folder Grid
+
+@interface SGThemeAtmosphereView : NSView
+@property (nonatomic, copy) NSString *atmosphere;
+@property (nonatomic, copy) NSString *backdropStyle;
+@property (nonatomic, strong) NSColor *baseBgColor;
+@property (nonatomic, strong) NSColor *glowColor;
+@property (nonatomic, strong) NSColor *glowColor2;
+@property (nonatomic, strong) NSColor *accentColor;
+@property (nonatomic, assign) int glowIntensity;
+@property (nonatomic, assign) int grain;
+@property (nonatomic, assign) BOOL scanlines;
+@property (nonatomic, assign) int vignette;
+@property (nonatomic, assign) BOOL prismEdge;
+@property (nonatomic, assign) BOOL isDark;
+@property (nonatomic, assign) double phase;
+@property (nonatomic, strong) NSTimer *animTimer;
+- (void)setAnimatedState:(BOOL)enabled;
+@end
+
+@implementation SGThemeAtmosphereView
+- (NSView *)hitTest:(NSPoint)point {
+  return nil;
+}
+- (BOOL)isOpaque {
+  return NO;
+}
+- (void)setAnimatedState:(BOOL)enabled {
+  if (enabled) {
+    if (!self.animTimer) {
+      __unsafe_unretained typeof(self) weakSelf = self;
+      self.animTimer = [NSTimer timerWithTimeInterval:0.033 repeats:YES block:^(NSTimer * _Nonnull timer) {
+        SGThemeAtmosphereView *strongSelf = weakSelf;
+        if (!strongSelf || strongSelf.isHiddenOrHasHiddenAncestor || !strongSelf.window || !(strongSelf.window.occlusionState & NSWindowOcclusionStateVisible)) return;
+        strongSelf.phase += 0.045;
+        [strongSelf setNeedsDisplay:YES];
+      }];
+      [[NSRunLoop mainRunLoop] addTimer:self.animTimer forMode:NSRunLoopCommonModes];
+    }
+  } else {
+    [self.animTimer invalidate];
+    self.animTimer = nil;
+  }
+}
+- (void)dealloc {
+  [_animTimer invalidate];
+  [super dealloc];
+}
+- (void)drawRect:(NSRect)dirtyRect {
+  [super drawRect:dirtyRect];
+  NSRect b = self.bounds;
+  if (b.size.width <= 1 || b.size.height <= 1) return;
+
+  // 0. Base theme canvas fill
+  if (self.baseBgColor) {
+    [self.baseBgColor setFill];
+    NSRectFill(b);
+  }
+
+  NSColor *g1 = self.glowColor ?: (self.accentColor ?: [NSColor colorWithSRGBRed:0.22 green:0.74 blue:0.97 alpha:1.0]);
+  NSColor *g2 = self.glowColor2 ?: g1;
+  CGFloat intensity = MIN(1.0, MAX(0.0, self.glowIntensity / 100.0));
+  double ph = self.phase;
+
+  // 1. Triple-bloom volumetric radial & diagonal ambient light wash
+  if (intensity > 0.02) {
+    CGFloat ox = 0.08 * sin(ph * 0.7);
+    CGFloat oy = 0.08 * cos(ph * 0.5);
+    NSGradient *rad1 = [[[NSGradient alloc] initWithStartingColor:[g1 colorWithAlphaComponent:0.34 * intensity]
+                                                      endingColor:[g1 colorWithAlphaComponent:0.0]] autorelease];
+    [rad1 drawInRect:b relativeCenterPosition:NSMakePoint(-0.52 + ox, 0.52 + oy)];
+    NSGradient *rad2 = [[[NSGradient alloc] initWithStartingColor:[g2 colorWithAlphaComponent:0.30 * intensity]
+                                                      endingColor:[g2 colorWithAlphaComponent:0.0]] autorelease];
+    [rad2 drawInRect:b relativeCenterPosition:NSMakePoint(0.54 - ox, -0.46 - oy)];
+    NSGradient *rad3 = [[[NSGradient alloc] initWithStartingColor:[g1 colorWithAlphaComponent:0.14 * intensity]
+                                                      endingColor:[g2 colorWithAlphaComponent:0.0]] autorelease];
+    [rad3 drawInRect:b relativeCenterPosition:NSMakePoint(0.0, 0.65)];
+  }
+
+  // 2. Backdrop 3D Perspective Synthwave Horizon Grid / Tactical Circuit Grid
+  NSString *bd = [self.backdropStyle lowercaseString] ?: @"frosted";
+  NSString *atmo = [self.atmosphere lowercaseString] ?: @"none";
+  if ([bd isEqualToString:@"grid"] || [bd isEqualToString:@"synthwave"] || [bd isEqualToString:@"circuit"] || [atmo isEqualToString:@"cyber_rain"] || [atmo isEqualToString:@"m4_raytrace_prism"]) {
+    // Upper subtle technical blueprint grid
+    [[g1 colorWithAlphaComponent:0.055] setStroke];
+    CGFloat step = [bd isEqualToString:@"synthwave"] ? 36.0 : 30.0;
+    for (CGFloat x = 0; x < b.size.width; x += step) {
+      NSBezierPath *p = [NSBezierPath bezierPath];
+      [p moveToPoint:NSMakePoint(x, 0)];
+      [p lineToPoint:NSMakePoint(x, b.size.height)];
+      p.lineWidth = 0.5;
+      [p stroke];
+    }
+    for (CGFloat y = 0; y < b.size.height; y += step) {
+      NSBezierPath *p = [NSBezierPath bezierPath];
+      [p moveToPoint:NSMakePoint(0, y)];
+      [p lineToPoint:NSMakePoint(b.size.width, y)];
+      p.lineWidth = 0.5;
+      [p stroke];
+    }
+
+    // 3D Vanishing-Point Perspective Floor Grid in lower 38% of window
+    CGFloat horizonY = b.size.height * 0.36;
+    NSPoint vanishPt = NSMakePoint(NSMidX(b), horizonY);
+    [[g2 colorWithAlphaComponent:0.13] setStroke];
+    for (int ray = -10; ray <= 10; ray++) {
+      NSBezierPath *rayPath = [NSBezierPath bezierPath];
+      [rayPath moveToPoint:vanishPt];
+      [rayPath lineToPoint:NSMakePoint(NSMidX(b) + ray * (b.size.width * 0.12), 0)];
+      rayPath.lineWidth = 0.8;
+      [rayPath stroke];
+    }
+    CGFloat zOffset = fmod(ph * 0.18, 1.0);
+    for (int row = 1; row <= 8; row++) {
+      CGFloat t = pow(((row - 1 + zOffset) / 8.0), 1.65);
+      CGFloat y = horizonY * (1.0 - t);
+      [[g1 colorWithAlphaComponent:0.06 + 0.14 * t] setStroke];
+      NSBezierPath *hLine = [NSBezierPath bezierPath];
+      [hLine moveToPoint:NSMakePoint(0, y)];
+      [hLine lineToPoint:NSMakePoint(b.size.width, y)];
+      hLine.lineWidth = 0.7 + t * 0.8;
+      [hLine stroke];
+    }
+  }
+
+  // 3. Multi-Layer Master Codecaine Atmosphere Shaders
+  if (![atmo isEqualToString:@"none"] && atmo.length > 0) {
+    if ([atmo isEqualToString:@"aurora"] || [atmo isEqualToString:@"nebula"] || [atmo isEqualToString:@"plasma_storm"]) {
+      // Twinkling background starfield + 5-band volumetric sine-wave aurora curtains
+      for (int s = 0; s < 28; s++) {
+        CGFloat sx = fmod((s * 137.5 + 19.0), b.size.width);
+        CGFloat sy = fmod((s * 89.3 + 43.0), b.size.height);
+        CGFloat tw = 0.15 + 0.25 * (0.5 + 0.5 * sin(ph * 2.0 + s));
+        [[NSColor colorWithWhite:1.0 alpha:tw] setFill];
+        CGFloat ssz = (s % 4 == 0) ? 3.0 : 1.8;
+        [[NSBezierPath bezierPathWithOvalInRect:NSMakeRect(sx, sy, ssz, ssz)] fill];
+      }
+      for (int band = 0; band < 5; band++) {
+        NSBezierPath *ribbon = [NSBezierPath bezierPath];
+        CGFloat baseY = b.size.height * (0.32 + band * 0.13);
+        CGFloat wave1 = 48.0 * sin(ph + band * 0.9);
+        CGFloat wave2 = 42.0 * cos(ph * 0.8 + band * 1.3);
+        [ribbon moveToPoint:NSMakePoint(0, baseY + wave1 * 0.4)];
+        [ribbon curveToPoint:NSMakePoint(b.size.width, baseY + (band % 2 == 0 ? 38 : -32) + wave2 * 0.4)
+               controlPoint1:NSMakePoint(b.size.width * 0.33, baseY + 65 + wave1)
+               controlPoint2:NSMakePoint(b.size.width * 0.66, baseY - 55 + wave2)];
+        NSColor *rc = (band % 2 == 0) ? g1 : g2;
+        [[rc colorWithAlphaComponent:0.11] setStroke];
+        ribbon.lineWidth = 32.0 - band * 4.0;
+        [ribbon stroke];
+        [[rc colorWithAlphaComponent:0.22] setStroke];
+        ribbon.lineWidth = 8.0;
+        [ribbon stroke];
+        [[[NSColor whiteColor] colorWithAlphaComponent:0.18] setStroke];
+        ribbon.lineWidth = 1.4;
+        [ribbon stroke];
+      }
+    } else if ([atmo isEqualToString:@"tactical_hud"] || [atmo isEqualToString:@"tesseract_4d"] || [atmo isEqualToString:@"m4_raytrace_prism"] || [atmo isEqualToString:@"supernova"]) {
+      NSPoint center = NSMakePoint(NSMidX(b), NSMidY(b));
+      // Concentric astrolabe / raytrace prism rings with chromatic offset
+      for (int r = 1; r <= 4; r++) {
+        CGFloat rad = MIN(b.size.width, b.size.height) * (0.11 * r);
+        [[g1 colorWithAlphaComponent:0.14] setStroke];
+        NSBezierPath *ring1 = [NSBezierPath bezierPathWithOvalInRect:NSMakeRect(center.x - rad - 1.5, center.y - rad, rad * 2, rad * 2)];
+        ring1.lineWidth = (r == 2) ? 1.6 : 1.0;
+        [ring1 stroke];
+
+        [[g2 colorWithAlphaComponent:0.12] setStroke];
+        NSBezierPath *ring2 = [NSBezierPath bezierPathWithOvalInRect:NSMakeRect(center.x - rad + 1.5, center.y - rad, rad * 2, rad * 2)];
+        ring2.lineWidth = 1.0;
+        [ring2 stroke];
+      }
+      // 4D Projected Tesseract Wireframe in center backdrop
+      CGFloat scale = MIN(b.size.width, b.size.height) * 0.22;
+      NSPoint outerPts[8];
+      NSPoint innerPts[8];
+      for (int v = 0; v < 8; v++) {
+        double vx = (v & 1) ? 1.0 : -1.0;
+        double vy = (v & 2) ? 1.0 : -1.0;
+        double vz = (v & 4) ? 1.0 : -1.0;
+        double angY = 0.55 + ph * 0.6;
+        double angX = 0.38 + ph * 0.35;
+        double rx = vx * cos(angY) - vz * sin(angY);
+        double rz = vx * sin(angY) + vz * cos(angY);
+        double ry = vy * cos(angX) - rz * sin(angX);
+        double rz2 = vy * sin(angX) + rz * cos(angX);
+        double perspOuter = 1.0 / (2.8 - rz2 * 0.35);
+        double perspInner = 0.52 / (2.8 - rz2 * 0.35);
+        outerPts[v] = NSMakePoint(center.x + rx * scale * perspOuter, center.y + ry * scale * perspOuter);
+        innerPts[v] = NSMakePoint(center.x + rx * scale * perspInner, center.y + ry * scale * perspInner);
+      }
+      int edges[12][2] = {{0,1},{2,3},{4,5},{6,7},{0,2},{1,3},{4,6},{5,7},{0,4},{1,5},{2,6},{3,7}};
+      [[g1 colorWithAlphaComponent:0.16] setStroke];
+      for (int e = 0; e < 12; e++) {
+        NSBezierPath *ep = [NSBezierPath bezierPath];
+        [ep moveToPoint:outerPts[edges[e][0]]];
+        [ep lineToPoint:outerPts[edges[e][1]]];
+        ep.lineWidth = 1.1;
+        [ep stroke];
+      }
+      [[g2 colorWithAlphaComponent:0.18] setStroke];
+      for (int e = 0; e < 12; e++) {
+        NSBezierPath *ep = [NSBezierPath bezierPath];
+        [ep moveToPoint:innerPts[edges[e][0]]];
+        [ep lineToPoint:innerPts[edges[e][1]]];
+        ep.lineWidth = 1.0;
+        [ep stroke];
+      }
+      [[[NSColor whiteColor] colorWithAlphaComponent:0.12] setStroke];
+      for (int v = 0; v < 8; v++) {
+        NSBezierPath *cp = [NSBezierPath bezierPath];
+        [cp moveToPoint:outerPts[v]];
+        [cp lineToPoint:innerPts[v]];
+        cp.lineWidth = 0.8;
+        [cp stroke];
+      }
+    } else if ([atmo isEqualToString:@"matrix"] || [atmo isEqualToString:@"katakana_gold"] || [atmo isEqualToString:@"cyber_rain"]) {
+      for (int i = 0; i < 32; i++) {
+        CGFloat px = fmod((i * 59.0 + 14.0), b.size.width);
+        CGFloat speed = 28.0 + (i % 5) * 14.0;
+        CGFloat rawY = fmod((i * 89.0 + 25.0 - ph * speed), b.size.height);
+        if (rawY < 0) rawY += b.size.height;
+        CGFloat tailLen = 54.0 + (i % 4) * 18.0;
+        NSColor *col = (i % 3 == 0) ? g2 : g1;
+        NSGradient *rainGrad = [[NSGradient alloc] initWithStartingColor:[col colorWithAlphaComponent:0.32]
+                                                             endingColor:[col colorWithAlphaComponent:0.0]];
+        [rainGrad drawInRect:NSMakeRect(px - 1.0, rawY, 2.2, MIN(tailLen, b.size.height - rawY)) angle:90.0];
+        // Glowing droplet head
+        [[[NSColor whiteColor] colorWithAlphaComponent:0.45] setFill];
+        [[NSBezierPath bezierPathWithOvalInRect:NSMakeRect(px - 1.8, rawY - 1.8, 3.6, 3.6)] fill];
+      }
+    } else if ([atmo isEqualToString:@"snow"] || [atmo isEqualToString:@"blizzard"] || [atmo isEqualToString:@"diamond_dust"]) {
+      int count = [atmo isEqualToString:@"blizzard"] ? 54 : 36;
+      for (int i = 0; i < count; i++) {
+        CGFloat px = fmod((i * 97.3 + 23.0 + sin(ph + i) * 12.0), b.size.width);
+        if (px < 0) px += b.size.width;
+        CGFloat py = fmod((i * 61.7 + 19.0 - ph * 18.0), b.size.height);
+        if (py < 0) py += b.size.height;
+        CGFloat sz = (i % 3 == 0) ? 4.5 : 2.5;
+        [[NSColor colorWithWhite:1.0 alpha:(i % 2 == 0 ? 0.36 : 0.20)] setFill];
+        [[NSBezierPath bezierPathWithOvalInRect:NSMakeRect(px, py, sz, sz)] fill];
+      }
+    } else if ([atmo isEqualToString:@"embers"] || [atmo isEqualToString:@"dragon_forge"] || [atmo isEqualToString:@"solar_flare"] || [atmo isEqualToString:@"fireflies"]) {
+      for (int i = 0; i < 36; i++) {
+        CGFloat px = fmod((i * 83.1 + 41.0 + sin(ph * 1.2 + i) * 14.0), b.size.width);
+        if (px < 0) px += b.size.width;
+        CGFloat py = fmod((i * 53.9 + 13.0 + ph * 22.0), b.size.height);
+        CGFloat sz = (i % 4 == 0) ? 5.5 : 3.2;
+        NSColor *c = (i % 2 == 0) ? g1 : g2;
+        [[c colorWithAlphaComponent:0.14] setFill];
+        [[NSBezierPath bezierPathWithOvalInRect:NSMakeRect(px - sz, py - sz, sz * 3.0, sz * 3.0)] fill];
+        [[c colorWithAlphaComponent:0.42] setFill];
+        [[NSBezierPath bezierPathWithOvalInRect:NSMakeRect(px, py, sz, sz)] fill];
+      }
+    } else if ([atmo isEqualToString:@"autumn_leaves"] || [atmo isEqualToString:@"sakura"]) {
+      for (int i = 0; i < 28; i++) {
+        CGFloat px = fmod((i * 109.0 + 31.0 + sin(ph + i) * 16.0), b.size.width);
+        if (px < 0) px += b.size.width;
+        CGFloat py = fmod((i * 71.0 + 17.0 - ph * 15.0), b.size.height);
+        if (py < 0) py += b.size.height;
+        NSColor *c = (i % 2 == 0) ? g1 : g2;
+        [[c colorWithAlphaComponent:0.28] setFill];
+        [[NSBezierPath bezierPathWithRoundedRect:NSMakeRect(px, py, 9, 5.5) xRadius:2.8 yRadius:2.8] fill];
+      }
+    } else if ([atmo isEqualToString:@"cinema_bokeh"] || [atmo isEqualToString:@"hollow_mist"] || [atmo isEqualToString:@"starfield"]) {
+      NSPoint pts[22];
+      for (int i = 0; i < 22; i++) {
+        CGFloat px = fmod((i * 113.0 + 29.0 + cos(ph * 0.6 + i) * 10.0), b.size.width);
+        if (px < 0) px += b.size.width;
+        CGFloat py = fmod((i * 79.0 + 37.0 + sin(ph * 0.6 + i) * 10.0), b.size.height);
+        if (py < 0) py += b.size.height;
+        pts[i] = NSMakePoint(px, py);
+        CGFloat sz = 18.0 + (i % 4) * 12.0;
+        NSColor *c = (i % 2 == 0) ? g1 : g2;
+        [[c colorWithAlphaComponent:0.09] setFill];
+        [[NSBezierPath bezierPathWithOvalInRect:NSMakeRect(px - sz * 0.5, py - sz * 0.5, sz, sz)] fill];
+        [[c colorWithAlphaComponent:0.35] setFill];
+        [[NSBezierPath bezierPathWithOvalInRect:NSMakeRect(px - 2.0, py - 2.0, 4.0, 4.0)] fill];
+      }
+      // Constellation plexus lines
+      [[g1 colorWithAlphaComponent:0.09] setStroke];
+      for (int i = 0; i < 22; i++) {
+        for (int j = i + 1; j < 22; j++) {
+          CGFloat dx = pts[i].x - pts[j].x;
+          CGFloat dy = pts[i].y - pts[j].y;
+          if (dx * dx + dy * dy < 180.0 * 180.0) {
+            NSBezierPath *ln = [NSBezierPath bezierPath];
+            [ln moveToPoint:pts[i]];
+            [ln lineToPoint:pts[j]];
+            ln.lineWidth = 0.7;
+            [ln stroke];
+          }
+        }
+      }
+    }
+  }
+
+  // 4. CRT Scanlines overlay
+  if (self.scanlines) {
+    [[NSColor colorWithWhite:0.0 alpha:0.13] setStroke];
+    for (CGFloat y = 0; y < b.size.height; y += 3.0) {
+      NSBezierPath *line = [NSBezierPath bezierPath];
+      [line moveToPoint:NSMakePoint(0, y)];
+      [line lineToPoint:NSMakePoint(b.size.width, y)];
+      line.lineWidth = 1.0;
+      [line stroke];
+    }
+  }
+
+  // 5. Screen-edge Vignette
+  if (self.vignette > 0) {
+    CGFloat vigAlpha = MIN(0.55, self.vignette / 110.0);
+    [[NSColor colorWithWhite:0.0 alpha:vigAlpha * 0.45] setStroke];
+    NSBezierPath *framePath = [NSBezierPath bezierPathWithRect:NSInsetRect(b, 2.0, 2.0)];
+    framePath.lineWidth = 8.0;
+    [framePath stroke];
+  }
+
+  // 6. Top & Bottom Prism Edge dispersion + Corner Tactical Reticles
+  if (self.prismEdge) {
+    NSGradient *prism = [[[NSGradient alloc] initWithColors:@[
+      [g1 colorWithAlphaComponent:0.0],
+      [g1 colorWithAlphaComponent:0.90],
+      [g2 colorWithAlphaComponent:0.90],
+      [g2 colorWithAlphaComponent:0.0]
+    ]] autorelease];
+    [prism drawInRect:NSMakeRect(0, b.size.height - 2.5, b.size.width, 2.5) angle:0.0];
+    [prism drawInRect:NSMakeRect(0, 0, b.size.width, 2.0) angle:180.0];
+  }
+}
+@end
+
+// Sculpted 3D Folder / Tile Grid Control (Codecaine File Manager GOAT Edition)
+@interface SGThemedFolderGridView : NSView
+@property (nonatomic, strong) NSMutableArray<NSString *> *titles;
+@property (nonatomic, strong) NSMutableArray<NSString *> *subtitles;
+@property (nonatomic, strong) NSMutableArray<NSString *> *folderTypes;
+@property (nonatomic, strong) NSMutableArray<NSString *> *badges;
+@property (nonatomic, assign) int columns;
+@property (nonatomic, assign) int selectedIndex;
+@property (nonatomic, assign) int hoveredIndex;
+@property (nonatomic, copy) NSString *uiElementFx;
+@property (nonatomic, copy) NSString *iconPackStyle;
+@property (nonatomic, strong) NSColor *accentColor;
+@property (nonatomic, strong) NSColor *secondaryAccent;
+@property (nonatomic, strong) NSColor *cardBgColor;
+@property (nonatomic, strong) NSColor *cardBorderColor;
+@property (nonatomic, assign) int cornerRadius;
+@property (nonatomic, assign) BOOL iconGlow;
+@property (nonatomic, copy) NSString *controlName;
+@property (nonatomic, assign) void *winPtr;
+@property (nonatomic, strong) NSTrackingArea *trackingArea;
+@end
+
+@implementation SGThemedFolderGridView
+- (instancetype)initWithFrame:(NSRect)frameRect {
+  self = [super initWithFrame:frameRect];
+  if (self) {
+    _hoveredIndex = -1;
+  }
+  return self;
+}
+- (BOOL)isFlipped {
+  return YES;
+}
+- (void)updateTrackingAreas {
+  [super updateTrackingAreas];
+  if (self.trackingArea) {
+    [self removeTrackingArea:self.trackingArea];
+  }
+  NSTrackingAreaOptions opts = NSTrackingMouseEnteredAndExited | NSTrackingMouseMoved | NSTrackingActiveAlways | NSTrackingInVisibleRect;
+  self.trackingArea = [[[NSTrackingArea alloc] initWithRect:self.bounds options:opts owner:self userInfo:nil] autorelease];
+  [self addTrackingArea:self.trackingArea];
+}
+- (int)tileIndexAtPoint:(NSPoint)pt {
+  NSInteger count = self.titles.count;
+  if (count == 0) return -1;
+  int cols = MAX(1, self.columns);
+  int rows = (int)((count + cols - 1) / cols);
+  CGFloat pad = 10.0;
+  CGFloat cellW = MAX(120.0, self.bounds.size.width - pad * (cols + 1)) / cols;
+  CGFloat cellH = MAX(72.0, self.bounds.size.height - pad * (rows + 1)) / rows;
+  for (NSInteger i = 0; i < count; i++) {
+    int r = (int)(i / cols);
+    int c = (int)(i % cols);
+    NSRect cellRect = NSMakeRect(pad + c * (cellW + pad), pad + r * (cellH + pad), cellW, cellH);
+    if (NSPointInRect(pt, cellRect)) return (int)i;
+  }
+  return -1;
+}
+- (void)mouseMoved:(NSEvent *)event {
+  NSPoint pt = [self convertPoint:event.locationInWindow fromView:nil];
+  int idx = [self tileIndexAtPoint:pt];
+  if (idx != self.hoveredIndex) {
+    self.hoveredIndex = idx;
+    [self setNeedsDisplay:YES];
+  }
+}
+- (void)mouseExited:(NSEvent *)event {
+  if (self.hoveredIndex != -1) {
+    self.hoveredIndex = -1;
+    [self setNeedsDisplay:YES];
+  }
+}
+- (NSColor *)semanticColorForType:(NSString *)ftype {
+  NSString *t = [ftype lowercaseString] ?: @"folder";
+  if ([t containsString:@"src"] || [t containsString:@"code"]) return [NSColor colorWithSRGBRed:0.22 green:0.74 blue:0.97 alpha:1.0];
+  if ([t containsString:@"test"]) return [NSColor colorWithSRGBRed:0.20 green:0.83 blue:0.60 alpha:1.0];
+  if ([t containsString:@"doc"]) return [NSColor colorWithSRGBRed:0.38 green:0.65 blue:0.98 alpha:1.0];
+  if ([t containsString:@"docker"] || [t containsString:@"cloud"]) return [NSColor colorWithSRGBRed:0.05 green:0.65 blue:0.91 alpha:1.0];
+  if ([t containsString:@"ai"] || [t containsString:@"shader"]) return [NSColor colorWithSRGBRed:0.75 green:0.52 blue:0.99 alpha:1.0];
+  if ([t containsString:@"sec"] || [t containsString:@"vault"]) return [NSColor colorWithSRGBRed:0.98 green:0.45 blue:0.09 alpha:1.0];
+  if ([t containsString:@"db"] || [t containsString:@"data"]) return [NSColor colorWithSRGBRed:0.96 green:0.62 blue:0.04 alpha:1.0];
+  if ([t containsString:@"game"]) return [NSColor colorWithSRGBRed:0.93 green:0.28 blue:0.60 alpha:1.0];
+  return self.accentColor ?: [NSColor colorWithSRGBRed:0.22 green:0.74 blue:0.97 alpha:1.0];
+}
+- (NSString *)emblemForType:(NSString *)ftype {
+  NSString *t = [ftype lowercaseString] ?: @"folder";
+  if ([t containsString:@"src"] || [t containsString:@"code"]) return @"</>";
+  if ([t containsString:@"test"]) return @"🧪";
+  if ([t containsString:@"doc"]) return @"📘";
+  if ([t containsString:@"docker"]) return @"🐳";
+  if ([t containsString:@"cloud"]) return @"☁️";
+  if ([t containsString:@"ai"]) return @"🧠";
+  if ([t containsString:@"shader"]) return @"✨";
+  if ([t containsString:@"sec"] || [t containsString:@"vault"]) return @"🛡️";
+  if ([t containsString:@"db"] || [t containsString:@"data"]) return @"🗄️";
+  if ([t containsString:@"game"]) return @"🎮";
+  return @"📁";
+}
+- (void)drawRect:(NSRect)dirtyRect {
+  [super drawRect:dirtyRect];
+  NSInteger count = self.titles.count;
+  if (count == 0) return;
+  int cols = MAX(1, self.columns);
+  int rows = (int)((count + cols - 1) / cols);
+  CGFloat pad = 10.0;
+  CGFloat availW = MAX(120.0, self.bounds.size.width - pad * (cols + 1));
+  CGFloat availH = MAX(72.0, self.bounds.size.height - pad * (rows + 1));
+  CGFloat cellW = availW / cols;
+  CGFloat cellH = availH / rows;
+  CGFloat rad = self.cornerRadius > 0 ? self.cornerRadius : 12.0;
+  NSString *fx = [self.uiElementFx lowercaseString] ?: @"frosted_glass";
+
+  for (NSInteger i = 0; i < count; i++) {
+    int r = (int)(i / cols);
+    int c = (int)(i % cols);
+    BOOL isSel = (i == self.selectedIndex);
+    BOOL isHov = (i == self.hoveredIndex);
+    CGFloat liftY = (isSel || isHov) ? -2.0 : 0.0;
+    NSRect cellRect = NSMakeRect(pad + c * (cellW + pad), pad + r * (cellH + pad) + liftY, cellW, cellH);
+    NSString *title = self.titles[i];
+    NSString *sub = (i < self.subtitles.count) ? self.subtitles[i] : @"";
+    NSString *ftype = (i < self.folderTypes.count) ? self.folderTypes[i] : @"folder";
+    NSString *badge = (i < self.badges.count) ? self.badges[i] : @"";
+    NSColor *semColor = [self semanticColorForType:ftype];
+
+    // 1. Card glass surface + holographic sheen
+    NSColor *bg = self.cardBgColor ?: [NSColor colorWithSRGBRed:0.10 green:0.13 blue:0.20 alpha:0.88];
+    if (isSel) {
+      bg = [semColor blendedColorWithFraction:0.74 ofColor:bg] ?: bg;
+    } else if (isHov) {
+      bg = [semColor blendedColorWithFraction:0.84 ofColor:bg] ?: bg;
+    }
+    NSBezierPath *cardPath = [NSBezierPath bezierPathWithRoundedRect:cellRect xRadius:rad yRadius:rad];
+    [bg setFill];
+    [cardPath fill];
+
+    // Iridescent diagonal foil / prism wash on card surface
+    if ([fx containsString:@"foil"] || [fx containsString:@"glass"] || [fx containsString:@"prism"] || isSel || isHov) {
+      NSColor *sec = self.secondaryAccent ?: semColor;
+      NSGradient *foilGrad = [[[NSGradient alloc] initWithColors:@[
+        [semColor colorWithAlphaComponent:(isSel ? 0.22 : 0.10)],
+        [NSColor clearColor],
+        [sec colorWithAlphaComponent:(isSel ? 0.18 : 0.08)]
+      ]] autorelease];
+      [foilGrad drawInBezierPath:cardPath angle:35.0];
+    }
+
+    // 2. Card Border + Top Specular Glass Lip + Corner Cyber Brackets
+    NSColor *borderCol = (isSel || isHov) ? semColor : (self.cardBorderColor ?: [semColor colorWithAlphaComponent:0.42]);
+    [borderCol setStroke];
+    cardPath.lineWidth = isSel ? 2.0 : (isHov ? 1.5 : 1.0);
+    [cardPath stroke];
+
+    // Top specular glass highlight line
+    NSBezierPath *specLip = [NSBezierPath bezierPath];
+    [specLip moveToPoint:NSMakePoint(cellRect.origin.x + rad, cellRect.origin.y + 1.5)];
+    [specLip lineToPoint:NSMakePoint(NSMaxX(cellRect) - rad, cellRect.origin.y + 1.5)];
+    [[[NSColor whiteColor] colorWithAlphaComponent:0.28] setStroke];
+    specLip.lineWidth = 1.0;
+    [specLip stroke];
+
+    // 3. 5-Layer Sculpted 3D Folder Icon (Pedestal + Back Plate + 2 Document Sheets + Skewed 3D Front Flap + Emblem)
+    CGFloat iconX = cellRect.origin.x + 14.0;
+    CGFloat iconY = cellRect.origin.y + 12.0;
+
+    // Layer A: Glowing elliptical floor pedestal
+    NSRect pedRect = NSMakeRect(iconX - 3, iconY + 30, 48, 9);
+    [[semColor colorWithAlphaComponent:(isSel ? 0.42 : 0.25)] setFill];
+    [[NSBezierPath bezierPathWithOvalInRect:pedRect] fill];
+
+    // Layer B: Back Folder Plate + Top Beveled Tab
+    NSColor *backDark = [semColor blendedColorWithFraction:0.38 ofColor:[NSColor blackColor]] ?: semColor;
+    [backDark setFill];
+    NSBezierPath *tabPath = [NSBezierPath bezierPathWithRoundedRect:NSMakeRect(iconX + 1, iconY + 1, 18, 9) xRadius:3.5 yRadius:3.5];
+    [tabPath fill];
+    NSBezierPath *backPlate = [NSBezierPath bezierPathWithRoundedRect:NSMakeRect(iconX, iconY + 5, 42, 26) xRadius:5.0 yRadius:5.0];
+    [backPlate fill];
+
+    // Layer C: 2 Recessed Document Sheets peeking out of the folder with micro-lines
+    NSRect sheet1 = NSMakeRect(iconX + 5, iconY + 4, 30, 14);
+    [[[NSColor whiteColor] colorWithAlphaComponent:0.75] setFill];
+    [[NSBezierPath bezierPathWithRoundedRect:sheet1 xRadius:2.0 yRadius:2.0] fill];
+    NSRect sheet2 = NSMakeRect(iconX + 8, iconY + 6, 30, 14);
+    [[[NSColor whiteColor] colorWithAlphaComponent:0.94] setFill];
+    [[NSBezierPath bezierPathWithRoundedRect:sheet2 xRadius:2.0 yRadius:2.0] fill];
+    // Micro code lines on front paper sheet
+    [[semColor colorWithAlphaComponent:0.55] setStroke];
+    for (int ln = 0; ln < 2; ln++) {
+      NSBezierPath *ml = [NSBezierPath bezierPath];
+      [ml moveToPoint:NSMakePoint(iconX + 11, iconY + 9 + ln * 2.5)];
+      [ml lineToPoint:NSMakePoint(iconX + 28 - ln * 5, iconY + 9 + ln * 2.5)];
+      ml.lineWidth = 1.0;
+      [ml stroke];
+    }
+
+    // Layer D: 3D Skewed Perspective Front Flap
+    NSBezierPath *flapPath = [NSBezierPath bezierPath];
+    [flapPath moveToPoint:NSMakePoint(iconX + 2, iconY + 11)];
+    [flapPath lineToPoint:NSMakePoint(iconX + 43, iconY + 9)];
+    [flapPath lineToPoint:NSMakePoint(iconX + 41, iconY + 33)];
+    [flapPath lineToPoint:NSMakePoint(iconX, iconY + 33)];
+    [flapPath closePath];
+    NSGradient *flapGrad = [[[NSGradient alloc] initWithStartingColor:[semColor colorWithAlphaComponent:0.96]
+                                                          endingColor:[backDark colorWithAlphaComponent:0.92]] autorelease];
+    [flapGrad drawInBezierPath:flapPath angle:90.0];
+    [[[NSColor whiteColor] colorWithAlphaComponent:0.55] setStroke];
+    flapPath.lineWidth = 1.0;
+    [flapPath stroke];
+
+    // Layer E: Semantic Emblem inside 3D Folder Front Flap
+    NSString *emblem = [self emblemForType:ftype];
+    NSDictionary *embAttrs = @{
+      NSFontAttributeName: [NSFont boldSystemFontOfSize:11.0],
+      NSForegroundColorAttributeName: [NSColor whiteColor]
+    };
+    [emblem drawInRect:NSMakeRect(iconX + 10, iconY + 14, 28, 16) withAttributes:embAttrs];
+
+    // 4. Holiday / Tier Corner Crest Pill Badge
+    if (badge.length > 0) {
+      NSRect pillRect = NSMakeRect(NSMaxX(cellRect) - 32, cellRect.origin.y + 8, 24, 18);
+      [[semColor colorWithAlphaComponent:0.20] setFill];
+      NSBezierPath *pillPath = [NSBezierPath bezierPathWithRoundedRect:pillRect xRadius:6.0 yRadius:6.0];
+      [pillPath fill];
+      [[semColor colorWithAlphaComponent:0.55] setStroke];
+      pillPath.lineWidth = 0.8;
+      [pillPath stroke];
+      NSDictionary *bAttrs = @{
+        NSFontAttributeName: [NSFont boldSystemFontOfSize:10.5],
+        NSForegroundColorAttributeName: semColor
+      };
+      [badge drawInRect:NSMakeRect(pillRect.origin.x + 4, pillRect.origin.y + 1, 18, 16) withAttributes:bAttrs];
+    }
+
+    // 5. Folder Title, Subtitle & Micro Telemetry Capacity Bar
+    BOOL cardIsDark = isDarkColor(bg);
+    NSColor *titleCol = cardIsDark ? [NSColor colorWithWhite:0.98 alpha:1.0] : [NSColor colorWithSRGBRed:0.08 green:0.09 blue:0.11 alpha:1.0];
+    NSColor *subCol = cardIsDark ? [NSColor colorWithWhite:0.76 alpha:0.94] : [NSColor colorWithSRGBRed:0.30 green:0.32 blue:0.36 alpha:0.95];
+    NSDictionary *titleAttrs = @{
+      NSFontAttributeName: [NSFont boldSystemFontOfSize:12.5],
+      NSForegroundColorAttributeName: titleCol
+    };
+    [title drawInRect:NSMakeRect(iconX + 50, cellRect.origin.y + 11, MAX(40, cellW - 76), 18) withAttributes:titleAttrs];
+
+    if (sub.length > 0) {
+      NSDictionary *subAttrs = @{
+        NSFontAttributeName: [NSFont systemFontOfSize:10.5],
+        NSForegroundColorAttributeName: subCol
+      };
+      [sub drawInRect:NSMakeRect(iconX + 50, cellRect.origin.y + 29, MAX(40, cellW - 72), 16) withAttributes:subAttrs];
+    }
+
+    // Sleek bottom micro neon activity bar
+    CGFloat barW = MAX(40.0, cellW - 28.0);
+    NSRect trackRect = NSMakeRect(cellRect.origin.x + 14.0, NSMaxY(cellRect) - 8.0, barW, 3.0);
+    [[semColor colorWithAlphaComponent:0.16] setFill];
+    [[NSBezierPath bezierPathWithRoundedRect:trackRect xRadius:1.5 yRadius:1.5] fill];
+    CGFloat fillRatio = 0.48 + 0.08 * (i % 6);
+    NSRect fillRect = NSMakeRect(trackRect.origin.x, trackRect.origin.y, barW * fillRatio, 3.0);
+    [[semColor colorWithAlphaComponent:0.88] setFill];
+    [[NSBezierPath bezierPathWithRoundedRect:fillRect xRadius:1.5 yRadius:1.5] fill];
+  }
+}
+- (void)mouseDown:(NSEvent *)event {
+  NSPoint pt = [self convertPoint:event.locationInWindow fromView:nil];
+  int idx = [self tileIndexAtPoint:pt];
+  if (idx >= 0) {
+    self.selectedIndex = idx;
+    [self setNeedsDisplay:YES];
+    if (self.winPtr && self.controlName) {
+      NSString *val = [NSString stringWithFormat:@"%d", idx];
+      vlang_dispatch_event(self.winPtr, [self.controlName UTF8String], "change", [val UTF8String]);
+    }
+  }
+}
+@end
+
+static SGThemeAtmosphereView *ensureAtmosphereView(AppDelegate *delegate) {
+  if (!delegate || !delegate.window || !delegate.window.contentView) return nil;
+  if (delegate.atmosphereView && [delegate.atmosphereView isKindOfClass:[SGThemeAtmosphereView class]]) {
+    return (SGThemeAtmosphereView *)delegate.atmosphereView;
+  }
+  NSView *content = delegate.window.contentView;
+  SGThemeAtmosphereView *atmo = [[SGThemeAtmosphereView alloc] initWithFrame:content.bounds];
+  [atmo setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
+  [content addSubview:atmo positioned:NSWindowBelow relativeTo:delegate.scrollView];
+  delegate.atmosphereView = atmo;
+  return atmo;
+}
+
+void window_apply_theme_fx(
+    main__WindowInfo *info,
+    const char *bg_color,
+    const char *font_color,
+    const char *accent_color,
+    const char *secondary_accent,
+    const char *card_bg_color,
+    const char *card_border_color,
+    const char *glow_color,
+    const char *glow_color2,
+    int glow_intensity,
+    int blur_radius,
+    int glass_opacity,
+    int corner_radius,
+    int border_width,
+    int border_opacity,
+    int grain,
+    int scanlines,
+    int vignette,
+    const char *atmosphere,
+    const char *ui_element_fx,
+    const char *backdrop_style,
+    int prism_edge,
+    int frosted_rim,
+    int inner_glow,
+    int is_dark) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *bgIn = nsstring(bg_color ?: "");
+  NSString *fgIn = nsstring(font_color ?: "");
+  NSString *accIn = nsstring(accent_color ?: "");
+  NSString *secIn = nsstring(secondary_accent ?: "");
+  NSString *cardBgIn = nsstring(card_bg_color ?: "");
+  NSString *cardBorderIn = nsstring(card_border_color ?: "");
+  NSString *glow1In = nsstring(glow_color ?: "");
+  NSString *glow2In = nsstring(glow_color2 ?: "");
+  NSString *atmoStr = nsstring(atmosphere ? atmosphere : "none");
+  NSString *uiFxStr = nsstring(ui_element_fx ? ui_element_fx : "frosted_glass");
+  NSString *backdropStr = nsstring(backdrop_style ? backdrop_style : "frosted");
+
+  sgRunOnMainSync(^{
+    NSColor *bgCol = bgIn.length > 0 ? colorFromString([bgIn UTF8String]) : nil;
+    NSColor *fgCol = fgIn.length > 0 ? colorFromString([fgIn UTF8String]) : nil;
+    NSColor *accCol = accIn.length > 0 ? colorFromString([accIn UTF8String]) : [NSColor controlAccentColor];
+    NSColor *secAccCol = secIn.length > 0 ? colorFromString([secIn UTF8String]) : accCol;
+    NSColor *cardBgCol = cardBgIn.length > 0 ? colorFromString([cardBgIn UTF8String]) : nil;
+    NSColor *cardBorderCol = cardBorderIn.length > 0 ? colorFromString([cardBorderIn UTF8String]) : nil;
+    NSColor *glow1 = glow1In.length > 0 ? colorFromString([glow1In UTF8String]) : accCol;
+    NSColor *glow2 = glow2In.length > 0 ? colorFromString([glow2In UTF8String]) : secAccCol;
+    delegate.currentAccentColor = accCol;
+    delegate.currentSecondaryAccentColor = secAccCol;
+    delegate.currentCardBackgroundColor = cardBgCol;
+    delegate.currentCardBorderColor = cardBorderCol;
+    delegate.currentGlowColor = glow1;
+    delegate.currentGlowColor2 = glow2;
+    delegate.currentGlowIntensity = glow_intensity;
+    delegate.currentBlurRadius = blur_radius;
+    delegate.currentGlassOpacity = glass_opacity;
+    delegate.currentCornerRadius = corner_radius;
+    delegate.currentPrismEdge = (prism_edge != 0);
+    delegate.currentFrostedRim = (frosted_rim != 0);
+    delegate.currentInnerGlow = (inner_glow != 0);
+    delegate.currentUiElementFx = uiFxStr;
+
+    SGThemeAtmosphereView *atmoView = ensureAtmosphereView(delegate);
+    if (atmoView) {
+      atmoView.baseBgColor = bgCol;
+      atmoView.atmosphere = atmoStr;
+      atmoView.backdropStyle = backdropStr;
+      atmoView.glowColor = glow1;
+      atmoView.glowColor2 = glow2;
+      atmoView.accentColor = accCol;
+      atmoView.glowIntensity = glow_intensity;
+      atmoView.grain = grain;
+      atmoView.scanlines = (scanlines != 0);
+      atmoView.vignette = vignette;
+      atmoView.prismEdge = (prism_edge != 0);
+      atmoView.isDark = (is_dark != 0);
+      [atmoView setNeedsDisplay:YES];
+    }
+
+    // Propagate theme FX to any SGThemedFolderGridView instances
+    for (NSString *k in delegate.controlsByName) {
+      NSView *v = delegate.controlsByName[k];
+      if ([v isKindOfClass:[SGThemedFolderGridView class]]) {
+        SGThemedFolderGridView *fg = (SGThemedFolderGridView *)v;
+        if (accCol) fg.accentColor = accCol;
+        if (secAccCol) fg.secondaryAccent = secAccCol;
+        if (cardBgCol) fg.cardBgColor = cardBgCol;
+        if (cardBorderCol) fg.cardBorderColor = cardBorderCol;
+        if (corner_radius > 0) fg.cornerRadius = corner_radius;
+        fg.uiElementFx = uiFxStr;
+        [fg setNeedsDisplay:YES];
+      } else if ([v respondsToSelector:@selector(setNeedsDisplay:)]) {
+        [v setNeedsDisplay:YES];
+      }
+    }
+
+    [delegate applyColors:(bgCol ?: delegate.currentBackgroundColor)
+                fontColor:(fgCol ?: delegate.currentFontColor)];
+  });
+}
+
+void window_set_theme_atmosphere(main__WindowInfo *info, const char *atmosphere, const char *glow_color, const char *glow_color2, int intensity) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *atmoStr = nsstring(atmosphere ? atmosphere : "none");
+  NSColor *g1 = (glow_color && *glow_color) ? colorFromString(glow_color) : delegate.currentGlowColor;
+  NSColor *g2 = (glow_color2 && *glow_color2) ? colorFromString(glow_color2) : delegate.currentGlowColor2;
+  sgRunOnMainSync(^{
+    SGThemeAtmosphereView *atmoView = ensureAtmosphereView(delegate);
+    if (atmoView) {
+      atmoView.atmosphere = atmoStr;
+      if (g1) atmoView.glowColor = g1;
+      if (g2) atmoView.glowColor2 = g2;
+      atmoView.glowIntensity = intensity;
+      [atmoView setNeedsDisplay:YES];
+    }
+  });
+}
+
+void window_set_atmosphere_animated(main__WindowInfo *info, int enabled) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  sgRunOnMainSync(^{
+    SGThemeAtmosphereView *atmoView = ensureAtmosphereView(delegate);
+    if (atmoView) {
+      [atmoView setAnimatedState:(enabled != 0)];
+    }
+  });
+}
+
+void window_step_atmosphere_phase(main__WindowInfo *info, double delta) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  sgRunOnMainSync(^{
+    SGThemeAtmosphereView *atmoView = ensureAtmosphereView(delegate);
+    if (atmoView) {
+      atmoView.phase += delta;
+      [atmoView setNeedsDisplay:YES];
+    }
+  });
+}
+
+void *window_add_themed_folder_grid_control(
+    main__WindowInfo *info,
+    const char *name,
+    const char **titles,
+    const char **subtitles,
+    const char **folder_types,
+    const char **badges,
+    int count,
+    int columns,
+    int height) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSMutableArray<NSString *> *tArr = [NSMutableArray array];
+  NSMutableArray<NSString *> *sArr = [NSMutableArray array];
+  NSMutableArray<NSString *> *fArr = [NSMutableArray array];
+  NSMutableArray<NSString *> *bArr = [NSMutableArray array];
+  for (int i = 0; i < count; i++) {
+    [tArr addObject:nsstring((titles && titles[i]) ? titles[i] : "Folder")];
+    [sArr addObject:nsstring((subtitles && subtitles[i]) ? subtitles[i] : "")];
+    [fArr addObject:nsstring((folder_types && folder_types[i]) ? folder_types[i] : "folder")];
+    [bArr addObject:nsstring((badges && badges[i]) ? badges[i] : "")];
+  }
+  int cols = columns > 0 ? columns : 3;
+  int h = height > 60 ? height : 170;
+  __block SGThemedFolderGridView *view = nil;
+  sgRunOnMainSync(^{
+    view = [[SGThemedFolderGridView alloc] initWithFrame:NSMakeRect(0, 0, 520, h)];
+    view.titles = tArr;
+    view.subtitles = sArr;
+    view.folderTypes = fArr;
+    view.badges = bArr;
+    view.columns = cols;
+    view.selectedIndex = 0;
+    view.accentColor = delegate.currentAccentColor ?: [NSColor colorWithSRGBRed:0.22 green:0.74 blue:0.97 alpha:1.0];
+    view.secondaryAccent = delegate.currentSecondaryAccentColor ?: view.accentColor;
+    view.cardBgColor = delegate.currentCardBackgroundColor;
+    view.cardBorderColor = delegate.currentCardBorderColor;
+    view.cornerRadius = delegate.currentCornerRadius > 0 ? delegate.currentCornerRadius : 12;
+    view.uiElementFx = delegate.currentUiElementFx ?: @"frosted_glass";
+    view.iconPackStyle = @"macos_3d";
+    view.controlName = key;
+    view.winPtr = delegate.win_ptr;
+    [view setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [view.widthAnchor constraintGreaterThanOrEqualToConstant:320].active = YES;
+    [view.heightAnchor constraintEqualToConstant:h].active = YES;
+    delegate.controlsByName[key] = view;
+    [delegate addControlToLayout:view];
+  });
+  return (__bridge void *)view;
+}
+
+void window_set_themed_folder_grid_fx(
+    main__WindowInfo *info,
+    const char *name,
+    const char *ui_element_fx,
+    const char *icon_pack_style,
+    const char *accent_color,
+    const char *secondary_accent,
+    const char *card_bg,
+    const char *card_border,
+    int corner_radius,
+    int icon_glow) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSString *uiFx = nsstring(ui_element_fx ? ui_element_fx : "frosted_glass");
+  NSString *pack = nsstring(icon_pack_style ? icon_pack_style : "macos_3d");
+  NSColor *acc = (accent_color && *accent_color) ? colorFromString(accent_color) : nil;
+  NSColor *sec = (secondary_accent && *secondary_accent) ? colorFromString(secondary_accent) : nil;
+  NSColor *cbg = (card_bg && *card_bg) ? colorFromString(card_bg) : nil;
+  NSColor *cbd = (card_border && *card_border) ? colorFromString(card_border) : nil;
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGThemedFolderGridView class]]) {
+      SGThemedFolderGridView *fg = (SGThemedFolderGridView *)v;
+      fg.uiElementFx = uiFx;
+      fg.iconPackStyle = pack;
+      if (acc) fg.accentColor = acc;
+      if (sec) fg.secondaryAccent = sec;
+      if (cbg) fg.cardBgColor = cbg;
+      if (cbd) fg.cardBorderColor = cbd;
+      if (corner_radius > 0) fg.cornerRadius = corner_radius;
+      fg.iconGlow = (icon_glow != 0);
+      [fg setNeedsDisplay:YES];
+    }
+  });
+}
+
+int window_get_themed_folder_grid_selected(main__WindowInfo *info, const char *name) {
+  if (!info || !info->app_delegate) return -1;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  __block int res = -1;
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGThemedFolderGridView class]]) {
+      res = [(SGThemedFolderGridView *)v selectedIndex];
+    }
+  });
+  return res;
+}
+
+void window_set_themed_folder_grid_selected(main__WindowInfo *info, const char *name, int index) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGThemedFolderGridView class]]) {
+      SGThemedFolderGridView *fg = (SGThemedFolderGridView *)v;
+      fg.selectedIndex = index;
+      [fg setNeedsDisplay:YES];
+    }
+  });
+}
+
+// ============================================================================
+// 26. Master VFX Shader Canvas Viewport (SGShaderCanvasView)
+// ============================================================================
+@interface SGShaderCanvasView : NSView
+@property (nonatomic, copy) NSString *preset;
+@property (nonatomic, assign) double phase;
+@property (nonatomic, assign) double speed;
+@property (nonatomic, strong) NSTimer *timer;
+@property (nonatomic, assign) AppDelegate *appDelegate;
+@property (nonatomic, copy) NSString *controlName;
+@property (nonatomic, assign) void *winPtr;
+@end
+
+@implementation SGShaderCanvasView
+- (instancetype)initWithFrame:(NSRect)frameRect {
+  self = [super initWithFrame:frameRect];
+  if (self) {
+    _preset = @"tesseract_4d";
+    _phase = 0.85;
+    _speed = 1.0;
+    __unsafe_unretained typeof(self) weakSelf = self;
+    _timer = [NSTimer timerWithTimeInterval:0.033 repeats:YES block:^(NSTimer * _Nonnull t) {
+      SGShaderCanvasView *s = weakSelf;
+      if (!s || s.isHiddenOrHasHiddenAncestor || !s.window || !(s.window.occlusionState & NSWindowOcclusionStateVisible)) return;
+      s.phase += 0.048 * s.speed;
+      [s setNeedsDisplay:YES];
+    }];
+    [[NSRunLoop mainRunLoop] addTimer:_timer forMode:NSRunLoopCommonModes];
+  }
+  return self;
+}
+- (void)dealloc {
+  [_timer invalidate];
+  [super dealloc];
+}
+- (void)drawRect:(NSRect)dirtyRect {
+  [super drawRect:dirtyRect];
+  NSRect b = self.bounds;
+  if (b.size.width <= 4 || b.size.height <= 4) return;
+  AppDelegate *del = self.appDelegate;
+  NSColor *g1 = del.currentGlowColor ?: (del.currentAccentColor ?: [NSColor colorWithSRGBRed:0.00 green:0.96 blue:0.83 alpha:1.0]);
+  NSColor *g2 = del.currentGlowColor2 ?: (del.currentSecondaryAccentColor ?: [NSColor colorWithSRGBRed:1.00 green:0.16 blue:0.52 alpha:1.0]);
+  NSColor *bg = del.currentCardBackgroundColor ?: [NSColor colorWithSRGBRed:0.03 green:0.04 blue:0.08 alpha:0.95];
+
+  NSBezierPath *clip = [NSBezierPath bezierPathWithRoundedRect:b xRadius:12.0 yRadius:12.0];
+  [NSGraphicsContext saveGraphicsState];
+  [clip addClip];
+
+  // Deep viewport background + dual radial nebula glow
+  [[bg colorWithAlphaComponent:0.94] setFill];
+  NSRectFill(b);
+  NSGradient *radA = [[[NSGradient alloc] initWithStartingColor:[g1 colorWithAlphaComponent:0.25] endingColor:[NSColor clearColor]] autorelease];
+  [radA drawInRect:b relativeCenterPosition:NSMakePoint(-0.35, 0.35)];
+  NSGradient *radB = [[[NSGradient alloc] initWithStartingColor:[g2 colorWithAlphaComponent:0.25] endingColor:[NSColor clearColor]] autorelease];
+  [radB drawInRect:b relativeCenterPosition:NSMakePoint(0.35, -0.35)];
+
+  NSPoint center = NSMakePoint(NSMidX(b), NSMidY(b));
+  double ph = self.phase;
+  NSString *pr = [self.preset lowercaseString] ?: @"tesseract_4d";
+
+  if ([pr containsString:@"plasma"] || [pr containsString:@"reactor"]) {
+    // Tokamak Fusion Plasma Reactor Core
+    for (int r = 1; r <= 5; r++) {
+      CGFloat rad = MIN(b.size.width, b.size.height) * (0.08 * r);
+      NSColor *rc = (r % 2 == 0) ? g1 : g2;
+      [[rc colorWithAlphaComponent:0.22] setStroke];
+      NSBezierPath *oval = [NSBezierPath bezierPathWithOvalInRect:NSMakeRect(center.x - rad, center.y - rad, rad * 2, rad * 2)];
+      oval.lineWidth = (r == 3) ? 2.5 : 1.2;
+      [oval stroke];
+    }
+    // 14 Plasma Lightning Filaments
+    for (int f = 0; f < 14; f++) {
+      double baseAng = (f * M_PI * 2.0 / 14.0) + ph * (f % 2 == 0 ? 0.6 : -0.4);
+      CGFloat maxR = MIN(b.size.width, b.size.height) * 0.42;
+      NSBezierPath *bolt = [NSBezierPath bezierPath];
+      [bolt moveToPoint:center];
+      for (int seg = 1; seg <= 5; seg++) {
+        CGFloat frac = seg / 5.0;
+        double jitter = 0.14 * sin(ph * 3.2 + f * 1.9 + seg * 2.1);
+        NSPoint pt = NSMakePoint(center.x + cos(baseAng + jitter) * maxR * frac,
+                                center.y + sin(baseAng + jitter) * maxR * frac);
+        [bolt lineToPoint:pt];
+      }
+      NSColor *bc = (f % 2 == 0) ? g1 : g2;
+      [[bc colorWithAlphaComponent:0.45] setStroke];
+      bolt.lineWidth = 3.2;
+      [bolt stroke];
+      [[[NSColor whiteColor] colorWithAlphaComponent:0.85] setStroke];
+      bolt.lineWidth = 1.1;
+      [bolt stroke];
+    }
+    // Glowing reactor core sphere
+    NSGradient *coreGrad = [[[NSGradient alloc] initWithStartingColor:[NSColor whiteColor] endingColor:[g1 colorWithAlphaComponent:0.0]] autorelease];
+    [coreGrad drawInRect:NSMakeRect(center.x - 26, center.y - 26, 52, 52) relativeCenterPosition:NSZeroPoint];
+  } else if ([pr containsString:@"synthwave"] || [pr containsString:@"horizon"] || [pr containsString:@"outrun"]) {
+    // 3D Synthwave Outrun Sunset + Wireframe Mountains + Perspective Grid
+    CGFloat horizonY = b.size.height * 0.44;
+    // Retro Segmented Neon Sun
+    CGFloat sunR = MIN(b.size.width, b.size.height) * 0.28;
+    NSRect sunRect = NSMakeRect(center.x - sunR, horizonY - sunR * 0.25, sunR * 2, sunR * 2);
+    NSGradient *sunGrad = [[[NSGradient alloc] initWithStartingColor:g2 endingColor:g1] autorelease];
+    NSBezierPath *sunOval = [NSBezierPath bezierPathWithOvalInRect:sunRect];
+    [sunGrad drawInBezierPath:sunOval angle:90.0];
+    // Horizontal scanline slice cutouts across lower half of sun
+    [[bg colorWithAlphaComponent:0.94] setFill];
+    for (int sl = 0; sl < 6; sl++) {
+      CGFloat sy = horizonY - sunR * 0.15 + sl * (sunR * 0.14);
+      NSRectFill(NSMakeRect(center.x - sunR - 2, sy, sunR * 2 + 4, 2.0 + sl * 0.7));
+    }
+    // Wireframe Mountain Range along Horizon
+    NSBezierPath *mtn = [NSBezierPath bezierPath];
+    [mtn moveToPoint:NSMakePoint(0, horizonY)];
+    int peaks = 16;
+    for (int pk = 0; pk <= peaks; pk++) {
+      CGFloat px = (b.size.width * pk) / peaks;
+      CGFloat py = horizonY + ((pk % 2 == 1) ? (14.0 + (pk % 3) * 12.0) : 2.0);
+      [mtn lineToPoint:NSMakePoint(px, py)];
+    }
+    [mtn lineToPoint:NSMakePoint(b.size.width, horizonY)];
+    [mtn closePath];
+    [[bg colorWithAlphaComponent:0.95] setFill];
+    [mtn fill];
+    [[g1 colorWithAlphaComponent:0.85] setStroke];
+    mtn.lineWidth = 1.5;
+    [mtn stroke];
+
+    // 3D Perspective Scrolling Grid below Horizon
+    [[g2 colorWithAlphaComponent:0.42] setStroke];
+    for (int ray = -12; ray <= 12; ray++) {
+      NSBezierPath *rp = [NSBezierPath bezierPath];
+      [rp moveToPoint:NSMakePoint(center.x, horizonY)];
+      [rp lineToPoint:NSMakePoint(center.x + ray * (b.size.width * 0.11), 0)];
+      rp.lineWidth = 1.0;
+      [rp stroke];
+    }
+    CGFloat zOff = fmod(ph * 0.25, 1.0);
+    for (int row = 1; row <= 8; row++) {
+      CGFloat t = pow(((row - 1 + zOff) / 8.0), 1.6);
+      CGFloat y = horizonY * (1.0 - t);
+      [[g1 colorWithAlphaComponent:0.20 + 0.60 * t] setStroke];
+      NSBezierPath *hl = [NSBezierPath bezierPath];
+      [hl moveToPoint:NSMakePoint(0, y)];
+      [hl lineToPoint:NSMakePoint(b.size.width, y)];
+      hl.lineWidth = 0.8 + t * 1.2;
+      [hl stroke];
+    }
+  } else if ([pr containsString:@"spectrum"] || [pr containsString:@"audio"]) {
+    // 3D Mirrored 48-Band Neon FFT Audio Spectrum Analyzer
+    int bands = 48;
+    CGFloat padX = 18.0;
+    CGFloat availW = b.size.width - padX * 2.0;
+    CGFloat barW = MAX(3.0, (availW / bands) - 3.0);
+    CGFloat midY = b.size.height * 0.42;
+    for (int i = 0; i < bands; i++) {
+      double wave = fabs(sin(ph * 1.8 + i * 0.24) * cos(ph * 0.9 - i * 0.15));
+      CGFloat h = MAX(6.0, wave * (b.size.height * 0.46));
+      CGFloat bx = padX + i * (availW / bands);
+      NSColor *barCol = (i % 2 == 0) ? g1 : g2;
+      // Upper main FFT bar
+      NSGradient *bGrad = [[NSGradient alloc] initWithStartingColor:[barCol colorWithAlphaComponent:0.95]
+                                                        endingColor:[barCol colorWithAlphaComponent:0.30]];
+      NSBezierPath *upBar = [NSBezierPath bezierPathWithRoundedRect:NSMakeRect(bx, midY, barW, h) xRadius:2.0 yRadius:2.0];
+      [bGrad drawInBezierPath:upBar angle:270.0];
+      // Floating Peak-Hold Cap
+      [[NSColor whiteColor] setFill];
+      NSRectFill(NSMakeRect(bx, midY + h + 3.0, barW, 2.0));
+      // Lower Mirrored Reflection
+      [[barCol colorWithAlphaComponent:0.22] setFill];
+      [[NSBezierPath bezierPathWithRoundedRect:NSMakeRect(bx, MAX(4.0, midY - h * 0.45), barW, h * 0.42) xRadius:1.5 yRadius:1.5] fill];
+    }
+  } else if ([pr containsString:@"black_hole"] || [pr containsString:@"singularity"]) {
+    // Gargantua Black Hole Accretion Disk & Relativistic Jets
+    CGFloat diskW = MIN(b.size.width * 0.72, 340.0);
+    CGFloat diskH = MIN(b.size.height * 0.26, 64.0);
+    // Gravitational Lensing Upper & Lower Halo Rings
+    for (int l = 0; l < 4; l++) {
+      CGFloat r = (diskH * 0.78) + l * 6.0;
+      NSColor *lc = (l % 2 == 0) ? g1 : g2;
+      [[lc colorWithAlphaComponent:0.45 - l * 0.08] setStroke];
+      NSBezierPath *lens = [NSBezierPath bezierPathWithOvalInRect:NSMakeRect(center.x - r, center.y - r, r * 2, r * 2)];
+      lens.lineWidth = 2.5;
+      [lens stroke];
+    }
+    // Event Horizon Pitch-Black Sphere
+    CGFloat ehR = diskH * 0.68;
+    [[NSColor blackColor] setFill];
+    [[NSBezierPath bezierPathWithOvalInRect:NSMakeRect(center.x - ehR, center.y - ehR, ehR * 2, ehR * 2)] fill];
+    [[[NSColor whiteColor] colorWithAlphaComponent:0.90] setStroke];
+    NSBezierPath *photon = [NSBezierPath bezierPathWithOvalInRect:NSMakeRect(center.x - ehR, center.y - ehR, ehR * 2, ehR * 2)];
+    photon.lineWidth = 1.6;
+    [photon stroke];
+    // Tilted Relativistic Accretion Disk Ellipses
+    for (int d = 0; d < 5; d++) {
+      CGFloat w = diskW * (0.65 + d * 0.09);
+      CGFloat h = diskH * (0.45 + d * 0.09);
+      NSColor *dc = (d % 2 == 0) ? g1 : g2;
+      [[dc colorWithAlphaComponent:0.55 - d * 0.08] setStroke];
+      NSBezierPath *disk = [NSBezierPath bezierPathWithOvalInRect:NSMakeRect(center.x - w * 0.5, center.y - h * 0.5, w, h)];
+      disk.lineWidth = 2.2;
+      [disk stroke];
+    }
+  } else if ([pr containsString:@"neural"] || [pr containsString:@"plexus"]) {
+    // Interactive Neural Plexus Constellation Network
+    NSPoint nodes[26];
+    for (int i = 0; i < 26; i++) {
+      CGFloat nx = 24.0 + fmod(i * 97.0 + sin(ph * 0.8 + i) * 26.0, MAX(60.0, b.size.width - 48.0));
+      if (nx < 24.0) nx += (b.size.width - 48.0);
+      CGFloat ny = 20.0 + fmod(i * 67.0 + cos(ph * 0.7 + i * 1.3) * 22.0, MAX(40.0, b.size.height - 40.0));
+      if (ny < 20.0) ny += (b.size.height - 40.0);
+      nodes[i] = NSMakePoint(nx, ny);
+    }
+    for (int i = 0; i < 26; i++) {
+      for (int j = i + 1; j < 26; j++) {
+        CGFloat dx = nodes[i].x - nodes[j].x;
+        CGFloat dy = nodes[i].y - nodes[j].y;
+        CGFloat distSq = dx * dx + dy * dy;
+        if (distSq < 150.0 * 150.0) {
+          CGFloat alpha = (1.0 - sqrt(distSq) / 150.0) * 0.55;
+          [[(i % 2 == 0 ? g1 : g2) colorWithAlphaComponent:alpha] setStroke];
+          NSBezierPath *syn = [NSBezierPath bezierPath];
+          [syn moveToPoint:nodes[i]];
+          [syn lineToPoint:nodes[j]];
+          syn.lineWidth = 1.2;
+          [syn stroke];
+        }
+      }
+    }
+    for (int i = 0; i < 26; i++) {
+      NSColor *nc = (i % 2 == 0) ? g1 : g2;
+      [[nc colorWithAlphaComponent:0.30] setFill];
+      [[NSBezierPath bezierPathWithOvalInRect:NSMakeRect(nodes[i].x - 7, nodes[i].y - 7, 14, 14)] fill];
+      [[NSColor whiteColor] setFill];
+      [[NSBezierPath bezierPathWithOvalInRect:NSMakeRect(nodes[i].x - 2.5, nodes[i].y - 2.5, 5, 5)] fill];
+    }
+  } else {
+    // Default Flagship: 4D Rotating Hypercube (Tesseract) + Astrolabe Rings
+    for (int r = 1; r <= 3; r++) {
+      CGFloat rad = MIN(b.size.width, b.size.height) * (0.14 * r);
+      [[(r % 2 == 1 ? g1 : g2) colorWithAlphaComponent:0.22] setStroke];
+      NSBezierPath *ring = [NSBezierPath bezierPathWithOvalInRect:NSMakeRect(center.x - rad, center.y - rad, rad * 2, rad * 2)];
+      ring.lineWidth = 1.2;
+      [ring stroke];
+    }
+    CGFloat scale = MIN(b.size.width, b.size.height) * 0.34;
+    NSPoint outerPts[8];
+    NSPoint innerPts[8];
+    for (int v = 0; v < 8; v++) {
+      double vx = (v & 1) ? 1.0 : -1.0;
+      double vy = (v & 2) ? 1.0 : -1.0;
+      double vz = (v & 4) ? 1.0 : -1.0;
+      double angY = ph * 0.75;
+      double angX = 0.45 + ph * 0.42;
+      double rx = vx * cos(angY) - vz * sin(angY);
+      double rz = vx * sin(angY) + vz * cos(angY);
+      double ry = vy * cos(angX) - rz * sin(angX);
+      double rz2 = vy * sin(angX) + rz * cos(angX);
+      double pOut = 1.0 / (2.5 - rz2 * 0.38);
+      double pIn = 0.50 / (2.5 - rz2 * 0.38);
+      outerPts[v] = NSMakePoint(center.x + rx * scale * pOut, center.y + ry * scale * pOut);
+      innerPts[v] = NSMakePoint(center.x + rx * scale * pIn, center.y + ry * scale * pIn);
+    }
+    int edges[12][2] = {{0,1},{2,3},{4,5},{6,7},{0,2},{1,3},{4,6},{5,7},{0,4},{1,5},{2,6},{3,7}};
+    [[g1 colorWithAlphaComponent:0.85] setStroke];
+    for (int e = 0; e < 12; e++) {
+      NSBezierPath *ep = [NSBezierPath bezierPath];
+      [ep moveToPoint:outerPts[edges[e][0]]];
+      [ep lineToPoint:outerPts[edges[e][1]]];
+      ep.lineWidth = 2.0;
+      [ep stroke];
+    }
+    [[g2 colorWithAlphaComponent:0.88] setStroke];
+    for (int e = 0; e < 12; e++) {
+      NSBezierPath *ep = [NSBezierPath bezierPath];
+      [ep moveToPoint:innerPts[edges[e][0]]];
+      [ep lineToPoint:innerPts[edges[e][1]]];
+      ep.lineWidth = 1.6;
+      [ep stroke];
+    }
+    [[[NSColor whiteColor] colorWithAlphaComponent:0.55] setStroke];
+    for (int v = 0; v < 8; v++) {
+      NSBezierPath *cp = [NSBezierPath bezierPath];
+      [cp moveToPoint:outerPts[v]];
+      [cp lineToPoint:innerPts[v]];
+      cp.lineWidth = 1.1;
+      [cp stroke];
+      [[NSColor whiteColor] setFill];
+      [[NSBezierPath bezierPathWithOvalInRect:NSMakeRect(outerPts[v].x - 3.0, outerPts[v].y - 3.0, 6.0, 6.0)] fill];
+    }
+  }
+
+  // HUD Telemetry Overlay & Border
+  NSString *hudLabel = [NSString stringWithFormat:@"SHADER // %@  [60 FPS METAL/CG]", [self.preset uppercaseString]];
+  [hudLabel drawAtPoint:NSMakePoint(12, b.size.height - 22) withAttributes:@{
+    NSFontAttributeName: [NSFont monospacedSystemFontOfSize:10.0 weight:NSFontWeightBold],
+    NSForegroundColorAttributeName: [g1 colorWithAlphaComponent:0.92]
+  }];
+  NSString *hintLabel = @"Click viewport to cycle VFX shader preset";
+  [hintLabel drawAtPoint:NSMakePoint(12, 8) withAttributes:@{
+    NSFontAttributeName: [NSFont systemFontOfSize:9.5 weight:NSFontWeightMedium],
+    NSForegroundColorAttributeName: [[NSColor whiteColor] colorWithAlphaComponent:0.55]
+  }];
+
+  [NSGraphicsContext restoreGraphicsState];
+  [[g1 colorWithAlphaComponent:0.55] setStroke];
+  clip.lineWidth = 1.4;
+  [clip stroke];
+}
+- (void)mouseDown:(NSEvent *)event {
+  NSArray<NSString *> *presets = @[@"tesseract_4d", @"plasma_reactor", @"synthwave_horizon", @"audio_spectrum_3d", @"black_hole_singularity", @"neural_plexus"];
+  NSUInteger idx = [presets indexOfObject:[self.preset lowercaseString]];
+  NSString *nextPreset = presets[(idx == NSNotFound) ? 0 : ((idx + 1) % presets.count)];
+  self.preset = nextPreset;
+  self.phase += 0.6;
+  [self setNeedsDisplay:YES];
+  if (self.winPtr && self.controlName) {
+    vlang_dispatch_event(self.winPtr, [self.controlName UTF8String], "change", [nextPreset UTF8String]);
+  }
+}
+@end
+
+void *window_add_shader_canvas_control(main__WindowInfo *info, const char *name, const char *preset, int height) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSString *prStr = nsstring((preset && *preset) ? preset : "tesseract_4d");
+  int h = height > 60 ? height : 190;
+  __block SGShaderCanvasView *view = nil;
+  sgRunOnMainSync(^{
+    view = [[SGShaderCanvasView alloc] initWithFrame:NSMakeRect(0, 0, 440, h)];
+    view.preset = prStr;
+    view.appDelegate = delegate;
+    view.controlName = key;
+    view.winPtr = delegate.win_ptr;
+    [view setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [view.widthAnchor constraintGreaterThanOrEqualToConstant:260].active = YES;
+    [view.heightAnchor constraintEqualToConstant:h].active = YES;
+    delegate.controlsByName[key] = view;
+    [delegate addControlToLayout:view];
+  });
+  return (__bridge void *)view;
+}
+
+void window_set_shader_canvas_preset(main__WindowInfo *info, const char *name, const char *preset) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSString *prStr = nsstring((preset && *preset) ? preset : "tesseract_4d");
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGShaderCanvasView class]]) {
+      SGShaderCanvasView *sc = (SGShaderCanvasView *)v;
+      sc.preset = prStr;
+      [sc setNeedsDisplay:YES];
+    }
+  });
+}
+
+const char *window_get_shader_canvas_preset(main__WindowInfo *info, const char *name) {
+  if (!info || !info->app_delegate) return strdup("");
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  __block NSString *res = @"";
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGShaderCanvasView class]]) {
+      res = [(SGShaderCanvasView *)v preset] ?: @"";
+    }
+  });
+  return strdup([res UTF8String]);
+}
+
+void window_set_shader_canvas_speed(main__WindowInfo *info, const char *name, double speed) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGShaderCanvasView class]]) {
+      SGShaderCanvasView *sc = (SGShaderCanvasView *)v;
+      sc.speed = speed;
+      [sc setNeedsDisplay:YES];
+    }
+  });
+}
+
+void window_step_shader_canvas(main__WindowInfo *info, const char *name, double delta) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGShaderCanvasView class]]) {
+      SGShaderCanvasView *sc = (SGShaderCanvasView *)v;
+      sc.phase += delta;
+      [sc setNeedsDisplay:YES];
+    }
+  });
+}
+
+// ============================================================================
+// 27. Interactive Particle Physics & Fireworks Emitter Control (SGParticleEmitterView)
+// ============================================================================
+@interface SGParticleEmitterView : NSView
+@property (nonatomic, copy) NSString *effectType;
+@property (nonatomic, assign) int particleCount;
+@property (nonatomic, assign) double phase;
+@property (nonatomic, assign) NSPoint burstCenter;
+@property (nonatomic, assign) double burstAge;
+@property (nonatomic, strong) NSTimer *timer;
+@property (nonatomic, assign) AppDelegate *appDelegate;
+@property (nonatomic, copy) NSString *controlName;
+@property (nonatomic, assign) void *winPtr;
+@end
+
+@implementation SGParticleEmitterView
+- (instancetype)initWithFrame:(NSRect)frameRect {
+  self = [super initWithFrame:frameRect];
+  if (self) {
+    _effectType = @"supernova_burst";
+    _particleCount = 64;
+    _phase = 1.2;
+    _burstAge = 0.35;
+    _burstCenter = NSMakePoint(0.5, 0.5);
+    __unsafe_unretained typeof(self) weakSelf = self;
+    _timer = [NSTimer timerWithTimeInterval:0.033 repeats:YES block:^(NSTimer * _Nonnull t) {
+      SGParticleEmitterView *s = weakSelf;
+      if (!s || s.isHiddenOrHasHiddenAncestor || !s.window || !(s.window.occlusionState & NSWindowOcclusionStateVisible)) return;
+      s.phase += 0.05;
+      s.burstAge = fmod(s.burstAge + 0.025, 1.0);
+      [s setNeedsDisplay:YES];
+    }];
+    [[NSRunLoop mainRunLoop] addTimer:_timer forMode:NSRunLoopCommonModes];
+  }
+  return self;
+}
+- (void)dealloc {
+  [_timer invalidate];
+  [super dealloc];
+}
+- (void)drawRect:(NSRect)dirtyRect {
+  [super drawRect:dirtyRect];
+  NSRect b = self.bounds;
+  if (b.size.width <= 4 || b.size.height <= 4) return;
+  AppDelegate *del = self.appDelegate;
+  NSColor *g1 = del.currentGlowColor ?: (del.currentAccentColor ?: [NSColor colorWithSRGBRed:1.0 green:0.16 blue:0.52 alpha:1.0]);
+  NSColor *g2 = del.currentGlowColor2 ?: (del.currentSecondaryAccentColor ?: [NSColor colorWithSRGBRed:0.0 green:0.96 blue:0.83 alpha:1.0]);
+  NSColor *bg = del.currentCardBackgroundColor ?: [NSColor colorWithSRGBRed:0.04 green:0.03 blue:0.09 alpha:0.95];
+
+  NSBezierPath *clip = [NSBezierPath bezierPathWithRoundedRect:b xRadius:12.0 yRadius:12.0];
+  [NSGraphicsContext saveGraphicsState];
+  [clip addClip];
+
+  [[bg colorWithAlphaComponent:0.94] setFill];
+  NSRectFill(b);
+
+  NSPoint origin = NSMakePoint(b.size.width * self.burstCenter.x, b.size.height * self.burstCenter.y);
+  int count = MIN(140, MAX(16, self.particleCount));
+  NSString *eff = [self.effectType lowercaseString] ?: @"supernova_burst";
+  double ph = self.phase;
+
+  // Shockwave ring
+  CGFloat shockR = self.burstAge * MIN(b.size.width, b.size.height) * 0.55;
+  [[g1 colorWithAlphaComponent:(1.0 - self.burstAge) * 0.45] setStroke];
+  NSBezierPath *shock = [NSBezierPath bezierPathWithOvalInRect:NSMakeRect(origin.x - shockR, origin.y - shockR, shockR * 2, shockR * 2)];
+  shock.lineWidth = 2.0;
+  [shock stroke];
+
+  for (int i = 0; i < count; i++) {
+    double seed = i * 1.61803398875;
+    double angle = (i * M_PI * 2.0 / count) + sin(seed) * 0.4;
+    CGFloat px = 0, py = 0;
+    if ([eff containsString:@"vortex"] || [eff containsString:@"galaxy"]) {
+      double armAngle = angle + ph * 0.9 + (i % 4) * 0.45;
+      CGFloat dist = (0.12 + 0.82 * ((double)(i % 24) / 24.0)) * MIN(b.size.width, b.size.height) * 0.46;
+      px = origin.x + cos(armAngle) * dist;
+      py = origin.y + sin(armAngle) * dist * 0.68;
+    } else if ([eff containsString:@"fountain"] || [eff containsString:@"sparks"]) {
+      double t = fmod(ph * 0.45 + (double)i / count, 1.0);
+      double vx = cos(angle) * b.size.width * 0.36;
+      double vy = (0.65 + 0.35 * sin(seed)) * b.size.height * 0.75;
+      px = origin.x + vx * t;
+      py = 14.0 + vy * t - 0.5 * (b.size.height * 0.85) * t * t;
+    } else {
+      // Supernova / Fireworks radial burst with velocity trails
+      double t = fmod(self.burstAge + (i % 5) * 0.12, 1.0);
+      CGFloat radius = (0.12 + 0.88 * pow(t, 0.72)) * MIN(b.size.width, b.size.height) * 0.48;
+      px = origin.x + cos(angle + ph * 0.15) * radius;
+      py = origin.y + sin(angle + ph * 0.15) * radius;
+      // Trail line
+      CGFloat tailR = MAX(0.0, radius - 16.0);
+      NSPoint tailPt = NSMakePoint(origin.x + cos(angle + ph * 0.15) * tailR, origin.y + sin(angle + ph * 0.15) * tailR);
+      NSColor *tc = (i % 2 == 0) ? g1 : g2;
+      [[tc colorWithAlphaComponent:0.55] setStroke];
+      NSBezierPath *tr = [NSBezierPath bezierPath];
+      [tr moveToPoint:tailPt];
+      [tr lineToPoint:NSMakePoint(px, py)];
+      tr.lineWidth = 1.8;
+      [tr stroke];
+    }
+    NSColor *pc = (i % 2 == 0) ? g1 : g2;
+    [[pc colorWithAlphaComponent:0.28] setFill];
+    [[NSBezierPath bezierPathWithOvalInRect:NSMakeRect(px - 6, py - 6, 12, 12)] fill];
+    [[NSColor whiteColor] setFill];
+    [[NSBezierPath bezierPathWithOvalInRect:NSMakeRect(px - 2.2, py - 2.2, 4.4, 4.4)] fill];
+  }
+
+  NSString *lbl = [NSString stringWithFormat:@"PARTICLE FX // %@ (%d ACTIVE)", [self.effectType uppercaseString], count];
+  [lbl drawAtPoint:NSMakePoint(12, b.size.height - 22) withAttributes:@{
+    NSFontAttributeName: [NSFont monospacedSystemFontOfSize:10.0 weight:NSFontWeightBold],
+    NSForegroundColorAttributeName: [g2 colorWithAlphaComponent:0.92]
+  }];
+  [NSGraphicsContext restoreGraphicsState];
+  [[g2 colorWithAlphaComponent:0.52] setStroke];
+  clip.lineWidth = 1.4;
+  [clip stroke];
+}
+- (void)mouseDown:(NSEvent *)event {
+  NSPoint pt = [self convertPoint:event.locationInWindow fromView:nil];
+  if (self.bounds.size.width > 1 && self.bounds.size.height > 1) {
+    self.burstCenter = NSMakePoint(pt.x / self.bounds.size.width, pt.y / self.bounds.size.height);
+    self.burstAge = 0.05;
+    [self setNeedsDisplay:YES];
+    if (self.winPtr && self.controlName) {
+      vlang_dispatch_event(self.winPtr, [self.controlName UTF8String], "click", [self.effectType UTF8String]);
+    }
+  }
+}
+@end
+
+void *window_add_particle_emitter_control(main__WindowInfo *info, const char *name, const char *effect_type, int particle_count, int height) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSString *effStr = nsstring((effect_type && *effect_type) ? effect_type : "supernova_burst");
+  int h = height > 60 ? height : 170;
+  __block SGParticleEmitterView *view = nil;
+  sgRunOnMainSync(^{
+    view = [[SGParticleEmitterView alloc] initWithFrame:NSMakeRect(0, 0, 360, h)];
+    view.effectType = effStr;
+    view.particleCount = particle_count > 0 ? particle_count : 64;
+    view.appDelegate = delegate;
+    view.controlName = key;
+    view.winPtr = delegate.win_ptr;
+    [view setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [view.widthAnchor constraintGreaterThanOrEqualToConstant:240].active = YES;
+    [view.heightAnchor constraintEqualToConstant:h].active = YES;
+    delegate.controlsByName[key] = view;
+    [delegate addControlToLayout:view];
+  });
+  return (__bridge void *)view;
+}
+
+void window_set_particle_emitter_type(main__WindowInfo *info, const char *name, const char *effect_type) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSString *effStr = nsstring((effect_type && *effect_type) ? effect_type : "supernova_burst");
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGParticleEmitterView class]]) {
+      SGParticleEmitterView *pe = (SGParticleEmitterView *)v;
+      pe.effectType = effStr;
+      [pe setNeedsDisplay:YES];
+    }
+  });
+}
+
+const char *window_get_particle_emitter_type(main__WindowInfo *info, const char *name) {
+  if (!info || !info->app_delegate) return strdup("");
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  __block NSString *res = @"";
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGParticleEmitterView class]]) {
+      res = [(SGParticleEmitterView *)v effectType] ?: @"";
+    }
+  });
+  return strdup([res UTF8String]);
+}
+
+void window_emit_particle_burst(main__WindowInfo *info, const char *name, double x, double y, int count) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGParticleEmitterView class]]) {
+      SGParticleEmitterView *pe = (SGParticleEmitterView *)v;
+      pe.burstCenter = NSMakePoint(MIN(0.9, MAX(0.1, x)), MIN(0.9, MAX(0.1, y)));
+      if (count > 0) pe.particleCount = count;
+      pe.burstAge = 0.05;
+      [pe setNeedsDisplay:YES];
+    }
+  });
+}
+
+// ============================================================================
+// 28. 3D Hologram Foil & Cyber HUD Showcase Card Control (SGHologramCardView)
+// ============================================================================
+@interface SGHologramCardView : NSView
+@property (nonatomic, copy) NSString *cardTitle;
+@property (nonatomic, copy) NSString *cardSubtitle;
+@property (nonatomic, copy) NSString *metricValue;
+@property (nonatomic, copy) NSString *badgeText;
+@property (nonatomic, copy) NSString *cardStyle;
+@property (nonatomic, assign) AppDelegate *appDelegate;
+@property (nonatomic, copy) NSString *controlName;
+@property (nonatomic, assign) void *winPtr;
+@end
+
+@implementation SGHologramCardView
+- (BOOL)isFlipped {
+  return YES;
+}
+- (void)drawRect:(NSRect)dirtyRect {
+  [super drawRect:dirtyRect];
+  NSRect b = self.bounds;
+  if (b.size.width <= 4 || b.size.height <= 4) return;
+  AppDelegate *del = self.appDelegate;
+  NSColor *g1 = del.currentGlowColor ?: (del.currentAccentColor ?: [NSColor colorWithSRGBRed:0.0 green:0.96 blue:0.83 alpha:1.0]);
+  NSColor *g2 = del.currentGlowColor2 ?: (del.currentSecondaryAccentColor ?: [NSColor colorWithSRGBRed:1.0 green:0.16 blue:0.52 alpha:1.0]);
+  NSColor *bg = del.currentCardBackgroundColor ?: [NSColor colorWithSRGBRed:0.06 green:0.08 blue:0.14 alpha:0.92];
+
+  NSBezierPath *card = [NSBezierPath bezierPathWithRoundedRect:NSInsetRect(b, 1.5, 1.5) xRadius:14.0 yRadius:14.0];
+  [bg setFill];
+  [card fill];
+
+  // Iridescent Hologram Diffraction Foil Gradient
+  NSGradient *holoGrad = [[[NSGradient alloc] initWithColors:@[
+    [g1 colorWithAlphaComponent:0.24],
+    [[NSColor colorWithSRGBRed:0.55 green:0.36 blue:0.98 alpha:1.0] colorWithAlphaComponent:0.16],
+    [g2 colorWithAlphaComponent:0.24],
+    [NSColor clearColor]
+  ]] autorelease];
+  [holoGrad drawInBezierPath:card angle:42.0];
+
+  // Double Prism Border + Tactical Corner Brackets
+  [[g1 colorWithAlphaComponent:0.75] setStroke];
+  card.lineWidth = 1.5;
+  [card stroke];
+
+  // Glowing Mini Radial Telemetry Ring on Right Side
+  CGFloat ringR = MIN(b.size.height * 0.30, 28.0);
+  NSPoint ringCenter = NSMakePoint(b.size.width - ringR - 22.0, b.size.height * 0.54);
+  [[g1 colorWithAlphaComponent:0.20] setStroke];
+  NSBezierPath *bgRing = [NSBezierPath bezierPathWithOvalInRect:NSMakeRect(ringCenter.x - ringR, ringCenter.y - ringR, ringR * 2, ringR * 2)];
+  bgRing.lineWidth = 4.5;
+  [bgRing stroke];
+  [[g2 colorWithAlphaComponent:0.92] setStroke];
+  NSBezierPath *fgArc = [NSBezierPath bezierPath];
+  [fgArc appendBezierPathWithArcWithCenter:ringCenter radius:ringR startAngle:-90 endAngle:185 clockwise:NO];
+  fgArc.lineWidth = 4.5;
+  [fgArc stroke];
+
+  // Badge Pill
+  if (self.badgeText.length > 0) {
+    NSRect badgeRect = NSMakeRect(16, 12, MIN(130, self.badgeText.length * 7.5 + 16), 20);
+    [[g1 colorWithAlphaComponent:0.20] setFill];
+    [[NSBezierPath bezierPathWithRoundedRect:badgeRect xRadius:6.0 yRadius:6.0] fill];
+    [self.badgeText drawInRect:NSMakeRect(22, 14, badgeRect.size.width - 10, 16) withAttributes:@{
+      NSFontAttributeName: [NSFont monospacedSystemFontOfSize:9.5 weight:NSFontWeightBold],
+      NSForegroundColorAttributeName: g1
+    }];
+  }
+
+  BOOL dark = isDarkColor(bg);
+  NSColor *titleCol = dark ? [NSColor whiteColor] : [NSColor blackColor];
+  NSColor *subCol = dark ? [NSColor colorWithWhite:0.78 alpha:1.0] : [NSColor colorWithWhite:0.28 alpha:1.0];
+
+  [self.cardTitle drawInRect:NSMakeRect(16, 36, b.size.width - 96, 18) withAttributes:@{
+    NSFontAttributeName: [NSFont systemFontOfSize:11.5 weight:NSFontWeightSemibold],
+    NSForegroundColorAttributeName: subCol
+  }];
+  [self.metricValue drawInRect:NSMakeRect(16, 54, b.size.width - 96, 30) withAttributes:@{
+    NSFontAttributeName: [NSFont monospacedDigitSystemFontOfSize:22.0 weight:NSFontWeightHeavy],
+    NSForegroundColorAttributeName: titleCol
+  }];
+  if (self.cardSubtitle.length > 0) {
+    [self.cardSubtitle drawInRect:NSMakeRect(16, 84, b.size.width - 96, 16) withAttributes:@{
+      NSFontAttributeName: [NSFont systemFontOfSize:10.5 weight:NSFontWeightMedium],
+      NSForegroundColorAttributeName: g2
+    }];
+  }
+}
+@end
+
+void *window_add_hologram_card_control(main__WindowInfo *info, const char *name, const char *title, const char *subtitle, const char *metric_value, const char *badge, const char *style, int height) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  int h = height > 60 ? height : 110;
+  __block SGHologramCardView *view = nil;
+  sgRunOnMainSync(^{
+    view = [[SGHologramCardView alloc] initWithFrame:NSMakeRect(0, 0, 260, h)];
+    view.cardTitle = nsstring(title ?: "Hologram Metric");
+    view.cardSubtitle = nsstring(subtitle ?: "");
+    view.metricValue = nsstring(metric_value ?: "99.9%");
+    view.badgeText = nsstring(badge ?: "HOLO-FX");
+    view.cardStyle = nsstring(style ?: "iridescent_foil");
+    view.appDelegate = delegate;
+    view.controlName = key;
+    view.winPtr = delegate.win_ptr;
+    [view setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [view.widthAnchor constraintGreaterThanOrEqualToConstant:210].active = YES;
+    [view.heightAnchor constraintEqualToConstant:h].active = YES;
+    delegate.controlsByName[key] = view;
+    [delegate addControlToLayout:view];
+  });
+  return (__bridge void *)view;
+}
+
+void window_set_hologram_card_value(main__WindowInfo *info, const char *name, const char *metric_value, const char *badge) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSString *vStr = nsstring(metric_value ?: "");
+  NSString *bStr = nsstring(badge ?: "");
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGHologramCardView class]]) {
+      SGHologramCardView *hc = (SGHologramCardView *)v;
+      hc.metricValue = vStr;
+      if (bStr.length > 0) hc.badgeText = bStr;
+      [hc setNeedsDisplay:YES];
+    }
+  });
+}
+
+const char *window_get_hologram_card_value(main__WindowInfo *info, const char *name) {
+  if (!info || !info->app_delegate) return strdup("");
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  __block NSString *res = @"";
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGHologramCardView class]]) {
+      res = [(SGHologramCardView *)v metricValue] ?: @"";
+    }
+  });
+  return strdup([res UTF8String]);
+}
+
+// ============================================================================
+// 29. Multi-Harmonic Glowing Waveform & Lissajous Synthesizer Control (SGWaveformSynthView)
+// ============================================================================
+@interface SGWaveformSynthView : NSView
+@property (nonatomic, copy) NSString *waveType;
+@property (nonatomic, assign) double frequency;
+@property (nonatomic, assign) double amplitude;
+@property (nonatomic, assign) double phase;
+@property (nonatomic, strong) NSTimer *timer;
+@property (nonatomic, assign) AppDelegate *appDelegate;
+@end
+
+@implementation SGWaveformSynthView
+- (instancetype)initWithFrame:(NSRect)frameRect {
+  self = [super initWithFrame:frameRect];
+  if (self) {
+    _waveType = @"harmonic_chord";
+    _frequency = 3.5;
+    _amplitude = 0.78;
+    _phase = 0.6;
+    __unsafe_unretained typeof(self) weakSelf = self;
+    _timer = [NSTimer timerWithTimeInterval:0.033 repeats:YES block:^(NSTimer * _Nonnull t) {
+      SGWaveformSynthView *s = weakSelf;
+      if (!s || s.isHiddenOrHasHiddenAncestor || !s.window || !(s.window.occlusionState & NSWindowOcclusionStateVisible)) return;
+      s.phase += 0.06;
+      [s setNeedsDisplay:YES];
+    }];
+    [[NSRunLoop mainRunLoop] addTimer:_timer forMode:NSRunLoopCommonModes];
+  }
+  return self;
+}
+- (void)dealloc {
+  [_timer invalidate];
+  [super dealloc];
+}
+- (void)drawRect:(NSRect)dirtyRect {
+  [super drawRect:dirtyRect];
+  NSRect b = self.bounds;
+  if (b.size.width <= 4 || b.size.height <= 4) return;
+  AppDelegate *del = self.appDelegate;
+  NSColor *g1 = del.currentGlowColor ?: (del.currentAccentColor ?: [NSColor colorWithSRGBRed:0.0 green:0.96 blue:0.83 alpha:1.0]);
+  NSColor *g2 = del.currentGlowColor2 ?: (del.currentSecondaryAccentColor ?: [NSColor colorWithSRGBRed:1.0 green:0.16 blue:0.52 alpha:1.0]);
+  NSColor *bg = del.currentCardBackgroundColor ?: [NSColor colorWithSRGBRed:0.03 green:0.05 blue:0.09 alpha:0.95];
+
+  NSBezierPath *clip = [NSBezierPath bezierPathWithRoundedRect:b xRadius:10.0 yRadius:10.0];
+  [bg setFill];
+  [clip fill];
+
+  // Oscilloscope Graticule Grid
+  [[g1 colorWithAlphaComponent:0.08] setStroke];
+  for (CGFloat x = 0; x < b.size.width; x += 28.0) {
+    NSBezierPath *gl = [NSBezierPath bezierPath];
+    [gl moveToPoint:NSMakePoint(x, 0)];
+    [gl lineToPoint:NSMakePoint(x, b.size.height)];
+    gl.lineWidth = 0.5;
+    [gl stroke];
+  }
+  CGFloat midY = NSMidY(b);
+  CGFloat maxAmp = (b.size.height * 0.38) * MIN(1.0, MAX(0.1, self.amplitude));
+  double freq = MAX(0.5, self.frequency);
+
+  for (int layer = 0; layer < 3; layer++) {
+    NSBezierPath *wave = [NSBezierPath bezierPath];
+    double lPhase = self.phase * (1.0 + layer * 0.35);
+    double lFreq = freq * (1.0 + layer * 0.45);
+    for (int x = 0; x <= (int)b.size.width; x += 3) {
+      double normX = (double)x / b.size.width;
+      double env = sin(normX * M_PI);
+      double yVal = sin(normX * M_PI * 2.0 * lFreq + lPhase) * 0.65 +
+                    cos(normX * M_PI * 4.0 * freq - lPhase * 0.7) * 0.35;
+      CGFloat py = midY + yVal * maxAmp * env * (1.0 - layer * 0.22);
+      if (x == 0) [wave moveToPoint:NSMakePoint(x, py)];
+      else [wave lineToPoint:NSMakePoint(x, py)];
+    }
+    NSColor *wc = (layer % 2 == 0) ? g1 : g2;
+    [[wc colorWithAlphaComponent:(layer == 0 ? 0.35 : 0.22)] setStroke];
+    wave.lineWidth = (layer == 0) ? 4.5 : 2.5;
+    [wave stroke];
+    [[wc colorWithAlphaComponent:(layer == 0 ? 0.95 : 0.65)] setStroke];
+    wave.lineWidth = (layer == 0) ? 1.8 : 1.1;
+    [wave stroke];
+  }
+
+  NSString *hud = [NSString stringWithFormat:@"SYNTH // %@ | %.1f Hz | AMP %.0f%%", [self.waveType uppercaseString], self.frequency, self.amplitude * 100.0];
+  [hud drawAtPoint:NSMakePoint(12, b.size.height - 20) withAttributes:@{
+    NSFontAttributeName: [NSFont monospacedSystemFontOfSize:9.5 weight:NSFontWeightBold],
+    NSForegroundColorAttributeName: [g1 colorWithAlphaComponent:0.90]
+  }];
+  [[g1 colorWithAlphaComponent:0.45] setStroke];
+  clip.lineWidth = 1.2;
+  [clip stroke];
+}
+@end
+
+void *window_add_waveform_synthesizer_control(main__WindowInfo *info, const char *name, const char *wave_type, double frequency, double amplitude, int height) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  int h = height > 50 ? height : 115;
+  __block SGWaveformSynthView *view = nil;
+  sgRunOnMainSync(^{
+    view = [[SGWaveformSynthView alloc] initWithFrame:NSMakeRect(0, 0, 360, h)];
+    view.waveType = nsstring((wave_type && *wave_type) ? wave_type : "harmonic_chord");
+    view.frequency = frequency > 0.1 ? frequency : 3.5;
+    view.amplitude = amplitude > 0.05 ? amplitude : 0.80;
+    view.appDelegate = delegate;
+    [view setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [view.widthAnchor constraintGreaterThanOrEqualToConstant:240].active = YES;
+    [view.heightAnchor constraintEqualToConstant:h].active = YES;
+    delegate.controlsByName[key] = view;
+    [delegate addControlToLayout:view];
+  });
+  return (__bridge void *)view;
+}
+
+void window_set_waveform_synthesizer_params(main__WindowInfo *info, const char *name, const char *wave_type, double frequency, double amplitude) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSString *wStr = nsstring((wave_type && *wave_type) ? wave_type : "harmonic_chord");
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGWaveformSynthView class]]) {
+      SGWaveformSynthView *ws = (SGWaveformSynthView *)v;
+      ws.waveType = wStr;
+      ws.frequency = frequency;
+      ws.amplitude = amplitude;
+      [ws setNeedsDisplay:YES];
+    }
+  });
+}
+
+const char *window_get_waveform_synthesizer_type(main__WindowInfo *info, const char *name) {
+  if (!info || !info->app_delegate) return strdup("");
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  __block NSString *res = @"";
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGWaveformSynthView class]]) {
+      res = [(SGWaveformSynthView *)v waveType] ?: @"";
+    }
+  });
+  return strdup([res UTF8String]);
+}
+
+// ============================================================================
+// 30. Cyberpunk Chromatic Glitch & Neon Hero Banner Control (SGGlitchBannerView)
+// ============================================================================
+@interface SGGlitchBannerView : NSView
+@property (nonatomic, copy) NSString *bannerTitle;
+@property (nonatomic, copy) NSString *bannerSubtitle;
+@property (nonatomic, copy) NSString *bannerStyle;
+@property (nonatomic, assign) double glitchOffset;
+@property (nonatomic, assign) AppDelegate *appDelegate;
+@end
+
+@implementation SGGlitchBannerView
+- (BOOL)isFlipped {
+  return YES;
+}
+- (void)drawRect:(NSRect)dirtyRect {
+  [super drawRect:dirtyRect];
+  NSRect b = self.bounds;
+  if (b.size.width <= 4 || b.size.height <= 4) return;
+  AppDelegate *del = self.appDelegate;
+  NSColor *g1 = del.currentGlowColor ?: (del.currentAccentColor ?: [NSColor colorWithSRGBRed:0.0 green:0.96 blue:0.83 alpha:1.0]);
+  NSColor *g2 = del.currentGlowColor2 ?: (del.currentSecondaryAccentColor ?: [NSColor colorWithSRGBRed:1.0 green:0.16 blue:0.52 alpha:1.0]);
+  NSColor *bg = del.currentCardBackgroundColor ?: [NSColor colorWithSRGBRed:0.04 green:0.03 blue:0.09 alpha:0.94];
+
+  NSBezierPath *box = [NSBezierPath bezierPathWithRoundedRect:NSInsetRect(b, 1, 1) xRadius:12.0 yRadius:12.0];
+  [bg setFill];
+  [box fill];
+
+  NSGradient *wash = [[[NSGradient alloc] initWithColors:@[
+    [g1 colorWithAlphaComponent:0.22],
+    [NSColor clearColor],
+    [g2 colorWithAlphaComponent:0.22]
+  ]] autorelease];
+  [wash drawInBezierPath:box angle:12.0];
+
+  // Chromatic Aberration Split Text (Cyan Left + Magenta Right + Crisp Foreground)
+  NSFont *heroFont = [NSFont systemFontOfSize:20.0 weight:NSFontWeightBlack];
+  CGFloat gx = self.glitchOffset != 0.0 ? self.glitchOffset : 2.2;
+  NSString *t = self.bannerTitle ?: @"CODECAINE FX ENGINE";
+
+  [t drawInRect:NSMakeRect(18 - gx, 12, b.size.width - 36, 28) withAttributes:@{
+    NSFontAttributeName: heroFont,
+    NSForegroundColorAttributeName: [g1 colorWithAlphaComponent:0.78]
+  }];
+  [t drawInRect:NSMakeRect(18 + gx, 13, b.size.width - 36, 28) withAttributes:@{
+    NSFontAttributeName: heroFont,
+    NSForegroundColorAttributeName: [g2 colorWithAlphaComponent:0.78]
+  }];
+  BOOL dark = isDarkColor(bg);
+  [t drawInRect:NSMakeRect(18, 12, b.size.width - 36, 28) withAttributes:@{
+    NSFontAttributeName: heroFont,
+    NSForegroundColorAttributeName: dark ? [NSColor whiteColor] : [NSColor blackColor]
+  }];
+
+  if (self.bannerSubtitle.length > 0) {
+    [self.bannerSubtitle drawInRect:NSMakeRect(18, 40, b.size.width - 36, 18) withAttributes:@{
+      NSFontAttributeName: [NSFont monospacedSystemFontOfSize:10.5 weight:NSFontWeightSemibold],
+      NSForegroundColorAttributeName: g1
+    }];
+  }
+
+  // Horizontal Laser Underline + Glitch Slice Bars
+  NSGradient *laser = [[[NSGradient alloc] initWithColors:@[g1, g2, [NSColor clearColor]]] autorelease];
+  [laser drawInRect:NSMakeRect(18, b.size.height - 7, b.size.width * 0.78, 2.5) angle:0.0];
+  [[g2 colorWithAlphaComponent:0.55] setStroke];
+  box.lineWidth = 1.4;
+  [box stroke];
+}
+@end
+
+void *window_add_glitch_banner_control(main__WindowInfo *info, const char *name, const char *title, const char *subtitle, const char *style, int height) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  int h = height > 44 ? height : 68;
+  __block SGGlitchBannerView *view = nil;
+  sgRunOnMainSync(^{
+    view = [[SGGlitchBannerView alloc] initWithFrame:NSMakeRect(0, 0, 480, h)];
+    view.bannerTitle = nsstring(title ?: "CODECAINE FX STUDIO");
+    view.bannerSubtitle = nsstring(subtitle ?: "");
+    view.bannerStyle = nsstring(style ?: "cyber_glitch");
+    view.glitchOffset = 2.2;
+    view.appDelegate = delegate;
+    [view setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [view.widthAnchor constraintGreaterThanOrEqualToConstant:280].active = YES;
+    [view.heightAnchor constraintEqualToConstant:h].active = YES;
+    delegate.controlsByName[key] = view;
+    [delegate addControlToLayout:view];
+  });
+  return (__bridge void *)view;
+}
+
+void window_set_glitch_banner_text(main__WindowInfo *info, const char *name, const char *title, const char *subtitle) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSString *tStr = nsstring(title ?: "");
+  NSString *sStr = nsstring(subtitle ?: "");
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGGlitchBannerView class]]) {
+      SGGlitchBannerView *gb = (SGGlitchBannerView *)v;
+      gb.bannerTitle = tStr;
+      gb.bannerSubtitle = sStr;
+      [gb setNeedsDisplay:YES];
+    }
+  });
+}
+
+const char *window_get_glitch_banner_text(main__WindowInfo *info, const char *name) {
+  if (!info || !info->app_delegate) return strdup("");
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  __block NSString *res = @"";
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGGlitchBannerView class]]) {
+      res = [(SGGlitchBannerView *)v bannerTitle] ?: @"";
+    }
+  });
+  return strdup([res UTF8String]);
+}
+
+void window_trigger_glitch_pulse(main__WindowInfo *info, const char *name) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGGlitchBannerView class]]) {
+      SGGlitchBannerView *gb = (SGGlitchBannerView *)v;
+      gb.glitchOffset = (gb.glitchOffset > 3.0) ? 2.2 : 4.8;
+      [gb setNeedsDisplay:YES];
+    }
+  });
+}
+
+// ============================================================================
+// 31. Special-FX Control Animations (Neon Pulse, 3D Flip, Zero-G Float)
+// ============================================================================
+void window_animate_control_pulse(main__WindowInfo *info, const char *name, const char *hex_color, int duration_ms) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSColor *col = (hex_color && *hex_color) ? colorFromString(hex_color) : (delegate.currentGlowColor ?: [NSColor cyanColor]);
+  double dur = duration_ms > 50 ? (duration_ms / 1000.0) : 0.45;
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if (!v) return;
+    [v setWantsLayer:YES];
+    v.layer.shadowColor = col.CGColor;
+    v.layer.shadowOffset = CGSizeZero;
+    CABasicAnimation *radAnim = [CABasicAnimation animationWithKeyPath:@"shadowRadius"];
+    radAnim.fromValue = @(2.0);
+    radAnim.toValue = @(18.0);
+    radAnim.duration = dur * 0.5;
+    radAnim.autoreverses = YES;
+    CABasicAnimation *opAnim = [CABasicAnimation animationWithKeyPath:@"shadowOpacity"];
+    opAnim.fromValue = @(0.15);
+    opAnim.toValue = @(0.92);
+    opAnim.duration = dur * 0.5;
+    opAnim.autoreverses = YES;
+    [v.layer addAnimation:radAnim forKey:@"sgNeonPulseRadius"];
+    [v.layer addAnimation:opAnim forKey:@"sgNeonPulseOpacity"];
+  });
+}
+
+void window_animate_control_flip(main__WindowInfo *info, const char *name, int duration_ms) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  double dur = duration_ms > 50 ? (duration_ms / 1000.0) : 0.40;
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if (!v) return;
+    [v setWantsLayer:YES];
+    CABasicAnimation *flip = [CABasicAnimation animationWithKeyPath:@"transform.rotation.y"];
+    flip.fromValue = @(0.0);
+    flip.toValue = @(M_PI * 2.0);
+    flip.duration = dur;
+    [v.layer addAnimation:flip forKey:@"sg3DFlip"];
+  });
+}
+
+void window_animate_control_float(main__WindowInfo *info, const char *name, int enabled) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if (!v) return;
+    [v setWantsLayer:YES];
+    if (enabled) {
+      CABasicAnimation *bob = [CABasicAnimation animationWithKeyPath:@"transform.translation.y"];
+      bob.fromValue = @(-3.0);
+      bob.toValue = @(3.0);
+      bob.duration = 1.6;
+      bob.autoreverses = YES;
+      bob.repeatCount = HUGE_VALF;
+      [v.layer addAnimation:bob forKey:@"sgZeroGFloat"];
+    } else {
+      [v.layer removeAnimationForKey:@"sgZeroGFloat"];
+    }
+  });
+}
+
+// ============================================================================
+// 32. Built-in Procedural Sound Effects & Audio Synthesizer Engine
+// ============================================================================
+static int sgSfxEnabled = 1;
+static double sgSfxVolume = 0.72;
+static NSSound *sgSfxPool[8] = {nil, nil, nil, nil, nil, nil, nil, nil};
+static int sgSfxPoolIdx = 0;
+
+static void sgPlayPcmBuffer(const int16_t *samples, int numSamples) {
+  if (!sgSfxEnabled || numSamples <= 0 || !samples) return;
+  uint32_t sampleRate = 44100;
+  uint32_t dataBytes = (uint32_t)(numSamples * sizeof(int16_t));
+  uint32_t chunkSize = 36 + dataBytes;
+  uint16_t audioFormat = 1;
+  uint16_t numChannels = 1;
+  uint32_t byteRate = sampleRate * 2;
+  uint16_t blockAlign = 2;
+  uint16_t bitsPerSample = 16;
+  uint32_t fmtSize = 16;
+
+  NSMutableData *wav = [NSMutableData dataWithCapacity:44 + dataBytes];
+  [wav appendBytes:"RIFF" length:4];
+  [wav appendBytes:&chunkSize length:4];
+  [wav appendBytes:"WAVE" length:4];
+  [wav appendBytes:"fmt " length:4];
+  [wav appendBytes:&fmtSize length:4];
+  [wav appendBytes:&audioFormat length:2];
+  [wav appendBytes:&numChannels length:2];
+  [wav appendBytes:&sampleRate length:4];
+  [wav appendBytes:&byteRate length:4];
+  [wav appendBytes:&blockAlign length:2];
+  [wav appendBytes:&bitsPerSample length:2];
+  [wav appendBytes:"data" length:4];
+  [wav appendBytes:&dataBytes length:4];
+  [wav appendBytes:samples length:dataBytes];
+
+  void (^playBlock)(void) = ^{
+    NSSound *old = sgSfxPool[sgSfxPoolIdx];
+    if (old) {
+      [old stop];
+      [old release];
+      sgSfxPool[sgSfxPoolIdx] = nil;
+    }
+    NSSound *snd = [[NSSound alloc] initWithData:wav];
+    if (snd) {
+      [snd setVolume:MIN(1.0, MAX(0.0, sgSfxVolume))];
+      [snd play];
+      sgSfxPool[sgSfxPoolIdx] = snd;
+      sgSfxPoolIdx = (sgSfxPoolIdx + 1) % 8;
+    }
+  };
+  if ([NSThread isMainThread]) {
+    playBlock();
+  } else {
+    dispatch_async(dispatch_get_main_queue(), playBlock);
+  }
+}
+
+void window_set_sfx_enabled(int enabled) {
+  sgSfxEnabled = enabled ? 1 : 0;
+}
+
+int window_is_sfx_enabled(void) {
+  return sgSfxEnabled;
+}
+
+void window_set_sfx_volume(double volume) {
+  sgSfxVolume = MIN(1.0, MAX(0.0, volume));
+}
+
+double window_get_sfx_volume(void) {
+  return sgSfxVolume;
+}
+
+void window_play_synth_tone(double freq_hz, int duration_ms, const char *wave_type, double volume) {
+  if (!sgSfxEnabled) return;
+  int dur = MIN(2500, MAX(15, duration_ms));
+  int n = (44100 * dur) / 1000;
+  int16_t *buf = (int16_t *)calloc((size_t)n, sizeof(int16_t));
+  if (!buf) return;
+  NSString *wt = [nsstring(wave_type ?: "sine") lowercaseString];
+  double amp = MIN(1.0, MAX(0.05, volume)) * 22000.0;
+  double f = MAX(20.0, MIN(12000.0, freq_hz));
+  for (int i = 0; i < n; i++) {
+    double t = (double)i / 44100.0;
+    double prog = (double)i / (double)n;
+    double env = (prog < 0.06) ? (prog / 0.06) : pow(1.0 - prog, 1.35);
+    double ph = 2.0 * M_PI * f * t;
+    double s = 0.0;
+    if ([wt containsString:@"square"]) {
+      s = (sin(ph) >= 0.0) ? 0.85 : -0.85;
+    } else if ([wt containsString:@"saw"]) {
+      s = 2.0 * fmod(f * t, 1.0) - 1.0;
+    } else if ([wt containsString:@"tri"]) {
+      s = (2.0 / M_PI) * asin(sin(ph));
+    } else if ([wt containsString:@"fm"] || [wt containsString:@"bell"]) {
+      s = sin(ph + 2.4 * exp(-prog * 4.0) * sin(ph * 2.0));
+    } else if ([wt containsString:@"cyber"] || [wt containsString:@"lead"]) {
+      s = 0.55 * sin(ph) + 0.30 * sin(ph * 2.01) + 0.15 * ((sin(ph * 0.5) >= 0.0) ? 1.0 : -1.0);
+    } else if ([wt containsString:@"noise"]) {
+      s = ((double)(arc4random_uniform(2000)) / 1000.0 - 1.0) * 0.7 + 0.3 * sin(ph);
+    } else {
+      s = 0.72 * sin(ph) + 0.20 * sin(ph * 2.0) + 0.08 * sin(ph * 3.0);
+    }
+    double val = s * env * amp;
+    if (val > 32700.0) val = 32700.0;
+    if (val < -32700.0) val = -32700.0;
+    buf[i] = (int16_t)val;
+  }
+  sgPlayPcmBuffer(buf, n);
+  free(buf);
+}
+
+void window_play_piano_note(int midi_note, int duration_ms, const char *wave_type) {
+  int clamped = MIN(108, MAX(21, midi_note));
+  double freq = 440.0 * pow(2.0, ((double)clamped - 69.0) / 12.0);
+  window_play_synth_tone(freq, duration_ms > 20 ? duration_ms : 260, wave_type ?: "cyber_lead", 0.75);
+}
+
+void window_play_sfx(const char *effect_name) {
+  if (!sgSfxEnabled) return;
+  NSString *fx = [nsstring(effect_name ?: "cyber_click") lowercaseString];
+  int durMs = 180;
+  if ([fx containsString:@"power"] || [fx containsString:@"level"] || [fx containsString:@"chime"] || [fx containsString:@"chord"] || [fx containsString:@"boom"] || [fx containsString:@"explosion"]) {
+    durMs = 420;
+  } else if ([fx containsString:@"click"] || [fx containsString:@"tick"] || [fx containsString:@"key"] || [fx containsString:@"hover"]) {
+    durMs = 75;
+  } else if ([fx containsString:@"ping"] || [fx containsString:@"sonar"] || [fx containsString:@"laser"] || [fx containsString:@"warp"]) {
+    durMs = 280;
+  }
+  int n = (44100 * durMs) / 1000;
+  int16_t *buf = (int16_t *)calloc((size_t)n, sizeof(int16_t));
+  if (!buf) return;
+
+  for (int i = 0; i < n; i++) {
+    double t = (double)i / 44100.0;
+    double prog = (double)i / (double)n;
+    double env = (prog < 0.04) ? (prog / 0.04) : pow(1.0 - prog, 1.5);
+    double s = 0.0;
+
+    if ([fx containsString:@"laser"] || [fx containsString:@"phaser"]) {
+      double f = 1950.0 * pow(0.12, prog);
+      s = sin(2.0 * M_PI * f * t + 3.0 * sin(2.0 * M_PI * 55.0 * t));
+    } else if ([fx containsString:@"power"] || [fx containsString:@"level"]) {
+      double notes[5] = {523.25, 659.25, 783.99, 987.77, 1174.66};
+      int idx = MIN(4, (int)(prog * 5.0));
+      double f = notes[idx];
+      s = 0.65 * sin(2.0 * M_PI * f * t) + 0.35 * sin(4.0 * M_PI * f * t);
+    } else if ([fx containsString:@"boom"] || [fx containsString:@"explosion"] || [fx containsString:@"supernova"]) {
+      double f = 120.0 * pow(0.22, prog);
+      double noise = ((double)arc4random_uniform(2000) / 1000.0 - 1.0) * pow(1.0 - prog, 1.8);
+      s = 0.65 * sin(2.0 * M_PI * f * t) + 0.35 * noise;
+    } else if ([fx containsString:@"warp"] || [fx containsString:@"teleport"] || [fx containsString:@"quantum"]) {
+      double f = 260.0 + 980.0 * sin(prog * M_PI);
+      s = sin(2.0 * M_PI * f * t + 4.0 * sin(2.0 * M_PI * 18.0 * t));
+    } else if ([fx containsString:@"success"] || [fx containsString:@"achieve"]) {
+      double f1 = (prog < 0.35) ? 587.33 : 880.0;
+      s = 0.55 * sin(2.0 * M_PI * f1 * t) + 0.30 * sin(2.0 * M_PI * (f1 * 1.25) * t) + 0.15 * sin(2.0 * M_PI * (f1 * 1.5) * t);
+    } else if ([fx containsString:@"error"] || [fx containsString:@"buzz"] || [fx containsString:@"alert"]) {
+      double f = (prog < 0.5) ? 175.0 : 145.0;
+      s = (2.0 * fmod(f * t, 1.0) - 1.0) * 0.8;
+    } else if ([fx containsString:@"radar"] || [fx containsString:@"sonar"] || [fx containsString:@"ping"]) {
+      s = sin(2.0 * M_PI * 1380.0 * t) * exp(-prog * 5.5) + 0.35 * sin(2.0 * M_PI * 2760.0 * t) * exp(-prog * 8.0);
+    } else if ([fx containsString:@"smart_home"] || [fx containsString:@"doorbell"] || [fx containsString:@"chime"]) {
+      double f = (prog < 0.45) ? 783.99 : 659.25;
+      s = 0.70 * sin(2.0 * M_PI * f * t) + 0.30 * sin(4.0 * M_PI * f * t);
+    } else if ([fx containsString:@"coin"] || [fx containsString:@"retro"]) {
+      double f = (prog < 0.28) ? 987.77 : 1318.51;
+      s = (sin(2.0 * M_PI * f * t) >= 0.0) ? 0.75 : -0.75;
+    } else if ([fx containsString:@"chord"] || [fx containsString:@"synth"]) {
+      s = 0.35 * sin(2.0 * M_PI * 220.0 * t) + 0.30 * sin(2.0 * M_PI * 277.18 * t) + 0.25 * sin(2.0 * M_PI * 329.63 * t) + 0.20 * sin(2.0 * M_PI * 440.0 * t);
+    } else if ([fx containsString:@"engine"] || [fx containsString:@"rev"]) {
+      double f = 95.0 + 380.0 * prog;
+      s = 0.6 * sin(2.0 * M_PI * f * t) + 0.4 * sin(4.0 * M_PI * f * t);
+    } else if ([fx containsString:@"glitch"] || [fx containsString:@"zap"]) {
+      double f = (i % 600 < 300) ? 1640.0 : 420.0;
+      s = 0.7 * sin(2.0 * M_PI * f * t);
+    } else {
+      // cyber_click / thermostat_tick / mech_key / neon_hover
+      double f = [fx containsString:@"hover"] ? 1850.0 : ([fx containsString:@"tick"] ? 2800.0 : 1450.0 * exp(-prog * 4.5));
+      s = sin(2.0 * M_PI * f * t) * exp(-prog * 6.0);
+    }
+
+    double val = s * env * 21000.0;
+    if (val > 32700.0) val = 32700.0;
+    if (val < -32700.0) val = -32700.0;
+    buf[i] = (int16_t)val;
+  }
+  sgPlayPcmBuffer(buf, n);
+  free(buf);
+}
+
+// ============================================================================
+// 33. Expanded Special-FX Control Animations & Webview Enhancements
+// ============================================================================
+void window_animate_control_bounce(main__WindowInfo *info, const char *name, double scale, int duration_ms) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  double sc = (scale > 1.01 && scale < 2.0) ? scale : 1.08;
+  double dur = duration_ms > 40 ? (duration_ms / 1000.0) : 0.36;
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if (!v) return;
+    [v setWantsLayer:YES];
+    CAKeyframeAnimation *bounce = [CAKeyframeAnimation animationWithKeyPath:@"transform.scale"];
+    bounce.values = @[@(1.0), @(sc), @(0.96), @(1.02), @(1.0)];
+    bounce.keyTimes = @[@(0.0), @(0.3), @(0.6), @(0.82), @(1.0)];
+    bounce.duration = dur;
+    [v.layer addAnimation:bounce forKey:@"sgSpringBounce"];
+  });
+}
+
+void window_animate_control_glitch(main__WindowInfo *info, const char *name, int duration_ms) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  double dur = duration_ms > 40 ? (duration_ms / 1000.0) : 0.32;
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if (!v) return;
+    [v setWantsLayer:YES];
+    CAKeyframeAnimation *jit = [CAKeyframeAnimation animationWithKeyPath:@"transform.translation.x"];
+    jit.values = @[@(0.0), @(-6.0), @(7.0), @(-4.0), @(5.0), @(-2.0), @(0.0)];
+    jit.duration = dur;
+    [v.layer addAnimation:jit forKey:@"sgCyberGlitchX"];
+  });
+}
+
+void window_set_control_neon_glow(main__WindowInfo *info, const char *name, const char *hex_color, double radius, double opacity) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSColor *col = (hex_color && *hex_color) ? colorFromString(hex_color) : (delegate.currentGlowColor ?: [NSColor cyanColor]);
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if (!v) return;
+    [v setWantsLayer:YES];
+    v.layer.shadowColor = col.CGColor;
+    v.layer.shadowOffset = CGSizeZero;
+    v.layer.shadowRadius = MAX(0.0, radius);
+    v.layer.shadowOpacity = MIN(1.0, MAX(0.0, opacity));
+  });
+}
+
+void window_webview_load_url(main__WindowInfo *info, const char *name, const char *url) {
+  if (!info || !info->app_delegate || !url) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSString *uStr = nsstring(url);
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[WKWebView class]]) {
+      WKWebView *wv = (WKWebView *)v;
+      NSURL *nsUrl = [uStr hasPrefix:@"http"] ? [NSURL URLWithString:uStr] : [NSURL fileURLWithPath:uStr];
+      if (nsUrl) {
+        if ([nsUrl isFileURL]) {
+          NSURL *parentUrl = [nsUrl URLByDeletingLastPathComponent];
+          NSString *parentPath = parentUrl.path ?: @"";
+          NSURL *readAccessUrl = parentUrl;
+          if ([parentPath isEqualToString:@"/"] || [parentPath isEqualToString:@"/tmp"] || [parentPath isEqualToString:@"/private/tmp"] || [parentPath isEqualToString:@"/var"] || [parentPath isEqualToString:@"/etc"]) {
+            readAccessUrl = nsUrl;
+          }
+          [wv loadFileURL:nsUrl allowingReadAccessToURL:readAccessUrl];
+        } else {
+          [wv loadRequest:[NSURLRequest requestWithURL:nsUrl]];
+        }
+      }
+    }
+  });
+}
+
+void window_webview_eval_js(main__WindowInfo *info, const char *name, const char *js_code) {
+  if (!info || !info->app_delegate || !js_code) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSString *codeStr = nsstring(js_code);
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[WKWebView class]]) {
+      [(WKWebView *)v evaluateJavaScript:codeStr completionHandler:nil];
+    }
+  });
+}
+
+// ============================================================================
+// 34. Qt 6 Smart House / Domotics Floorplan & IoT Room Controller (SGSmartHouseFloorplanView)
+// ============================================================================
+@interface SGSmartHouseFloorplanView : NSView
+@property (nonatomic, copy) NSString *houseTitle;
+@property (nonatomic, assign) int activeMask;
+@property (nonatomic, assign) double totalKw;
+@property (nonatomic, assign) int batteryPct;
+@property (nonatomic, assign) double phase;
+@property (nonatomic, strong) NSTimer *timer;
+@property (nonatomic, assign) AppDelegate *appDelegate;
+@property (nonatomic, copy) NSString *controlName;
+@property (nonatomic, assign) void *winPtr;
+@end
+
+@implementation SGSmartHouseFloorplanView
+- (BOOL)isFlipped { return YES; }
+- (instancetype)initWithFrame:(NSRect)frameRect {
+  self = [super initWithFrame:frameRect];
+  if (self) {
+    _houseTitle = @"QT6 SMART HOUSE // DOMOTICS FLOORPLAN & IOT MESH";
+    _activeMask = 0x2F;
+    _totalKw = 4.8;
+    _batteryPct = 88;
+    _phase = 0.0;
+    __unsafe_unretained typeof(self) weakSelf = self;
+    _timer = [NSTimer timerWithTimeInterval:0.04 repeats:YES block:^(NSTimer * _Nonnull t) {
+      SGSmartHouseFloorplanView *s = weakSelf;
+      if (!s || s.isHiddenOrHasHiddenAncestor || !s.window || !(s.window.occlusionState & NSWindowOcclusionStateVisible)) return;
+      s.phase += 0.06;
+      [s setNeedsDisplay:YES];
+    }];
+    [[NSRunLoop mainRunLoop] addTimer:_timer forMode:NSRunLoopCommonModes];
+  }
+  return self;
+}
+- (void)dealloc {
+  [_timer invalidate];
+  [super dealloc];
+}
+- (void)drawRect:(NSRect)dirtyRect {
+  [super drawRect:dirtyRect];
+  NSRect b = self.bounds;
+  if (b.size.width <= 10 || b.size.height <= 10) return;
+  AppDelegate *del = self.appDelegate;
+  NSColor *g1 = del.currentGlowColor ?: (del.currentAccentColor ?: [NSColor colorWithSRGBRed:0.0 green:0.96 blue:0.83 alpha:1.0]);
+  NSColor *g2 = del.currentGlowColor2 ?: (del.currentSecondaryAccentColor ?: [NSColor colorWithSRGBRed:1.0 green:0.16 blue:0.52 alpha:1.0]);
+  NSColor *bg = del.currentCardBackgroundColor ?: [NSColor colorWithSRGBRed:0.04 green:0.07 blue:0.12 alpha:0.95];
+
+  NSBezierPath *outer = [NSBezierPath bezierPathWithRoundedRect:NSInsetRect(b, 1, 1) xRadius:12.0 yRadius:12.0];
+  [bg setFill];
+  [outer fill];
+
+  // Top Domotics Telemetry Header Bar
+  NSString *hdr = [NSString stringWithFormat:@"🏠 %@   |   ☀️ SOLAR +6.4 kW   |   ⚡ LOAD %.1f kW   |   🔋 POWERWALL %d%%   |   🛡️ ARMED",
+                   self.houseTitle, self.totalKw, self.batteryPct];
+  [hdr drawInRect:NSMakeRect(14, 8, b.size.width - 28, 18) withAttributes:@{
+    NSFontAttributeName: [NSFont monospacedSystemFontOfSize:10.0 weight:NSFontWeightBold],
+    NSForegroundColorAttributeName: g1
+  }];
+
+  NSArray<NSString *> *rooms = @[@"LIVING LOUNGE", @"MASTER SUITE", @"KITCHEN LAB", @"EV GARAGE BAY", @"AI SERVER VAULT", @"SOLAR ATRIUM"];
+  NSArray<NSString *> *temps = @[@"71.5°F • 42% RH", @"68.0°F • SLEEP", @"72.0°F • INDUCTION", @"CHARGING • 11.5 kW", @"64.2°F • LIQUID COOL", @"74.8°F • UV DOME"];
+  NSArray<NSString *> *icons = @[@"🛋️", @"🛏️", @"🍳", @"🚗", @"🖥️", @"🌿"];
+
+  CGFloat topY = 30.0;
+  CGFloat gridH = b.size.height - topY - 10.0;
+  CGFloat colW = (b.size.width - 36.0) / 3.0;
+  CGFloat rowH = (gridH - 10.0) / 2.0;
+
+  for (int i = 0; i < 6; i++) {
+    int col = i % 3;
+    int row = i / 3;
+    NSRect rRect = NSMakeRect(12.0 + col * (colW + 6.0), topY + row * (rowH + 8.0), colW, rowH);
+    BOOL isOn = (self.activeMask & (1 << i)) != 0;
+    NSColor *roomCol = (i % 2 == 0) ? g1 : g2;
+
+    NSBezierPath *rp = [NSBezierPath bezierPathWithRoundedRect:rRect xRadius:8.0 yRadius:8.0];
+    [[roomCol colorWithAlphaComponent:(isOn ? 0.16 : 0.04)] setFill];
+    [rp fill];
+
+    // Architectural Blueprint Wall Double-Lines
+    [[roomCol colorWithAlphaComponent:(isOn ? 0.85 : 0.28)] setStroke];
+    rp.lineWidth = isOn ? 1.8 : 1.0;
+    [rp stroke];
+
+    if (isOn) {
+      // Animated IoT Sensor Radar Ring inside active room
+      CGFloat pulseR = 6.0 + fmod(self.phase * 8.0 + i * 3.0, 16.0);
+      NSPoint sensorPt = NSMakePoint(NSMaxX(rRect) - 22.0, NSMinY(rRect) + 18.0);
+      [[roomCol colorWithAlphaComponent:0.45] setStroke];
+      [[NSBezierPath bezierPathWithOvalInRect:NSMakeRect(sensorPt.x - pulseR, sensorPt.y - pulseR, pulseR * 2, pulseR * 2)] stroke];
+      [[roomCol colorWithAlphaComponent:0.95] setFill];
+      [[NSBezierPath bezierPathWithOvalInRect:NSMakeRect(sensorPt.x - 3.5, sensorPt.y - 3.5, 7.0, 7.0)] fill];
+    }
+
+    NSString *rTitle = [NSString stringWithFormat:@"%@ %@", icons[i], rooms[i]];
+    [rTitle drawInRect:NSMakeRect(rRect.origin.x + 10, rRect.origin.y + 8, rRect.size.width - 36, 16) withAttributes:@{
+      NSFontAttributeName: [NSFont systemFontOfSize:11.0 weight:NSFontWeightBold],
+      NSForegroundColorAttributeName: isOn ? [NSColor whiteColor] : [NSColor colorWithWhite:0.55 alpha:1.0]
+    }];
+
+    [temps[i] drawInRect:NSMakeRect(rRect.origin.x + 10, rRect.origin.y + 26, rRect.size.width - 20, 14) withAttributes:@{
+      NSFontAttributeName: [NSFont monospacedSystemFontOfSize:9.5 weight:NSFontWeightMedium],
+      NSForegroundColorAttributeName: isOn ? roomCol : [NSColor colorWithWhite:0.45 alpha:1.0]
+    }];
+
+    if (rowH >= 56.0) {
+      NSString *statusStr = isOn ? @"⚡ ACTIVE • CLICK TO TOGGLE" : @"○ STANDBY • ECO SLEEP";
+      [statusStr drawInRect:NSMakeRect(rRect.origin.x + 10, NSMaxY(rRect) - 18, rRect.size.width - 20, 14) withAttributes:@{
+        NSFontAttributeName: [NSFont systemFontOfSize:9.0 weight:NSFontWeightSemibold],
+        NSForegroundColorAttributeName: isOn ? [[NSColor whiteColor] colorWithAlphaComponent:0.82] : [NSColor colorWithWhite:0.40 alpha:1.0]
+      }];
+    }
+  }
+
+  [[g1 colorWithAlphaComponent:0.55] setStroke];
+  outer.lineWidth = 1.4;
+  [outer stroke];
+}
+- (void)mouseDown:(NSEvent *)event {
+  NSPoint pt = [self convertPoint:event.locationInWindow fromView:nil];
+  NSRect b = self.bounds;
+  CGFloat topY = 30.0;
+  CGFloat gridH = b.size.height - topY - 10.0;
+  CGFloat colW = (b.size.width - 36.0) / 3.0;
+  CGFloat rowH = (gridH - 10.0) / 2.0;
+  for (int i = 0; i < 6; i++) {
+    int col = i % 3;
+    int row = i / 3;
+    NSRect rRect = NSMakeRect(12.0 + col * (colW + 6.0), topY + row * (rowH + 8.0), colW, rowH);
+    if (NSPointInRect(pt, rRect)) {
+      self.activeMask ^= (1 << i);
+      window_play_sfx("smart_home_chime");
+      [self setNeedsDisplay:YES];
+      if (self.winPtr && self.controlName) {
+        NSString *valStr = [NSString stringWithFormat:@"%d", self.activeMask];
+        vlang_dispatch_event(self.winPtr, [self.controlName UTF8String], "change", [valStr UTF8String]);
+      }
+      break;
+    }
+  }
+}
+@end
+
+void *window_add_smart_house_floorplan_control(main__WindowInfo *info, const char *name, const char *title, int active_mask, double total_kw, int battery_pct, int height) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  int h = height > 110 ? height : 185;
+  __block SGSmartHouseFloorplanView *view = nil;
+  sgRunOnMainSync(^{
+    view = [[SGSmartHouseFloorplanView alloc] initWithFrame:NSMakeRect(0, 0, 520, h)];
+    if (title && *title) view.houseTitle = nsstring(title);
+    view.activeMask = active_mask;
+    view.totalKw = total_kw;
+    view.batteryPct = battery_pct;
+    view.appDelegate = delegate;
+    view.controlName = key;
+    view.winPtr = delegate.win_ptr;
+    [view setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [view.widthAnchor constraintGreaterThanOrEqualToConstant:360].active = YES;
+    [view.heightAnchor constraintEqualToConstant:h].active = YES;
+    delegate.controlsByName[key] = view;
+    [delegate addControlToLayout:view];
+  });
+  return (__bridge void *)view;
+}
+
+void window_set_smart_house_state(main__WindowInfo *info, const char *name, int active_mask, double total_kw, int battery_pct) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGSmartHouseFloorplanView class]]) {
+      SGSmartHouseFloorplanView *sh = (SGSmartHouseFloorplanView *)v;
+      sh.activeMask = active_mask;
+      sh.totalKw = total_kw;
+      sh.batteryPct = battery_pct;
+      [sh setNeedsDisplay:YES];
+    }
+  });
+}
+
+int window_get_smart_house_active_mask(main__WindowInfo *info, const char *name) {
+  if (!info || !info->app_delegate) return 0;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  __block int res = 0;
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGSmartHouseFloorplanView class]]) {
+      res = [(SGSmartHouseFloorplanView *)v activeMask];
+    }
+  });
+  return res;
+}
+
+// ============================================================================
+// 35. Qt 6 Smart Climate Thermostat & Environmental Dial (SGSmartThermostatView)
+// ============================================================================
+@interface SGSmartThermostatView : NSView
+@property (nonatomic, copy) NSString *zoneName;
+@property (nonatomic, assign) double targetTemp;
+@property (nonatomic, assign) double currentTemp;
+@property (nonatomic, assign) int humidity;
+@property (nonatomic, copy) NSString *hvacMode;
+@property (nonatomic, assign) AppDelegate *appDelegate;
+@property (nonatomic, copy) NSString *controlName;
+@property (nonatomic, assign) void *winPtr;
+@end
+
+@implementation SGSmartThermostatView
+- (void)drawRect:(NSRect)dirtyRect {
+  [super drawRect:dirtyRect];
+  NSRect b = self.bounds;
+  if (b.size.width <= 10 || b.size.height <= 10) return;
+  AppDelegate *del = self.appDelegate;
+  NSColor *g1 = del.currentGlowColor ?: (del.currentAccentColor ?: [NSColor colorWithSRGBRed:0.0 green:0.96 blue:0.83 alpha:1.0]);
+  NSColor *g2 = del.currentGlowColor2 ?: (del.currentSecondaryAccentColor ?: [NSColor colorWithSRGBRed:1.0 green:0.35 blue:0.16 alpha:1.0]);
+  NSColor *bg = del.currentCardBackgroundColor ?: [NSColor colorWithSRGBRed:0.05 green:0.07 blue:0.12 alpha:0.96];
+
+  NSBezierPath *card = [NSBezierPath bezierPathWithRoundedRect:NSInsetRect(b, 1, 1) xRadius:14.0 yRadius:14.0];
+  [bg setFill];
+  [card fill];
+
+  NSPoint center = NSMakePoint(NSMidX(b), NSMidY(b) - 4.0);
+  CGFloat radius = MIN(b.size.width, b.size.height) * 0.38;
+
+  // Outer Bezel Ring
+  [[g1 colorWithAlphaComponent:0.18] setStroke];
+  NSBezierPath *bezel = [NSBezierPath bezierPathWithOvalInRect:NSMakeRect(center.x - radius - 8, center.y - radius - 8, (radius + 8) * 2, (radius + 8) * 2)];
+  bezel.lineWidth = 2.0;
+  [bezel stroke];
+
+  // 48 Radial Tick Marks around 270-degree dial (from 225 deg down to -45 deg)
+  double normTarget = MIN(1.0, MAX(0.0, (self.targetTemp - 55.0) / 35.0));
+  int activeTicks = (int)(normTarget * 48.0);
+  for (int i = 0; i <= 48; i++) {
+    double frac = (double)i / 48.0;
+    double deg = 225.0 - frac * 270.0;
+    double rad = deg * M_PI / 180.0;
+    BOOL lit = (i <= activeTicks);
+    NSColor *tc = lit ? (frac > 0.6 ? g2 : g1) : [[NSColor whiteColor] colorWithAlphaComponent:0.16];
+    [tc setStroke];
+    CGFloat rIn = radius - 5.0;
+    CGFloat rOut = radius + (i % 6 == 0 ? 5.0 : 2.0);
+    NSBezierPath *tk = [NSBezierPath bezierPath];
+    [tk moveToPoint:NSMakePoint(center.x + cos(rad) * rIn, center.y + sin(rad) * rIn)];
+    [tk lineToPoint:NSMakePoint(center.x + cos(rad) * rOut, center.y + sin(rad) * rOut)];
+    tk.lineWidth = lit ? 2.2 : 1.2;
+    [tk stroke];
+  }
+
+  // Center Glass Dial Face
+  NSBezierPath *innerFace = [NSBezierPath bezierPathWithOvalInRect:NSMakeRect(center.x - radius + 10, center.y - radius + 10, (radius - 10) * 2, (radius - 10) * 2)];
+  [[[NSColor blackColor] colorWithAlphaComponent:0.42] setFill];
+  [innerFace fill];
+
+  // Zone & Mode Readout
+  NSMutableParagraphStyle *pCenter = [[[NSMutableParagraphStyle alloc] init] autorelease];
+  pCenter.alignment = NSTextAlignmentCenter;
+
+  [self.zoneName drawInRect:NSMakeRect(center.x - radius, center.y + radius * 0.34, radius * 2, 16) withAttributes:@{
+    NSFontAttributeName: [NSFont systemFontOfSize:9.5 weight:NSFontWeightBold],
+    NSForegroundColorAttributeName: g1,
+    NSParagraphStyleAttributeName: pCenter
+  }];
+
+  NSString *tempStr = [NSString stringWithFormat:@"%.1f°", self.targetTemp];
+  [tempStr drawInRect:NSMakeRect(center.x - radius, center.y - 16, radius * 2, 32) withAttributes:@{
+    NSFontAttributeName: [NSFont monospacedDigitSystemFontOfSize:24.0 weight:NSFontWeightBlack],
+    NSForegroundColorAttributeName: [NSColor whiteColor],
+    NSParagraphStyleAttributeName: pCenter
+  }];
+
+  NSString *subStr = [NSString stringWithFormat:@"NOW %.1f° • 💧%d%% • %@", self.currentTemp, self.humidity, [self.hvacMode uppercaseString]];
+  [subStr drawInRect:NSMakeRect(8, 8, b.size.width - 16, 16) withAttributes:@{
+    NSFontAttributeName: [NSFont monospacedSystemFontOfSize:9.0 weight:NSFontWeightSemibold],
+    NSForegroundColorAttributeName: g2,
+    NSParagraphStyleAttributeName: pCenter
+  }];
+
+  [[g1 colorWithAlphaComponent:0.50] setStroke];
+  card.lineWidth = 1.4;
+  [card stroke];
+}
+- (void)mouseDown:(NSEvent *)event {
+  NSPoint pt = [self convertPoint:event.locationInWindow fromView:nil];
+  if (pt.x > NSMidX(self.bounds)) {
+    self.targetTemp = MIN(90.0, self.targetTemp + 1.0);
+  } else {
+    self.targetTemp = MAX(55.0, self.targetTemp - 1.0);
+  }
+  window_play_sfx("thermostat_tick");
+  [self setNeedsDisplay:YES];
+  if (self.winPtr && self.controlName) {
+    NSString *vStr = [NSString stringWithFormat:@"%.1f", self.targetTemp];
+    vlang_dispatch_event(self.winPtr, [self.controlName UTF8String], "change", [vStr UTF8String]);
+  }
+}
+@end
+
+void *window_add_smart_thermostat_control(main__WindowInfo *info, const char *name, const char *zone_name, double target_temp, double current_temp, int humidity, const char *mode, int size) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  int sz = size > 110 ? size : 185;
+  __block SGSmartThermostatView *view = nil;
+  sgRunOnMainSync(^{
+    view = [[SGSmartThermostatView alloc] initWithFrame:NSMakeRect(0, 0, sz, sz)];
+    view.zoneName = nsstring(zone_name ?: "MAIN LIVING ZONE");
+    view.targetTemp = target_temp > 40.0 ? target_temp : 72.0;
+    view.currentTemp = current_temp > 40.0 ? current_temp : 70.5;
+    view.humidity = humidity > 0 ? humidity : 44;
+    view.hvacMode = nsstring(mode ?: "AUTO-ECO");
+    view.appDelegate = delegate;
+    view.controlName = key;
+    view.winPtr = delegate.win_ptr;
+    [view setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [view.widthAnchor constraintGreaterThanOrEqualToConstant:sz].active = YES;
+    [view.heightAnchor constraintEqualToConstant:sz].active = YES;
+    delegate.controlsByName[key] = view;
+    [delegate addControlToLayout:view];
+  });
+  return (__bridge void *)view;
+}
+
+void window_set_smart_thermostat(main__WindowInfo *info, const char *name, double target_temp, double current_temp, int humidity, const char *mode) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSString *mStr = nsstring(mode ?: "AUTO-ECO");
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGSmartThermostatView class]]) {
+      SGSmartThermostatView *st = (SGSmartThermostatView *)v;
+      st.targetTemp = target_temp;
+      st.currentTemp = current_temp;
+      st.humidity = humidity;
+      st.hvacMode = mStr;
+      [st setNeedsDisplay:YES];
+    }
+  });
+}
+
+double window_get_smart_thermostat_target(main__WindowInfo *info, const char *name) {
+  if (!info || !info->app_delegate) return 72.0;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  __block double res = 72.0;
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGSmartThermostatView class]]) {
+      res = [(SGSmartThermostatView *)v targetTemp];
+    }
+  });
+  return res;
+}
+
+// ============================================================================
+// 36. Qt 6 Automotive & Aerospace Digital Cockpit Cluster (SGCockpitClusterView)
+// ============================================================================
+@interface SGCockpitClusterView : NSView
+@property (nonatomic, assign) double speedMph;
+@property (nonatomic, assign) double rpm;
+@property (nonatomic, copy) NSString *gear;
+@property (nonatomic, assign) int batteryPct;
+@property (nonatomic, assign) double phase;
+@property (nonatomic, strong) NSTimer *timer;
+@property (nonatomic, assign) AppDelegate *appDelegate;
+@property (nonatomic, copy) NSString *controlName;
+@property (nonatomic, assign) void *winPtr;
+@end
+
+@implementation SGCockpitClusterView
+- (instancetype)initWithFrame:(NSRect)frameRect {
+  self = [super initWithFrame:frameRect];
+  if (self) {
+    _speedMph = 142.0;
+    _rpm = 6.8;
+    _gear = @"S+";
+    _batteryPct = 92;
+    _phase = 0.0;
+    __unsafe_unretained typeof(self) weakSelf = self;
+    _timer = [NSTimer timerWithTimeInterval:0.033 repeats:YES block:^(NSTimer * _Nonnull t) {
+      SGCockpitClusterView *s = weakSelf;
+      if (!s || s.isHiddenOrHasHiddenAncestor || !s.window || !(s.window.occlusionState & NSWindowOcclusionStateVisible)) return;
+      s.phase += 0.08;
+      [s setNeedsDisplay:YES];
+    }];
+    [[NSRunLoop mainRunLoop] addTimer:_timer forMode:NSRunLoopCommonModes];
+  }
+  return self;
+}
+- (void)dealloc {
+  [_timer invalidate];
+  [super dealloc];
+}
+- (void)drawRect:(NSRect)dirtyRect {
+  [super drawRect:dirtyRect];
+  NSRect b = self.bounds;
+  if (b.size.width <= 10 || b.size.height <= 10) return;
+  AppDelegate *del = self.appDelegate;
+  NSColor *g1 = del.currentGlowColor ?: (del.currentAccentColor ?: [NSColor colorWithSRGBRed:0.0 green:0.96 blue:0.83 alpha:1.0]);
+  NSColor *g2 = del.currentGlowColor2 ?: (del.currentSecondaryAccentColor ?: [NSColor colorWithSRGBRed:1.0 green:0.16 blue:0.52 alpha:1.0]);
+  NSColor *bg = del.currentCardBackgroundColor ?: [NSColor colorWithSRGBRed:0.03 green:0.05 blue:0.10 alpha:0.96];
+
+  NSBezierPath *card = [NSBezierPath bezierPathWithRoundedRect:NSInsetRect(b, 1, 1) xRadius:14.0 yRadius:14.0];
+  [bg setFill];
+  [card fill];
+
+  CGFloat dialR = MIN(b.size.height * 0.38, b.size.width * 0.18);
+  NSPoint leftDial = NSMakePoint(b.size.width * 0.22, NSMidY(b) - 4.0);
+  NSPoint rightDial = NSMakePoint(b.size.width * 0.78, NSMidY(b) - 4.0);
+
+  NSMutableParagraphStyle *pCenter = [[[NSMutableParagraphStyle alloc] init] autorelease];
+  pCenter.alignment = NSTextAlignmentCenter;
+
+  // Left Dial: RPM Tachometer
+  [[g2 colorWithAlphaComponent:0.22] setStroke];
+  NSBezierPath *lRing = [NSBezierPath bezierPathWithOvalInRect:NSMakeRect(leftDial.x - dialR, leftDial.y - dialR, dialR * 2, dialR * 2)];
+  lRing.lineWidth = 5.0;
+  [lRing stroke];
+  double rpmAngle = 210.0 - MIN(1.0, MAX(0.0, self.rpm / 9.0)) * 240.0;
+  double rpmRad = rpmAngle * M_PI / 180.0;
+  [[g2 colorWithAlphaComponent:0.95] setStroke];
+  NSBezierPath *rpmNeedle = [NSBezierPath bezierPath];
+  [rpmNeedle moveToPoint:leftDial];
+  [rpmNeedle lineToPoint:NSMakePoint(leftDial.x + cos(rpmRad) * (dialR - 4.0), leftDial.y + sin(rpmRad) * (dialR - 4.0))];
+  rpmNeedle.lineWidth = 2.6;
+  [rpmNeedle stroke];
+  [[NSString stringWithFormat:@"%.1f", self.rpm] drawInRect:NSMakeRect(leftDial.x - dialR, leftDial.y - 12, dialR * 2, 24) withAttributes:@{
+    NSFontAttributeName: [NSFont monospacedDigitSystemFontOfSize:18.0 weight:NSFontWeightBlack],
+    NSForegroundColorAttributeName: [NSColor whiteColor],
+    NSParagraphStyleAttributeName: pCenter
+  }];
+  [@"x1000 RPM" drawInRect:NSMakeRect(leftDial.x - dialR, leftDial.y - dialR + 8, dialR * 2, 14) withAttributes:@{
+    NSFontAttributeName: [NSFont monospacedSystemFontOfSize:8.5 weight:NSFontWeightBold],
+    NSForegroundColorAttributeName: g2,
+    NSParagraphStyleAttributeName: pCenter
+  }];
+
+  // Center ADAS Corridor & Gear Telemetry
+  CGFloat midX = NSMidX(b);
+  [[g1 colorWithAlphaComponent:0.45] setStroke];
+  for (int side = -1; side <= 1; side += 2) {
+    NSBezierPath *lane = [NSBezierPath bezierPath];
+    [lane moveToPoint:NSMakePoint(midX + side * 46.0, 18.0)];
+    [lane lineToPoint:NSMakePoint(midX + side * 14.0, b.size.height - 34.0)];
+    lane.lineWidth = 2.0;
+    [lane stroke];
+  }
+  [[NSString stringWithFormat:@"GEAR [%@]", self.gear] drawInRect:NSMakeRect(midX - 65, b.size.height - 28, 130, 18) withAttributes:@{
+    NSFontAttributeName: [NSFont monospacedSystemFontOfSize:11.0 weight:NSFontWeightBlack],
+    NSForegroundColorAttributeName: g1,
+    NSParagraphStyleAttributeName: pCenter
+  }];
+  [[NSString stringWithFormat:@"🔋 %d%% • ADAS LOCK", self.batteryPct] drawInRect:NSMakeRect(midX - 75, 8, 150, 16) withAttributes:@{
+    NSFontAttributeName: [NSFont monospacedSystemFontOfSize:9.5 weight:NSFontWeightBold],
+    NSForegroundColorAttributeName: g2,
+    NSParagraphStyleAttributeName: pCenter
+  }];
+
+  // Right Dial: Digital Speedometer
+  [[g1 colorWithAlphaComponent:0.22] setStroke];
+  NSBezierPath *rRing = [NSBezierPath bezierPathWithOvalInRect:NSMakeRect(rightDial.x - dialR, rightDial.y - dialR, dialR * 2, dialR * 2)];
+  rRing.lineWidth = 5.0;
+  [rRing stroke];
+  double spdAngle = 210.0 - MIN(1.0, MAX(0.0, self.speedMph / 220.0)) * 240.0;
+  double spdRad = spdAngle * M_PI / 180.0;
+  [[g1 colorWithAlphaComponent:0.95] setStroke];
+  NSBezierPath *spdNeedle = [NSBezierPath bezierPath];
+  [spdNeedle moveToPoint:rightDial];
+  [spdNeedle lineToPoint:NSMakePoint(rightDial.x + cos(spdRad) * (dialR - 4.0), rightDial.y + sin(spdRad) * (dialR - 4.0))];
+  spdNeedle.lineWidth = 2.6;
+  [spdNeedle stroke];
+  [[NSString stringWithFormat:@"%.0f", self.speedMph] drawInRect:NSMakeRect(rightDial.x - dialR, rightDial.y - 12, dialR * 2, 24) withAttributes:@{
+    NSFontAttributeName: [NSFont monospacedDigitSystemFontOfSize:19.0 weight:NSFontWeightBlack],
+    NSForegroundColorAttributeName: [NSColor whiteColor],
+    NSParagraphStyleAttributeName: pCenter
+  }];
+  [@"MPH // TELEMETRY" drawInRect:NSMakeRect(rightDial.x - dialR, rightDial.y - dialR + 8, dialR * 2, 14) withAttributes:@{
+    NSFontAttributeName: [NSFont monospacedSystemFontOfSize:8.5 weight:NSFontWeightBold],
+    NSForegroundColorAttributeName: g1,
+    NSParagraphStyleAttributeName: pCenter
+  }];
+
+  [[g1 colorWithAlphaComponent:0.52] setStroke];
+  card.lineWidth = 1.4;
+  [card stroke];
+}
+- (void)mouseDown:(NSEvent *)event {
+  self.speedMph = fmod(self.speedMph + 24.0, 215.0);
+  if (self.speedMph < 35.0) self.speedMph = 65.0;
+  self.rpm = MIN(8.8, 2.2 + (self.speedMph / 215.0) * 6.5);
+  window_play_sfx("engine_rev");
+  [self setNeedsDisplay:YES];
+  if (self.winPtr && self.controlName) {
+    NSString *sVal = [NSString stringWithFormat:@"%.0f", self.speedMph];
+    vlang_dispatch_event(self.winPtr, [self.controlName UTF8String], "change", [sVal UTF8String]);
+  }
+}
+@end
+
+void *window_add_cockpit_cluster_control(main__WindowInfo *info, const char *name, double speed_mph, double rpm, const char *gear, int battery_pct, int height) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  int h = height > 100 ? height : 165;
+  __block SGCockpitClusterView *view = nil;
+  sgRunOnMainSync(^{
+    view = [[SGCockpitClusterView alloc] initWithFrame:NSMakeRect(0, 0, 460, h)];
+    view.speedMph = speed_mph;
+    view.rpm = rpm;
+    view.gear = nsstring(gear ?: "S+");
+    view.batteryPct = battery_pct;
+    view.appDelegate = delegate;
+    view.controlName = key;
+    view.winPtr = delegate.win_ptr;
+    [view setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [view.widthAnchor constraintGreaterThanOrEqualToConstant:340].active = YES;
+    [view.heightAnchor constraintEqualToConstant:h].active = YES;
+    delegate.controlsByName[key] = view;
+    [delegate addControlToLayout:view];
+  });
+  return (__bridge void *)view;
+}
+
+void window_set_cockpit_telemetry(main__WindowInfo *info, const char *name, double speed_mph, double rpm, const char *gear, int battery_pct) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSString *gStr = nsstring(gear ?: "S+");
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGCockpitClusterView class]]) {
+      SGCockpitClusterView *cc = (SGCockpitClusterView *)v;
+      cc.speedMph = speed_mph;
+      cc.rpm = rpm;
+      cc.gear = gStr;
+      cc.batteryPct = battery_pct;
+      [cc setNeedsDisplay:YES];
+    }
+  });
+}
+
+double window_get_cockpit_speed(main__WindowInfo *info, const char *name) {
+  if (!info || !info->app_delegate) return 0.0;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  __block double res = 0.0;
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGCockpitClusterView class]]) {
+      res = [(SGCockpitClusterView *)v speedMph];
+    }
+  });
+  return res;
+}
+
+// ============================================================================
+// 37. Visual Node Graph / Blueprint Shader & Logic Editor (SGNodeGraphView)
+// ============================================================================
+@interface SGNodeGraphView : NSView
+@property (nonatomic, copy) NSString *graphTitle;
+@property (nonatomic, strong) NSArray<NSString *> *nodeTitles;
+@property (nonatomic, assign) int selectedIndex;
+@property (nonatomic, assign) double phase;
+@property (nonatomic, strong) NSTimer *timer;
+@property (nonatomic, assign) AppDelegate *appDelegate;
+@property (nonatomic, copy) NSString *controlName;
+@property (nonatomic, assign) void *winPtr;
+@end
+
+@implementation SGNodeGraphView
+- (BOOL)isFlipped { return YES; }
+- (instancetype)initWithFrame:(NSRect)frameRect {
+  self = [super initWithFrame:frameRect];
+  if (self) {
+    _graphTitle = @"BLUEPRINT NODE GRAPH // SHADER & IOT PIPELINE";
+    _nodeTitles = [@[@"Time Uniform", @"4D Rotor Matrix", @"Audio FFT Band", @"PBR Master Output"] retain];
+    _selectedIndex = 1;
+    _phase = 0.0;
+    __unsafe_unretained typeof(self) weakSelf = self;
+    _timer = [NSTimer timerWithTimeInterval:0.035 repeats:YES block:^(NSTimer * _Nonnull t) {
+      SGNodeGraphView *s = weakSelf;
+      if (!s || s.isHiddenOrHasHiddenAncestor || !s.window || !(s.window.occlusionState & NSWindowOcclusionStateVisible)) return;
+      s.phase = fmod(s.phase + 0.03, 1.0);
+      [s setNeedsDisplay:YES];
+    }];
+    [[NSRunLoop mainRunLoop] addTimer:_timer forMode:NSRunLoopCommonModes];
+  }
+  return self;
+}
+- (void)dealloc {
+  [_timer invalidate];
+  [_nodeTitles release];
+  [super dealloc];
+}
+- (void)drawRect:(NSRect)dirtyRect {
+  [super drawRect:dirtyRect];
+  NSRect b = self.bounds;
+  if (b.size.width <= 10 || b.size.height <= 10) return;
+  AppDelegate *del = self.appDelegate;
+  NSColor *g1 = del.currentGlowColor ?: (del.currentAccentColor ?: [NSColor colorWithSRGBRed:0.0 green:0.96 blue:0.83 alpha:1.0]);
+  NSColor *g2 = del.currentGlowColor2 ?: (del.currentSecondaryAccentColor ?: [NSColor colorWithSRGBRed:1.0 green:0.16 blue:0.52 alpha:1.0]);
+  NSColor *bg = del.currentCardBackgroundColor ?: [NSColor colorWithSRGBRed:0.03 green:0.05 blue:0.09 alpha:0.96];
+
+  NSBezierPath *card = [NSBezierPath bezierPathWithRoundedRect:NSInsetRect(b, 1, 1) xRadius:12.0 yRadius:12.0];
+  [bg setFill];
+  [card fill];
+
+  // Blueprint Dot Grid
+  [[g1 colorWithAlphaComponent:0.12] setFill];
+  for (CGFloat x = 18; x < b.size.width - 12; x += 22) {
+    for (CGFloat y = 28; y < b.size.height - 10; y += 22) {
+      NSRectFill(NSMakeRect(x, y, 1.5, 1.5));
+    }
+  }
+
+  [self.graphTitle drawInRect:NSMakeRect(14, 7, b.size.width - 28, 16) withAttributes:@{
+    NSFontAttributeName: [NSFont monospacedSystemFontOfSize:9.5 weight:NSFontWeightBold],
+    NSForegroundColorAttributeName: g1
+  }];
+
+  int nCount = (int)MIN(6, MAX(1, self.nodeTitles.count));
+  CGFloat availW = b.size.width - 32.0;
+  CGFloat nodeW = MIN(135.0, (availW - (nCount - 1) * 18.0) / nCount);
+  CGFloat nodeH = MIN(74.0, b.size.height - 46.0);
+
+  NSPoint outPins[6];
+  NSPoint inPins[6];
+  NSRect nodeRects[6];
+
+  for (int i = 0; i < nCount; i++) {
+    CGFloat nx = 16.0 + i * (nodeW + (availW - nCount * nodeW) / MAX(1, nCount - 1));
+    CGFloat ny = 32.0 + ((i % 2 == 1) ? 14.0 : 2.0);
+    nodeRects[i] = NSMakeRect(nx, ny, nodeW, nodeH);
+    inPins[i] = NSMakePoint(nx, ny + nodeH * 0.55);
+    outPins[i] = NSMakePoint(nx + nodeW, ny + nodeH * 0.55);
+  }
+
+  // Draw glowing cubic Bezier wires & streaming data pulse orbs
+  for (int i = 0; i < nCount - 1; i++) {
+    NSPoint p0 = outPins[i];
+    NSPoint p3 = inPins[i + 1];
+    CGFloat dx = (p3.x - p0.x) * 0.5;
+    NSPoint p1 = NSMakePoint(p0.x + dx, p0.y);
+    NSPoint p2 = NSMakePoint(p3.x - dx, p3.y);
+
+    NSColor *wc = (i % 2 == 0) ? g1 : g2;
+    [[wc colorWithAlphaComponent:0.75] setStroke];
+    NSBezierPath *wire = [NSBezierPath bezierPath];
+    [wire moveToPoint:p0];
+    [wire curveToPoint:p3 controlPoint1:p1 controlPoint2:p2];
+    wire.lineWidth = 2.2;
+    [wire stroke];
+
+    // Animated Data Packet along Bezier curve
+    double t = fmod(self.phase + i * 0.28, 1.0);
+    double u = 1.0 - t;
+    CGFloat px = u*u*u*p0.x + 3*u*u*t*p1.x + 3*u*t*t*p2.x + t*t*t*p3.x;
+    CGFloat py = u*u*u*p0.y + 3*u*u*t*p1.y + 3*u*t*t*p2.y + t*t*t*p3.y;
+    [[NSColor whiteColor] setFill];
+    [[NSBezierPath bezierPathWithOvalInRect:NSMakeRect(px - 3.5, py - 3.5, 7.0, 7.0)] fill];
+  }
+
+  // Draw Nodes
+  for (int i = 0; i < nCount; i++) {
+    NSRect nr = nodeRects[i];
+    BOOL sel = (i == self.selectedIndex);
+    NSColor *nc = (i % 2 == 0) ? g1 : g2;
+    NSBezierPath *np = [NSBezierPath bezierPathWithRoundedRect:nr xRadius:8.0 yRadius:8.0];
+    [[[NSColor colorWithSRGBRed:0.07 green:0.10 blue:0.17 alpha:0.95] colorWithAlphaComponent:0.95] setFill];
+    [np fill];
+
+    // Node Header Bar
+    NSRect hdrRect = NSMakeRect(nr.origin.x, nr.origin.y, nr.size.width, 20.0);
+    [[nc colorWithAlphaComponent:(sel ? 0.55 : 0.28)] setFill];
+    [[NSBezierPath bezierPathWithRoundedRect:hdrRect xRadius:8.0 yRadius:8.0] fill];
+
+    [self.nodeTitles[i] drawInRect:NSMakeRect(nr.origin.x + 8, nr.origin.y + 3, nr.size.width - 14, 15) withAttributes:@{
+      NSFontAttributeName: [NSFont systemFontOfSize:10.0 weight:NSFontWeightBold],
+      NSForegroundColorAttributeName: [NSColor whiteColor]
+    }];
+
+    NSString *pinInfo = (i == nCount - 1) ? @"⬅ IN: vec4_color" : @"OUT: float4 ➡";
+    [pinInfo drawInRect:NSMakeRect(nr.origin.x + 8, nr.origin.y + 28, nr.size.width - 14, 14) withAttributes:@{
+      NSFontAttributeName: [NSFont monospacedSystemFontOfSize:8.5 weight:NSFontWeightMedium],
+      NSForegroundColorAttributeName: nc
+    }];
+
+    [[nc colorWithAlphaComponent:(sel ? 1.0 : 0.45)] setStroke];
+    np.lineWidth = sel ? 2.2 : 1.1;
+    [np stroke];
+  }
+
+  [[g1 colorWithAlphaComponent:0.50] setStroke];
+  card.lineWidth = 1.4;
+  [card stroke];
+}
+- (void)mouseDown:(NSEvent *)event {
+  int nCount = (int)MIN(6, MAX(1, self.nodeTitles.count));
+  self.selectedIndex = (self.selectedIndex + 1) % nCount;
+  window_play_sfx("cyber_click");
+  [self setNeedsDisplay:YES];
+  if (self.winPtr && self.controlName) {
+    NSString *selName = self.nodeTitles[self.selectedIndex];
+    vlang_dispatch_event(self.winPtr, [self.controlName UTF8String], "change", [selName UTF8String]);
+  }
+}
+@end
+
+void *window_add_node_graph_control(main__WindowInfo *info, const char *name, const char *title, const char **node_titles, int count, int height) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSMutableArray<NSString *> *arr = [NSMutableArray array];
+  for (int i = 0; i < count; i++) {
+    if (node_titles && node_titles[i]) [arr addObject:nsstring(node_titles[i])];
+  }
+  if (arr.count == 0) {
+    [arr addObjectsFromArray:@[@"Time Uniform", @"4D Rotor Matrix", @"Plasma Shader", @"Master Output"]];
+  }
+  int h = height > 90 ? height : 140;
+  __block SGNodeGraphView *view = nil;
+  sgRunOnMainSync(^{
+    view = [[SGNodeGraphView alloc] initWithFrame:NSMakeRect(0, 0, 500, h)];
+    if (title && *title) view.graphTitle = nsstring(title);
+    view.nodeTitles = arr;
+    view.appDelegate = delegate;
+    view.controlName = key;
+    view.winPtr = delegate.win_ptr;
+    [view setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [view.widthAnchor constraintGreaterThanOrEqualToConstant:340].active = YES;
+    [view.heightAnchor constraintEqualToConstant:h].active = YES;
+    delegate.controlsByName[key] = view;
+    [delegate addControlToLayout:view];
+  });
+  return (__bridge void *)view;
+}
+
+void window_set_node_graph_nodes(main__WindowInfo *info, const char *name, const char **node_titles, int count) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSMutableArray<NSString *> *arr = [NSMutableArray array];
+  for (int i = 0; i < count; i++) {
+    if (node_titles && node_titles[i]) [arr addObject:nsstring(node_titles[i])];
+  }
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGNodeGraphView class]] && arr.count > 0) {
+      SGNodeGraphView *ng = (SGNodeGraphView *)v;
+      ng.nodeTitles = arr;
+      [ng setNeedsDisplay:YES];
+    }
+  });
+}
+
+int window_get_node_graph_selected(main__WindowInfo *info, const char *name) {
+  if (!info || !info->app_delegate) return 0;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  __block int res = 0;
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGNodeGraphView class]]) {
+      res = [(SGNodeGraphView *)v selectedIndex];
+    }
+  });
+  return res;
+}
+
+// ============================================================================
+// 38. Interactive Piano / MIDI Synthesizer Studio Keyboard (SGPianoKeyboardView)
+// ============================================================================
+@interface SGPianoKeyboardView : NSView
+@property (nonatomic, assign) int activeMidiNote;
+@property (nonatomic, copy) NSString *waveType;
+@property (nonatomic, assign) AppDelegate *appDelegate;
+@property (nonatomic, copy) NSString *controlName;
+@property (nonatomic, assign) void *winPtr;
+@end
+
+@implementation SGPianoKeyboardView
+- (BOOL)isFlipped { return YES; }
+- (void)drawRect:(NSRect)dirtyRect {
+  [super drawRect:dirtyRect];
+  NSRect b = self.bounds;
+  if (b.size.width <= 10 || b.size.height <= 10) return;
+  AppDelegate *del = self.appDelegate;
+  NSColor *g1 = del.currentGlowColor ?: (del.currentAccentColor ?: [NSColor colorWithSRGBRed:0.0 green:0.96 blue:0.83 alpha:1.0]);
+  NSColor *g2 = del.currentGlowColor2 ?: (del.currentSecondaryAccentColor ?: [NSColor colorWithSRGBRed:1.0 green:0.16 blue:0.52 alpha:1.0]);
+  NSColor *bg = del.currentCardBackgroundColor ?: [NSColor colorWithSRGBRed:0.04 green:0.05 blue:0.09 alpha:0.98];
+
+  NSBezierPath *card = [NSBezierPath bezierPathWithRoundedRect:NSInsetRect(b, 1, 1) xRadius:10.0 yRadius:10.0];
+  [bg setFill];
+  [card fill];
+
+  double freq = 440.0 * pow(2.0, ((double)self.activeMidiNote - 69.0) / 12.0);
+  NSString *hdr = [NSString stringWithFormat:@"🎹 STUDIO MIDI SYNTHESIZER // NOTE: MIDI %d (%.1f Hz) • WAVE: %@ • CLICK KEYS TO PLAY AUDIO",
+                   self.activeMidiNote, freq, [self.waveType uppercaseString]];
+  [hdr drawInRect:NSMakeRect(12, 6, b.size.width - 24, 16) withAttributes:@{
+    NSFontAttributeName: [NSFont monospacedSystemFontOfSize:9.5 weight:NSFontWeightBold],
+    NSForegroundColorAttributeName: g1
+  }];
+
+  int whiteOffsets[14] = {0, 2, 4, 5, 7, 9, 11, 12, 14, 16, 17, 19, 21, 23};
+  CGFloat keyTop = 26.0;
+  CGFloat keyH = b.size.height - keyTop - 8.0;
+  CGFloat whiteW = (b.size.width - 20.0) / 14.0;
+
+  // Draw 14 White Keys (2 Octaves C4..B5)
+  for (int i = 0; i < 14; i++) {
+    int midi = 60 + whiteOffsets[i];
+    BOOL active = (midi == self.activeMidiNote);
+    NSRect kr = NSMakeRect(10.0 + i * whiteW, keyTop, whiteW - 2.0, keyH);
+    NSBezierPath *kp = [NSBezierPath bezierPathWithRoundedRect:kr xRadius:4.0 yRadius:4.0];
+    if (active) {
+      [g1 setFill];
+    } else {
+      [[NSColor colorWithWhite:0.94 alpha:1.0] setFill];
+    }
+    [kp fill];
+  }
+
+  // Draw 10 Black Keys
+  int blackAfterWhite[10] = {0, 1, 3, 4, 5, 7, 8, 10, 11, 12};
+  int blackOffsets[10] = {1, 3, 6, 8, 10, 13, 15, 18, 20, 22};
+  CGFloat blackW = whiteW * 0.62;
+  CGFloat blackH = keyH * 0.60;
+  for (int j = 0; j < 10; j++) {
+    int midi = 60 + blackOffsets[j];
+    BOOL active = (midi == self.activeMidiNote);
+    CGFloat bx = 10.0 + (blackAfterWhite[j] + 1) * whiteW - blackW * 0.5;
+    NSRect br = NSMakeRect(bx, keyTop, blackW, blackH);
+    NSBezierPath *bp = [NSBezierPath bezierPathWithRoundedRect:br xRadius:3.0 yRadius:3.0];
+    if (active) {
+      [g2 setFill];
+    } else {
+      [[NSColor colorWithSRGBRed:0.08 green:0.09 blue:0.13 alpha:1.0] setFill];
+    }
+    [bp fill];
+    [[g1 colorWithAlphaComponent:0.45] setStroke];
+    bp.lineWidth = 1.0;
+    [bp stroke];
+  }
+
+  [[g1 colorWithAlphaComponent:0.50] setStroke];
+  card.lineWidth = 1.4;
+  [card stroke];
+}
+- (void)mouseDown:(NSEvent *)event {
+  NSPoint pt = [self convertPoint:event.locationInWindow fromView:nil];
+  CGFloat whiteW = (self.bounds.size.width - 20.0) / 14.0;
+  int idx = MIN(13, MAX(0, (int)((pt.x - 10.0) / whiteW)));
+  int whiteOffsets[14] = {0, 2, 4, 5, 7, 9, 11, 12, 14, 16, 17, 19, 21, 23};
+  self.activeMidiNote = 60 + whiteOffsets[idx];
+  window_play_piano_note(self.activeMidiNote, 260, [self.waveType UTF8String]);
+  [self setNeedsDisplay:YES];
+  if (self.winPtr && self.controlName) {
+    NSString *nStr = [NSString stringWithFormat:@"%d", self.activeMidiNote];
+    vlang_dispatch_event(self.winPtr, [self.controlName UTF8String], "change", [nStr UTF8String]);
+  }
+}
+@end
+
+void *window_add_piano_keyboard_control(main__WindowInfo *info, const char *name, int active_midi_note, const char *wave_type, int height) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  int h = height > 70 ? height : 120;
+  __block SGPianoKeyboardView *view = nil;
+  sgRunOnMainSync(^{
+    view = [[SGPianoKeyboardView alloc] initWithFrame:NSMakeRect(0, 0, 500, h)];
+    view.activeMidiNote = active_midi_note > 0 ? active_midi_note : 64;
+    view.waveType = nsstring(wave_type ?: "cyber_lead");
+    view.appDelegate = delegate;
+    view.controlName = key;
+    view.winPtr = delegate.win_ptr;
+    [view setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [view.widthAnchor constraintGreaterThanOrEqualToConstant:340].active = YES;
+    [view.heightAnchor constraintEqualToConstant:h].active = YES;
+    delegate.controlsByName[key] = view;
+    [delegate addControlToLayout:view];
+  });
+  return (__bridge void *)view;
+}
+
+void window_set_piano_active_note(main__WindowInfo *info, const char *name, int midi_note) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGPianoKeyboardView class]]) {
+      SGPianoKeyboardView *pk = (SGPianoKeyboardView *)v;
+      pk.activeMidiNote = midi_note;
+      [pk setNeedsDisplay:YES];
+    }
+  });
+}
+
+int window_get_piano_active_note(main__WindowInfo *info, const char *name) {
+  if (!info || !info->app_delegate) return 60;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  __block int res = 60;
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGPianoKeyboardView class]]) {
+      res = [(SGPianoKeyboardView *)v activeMidiNote];
+    }
+  });
+  return res;
+}
+
+// ============================================================================
+// 39. 16-Step Pro Audio Drum & Synth Matrix Sequencer (SGStepSequencerView)
+// ============================================================================
+@interface SGStepSequencerView : NSView
+@property (nonatomic, copy) NSString *seqTitle;
+@property (nonatomic, assign) int bpm;
+@property (nonatomic, assign) unsigned int patternMask;
+@property (nonatomic, assign) int playheadStep;
+@property (nonatomic, strong) NSTimer *timer;
+@property (nonatomic, assign) AppDelegate *appDelegate;
+@property (nonatomic, copy) NSString *controlName;
+@property (nonatomic, assign) void *winPtr;
+@end
+
+@implementation SGStepSequencerView
+- (BOOL)isFlipped { return YES; }
+- (instancetype)initWithFrame:(NSRect)frameRect {
+  self = [super initWithFrame:frameRect];
+  if (self) {
+    _seqTitle = @"16-STEP PRO DAW MATRIX SEQUENCER";
+    _bpm = 128;
+    _patternMask = 0x9249B6D5;
+    _playheadStep = 0;
+    __unsafe_unretained typeof(self) weakSelf = self;
+    _timer = [NSTimer timerWithTimeInterval:0.14 repeats:YES block:^(NSTimer * _Nonnull t) {
+      SGStepSequencerView *s = weakSelf;
+      if (!s || s.isHiddenOrHasHiddenAncestor || !s.window || !(s.window.occlusionState & NSWindowOcclusionStateVisible)) return;
+      s.playheadStep = (s.playheadStep + 1) % 16;
+      [s setNeedsDisplay:YES];
+    }];
+    [[NSRunLoop mainRunLoop] addTimer:_timer forMode:NSRunLoopCommonModes];
+  }
+  return self;
+}
+- (void)dealloc {
+  [_timer invalidate];
+  [super dealloc];
+}
+- (void)drawRect:(NSRect)dirtyRect {
+  [super drawRect:dirtyRect];
+  NSRect b = self.bounds;
+  if (b.size.width <= 10 || b.size.height <= 10) return;
+  AppDelegate *del = self.appDelegate;
+  NSColor *g1 = del.currentGlowColor ?: (del.currentAccentColor ?: [NSColor colorWithSRGBRed:0.0 green:0.96 blue:0.83 alpha:1.0]);
+  NSColor *g2 = del.currentGlowColor2 ?: (del.currentSecondaryAccentColor ?: [NSColor colorWithSRGBRed:1.0 green:0.16 blue:0.52 alpha:1.0]);
+  NSColor *bg = del.currentCardBackgroundColor ?: [NSColor colorWithSRGBRed:0.04 green:0.05 blue:0.09 alpha:0.96];
+
+  NSBezierPath *card = [NSBezierPath bezierPathWithRoundedRect:NSInsetRect(b, 1, 1) xRadius:12.0 yRadius:12.0];
+  [bg setFill];
+  [card fill];
+
+  NSString *hdr = [NSString stringWithFormat:@"🎛️ %@   |   BPM: %d   |   STEP: %02d/16   |   CLICK PADS TO TOGGLE", self.seqTitle, self.bpm, self.playheadStep + 1];
+  [hdr drawInRect:NSMakeRect(12, 6, b.size.width - 24, 16) withAttributes:@{
+    NSFontAttributeName: [NSFont monospacedSystemFontOfSize:9.5 weight:NSFontWeightBold],
+    NSForegroundColorAttributeName: g1
+  }];
+
+  NSArray<NSString *> *tracks = @[@"808 KICK", @"SNARE", @"HI-HAT", @"SYNTH"];
+  CGFloat leftPad = 68.0;
+  CGFloat topY = 26.0;
+  CGFloat gridW = b.size.width - leftPad - 12.0;
+  CGFloat gridH = b.size.height - topY - 8.0;
+  CGFloat cellW = gridW / 16.0;
+  CGFloat rowH = gridH / 4.0;
+
+  for (int r = 0; r < 4; r++) {
+    [tracks[r] drawInRect:NSMakeRect(10, topY + r * rowH + (rowH - 13) * 0.5, leftPad - 12, 14) withAttributes:@{
+      NSFontAttributeName: [NSFont monospacedSystemFontOfSize:9.0 weight:NSFontWeightBold],
+      NSForegroundColorAttributeName: (r % 2 == 0) ? g1 : g2
+    }];
+    for (int c = 0; c < 16; c++) {
+      int bitIdx = (r * 8 + (c % 8)) % 32;
+      BOOL isLit = ((self.patternMask >> bitIdx) & 1) != 0 || ((r + c) % 4 == 0 && (self.patternMask & (1u << (c % 16))));
+      BOOL isPlayhead = (c == self.playheadStep);
+      NSRect pr = NSMakeRect(leftPad + c * cellW + 1.5, topY + r * rowH + 2.0, cellW - 3.0, rowH - 4.0);
+      NSBezierPath *pad = [NSBezierPath bezierPathWithRoundedRect:pr xRadius:3.5 yRadius:3.5];
+      NSColor *tc = (r % 2 == 0) ? g1 : g2;
+      if (isLit) {
+        [[tc colorWithAlphaComponent:(isPlayhead ? 1.0 : 0.78)] setFill];
+      } else {
+        [[[NSColor whiteColor] colorWithAlphaComponent:(isPlayhead ? 0.22 : 0.07)] setFill];
+      }
+      [pad fill];
+      if (isPlayhead) {
+        [[NSColor whiteColor] setStroke];
+        pad.lineWidth = 1.4;
+        [pad stroke];
+      }
+    }
+  }
+
+  [[g1 colorWithAlphaComponent:0.50] setStroke];
+  card.lineWidth = 1.4;
+  [card stroke];
+}
+- (void)mouseDown:(NSEvent *)event {
+  self.patternMask ^= 0x3C5A96E1u;
+  window_play_sfx("cyber_click");
+  [self setNeedsDisplay:YES];
+  if (self.winPtr && self.controlName) {
+    NSString *mStr = [NSString stringWithFormat:@"%u", self.patternMask];
+    vlang_dispatch_event(self.winPtr, [self.controlName UTF8String], "change", [mStr UTF8String]);
+  }
+}
+@end
+
+void *window_add_step_sequencer_control(main__WindowInfo *info, const char *name, const char *title, int bpm, unsigned int pattern_mask, int height) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  int h = height > 80 ? height : 130;
+  __block SGStepSequencerView *view = nil;
+  sgRunOnMainSync(^{
+    view = [[SGStepSequencerView alloc] initWithFrame:NSMakeRect(0, 0, 500, h)];
+    if (title && *title) view.seqTitle = nsstring(title);
+    view.bpm = bpm > 40 ? bpm : 128;
+    view.patternMask = pattern_mask != 0 ? pattern_mask : 0x9249B6D5u;
+    view.appDelegate = delegate;
+    view.controlName = key;
+    view.winPtr = delegate.win_ptr;
+    [view setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [view.widthAnchor constraintGreaterThanOrEqualToConstant:360].active = YES;
+    [view.heightAnchor constraintEqualToConstant:h].active = YES;
+    delegate.controlsByName[key] = view;
+    [delegate addControlToLayout:view];
+  });
+  return (__bridge void *)view;
+}
+
+void window_set_step_sequencer_state(main__WindowInfo *info, const char *name, int bpm, unsigned int pattern_mask) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGStepSequencerView class]]) {
+      SGStepSequencerView *sq = (SGStepSequencerView *)v;
+      sq.bpm = bpm;
+      sq.patternMask = pattern_mask;
+      [sq setNeedsDisplay:YES];
+    }
+  });
+}
+
+unsigned int window_get_step_sequencer_pattern(main__WindowInfo *info, const char *name) {
+  if (!info || !info->app_delegate) return 0;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  __block unsigned int res = 0;
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGStepSequencerView class]]) {
+      res = [(SGStepSequencerView *)v patternMask];
+    }
+  });
+  return res;
+}
+
+// ============================================================================
+// 40. Real-Time 3D Wireframe & Shaded Mesh Viewport (SGMeshViewport3DView)
+// ============================================================================
+@interface SGMeshViewport3DView : NSView
+@property (nonatomic, copy) NSString *meshPreset;
+@property (nonatomic, assign) double angleY;
+@property (nonatomic, assign) double angleX;
+@property (nonatomic, strong) NSTimer *timer;
+@property (nonatomic, assign) AppDelegate *appDelegate;
+@property (nonatomic, copy) NSString *controlName;
+@property (nonatomic, assign) void *winPtr;
+@end
+
+@implementation SGMeshViewport3DView
+- (instancetype)initWithFrame:(NSRect)frameRect {
+  self = [super initWithFrame:frameRect];
+  if (self) {
+    _meshPreset = @"smart_house_3d";
+    _angleY = 0.65;
+    _angleX = 0.38;
+    __unsafe_unretained typeof(self) weakSelf = self;
+    _timer = [NSTimer timerWithTimeInterval:0.033 repeats:YES block:^(NSTimer * _Nonnull t) {
+      SGMeshViewport3DView *s = weakSelf;
+      if (!s || s.isHiddenOrHasHiddenAncestor || !s.window || !(s.window.occlusionState & NSWindowOcclusionStateVisible)) return;
+      s.angleY += 0.032;
+      [s setNeedsDisplay:YES];
+    }];
+    [[NSRunLoop mainRunLoop] addTimer:_timer forMode:NSRunLoopCommonModes];
+  }
+  return self;
+}
+- (void)dealloc {
+  [_timer invalidate];
+  [super dealloc];
+}
+- (void)drawRect:(NSRect)dirtyRect {
+  [super drawRect:dirtyRect];
+  NSRect b = self.bounds;
+  if (b.size.width <= 10 || b.size.height <= 10) return;
+  AppDelegate *del = self.appDelegate;
+  NSColor *g1 = del.currentGlowColor ?: (del.currentAccentColor ?: [NSColor colorWithSRGBRed:0.0 green:0.96 blue:0.83 alpha:1.0]);
+  NSColor *g2 = del.currentGlowColor2 ?: (del.currentSecondaryAccentColor ?: [NSColor colorWithSRGBRed:1.0 green:0.16 blue:0.52 alpha:1.0]);
+  NSColor *bg = del.currentCardBackgroundColor ?: [NSColor colorWithSRGBRed:0.03 green:0.05 blue:0.10 alpha:0.96];
+
+  NSBezierPath *card = [NSBezierPath bezierPathWithRoundedRect:NSInsetRect(b, 1, 1) xRadius:12.0 yRadius:12.0];
+  [bg setFill];
+  [card fill];
+
+  NSPoint center = NSMakePoint(NSMidX(b), NSMidY(b) - 4.0);
+  CGFloat scale = MIN(b.size.width, b.size.height) * 0.34;
+  NSString *pr = [self.meshPreset lowercaseString] ?: @"smart_house_3d";
+
+  auto NSPoint (^proj3D)(double, double, double) = ^NSPoint(double vx, double vy, double vz) {
+    double rx = vx * cos(self.angleY) - vz * sin(self.angleY);
+    double rz = vx * sin(self.angleY) + vz * cos(self.angleY);
+    double ry = vy * cos(self.angleX) - rz * sin(self.angleX);
+    double rz2 = vy * sin(self.angleX) + rz * cos(self.angleX);
+    double p = 1.0 / (2.8 - rz2 * 0.45);
+    return NSMakePoint(center.x + rx * scale * p * 1.6, center.y + ry * scale * p * 1.6);
+  };
+
+  if ([pr containsString:@"dna"] || [pr containsString:@"helix"]) {
+    for (int i = 0; i < 20; i++) {
+      double y = -1.0 + (i / 19.0) * 2.0;
+      double th = i * 0.45;
+      NSPoint pA = proj3D(cos(th) * 0.75, y, sin(th) * 0.75);
+      NSPoint pB = proj3D(cos(th + M_PI) * 0.75, y, sin(th + M_PI) * 0.75);
+      [[(i % 2 == 0 ? g1 : g2) colorWithAlphaComponent:0.75] setStroke];
+      NSBezierPath *rung = [NSBezierPath bezierPath];
+      [rung moveToPoint:pA];
+      [rung lineToPoint:pB];
+      rung.lineWidth = 1.8;
+      [rung stroke];
+      [[g1 colorWithAlphaComponent:0.95] setFill];
+      [[NSBezierPath bezierPathWithOvalInRect:NSMakeRect(pA.x - 3, pA.y - 3, 6, 6)] fill];
+      [[g2 colorWithAlphaComponent:0.95] setFill];
+      [[NSBezierPath bezierPathWithOvalInRect:NSMakeRect(pB.x - 3, pB.y - 3, 6, 6)] fill];
+    }
+  } else if ([pr containsString:@"torus"] || [pr containsString:@"sphere"]) {
+    for (int ring = 0; ring < 14; ring++) {
+      double u = (ring * M_PI * 2.0) / 14.0;
+      NSBezierPath *rp = [NSBezierPath bezierPath];
+      for (int s = 0; s <= 20; s++) {
+        double v = (s * M_PI * 2.0) / 20.0;
+        double rMaj = 0.72 + 0.28 * cos(v);
+        NSPoint pt = proj3D(rMaj * cos(u), 0.35 * sin(v), rMaj * sin(u));
+        if (s == 0) [rp moveToPoint:pt];
+        else [rp lineToPoint:pt];
+      }
+      [[(ring % 2 == 0 ? g1 : g2) colorWithAlphaComponent:0.68] setStroke];
+      rp.lineWidth = 1.4;
+      [rp stroke];
+    }
+  } else {
+    // 3D Architectural Smart House Wireframe (Walls + Pitched Solar Roof + Glowing Interior Core)
+    double verts[10][3] = {
+      {-0.9, -0.6, -0.7}, {0.9, -0.6, -0.7}, {0.9, -0.6, 0.7}, {-0.9, -0.6, 0.7}, // Floor 0..3
+      {-0.9,  0.2, -0.7}, {0.9,  0.2, -0.7}, {0.9,  0.2, 0.7}, {-0.9,  0.2, 0.7}, // Eaves 4..7
+      {-0.9,  0.85, 0.0}, {0.9,  0.85, 0.0}                                        // Roof Ridge 8..9
+    };
+    NSPoint pts[10];
+    for (int i = 0; i < 10; i++) pts[i] = proj3D(verts[i][0], verts[i][1], verts[i][2]);
+    int edges[19][2] = {
+      {0,1},{1,2},{2,3},{3,0}, // Base
+      {4,5},{5,6},{6,7},{7,4}, // Eaves
+      {0,4},{1,5},{2,6},{3,7}, // Columns
+      {4,8},{7,8},{5,9},{6,9},{8,9}, // Pitched Roof
+      {0,2},{4,6} // Structural cross-beams
+    };
+    for (int e = 0; e < 19; e++) {
+      NSColor *ec = (e >= 12) ? g2 : g1;
+      [[ec colorWithAlphaComponent:0.86] setStroke];
+      NSBezierPath *ep = [NSBezierPath bezierPath];
+      [ep moveToPoint:pts[edges[e][0]]];
+      [ep lineToPoint:pts[edges[e][1]]];
+      ep.lineWidth = (e >= 12) ? 2.2 : 1.6;
+      [ep stroke];
+    }
+    for (int i = 0; i < 10; i++) {
+      [[NSColor whiteColor] setFill];
+      [[NSBezierPath bezierPathWithOvalInRect:NSMakeRect(pts[i].x - 2.8, pts[i].y - 2.8, 5.6, 5.6)] fill];
+    }
+  }
+
+  NSString *hud = [NSString stringWithFormat:@"3D CAD MESH // %@  [CLICK TO CYCLE MODEL]", [self.meshPreset uppercaseString]];
+  [hud drawAtPoint:NSMakePoint(12, b.size.height - 20) withAttributes:@{
+    NSFontAttributeName: [NSFont monospacedSystemFontOfSize:9.5 weight:NSFontWeightBold],
+    NSForegroundColorAttributeName: g1
+  }];
+
+  [[g1 colorWithAlphaComponent:0.50] setStroke];
+  card.lineWidth = 1.4;
+  [card stroke];
+}
+- (void)mouseDown:(NSEvent *)event {
+  NSArray<NSString *> *presets = @[@"smart_house_3d", @"dna_double_helix", @"torus_knot"];
+  NSUInteger idx = [presets indexOfObject:[self.meshPreset lowercaseString]];
+  self.meshPreset = presets[(idx == NSNotFound) ? 0 : ((idx + 1) % presets.count)];
+  window_play_sfx("quantum_warp");
+  [self setNeedsDisplay:YES];
+  if (self.winPtr && self.controlName) {
+    vlang_dispatch_event(self.winPtr, [self.controlName UTF8String], "change", [self.meshPreset UTF8String]);
+  }
+}
+@end
+
+void *window_add_mesh_viewport_3d_control(main__WindowInfo *info, const char *name, const char *mesh_preset, int height) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  int h = height > 90 ? height : 175;
+  __block SGMeshViewport3DView *view = nil;
+  sgRunOnMainSync(^{
+    view = [[SGMeshViewport3DView alloc] initWithFrame:NSMakeRect(0, 0, 320, h)];
+    view.meshPreset = nsstring((mesh_preset && *mesh_preset) ? mesh_preset : "smart_house_3d");
+    view.appDelegate = delegate;
+    view.controlName = key;
+    view.winPtr = delegate.win_ptr;
+    [view setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [view.widthAnchor constraintGreaterThanOrEqualToConstant:230].active = YES;
+    [view.heightAnchor constraintEqualToConstant:h].active = YES;
+    delegate.controlsByName[key] = view;
+    [delegate addControlToLayout:view];
+  });
+  return (__bridge void *)view;
+}
+
+void window_set_mesh_viewport_preset(main__WindowInfo *info, const char *name, const char *mesh_preset) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSString *mStr = nsstring(mesh_preset ?: "smart_house_3d");
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGMeshViewport3DView class]]) {
+      SGMeshViewport3DView *mv = (SGMeshViewport3DView *)v;
+      mv.meshPreset = mStr;
+      [mv setNeedsDisplay:YES];
+    }
+  });
+}
+
+const char *window_get_mesh_viewport_preset(main__WindowInfo *info, const char *name) {
+  if (!info || !info->app_delegate) return strdup("");
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  __block NSString *res = @"";
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGMeshViewport3DView class]]) {
+      res = [(SGMeshViewport3DView *)v meshPreset] ?: @"";
+    }
+  });
+  return strdup([res UTF8String]);
+}
+
+// ============================================================================
+// 41. Sweeping Polar Radar, Sonar & RF Smith Scope (SGPolarRadarSonarView)
+// ============================================================================
+@interface SGPolarRadarSonarView : NSView
+@property (nonatomic, copy) NSString *radarTitle;
+@property (nonatomic, assign) double sweepSpeed;
+@property (nonatomic, assign) int targetCount;
+@property (nonatomic, assign) double sweepAngle;
+@property (nonatomic, strong) NSTimer *timer;
+@property (nonatomic, assign) AppDelegate *appDelegate;
+@property (nonatomic, copy) NSString *controlName;
+@property (nonatomic, assign) void *winPtr;
+@end
+
+@implementation SGPolarRadarSonarView
+- (instancetype)initWithFrame:(NSRect)frameRect {
+  self = [super initWithFrame:frameRect];
+  if (self) {
+    _radarTitle = @"SONAR // POLAR RADAR";
+    _sweepSpeed = 1.0;
+    _targetCount = 5;
+    _sweepAngle = 45.0;
+    __unsafe_unretained typeof(self) weakSelf = self;
+    _timer = [NSTimer timerWithTimeInterval:0.033 repeats:YES block:^(NSTimer * _Nonnull t) {
+      SGPolarRadarSonarView *s = weakSelf;
+      if (!s || s.isHiddenOrHasHiddenAncestor || !s.window || !(s.window.occlusionState & NSWindowOcclusionStateVisible)) return;
+      s.sweepAngle = fmod(s.sweepAngle + 3.5 * MAX(0.2, s.sweepSpeed), 360.0);
+      [s setNeedsDisplay:YES];
+    }];
+    [[NSRunLoop mainRunLoop] addTimer:_timer forMode:NSRunLoopCommonModes];
+  }
+  return self;
+}
+- (void)dealloc {
+  [_timer invalidate];
+  [super dealloc];
+}
+- (void)drawRect:(NSRect)dirtyRect {
+  [super drawRect:dirtyRect];
+  NSRect b = self.bounds;
+  if (b.size.width <= 10 || b.size.height <= 10) return;
+  AppDelegate *del = self.appDelegate;
+  NSColor *g1 = del.currentGlowColor ?: (del.currentAccentColor ?: [NSColor colorWithSRGBRed:0.0 green:0.96 blue:0.83 alpha:1.0]);
+  NSColor *g2 = del.currentGlowColor2 ?: (del.currentSecondaryAccentColor ?: [NSColor colorWithSRGBRed:1.0 green:0.16 blue:0.52 alpha:1.0]);
+  NSColor *bg = del.currentCardBackgroundColor ?: [NSColor colorWithSRGBRed:0.02 green:0.06 blue:0.09 alpha:0.96];
+
+  NSBezierPath *card = [NSBezierPath bezierPathWithRoundedRect:NSInsetRect(b, 1, 1) xRadius:12.0 yRadius:12.0];
+  [bg setFill];
+  [card fill];
+
+  NSPoint center = NSMakePoint(NSMidX(b), NSMidY(b) - 4.0);
+  CGFloat maxR = MIN(b.size.width, b.size.height) * 0.40;
+
+  // Range Rings & Crosshairs
+  for (int r = 1; r <= 3; r++) {
+    CGFloat rr = maxR * (r / 3.0);
+    [[g1 colorWithAlphaComponent:0.25] setStroke];
+    [[NSBezierPath bezierPathWithOvalInRect:NSMakeRect(center.x - rr, center.y - rr, rr * 2, rr * 2)] stroke];
+  }
+  [[g1 colorWithAlphaComponent:0.20] setStroke];
+  NSBezierPath *ch = [NSBezierPath bezierPath];
+  [ch moveToPoint:NSMakePoint(center.x - maxR, center.y)];
+  [ch lineToPoint:NSMakePoint(center.x + maxR, center.y)];
+  [ch moveToPoint:NSMakePoint(center.x, center.y - maxR)];
+  [ch lineToPoint:NSMakePoint(center.x, center.y + maxR)];
+  [ch stroke];
+
+  // Sweeping Phosphor Cone
+  NSBezierPath *cone = [NSBezierPath bezierPath];
+  [cone moveToPoint:center];
+  [cone appendBezierPathWithArcWithCenter:center radius:maxR startAngle:self.sweepAngle - 38.0 endAngle:self.sweepAngle clockwise:NO];
+  [cone closePath];
+  [[g1 colorWithAlphaComponent:0.22] setFill];
+  [cone fill];
+
+  double rad = self.sweepAngle * M_PI / 180.0;
+  [[g1 colorWithAlphaComponent:0.95] setStroke];
+  NSBezierPath *beam = [NSBezierPath bezierPath];
+  [beam moveToPoint:center];
+  [beam lineToPoint:NSMakePoint(center.x + cos(rad) * maxR, center.y + sin(rad) * maxR)];
+  beam.lineWidth = 2.0;
+  [beam stroke];
+
+  // Target Blips
+  int tCount = MIN(12, MAX(1, self.targetCount));
+  for (int i = 0; i < tCount; i++) {
+    double tAng = (i * 137.5) * M_PI / 180.0;
+    CGFloat tDist = maxR * (0.28 + 0.62 * fmod(i * 0.37, 1.0));
+    NSPoint tp = NSMakePoint(center.x + cos(tAng) * tDist, center.y + sin(tAng) * tDist);
+    [[g2 colorWithAlphaComponent:0.35] setStroke];
+    [[NSBezierPath bezierPathWithOvalInRect:NSMakeRect(tp.x - 6, tp.y - 6, 12, 12)] stroke];
+    [[g2 colorWithAlphaComponent:0.95] setFill];
+    [[NSBezierPath bezierPathWithOvalInRect:NSMakeRect(tp.x - 2.8, tp.y - 2.8, 5.6, 5.6)] fill];
+  }
+
+  [self.radarTitle drawAtPoint:NSMakePoint(10, b.size.height - 19) withAttributes:@{
+    NSFontAttributeName: [NSFont monospacedSystemFontOfSize:9.0 weight:NSFontWeightBold],
+    NSForegroundColorAttributeName: g1
+  }];
+
+  [[g1 colorWithAlphaComponent:0.50] setStroke];
+  card.lineWidth = 1.4;
+  [card stroke];
+}
+- (void)mouseDown:(NSEvent *)event {
+  self.targetCount = (self.targetCount % 9) + 2;
+  window_play_sfx("radar_ping");
+  [self setNeedsDisplay:YES];
+}
+@end
+
+void *window_add_polar_radar_sonar_control(main__WindowInfo *info, const char *name, const char *title, double sweep_speed, int target_count, int size) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  int sz = size > 100 ? size : 175;
+  __block SGPolarRadarSonarView *view = nil;
+  sgRunOnMainSync(^{
+    view = [[SGPolarRadarSonarView alloc] initWithFrame:NSMakeRect(0, 0, sz, sz)];
+    if (title && *title) view.radarTitle = nsstring(title);
+    view.sweepSpeed = sweep_speed > 0.1 ? sweep_speed : 1.0;
+    view.targetCount = target_count > 0 ? target_count : 5;
+    view.appDelegate = delegate;
+    view.controlName = key;
+    view.winPtr = delegate.win_ptr;
+    [view setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [view.widthAnchor constraintGreaterThanOrEqualToConstant:sz].active = YES;
+    [view.heightAnchor constraintEqualToConstant:sz].active = YES;
+    delegate.controlsByName[key] = view;
+    [delegate addControlToLayout:view];
+  });
+  return (__bridge void *)view;
+}
+
+void window_set_polar_radar_params(main__WindowInfo *info, const char *name, double sweep_speed, int target_count) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGPolarRadarSonarView class]]) {
+      SGPolarRadarSonarView *pr = (SGPolarRadarSonarView *)v;
+      pr.sweepSpeed = sweep_speed;
+      pr.targetCount = target_count;
+      [pr setNeedsDisplay:YES];
+    }
+  });
+}
+
+void window_ping_polar_radar(main__WindowInfo *info, const char *name) {
+  window_play_sfx("radar_ping");
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGPolarRadarSonarView class]]) {
+      [v setNeedsDisplay:YES];
+    }
+  });
+}
+
+// ============================================================================
+// 42. Digital Logic Analyzer & Bus Protocol Timing Scope (SGLogicAnalyzerView)
+// ============================================================================
+@interface SGLogicAnalyzerView : NSView
+@property (nonatomic, copy) NSString *scopeTitle;
+@property (nonatomic, assign) int sampleRateMhz;
+@property (nonatomic, assign) int patternSeed;
+@property (nonatomic, assign) AppDelegate *appDelegate;
+@end
+
+@implementation SGLogicAnalyzerView
+- (BOOL)isFlipped { return YES; }
+- (void)drawRect:(NSRect)dirtyRect {
+  [super drawRect:dirtyRect];
+  NSRect b = self.bounds;
+  if (b.size.width <= 10 || b.size.height <= 10) return;
+  AppDelegate *del = self.appDelegate;
+  NSColor *g1 = del.currentGlowColor ?: (del.currentAccentColor ?: [NSColor colorWithSRGBRed:0.0 green:0.96 blue:0.83 alpha:1.0]);
+  NSColor *g2 = del.currentGlowColor2 ?: (del.currentSecondaryAccentColor ?: [NSColor colorWithSRGBRed:1.0 green:0.16 blue:0.52 alpha:1.0]);
+  NSColor *bg = del.currentCardBackgroundColor ?: [NSColor colorWithSRGBRed:0.03 green:0.05 blue:0.09 alpha:0.96];
+
+  NSBezierPath *card = [NSBezierPath bezierPathWithRoundedRect:NSInsetRect(b, 1, 1) xRadius:10.0 yRadius:10.0];
+  [bg setFill];
+  [card fill];
+
+  NSString *hdr = [NSString stringWithFormat:@"📟 %@   |   SAMPLE RATE: %d MHz   |   BUS: SPI/I2C DECODE [0xA5 • ACK]", self.scopeTitle, self.sampleRateMhz];
+  [hdr drawInRect:NSMakeRect(12, 6, b.size.width - 24, 15) withAttributes:@{
+    NSFontAttributeName: [NSFont monospacedSystemFontOfSize:9.5 weight:NSFontWeightBold],
+    NSForegroundColorAttributeName: g1
+  }];
+
+  NSArray<NSString *> *chNames = @[@"SYS_CLK", @"SPI_MOSI", @"SPI_MISO", @"IRQ_SYNC"];
+  CGFloat leftX = 74.0;
+  CGFloat topY = 25.0;
+  CGFloat rowH = (b.size.height - topY - 8.0) / 4.0;
+  int steps = 24;
+  CGFloat stepW = (b.size.width - leftX - 14.0) / steps;
+
+  for (int ch = 0; ch < 4; ch++) {
+    NSColor *cc = (ch % 2 == 0) ? g1 : g2;
+    [chNames[ch] drawInRect:NSMakeRect(10, topY + ch * rowH + 2, leftX - 12, 14) withAttributes:@{
+      NSFontAttributeName: [NSFont monospacedSystemFontOfSize:9.0 weight:NSFontWeightBold],
+      NSForegroundColorAttributeName: cc
+    }];
+
+    NSBezierPath *wf = [NSBezierPath bezierPath];
+    CGFloat highY = topY + ch * rowH + 4.0;
+    CGFloat lowY = topY + (ch + 1) * rowH - 5.0;
+    BOOL prevHigh = NO;
+    for (int s = 0; s < steps; s++) {
+      BOOL isHigh = (ch == 0) ? (s % 2 == 0) : (((s + ch * 3 + self.patternSeed) * 7) % 5 > 1);
+      CGFloat sx = leftX + s * stepW;
+      CGFloat sy = isHigh ? highY : lowY;
+      if (s == 0) {
+        [wf moveToPoint:NSMakePoint(sx, sy)];
+      } else {
+        if (isHigh != prevHigh) [wf lineToPoint:NSMakePoint(sx, sy)];
+      }
+      [wf lineToPoint:NSMakePoint(sx + stepW, sy)];
+      prevHigh = isHigh;
+    }
+    [[cc colorWithAlphaComponent:0.90] setStroke];
+    wf.lineWidth = 1.6;
+    [wf stroke];
+  }
+
+  [[g1 colorWithAlphaComponent:0.48] setStroke];
+  card.lineWidth = 1.3;
+  [card stroke];
+}
+- (void)mouseDown:(NSEvent *)event {
+  self.patternSeed++;
+  window_play_sfx("cyber_click");
+  [self setNeedsDisplay:YES];
+}
+@end
+
+void *window_add_logic_analyzer_control(main__WindowInfo *info, const char *name, const char *title, int sample_rate_mhz, int pattern_seed, int height) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  int h = height > 75 ? height : 115;
+  __block SGLogicAnalyzerView *view = nil;
+  sgRunOnMainSync(^{
+    view = [[SGLogicAnalyzerView alloc] initWithFrame:NSMakeRect(0, 0, 460, h)];
+    view.scopeTitle = nsstring(title ?: "DIGITAL LOGIC ANALYZER");
+    view.sampleRateMhz = sample_rate_mhz > 0 ? sample_rate_mhz : 500;
+    view.patternSeed = pattern_seed;
+    view.appDelegate = delegate;
+    [view setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [view.widthAnchor constraintGreaterThanOrEqualToConstant:320].active = YES;
+    [view.heightAnchor constraintEqualToConstant:h].active = YES;
+    delegate.controlsByName[key] = view;
+    [delegate addControlToLayout:view];
+  });
+  return (__bridge void *)view;
+}
+
+void window_set_logic_analyzer_seed(main__WindowInfo *info, const char *name, int pattern_seed) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGLogicAnalyzerView class]]) {
+      SGLogicAnalyzerView *la = (SGLogicAnalyzerView *)v;
+      la.patternSeed = pattern_seed;
+      [la setNeedsDisplay:YES];
+    }
+  });
+}
+
+// ============================================================================
+// 43. Sci-Fi Nixie Tube & Plasma Counter Display (SGNixieDisplayView)
+// ============================================================================
+@interface SGNixieDisplayView : NSView
+@property (nonatomic, copy) NSString *nixieTitle;
+@property (nonatomic, copy) NSString *valueText;
+@property (nonatomic, copy) NSString *tubeStyle;
+@property (nonatomic, assign) AppDelegate *appDelegate;
+@end
+
+@implementation SGNixieDisplayView
+- (BOOL)isFlipped { return YES; }
+- (void)drawRect:(NSRect)dirtyRect {
+  [super drawRect:dirtyRect];
+  NSRect b = self.bounds;
+  if (b.size.width <= 10 || b.size.height <= 10) return;
+  AppDelegate *del = self.appDelegate;
+  NSColor *amber = [NSColor colorWithSRGBRed:1.0 green:0.42 blue:0.08 alpha:1.0];
+  NSColor *glowCol = [[self.tubeStyle lowercaseString] containsString:@"plasma"]
+    ? (del.currentGlowColor ?: [NSColor cyanColor])
+    : amber;
+
+  NSBezierPath *card = [NSBezierPath bezierPathWithRoundedRect:NSInsetRect(b, 1, 1) xRadius:12.0 yRadius:12.0];
+  [[NSColor colorWithSRGBRed:0.05 green:0.03 blue:0.04 alpha:0.96] setFill];
+  [card fill];
+
+  [self.nixieTitle drawInRect:NSMakeRect(12, 5, b.size.width - 24, 14) withAttributes:@{
+    NSFontAttributeName: [NSFont monospacedSystemFontOfSize:9.0 weight:NSFontWeightBold],
+    NSForegroundColorAttributeName: [glowCol colorWithAlphaComponent:0.88]
+  }];
+
+  NSString *txt = self.valueText.length > 0 ? self.valueText : @"10:42:59";
+  int len = (int)MIN(10, txt.length);
+  CGFloat tubeW = (b.size.width - 24.0 - (len - 1) * 6.0) / MAX(1, len);
+  CGFloat tubeH = b.size.height - 28.0;
+  NSMutableParagraphStyle *pCenter = [[[NSMutableParagraphStyle alloc] init] autorelease];
+  pCenter.alignment = NSTextAlignmentCenter;
+
+  for (int i = 0; i < len; i++) {
+    NSString *ch = [txt substringWithRange:NSMakeRange(i, 1)];
+    NSRect tr = NSMakeRect(12.0 + i * (tubeW + 6.0), 22.0, tubeW, tubeH);
+    NSBezierPath *tube = [NSBezierPath bezierPathWithRoundedRect:tr xRadius:8.0 yRadius:8.0];
+    [[NSColor colorWithSRGBRed:0.09 green:0.05 blue:0.06 alpha:0.95] setFill];
+    [tube fill];
+
+    // Unlit ghost cathode '8'
+    [@"8" drawInRect:NSMakeRect(tr.origin.x, tr.origin.y + (tubeH - 28) * 0.5, tubeW, 30) withAttributes:@{
+      NSFontAttributeName: [NSFont monospacedDigitSystemFontOfSize:22.0 weight:NSFontWeightHeavy],
+      NSForegroundColorAttributeName: [[NSColor whiteColor] colorWithAlphaComponent:0.07],
+      NSParagraphStyleAttributeName: pCenter
+    }];
+
+    // Lit neon cathode character
+    [ch drawInRect:NSMakeRect(tr.origin.x, tr.origin.y + (tubeH - 28) * 0.5, tubeW, 30) withAttributes:@{
+      NSFontAttributeName: [NSFont monospacedDigitSystemFontOfSize:22.0 weight:NSFontWeightHeavy],
+      NSForegroundColorAttributeName: glowCol,
+      NSParagraphStyleAttributeName: pCenter
+    }];
+
+    [[glowCol colorWithAlphaComponent:0.45] setStroke];
+    tube.lineWidth = 1.2;
+    [tube stroke];
+  }
+
+  [[glowCol colorWithAlphaComponent:0.55] setStroke];
+  card.lineWidth = 1.4;
+  [card stroke];
+}
+@end
+
+void *window_add_nixie_display_control(main__WindowInfo *info, const char *name, const char *title, const char *value_text, const char *tube_style, int height) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  int h = height > 60 ? height : 82;
+  __block SGNixieDisplayView *view = nil;
+  sgRunOnMainSync(^{
+    view = [[SGNixieDisplayView alloc] initWithFrame:NSMakeRect(0, 0, 320, h)];
+    view.nixieTitle = nsstring(title ?: "NIXIE VACUUM TELEMETRY");
+    view.valueText = nsstring(value_text ?: "1.048596");
+    view.tubeStyle = nsstring(tube_style ?: "amber_tube");
+    view.appDelegate = delegate;
+    [view setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [view.widthAnchor constraintGreaterThanOrEqualToConstant:240].active = YES;
+    [view.heightAnchor constraintEqualToConstant:h].active = YES;
+    delegate.controlsByName[key] = view;
+    [delegate addControlToLayout:view];
+  });
+  return (__bridge void *)view;
+}
+
+void window_set_nixie_display_text(main__WindowInfo *info, const char *name, const char *value_text) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSString *vStr = nsstring(value_text ?: "");
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGNixieDisplayView class]]) {
+      SGNixieDisplayView *nx = (SGNixieDisplayView *)v;
+      nx.valueText = vStr;
+      [nx setNeedsDisplay:YES];
+    }
+  });
+}
+
+const char *window_get_nixie_display_text(main__WindowInfo *info, const char *name) {
+  if (!info || !info->app_delegate) return strdup("");
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  __block NSString *res = @"";
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGNixieDisplayView class]]) {
+      res = [(SGNixieDisplayView *)v valueText] ?: @"";
+    }
+  });
+  return strdup([res UTF8String]);
+}
+
+// ============================================================================
+// 44. Sankey Energy & Data Flow Diagram (SGSankeyChartView)
+// ============================================================================
+@interface SGSankeyChartView : NSView
+@property (nonatomic, copy) NSString *chartTitle;
+@property (nonatomic, strong) NSArray<NSString *> *sources;
+@property (nonatomic, strong) NSArray<NSString *> *targets;
+@property (nonatomic, strong) NSArray<NSNumber *> *values;
+@property (nonatomic, assign) AppDelegate *appDelegate;
+@end
+
+@implementation SGSankeyChartView
+- (BOOL)isFlipped { return YES; }
+- (void)dealloc {
+  [_sources release];
+  [_targets release];
+  [_values release];
+  [super dealloc];
+}
+- (void)drawRect:(NSRect)dirtyRect {
+  [super drawRect:dirtyRect];
+  NSRect b = self.bounds;
+  if (b.size.width <= 10 || b.size.height <= 10) return;
+  AppDelegate *del = self.appDelegate;
+  NSColor *g1 = del.currentGlowColor ?: (del.currentAccentColor ?: [NSColor colorWithSRGBRed:0.0 green:0.96 blue:0.83 alpha:1.0]);
+  NSColor *g2 = del.currentGlowColor2 ?: (del.currentSecondaryAccentColor ?: [NSColor colorWithSRGBRed:1.0 green:0.16 blue:0.52 alpha:1.0]);
+  NSColor *bg = del.currentCardBackgroundColor ?: [NSColor colorWithSRGBRed:0.04 green:0.06 blue:0.11 alpha:0.96];
+
+  NSBezierPath *card = [NSBezierPath bezierPathWithRoundedRect:NSInsetRect(b, 1, 1) xRadius:12.0 yRadius:12.0];
+  [bg setFill];
+  [card fill];
+
+  [self.chartTitle drawInRect:NSMakeRect(12, 6, b.size.width - 24, 16) withAttributes:@{
+    NSFontAttributeName: [NSFont monospacedSystemFontOfSize:9.5 weight:NSFontWeightBold],
+    NSForegroundColorAttributeName: g1
+  }];
+
+  int cnt = (int)MIN(self.sources.count, MIN(self.targets.count, self.values.count));
+  if (cnt <= 0) return;
+  CGFloat topY = 26.0;
+  CGFloat rowH = (b.size.height - topY - 8.0) / cnt;
+  CGFloat leftX = 110.0;
+  CGFloat rightX = b.size.width - 125.0;
+
+  for (int i = 0; i < cnt; i++) {
+    CGFloat y0 = topY + i * rowH + rowH * 0.5;
+    CGFloat y1 = topY + ((i + 1) % cnt) * rowH + rowH * 0.5;
+    NSColor *rc = (i % 2 == 0) ? g1 : g2;
+
+    NSBezierPath *rib = [NSBezierPath bezierPath];
+    [rib moveToPoint:NSMakePoint(leftX, y0)];
+    [rib curveToPoint:NSMakePoint(rightX, y0)
+        controlPoint1:NSMakePoint((leftX + rightX) * 0.45, y0)
+        controlPoint2:NSMakePoint((leftX + rightX) * 0.55, y1 * 0.3 + y0 * 0.7)];
+    [[rc colorWithAlphaComponent:0.45] setStroke];
+    rib.lineWidth = MAX(4.0, rowH * 0.48);
+    [rib stroke];
+
+    [self.sources[i] drawInRect:NSMakeRect(12, y0 - 8, leftX - 16, 16) withAttributes:@{
+      NSFontAttributeName: [NSFont systemFontOfSize:10.0 weight:NSFontWeightBold],
+      NSForegroundColorAttributeName: [NSColor whiteColor]
+    }];
+    NSString *tLbl = [NSString stringWithFormat:@"%@ (%.1f)", self.targets[i], [self.values[i] doubleValue]];
+    [tLbl drawInRect:NSMakeRect(rightX + 8, y0 - 8, 114, 16) withAttributes:@{
+      NSFontAttributeName: [NSFont monospacedSystemFontOfSize:9.5 weight:NSFontWeightSemibold],
+      NSForegroundColorAttributeName: rc
+    }];
+  }
+
+  [[g1 colorWithAlphaComponent:0.50] setStroke];
+  card.lineWidth = 1.4;
+  [card stroke];
+}
+@end
+
+void *window_add_sankey_chart_control(main__WindowInfo *info, const char *name, const char *title, const char **sources, const char **targets, const double *values, int count, int height) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSMutableArray<NSString *> *sArr = [NSMutableArray array];
+  NSMutableArray<NSString *> *tArr = [NSMutableArray array];
+  NSMutableArray<NSNumber *> *vArr = [NSMutableArray array];
+  for (int i = 0; i < count; i++) {
+    [sArr addObject:nsstring((sources && sources[i]) ? sources[i] : "Source")];
+    [tArr addObject:nsstring((targets && targets[i]) ? targets[i] : "Target")];
+    [vArr addObject:@(values ? values[i] : 10.0)];
+  }
+  int h = height > 80 ? height : 135;
+  __block SGSankeyChartView *view = nil;
+  sgRunOnMainSync(^{
+    view = [[SGSankeyChartView alloc] initWithFrame:NSMakeRect(0, 0, 440, h)];
+    view.chartTitle = nsstring(title ?: "SANKEY ENERGY & TELEMETRY FLOW");
+    view.sources = sArr;
+    view.targets = tArr;
+    view.values = vArr;
+    view.appDelegate = delegate;
+    [view setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [view.widthAnchor constraintGreaterThanOrEqualToConstant:320].active = YES;
+    [view.heightAnchor constraintEqualToConstant:h].active = YES;
+    delegate.controlsByName[key] = view;
+    [delegate addControlToLayout:view];
+  });
+  return (__bridge void *)view;
+}
+
+void window_set_sankey_chart_data(main__WindowInfo *info, const char *name, const char **sources, const char **targets, const double *values, int count) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSMutableArray<NSString *> *sArr = [NSMutableArray array];
+  NSMutableArray<NSString *> *tArr = [NSMutableArray array];
+  NSMutableArray<NSNumber *> *vArr = [NSMutableArray array];
+  for (int i = 0; i < count; i++) {
+    [sArr addObject:nsstring((sources && sources[i]) ? sources[i] : "Source")];
+    [tArr addObject:nsstring((targets && targets[i]) ? targets[i] : "Target")];
+    [vArr addObject:@(values ? values[i] : 10.0)];
+  }
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGSankeyChartView class]]) {
+      SGSankeyChartView *sk = (SGSankeyChartView *)v;
+      sk.sources = sArr;
+      sk.targets = tArr;
+      sk.values = vArr;
+      [sk setNeedsDisplay:YES];
+    }
+  });
+}
+
+// ============================================================================
+// 45. Studio Color Wheel & Vectorscope Harmonies (SGColorWheelView)
+// ============================================================================
+@interface SGColorWheelView : NSView
+@property (nonatomic, copy) NSString *selectedHex;
+@property (nonatomic, copy) NSString *harmonyMode;
+@property (nonatomic, assign) AppDelegate *appDelegate;
+@property (nonatomic, copy) NSString *controlName;
+@property (nonatomic, assign) void *winPtr;
+@end
+
+@implementation SGColorWheelView
+- (void)drawRect:(NSRect)dirtyRect {
+  [super drawRect:dirtyRect];
+  NSRect b = self.bounds;
+  if (b.size.width <= 10 || b.size.height <= 10) return;
+  AppDelegate *del = self.appDelegate;
+  NSColor *bg = del.currentCardBackgroundColor ?: [NSColor colorWithSRGBRed:0.04 green:0.05 blue:0.10 alpha:0.96];
+  NSColor *g1 = del.currentGlowColor ?: [NSColor cyanColor];
+
+  NSBezierPath *card = [NSBezierPath bezierPathWithRoundedRect:NSInsetRect(b, 1, 1) xRadius:12.0 yRadius:12.0];
+  [bg setFill];
+  [card fill];
+
+  NSPoint center = NSMakePoint(NSMidX(b), NSMidY(b) + 6.0);
+  CGFloat radius = MIN(b.size.width, b.size.height) * 0.36;
+
+  for (int deg = 0; deg < 360; deg += 10) {
+    NSBezierPath *wedge = [NSBezierPath bezierPath];
+    [wedge moveToPoint:center];
+    [wedge appendBezierPathWithArcWithCenter:center radius:radius startAngle:deg endAngle:deg + 11 clockwise:NO];
+    [wedge closePath];
+    [[NSColor colorWithHue:(deg / 360.0) saturation:0.88 brightness:0.96 alpha:0.88] setFill];
+    [wedge fill];
+  }
+
+  // Harmony Chord Triangle
+  [[NSColor whiteColor] setStroke];
+  NSBezierPath *tri = [NSBezierPath bezierPath];
+  for (int k = 0; k < 3; k++) {
+    double a = (k * 120.0 + 30.0) * M_PI / 180.0;
+    NSPoint p = NSMakePoint(center.x + cos(a) * radius * 0.78, center.y + sin(a) * radius * 0.78);
+    if (k == 0) [tri moveToPoint:p];
+    else [tri lineToPoint:p];
+  }
+  [tri closePath];
+  tri.lineWidth = 1.6;
+  [tri stroke];
+
+  NSString *lbl = [NSString stringWithFormat:@"🎨 %@ • %@", self.selectedHex, [self.harmonyMode uppercaseString]];
+  [lbl drawAtPoint:NSMakePoint(12, 8) withAttributes:@{
+    NSFontAttributeName: [NSFont monospacedSystemFontOfSize:9.5 weight:NSFontWeightBold],
+    NSForegroundColorAttributeName: [NSColor whiteColor]
+  }];
+
+  [[g1 colorWithAlphaComponent:0.50] setStroke];
+  card.lineWidth = 1.4;
+  [card stroke];
+}
+- (void)mouseDown:(NSEvent *)event {
+  NSArray<NSString *> *palette = @[@"#00F5D4", @"#FF2A85", @"#7C3AED", @"#38BDF8", @"#F59E0B", @"#10B981"];
+  NSUInteger idx = [palette indexOfObject:[self.selectedHex uppercaseString]];
+  self.selectedHex = palette[(idx == NSNotFound) ? 0 : ((idx + 1) % palette.count)];
+  window_play_sfx("neon_hover");
+  [self setNeedsDisplay:YES];
+  if (self.winPtr && self.controlName) {
+    vlang_dispatch_event(self.winPtr, [self.controlName UTF8String], "change", [self.selectedHex UTF8String]);
+  }
+}
+@end
+
+void *window_add_color_wheel_control(main__WindowInfo *info, const char *name, const char *selected_hex, const char *harmony_mode, int size) {
+  if (!info || !info->app_delegate) return NULL;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  int sz = size > 100 ? size : 175;
+  __block SGColorWheelView *view = nil;
+  sgRunOnMainSync(^{
+    view = [[SGColorWheelView alloc] initWithFrame:NSMakeRect(0, 0, sz, sz)];
+    view.selectedHex = nsstring(selected_hex ?: "#00F5D4");
+    view.harmonyMode = nsstring(harmony_mode ?: "TRIADIC");
+    view.appDelegate = delegate;
+    view.controlName = key;
+    view.winPtr = delegate.win_ptr;
+    [view setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [view.widthAnchor constraintGreaterThanOrEqualToConstant:sz].active = YES;
+    [view.heightAnchor constraintEqualToConstant:sz].active = YES;
+    delegate.controlsByName[key] = view;
+    [delegate addControlToLayout:view];
+  });
+  return (__bridge void *)view;
+}
+
+void window_set_color_wheel_hex(main__WindowInfo *info, const char *name, const char *selected_hex) {
+  if (!info || !info->app_delegate) return;
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  NSString *hStr = nsstring(selected_hex ?: "#00F5D4");
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGColorWheelView class]]) {
+      SGColorWheelView *cw = (SGColorWheelView *)v;
+      cw.selectedHex = hStr;
+      [cw setNeedsDisplay:YES];
+    }
+  });
+}
+
+const char *window_get_color_wheel_hex(main__WindowInfo *info, const char *name) {
+  if (!info || !info->app_delegate) return strdup("");
+  AppDelegate *delegate = (AppDelegate *)info->app_delegate;
+  NSString *key = sgNormKey(name);
+  __block NSString *res = @"";
+  sgRunOnMainSync(^{
+    NSView *v = delegate.controlsByName[key];
+    if ([v isKindOfClass:[SGColorWheelView class]]) {
+      res = [(SGColorWheelView *)v selectedHex] ?: @"";
+    }
+  });
+  return strdup([res UTF8String]);
+}
+
+
+
+
+
 
 
 

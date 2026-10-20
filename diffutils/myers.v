@@ -283,6 +283,7 @@ pub fn apply_patch(old_text string, patch string) !string {
 			return error('malformed hunk header: ${line}')
 		}
 		old_start, old_count := parse_range(parts[1][1..])!
+		_, new_count := parse_range(parts[2][1..])!
 		target := if old_count == 0 { old_start } else { old_start - 1 }
 		if target < pos || target > old.len {
 			return error('hunk out of order or out of range: ${line}')
@@ -292,9 +293,14 @@ pub fn apply_patch(old_text string, patch string) !string {
 			pos++
 		}
 		i++
+		mut rem_old := old_count
+		mut rem_new := new_count
 		for i < lines.len && !lines[i].starts_with('@@') {
 			l := lines[i]
-			if l.starts_with('---') || l.starts_with('+++') {
+			if rem_old <= 0 && rem_new <= 0 && (l.len == 0 || l[0] != `\\`) {
+				break
+			}
+			if (l.starts_with('--- ') || l.starts_with('+++ ')) && rem_old <= 0 && rem_new <= 0 {
 				break
 			}
 			if l.len == 0 || l[0] == ` ` || l[0] == `-` {
@@ -304,10 +310,13 @@ pub fn apply_patch(old_text string, patch string) !string {
 				}
 				if l.len == 0 || l[0] == ` ` {
 					out << body
+					rem_new--
 				}
+				rem_old--
 				pos++
 			} else if l[0] == `+` {
 				out << l[1..]
+				rem_new--
 			} else if l[0] != `\\` {
 				return error('unexpected patch line: ${l}')
 			}

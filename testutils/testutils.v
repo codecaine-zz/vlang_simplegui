@@ -1,5 +1,6 @@
 module testutils
 
+import math
 import os
 import rand
 
@@ -94,7 +95,7 @@ pub fn assert_contains(haystack string, needle string, msg ...string) {
 // assert_in_delta verifies that a floating point number is within delta of expected.
 pub fn assert_in_delta(actual f64, expected f64, delta f64, msg ...string) {
 	diff := if actual > expected { actual - expected } else { expected - actual }
-	if diff > delta {
+	if math.is_nan(actual) || math.is_nan(expected) || math.is_nan(delta) || diff > delta {
 		custom := if msg.len > 0 { ': ' + msg.join(' ') } else { '' }
 		panic('assertion failed${custom}\n  diff ${diff} exceeds delta ${delta} (actual: ${actual}, expected: ${expected})')
 	}

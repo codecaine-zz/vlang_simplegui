@@ -855,4 +855,16 @@ fn test_select_rows_paged() {
 	if _ := select_rows_paged(mut db, 'users', ['*'], '', [], 1, 10, 'id INVALID_DIR') {
 		panic('expected error on invalid order_by direction')
 	}
+
+	// Security: sanitize_sql_type must reject unbalanced double quotes and subquery keywords
+	if _ := sanitize_sql_type('TEXT "unclosed') {
+		panic('expected error on unclosed double quotes in sql_type')
+	}
+	if _ := sanitize_sql_type('TEXT DEFAULT (SELECT name FROM users)') {
+		panic('expected error on subquery keyword in sql_type')
+	}
+	if _ := sanitize_sql_type('TEXT DROP TABLE users') {
+		panic('expected error on DDL keyword in sql_type')
+	}
+	assert escape_string("a'b\x00c") == "a''bc"
 }

@@ -212,6 +212,16 @@ fn main() {
 			if is_mathjax { raw_args << '--mathjax' }
 			if theme != '' && theme != 'none' { raw_args << '--highlight-style=${theme}' }
 
+			is_binary_fmt := to_fmt in ['docx', 'epub', 'pptx']
+			tmp_out := if is_binary_fmt {
+				os.join_path(os.temp_dir(), 'pandoc_studio_out_${time.ticks()}.${to_fmt}')
+			} else {
+				''
+			}
+			if is_binary_fmt {
+				raw_args << ['-o', tmp_out]
+			}
+
 			raw_args << tmp_in
 
 			res := simplegui.exec_safe(pandoc, raw_args)
@@ -221,12 +231,23 @@ fn main() {
 				os.rm(tmp_in) or {}
 			}
 
-			win.run_on_main_thread(fn [res, elapsed_ms, from_fmt, to_fmt] (mut win_main simplegui.SimpleWindow) {
+			mut final_output := res.output
+			mut out_bytes := final_output.len
+			if is_binary_fmt && res.exit_code == 0 && os.exists(tmp_out) {
+				sz := os.file_size(tmp_out)
+				out_bytes = int(sz)
+				final_output = '✅ Binary ${to_fmt.to_upper()} document generated successfully!\n' +
+					'📦 Temporary Package: ${tmp_out}\n' +
+					'📏 File Size: ${sz} bytes (${f64(sz) / 1024.0:.2f} KB)\n\n' +
+					'Tip: Use "⚡ Publish File on Disk (PDF/Docx/EPUB)..." to save directly to your chosen destination path.'
+				os.rm(tmp_out) or {}
+			}
+
+			win.run_on_main_thread(fn [res, final_output, out_bytes, elapsed_ms, from_fmt, to_fmt] (mut win_main simplegui.SimpleWindow) {
 				if res.exit_code == 0 {
-					out_str := res.output
-					win_main.set('txt_output_data', out_str)
+					win_main.set('txt_output_data', final_output)
 					win_main.set('lbl_stats',
-						'📊 Stats: SUCCESS  |  ${from_fmt} ➔ ${to_fmt}  |  Out Size: ${out_str.len} bytes  |  Duration: ${elapsed_ms} ms')
+						'📊 Stats: SUCCESS  |  ${from_fmt} ➔ ${to_fmt}  |  Out Size: ${out_bytes} bytes  |  Duration: ${elapsed_ms} ms')
 					win_main.set_status('Converted ${from_fmt} to ${to_fmt} in ${elapsed_ms} ms.')
 					win_main.toast('Document converted in ${elapsed_ms} ms!')
 				} else {
@@ -344,7 +365,7 @@ fn main() {
 		is_toc := w.get('chk_toc') == 'true'
 		is_num_sec := w.get('chk_number_sec') == 'true'
 
-		mut args := [pandoc, '"${in_path}"', '-o "${out_path}"']
+		mut args := [in_path, '-o', out_path]
 		if is_standalone { args << '-s' }
 		if is_toc { args << '--toc' }
 		if is_num_sec { args << '-N' }
@@ -360,13 +381,12 @@ fn main() {
 			}
 		}
 
-		cmd := args.join(' ')
 		w.set_status('Publishing file directly with Pandoc...')
 		w.toast('⚡ Publishing file in background...')
 
-		go fn [mut w, cmd, out_path] () {
+		go fn [mut w, pandoc, args, out_path] () {
 			t0 := time.ticks()
-			res := os.execute(cmd)
+			res := simplegui.exec_safe(pandoc, args)
 			elapsed_ms := time.ticks() - t0
 
 			w.run_on_main_thread(fn [res, out_path, elapsed_ms] (mut win_main simplegui.SimpleWindow) {

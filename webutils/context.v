@@ -9,6 +9,7 @@ import crypto.sha256
 import crypto.rand
 import encoding.base64
 import json2
+import strconv
 import strings
 
 // Context carries one request and its response (like Express `req` + `res`).
@@ -131,16 +132,11 @@ pub fn (c &Context) query_or(name string, def string) string {
 // query_int parses a query parameter as an integer, returning `def` when
 // missing or malformed.
 pub fn (c &Context) query_int(name string, def int) int {
-	v := c.query(name).trim_space()
-	if v == '' {
+	raw := c.query(name).trim_space()
+	if raw == '' {
 		return def
 	}
-	for i, ch in v {
-		if !(ch.is_digit() || (i == 0 && (ch == `-` || ch == `+`))) {
-			return def
-		}
-	}
-	return v.int()
+	return strconv.atoi(raw) or { return def }
 }
 
 // query_values returns every value for a repeated query parameter (`?t=a&t=b`).
@@ -630,6 +626,7 @@ pub enum SameSite {
 	no_restriction // `SameSite=None` (forces Secure)
 }
 
+// CookieOptions configures attributes (`Path`, `Domain`, `Max-Age`, `Secure`, `HttpOnly`, `SameSite`) when setting an HTTP cookie.
 @[params]
 pub struct CookieOptions {
 pub:
@@ -647,7 +644,8 @@ fn valid_cookie_name(n string) bool {
 	}
 	for ch in n {
 		if ch <= 0x20 || ch >= 0x7f
-			|| ch in [`(`, `)`, `<`, `>`, `@`, `,`, `;`, `:`, `\\`, `"`, `/`, `[`, `]`, `?`, `=`, `{`, `}`] {
+			|| ch in [`(`, `)`, `<`, `>`, `@`, `,`, `;`, `:`, `\\`, `"`, `/`, `[`, `]`, `?`, `=`,
+				`{`, `}`] {
 			return false
 		}
 	}

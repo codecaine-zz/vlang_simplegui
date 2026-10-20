@@ -114,10 +114,10 @@ fn main() {
 				res := simplegui.exec_safe(whois_bin, [target])
 				output_str = res.output.trim_space()
 			} else if module_choice.starts_with('2.') || module_choice.contains('Geolocation') {
-				res := os.execute('curl -s "https://ipinfo.io/${target}/json"')
+				res := os.execute('curl -s ${simplegui.quote_arg('https://ipinfo.io/${target}/json')}')
 				output_str = res.output.trim_space()
 			} else if module_choice.starts_with('3.') || module_choice.contains('crt.sh') {
-				res := os.execute('curl -s "https://crt.sh/?q=%25.${target}&output=json"')
+				res := os.execute('curl -s ${simplegui.quote_arg('https://crt.sh/?q=%25.${target}&output=json')}')
 				if res.output.trim_space() != '' && !res.output.contains('html') {
 					output_str = res.output.trim_space()
 				} else {
@@ -125,16 +125,49 @@ fn main() {
 				}
 			} else if module_choice.starts_with('4.') || module_choice.contains('Headers') {
 				url := if target.starts_with('http') { target } else { 'https://' + target }
-				res := os.execute('curl -s -I -L --max-time 10 "${url}"')
+				res := os.execute('curl -s -I -L --max-time 10 ${simplegui.quote_arg(url)}')
 				output_str = res.output.trim_space()
 			} else if module_choice.starts_with('5.') || module_choice.contains('Robots') {
 				url := if target.starts_with('http') { target } else { 'https://' + target }
-				res := os.execute('curl -s --max-time 10 "${url}/robots.txt"')
+				res := os.execute('curl -s --max-time 10 ${simplegui.quote_arg('${url}/robots.txt')}')
 				output_str = if res.output.trim_space() != '' {
 					res.output.trim_space()
 				} else {
 					'No robots.txt found or unreachable.'
 				}
+			} else if module_choice.starts_with('6.') || module_choice.contains('Email') {
+				host := target.replace('https://', '').replace('http://', '').all_before('/')
+				mx_res := os.execute('dig +short ${simplegui.quote_arg(host)} MX')
+				txt_res := os.execute('dig +short ${simplegui.quote_arg(host)} TXT')
+				dmarc_res := os.execute('dig +short ${simplegui.quote_arg('_dmarc.${host}')} TXT')
+				sec_res := os.execute('curl -s -L --max-time 8 ${simplegui.quote_arg('https://${host}/.well-known/security.txt')}')
+				mut sections := []string{}
+				sections << '=== PUBLIC EMAIL & METADATA FOOTPRINT: ${host} ==='
+				sections << '\n[1] Mail Exchange (MX) Servers:\n' +
+					if mx_res.output.trim_space() != '' {
+					mx_res.output.trim_space()
+				} else {
+					'(none)'
+				}
+				sections << '\n[2] Domain TXT & SPF Records:\n' +
+					if txt_res.output.trim_space() != '' {
+					txt_res.output.trim_space()
+				} else {
+					'(none)'
+				}
+				sections << '\n[3] DMARC Policy (_dmarc.${host}):\n' +
+					if dmarc_res.output.trim_space() != '' {
+					dmarc_res.output.trim_space()
+				} else {
+					'(none)'
+				}
+				sections << '\n[4] Security Contact Metadata (/.well-known/security.txt):\n' +
+					if sec_res.output.trim_space() != '' && !sec_res.output.contains('<html') {
+					sec_res.output.trim_space()
+				} else {
+					'(no security.txt published)'
+				}
+				output_str = sections.join('\n')
 			} else {
 				res := simplegui.exec_safe(whois_bin, [target])
 				output_str = res.output.trim_space()

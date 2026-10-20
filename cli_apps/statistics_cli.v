@@ -1,6 +1,22 @@
 module main
 
+import strconv
 import simplecli
+
+fn parse_dataset_numbers(raw string) []f64 {
+	mut nums := []f64{}
+	normalized := raw.replace(',', ' ').replace('\n', ' ').replace('\r', ' ').replace('\t',
+		' ')
+	for part in normalized.split(' ') {
+		clean := part.trim_space()
+		if clean.len == 0 {
+			continue
+		}
+		val := strconv.atof64(clean) or { continue }
+		nums << val
+	}
+	return nums
+}
 
 fn main() {
 	mut app := simplecli.new_app('statistics-cli', '1.0.0')
@@ -24,19 +40,14 @@ fn main() {
 	file_path := app.get_flag_string('file')
 
 	mut numbers := []f64{}
-	if file_path.len > 0 && app.file_exists(file_path) {
-		lines := app.read_file(file_path).split_into_lines()
-		for l in lines {
-			n := l.trim_space().f64()
-			if n != 0.0 || l.trim_space() == '0' {
-				numbers << n
-			}
+	if file_path.len > 0 {
+		if !app.file_exists(file_path) {
+			app.error('Input file not found: ${file_path}')
+			return
 		}
+		numbers = parse_dataset_numbers(app.read_file(file_path))
 	} else {
-		parts := data_str.split(',')
-		for p in parts {
-			numbers << p.trim_space().f64()
-		}
+		numbers = parse_dataset_numbers(data_str)
 	}
 
 	if numbers.len == 0 {
@@ -77,9 +88,10 @@ fn display_stats(mut app simplecli.SimpleCli, data []f64) {
 fn run_interactive(mut app simplecli.SimpleCli) {
 	app.panel('Statistics REPL', 'Input numbers to calculate central tendency and dispersion.')
 	input := app.prompt('Enter comma-separated numbers', '12.5, 45.2, 88.0, 102.4, 33.1, 74.9')
-	mut nums := []f64{}
-	for p in input.split(',') {
-		nums << p.trim_space().f64()
+	nums := parse_dataset_numbers(input)
+	if nums.len == 0 {
+		app.error('No valid numbers entered.')
+		return
 	}
 	display_stats(mut app, nums)
 }

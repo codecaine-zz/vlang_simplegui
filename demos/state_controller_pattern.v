@@ -18,7 +18,7 @@ fn main() {
 		.run()
 }
 
-fn on_volume_changed(mut win simplegui.SimpleWindow, value string) {
+fn on_volume_changed(mut win simplegui.SimpleWindow, _ string) {
 	// 1. Get mutated value
 	vol := win.get_value_int('volume_slider')
 
@@ -27,7 +27,7 @@ fn on_volume_changed(mut win simplegui.SimpleWindow, value string) {
 	win.set_value_int('prog_bar', vol)
 }
 
-fn on_mute_toggled(mut win simplegui.SimpleWindow, value string) {
+fn on_mute_toggled(mut win simplegui.SimpleWindow, _ string) {
 	muted := win.get_checked('mute_toggle')
 
 	if muted {

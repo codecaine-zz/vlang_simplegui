@@ -22,11 +22,17 @@ pub enum StateBackend {
 }
 
 // Standard default filenames and table names for state persistence
+// default_state_file is the default JSON filename used for persisting application state.
 pub const default_state_file = 'state.json'
+// default_sqlite_state_file is the default SQLite database filename used for persisting application state.
 pub const default_sqlite_state_file = 'state.db'
+// default_kv_file is the default JSON filename used for persisting key-value settings.
 pub const default_kv_file = 'settings.json'
+// default_sqlite_kv_file is the default SQLite database filename used for persisting key-value settings.
 pub const default_sqlite_kv_file = 'settings.db'
+// default_app_state_table is the default SQLite table name used for storing structured application state.
 pub const default_app_state_table = 'app_state'
+// default_kv_state_table is the default SQLite table name used for storing key-value settings.
 pub const default_kv_state_table = 'kv_state'
 
 // StateStoreConfig configures an AppStateStore or KeyValueState instance.
@@ -701,9 +707,15 @@ pub fn (kv KeyValueState) save() ! {
 		tbl := sanitize_table_name(kv.table_name)!
 		db.exec('CREATE TABLE IF NOT EXISTS "${tbl}" (key TEXT PRIMARY KEY, val TEXT);')!
 		db.exec('BEGIN TRANSACTION;')!
-		db.exec('DELETE FROM "${tbl}";')!
+		db.exec('DELETE FROM "${tbl}";') or {
+			db.exec('ROLLBACK;') or {}
+			return err
+		}
 		for k, v in kv.values {
-			db.exec_param_many('INSERT INTO "${tbl}" (key, val) VALUES (?, ?);', [k, v])!
+			db.exec_param_many('INSERT INTO "${tbl}" (key, val) VALUES (?, ?);', [k, v]) or {
+				db.exec('ROLLBACK;') or {}
+				return err
+			}
 		}
 		db.exec('COMMIT;')!
 		return

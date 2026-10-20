@@ -79,18 +79,27 @@ fn parse_field(field_str string, min_val int, max_val int) !CronField {
 		mut start := min_val
 		mut end := max_val
 		if base == '*' || base == '?' {
-			// full range
+			if min_val == 0 && max_val == 7 {
+				end = 6
+			}
 		} else if base.contains('-') {
 			lo, hi := base.split_once('-') or { base, '' }
 			start = parse_atom(lo, min_val, max_val)!
 			end = parse_atom(hi, min_val, max_val)!
+			if min_val == 0 && max_val == 7 && end == 0 && hi.to_upper() == 'SUN' && start > 0 {
+				end = 7
+			}
 			if start > end {
 				return error('invalid cron range bounds: ${trimmed}')
 			}
 		} else {
 			start = parse_atom(base, min_val, max_val)!
 			// `N/step` means N..max stepping; a bare `N` is a single value.
-			end = if trimmed.contains('/') { max_val } else { start }
+			end = if trimmed.contains('/') {
+				if min_val == 0 && max_val == 7 { 6 } else { max_val }
+			} else {
+				start
+			}
 		}
 		for v := start; v <= end; v += step {
 			seen[v] = true

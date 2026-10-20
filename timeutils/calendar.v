@@ -50,8 +50,13 @@ pub fn days_in_month(year int, month int) int {
 // length so Jan 31 + 1 month = Feb 28/29 (never rolls into March). Time of day is preserved.
 pub fn add_months(t time.Time, n int) time.Time {
 	total := t.year * 12 + (t.month - 1) + n
-	year := total / 12
-	month := total % 12 + 1
+	mut year := total / 12
+	mut rem := total % 12
+	if rem < 0 {
+		rem += 12
+		year--
+	}
+	month := rem + 1
 	day := if t.day > days_in_month(year, month) { days_in_month(year, month) } else { t.day }
 	return with_date(t, year, month, day)
 }

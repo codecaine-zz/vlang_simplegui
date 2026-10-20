@@ -91,7 +91,9 @@ fn run_backup(mut app simplecli.SimpleCli) {
 	}
 
 	app.step(1, 'Scanning files in source directory: ${src_dir}')
-	file_paths := if app.is_dir(src_dir) {
+	is_src_dir := app.is_dir(src_dir)
+	abs_src := os.real_path(src_dir)
+	file_paths := if is_src_dir {
 		app.list_files_recursive(src_dir, '')
 	} else {
 		[src_dir]
@@ -114,9 +116,19 @@ fn run_backup(mut app simplecli.SimpleCli) {
 		meta := app.get_file_metadata(f) or { continue }
 		sum := app.crypto_sha256(content)
 		b64_content := app.base64_encode(content)
+		abs_f := os.real_path(f)
+		rel_path := if is_src_dir {
+			if abs_f.starts_with(abs_src) {
+				abs_f[abs_src.len..].trim_left('/\\')
+			} else {
+				os.file_name(f)
+			}
+		} else {
+			os.file_name(f)
+		}
 
 		archive_files << ArchiveFile{
-			path:     f.replace(src_dir, '').trim_left('/')
+			path:     rel_path
 			size:     meta.size_bytes
 			checksum: sum
 			content:  b64_content
@@ -196,6 +208,11 @@ fn run_restore(mut app simplecli.SimpleCli) {
 
 	app.step(2, 'Restoring and verifying files into destination: ${dest_dir}')
 	for i, f in manifest.files {
+		if f.path.starts_with('/') || f.path.starts_with('\\') || f.path.contains('..')
+			|| f.path.contains_u8(0) {
+			app.error('Blocked unsafe archive path "${f.path}" during restore.')
+			continue
+		}
 		target_path := os.join_path(dest_dir, f.path)
 		raw_content := app.base64_decode(f.content)
 		current_sum := app.crypto_sha256(raw_content)
@@ -238,17 +255,33 @@ fn run_verify(mut app simplecli.SimpleCli) {
 	}
 
 	mut rows := [][]string{}
+	mut corrupt_count := 0
+	mut computed_total_bytes := u64(0)
 	for f in manifest.files {
 		raw := app.base64_decode(f.content)
 		current_sum := app.crypto_sha256(raw)
-		status := if current_sum == f.checksum {
+		computed_total_bytes += u64(raw.len)
+		status := if current_sum == f.checksum && u64(raw.len) == f.size {
 			app.green('✓ VALID')
 		} else {
+			corrupt_count++
 			app.red('✗ CORRUPT')
 		}
-		rows << [f.path, '${f.size} B', f.checksum[0..12] + '...', status]
+		short_sum := if f.checksum.len >= 12 { f.checksum[0..12] + '...' } else { f.checksum }
+		rows << [f.path, '${f.size} B', short_sum, status]
 	}
 
 	app.table(['Archived Path', 'Size', 'SHA-256 Checksum', 'Integrity Status'], rows)
-	app.success('Vault integrity verified: All ${manifest.file_count} files passed checksum checks.')
+
+	expected_manifest_sum := app.crypto_sha256('${manifest.files.len}:${computed_total_bytes}')
+	if manifest.checksum != expected_manifest_sum || manifest.file_count != manifest.files.len {
+		corrupt_count++
+		app.error('Manifest header checksum mismatch! Expected ${expected_manifest_sum}, got ${manifest.checksum}.')
+	}
+
+	if corrupt_count > 0 {
+		app.error('Vault integrity check FAILED: ${corrupt_count} integrity error(s) detected.')
+	} else {
+		app.success('Vault integrity verified: All ${manifest.file_count} files passed checksum checks.')
+	}
 }

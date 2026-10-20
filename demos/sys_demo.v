@@ -307,6 +307,7 @@ fn demo_files(mut w simplegui.SimpleWindow) {
 	w.delete_file(sym)
 	w.delete_file(file_c)
 	w.delete_file(file_a)
+	w.delete_file(atomic_file)
 	w.delete_file(lines_file)
 	w.delete_file(bytes_file)
 	w.delete_directory(tmp_dir) or {}

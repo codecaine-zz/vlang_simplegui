@@ -1774,7 +1774,7 @@ fn main() {
 	win.on_click('btn_prettify_json', fn [mut state, update_telemetry] (mut w simplegui.SimpleWindow) {
 		text := w.get('txt_editor').trim_space()
 		if text == '' { return }
-		res := simplegui.exec_safe_stdin('python3', ['-m', 'json.tool'], text)
+		res := simplegui.exec_safe_input('python3', ['-m', 'json.tool'], text)
 		if res.exit_code == 0 && res.output.trim_space() != '' {
 			w.set('txt_editor', res.output)
 			state.is_dirty = true
@@ -1789,7 +1789,7 @@ fn main() {
 	win.on_click('btn_minify_json', fn [mut state, update_telemetry] (mut w simplegui.SimpleWindow) {
 		text := w.get('txt_editor').trim_space()
 		if text == '' { return }
-		res := simplegui.exec_safe_stdin('python3', ['-c',
+		res := simplegui.exec_safe_input('python3', ['-c',
 			'import sys, json; print(json.dumps(json.loads(sys.stdin.read()), separators=(",", ":")))'], text)
 		if res.exit_code == 0 && res.output.trim_space() != '' {
 			w.set('txt_editor', res.output.trim_space())
@@ -2316,7 +2316,8 @@ fn main() {
 
 	win.add_context_menu_item('txt_editor', '📑 Prettify JSON', fn [mut state, update_telemetry] (mut w simplegui.SimpleWindow) {
 		text := w.get('txt_editor').trim_space()
-		res := simplegui.exec_safe_stdin('python3', ['-m', 'json.tool'], text)
+		if text == '' { return }
+		res := simplegui.exec_safe_input('python3', ['-m', 'json.tool'], text)
 		if res.exit_code == 0 && res.output != '' {
 			w.set('txt_editor', res.output)
 			state.is_dirty = true

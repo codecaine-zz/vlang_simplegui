@@ -100,11 +100,12 @@ pub const default_secret_keys = ['password', 'passwd', 'secret', 'token', 'api_k
 // redact_fields returns a copy with values of sensitive keys (case-insensitive,
 // substring match against `secret_keys`) replaced by "[REDACTED]".
 pub fn redact_fields(fields map[string]string, secret_keys []string) map[string]string {
+	lower_secrets := secret_keys.map(it.to_lower()).filter(it.len > 0)
 	mut out := map[string]string{}
 	for k, v in fields {
 		lk := k.to_lower()
 		mut hidden := false
-		for s in secret_keys {
+		for s in lower_secrets {
 			if lk.contains(s) {
 				hidden = true
 				break

@@ -5,17 +5,44 @@ Build real, native Cocoa desktop apps in [V](https://vlang.io) with a beginner-f
 ![Platform: macOS](https://img.shields.io/badge/platform-macOS-blue)
 ![Language: V](https://img.shields.io/badge/language-V-4f87c4)
 ![License: MIT](https://img.shields.io/badge/license-MIT-green)
-![Demos: 70+](https://img.shields.io/badge/demos-70%2B-orange)
+![Controls: 115+](https://img.shields.io/badge/controls-115%2B-00e5ff)
+![Themes: 50+ Curated & FX](https://img.shields.io/badge/themes-50%2B%20FX-f43f5e)
+![Demos: 140+](https://img.shields.io/badge/demos-140%2B-orange)
 ![RAD Studio: Visual Designer Included](https://img.shields.io/badge/RAD%20Designer-Included-8A2BE2)
 
 ![SimpleGUI — All Controls Demo (20 sections, every win.add_* control)](screenshots/all_controls_demo.png)
 
+---
+
+## 🧭 Master Documentation Hub — "Where Do I Find...?" (In Plain Words)
+
+Welcome! All documentation in this repository is organized so you can find anything in seconds, explained in plain words with copy-pasteable examples:
+
+| What You Are Looking For | Plain-English Description | Jump to Guide |
+| :--- | :--- | :--- |
+| **🚀 Quick Start & Beginner Glossary** | Never built a desktop app before? Learn what windows, controls, events, and layouts mean in plain words and run your first app in 60 seconds. | [Beginner Glossary](#beginners-core-concepts--jargon-free-glossary) • [Quick Start](#quick-start) |
+| **📘 Complete GUI Controls & Window API** | Every `win.add_*` control, chart, 4D shader, Smart House widget, dialog, layout container, and event callback with examples. | [**`docs/API.md`**](docs/API.md) |
+| **🎨 50 Built-In Themes & Custom Themes Vault** | 18 Classic Studio Themes, 12 Flagship FX Themes, 20 Hardware-Tiered Custom Themes (`low` · `medium` · `high` · `ultra`), and 18 US Holiday Themes with 1-click `CCFM1:` share codes. | [**`custom_themes/README.md`**](custom_themes/README.md) • [**Style Guide**](custom_themes/THEME_DESIGN_STYLE_GUIDE.md) |
+| **🔥 God-Mode, GOAT 4D Shaders & Qt 6 Smart House** | Live 4D Tesseract shaders, particle fireworks, hologram foil cards, 16-preset procedural PCM synth SFX, Qt 6 Smart House floorplan, and digital cockpit gauges. | [God-Mode Showcase Section](#god-mode-goat-4d-shaders-procedural-synth-audio--qt-6-smart-house-studio) • [`docs/API.md` §24](docs/API.md#24-god-mode-goat-4d-shaders-procedural-synth-audio--qt-6-smart-house--digital-cockpit-suite) |
+| **🎬 Video Tutorials & M4 Ultra 6K YouTube Short** | Narrated 9:16 Vertical YouTube Short (`0:57` & `1:14`) and 16:9 Widescreen Tour recorded on Apple Mac Studio M4 Ultra (`6K 120Hz`) with full chapter timestamps. | [Video Tutorials & Timestamps](#video-tutorials--m4-ultra-6k-120hz-youtube-short-with-timestamps) • [**`youtube_production/`**](youtube_production/VLANG_SIMPLEGUI_SHORT_TUTORIAL_NOTES.md) |
+| **🎨 Drag-and-Drop RAD Visual UI Designer** | Build forms visually like Delphi / Visual Basic (`tools/ui_designer.v` & `examples/rad_studio.v`), inspect properties, and generate V or HTML5 code in 1 click. | [RAD Visual UI Designer](#rad-visual-ui-designer--code-studio) • [`docs/API.md` §18](docs/API.md#18-rad-visual-ui-designer--code-generator-api) |
+| **🖥️ 47 Native Desktop Studio Workstations** | Ready-to-run GUI apps for FFmpeg, ImageMagick, JQ, SQLite, Docker, Homebrew, Nmap, Regex, Calculus, Statistics, and more. | [**`applications/README.md`**](applications/README.md) |
+| **⌨️ SimpleCLI & 49 Console Applications** | Build zero-GUI terminal tools with flags, tables, spinners, and prompts, or run any of the 49 included CLI tools. | [**`CLI_API.md`**](CLI_API.md) • [**`cli_apps/README.md`**](cli_apps/README.md) |
+| **🧰 45 Zero-Dependency Utility Modules (`vlang_utils`)** | Standalone V libraries for SQLite, Web Server (`webutils`), Crypto, JSON, Markdown, Stats, Caching, Graphs, Cron, JWT, and more. | [**`UTILS_API.md`**](UTILS_API.md) |
+| **📖 Complete V Programming Language Textbook** | Full beginner-to-advanced textbook covering the V language from variables and structs to concurrency and C interop. | [**V Language Textbook**](<docs/The V Programming Language: A Comprehensive Textbook Guide.md>) |
+| **🛠️ Contributing & Changelog** | How the codebase is structured, how to run tests, and a complete history of new features. | [**`CONTRIBUTING.md`**](CONTRIBUTING.md) • [**`CHANGELOG.md`**](CHANGELOG.md) |
+
+---
+
 ## Table of contents
 
+- [🧭 Master Documentation Hub ("Where Do I Find...?")](#-master-documentation-hub--where-do-i-find-in-plain-words)
 - [Overview](#overview)
 - [📘 Beginner's Core Concepts Glossary](#beginners-core-concepts--jargon-free-glossary)
 - [Features](#features)
 - [🎨 RAD Visual UI Designer & Code Studio](#rad-visual-ui-designer--code-studio)
+- [🔥 God-Mode, GOAT 4D Shaders, Procedural Synth Audio & Qt 6 Smart House Studio](#god-mode-goat-4d-shaders-procedural-synth-audio--qt-6-smart-house-studio)
+- [🎬 Video Tutorials & M4 Ultra 6K 120Hz YouTube Short (With Timestamps)](#video-tutorials--m4-ultra-6k-120hz-youtube-short-with-timestamps)
 - [Platform Support Matrix](#platform-support-matrix)
 - [Installation](#installation)
 - [Quick start](#quick-start)
@@ -42,14 +69,16 @@ Build real, native Cocoa desktop apps in [V](https://vlang.io) with a beginner-f
 
 SimpleGUI makes building desktop software on macOS effortless and enjoyable for beginners and experienced developers alike. It combines:
 
-- **Lightweight V Code**: Write clean, concise code in [V](https://vlang.io) without heavy frameworks or bloated web views.
+- **Lightweight V Code**: Write clean, concise code in [V](https://vlang.io) without heavy frameworks or bloated dependencies.
 - **Native macOS Cocoa Bridge**: Displays real, native Mac windows, buttons, text fields, and menus that match the macOS operating system seamlessly.
 - **Beginner-Friendly API**: Add named controls, read/write input values, and attach click or change events in just a few lines of code.
-- **🎨 Built-in Drag & Drop Visual UI Designer**: Design forms visually with a Delphi/VB/Lazarus-style WYSIWYG studio (`v run tools/ui_designer.v`), complete with an Object Inspector, property search filter, multi-column grid auto-layout, undo/redo history, 10+ layout presets, and 1-click V source code & HTML generation.
+- **🎨 Built-in Drag & Drop Visual UI Designer**: Design forms visually with a Delphi/VB/Lazarus-style WYSIWYG studio (`v run tools/ui_designer.v` or `v run examples/rad_studio.v`), complete with an Object Inspector, property search filter, multi-column grid auto-layout, undo/redo history, 17 layout presets, and 1-click V source code & HTML5 generation.
 
 The goal is to provide an intuitive, event-driven GUI framework similar to classic tools like Delphi, Visual Basic, or Python UI libraries — while delivering the lightning-fast performance of compiled native software.
 
 ---
+
+<a id="beginners-core-concepts--jargon-free-glossary"></a>
 
 ## 📘 Beginner's Core Concepts & Jargon-Free Glossary
 
@@ -77,13 +106,18 @@ If you are new to programming or desktop app creation, here are simple definitio
   - Flexbox containers (`win.begin_flex_box` / `win.end_flex_box` and `win.flex_box(...)`) supporting `row`/`column` directions, main-axis justification (`start`, `center`, `end`, `space_between`, `space_around`, `fill`), and cross-axis alignment (`start`, `center`, `end`, `stretch`).
   - Native Cocoa `containerStack` backend supporting arbitrary nested container hierarchies (Grid inside Flexbox inside Cards).
   - Explicit control alignment modifiers (`.align_left()`, `.align_center()`, `.align_right()`, `.align_top()`, `.align_bottom()`) and fill expansion (`.expand_fill()`).
-- **40+ Native macOS Controls**:
+- **115+ Native macOS, Super & God-Mode Controls**:
   - **Standard Controls**: Labels, text inputs, password fields, scrollable text areas, push buttons, checkboxes, radio groups, dropdowns, segmented controls, search fields, sliders, steppers, progress bars, and image boxes.
-  - **Rich macOS Widgets**: `NSComboBox` (editable combo box with suggestions), `NSLevelIndicator` & Star Ratings, `NSTokenField` (bubble tag editor), `NSPathControl` (interactive breadcrumb path navigator), and Activity Loading Spinners.
-  - **Developer & Dashboard Controls**: Breadcrumb bars, keyboard shortcut recorders, line & area charts, circular progress gauges, property inspector grids, color swatches/wells, editable spreadsheet-style grids, tree views, code editors, timeline event feeds, badges, avatar cards, stat cards, notice banners, split buttons, tag clouds, wizard steppers, status indicators, metric meters, system tray status items, collapsible sections, titlebar toolbar items, WebKit HTML preview panels, and drag-and-drop file drop zones.
-- **18 Curated Production Themes & Save State**:
-  - Light & Dark system palettes: `GitHub Dark` (Default), `Apple Dark`, `Apple Light`, `Deep Space OLED`, `Tokyo Night`, `Nord Arctic`, `Dracula Vampire`, `Cyberpunk Neon`, `Catppuccin Mocha`, `Monokai Pro`, `Gruvbox Dark`, `Cobalt Blue`, `Emerald Forest`, `Sunset Dusk`, `GitHub Light`, `Solarized Dark`, `Solarized Light`, and `Warm Paper & Ink`.
-  - **Cross-App Theme State Persistence**: User theme choices persist automatically to `~/.config/simplegui/theme.txt` and synchronize seamlessly across all applications on startup.
+  - **Rich macOS Widgets**: `NSComboBox` (editable combo box with suggestions), `NSLevelIndicator` & Star Ratings, `NSTokenField` (bubble tag editor), `NSPathControl` (interactive breadcrumb path navigator), `PDFView`, `AVPlayerView`, `MTKView`, `MKMapView`, `NSBrowser` (Miller columns), `NSCollectionView`, `NSDatePicker` calendar, custom drawing canvas, and Activity Loading Spinners.
+  - **Scientific, Financial & Audio Visualization Widgets**: Gantt charts (`add_gantt_chart`), Funnel charts (`add_funnel_chart`), Candlestick charts (`add_candlestick_chart`), Radar charts (`add_radar_chart`), Bullet charts (`add_bullet_chart`), Waterfall charts (`add_waterfall_chart`), Sankey energy/flow diagrams (`add_sankey_chart`), Donut gauges (`add_donut_chart`), Multi-band Equalizers (`add_equalizer`), Stereo VU Meters (`add_vu_meter`), 2D XY Pads (`add_xy_pad`), Interactive Piano / MIDI Keyboards (`add_piano_keyboard`), 16-Step Drum & Synth Matrix Sequencers (`add_step_sequencer`), and Interactive Stopwatches (`add_stopwatch`).
+  - **🔥 God-Mode, GOAT 4D Shaders, Particle Physics & Qt 6 Smart House / Cockpit Controls**: Real-time 4D/3D Shader Canvas (`add_shader_canvas` with 6 presets: `'tesseract_4d'`, `'plasma_reactor'`, `'synthwave_horizon'`, `'audio_spectrum_3d'`, `'black_hole_singularity'`, `'neural_plexus'`), Particle Physics & Fireworks Emitter (`add_particle_emitter`), 3D Hologram Foil Cards (`add_hologram_card`), Multi-Harmonic Waveform & Lissajous Synthesizer (`add_waveform_synthesizer`), Cyberpunk Chromatic Glitch Banners (`add_glitch_banner`), Sculpted 3D Folder Grids (`add_themed_folder_grid`), Qt 6 Smart House Domotics Floorplan (`add_smart_house_floorplan`), Qt 6 Smart Climate Thermostat (`add_smart_thermostat`), Qt 6 Automotive/Aerospace Digital Cockpit Cluster (`add_cockpit_cluster`), Visual Node Graph / Blueprint Shader Editor (`add_node_graph`), Real-Time 3D Wireframe/Shaded Mesh Viewport (`add_mesh_viewport_3d`), Sweeping Polar Radar / Sonar / RF Smith Scope (`add_polar_radar_sonar`), Digital Logic Analyzer (`add_logic_analyzer`), Sci-Fi Nixie Tube & Plasma Counter Display (`add_nixie_display`), and Studio Color Wheel & Vectorscope Harmonies (`add_color_wheel`).
+  - **🔊 Built-In Zero-File Procedural Sound Effects & Synth Engine**: Real-time 44.1 kHz 16-bit PCM synthesizer (`play_sfx`, `play_synth_tone`, `play_piano_note`) with 16 built-in presets (`'cyber_click'`, `'neon_hover'`, `'laser_pulse'`, `'power_up'`, `'supernova_boom'`, `'quantum_warp'`, `'success_chime'`, `'error_buzz'`, `'radar_ping'`, `'synth_chord'`, `'coin_pickup'`, `'mech_key'`, `'smart_home_chime'`, `'thermostat_tick'`, `'engine_rev'`, `'glitch_zap'`).
+  - **Developer, Productivity & Dashboard Controls**: Breadcrumb bars, keyboard shortcut recorders, line & area charts, circular progress gauges, property inspector grids, color swatches/wells, editable spreadsheet-style grids, tree views, code editors & macOS Code Studio, timeline event feeds, badges, avatar cards, avatar groups, stat cards, notice banners, split buttons, tag clouds, tag inputs, OTP inputs, command bars, Kanban boards, chat views, notification lists, pricing cards, comparison cards/tables, checkout steps, cron editors, regex testers, hex viewers, password strength meters, signature pads, number spinners, org charts, mini calendars, empty states, skeleton loaders, segmented progress bars, split views, popovers, folder tiles, wizard steppers, status indicators, metric meters, system tray status items, collapsible sections, titlebar toolbar items, WebKit HTML preview panels, and drag-and-drop file drop zones.
+- **50 Curated Production & Codecaine FX Themes & Save State**:
+  - **18 Classic SimpleGUI Studio Themes**: `GitHub Dark` (Default), `Apple Dark`, `Apple Light`, `Deep Space OLED`, `Tokyo Night`, `Nord Arctic`, `Dracula Vampire`, `Cyberpunk Neon`, `Catppuccin Mocha`, `Monokai Pro`, `Gruvbox Dark`, `Cobalt Blue`, `Emerald Forest`, `Sunset Dusk`, `GitHub Light`, `Solarized Dark`, `Solarized Light`, and `Warm Paper & Ink`.
+  - **12 Codecaine Flagship FX Themes**: `Prism Reactor`, `Orbital Ice`, `Ember Grid`, `Cyberpunk Hologram`, `Neon HUD`, `Quantum Obsidian`, `Deep Space`, `Liquid Metal`, `Titanium Aurora`, `Neo-Tokyo Dark`, `Aurora Glass`, and `Plasma Violet`.
+  - **20 Codecaine Master Designer Custom Themes** (tiered across `low`, `medium`, `high`, and `ultra` hardware profiles): `E-Ink Paper Daylight`, `Amber CRT Terminal`, `Nordic Slate Lite`, `Solarized Studio Lite`, `Midnight Carbon Matte`, `Mac Studio Frosted Pro`, `Emerald Botanical Glass`, `Tokyo Twilight Aero`, `Autumn Maple Warm Glass`, `Deep Ocean Bioluminescence`, `Arctic Aurora Borealis`, `Cyberpunk Edgerunner 2099`, `Winter Solstice Blizzard`, `Hollow Hallows Eve`, `Crimson Dragon Forge`, `Matrix Architect Construct`, `Tactical SpecOps NightVision`, `Nebula Supernova Raytrace`, `Quantum Tesseract 4D`, and `Omega Pantheon 3099 Singularity`.
+  - **Cross-App Theme State Persistence & CCFM Share Codes**: User theme choices persist automatically to `~/.config/simplegui/theme.txt`, with full support for WCAG 2.1 contrast auditing (`audit_theme_contrast`) and portable `CCFM1:` theme share codes (`export_ccfm_share_code` / `apply_ccfm_share_code`).
   - **Theme-driven control styling**: buttons, dropdowns, inputs, and date pickers restyle from the applied theme's background — a light theme renders light controls even when macOS is in system Dark Mode (and vice versa).
 - **High Dynamic Range (HDR) & Extended Dynamic Range (EDR) Architecture**:
   - **Hardware & Headroom Diagnostics**: Query display HDR capability (`is_hdr_supported`), live EDR headroom (`get_screen_edr_headroom`), maximum potential headroom, and Apple Reference mode headroom.
@@ -103,12 +137,12 @@ If you are new to programming or desktop app creation, here are simple definitio
   - Built-in ready-made validators for email, numeric input, URLs, IP addresses, phone numbers, alphanumeric string constraints, and numeric ranges.
 - **Neutralino-inspired OS & System APIs**:
   - Synchronous, asynchronous, and timeout shell process execution (`exec`, `exec_bg`, `exec_timeout`, `spawn_process`).
-  - Production reliability helpers: structured command metadata (`exec_result`, `exec_timeout_result`), retry/backoff (`exec_retry`), command dependency checks (`command_exists`, `require_command`), and readiness waits (`wait_for_file`, `wait_for_port`).
+  - Production reliability helpers: structured command metadata (`exec_result`, `exec_timeout_result`), retry/backoff (`exec_retry`), command dependency checks (`command_exists`, `require_command`, `resolve_tool`, `has_tool`, `verify_tools`), and readiness waits (`wait_for_file`, `wait_for_port`).
   - Environment variable accessors, system paths lookup (`home`, `temp`, `desktop`, `documents`, `downloads`, `cache`, `app_data`).
   - Hardware & system diagnostics: Processor model, CPU physical/logical cores, frequency, architecture, RAM memory, disk space, and disk usage stats (`DiskStats`).
   - Network tools: Local IP, public external IP, TCP ping reachability, DNS lookup, Wi-Fi SSID, network interface listing, MAC address, DNS servers, default gateway, and listening ports detection.
   - Resource monitoring: CPU utilization %, RSS memory usage per process, load average (1m/5m/15m), and kernel memory pressure.
-  - macOS App & Dock Integration: Bouncing dock icon for alerts, dock badges, native system notifications via AppleScript, volume/mute control, system accent color, dark mode toggle, and launch-at-login management.
+  - macOS App & Dock Integration: Bouncing dock icon for alerts, dock badges, native system notifications via AppleScript, volume/mute control, system accent color, dark mode toggle, launch-at-login management, and native `.app` / `.icns` bundle packaging (`create_app_bundle`, `generate_icns`).
   - Cross-window and external-app automation helpers: inspect/drive registered SimpleGUI windows and external macOS apps via Accessibility (AXUIElement) by PID, including enable/disable/show/hide, set text/value, flash highlights, and app frontmost/visibility controls.
 - **V Standard Library High-Level Wrappers**:
   - **HTTP & WebSockets**: Synchronous HTTP GET/POST and background WebSocket client thread wrappers.
@@ -130,7 +164,7 @@ If you are new to programming or desktop app creation, here are simple definitio
 - **Native Keyboard Shortcuts & Overlay Levels**:
   - `CMD + F` for full screen, `CMD + Q` to quit, custom shortcut recorder widget, and window always-on-top level control.
 - **RAD Visual UI Designer & Code Generator**:
-  - Delphi/VB/Lazarus-inspired drag-and-drop visual design studio (`v run tools/ui_designer.v`).
+  - Delphi/VB/Lazarus-inspired drag-and-drop visual design studio (`v run tools/ui_designer.v` and `v run examples/rad_studio.v`).
   - **⚡ Object Inspector Component Selector Dropdown**: Top dropdown selector listing all controls on the form (`id: ControlType ("Caption")`) for instant selection and canvas highlighting.
   - **Object Inspector Property Search & Filter**: Live keyword filter bar in Object Inspector to instantly search properties (`color`, `width`, `text`, `hover`, etc.).
   - **Auto-Generated Event Callbacks & Code Stubs**: 1-click RAD event generator (`on_<id>_click`, `on_<id>_change`, `on_<id>_hover`, `on_<id>_hover_exit`) and generated V callback function stubs.
@@ -141,9 +175,9 @@ If you are new to programming or desktop app creation, here are simple definitio
   - Full alignment and distribution toolbar (`Align Left`, `Center`, `Right`, `Top`, `Middle`, `Bottom`, `Center H Form`, `Center V Form`, `Distribute Horizontally/Vertically`, `Equal Width/Height`, `Fit Text Size`).
   - Smart snap alignment guide lines for instant pixel-perfect layout alignment.
   - Arrow key nudge controls (`1px`, or `8px` with `Shift`).
-  - 25+ Supported component types: buttons, labels, inputs, password fields, textareas, checkboxes, switches, sliders, progress indicators, panel boxes, radio buttons, separators, status badges, search inputs, data grids, color wells, date pickers, metric cards, alert banners, circular progress dials, code views, drop zones, rating stars, steppers, and token fields.
-  - 10 Pre-loaded layout presets: Customer Registration, Auth Login, KPI Dashboard, Settings Studio, Checkout, Enterprise Data Grid CRUD Manager, Support Ticket Reporter, REST API Client Tester, Audio Media Player, and User Profile.
-  - One-click V source code generator producing clean `simplegui` code with event handler callback stubs.
+  - 70+ Supported component types including standard inputs, charts, 4D shaders, particle emitters, hologram foil cards, waveform synthesizers, and Qt 6 Smart House / Digital Cockpit widgets.
+  - 17 Pre-loaded layout presets: Customer Registration, Auth Login, KPI Dashboard, Settings Studio, Checkout, Enterprise Data Grid CRUD Manager, Support Ticket Reporter, REST API Client Tester, Audio Media Player, User Profile, DevOps Cluster Monitor, AI Prompt Studio, Pro Audio Mastering Studio, Enterprise CRM Pipeline, Node VFX Compositor, **Qt 6 Smart House Domotics Studio**, and **God-Mode GOAT VFX Studio**.
+  - One-click V source code generator producing clean `simplegui` or `webview` V code with event handler callback stubs.
   - Import / Export JSON layout specs, live V runtime state sync (`syncSpecToV()`), and launch live native preview test windows (`launch_preview_window`) executing click, hover, hover exit, and change callbacks.
 - **RAD Code Explorer & Live Previewer Studio**:
   - Interactive V code studio & file explorer (`v run tools/vlang_simple_gui_previewer.v`), buildable as a standalone macOS `.app` bundle via `v run scripts/build_previewer.vsh`.
@@ -175,19 +209,26 @@ For app code, the grid helpers are intentionally ergonomic:
 
 ---
 
+<a id="rad-visual-ui-designer--code-studio"></a>
+
 ## 🎨 RAD Visual UI Designer & Code Studio
 
-SimpleGUI includes a dedicated, Delphi & Visual Basic-inspired **Visual UI Designer Studio** (`tools/ui_designer.v`) and **RAD Code Explorer & Live Previewer** (`tools/vlang_simple_gui_previewer.v`). Design forms visually, drag and drop native controls, configure properties with live search, test run interactive windows, and export production-ready V source code in seconds.
+SimpleGUI includes a dedicated, Delphi & Visual Basic-inspired **Visual UI Designer Studio** (`tools/ui_designer.v`), an integrated **WebView RAD Studio IDE** (`examples/rad_studio.v`), and a **RAD Code Explorer & Live Previewer** (`tools/vlang_simple_gui_previewer.v`). Design forms visually, drag and drop native controls, configure properties with live search, test run interactive windows, and export production-ready V source code in seconds.
 
 ![SimpleGUI RAD Visual UI Designer Studio](screenshots/ui_designer.png)
+
+![SimpleGUI WebView RAD Studio GOAT VFX IDE](screenshots/rad_studio_goat_vfx.png)
 
 ### Launching the Designer Studio
 
 Run the visual designer directly with the V compiler:
 
 ```bash
-# Launch the Delphi/VB-inspired RAD Visual UI Designer
+# Launch the Delphi/VB-inspired Native RAD Visual UI Designer
 v run tools/ui_designer.v
+
+# Launch the Integrated WebView RAD Studio IDE (with 5 Tabs, 4D Shaders, Smart House & WebAudio Synth)
+v run examples/rad_studio.v
 
 # Or launch the interactive V Code Explorer & Live Previewer
 v run tools/vlang_simple_gui_previewer.v
@@ -195,7 +236,7 @@ v run tools/vlang_simple_gui_previewer.v
 
 ### Core Designer Features & Capabilities
 
-- **🎨 Drag & Drop WYSIWYG Canvas**: Place and position 25+ native macOS controls directly on the canvas — buttons, inputs, password fields, textareas, checkboxes, switches, sliders, progress dials, color wells, date pickers, editable data grids, tree views, code views, rating stars, steppers, token fields, and file drop zones.
+- **🎨 Drag & Drop WYSIWYG Canvas**: Place and position 70+ native macOS and God-Mode controls directly on the canvas — buttons, inputs, password fields, textareas, checkboxes, switches, sliders, progress dials, color wells, date pickers, editable data grids, tree views, code views, rating stars, steppers, token fields, 4D shader canvases, particle emitters, and Smart House floorplans.
 - **⚡ Object Inspector & Instant Property Search**:
   - **Component Selector Dropdown**: Top dropdown selector (`id: ControlType ("Caption")`) for instant selection and canvas highlighting.
   - **Property Filter Bar**: Live keyword search to filter properties (`color`, `width`, `text`, `hover`, `font`, etc.).
@@ -204,9 +245,82 @@ v run tools/vlang_simple_gui_previewer.v
 - **📐 Layout & Distribution Toolbar**: 1-click alignment (`Align Left`, `Center`, `Right`, `Top`, `Middle`, `Bottom`, `Center H Form`, `Center V Form`, `Distribute Horizontally/Vertically`, `Equal Width/Height`, `Fit Text Size`) with smart snap alignment guide lines.
 - **⚡ 1-Click RAD Event Generator & V Code Stubs**: Automatically generates clean event handlers (`on_<id>_click`, `on_<id>_change`, `on_<id>_hover`, `on_<id>_hover_exit`) and idiomatic `simplegui` V code ready to copy to the clipboard or save into a `.v` file.
 - **▶️ Live Interactive Test Run**: Click **"Test Run Form"** (`tb_run`) to instantly spin up a live native Cocoa window executing your form layout and callbacks in real time.
-- **📋 10+ Pre-Loaded Layout Presets**: Instant starter templates for Customer Registration, Auth Login, KPI Dashboard, Settings Studio, Checkout, Data Grid CRUD Manager, Support Ticket Reporter, REST API Client Tester, Audio Player, and User Profile.
+- **📋 17 Pre-Loaded Layout Presets**: Instant starter templates for Customer Registration, Auth Login, KPI Dashboard, Settings Studio, Checkout, Data Grid CRUD Manager, Support Ticket Reporter, REST API Client Tester, Audio Player, User Profile, DevOps Cluster Monitor, AI Prompt Studio, Pro Audio Mastering Studio, Enterprise CRM Pipeline, Node VFX Compositor, **Qt 6 Smart House Domotics**, and **God-Mode GOAT VFX Studio**.
 - **↺ Undo / Redo History**: Full `Cmd+Z` and `Cmd+Shift+Z` state history engine.
-- **🌐 Standalone HTML5/CSS Web Export**: 1-click export of form layouts to clean HTML5 and CSS for multi-platform preview and web embedding.
+- **🌐 Standalone HTML5/CSS/WebAudio Export**: 1-click export of form layouts (`win.export_webview_app_html`) to self-contained HTML5, CSS, and WebAudio apps.
+
+---
+
+<a id="god-mode-goat-4d-shaders-procedural-synth-audio--qt-6-smart-house-studio"></a>
+
+## 🔥 God-Mode, GOAT 4D Shaders, Procedural Synth Audio & Qt 6 Smart House Studio
+
+SimpleGUI ships with 21 next-generation visual and audio controls in [`controls.v`](controls.v) (documented in plain words in [`docs/API.md` §24](docs/API.md#24-god-mode-goat-4d-shaders-procedural-synth-audio--qt-6-smart-house--digital-cockpit-suite)):
+
+- **🌌 4D/3D Mathematical Shader Canvas (`add_shader_canvas`)**: 6 real-time animated presets (`'tesseract_4d'`, `'plasma_reactor'`, `'synthwave_horizon'`, `'audio_spectrum_3d'`, `'black_hole_singularity'`, `'neural_plexus'`).
+- **🎆 Particle Physics & Fireworks Emitter (`add_particle_emitter`)**: Interactive particle bursts across `'supernova_burst'`, `'vortex_galaxy'`, `'cyber_sparks'`, and `'quantum_fountain'`.
+- **🏠 Qt 6 Smart House Domotics & Climate (`add_smart_house_floorplan`, `add_smart_thermostat`)**: Interactive 6-room architectural blueprint with live lighting, HVAC, solar/grid/EV power telemetry, and rotary thermostat dial.
+- **🏎️ Qt 6 Automotive & Aerospace Digital Cockpit (`add_cockpit_cluster`)**: Twin speedometer + tachometer arcs, gear indicator, battery SoC, G-force meter, and ADAS lane HUD.
+- **🎹 Pro Audio & Node Studio (`add_piano_keyboard`, `add_step_sequencer`, `add_node_graph`, `add_waveform_synthesizer`)**: Playable multi-octave MIDI piano, 4×16 drum/synth step sequencer, Bezier node graph editor, and Lissajous/FM synthesizer scope.
+- **🛰️ Scientific & Retro-Futuristic Instrumentation (`add_mesh_viewport_3d`, `add_polar_radar_sonar`, `add_logic_analyzer`, `add_nixie_display`, `add_sankey_chart`, `add_color_wheel`)**: 3D wireframe/shaded mesh viewport, sweeping polar radar/sonar/Smith chart, SPI/I2C logic timing scope, glowing amber Nixie tube counter, Sankey energy diagram, and studio vectorscope color wheel.
+- **🔊 Zero-File Procedural PCM Audio Synthesizer (`play_sfx`, `play_synth_tone`, `play_piano_note`)**: Real-time 44.1 kHz 16-bit PCM sound generator with 16 built-in presets (`'cyber_click'`, `'power_up'`, `'supernova_boom'`, `'radar_ping'`, `'smart_home_chime'`, etc.).
+
+```bash
+# Run the Qt 6 Smart House, Digital Cockpit, Pro Audio & 3D Engineering Showcase
+v run examples/god_mode_showcase.v
+
+# Run the Codecaine 50 FX Themes, 4D Tesseract & Particle Physics Showcase
+v run examples/codecaine_fx_themes_showcase.v
+
+# Run the Integrated WebView RAD Studio IDE + GOAT VFX Showcase
+v run examples/rad_studio.v
+```
+
+![God-Mode Qt 6 Smart House, Digital Cockpit & 3D Mesh Showcase](screenshots/god_mode_smart_house_showcase.png)
+
+![God-Mode Cyberpunk Cockpit & Pro Audio Sequencer](screenshots/god_mode_cyberpunk_cockpit.png)
+
+![GOAT Omega Pantheon 4D Tesseract Shader Showcase](screenshots/goat_omega_tesseract.png)
+
+![GOAT Prism Plasma Reactor & Particle Physics Showcase](screenshots/goat_prism_plasma_reactor.png)
+
+---
+
+<a id="video-tutorials--m4-ultra-6k-120hz-youtube-short-with-timestamps"></a>
+
+## 🎬 Video Tutorials & M4 Ultra 6K 120Hz YouTube Short (With Timestamps)
+
+All narrated video tours and YouTube Shorts are stored in [`youtube_production/`](youtube_production/) and can be regenerated at any time via [`scripts/build_youtube_short.ts`](scripts/build_youtube_short.ts) (`bun scripts/build_youtube_short.ts`). Every video features broadcast-mastered `-16 LUFS` neural narration mixed with authentic **SimpleGUI 44.1 kHz 16-bit procedural PCM sound effects** (`power_up`, `smart_home_chime`, `engine_rev`, `supernova_boom`, `synth_chord`, `quantum_warp`) and is marked with our reference workstation:
+
+> **Workstation Hardware Mark:** `🍎 Mac Studio M4 Ultra · 32c CPU · 80c GPU · 192GB Unified · Pro Display XDR 6K 120Hz`
+
+### 📼 Included Video Files & Upload Notes
+
+| Video / Companion File | Format & Resolution | Duration | Description |
+| :--- | :--- | :--- | :--- |
+| [**`youtube_production/vlang_simplegui_youtube_short_under60s_9x16.mp4`**](youtube_production/vlang_simplegui_youtube_short_under60s_9x16.mp4) | Vertical `9:16` (`1080×1920` @ 30fps) | **`0:57`** (`<60s`) | Strict under-60-second Vertical YouTube Short hitting all 6 major points at high velocity. |
+| [**`youtube_production/vlang_simplegui_youtube_short_9x16.mp4`**](youtube_production/vlang_simplegui_youtube_short_9x16.mp4) | Vertical `9:16` (`1080×1920` @ 30fps) | **`1:14`** | Standard-pace Vertical YouTube Short with full uncropped Retina windows and dual callout cards. |
+| [**`youtube_production/vlang_simplegui_short_tutorial.mp4`**](youtube_production/vlang_simplegui_short_tutorial.mp4) | Widescreen `16:9` (`1920×1080` @ 30fps) | **`1:14`** | Desktop Widescreen Short Tour with primary + companion Retina viewports and hardware lower-third strip. |
+| [**`youtube_production/VLANG_SIMPLEGUI_SHORT_TUTORIAL_NOTES.md`**](youtube_production/VLANG_SIMPLEGUI_SHORT_TUTORIAL_NOTES.md) | Markdown Guide | — | Ready-to-copy YouTube Title, Description, Workstation Specs, Chapters, and Tags. |
+
+### ⏱️ Chapter Timestamps & Major Points Covered
+
+| Standard (`1:14`) | `<60s` Short (`0:57`) | Chapter Title | Key Controls, Shaders & Features Demonstrated | Built-In PCM SFX Cue |
+| :--- | :--- | :--- | :--- | :--- |
+| **`0:00`** | **`0:00`** | **Native Vlang SimpleGUI + Webview RAD Studio on M4 Ultra 6K** | 115+ Native macOS Cocoa & God-Mode controls, 20 control categories, Grid/Flexbox auto-layout, 50 FX themes, 140+ demos, and 47 desktop workstations on Apple Silicon M4 Ultra (`120Hz ProMotion`). | `power_up` + `synth_chord` |
+| **`0:12`** | **`0:09`** | **Qt 6 Smart House Domotics, 270° HVAC Thermostat & 3D CAD** | Interactive 6-room architectural floorplan (`add_smart_house_floorplan`) with live luminaire circuits & kW telemetry, 270° rotary climate dial (`add_smart_thermostat`), 3D wireframe house CAD viewport (`add_mesh_viewport_3d`), and Solar-to-Powerwall Sankey flow (`add_sankey_chart`). | `smart_home_chime` + `thermostat_tick` |
+| **`0:24`** | **`0:18`** | **Automotive & Aerospace Digital Cockpit, LiDAR Radar & Nixie Chrono** | Twin-dial 228 MPH speedometer + 7,600 RPM tachometer cluster (`add_cockpit_cluster`) with ADAS 3D lane corridor & G-force meter, sweeping Polar LiDAR Radar (`add_polar_radar_sonar`), 8-channel SPI/I2C Logic Analyzer (`add_logic_analyzer`), and Vacuum Nixie Tube Chrono (`add_nixie_display`). | `engine_rev` + `radar_ping` |
+| **`0:36`** | **`0:28`** | **GOAT 4D Tesseract Shaders, Particle Physics & 50 Ultra FX Themes** | 6 real-time mathematical shaders (`tesseract_4d`, `plasma_reactor`, `synthwave_horizon`, `audio_spectrum_3d`, `black_hole_singularity`, `neural_plexus`), 72-particle supernova bursts (`add_particle_emitter`), 3D iridescent hologram foil cards (`add_hologram_card`), 5-layer sculpted 3D folders (`add_themed_folder_grid`), and 1600-nit Display-P3 HDR/EDR. | `supernova_boom` |
+| **`0:49`** | **`0:37`** | **Built-In 16-Preset Procedural PCM Synth, MIDI Piano & 16-Step Sequencer** | Zero-dependency 44.1 kHz 16-bit PCM audio synthesizer (`play_sfx`, `play_synth_tone`, `play_piano_note`), playable 2-octave MIDI piano keyboard (`add_piano_keyboard`), 4×16 drum & synth matrix sequencer (`add_step_sequencer`), Bezier visual node graph (`add_node_graph`), and studio vectorscope color wheel (`add_color_wheel`). | `synth_chord` + `cyber_click` |
+| **`1:02`** | **`0:48`** | **Integrated `vlang_webview_rad_studio`, Drag & Drop IDE & 47 Workstations** | Visual WYSIWYG form designer (`examples/rad_studio.v` & `examples/webview_rad_studio.v`) with 70+ controls, 17 presets, and 1-click export to native V Cocoa or standalone HTML5/WebView apps, plus 47 studio workstations (FFmpeg, Docker, SQLite, Crypto, Media Hub, Task Manager) and 49 CLI tools. | `quantum_warp` + `success_chime` |
+
+### 📸 Video Tutorial Preview Frames (`9:16` Vertical & `16:9` Widescreen)
+
+| 9:16 Scene 2 — Qt 6 Smart House & 270° HVAC Dial | 9:16 Scene 3 — 228 MPH Cockpit & Polar LiDAR | 9:16 Scene 4 — GOAT 4D Tesseract & Supernova FX |
+| :---: | :---: | :---: |
+| ![9:16 Smart House](screenshots/yt_short_9x16_smart_house.png) | ![9:16 Digital Cockpit](screenshots/yt_short_9x16_cockpit.png) | ![9:16 4D Shaders](screenshots/yt_short_9x16_shaders.png) |
+
+![16:9 Widescreen Tour — Integrated vlang_webview_rad_studio & Drag-and-Drop RAD Designer](screenshots/yt_short_16x9_webview.png)
 
 ---
 
@@ -449,7 +563,7 @@ win.on_change('email', fn (mut win &simplegui.SimpleWindow, value string) {
 win.run()
 ```
 
-### 4. The Easiest Way to Build (The Golden Rules)
+### 5. The Easiest Way to Build (The Golden Rules)
 
 - **Always Configure Early**: Use `.configure(...)` right at the start to declare window geometry, paddings, and alignment spacing.
 - **Keep Event Callbacks Small**: Avoid global mutability. Read current values with `win.get_text()`, `win.get_checked()`, or `win.get_value_int()` and update the UI directly.
@@ -1116,7 +1230,7 @@ v run scripts/capture_demos.vsh beginner_demo
 
 ## Demos
 
-The [demos/](demos/) folder contains 70+ runnable examples covering every control, layout style, and stdlib integration. Run any demo with:
+The [demos/](demos/) folder contains 138 runnable examples covering every control, layout style, stdlib integration, and utility module. Run any demo with:
 
 ```bash
 v run demos/<demo_name>.v
@@ -1138,6 +1252,7 @@ v run .
 | [beginner_demo.v](demos/beginner_demo.v)                       | Beginner-friendly signup form and profile builder                           |
 | [vertical_stack_starter.v](demos/vertical_stack_starter.v)     | Best-practice template for vertical stack forms                             |
 | [grid_column_starter.v](demos/grid_column_starter.v)           | Best-practice template for horizontal row layouts and events                |
+| [scroll_view_starter.v](demos/scroll_view_starter.v)           | Best-practice template for scrollable document and license views            |
 | [state_controller_pattern.v](demos/state_controller_pattern.v) | State manipulation and reactive controls pattern                            |
 | [stack_style.v](demos/stack_style.v)                           | Clean, vertical form stacking                                               |
 | [grid_style.v](demos/grid_style.v)                             | Side-by-side row-based grids                                                |
@@ -1149,7 +1264,10 @@ v run .
 | -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
 | [layout_vertical_stack.v](demos/layout_vertical_stack.v)                   | Linear vertical stacking, padding, spacing, dividers, and spacers                            |
 | [layout_horizontal_rows.v](demos/layout_horizontal_rows.v)                 | Side-by-side rows, spacers, action rows, and field rows                                      |
+| [labeled_control_rows_demo.v](demos/labeled_control_rows_demo.v)           | Labeled input, number, dropdown, slider, and checkbox rows (`add_labeled_*`)                 |
+| [tight_labels_demo.v](demos/tight_labels_demo.v)                           | Right-aligned labels and compact label-to-input spacing in grids                             |
 | [layout_form_sections.v](demos/layout_form_sections.v)                     | Semantic forms, section blocks, and form control validation                                  |
+| [form_color_theme_demo.v](demos/form_color_theme_demo.v)                   | Form section theming, color palettes, and live dark/light switching                          |
 | [layout_group_boxes.v](demos/layout_group_boxes.v)                         | Visual panel containment boxes                                                               |
 | [group_box_card_styling_demo.v](demos/group_box_card_styling_demo.v)       | Custom group box borders, stroke thickness, corner radii, background fills, and drop shadows  |
 | [layout_tabs.v](demos/layout_tabs.v)                                       | Interactive native tabs switching between multi-view panels                                  |
@@ -1157,24 +1275,36 @@ v run .
 | [layout_struct_reflection.v](demos/layout_struct_reflection.v)             | Auto-generating forms from structs using compile-time reflection                             |
 | [layout_responsive_constraints.v](demos/layout_responsive_constraints.v)   | Responsive auto-layout scaling vs fixed constraints                                          |
 | [layout_events_mini_demo.v](demos/layout_events_mini_demo.v)               | Compact showcase combining sections, rows, groups, and event bindings                        |
+| [flexbox_demo.v](demos/flexbox_demo.v)                                     | Flexbox direction, justify, and cross-axis alignment showcase                                |
 | [layout_advanced_grid_flex_demo.v](demos/layout_advanced_grid_flex_demo.v) | Multi-column grid forms, flexbox directions & distribution, alignment, and nested containers |
 
 ### Controls & widgets
 
-| Demo                                                                 | Description                                                                                                                                                                    |
-| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| [all_controls_demo.v](demos/all_controls_demo.v)                     | Comprehensive 20-section showcase of every `win.add_*` control in [docs/API.md](docs/API.md) — text, buttons, sliders, pickers, charts, grids, badges, stat cards, code editor, timeline, and more |
-| [cursor_demo.v](demos/cursor_demo.v)                                 | Window-wide and per-control cursor icon/size customization, mouse warping, and live mouse tracking                                                                             |
-| [developer_controls_demo.v](demos/developer_controls_demo.v)         | Breadcrumbs, shortcut recorders, charts, gauges, property grids, and log consoles                                                                                              |
-| [editable_grid_showcase_demo.v](demos/editable_grid_showcase_demo.v) | Editable grid workflow: selection, filtering, sorting, and programmatic cell access                                                                                            |
-| [spy_plus_plus_demo.v](demos/spy_plus_plus_demo.v)                   | Production Spy++-style inspector: target table + control tree, strict selector mode, value watch mode, health checks, action history, and JSON snapshot export                 |
-| [ext_spy_calc_check.v](demos/ext_spy_calc_check.v)                   | External Calculator accessibility probe: auto-opens Calculator, drives the UI with AXUIElement, and verifies button presses plus readback results                      |
-| [tree_view_demo.v](demos/tree_view_demo.v)                           | Hierarchical tree view                                                                                                                                                         |
-| [advanced_features_demo.v](demos/advanced_features_demo.v)           | Advanced typography and macOS APIs                                                                                                                                             |
-| [menu_demo.v](demos/menu_demo.v)                                     | Standard macOS application menus and text editing shortcuts                                                                                                                    |
-| [colors_demo.v](demos/colors_demo.v)                                 | Live custom colors styling sandbox for typography and backgrounds                                                                                                              |
-| [animation_demo.v](demos/animation_demo.v)                           | Animated control and window effects                                                                                                                                            |
-| [lorem_and_html_demo.v](demos/lorem_and_html_demo.v)                 | Placeholder text generation and HTML rendering                                                                                                                                 |
+| Demo                                                                         | Description                                                                                                                                                                    |
+| ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [all_controls_demo.v](demos/all_controls_demo.v)                             | Comprehensive 20-section showcase of every `win.add_*` control in [docs/API.md](docs/API.md) — text, buttons, sliders, pickers, charts, grids, badges, stat cards, code editor, timeline, and more |
+| [composite_demo.v](demos/composite_demo.v)                                   | High-level composite controls and grouped input patterns                                                                                                                       |
+| [native_macos_controls_demo.v](demos/native_macos_controls_demo.v)           | Native Cocoa controls: Miller columns (`NSBrowser`), `PDFView`, `AVPlayerView`, `MKMapView`, and `NSCollectionView`                                                            |
+| [new_apis_demo.v](demos/new_apis_demo.v)                                     | Extended control APIs, charts, super widgets, and macOS integration showcase                                                                                                   |
+| [hdr_demo.v](demos/hdr_demo.v)                                               | macOS High Dynamic Range (HDR / EDR) headroom, Metal `RGBA16Float` views, and `HDRGlowBoxView`                                                                                 |
+| [cursor_demo.v](demos/cursor_demo.v)                                         | Window-wide and per-control cursor icon/size customization, mouse warping, and live mouse tracking                                                                             |
+| [developer_controls_demo.v](demos/developer_controls_demo.v)                 | Breadcrumbs, shortcut recorders, charts, gauges, property grids, and log consoles                                                                                              |
+| [developer_tools_showcase_demo.v](demos/developer_tools_showcase_demo.v)     | Titlebar toolbar items, collapsible sections, system tray icons, and diagnostic tools                                                                                          |
+| [editable_grid_showcase_demo.v](demos/editable_grid_showcase_demo.v)         | Editable grid workflow: selection, filtering, sorting, and programmatic cell access                                                                                            |
+| [multi-column_table_data_grid_demo.v](demos/multi-column_table_data_grid_demo.v) | Side-by-side comparison of multi-column tables and editable data grids                                                                                                     |
+| [table_features_demo.v](demos/table_features_demo.v)                         | Multi-column table sorting, row filtering, CSV import/export, and cell manipulation                                                                                            |
+| [datetime_picker_demo.v](demos/datetime_picker_demo.v)                       | Native macOS date and time picker controls and formatting                                                                                                                      |
+| [dialogs_file_panels_demo.v](demos/dialogs_file_panels_demo.v)               | Modal alerts, confirmations, text prompts, choice dialogs, and open/save file panels                                                                                           |
+| [context_menus_demo.v](demos/context_menus_demo.v)                           | Per-control right-click context menus and dynamic menu item handlers                                                                                                           |
+| [token_field_ergonomics_demo.v](demos/token_field_ergonomics_demo.v)         | `NSTokenField` bubble tag editor and token array manipulation helpers                                                                                                          |
+| [spy_plus_plus_demo.v](demos/spy_plus_plus_demo.v)                           | Production Spy++-style inspector: target table + control tree, strict selector mode, value watch mode, health checks, action history, and JSON snapshot export                 |
+| [ext_spy_calc_check.v](demos/ext_spy_calc_check.v)                           | External Calculator accessibility probe: auto-opens Calculator, drives the UI with AXUIElement, and verifies button presses plus readback results                      |
+| [tree_view_demo.v](demos/tree_view_demo.v)                                   | Hierarchical tree view                                                                                                                                                         |
+| [advanced_features_demo.v](demos/advanced_features_demo.v)                   | Advanced typography and macOS APIs                                                                                                                                             |
+| [menu_demo.v](demos/menu_demo.v)                                             | Standard macOS application menus and text editing shortcuts                                                                                                                    |
+| [colors_demo.v](demos/colors_demo.v)                                         | Live custom colors styling sandbox for typography and backgrounds                                                                                                              |
+| [animation_demo.v](demos/animation_demo.v)                                   | Animated control and window effects                                                                                                                                            |
+| [lorem_and_html_demo.v](demos/lorem_and_html_demo.v)                         | Placeholder text generation and HTML rendering                                                                                                                                 |
 
 ### Complete example apps
 
@@ -1201,16 +1331,18 @@ v run .
 
 ### Developer experience & ergonomics
 
-| Demo                                                         | Description                                                                        |
-| ------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
-| [list_table_toolkit_demo.v](demos/list_table_toolkit_demo.v) | Live search filtering, sorting, reordering, CSV export/import, and validators      |
-| [features_demo.v](demos/features_demo.v)                     | Compile-time struct binding and automatic multi-column tables                      |
-| [configuration_demo.v](demos/configuration_demo.v)           | Fluent configuration using `WindowConfig`                                          |
-| [dirty_form_demo.v](demos/dirty_form_demo.v)                 | Live form dirty-tracking state and control validation callbacks                    |
-| [save_restore_demo.v](demos/save_restore_demo.v)             | One-call JSON settings persistence with unsaved-changes prompts                    |
-| [delphi_inspired_demo.v](demos/delphi_inspired_demo.v)       | Classic Delphi RAD tool look and event bindings                                    |
-| [events_demo.v](demos/events_demo.v)                         | Hover, focus, blur, and window resize event listeners                              |
-| [always_on_top_demo.v](demos/always_on_top_demo.v)           | Window z-axis float levels and the always-on-top API                               |
+| Demo                                                             | Description                                                                        |
+| ---------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| [list_table_toolkit_demo.v](demos/list_table_toolkit_demo.v)     | Live search filtering, sorting, reordering, CSV export/import, and validators      |
+| [features_demo.v](demos/features_demo.v)                         | Compile-time struct binding and automatic multi-column tables                      |
+| [configuration_demo.v](demos/configuration_demo.v)               | Fluent configuration using `WindowConfig`                                          |
+| [dirty_form_demo.v](demos/dirty_form_demo.v)                     | Live form dirty-tracking state and control validation callbacks                    |
+| [save_restore_demo.v](demos/save_restore_demo.v)                 | One-call JSON settings persistence with unsaved-changes prompts                    |
+| [settings_persistence_demo.v](demos/settings_persistence_demo.v) | Typed struct settings persistence and auto-save workflows                          |
+| [delphi_inspired_demo.v](demos/delphi_inspired_demo.v)           | Classic Delphi RAD tool look and event bindings                                    |
+| [events_demo.v](demos/events_demo.v)                             | Hover, focus, blur, and window resize event listeners                              |
+| [event_handling_demo.v](demos/event_handling_demo.v)             | Comprehensive control, keyboard, and window lifecycle event handling               |
+| [always_on_top_demo.v](demos/always_on_top_demo.v)               | Window z-axis float levels and the always-on-top API                               |
 
 ### Networking & security
 
@@ -1236,6 +1368,29 @@ v run .
 | [macos_power_controls_demo.v](demos/macos_power_controls_demo.v)             | Global macOS theme/power/session controls with keep-awake guard status and safe confirmations                  |
 | [system_calls_demo.v](demos/system_calls_demo.v)                             | Shell process invocation, stdout routing, and folder monitoring                                                |
 | [benchmark_demo.v](demos/benchmark_demo.v)                                   | Wrapper operation latency benchmarks                                                                           |
+
+### Developer utility suite demos (45 standalone modules + runner)
+
+Run all 45 utility module demos sequentially with `[run_all_demos.v](demos/run_all_demos.v)` (`v run demos/run_all_demos.v`), or run any individual module demo:
+
+| Demo | Module | Demo | Module | Demo | Module |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| [demo_archiveutils.v](demos/demo_archiveutils.v) | `archiveutils` | [demo_graphutils.v](demos/demo_graphutils.v) | `graphutils` | [demo_sliceutils.v](demos/demo_sliceutils.v) | `sliceutils` |
+| [demo_asyncutils.v](demos/demo_asyncutils.v) | `asyncutils` | [demo_htmlutils.v](demos/demo_htmlutils.v) | `htmlutils` | [demo_sqlbuilder.v](demos/demo_sqlbuilder.v) | `sqlbuilder` |
+| [demo_bitutils.v](demos/demo_bitutils.v) | `bitutils` | [demo_httputils.v](demos/demo_httputils.v) | `httputils` | [demo_sqliteutils.v](demos/demo_sqliteutils.v) | `sqliteutils` |
+| [demo_cacheutils.v](demos/demo_cacheutils.v) | `cacheutils` | [demo_idutils.v](demos/demo_idutils.v) | `idutils` | [demo_stateutils.v](demos/demo_stateutils.v) | `stateutils` |
+| [demo_cliutils.v](demos/demo_cliutils.v) | `cliutils` | [demo_jsonutils.v](demos/demo_jsonutils.v) | `jsonutils` | [demo_statutils.v](demos/demo_statutils.v) | `statutils` |
+| [demo_colorutils.v](demos/demo_colorutils.v) | `colorutils` | [demo_jwtutils.v](demos/demo_jwtutils.v) | `jwtutils` | [demo_structutils.v](demos/demo_structutils.v) | `structutils` |
+| [demo_compressutils.v](demos/demo_compressutils.v) | `compressutils` | [demo_logutils.v](demos/demo_logutils.v) | `logutils` | [demo_strutils.v](demos/demo_strutils.v) | `strutils` |
+| [demo_configutils.v](demos/demo_configutils.v) | `configutils` | [demo_markdownutils.v](demos/demo_markdownutils.v) | `markdownutils` | [demo_sysutils.v](demos/demo_sysutils.v) | `sysutils` |
+| [demo_cronutils.v](demos/demo_cronutils.v) | `cronutils` | [demo_mathutils.v](demos/demo_mathutils.v) | `mathutils` | [demo_tarutils.v](demos/demo_tarutils.v) | `tarutils` |
+| [demo_cryptoutils.v](demos/demo_cryptoutils.v) | `cryptoutils` | [demo_mockutils.v](demos/demo_mockutils.v) | `mockutils` | [demo_templateutils.v](demos/demo_templateutils.v) | `templateutils` |
+| [demo_diffutils.v](demos/demo_diffutils.v) | `diffutils` | [demo_netutils.v](demos/demo_netutils.v) | `netutils` | [demo_testutils.v](demos/demo_testutils.v) | `testutils` |
+| [demo_envutils.v](demos/demo_envutils.v) | `envutils` | [demo_procutils.v](demos/demo_procutils.v) | `procutils` | [demo_timeutils.v](demos/demo_timeutils.v) | `timeutils` |
+| [demo_eventutils.v](demos/demo_eventutils.v) | `eventutils` | [demo_regexutils.v](demos/demo_regexutils.v) | `regexutils` | [demo_tomlutils.v](demos/demo_tomlutils.v) | `tomlutils` |
+| [demo_fileutils.v](demos/demo_fileutils.v) | `fileutils` | [demo_semverutils.v](demos/demo_semverutils.v) | `semverutils` | [demo_urlutils.v](demos/demo_urlutils.v) | `urlutils` |
+| [demo_flowutils.v](demos/demo_flowutils.v) | `flowutils` | [run_all_demos.v](demos/run_all_demos.v) | All 45 Demos | [demo_validutils.v](demos/demo_validutils.v) | `validutils` |
+| [demo_webutils.v](demos/demo_webutils.v) | `webutils` | | | | |
 
 ### Run the Stack Style demo
 
@@ -1344,6 +1499,7 @@ This demo opens Calculator automatically if needed, inspects its AXUIElement con
 ### Run the Ergonomic Helpers demo
 
 ```bash
+v run demos/token_field_ergonomics_demo.v
 ```
 
 ### Run the Delphi & C# Inspired RAD Showcase demo
@@ -1355,11 +1511,13 @@ v run demos/delphi_inspired_demo.v
 ### Run the developer experience (DX) showcase demo
 
 ```bash
+v run demos/developer_tools_showcase_demo.v
 ```
 
 ### Run the High-Level Helpers demo
 
 ```bash
+v run demos/composite_demo.v
 ```
 
 ### Run the Native Menu Bar & Text Shortcuts demo
@@ -1395,6 +1553,7 @@ v run demos/dirty_form_demo.v
 ### Run the Developer Experience DX Showcase
 
 ```bash
+v run demos/new_apis_demo.v
 ```
 
 ### Run the QoL Bulk Binding Features demo
@@ -1424,6 +1583,7 @@ v run demos/web_studio_demo.v
 ### Run the Native Switch & Custom Controls Showcase
 
 ```bash
+v run demos/native_macos_controls_demo.v
 ```
 
 ### Run the Sticky Floating Yellow Pad Overlay widget
@@ -1435,6 +1595,7 @@ v run demos/overlay_widget_demo.v
 ### Run the Interactive Window controller demo
 
 ```bash
+v run demos/event_handling_demo.v
 ```
 
 ### Run the 2D Grid Beginner Painter demo
@@ -1560,6 +1721,7 @@ v run demos/system_calls_demo.v
 ### Run the System & Stdlib Features demo
 
 ```bash
+v run demos/sys_demo.v
 ```
 
 ### Run the Clipboard Manager demo
@@ -1582,14 +1744,34 @@ v test .
 
 ## Project structure
 
+- [window.v](window.v) — core `SimpleWindow` lifecycle, geometry, HDR/EDR, and Cocoa integration
+- [window.m](window.m) — native macOS Objective-C / Cocoa bridge implementation
+- [window.h](window.h) — C/Objective-C bridge declarations used by V
+- [controls.v](controls.v) — 115+ native macOS controls, scientific/business charts, audio/media views, God-Mode 4D shaders, procedural PCM audio synth, and Qt 6 Smart House / Cockpit widgets
+- [layout.v](layout.v) — horizontal rows, multi-column grids, flexbox containers, group cards, and spacers
+- [events.v](events.v) — event registration, callbacks, timers, application menus, and context menus
+- [theming.v](theming.v) — 50 curated theme presets, Codecaine FX engine, CCFM share codes, and WCAG contrast auditing
+- [dialogs.v](dialogs.v) — native macOS modal alerts, confirmations, prompts, choice dialogs, file panels, and toasts
+- [state.v](state.v) — `SimpleWindow`, `ControlEntry`, `WindowConfig`, `Theme`, and reactive state structures
+- [ergonomics.v](ergonomics.v) — reactive `bind_*` helpers, CRUD table-to-form binding, wizard step binding, form undo/redo history, command registry, form validation, list/table toolkits, and CLI tool verification
+- [sys.v](sys.v) — Neutralino-inspired OS, process, hardware, network, and Accessibility (`AXUIElement`) APIs
+- [stdlib.v](stdlib.v) — high-level wrappers for HTTP, WebSockets, crypto, compression, TOML, HTML, and collections
+- [security.v](security.v) — POSIX argument quoting, filename sanitization, and safe subshell execution
+- [macos.v](macos.v) — native macOS power/session guards, screen diagnostics, and `.app` / `.icns` bundler APIs
+- [designer.v](designer.v) — RAD Visual UI Designer state, 17 form presets, WebView RAD Studio compiler, and V/HTML code generators
+- [examples/](examples/) — flagship showcases (`god_mode_showcase.v`, `rad_studio.v`, `codecaine_fx_themes_showcase.v`, `main_light.v`)
+- [custom_themes/](custom_themes/) — 20 hardware-tiered custom themes (`low` · `medium` · `high` · `ultra`), 18 US Holiday themes, `CCFM-PACK-v1` share codes, and [`THEME_DESIGN_STYLE_GUIDE.md`](custom_themes/THEME_DESIGN_STYLE_GUIDE.md)
+- [filemanager/](filemanager/) — reusable Codecaine Dual-Pane File Manager v1.3.0 sub-package (`import filemanager`)
+- [webview/](webview/) — native WebView window controller & `vlang_webview_rad_studio` bridge (`import webview`)
+- [system/](system/) — cross-platform OS, process, CPU/RAM/disk/battery, and network diagnostics module (`import system`)
+- [simplecli/](simplecli/) — headless console & RAD toolkit (`simplecli.v`, `stdlib.v`, `sys.v`)
+- [applications/](applications/) — 47 native macOS desktop studio workstations
+- [cli_apps/](cli_apps/) — 49 standalone console applications built on `simplecli`
 - [scripts/build.vsh](scripts/build.vsh) — macOS binary compilation and packaging script for `.app` bundle with icons
 - [scripts/build_demos.vsh](scripts/build_demos.vsh) — batch compilation script to package all demos concurrently with their premium icons
+- [tests/](tests/) — regression and unit test suite for controls, windows, layout, theming, HDR, macOS APIs, CLI, and security
 - [demos/main.v](demos/main.v) — example app and demo entry point
 - [demos/starter_template.v](demos/starter_template.v) — minimal starter app for new developers
-- [window.v](window.v) — core window API and Cocoa integration
-- [window.m](window.m) — native macOS bridge implementation
-- [window.h](window.h) — bridge declarations used by V
-- [tests/](tests/) — regression and unit test suite for controls, windows, layout, theming, and security
 - [demos/stack_style.v](demos/stack_style.v) — demo of clean, vertical form stacking
 - [demos/grid_style.v](demos/grid_style.v) — demo of side-by-side row-based grids
 - [demos/calculator.v](demos/calculator.v) — interactive math calculator showing nested grid rows
@@ -1660,7 +1842,7 @@ Full API documentation and detailed signature references are maintained in [API.
 - **Lifecycle**: `new_simple_window(title, w, h)`, `win.run()`, `win.close()`, `win.hide()`, `win.show_window()`
 - **Geometry & Alignment**: `win.center()`, `win.align(pos)`, `win.set_size(w, h)`, `win.set_position(x, y)`, `win.set_min_size()`, `win.set_max_size()`, `win.set_resizable()`, `win.set_aspect_ratio()`
 - **Appearance & Opacity**: `win.set_title(t)`, `win.set_subtitle(s)`, `win.set_opacity(alpha)`, `win.set_background_color(hex)`, `win.set_font_color(color)`, `win.set_titlebar_visible()`, `win.set_titlebar_appears_transparent()`, `win.set_full_size_content_view()`
-- **17 Theme Presets**: `win.set_theme(name)` applies any built-in theme (`Apple Light`, `Apple Dark`, `Midnight Space Gray`, `Apple Sunset`, `Sonoma Emerald`, `Ventura Amber`, `Soft Pastel`, `Catppuccin`, `Nord`, `Dracula`, `Cyberpunk`, `Solarized Light`, `Solarized Dark`, `GitHub Dark`, `GitHub Light`, `Navy Blue`, `Forest Green`). List all themes with `simplegui.list_themes()`, inspect one with `simplegui.get_theme(name)` (returns a `Theme` struct with `background_color`, `font_color`, `accent_color`, `is_dark`), or apply a custom `Theme` with `win.apply_theme(t)`. Applying a theme restyles all controls (buttons, dropdowns, inputs, date pickers) to match the theme's light/dark background regardless of the macOS system appearance; per-control overrides via `set_control_background_color`/`set_control_font_color` can be layered on top afterwards.
+- **50 Theme Presets & Codecaine FX Engine**: `win.set_theme(name)` applies any of the 50 built-in themes (18 Classic Studio Themes, 12 Codecaine Flagship FX Themes, and 20 Codecaine Master Designer Custom Themes across `low`, `medium`, `high`, and `ultra` hardware tiers). List all themes with `simplegui.list_themes()`, filter by hardware tier with `simplegui.list_themes_by_tier(tier)`, inspect a theme with `simplegui.get_theme(name)` (returns a `Theme` struct with `background_color`, `font_color`, `accent_color`, `tier`, `fx`, `is_dark`), audit contrast ratios with `simplegui.audit_theme_contrast(t)`, import/export `CCFM1:` share codes (`simplegui.export_ccfm_share_code(t)` / `win.apply_ccfm_share_code(code)`), or apply a custom `Theme` with `win.apply_theme(t)`.
 - **Window Stacking & Dock**: `win.set_always_on_top(bool)`, `win.set_window_level(level)`, `win.toggle_fullscreen()`, `win.bounce_dock(critical)`, `win.set_dock_badge(count)`, `win.set_movable_by_window_background()`
 - **Production Window State**: `win.set_represented_filename(path)`, `win.set_document_edited(bool)`, `win.set_frame_autosave_name(name)`, `win.save_frame()`, `win.restore_frame()`, `win.capture_screenshot(path)`
 
@@ -1673,11 +1855,14 @@ Full API documentation and detailed signature references are maintained in [API.
 - **Group Containers**: `win.add_group_box(name, title)` / `win.group(...)`, `win.add_tabs(name, titles)`, `win.add_scroll_view(name, height)`
 - **Layout Spacers**: `win.add_vertical_spacer(h)`, `win.add_horizontal_spacer(w)`, `win.add_separator()`
 
-### 3. Controls & Widgets (40+ Native Controls)
+### 3. Controls & Widgets (115+ Native, Super & God-Mode Controls)
 
 - **Standard Controls**: `add_input`, `add_password`, `add_textarea`, `add_checkbox`, `add_button`, `add_number`, `add_slider`, `add_dropdown`, `add_segmented_control`, `add_radio_group`, `add_switch`, `add_search_field`
-- **Rich Cocoa Controls**: `add_combo_box`, `add_level_indicator`, `add_rating`, `add_spinner`, `add_path_control`, `add_token_field`, `add_stepper`, `add_knob`, `add_pull_down`, `add_image_button`
-- **Dashboard & Developer Widgets**: `add_breadcrumbs`, `add_shortcut_recorder`, `add_chart`, `add_circular_progress`, `add_property_grid`, `add_color_grid`, `add_console`, `add_code_editor`, `add_timeline_view`, `add_stat_card`, `add_banner`, `add_star_rating`, `add_range_slider`, `add_split_button`, `add_tag_cloud`, `add_wizard_stepper`, `add_section_header`, `add_vertical_slider`, `add_chip_group`, `add_badge`, `add_icon_segments`, `add_status_indicator`, `add_metric_meter`, `add_avatar_card`, `add_time_picker`, `add_tray_icon`, `add_collapsible_section`, `add_toolbar_item`, `add_html_view`, `add_drop_zone`
+- **Rich Cocoa & Framework Controls**: `add_combo_box`, `add_level_indicator`, `add_rating`, `add_spinner`, `add_path_control`, `add_token_field`, `add_stepper`, `add_knob`, `add_pull_down`, `add_image_button`, `add_pdf_view`, `add_avplayer_view`, `add_mtk_view`, `add_map_view`, `add_column_browser`, `add_collection_view`, `add_calendar`, `add_canvas`
+- **Scientific, Financial & Audio Widgets**: `add_gantt_chart`, `add_funnel_chart`, `add_candlestick_chart`, `add_radar_chart`, `add_bullet_chart`, `add_waterfall_chart`, `add_sankey_chart`, `add_donut_chart`, `add_equalizer`, `add_vu_meter`, `add_xy_pad`, `add_piano_keyboard`, `add_step_sequencer`, `add_stopwatch`, `add_media_player`, `add_media_player_with_audio`
+- **God-Mode, GOAT 4D Shaders, Particle Physics & Qt 6 Smart House / Cockpit Controls**: `add_shader_canvas` (`'tesseract_4d'`, `'plasma_reactor'`, `'synthwave_horizon'`, `'audio_spectrum_3d'`, `'black_hole_singularity'`, `'neural_plexus'`), `add_particle_emitter`, `add_hologram_card`, `add_waveform_synthesizer`, `add_glitch_banner`, `add_themed_folder_grid`, `add_smart_house_floorplan`, `add_smart_thermostat`, `add_cockpit_cluster`, `add_node_graph`, `add_mesh_viewport_3d`, `add_polar_radar_sonar`, `add_logic_analyzer`, `add_nixie_display`, `add_color_wheel`
+- **Built-In Procedural PCM Synth Audio (16 Presets)**: `play_sfx`, `play_synth_tone`, `play_piano_note`, `list_sfx_presets`, `set_sfx_enabled`, `set_sfx_volume`
+- **Dashboard, Productivity & Developer Widgets**: `add_breadcrumbs`, `add_shortcut_recorder`, `add_chart`, `add_circular_progress`, `add_property_grid`, `add_color_grid`, `add_console`, `add_code_editor`, `add_code_studio`, `add_timeline_view`, `add_stat_card`, `add_banner`, `add_star_rating`, `add_range_slider`, `add_split_button`, `add_tag_cloud`, `add_tag_input`, `add_otp_input`, `add_command_bar`, `add_kanban_board`, `add_chat_view`, `add_notification_list`, `add_pricing_card`, `add_comparison_card`, `add_comparison_table`, `add_avatar_group`, `add_checkout_steps`, `add_cron_editor`, `add_regex_tester`, `add_hex_viewer`, `add_password_strength`, `add_signature_pad`, `add_number_spinner`, `add_org_chart`, `add_mini_calendar`, `add_empty_state`, `add_skeleton_loader`, `add_segmented_progress`, `add_split_view`, `add_popover`, `add_folder_tile`, `add_wizard_stepper`, `add_section_header`, `add_vertical_slider`, `add_chip_group`, `add_badge`, `add_icon_segments`, `add_status_indicator`, `add_metric_meter`, `add_avatar_card`, `add_time_picker`, `add_tray_icon`, `add_collapsible_section`, `add_toolbar_item`, `add_html_view`, `add_drop_zone`
 - **Reflection & Struct Validation**: `win.add_form_from_struct[T](default_data)` auto-builds forms from V structs; `win.validate_struct[T]()` validates struct field attributes (`@[required]`, `@[min_len]`, `@[max_len]`, `@[email]`, `@[url]`, `@[alphanumeric]`, `@[min]`, `@[max]`).
 
 ### 4. Sizing, Styling, Alignment & Fluent Chaining
@@ -1773,6 +1958,7 @@ fn main() {
 ### 10. Ergonomics, Settings Persistence & Async Execution
 
 - **Settings & App State Persistence**: `win.save_app_state("preset_1")!`, `win.load_app_state("preset_1")`, `win.enable_app_autosave()`, `win.save_values_to_file("settings.json")!`, `win.load_values_from_file("settings.json")!` (automatically persists to the recommended macOS user application storage `~/Library/Application Support/<app_name>/`, ensuring full functionality when moved to `/Applications`)
+- **RAD Workflow Controllers**: `win.crud_bind_table_to_form(table, fields)`, `win.crud_add_from_form(table)`, `win.crud_update_selected_from_form(table)`, `win.crud_delete_selected_row(table)`, `win.bind_wizard_pages(stepper, pages)`, `win.wizard_next_step(stepper)`, `win.push_form_snapshot()`, `win.undo_form()`, `win.redo_form()`, `win.register_command(id, title, shortcut, desc, cb)`
 - **Storage Path Resolvers**: `win.get_app_storage_dir()`, `win.get_app_storage_path(filename)`, `win.resolve_storage_path(path)`
 - **Form Dirty Tracking**: `win.is_dirty()`, `win.is_control_dirty(name)`, `win.commit_changes()`, `win.confirm_discard_changes()`
 - **Live Search Filtering**: `win.bind_search_to_list(search_name, list_name)`
@@ -1792,8 +1978,14 @@ The goal of this project is to provide a simple, high-abstraction GUI layer that
 The following native macOS windows were captured dynamically by building and running each live V demo.
 Screenshots are auto-generated using `v run scripts/capture_demos.vsh`.
 
-### High-Fidelity App & Web Studios
+### High-Fidelity App, God-Mode & Web Studios
 
+- **God-Mode Qt 6 Smart House, Digital Cockpit & 3D Engineering Showcase**: `v run examples/god_mode_showcase.v`
+  ![God-Mode Qt 6 Smart House Showcase](screenshots/god_mode_smart_house_showcase.png)
+- **Integrated WebView RAD Studio IDE & GOAT VFX Showcase**: `v run examples/rad_studio.v`
+  ![WebView RAD Studio GOAT VFX](screenshots/rad_studio_goat_vfx.png)
+- **Codecaine 50 FX Themes, 4D Tesseract & Particle Physics Showcase**: `v run examples/codecaine_fx_themes_showcase.v`
+  ![GOAT Omega Tesseract Showcase](screenshots/goat_omega_tesseract.png)
 - **RAD Visual UI Designer Studio**: `v run tools/ui_designer.v`
   ![SimpleGUI RAD Visual UI Designer Studio](screenshots/ui_designer.png)
 - **RAD Code Explorer & Live Previewer Studio**: `v run tools/vlang_simple_gui_previewer.v`
@@ -1955,27 +2147,14 @@ Screenshots are auto-generated using `v run scripts/capture_demos.vsh`.
 
 SimpleGUI includes 47 complete, native desktop workstation applications in [`applications/`](applications/) designed for engineering workflows, low-level binary & bitwise register engineering, 2D function plotting & network graph topology, symbolic math, physical dimensional analysis, calculus, statistics & data science, network intelligence, text & code editing, universal archiving & compression, stream editing, system monitoring, filesystem discovery, data analysis, speech synthesis, and media transformation:
 
-### 📦 Prerequisites & Homebrew Installation
-
-You can install all dependencies via standard Homebrew bundle, automated shell script, or the interactive V dependency inspector:
+### 📦 Prerequisites & Homebrew Installation:
 
 ```bash
-# 1. Automated Homebrew Bundle Installation (Recommended)
-./install_homebrew_dependencies.sh
+# Check status and automatically install missing Homebrew formulae
+./install_deps.vsh
 
-# Or directly with Homebrew bundle:
-brew bundle --file ./Brewfile
-
-# 2. Interactive / Non-Interactive V Dependency Inspector & Auto-Installer
-./install_dependencies.vsh -y
-
-# 3. Check health and missing dependencies without installing:
-./install_dependencies.vsh --check
-
-# 4. Include optional cross-compilers (zig, mingw-w64):
-./install_homebrew_dependencies.sh --optional
-# or
-./install_dependencies.vsh --all -y
+# Or install manually via Homebrew:
+brew install ripgrep fd sd gawk ouch ffmpeg imagemagick pandoc wget2 yt-dlp subfinder jq libqalculate numbat kalker nmap exiftool tesseract graphviz
 ```
 
 ### 🚀 Complete Workstations Catalog (47 Applications):
@@ -2025,13 +2204,16 @@ brew bundle --file ./Brewfile
 | **📊 Statistics Studio Pro** | [`applications/statistics_studio.v`](applications/statistics_studio.v) | Comprehensive scientific data science workbench in pure V: descriptive statistics, normality tests, hypothesis testing (Student's t-test, ANOVA), OLS linear regression, and ASCII histograms. |
 | **📈 Graph Studio Pro** | [`applications/graph_studio.v`](applications/graph_studio.v) | High-precision scientific plotting & visualization studio in pure V: 2D continuous function grapher, multi-series data visualizer, bar charts, scatter plots, and network topology graph visualizer. |
 | **💻 Programmer Calculator** | [`applications/programmer_calculator.v`](applications/programmer_calculator.v) | Advanced multi-radix computer science calculator in pure V: simultaneous Hex, Dec, Oct, Bin displays, interactive 64-bit grid, IEEE-754 floating point inspector, Endianness converters, and bitwise logic. |
+| **⚰️ Rip Studio Pro** | [`applications/rip_studio.v`](applications/rip_studio.v) | Safe deletion & graveyard recovery workbench powered by `rip2`: non-destructive `rm` alternative, tomb browser, directory séance ghost summoning, selective restoration, and purge telemetry. |
+| **⚡ Watchexec Studio Pro** | [`applications/watchexec_studio.v`](applications/watchexec_studio.v) | Real-time filesystem event monitor & automated task runner powered by `watchexec`: live daemon lifecycle, debounce configuration, path filters, and background execution console. |
+| **🛠️ Omnitool Studio Pro** | [`applications/omnitool_studio.v`](applications/omnitool_studio.v) | Universal Unix toolchain & developer workbench orchestrator: unified control center for `fd`, `sd`, `watchexec`, `wget2`, `rg`, `rip`, `ouch`, `bat`, and `eza`. |
 | **🚀 Media & Data Studio Hub** | [`applications/media_studio_hub.v`](applications/media_studio_hub.v) | Master workstation with system environment diagnostics, instant one-click quick tools (Discord <10MB, TikTok 9:16, Loudnorm, Favicon, Remove White BG, 2-Pass GIF, WebP), and sub-app launchers. |
 
-All applications support dynamic runtime theme switching across all 18 curated palettes with automatic state persistence to `~/.config/simplegui/theme.txt`.
+All applications support dynamic runtime theme switching across all 50 curated palettes with automatic state persistence to `~/.config/simplegui/theme.txt`.
 
 ### 📸 Workstations Showcase & Screenshots
 
-All 44 applications are fully equipped with native screenshots. See [`applications/README.md`](applications/README.md) for the complete visual catalog.
+Explore the workstations below or see [`applications/README.md`](applications/README.md) for the complete visual catalog.
 
 #### 🧮 Computing, Math & Science
 
@@ -2089,6 +2271,9 @@ All 44 applications are fully equipped with native screenshots. See [`applicatio
 - **🎬 yt-dlp Studio Pro**: `v run applications/yt_dlp_studio.v`
   ![🎬 yt-dlp Studio Pro](screenshots/yt_dlp_studio.png)
 
+- **🔍 ExifTool Studio Pro**: `v run applications/exif_studio.v`
+  ![🔍 ExifTool Studio Pro](screenshots/exif_studio.png)
+
 - **📊 Graphviz Studio Pro**: `v run applications/dot_studio.v`
   ![📊 Graphviz Studio Pro](screenshots/dot_studio.png)
 
@@ -2135,6 +2320,8 @@ All 44 applications are fully equipped with native screenshots. See [`applicatio
 - **📦 App Bundler Studio Pro**: `v run applications/app_bundler_studio.v`
   ![📦 App Bundler Studio Pro](screenshots/app_bundler_studio.png)
 
+- **🛠️ Omnitool Studio Pro**: `v run applications/omnitool_studio.v`
+
 - **⚡ Task Manager Pro**: `v run applications/task_manager.v`
   ![⚡ Task Manager Pro](screenshots/task_manager.png)
 
@@ -2153,6 +2340,8 @@ All 44 applications are fully equipped with native screenshots. See [`applicatio
 - **⏰ Launchd & Cron Pro**: `v run applications/launchd_studio.v`
   ![⏰ Launchd & Cron Pro](screenshots/launchd_studio.png)
 
+- **⚡ Watchexec Studio Pro**: `v run applications/watchexec_studio.v`
+
 - **🔍 RG Studio Pro**: `v run applications/rg_studio.v`
   ![🔍 RG Studio Pro](screenshots/rg_studio.png)
 
@@ -2164,6 +2353,8 @@ All 44 applications are fully equipped with native screenshots. See [`applicatio
 
 - **🔍 SD Studio Pro**: `v run applications/sd_studio.v`
   ![🔍 SD Studio Pro](screenshots/sd_studio.png)
+
+- **⚰️ Rip Studio Pro**: `v run applications/rip_studio.v`
 
 - **📦 Ouch Studio Pro**: `v run applications/ouch_studio.v`
   ![📦 Ouch Studio Pro](screenshots/ouch_studio.png)
@@ -2185,7 +2376,7 @@ For headless console scripts, backend daemons, automation tools, and CI/CD pipel
 - **Stdlib & Cryptography**: Native HTTP client, SHA-256/512/MD5, AES-256-CTR, Bcrypt, GZIP, TOML, JSON, and generic data collections (`SimpleStack`, `SimpleQueue`, `SimpleRingBuffer`, `SimpleMinHeap`).
 - **Production CLI Suite**: 49 ready-to-use tools in [`cli_apps/`](cli_apps/), all with generated `--help`/`--version`, strict typed argument validation, stderr diagnostics, and nonzero invalid-usage exit codes.
 
-👉 **Read the comprehensive 20-chapter [SimpleCLI Reference Manual (CLI_API.md)](CLI_API.md) or browse the [complete CLI application catalog](cli_apps/README.md).**
+👉 **Read the comprehensive 22-chapter [SimpleCLI Reference Manual (CLI_API.md)](CLI_API.md) or browse the [complete CLI application catalog](cli_apps/README.md).**
 
 ---
 
@@ -2197,14 +2388,18 @@ For headless console scripts, backend daemons, automation tools, and CI/CD pipel
 | :--- | :--- |
 | [`fileutils`](UTILS_API.md#fileutils-api) | JSON serialization, text operations, CSV parsing, copy/move, recursive listing, human-readable file sizes. |
 | [`sqliteutils`](UTILS_API.md#sqliteutils-api) | Ergonomic SQLite persistence, KV store, JSON document store, SQL injection defense, parameterized CRUD, secure PRAGMAs, DDL migrations. |
+| [`sqlbuilder`](UTILS_API.md#sqlbuilder-api) | Fluent, composable SQL query builder for parameterized `SELECT`, `INSERT`, `UPDATE`, and `DELETE` statements. |
+| [`configutils`](UTILS_API.md#configutils-api) | Hierarchical layered configuration manager merging defaults, TOML/JSON files, environment variables, and CLI overrides. |
 | [`strutils`](UTILS_API.md#strutils-api) | Case conversions (snake, kebab, camel, pascal, title), slugify, masking, padding, Levenshtein distance, word wrap. |
 | [`sliceutils`](UTILS_API.md#sliceutils-api) | Generic collection operations: unique, chunk, flatten, partition, intersection, difference, shuffle, sampling, stats. |
 | [`envutils`](UTILS_API.md#envutils-api) | Type-safe environment variable retrieval (`get_str`, `get_int`, `get_bool`), setters (`set`, `set_int`, `set_bool`), `.env` file loader, variable expansion. |
 | [`cryptoutils`](UTILS_API.md#cryptoutils-api) | SHA-256, SHA-512, MD5, HMAC-SHA256, Base64 / Base64URL encode/decode, UUID v4, secure tokens. |
+| [`idutils`](UTILS_API.md#idutils-api) | Modern unique ID generation: lexicographically sortable ULIDs, 64-bit distributed Snowflake IDs, and Sqids integer obfuscation. |
 | [`timeutils`](UTILS_API.md#timeutils-api) | Human relative time ("2 hours ago", "in 3 days"), ISO 8601 formatting/parsing, calendar boundaries, `Stopwatch`. |
 | [`httputils`](UTILS_API.md#httputils-api) | Ergonomic HTTP client (`get_json[T]`, `post_json[T, R]`, `get_text`), query string builder/parser, retry with backoff. |
 | [`cliutils`](UTILS_API.md#cliutils-api) | Terminal ANSI styling, FlagParser, interactive prompts, progress bar, sparkline, bar chart, gauge, tree, diff, tables. |
 | [`sysutils`](UTILS_API.md#sysutils-api) | System telemetry (CPU usage/cores, RAM, swap, disk, uptime, load averages), safe exec (`exec_safe`, `quote_arg`), paths, clipboard. |
+| [`procutils`](UTILS_API.md#procutils-api) | Subprocess management with real-time stdout/stderr line streaming, execution timeouts, environment injection, and pipelines. |
 | [`netutils`](UTILS_API.md#netutils-api) | Network discovery (local/public IP, MAC, Wi-Fi SSID, DNS servers, gateway, listening ports), connectivity check & TCP ping. |
 | [`validutils`](UTILS_API.md#validutils-api) | High-speed validation for email, URL, IPv4/IPv6, phone numbers, alphanumeric strings, numeric ranges, UUID, JSON. |
 | [`structutils`](UTILS_API.md#structutils-api) | Generic RAD data structures: `SimpleStack[T]`, `SimpleQueue[T]`, circular `SimpleRingBuffer[T]`, and `SimpleMinHeap`. |
@@ -2214,21 +2409,22 @@ For headless console scripts, backend daemons, automation tools, and CI/CD pipel
 | [`semverutils`](UTILS_API.md#semverutils-api) | Semantic Versioning 2.0.0 parsing, precedence comparison, range matching (`^`, `~`, `>=`, `<=`), and version bumping. |
 | [`flowutils`](UTILS_API.md#flowutils-api) | Traffic control & resilience: Token Bucket `RateLimiter`, 3-state `CircuitBreaker`, exponential backoff `retry[T]`, and event `Debouncer`. |
 | [`templateutils`](UTILS_API.md#templateutils-api) | Fast string templating with fallback defaults (`{{key | default}}`), dynamic resolvers, and styled ANSI markdown terminal rendering. |
-| [`colorutils`](UTILS_API.md#colorutils-api) | HEX/RGB/HSL color conversions, color theory transforms, WCAG 2.1 accessibility & contrast auditing, and 24-bit Truecolor terminal formatting. |
+| [`colorutils`](UTILS_API.md#colorutils-api) | HEX/RGB/HSL color conversions, color theory transforms, WCAG 2.1 accessibility & contrast auditing, HDR tone mapping, and 24-bit Truecolor terminal formatting. |
 | [`archiveutils`](UTILS_API.md#archiveutils-api) | Ergonomic Zip archive creation, extraction, recursive directory compression, and in-memory inspection via V's native `compress.szip`. |
 | [`asyncutils`](UTILS_API.md#asyncutils-api) | Bounded concurrency primitives: order-preserving `parallel_map[T, R]`, `parallel_filter[T]`, `parallel_each[T]`, `WaitGroup`, and `WorkerPool`. |
 | [`regexutils`](UTILS_API.md#regexutils-api) | High-level regular expression helpers: `is_match`, `find_first`, `find_all`, `replace`, `split`, and `find_matches`. |
 | [`mockutils`](UTILS_API.md#mockutils-api) | Synthetic testing & prototyping data generation: `lorem_text`, `lorem_words`, `mock_user`, `mock_email`, `mock_phone`, `mock_ipv4`, `mock_url`. |
+| [`testutils`](UTILS_API.md#testutils-api) | Assertion helpers, temporary test directory lifecycle management, fixture builders, and snapshot verification utilities. |
 | [`logutils`](UTILS_API.md#logutils-api) | Leveled structured logging (`LogLevel`, `Logger`, file/stdout targets, ANSI color highlighting). |
 | [`tomlutils`](UTILS_API.md#tomlutils-api) | TOML configuration file and string parsing with typed accessors (`get_string`, `get_int`, `get_bool`, `get_strings`). |
-| [`htmlutils`](UTILS_API.md#htmlutils-api) | HTML parsing, DOM navigation (`get_element_by_id`, `get_elements_by_tag`), entity escaping, and tag stripping. |
+| [`htmlutils`](UTILS_API.md#htmlutils-api) | HTML parsing, DOM navigation (`get_element_by_id`, `get_elements_by_tag`), entity escaping, sanitization, and tag stripping. |
 | [`bitutils`](UTILS_API.md#bitutils-api) | Dynamic bitsets (`BitSet`), bitwise operations, popcount, binary string conversions, and bitmask flag manipulation. |
 | [`compressutils`](UTILS_API.md#compressutils-api) | Fast compression & decompression for Gzip, Zlib, Deflate, and Zstandard strings and byte buffers. |
 | [`tarutils`](UTILS_API.md#tarutils-api) | In-memory and on-disk TAR archive creation, unpacking, directory archiving, and tarball inspection. |
 | [`mathutils`](UTILS_API.md#mathutils-api) | 2D Math, spatial geometry, and number theory: `lerp`, `remap`, `clamp`, `round_to_step`, `Point2D`, `Rect` intersection, `gcd`, `lcm`, and power-of-two checks. |
 | [`cronutils`](UTILS_API.md#cronutils-api) | Standard 5-field cron parsing, next execution calculation (`next_after`), matching, and human-readable English summaries (`cron_to_human`). |
 | [`urlutils`](UTILS_API.md#urlutils-api) | RFC 3986 URL parsing (`parse_url`), component inspection, path segment joining (`join_path`), and credential redaction (`redact_credentials`). |
-| [`jwtutils`](UTILS_API.md#jwtutils-api) | Lightweight, zero-dependency HS256 JSON Web Token signing (`sign_jwt`) and verification (`verify_jwt`) with expiration checks. |
+| [`jwtutils`](UTILS_API.md#jwtutils-api) | Lightweight, zero-dependency HS256/384/512 JSON Web Token signing (`sign_jwt`) and verification (`verify_jwt`) with expiration checks. |
 | [`eventutils`](UTILS_API.md#eventutils-api) | In-memory publish-subscribe event dispatcher (`EventEmitter`, `on`, `once`, `off`, `emit`). |
 | [`diffutils`](UTILS_API.md#diffutils-api) | Line-level text diffing (`diff_lines`) and standard Git-style unified diff generation (`unified_diff`). |
 | [`graphutils`](UTILS_API.md#graphutils-api) | Generic Directed Acyclic Graphs (`Graph[T]`), cycle detection, Kahn's topological sort (`topological_sort`), BFS, and DFS. |
@@ -2236,7 +2432,7 @@ For headless console scripts, backend daemons, automation tools, and CI/CD pipel
 | [`markdownutils`](UTILS_API.md#markdownutils-api) | Safe Markdown → HTML converter (GFM tables, task lists, code blocks), heading anchors, TOC generation, and plain-text extraction. |
 | [`webutils`](UTILS_API.md#webutils-api) | Express-style web framework with a secure EJS-style template engine and batteries included (sessions, CSRF, CORS, rate limiting, security headers, static files, multipart, gzip, signed cookies, in-process testing). |
 
-👉 **Read the comprehensive 6,000+ line [Developer Utility Suite Reference Manual (UTILS_API.md)](UTILS_API.md).**
+👉 **Read the comprehensive 10,000+ line [Developer Utility Suite Reference Manual (UTILS_API.md)](UTILS_API.md).**
 
 ---
 
@@ -2250,7 +2446,7 @@ Explore sister projects and complementary GUI frameworks, templates, and RAD vis
 | **[Vlang Webview RAD Studio](https://github.com/codecaine-zz/vlang_webview_rad_studio)** | V (vlang) + Native OS Webview | Cross-platform visual Rapid Application Development (RAD) IDE & enterprise desktop suite. Borland Delphi/VB-inspired form designer with 70+ controls, 42 desktop themes, 16 enterprise studio applications, 16 companion CLIs, and standalone `.app`/`.exe`/ELF packager. |
 | **[Bun RAD Studio](https://github.com/codecaine-zz/bun_rad_studio)** | Bun + TypeScript / Webview-Bun | High-performance visual RAD IDE for Bun and Webview-Bun, featuring instant hot-reload, drag-and-drop form canvas, full TypeScript type safety, and 42 desktop themes. |
 | **[Vlang macOS Webview App Template](https://github.com/codecaine-zz/vlang_macos_webview_app_template)** | V (vlang) + Cocoa Webview | Standalone native macOS `.app` desktop application template for V using `ttytm.webview`, Cocoa Objective-C window helper integration (`window_helper.m`), 9-point screen placement geometry, stay-on-top pinning, and two-way IPC. |
-| **[vlang_simplegui](https://github.com/codecaine-zz/vlang_simplegui)** | V (vlang) + Native GUI | Declarative macOS-native GUI starter framework written in V, featuring fluent builder syntax, reactive two-way value synchronization, KPI dashboards, sortable tables, and dynamic live theme switching across 42 themes. |
+| **[vlang_simplegui](https://github.com/codecaine-zz/vlang_simplegui)** | V (vlang) + Native GUI | Declarative macOS-native GUI starter framework written in V, featuring fluent builder syntax, reactive two-way value synchronization, KPI dashboards, sortable tables, and dynamic live theme switching across 50 themes. |
 
 ### Notable Open-Source Webview Frameworks
 

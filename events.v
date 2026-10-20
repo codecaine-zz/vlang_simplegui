@@ -16,13 +16,19 @@ pub fn (win &SimpleWindow) set_value(name string, value string) &SimpleWindow {
 // on_key registers a keyboard shortcut event handler for the window.
 pub fn (win &SimpleWindow) on_key(key string, callback StringEventCallback) &SimpleWindow {
 	norm_key := normalize_key_shortcut(key)
+	idx := win.find_handler_by_filter('window', 'key', norm_key)
+	handler := ControlEventHandler{
+		control_name: 'window'
+		event_name:   'key'
+		filter_value: norm_key
+		string_cb:    callback
+	}
 	unsafe {
 		mut w := &SimpleWindow(win)
-		w.handlers << ControlEventHandler{
-			control_name: 'window'
-			event_name:   'key'
-			filter_value: norm_key
-			string_cb:    callback
+		if idx >= 0 {
+			w.handlers[idx] = handler
+		} else {
+			w.handlers << handler
 		}
 	}
 	return win
@@ -30,16 +36,18 @@ pub fn (win &SimpleWindow) on_key(key string, callback StringEventCallback) &Sim
 
 // run_after executes a void callback after a specified duration in milliseconds.
 pub fn (win &SimpleWindow) run_after(ms int, callback VoidEventCallback) &SimpleWindow {
+	mut handler_id := 'window'
 	unsafe {
 		mut w := &SimpleWindow(win)
+		handler_id = 'run_after_${w.handlers.len}'
 		w.handlers << ControlEventHandler{
-			control_name: 'window'
+			control_name: handler_id
 			event_name:   'run_after'
 			void_cb:      callback
 		}
 	}
 	if win.window_info != unsafe { nil } {
-		C.window_run_after(win.window_info, ms, c'window')
+		C.window_run_after(win.window_info, ms, handler_id.str)
 	}
 	return win
 }
@@ -171,6 +179,14 @@ pub fn (win &SimpleWindow) dispatch_event(name string, event_name string, value 
 		}
 	} else {
 		handler_idx = win.find_handler_by_filter(name, event_name, value)
+		if handler_idx < 0 && event_name == 'run_after' && (name == '' || name == 'window') {
+			for i, h in win.handlers {
+				if h.event_name == 'run_after' {
+					handler_idx = i
+					break
+				}
+			}
+		}
 	}
 	if handler_idx < 0 {
 		return false
@@ -224,11 +240,11 @@ fn vlang_is_window_valid(win_ptr voidptr) bool {
 	return false
 }
 
-// Cocoa event dispatcher to V
+// vlang_dispatch_event dispatches a native Cocoa UI event to the corresponding V SimpleWindow handlers.
 @[export: 'vlang_dispatch_event']
-fn vlang_dispatch_event(win_ptr voidptr, name_str &u8, event_str &u8, value_str &u8) {
+pub fn vlang_dispatch_event(win_ptr voidptr, name_str &u8, event_str &u8, value_str &u8) bool {
 	if win_ptr == unsafe { nil } || !vlang_is_window_valid(win_ptr) {
-		return
+		return false
 	}
 	mut win := unsafe { &SimpleWindow(win_ptr) }
 	name := unsafe { name_str.vstring() }
@@ -240,8 +256,8 @@ fn vlang_dispatch_event(win_ptr voidptr, name_str &u8, event_str &u8, value_str 
 		idx := win.find_control(name)
 		if idx >= 0 {
 			kind := win.controls[idx].kind
-			if kind == 'checkbox' || kind == 'toggle' {
-				win.controls[idx].checked = (value == 'true')
+			if kind in ['checkbox', 'toggle', 'switch', 'radio', 'disclosure', 'spinner'] {
+				win.controls[idx].checked = (value == 'true' || value == '1')
 			} else if kind in ['number', 'slider', 'vertical_slider', 'progress', 'stepper', 'knob',
 				'levelindicator'] {
 				win.controls[idx].number = value.int()
@@ -252,11 +268,12 @@ fn vlang_dispatch_event(win_ptr voidptr, name_str &u8, event_str &u8, value_str 
 		win.table_selected_columns[name] = value.int()
 	}
 
-	win.dispatch_event(name, event, value)
+	return win.dispatch_event(name, event, value)
 }
 
+// vlang_dispatch_close_requested handles the native window close request and returns whether closing is allowed.
 @[export: 'vlang_dispatch_close_requested']
-fn vlang_dispatch_close_requested(win_ptr voidptr) bool {
+pub fn vlang_dispatch_close_requested(win_ptr voidptr) bool {
 	if win_ptr == unsafe { nil } || !vlang_is_window_valid(win_ptr) {
 		return true
 	}
@@ -270,12 +287,18 @@ fn vlang_dispatch_close_requested(win_ptr voidptr) bool {
 
 // set_interval starts a recurring timer that triggers a callback every ms milliseconds.
 pub fn (win &SimpleWindow) set_interval(timer_name string, ms int, callback VoidEventCallback) &SimpleWindow {
+	idx := win.find_handler(timer_name, 'timer')
+	handler := ControlEventHandler{
+		control_name: timer_name
+		event_name:   'timer'
+		void_cb:      callback
+	}
 	unsafe {
 		mut w := &SimpleWindow(win)
-		w.handlers << ControlEventHandler{
-			control_name: timer_name
-			event_name:   'timer'
-			void_cb:      callback
+		if idx >= 0 {
+			w.handlers[idx] = handler
+		} else {
+			w.handlers << handler
 		}
 	}
 	if win.window_info != unsafe { nil } {
@@ -286,6 +309,13 @@ pub fn (win &SimpleWindow) set_interval(timer_name string, ms int, callback Void
 
 // stop_interval stops a recurring timer by name.
 pub fn (win &SimpleWindow) stop_interval(timer_name string) &SimpleWindow {
+	idx := win.find_handler(timer_name, 'timer')
+	if idx >= 0 {
+		unsafe {
+			mut w := &SimpleWindow(win)
+			w.handlers.delete(idx)
+		}
+	}
 	if win.window_info != unsafe { nil } {
 		C.window_stop_interval(win.window_info, timer_name.str)
 	}
@@ -294,12 +324,18 @@ pub fn (win &SimpleWindow) stop_interval(timer_name string) &SimpleWindow {
 
 // on_hover registers an event handler for mouse hover enter events on a control.
 pub fn (win &SimpleWindow) on_hover(name string, callback VoidEventCallback) &SimpleWindow {
+	idx := win.find_handler(name, 'hover_enter')
+	handler := ControlEventHandler{
+		control_name: name
+		event_name:   'hover_enter'
+		void_cb:      callback
+	}
 	unsafe {
 		mut w := &SimpleWindow(win)
-		w.handlers << ControlEventHandler{
-			control_name: name
-			event_name:   'hover_enter'
-			void_cb:      callback
+		if idx >= 0 {
+			w.handlers[idx] = handler
+		} else {
+			w.handlers << handler
 		}
 	}
 	if win.window_info != unsafe { nil } {
@@ -310,12 +346,18 @@ pub fn (win &SimpleWindow) on_hover(name string, callback VoidEventCallback) &Si
 
 // on_hover_exit registers an event handler for mouse hover exit events on a control.
 pub fn (win &SimpleWindow) on_hover_exit(name string, callback VoidEventCallback) &SimpleWindow {
+	idx := win.find_handler(name, 'hover_exit')
+	handler := ControlEventHandler{
+		control_name: name
+		event_name:   'hover_exit'
+		void_cb:      callback
+	}
 	unsafe {
 		mut w := &SimpleWindow(win)
-		w.handlers << ControlEventHandler{
-			control_name: name
-			event_name:   'hover_exit'
-			void_cb:      callback
+		if idx >= 0 {
+			w.handlers[idx] = handler
+		} else {
+			w.handlers << handler
 		}
 	}
 	if win.window_info != unsafe { nil } {

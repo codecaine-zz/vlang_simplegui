@@ -1,4 +1,4 @@
-#!/usr/bin/env v
+#!/usr/bin/env -S v run
 
 import os
 

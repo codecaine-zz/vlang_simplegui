@@ -1,5 +1,6 @@
 module main
 
+import os
 import simplegui
 
 struct TestCloseState {
@@ -27,7 +28,11 @@ fn test_new_window_methods() {
 
 	// 4. System attention & screenshot
 	win.request_user_attention(false)
-	win.save_screenshot('test_shot.png')
+	shot_path := os.join_path(os.temp_dir(), 'simplegui_test_shot.png')
+	defer {
+		os.rm(shot_path) or {}
+	}
+	win.save_screenshot(shot_path)
 
 	// 5. Close gate callback
 	mut state := &TestCloseState{}

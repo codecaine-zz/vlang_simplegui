@@ -4,12 +4,16 @@ import json2
 import os
 import time
 
+// StringEventCallback is a function callback signature for UI events carrying a string payload.
 pub type StringEventCallback = fn (mut win SimpleWindow, value string)
 
+// VoidEventCallback is a function callback signature for UI events without a value payload.
 pub type VoidEventCallback = fn (mut win SimpleWindow)
 
+// FileDropCallback is a function callback signature invoked when files are dropped onto the window.
 pub type FileDropCallback = fn (mut win SimpleWindow, files []string)
 
+// MenuItem represents a custom application menu bar item with an optional keyboard shortcut and callback.
 pub struct MenuItem {
 pub:
 	title    string
@@ -17,6 +21,7 @@ pub:
 	callback VoidEventCallback = unsafe { nil }
 }
 
+// WindowConfig holds mutable configuration options for initializing or reconfiguring a SimpleWindow.
 pub struct WindowConfig {
 pub mut:
 	title                        string
@@ -38,6 +43,7 @@ pub mut:
 	title_visible                bool
 }
 
+// WindowParams represents the C-interop parameter struct passed to native window creation.
 pub struct WindowParams {
 	title                        &char
 	width                        int
@@ -57,11 +63,13 @@ pub struct WindowParams {
 	title_visible                int
 }
 
+// WindowInfo holds opaque native Objective-C / Cocoa application and delegate pointers.
 pub struct WindowInfo {
 	app          voidptr
 	app_delegate voidptr
 }
 
+// SimpleWindow represents a native desktop application window and its layout, controls, event handlers, and reactive state.
 @[heap]
 pub struct SimpleWindow {
 mut:
@@ -123,6 +131,12 @@ mut:
 	grid_selected_rows           map[string]int
 	grid_selected_columns        map[string]int
 	on_close_requested_fn        CloseRequestedCallback = unsafe { nil }
+	form_undo_stack              []map[string]string
+	form_redo_stack              []map[string]string
+	commands                     map[string]CommandEntry
+	wizard_pages                 map[string][]string
+	wizard_steps                 map[string]int
+	crud_bindings                map[string][]string
 pub mut:
 	ws_client       voidptr = unsafe { nil }
 	state_store     map[string]string
@@ -133,8 +147,20 @@ pub mut:
 	theme           Theme
 }
 
+// CommandEntry represents a command registered in the window's command palette.
+pub struct CommandEntry {
+pub:
+	id          string
+	title       string
+	shortcut    string
+	description string
+	callback    VoidEventCallback = unsafe { nil }
+}
+
+// Control is a type alias for ControlEntry.
 pub type Control = ControlEntry
 
+// ControlEntry represents the state and properties of a single UI control registered in a SimpleWindow.
 @[heap]
 pub struct ControlEntry {
 pub mut:
@@ -248,8 +274,10 @@ pub fn (c &ControlEntry) set_bg_color(color string) &ControlEntry {
 	return c
 }
 
+// CloseRequestedCallback is a callback invoked before a window closes; returning false cancels closing.
 pub type CloseRequestedCallback = fn (mut win SimpleWindow) bool
 
+// AnyEventCallback is an observer callback invoked whenever any UI control event occurs in a SimpleWindow.
 pub type AnyEventCallback = fn (mut win SimpleWindow, control_name string, event_name string, value string)
 
 struct ControlEventHandler {
@@ -262,7 +290,7 @@ mut:
 	file_drop_cb FileDropCallback    = unsafe { nil }
 }
 
-// new_simple_window creates and initializes a new SimpleWindow instance.
+// add_chart adds a native line or area chart control to the window layout.
 pub fn (win &SimpleWindow) add_chart(name string, chart_type string, height int) &SimpleWindow {
 	mut real_name := name
 	if real_name == '' {
@@ -281,7 +309,7 @@ pub fn (win &SimpleWindow) add_chart(name string, chart_type string, height int)
 	return win
 }
 
-// set_chart_data updates the values drawn in the chart control.
+// grid_set_column_type sets the column cell type (e.g. 'text' or 'checkbox') for a grid control.
 pub fn (win &SimpleWindow) grid_set_column_type(name string, col_idx int, col_type string) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_grid_set_column_type(win.window_info, name.str, col_idx, col_type.str)
@@ -289,12 +317,12 @@ pub fn (win &SimpleWindow) grid_set_column_type(name string, col_idx int, col_ty
 	return win
 }
 
-// grid_set_column_width resizes a specific column to a fixed width.
+// set_level_type sets the window level type ("normal", "floating", "modal", etc.).
 pub fn (win &SimpleWindow) set_level_type(level_type string) &SimpleWindow {
 	return win.set_window_level(level_type)
 }
 
-// get_window_level retrieves the current window level.
+// ControlInfo represents detailed inspection metadata for a window control (Spy++ API).
 pub struct ControlInfo {
 pub mut:
 	name             string
@@ -315,7 +343,7 @@ pub mut:
 	font_size        int
 }
 
-// spy_control inspects and returns detailed information about a single control by name.
+// TreeNode represents a single node in a hierarchical tree view control.
 pub struct TreeNode {
 pub mut:
 	id        string
@@ -323,25 +351,97 @@ pub mut:
 	text      string
 }
 
-// tree_node creates a TreeNode with explicit id, parent id, and display text.
+// MainThreadCallback holds a window pointer and callback for dispatching execution onto the main UI thread.
 struct MainThreadCallback {
 mut:
 	win &SimpleWindow     = unsafe { nil }
 	cb  VoidEventCallback = unsafe { nil }
 }
 
-// Theme represents a complete color scheme for SimpleWindow interface styling.
-pub struct Theme {
+// ThemeFx represents the Codecaine File Manager shader, atmosphere, glassmorphism,
+// and hardware-accelerated visual FX tokens for a Theme.
+pub struct ThemeFx {
+pub mut:
+	glow            bool
+	glow_color      string
+	glow_color2     string
+	glow_intensity  int    = 50
+	blur            int    = 12
+	glass           int    = 82
+	radius          int    = 10
+	border          int    = 1
+	border_opacity  int    = 25
+	motion          string = 'smooth'
+	grain           int
+	scanlines       bool
+	vignette        int
+	backdrop_style  string = 'frosted'
+	atmosphere      string = 'none'
+	ui_element_fx   string = 'frosted_glass'
+	icon_pack_style string = 'macos_3d'
+	font_profile    string = 'modern_sans'
+	corner_profile  string = 'rounded'
+	icon_glow       bool
+	icon_animation  string = 'hover_lift'
+	sheen           bool
+	noise           bool
+	chromatic       bool
+	ambient         bool
+	prism_edge      bool
+	inner_glow      bool
+	frosted_rim     bool
+	neon_pulse      bool
+	parallax        bool
+}
+
+// ThemeContrastItem holds WCAG contrast audit metrics for a semantic color pair in a Theme.
+pub struct ThemeContrastItem {
 pub:
+	label  string
+	fg     string
+	bg     string
+	ratio  f64
+	aa     bool
+	aaa    bool
+	nudged string
+}
+
+// FolderTileItem represents a sculpted 3D folder/item card in a Codecaine ThemedFolderGrid control.
+pub struct FolderTileItem {
+pub mut:
+	name         string
+	subtitle     string
+	folder_type  string = 'folder'
+	badge        string
+	accent_color string
+	item_count   int
+}
+
+// Theme represents a complete color scheme and FX shader profile for SimpleWindow interface styling,
+// compatible with Codecaine File Manager themes (CCFM-THEME-v1 / master_all_systems_20_themes_pack).
+pub struct Theme {
+pub mut:
 	name             string
+	short_name       string
+	tier             string = 'medium'
+	tier_label       string = 'Balanced Glass'
+	target_hardware  string = 'Apple Silicon / Desktop GPU'
 	background_color string
 	font_color       string
 	accent_color     string
+	secondary_accent string
+	card_background  string
+	card_border      string
+	danger_color     string = '#ef4444'
+	warning_color    string = '#f59e0b'
+	success_color    string = '#10b981'
+	info_color       string = '#3b82f6'
 	description      string
-	is_dark          bool
+	is_dark          bool = true
+	fx               ThemeFx
 }
 
-// list_themes returns all built-in production theme preset names.
+// append_terminal_line appends a styled output line to a terminal view widget.
 pub fn (win &SimpleWindow) append_terminal_line(name string, line_text string, line_type int) &SimpleWindow {
 	if win.window_info != unsafe { nil } {
 		C.window_append_terminal_line(win.window_info, name.str, line_text.str, line_type)
@@ -349,7 +449,7 @@ pub fn (win &SimpleWindow) append_terminal_line(name string, line_text string, l
 	return win
 }
 
-// clear_terminal clears output in terminal view widget.
+// add_status_banner adds a status banner alert strip widget.
 pub fn (win &SimpleWindow) add_status_banner(name string, title string, message string, style_type string) &SimpleWindow {
 	mut real_name := name
 	if real_name == '' {
@@ -357,11 +457,7 @@ pub fn (win &SimpleWindow) add_status_banner(name string, title string, message 
 	}
 	unsafe {
 		mut w := &SimpleWindow(win)
-		w.controls << ControlEntry{
-			name:  real_name
-			kind:  'status_banner'
-			value: title
-		}
+		w.upsert_control(real_name, 'status_banner', title, title, false, 0)
 	}
 	if win.window_info != unsafe { nil } {
 		C.window_add_status_banner_control(win.window_info, real_name.str, title.str, message.str,
@@ -384,7 +480,7 @@ pub fn (win &SimpleWindow) set_status_banner(name string, title string, message 
 	return win
 }
 
-// add_pill_toggle adds a rounded pill segment option toggle bar.
+// add_info_callout adds an info callout card widget with an optional action button.
 pub fn (win &SimpleWindow) add_info_callout(name string, title string, message string, style_type string, button_text string) &SimpleWindow {
 	mut real_name := name
 	if real_name == '' {
@@ -392,11 +488,7 @@ pub fn (win &SimpleWindow) add_info_callout(name string, title string, message s
 	}
 	unsafe {
 		mut w := &SimpleWindow(win)
-		w.controls << ControlEntry{
-			name:  real_name
-			kind:  'info_callout'
-			value: title
-		}
+		w.upsert_control(real_name, 'info_callout', title, title, false, 0)
 	}
 	if win.window_info != unsafe { nil } {
 		C.window_add_info_callout_control(win.window_info, real_name.str, title.str, message.str,
@@ -435,21 +527,19 @@ pub fn (win &SimpleWindow) set_state(key string, val string) &SimpleWindow {
 }
 
 // get_state retrieves the string value associated with `key` from the state store.
-// Optional `default_val`: Allows specifying a custom fallback string if `key` is missing or empty (defaults to `""`).
+// Optional `default_val`: Allows specifying a custom fallback string if `key` is missing (defaults to `""`).
 // Example: `theme := win.get_state('theme', 'Apple Dark')`
 pub fn (win &SimpleWindow) get_state(key string, default_val ...string) string {
 	fallback := if default_val.len > 0 { default_val[0] } else { '' }
 	return win.get_state_or(key, fallback)
 }
 
-// get_state_or retrieves the string value for `key`.
-// Default Return Value: Returns custom `fallback` string if `key` is unset or contains an empty string `""`.
+// get_state_or retrieves the string value for `key`, returning `fallback` if `key` is unset.
 pub fn (win &SimpleWindow) get_state_or(key string, fallback string) string {
-	val := win.state_store[key] or { '' }
-	if val == '' {
-		return fallback
+	if key in win.state_store {
+		return win.state_store[key]
 	}
-	return val
+	return fallback
 }
 
 // has_state returns `true` if `key` exists in the state store dictionary.
@@ -1001,6 +1091,8 @@ pub fn should_persist_control(ctrl &ControlEntry) bool {
 		'search',
 		'search_bar',
 		'file_picker',
+		'date',
+		'datetime',
 		'date_picker',
 		'time_picker',
 		'number',
@@ -1009,6 +1101,7 @@ pub fn should_persist_control(ctrl &ControlEntry) bool {
 		'combobox',
 		'segmented',
 		'radio',
+		'radiogroup',
 		'checkbox',
 		'switch',
 		'toggle',
@@ -1018,6 +1111,10 @@ pub fn should_persist_control(ctrl &ControlEntry) bool {
 		'stepper',
 		'rating',
 		'textarea',
+		'color',
+		'mode',
+		'tokenfield',
+		'pathcontrol',
 	] {
 		return false
 	}
@@ -1203,8 +1300,7 @@ pub fn (win &SimpleWindow) restore_app_form_state(app_name ...string) bool {
 				if ctrl.kind in ['checkbox', 'switch', 'toggle'] {
 					b_val := (val.to_lower().trim_space() in ['true', '1', 'yes', 'on'])
 					win.set_bool(ctrl.name, b_val)
-				} else if ctrl.kind in ['slider', 'number', 'progress', 'stepper', 'rating',
-					'spinner'] {
+				} else if ctrl.kind in ['slider', 'number', 'progress', 'stepper', 'rating', 'spinner'] {
 					win.set_number_value(ctrl.name, val.int())
 				} else {
 					win.set_text(ctrl.name, val)

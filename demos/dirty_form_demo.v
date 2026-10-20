@@ -67,7 +67,7 @@ fn main() {
 }
 
 // Live change listener: checks if form is dirty and updates the status banner
-fn on_field_changed(mut win simplegui.SimpleWindow, value string) {
+fn on_field_changed(mut win simplegui.SimpleWindow, _ string) {
 	if win.is_dirty() {
 		win.set_text('dirty_banner', '⚠️ Unsaved changes exist!')
 		win.set_control_font_color('dirty_banner', '#ff5555') // Red

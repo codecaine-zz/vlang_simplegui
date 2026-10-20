@@ -19,6 +19,87 @@ fn main() {
 		return
 	}
 
+	input_file := app.get_flag_string('input')
+	action := app.get_flag_string('action').to_lower()
+
+	if action.len > 0 {
+		if action == 'tts' {
+			msg := if input_file.len > 0 { input_file } else { 'Media Studio Hub active.' }
+			app.say(msg)
+			app.success('Synthesized speech: "${msg}"')
+			return
+		}
+
+		if input_file.len == 0 {
+			app.error('Input media file (-i) is required for action "${action}".')
+			return
+		}
+		if !app.file_exists(input_file) {
+			app.error('Input file not found: ${input_file}')
+			return
+		}
+
+		match action {
+			'transcode' {
+				out_file := 'transcoded_output.mp4'
+				out, code := app.exec_safe('ffmpeg', [
+					'-y',
+					'-i',
+					input_file,
+					'-c:v',
+					'libx264',
+					'-c:a',
+					'aac',
+					out_file,
+				])
+				if code == 0 {
+					app.success('Transcoded media saved to ${out_file}')
+				} else {
+					app.error('Transcode failed:\n${out}')
+				}
+			}
+			'audio-extract' {
+				out_file := 'extracted_audio.mp3'
+				out, code := app.exec_safe('ffmpeg', [
+					'-y',
+					'-i',
+					input_file,
+					'-vn',
+					'-ab',
+					'320k',
+					out_file,
+				])
+				if code == 0 {
+					app.success('Extracted audio saved to ${out_file}')
+				} else {
+					app.error('Audio extraction failed:\n${out}')
+				}
+			}
+			'thumbnail' {
+				out_file := 'thumbnail.png'
+				magick_cmd := if app.command_exists('magick') { 'magick' } else { 'convert' }
+				out, code := app.exec_safe(magick_cmd, [input_file, '-resize', '50%', out_file])
+				if code == 0 {
+					app.success('Thumbnail saved to ${out_file}')
+				} else {
+					app.error('Thumbnail generation failed:\n${out}')
+				}
+			}
+			'ocr' {
+				out, code := app.exec_safe('tesseract', [input_file, 'stdout'])
+				if code == 0 {
+					println(out)
+				} else {
+					app.error('OCR failed:\n${out}')
+				}
+			}
+			else {
+				app.error('Unknown action "${action}". Supported: transcode, thumbnail, ocr, audio-extract, tts')
+			}
+		}
+		return
+	}
+
 	app.info('Installed media engines:')
 	app.print_kv({
 		'FFmpeg':        if app.command_exists('ffmpeg') {

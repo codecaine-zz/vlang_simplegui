@@ -93,8 +93,7 @@ fn convert_data_format(input_str string, from_fmt string, to_fmt string) (string
 	// Primary Engine: yq (handles JSON, YAML, TOML, CSV, and XML natively)
 	yq_path := find_yq()
 	if yq_path != '' {
-		yq_cmd := '${yq_path} -P -p "${from_clean}" -o "${to_clean}" "${tmp_in}" 2>&1'
-		yq_res := os.execute(yq_cmd)
+		yq_res := simplegui.exec_safe(yq_path, ['-P', '-p', from_clean, '-o', to_clean, tmp_in])
 		if yq_res.exit_code == 0 && yq_res.output.trim_space() != '' {
 			return yq_res.output.trim_space(), ''
 		}
@@ -220,7 +219,7 @@ try:
                 parts.append(str(d))
             parts.append(f\"</{tag}>\")
             return \"\".join(parts)
-        print(\"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\" + dict_to_xml(\"root\", obj))
+        print('<?xml version=\"1.0\" encoding=\"UTF-8\"?>\\n' + dict_to_xml('root', obj))
     else:
         sys.stderr.write(f\"Unsupported target format: {to_f}\")
         sys.exit(1)
@@ -233,8 +232,7 @@ except Exception as e:
 	os.write_file(tmp_py, script) or { return '', 'Failed to create worker script: ${err}' }
 	defer { os.rm(tmp_py) or {} }
 
-	py_cmd := 'python3 "${tmp_py}" < "${tmp_in}" 2>&1'
-	py_res := os.execute(py_cmd)
+	py_res := simplegui.exec_safe_stdin('python3', [tmp_py], tmp_in)
 
 	if py_res.exit_code == 0 && py_res.output.trim_space() != '' {
 		return py_res.output.trim_space(), ''

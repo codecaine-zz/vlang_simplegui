@@ -241,7 +241,7 @@ fn format_color(color string) string {
 	return color
 }
 
-fn on_target_changed(mut win simplegui.SimpleWindow, value string) {
+fn on_target_changed(mut win simplegui.SimpleWindow, _ string) {
 	sync_wells_with_target(mut win)
 }
 

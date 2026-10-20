@@ -713,7 +713,7 @@ pub fn singularize(word string) string {
 	}
 	res := if w.ends_with('ies') && w.len > 3 {
 		w[..w.len - 3] + 'y'
-	} else if w.ends_with('ives') {
+	} else if w == 'knives' || w.ends_with('wives') || w == 'lives' || w.ends_with('lives') {
 		w[..w.len - 3] + 'fe'
 	} else if w.ends_with('sses') || w.ends_with('xes') || w.ends_with('zes') || w.ends_with('ches')
 		|| w.ends_with('shes') || w.ends_with('uses') {

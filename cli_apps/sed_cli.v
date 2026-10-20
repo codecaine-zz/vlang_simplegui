@@ -1,5 +1,6 @@
 module main
 
+import os
 import simplecli
 
 fn main() {
@@ -22,10 +23,18 @@ fn main() {
 	expr := app.get_flag_string('expr')
 	input_file := app.get_flag_string('input')
 
-	mut args := ['-e', expr]
-	if input_file.len > 0 {
-		args << input_file
+	if input_file.len == 0 {
+		app.warn('No input file specified. Run with -i <file> or -x for interactive mode.')
+		app.print_help()
+		return
 	}
+
+	if !app.file_exists(input_file) {
+		app.error('Input file not found: ${input_file}')
+		return
+	}
+
+	args := ['-e', expr, input_file]
 
 	out, code := app.exec_safe('sed', args)
 	if code == 0 {
@@ -41,8 +50,23 @@ fn run_interactive(mut app simplecli.SimpleCli) {
 	find_str := app.prompt('Find string', 'localhost:8080')
 	replace_str := app.prompt('Replace string', 'production.corp.internal')
 
-	expr := 's/${find_str}/${replace_str}/g'
-	out, _ := app.exec("echo '${text}' | sed '${expr}'")
-	app.success('Transformed Result:')
-	println(out)
+	tmp_file := os.join_path(os.temp_dir(), 'simplecli_sed_${os.getpid()}.txt')
+	os.write_file(tmp_file, text + '\n') or {
+		app.error('Failed to write temporary sample file: ${err}')
+		return
+	}
+	defer {
+		os.rm(tmp_file) or {}
+	}
+
+	escaped_find := find_str.replace('|', '\\|')
+	escaped_replace := replace_str.replace('|', '\\|')
+	expr := 's|${escaped_find}|${escaped_replace}|g'
+	out, code := app.exec_safe('sed', ['-e', expr, tmp_file])
+	if code == 0 {
+		app.success('Transformed Result:')
+		println(out)
+	} else {
+		app.error('Sed failed:\n${out}')
+	}
 }

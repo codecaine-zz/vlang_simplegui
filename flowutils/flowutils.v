@@ -225,7 +225,7 @@ pub fn retry[T](attempts int, base_delay time.Duration, factor f64, max_delay ti
 				current_ns := i64(current_delay)
 				next_delay_ns := i64(f64(current_ns) * factor)
 				max_delay_ns := i64(max_delay)
-				current_delay = if next_delay_ns > max_delay_ns {
+				current_delay = if max_delay_ns > 0 && next_delay_ns > max_delay_ns {
 					max_delay
 				} else {
 					time.Duration(next_delay_ns)

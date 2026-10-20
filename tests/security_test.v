@@ -32,6 +32,8 @@ fn test_sanitize_filename() {
 	assert simplegui.sanitize_filename('../../../etc/passwd') == '.._.._.._etc_passwd'
 	assert simplegui.sanitize_filename('file;id.mp4') == 'file_id.mp4'
 	assert simplegui.sanitize_filename('file$(whoami).png') == 'file__whoami_.png'
+	assert simplegui.sanitize_filename('.') == '_'
+	assert simplegui.sanitize_filename('..') == '__'
 }
 
 fn test_exec_safe() {

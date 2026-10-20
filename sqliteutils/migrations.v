@@ -266,11 +266,11 @@ pub fn paginate(mut db sqlite.DB, query string, params []string, page int, page_
 		return error('page and page_size must be >= 1')
 	}
 	q := query.trim_space().trim_right(';')
-	total := query_scalar(mut db, 'SELECT COUNT(*) FROM (${q});', params)!.int()
+	total := query_scalar(mut db, 'SELECT COUNT(*) FROM (${q}\n);', params)!.int()
 	mut p := params.clone()
 	p << page_size.str()
 	p << ((page - 1) * page_size).str()
-	rows := query_maps_params(mut db, 'SELECT * FROM (${q}) LIMIT ? OFFSET ?;', p)!
+	rows := query_maps_params(mut db, 'SELECT * FROM (${q}\n) LIMIT ? OFFSET ?;', p)!
 	return Page{
 		rows:        rows
 		page:        page

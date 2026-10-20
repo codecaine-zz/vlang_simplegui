@@ -24,14 +24,15 @@ fn main() {
 
 	if app.get_flag_bool('mounts') {
 		app.info('Mounted filesystems:')
-		out, _ := app.exec('df -h')
+		out, _ := app.exec_safe('df', ['-h'])
 		println(out)
 		return
 	}
 
 	if app.get_flag_bool('large') {
 		app.info('Scanning top 10 largest entries in "${target_path}"...')
-		out, _ := app.exec('du -sh ${target_path}/* 2>/dev/null | sort -hr | head -n 10')
+		quoted_path := simplecli.quote_path(target_path)
+		out, _ := app.exec('du -sh ${quoted_path}/* 2>/dev/null | sort -hr | head -n 10')
 		println(out)
 		return
 	}
@@ -79,11 +80,12 @@ fn run_interactive(mut app simplecli.SimpleCli) {
 			})
 		}
 		'Mounted Filesystems (df -h)' {
-			out, _ := app.exec('df -h')
+			out, _ := app.exec_safe('df', ['-h'])
 			println(out)
 		}
 		'Top 10 Largest Items in Home' {
-			out, _ := app.exec('du -sh ~/* 2>/dev/null | sort -hr | head -n 10')
+			home_q := simplecli.quote_path(simplecli.get_user_home_dir())
+			out, _ := app.exec('du -sh ${home_q}/* 2>/dev/null | sort -hr | head -n 10')
 			println(out)
 		}
 		else {

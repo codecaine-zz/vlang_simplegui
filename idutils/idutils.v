@@ -64,7 +64,7 @@ pub fn ulid_at_time(t time.Time) string {
 
 // is_valid_ulid checks if a string is a valid 26-character Crockford Base32 ULID.
 pub fn is_valid_ulid(s string) bool {
-	if s.len != 26 {
+	if s.len != 26 || s[0] > `7` {
 		return false
 	}
 	for b in s {
@@ -103,6 +103,7 @@ pub fn parse_ulid_time(s string) !time.Time {
 
 const default_epoch_ms = u64(1704067200000) // 2024-01-01 00:00:00 UTC
 
+// SnowflakeGenerator generates unique 64-bit Twitter Snowflake distributed IDs for a given node_id.
 pub struct SnowflakeGenerator {
 pub:
 	node_id  u16
@@ -127,10 +128,11 @@ pub fn new_snowflake_generator(node_id u16) !&SnowflakeGenerator {
 
 // next_id generates the next unique 64-bit snowflake ID.
 pub fn (mut g SnowflakeGenerator) next_id() !u64 {
-	mut now_ms := u64(time.now().unix_milli())
-	if now_ms < g.last_timestamp {
+	raw_ms := time.now().unix_milli()
+	if raw_ms < 0 || u64(raw_ms) < g.epoch_ms || u64(raw_ms) < g.last_timestamp {
 		return error('system clock moved backwards, refusing to generate id')
 	}
+	mut now_ms := u64(raw_ms)
 
 	if now_ms == g.last_timestamp {
 		g.sequence = (g.sequence + 1) & 0x0FFF // 12 bits = 4095 max
@@ -169,12 +171,14 @@ pub fn parse_snowflake(id u64, epoch_ms u64) (u64, u16, u16) {
 
 const default_sqids_alphabet = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
 
+// SqidsOptions configures the alphabet and minimum ID length for a Sqids encoder/decoder.
 pub struct SqidsOptions {
 pub:
 	alphabet   string = default_sqids_alphabet
 	min_length int
 }
 
+// Sqids encodes and decodes slices of unsigned integers into URL-friendly obfuscated strings.
 pub struct Sqids {
 pub:
 	alphabet   string
@@ -334,20 +338,24 @@ fn shuffle_alphabet(alphabet string) string {
 }
 
 // Default convenience wrappers
+// sqids_encode encodes a slice of unsigned 64-bit integers into a Sqids string using the default alphabet.
 pub fn sqids_encode(numbers []u64) !string {
 	sq := new_sqids(SqidsOptions{})!
 	return sq.encode(numbers)
 }
 
+// sqids_decode decodes a Sqids string into a slice of unsigned 64-bit integers using the default alphabet.
 pub fn sqids_decode(id string) []u64 {
 	sq := new_sqids(SqidsOptions{}) or { return []u64{} }
 	return sq.decode(id)
 }
 
+// sqids_encode_one encodes a single unsigned 64-bit integer into a Sqids string using the default alphabet.
 pub fn sqids_encode_one(num u64) !string {
 	return sqids_encode([num])
 }
 
+// sqids_decode_one decodes a Sqids string back into a single unsigned 64-bit integer.
 pub fn sqids_decode_one(id string) !u64 {
 	nums := sqids_decode(id)
 	if nums.len == 0 {

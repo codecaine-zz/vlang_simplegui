@@ -5,15 +5,23 @@ def main():
     with open("applications/README.md") as f:
         app_readme = f.read()
 
-    # Extract all 44 table entries from applications/README.md
+    # Dynamically locate the Complete Applications Suite table in applications/README.md
     lines = app_readme.splitlines()
     entries = []
-    for line in lines[8:60]:
-        if line.startswith("| **"):
+    in_table_section = False
+    for line in lines:
+        if line.startswith("## ") and "Complete Applications Suite" in line:
+            in_table_section = True
+            continue
+        if in_table_section and line.startswith("## "):
+            break
+        if (in_table_section or not entries) and line.startswith("| **"):
             m = re.match(r"\|\s*\*\*([^*]+)\*\*\s*\|\s*\[`([^`]+)`\]\([^)]+\)\s*\|\s*(.+)\s*\|", line)
             if m:
                 name, path, desc = m.groups()
                 basename = path.split("/")[-1].replace(".v", "")
+                if not path.startswith("applications/"):
+                    path = f"applications/{path.lstrip('./')}"
                 entries.append({
                     "name": name.strip(),
                     "path": path.strip(),
@@ -32,11 +40,11 @@ def main():
         print("Could not find section header in README.md")
         return
 
-    next_sec_header = "## Security & Command Injection Prevention"
-    next_sec_idx = readme.find(next_sec_header)
-    if next_sec_idx == -1:
+    next_sec_match = re.search(r"\n##\s+", readme[sec_idx + len(sec_header):])
+    if not next_sec_match:
         print("Could not find next section header in README.md")
         return
+    next_sec_idx = sec_idx + len(sec_header) + next_sec_match.start() + 1
 
     new_sec_lines = []
     new_sec_lines.append("## Production Workstations & Studio Applications\n")
@@ -59,13 +67,31 @@ def main():
     new_sec_lines.append("### 📸 Workstations Showcase & Screenshots\n")
     new_sec_lines.append(f"All {len(entries)} applications are fully equipped with native screenshots. See [`applications/README.md`](applications/README.md) for the complete visual catalog.\n")
 
-    # Categories
+    # Categories (all 47 studio applications)
     categories = [
-        ("🧮 Computing, Math & Science", ["programmer_calculator", "graph_studio", "statistics_studio", "qalc_studio", "numbat_studio", "kalker_studio"]),
-        ("🌐 Security, Network & OSINT", ["api_studio", "nmap_studio", "dns_studio", "recon_studio", "ifconfig_studio", "crypto_studio", "subfinder_studio"]),
-        ("🎬 Media, Graphics & Publishing", ["media_studio_hub", "ffmpeg_studio", "imagemagick_studio", "yt_dlp_studio", "dot_studio", "ocr_studio", "audiotag_studio", "pandoc_studio", "say_studio"]),
-        ("⚡ Data Engineering & Stream Processing", ["jq_studio", "dataconvert_studio", "sqlite_studio", "gawk_studio", "sed_studio", "regex_studio", "cut_studio", "tr_studio"]),
-        ("🛠️ System, DevOps & Filesystem Workstations", ["app_bundler_studio", "task_manager", "text_editor", "brew_studio", "docker_studio", "disk_studio", "launchd_studio", "rg_studio", "fd_studio", "find_studio", "sd_studio", "ouch_studio", "wget2_studio"])
+        ("🧮 Computing, Math & Science", [
+            "programmer_calculator", "graph_studio", "statistics_studio",
+            "qalc_studio", "numbat_studio", "kalker_studio"
+        ]),
+        ("🌐 Security, Network & OSINT", [
+            "api_studio", "nmap_studio", "dns_studio", "recon_studio",
+            "ifconfig_studio", "crypto_studio", "subfinder_studio"
+        ]),
+        ("🎬 Media, Graphics & Publishing", [
+            "media_studio_hub", "ffmpeg_studio", "imagemagick_studio",
+            "yt_dlp_studio", "exif_studio", "dot_studio", "ocr_studio",
+            "audiotag_studio", "pandoc_studio", "say_studio"
+        ]),
+        ("⚡ Data Engineering & Stream Processing", [
+            "jq_studio", "dataconvert_studio", "sqlite_studio", "gawk_studio",
+            "sed_studio", "regex_studio", "cut_studio", "tr_studio"
+        ]),
+        ("🛠️ System, DevOps & Filesystem Workstations", [
+            "app_bundler_studio", "omnitool_studio", "task_manager",
+            "text_editor", "brew_studio", "docker_studio", "disk_studio", "launchd_studio",
+            "watchexec_studio", "rg_studio", "fd_studio", "find_studio",
+            "sd_studio", "rip_studio", "ouch_studio", "wget2_studio"
+        ])
     ]
 
     e_map = {e["basename"]: e for e in entries}

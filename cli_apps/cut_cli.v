@@ -1,5 +1,6 @@
 module main
 
+import os
 import simplecli
 
 fn main() {
@@ -24,10 +25,18 @@ fn main() {
 	fields := app.get_flag_string('fields')
 	input_file := app.get_flag_string('input')
 
-	mut args := ['-d', delim, '-f', fields]
-	if input_file.len > 0 {
-		args << input_file
+	if input_file.len == 0 {
+		app.warn('No input file specified. Run with -i <file> or -x for interactive mode.')
+		app.print_help()
+		return
 	}
+
+	if !app.file_exists(input_file) {
+		app.error('Input file not found: ${input_file}')
+		return
+	}
+
+	args := ['-d', delim, '-f', fields, input_file]
 
 	out, code := app.exec_safe('cut', args)
 	if code == 0 {
@@ -43,6 +52,19 @@ fn run_interactive(mut app simplecli.SimpleCli) {
 	app.info('Sample Data (delimiter: ":"):\n${sample}')
 	field := app.prompt('Enter field number to extract (1=username, 6=homedir, 7=shell)', '1')
 
-	out, _ := app.exec("echo '${sample}' | cut -d: -f${field}")
-	app.success('Extracted Column:\n${out}')
+	tmp_file := os.join_path(os.temp_dir(), 'simplecli_cut_${os.getpid()}.txt')
+	os.write_file(tmp_file, sample + '\n') or {
+		app.error('Failed to write temporary sample file: ${err}')
+		return
+	}
+	defer {
+		os.rm(tmp_file) or {}
+	}
+
+	out, code := app.exec_safe('cut', ['-d', ':', '-f', field, tmp_file])
+	if code == 0 {
+		app.success('Extracted Column:\n${out}')
+	} else {
+		app.error('Cut failed:\n${out}')
+	}
 }

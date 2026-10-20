@@ -48,8 +48,13 @@ fn display_process_table(mut app simplecli.SimpleCli) {
 	top_count := app.get_flag_int('top')
 	sort_col := app.get_flag_string('sort').to_lower()
 
-	sort_arg := if sort_col == 'mem' { '-m' } else { '-r' }
-	out, _ := app.exec('ps -eo pid,pcpu,pmem,comm ${sort_arg}')
+	mut ps_args := ['-eo', 'pid,pcpu,pmem,comm']
+	if sort_col == 'mem' {
+		ps_args << '-m'
+	} else if sort_col != 'pid' {
+		ps_args << '-r'
+	}
+	out, _ := app.exec_safe('ps', ps_args)
 	lines := out.split_into_lines().filter(it.len > 0)
 
 	mut rows := [][]string{}
@@ -64,11 +69,26 @@ fn display_process_table(mut app simplecli.SimpleCli) {
 
 			if search_term.len == 0 || cmd.to_lower().contains(search_term) {
 				rows << [pid, cpu, mem, cmd]
-				if rows.len >= top_count {
-					break
-				}
 			}
 		}
+	}
+
+	if sort_col == 'pid' {
+		rows.sort_with_compare(fn (a &[]string, b &[]string) int {
+			pa := (*a)[0].int()
+			pb := (*b)[0].int()
+			if pa < pb {
+				return -1
+			}
+			if pa > pb {
+				return 1
+			}
+			return 0
+		})
+	}
+
+	if top_count > 0 && rows.len > top_count {
+		rows = rows[..top_count].clone()
 	}
 
 	app.table(['PID', 'CPU %', 'Memory %', 'Command'], rows)

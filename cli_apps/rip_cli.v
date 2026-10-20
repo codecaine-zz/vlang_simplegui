@@ -40,8 +40,9 @@ fn main() {
 				rec_file := os.join_path(gy_path, '.record')
 				if os.exists(rec_file) {
 					content := os.read_file(rec_file) or { '' }
-					lines := content.split_into_lines()
-					app.success('Tomb registry found: ${lines.len - 1} historical records recorded.')
+					lines := content.split_into_lines().filter(it.trim_space().len > 0)
+					rec_count := if lines.len > 0 { lines.len - 1 } else { 0 }
+					app.success('Tomb registry found: ${rec_count} historical records recorded.')
 				}
 			}
 		} else {
@@ -68,7 +69,7 @@ fn main() {
 		}
 
 		app.info('Decomposing graveyard...')
-		out, code := app.exec_safe('rip', ['-d'])
+		out, code := app.exec_safe('rip', ['-d', '-f'])
 		if code == 0 {
 			app.success('Graveyard successfully decomposed and purged.')
 			if out.trim_space() != '' {
@@ -111,12 +112,7 @@ fn main() {
 		effective_dir := if pos_args.len > 0 { pos_args[0] } else { '.' }
 		app.info('Summoning ghost records for directory: ${effective_dir}...')
 
-		saved_dir := os.getwd()
-		if os.is_dir(effective_dir) {
-			os.chdir(effective_dir) or {}
-		}
-		out, _ := app.exec_safe('rip', ['-s'])
-		os.chdir(saved_dir) or {}
+		out, _ := app.exec_safe('rip', ['-s', effective_dir])
 
 		trimmed := out.trim_space()
 		if trimmed == '' || trimmed == 'deletion_time\tpath' {
@@ -146,10 +142,21 @@ fn main() {
 		}
 
 		if has_rip {
-			mut args := []string{}
-			if app.get_flag_bool('inspect') {
-				args << '-i'
+			if app.get_flag_bool('inspect') && !app.get_flag_bool('force') {
+				if meta := app.get_file_metadata(bury_target) {
+					app.print_kv({
+						'Target': bury_target
+						'Size':   '${meta.size_bytes} bytes'
+						'Type':   if meta.is_dir { 'Directory' } else { 'File' }
+					})
+				}
+				if !app.confirm('Proceed with burying "${bury_target}" to graveyard?', true) {
+					app.warn('Bury operation cancelled.')
+					return
+				}
 			}
+
+			mut args := []string{}
 			if app.get_flag_bool('force') {
 				args << '-f'
 			}
@@ -204,12 +211,20 @@ fn run_interactive(mut app simplecli.SimpleCli, has_rip bool) {
 				return
 			}
 			inspect_first := app.confirm('Inspect file details before burying?', true)
-			mut args := []string{}
 			if inspect_first {
-				args << '-i'
+				if meta := app.get_file_metadata(target) {
+					app.print_kv({
+						'Target': target
+						'Size':   '${meta.size_bytes} bytes'
+						'Type':   if meta.is_dir { 'Directory' } else { 'File' }
+					})
+				}
+				if !app.confirm('Confirm burying "${target}"?', true) {
+					app.warn('Operation cancelled.')
+					return
+				}
 			}
-			args << target
-			out, code := app.exec_safe('rip', args)
+			out, code := app.exec_safe('rip', [target])
 			if code == 0 {
 				app.success('Safely buried ${target}')
 				if out.trim_space() != '' {
@@ -230,12 +245,7 @@ fn run_interactive(mut app simplecli.SimpleCli, has_rip bool) {
 		}
 		'Directory Séance (Show Deleted in Folder) (-s)' {
 			dir := app.prompt('Target directory to check for ghosts', '.')
-			saved_dir := os.getwd()
-			if os.is_dir(dir) {
-				os.chdir(dir) or {}
-			}
-			out, _ := app.exec_safe('rip', ['-s'])
-			os.chdir(saved_dir) or {}
+			out, _ := app.exec_safe('rip', ['-s', dir])
 			if out.trim_space() == '' || out.trim_space() == 'deletion_time\tpath' {
 				app.info('No deleted files currently resting in graveyard for ${dir}.')
 			} else {

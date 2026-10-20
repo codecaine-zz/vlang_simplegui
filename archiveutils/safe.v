@@ -22,7 +22,7 @@ fn szip_level(l ZipLevel) szip.CompressionLevel {
 
 // is_safe_entry_path reports whether an archive entry name stays inside the
 // extraction directory: not empty, not absolute, no drive letter, no NUL byte and
-// no `..` component. Used to block "zip-slip" path traversal.
+// no `.` or `..` component. Used to block "zip-slip" path traversal.
 pub fn is_safe_entry_path(name string) bool {
 	if name.len == 0 || name.contains('\x00') {
 		return false
@@ -31,7 +31,7 @@ pub fn is_safe_entry_path(name string) bool {
 		return false
 	}
 	for part in name.replace('\\', '/').split('/') {
-		if part == '..' {
+		if part == '..' || part == '.' {
 			return false
 		}
 	}
@@ -58,6 +58,41 @@ pub:
 	overwrite       bool = true // false = fail if a target file already exists
 }
 
+fn extract_one_entry(mut z szip.Zip, idx int, dest_dir string, overwrite bool) !bool {
+	z.open_entry_by_index(idx)!
+	defer {
+		z.close_entry()
+	}
+	name := z.name().clone()
+	if !is_safe_entry_path(name) {
+		return error('unsafe path in zip archive (path traversal blocked): "${name}"')
+	}
+	is_dir := z.is_dir() or { false }
+	target := os.join_path(dest_dir, name)
+	if is_dir || name.ends_with('/') {
+		os.mkdir_all(target)!
+		return false
+	}
+	if !overwrite && os.exists(target) {
+		return error('refusing to overwrite existing file: ${target}')
+	}
+	parent := os.dir(target)
+	if !os.exists(parent) {
+		os.mkdir_all(parent)!
+	}
+	raw_sz := z.size()
+	if raw_sz > u64(max_i32) {
+		return error('entry "${name}" is too large to allocate (${raw_sz} bytes)')
+	}
+	sz := int(raw_sz)
+	mut buf := []u8{len: sz}
+	if sz > 0 {
+		z.read_entry_buf(buf.data, sz)!
+	}
+	os.write_file_array(target, buf)!
+	return true
+}
+
 // extract_safe extracts an untrusted archive: every entry name is validated
 // (zip-slip), entry count and uncompressed sizes are bounded (zip bombs), and each
 // entry is decoded into a buffer no larger than its declared size, so a lying
@@ -76,10 +111,13 @@ pub fn extract_safe(zip_file string, dest_dir string, opts ExtractOptions) !int 
 		if opts.max_entry_bytes > 0 && e.size > opts.max_entry_bytes {
 			return error('entry "${e.name}" is ${e.size} bytes, limit is ${opts.max_entry_bytes}')
 		}
-		total += e.size
-		if total > opts.max_total_bytes {
+		if e.size > u64(max_i32) {
+			return error('entry "${e.name}" is too large to allocate (${e.size} bytes)')
+		}
+		if e.size > max_u64 - total || total + e.size > opts.max_total_bytes {
 			return error('archive expands beyond the ${opts.max_total_bytes}-byte limit')
 		}
+		total += e.size
 	}
 	if !os.exists(dest_dir) {
 		os.mkdir_all(dest_dir)!
@@ -91,32 +129,21 @@ pub fn extract_safe(zip_file string, dest_dir string, opts ExtractOptions) !int 
 	n := z.total()!
 	mut written := 0
 	for i in 0 .. n {
-		z.open_entry_by_index(i)!
-		name := z.name().clone()
-		is_dir := z.is_dir() or { false }
-		target := os.join_path(dest_dir, name)
-		if is_dir || name.ends_with('/') {
-			os.mkdir_all(target)!
-		} else {
-			if !opts.overwrite && os.exists(target) {
-				z.close_entry()
-				return error('refusing to overwrite existing file: ${target}')
-			}
-			parent := os.dir(target)
-			if !os.exists(parent) {
-				os.mkdir_all(parent)!
-			}
-			sz := int(z.size())
-			mut buf := []u8{len: sz}
-			if sz > 0 {
-				z.read_entry_buf(buf.data, sz)!
-			}
-			os.write_file_array(target, buf)!
+		if extract_one_entry(mut z, i, dest_dir, opts.overwrite)! {
 			written++
 		}
-		z.close_entry()
 	}
 	return written
+}
+
+fn write_one_entry(mut z szip.Zip, name string, data []u8) ! {
+	z.open_entry(name)!
+	defer {
+		z.close_entry()
+	}
+	if !name.ends_with('/') {
+		z.write_entry(data)!
+	}
 }
 
 // create_zip writes in-memory files (entry name -> content) into dest_zip.
@@ -135,11 +162,7 @@ pub fn create_zip(dest_zip string, files map[string][]u8, level ZipLevel) ! {
 	mut names := files.keys()
 	names.sort()
 	for name in names {
-		z.open_entry(name)!
-		if !name.ends_with('/') {
-			z.write_entry(files[name])!
-		}
-		z.close_entry()
+		write_one_entry(mut z, name, files[name])!
 	}
 }
 
@@ -190,21 +213,60 @@ pub fn has_entry(zip_file string, entry_name string) bool {
 pub fn total_uncompressed_size(zip_file string) !u64 {
 	mut total := u64(0)
 	for e in list_entries(zip_file)! {
+		if e.size > max_u64 - total {
+			return error('archive uncompressed size overflows u64')
+		}
 		total += e.size
 	}
 	return total
 }
 
+fn read_indexed_entry(mut z szip.Zip, idx int, max_remaining u64, max_total_bytes u64) !(string, []u8, bool) {
+	z.open_entry_by_index(idx)!
+	defer {
+		z.close_entry()
+	}
+	name := z.name().clone()
+	if !is_safe_entry_path(name) {
+		return error('unsafe path in zip archive (path traversal blocked): "${name}"')
+	}
+	is_dir := (z.is_dir() or { false }) || name.ends_with('/')
+	raw_sz := z.size()
+	if raw_sz > max_remaining {
+		return error('archive expands beyond the ${max_total_bytes}-byte limit')
+	}
+	if raw_sz > u64(max_i32) {
+		return error('entry "${name}" is too large to allocate (${raw_sz} bytes)')
+	}
+	if is_dir {
+		return name, []u8{}, true
+	}
+	sz := int(raw_sz)
+	mut buf := []u8{len: sz}
+	if sz > 0 {
+		z.read_entry_buf(buf.data, sz)!
+	}
+	return name, buf, false
+}
+
 // read_all_entries loads every file entry into memory (name -> bytes), refusing
 // archives whose declared total exceeds max_total_bytes.
 pub fn read_all_entries(zip_file string, max_total_bytes u64) !map[string][]u8 {
-	if total_uncompressed_size(zip_file)! > max_total_bytes {
-		return error('archive expands beyond the ${max_total_bytes}-byte limit')
+	if !os.exists(zip_file) {
+		return error('Zip archive does not exist: "${zip_file}"')
 	}
+	mut z := szip.open(zip_file, .no_compression, .read_only)!
+	defer {
+		z.close()
+	}
+	n := z.total()!
+	mut total := u64(0)
 	mut out := map[string][]u8{}
-	for e in list_entries(zip_file)! {
-		if !e.is_dir && !e.name.ends_with('/') {
-			out[e.name] = read_entry_bytes(zip_file, e.name)!
+	for i in 0 .. n {
+		name, buf, is_dir := read_indexed_entry(mut z, i, max_total_bytes - total, max_total_bytes)!
+		total += u64(buf.len)
+		if !is_dir {
+			out[name] = buf
 		}
 	}
 	return out

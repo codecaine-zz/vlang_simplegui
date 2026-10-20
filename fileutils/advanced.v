@@ -38,7 +38,18 @@ pub fn safe_join(base string, untrusted string) !string {
 	if parts.len == 0 {
 		return base
 	}
-	return os.join_path(base, ...parts)
+	joined := os.join_path(base, ...parts)
+	if os.exists(base) {
+		real_base := os.real_path(base)
+		check_target := if os.exists(joined) { joined } else { os.dir(joined) }
+		if os.exists(check_target) {
+			real_target := os.real_path(check_target)
+			if real_target != real_base && !real_target.starts_with(real_base + os.path_separator) {
+				return error('symlink escapes base directory: ${untrusted}')
+			}
+		}
+	}
+	return joined
 }
 
 const windows_reserved_names = ['CON', 'PRN', 'AUX', 'NUL', 'COM1', 'COM2', 'COM3', 'COM4', 'COM5',

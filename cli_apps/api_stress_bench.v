@@ -35,8 +35,14 @@ fn main() {
 	target_url := app.get_flag_string('url')
 	method := app.get_flag_string('method').to_upper()
 	body := app.get_flag_string('body')
-	total_reqs := app.get_flag_int('requests')
-	concurrency := app.get_flag_int('concurrency')
+	mut total_reqs := app.get_flag_int('requests')
+	mut concurrency := app.get_flag_int('concurrency')
+	if total_reqs <= 0 {
+		total_reqs = 1
+	}
+	if concurrency <= 0 {
+		concurrency = 1
+	}
 	export_path := app.get_flag_string('export')
 
 	app.banner('API Stress Bench & Latency Analyzer', 'v1.0.0 - High-Throughput HTTP Engine')
@@ -162,7 +168,11 @@ fn main() {
 	mut status_rows := [][]string{}
 	for code, count in status_counts {
 		code_label := if code == 0 { 'Network Error / Timeout' } else { '${code}' }
-		pct := (f64(count) / f64(all_results.len)) * 100.0
+		pct := if all_results.len > 0 {
+			(f64(count) / f64(all_results.len)) * 100.0
+		} else {
+			0.0
+		}
 		cnt_str := '${count}'
 		pct_str := '${pct:.1f}%'
 		status_rows << [code_label, cnt_str, pct_str]

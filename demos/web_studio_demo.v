@@ -123,7 +123,7 @@ fn main() {
 }
 
 // Retrieves all active V control properties, compiles the output HTML and updates WebView
-fn on_style_changed(mut win simplegui.SimpleWindow, value string) {
+fn on_style_changed(mut win simplegui.SimpleWindow, _ string) {
 	comp := win.get_text('company_name')
 	kpi := win.get_text('kpi_label')
 	rev := win.get_value_int('total_revenue_slider') * 100000

@@ -2,6 +2,7 @@ module cliutils
 
 import clipboard
 import os
+import strconv
 import strings
 import time
 
@@ -9,46 +10,57 @@ import time
 // ANSI Color & Text Style Formatting
 // ============================================================================
 
+// bold wraps `s` in ANSI bold escape codes.
 pub fn bold(s string) string {
 	return '\x1b[1m${s}\x1b[0m'
 }
 
+// dim wraps `s` in ANSI dim/faint escape codes.
 pub fn dim(s string) string {
 	return '\x1b[2m${s}\x1b[0m'
 }
 
+// italic wraps `s` in ANSI italic escape codes.
 pub fn italic(s string) string {
 	return '\x1b[3m${s}\x1b[0m'
 }
 
+// underline wraps `s` in ANSI underline escape codes.
 pub fn underline(s string) string {
 	return '\x1b[4m${s}\x1b[0m'
 }
 
+// red wraps `s` in ANSI red foreground escape codes.
 pub fn red(s string) string {
 	return '\x1b[31m${s}\x1b[0m'
 }
 
+// green wraps `s` in ANSI green foreground escape codes.
 pub fn green(s string) string {
 	return '\x1b[32m${s}\x1b[0m'
 }
 
+// yellow wraps `s` in ANSI yellow foreground escape codes.
 pub fn yellow(s string) string {
 	return '\x1b[33m${s}\x1b[0m'
 }
 
+// blue wraps `s` in ANSI blue foreground escape codes.
 pub fn blue(s string) string {
 	return '\x1b[34m${s}\x1b[0m'
 }
 
+// magenta wraps `s` in ANSI magenta foreground escape codes.
 pub fn magenta(s string) string {
 	return '\x1b[35m${s}\x1b[0m'
 }
 
+// cyan wraps `s` in ANSI cyan foreground escape codes.
 pub fn cyan(s string) string {
 	return '\x1b[36m${s}\x1b[0m'
 }
 
+// gray wraps `s` in ANSI bright-black (gray) foreground escape codes.
 pub fn gray(s string) string {
 	return '\x1b[90m${s}\x1b[0m'
 }
@@ -246,6 +258,7 @@ pub fn (pb ProgressBar) render() string {
 // CLI Flags & Argument Parsing
 // ============================================================================
 
+// FlagDef describes a single registered CLI option flag and its metadata.
 pub struct FlagDef {
 pub:
 	name        string
@@ -276,6 +289,7 @@ pub fn new_flag_parser(app_name string, description string) FlagParser {
 	}
 }
 
+// add_flag_string registers a string CLI flag with optional short alias, default value, and description.
 pub fn (mut fp FlagParser) add_flag_string(name string, short string, default_val string, desc string) {
 	fp.flags << FlagDef{
 		name:        name
@@ -287,6 +301,7 @@ pub fn (mut fp FlagParser) add_flag_string(name string, short string, default_va
 	fp.parsed[name] = default_val
 }
 
+// add_flag_int registers an integer CLI flag with optional short alias, default value, and description.
 pub fn (mut fp FlagParser) add_flag_int(name string, short string, default_val int, desc string) {
 	fp.flags << FlagDef{
 		name:        name
@@ -298,6 +313,7 @@ pub fn (mut fp FlagParser) add_flag_int(name string, short string, default_val i
 	fp.parsed[name] = '${default_val}'
 }
 
+// add_flag_bool registers a boolean CLI flag with optional short alias, default value, and description.
 pub fn (mut fp FlagParser) add_flag_bool(name string, short string, default_val bool, desc string) {
 	fp.flags << FlagDef{
 		name:        name
@@ -309,6 +325,7 @@ pub fn (mut fp FlagParser) add_flag_bool(name string, short string, default_val 
 	fp.parsed[name] = if default_val { 'true' } else { 'false' }
 }
 
+// add_flag_float registers a 64-bit float CLI flag with optional short alias, default value, and description.
 pub fn (mut fp FlagParser) add_flag_float(name string, short string, default_val f64, desc string) {
 	fp.flags << FlagDef{
 		name:        name
@@ -338,14 +355,26 @@ fn (fp FlagParser) find_short(short string) ?FlagDef {
 	return none
 }
 
+fn is_valid_int_flag(val string) bool {
+	_ := strconv.atoi(val) or { return false }
+	return true
+}
+
+fn is_valid_float_flag(val string) bool {
+	if val.len == 0 {
+		return false
+	}
+	_ := strconv.atof64(val) or { return false }
+	return true
+}
+
 fn check_flag_value(flag FlagDef, val string) ! {
 	ok := match flag.kind {
 		'int' {
-			val.len > 0 && val.trim_left('+-').len > 0
-				&& val.trim_left('+-').bytes().all(it.is_digit())
+			is_valid_int_flag(val)
 		}
 		'float' {
-			val.len > 0 && (val.f64() != 0.0 || val.trim_left('+-').trim('0.') == '')
+			is_valid_float_flag(val)
 		}
 		'bool' {
 			val.to_lower() in ['true', 'false', '1', '0', 'yes', 'no', 'on', 'off']
@@ -446,23 +475,28 @@ pub fn (mut fp FlagParser) parse(args []string) ! {
 	}
 }
 
+// get_string returns the parsed string value for flag `name`.
 pub fn (fp FlagParser) get_string(name string) string {
 	return fp.parsed[name] or { '' }
 }
 
+// get_int returns the parsed integer value for flag `name`.
 pub fn (fp FlagParser) get_int(name string) int {
 	return (fp.parsed[name] or { '0' }).int()
 }
 
+// get_bool returns the parsed boolean value for flag `name`.
 pub fn (fp FlagParser) get_bool(name string) bool {
 	val := (fp.parsed[name] or { 'false' }).to_lower()
 	return val in ['true', '1', 'yes', 'on']
 }
 
+// get_float returns the parsed 64-bit float value for flag `name`.
 pub fn (fp FlagParser) get_float(name string) f64 {
 	return (fp.parsed[name] or { '0.0' }).f64()
 }
 
+// get_positional returns a copy of all non-flag positional arguments collected during parsing.
 pub fn (fp FlagParser) get_positional() []string {
 	return fp.positional.clone()
 }
@@ -488,6 +522,7 @@ pub fn (fp FlagParser) format_help() string {
 	return sb.str()
 }
 
+// print_help prints the formatted CLI usage and flag help text to stdout.
 pub fn (fp FlagParser) print_help() {
 	println(fp.format_help())
 }
@@ -496,12 +531,14 @@ pub fn (fp FlagParser) print_help() {
 // Multi-Step Task Pipeline Runner
 // ============================================================================
 
+// PipelineStep represents a named action step in a sequential CLI Pipeline.
 pub struct PipelineStep {
 pub:
 	name   string
 	action fn () bool = unsafe { nil }
 }
 
+// Pipeline manages and runs an ordered sequence of PipelineStep tasks with timing and status output.
 pub struct Pipeline {
 pub:
 	name string
@@ -509,6 +546,7 @@ pub mut:
 	steps []PipelineStep
 }
 
+// new_pipeline creates a new empty CLI task Pipeline with the given name.
 pub fn new_pipeline(name string) Pipeline {
 	return Pipeline{
 		name:  name
@@ -516,6 +554,7 @@ pub fn new_pipeline(name string) Pipeline {
 	}
 }
 
+// add_step appends a named step closure to the pipeline.
 pub fn (mut p Pipeline) add_step(name string, action fn () bool) {
 	p.steps << PipelineStep{
 		name:   name
@@ -523,6 +562,7 @@ pub fn (mut p Pipeline) add_step(name string, action fn () bool) {
 	}
 }
 
+// run executes all steps in the pipeline sequentially and returns true if every step succeeded.
 pub fn (mut p Pipeline) run() bool {
 	println(bold(cyan('==> Running pipeline: ${p.name} (${p.steps.len} steps)')))
 	for i, step in p.steps {
@@ -546,6 +586,7 @@ pub fn (mut p Pipeline) run() bool {
 // Structured Multi-Level Logger
 // ============================================================================
 
+// LogLevel defines the severity threshold for CLI Logger messages.
 pub enum LogLevel {
 	trace
 	debug
@@ -555,6 +596,7 @@ pub enum LogLevel {
 	silent
 }
 
+// Logger outputs timestamped, color-coded log messages to stdout and an optional log file.
 pub struct Logger {
 pub mut:
 	level    LogLevel
@@ -562,6 +604,7 @@ pub mut:
 	no_color bool
 }
 
+// new_logger creates a new Logger configured with the given minimum LogLevel and optional log file path.
 pub fn new_logger(level LogLevel, log_file string) Logger {
 	return Logger{
 		level:    level
@@ -587,26 +630,32 @@ fn (mut l Logger) log(level LogLevel, tag string, colored_tag string, msg string
 	}
 }
 
+// trace logs a message at TRACE level.
 pub fn (mut l Logger) trace(msg string) {
 	l.log(.trace, '[TRACE]', gray('[TRACE]'), msg)
 }
 
+// debug logs a message at DEBUG level.
 pub fn (mut l Logger) debug(msg string) {
 	l.log(.debug, '[DEBUG]', cyan('[DEBUG]'), msg)
 }
 
+// info logs a message at INFO level.
 pub fn (mut l Logger) info(msg string) {
 	l.log(.info, '[INFO]', blue('[INFO]'), msg)
 }
 
+// success logs a success message at INFO level with a green `[SUCCESS]` tag.
 pub fn (mut l Logger) success(msg string) {
 	l.log(.info, '[SUCCESS]', green('[SUCCESS]'), msg)
 }
 
+// warn logs a message at WARN level.
 pub fn (mut l Logger) warn(msg string) {
 	l.log(.warn, '[WARN]', yellow('[WARN]'), msg)
 }
 
+// error logs a message at ERROR level.
 pub fn (mut l Logger) error(msg string) {
 	l.log(.error_level, '[ERROR]', red('[ERROR]'), msg)
 }
@@ -667,7 +716,7 @@ pub fn bar_chart(title string, items map[string]f64, max_width int) string {
 	for k, v in items {
 		ratio := if max_val > 0.0 { v / max_val } else { 0.0 }
 		bar_len := int(ratio * f64(w))
-		bar := '█'.repeat(bar_len)
+		bar := '█'.repeat(if bar_len < 0 { 0 } else { bar_len })
 		padded_k := k + strings.repeat(` `, if max_label_len > k.len {
 			max_label_len - k.len
 		} else {
@@ -683,9 +732,16 @@ pub fn gauge(label string, current f64, max f64, unit string) string {
 	ratio := if max > 0.0 { current / max } else { 0.0 }
 	pct := ratio * 100.0
 	width := 20
-	filled := int(ratio * f64(width))
-	bar := '█'.repeat(if filled > width { width } else { filled })
-	empty := '░'.repeat(if width > filled { width - filled } else { 0 })
+	raw_filled := int(ratio * f64(width))
+	filled := if raw_filled < 0 {
+		0
+	} else if raw_filled > width {
+		width
+	} else {
+		raw_filled
+	}
+	bar := '█'.repeat(filled)
+	empty := '░'.repeat(width - filled)
 	status := if pct > 90.0 {
 		red('[CRITICAL]')
 	} else if pct > 75.0 {
@@ -703,6 +759,7 @@ pub mut:
 	children []TreeNode
 }
 
+// new_tree_node creates a new TreeNode with the given display label and an empty child list.
 pub fn new_tree_node(label string) TreeNode {
 	return TreeNode{
 		label:    label
@@ -710,10 +767,10 @@ pub fn new_tree_node(label string) TreeNode {
 	}
 }
 
-pub fn (mut t TreeNode) add_child(label string) TreeNode {
-	child := new_tree_node(label)
-	t.children << child
-	return child
+// add_child appends a child node with `label` to `t` and returns a mutable reference to the new child.
+pub fn (mut t TreeNode) add_child(label string) &TreeNode {
+	t.children << new_tree_node(label)
+	return &t.children[t.children.len - 1]
 }
 
 // render_tree renders a tree structure with branch glyphs (├──, └──, │   ).
@@ -784,12 +841,32 @@ pub fn table_to_markdown(headers []string, rows [][]string) string {
 	return sb.str()
 }
 
+fn csv_escape_cell(cell string) string {
+	if cell.contains(',') || cell.contains('"') || cell.contains('\n') || cell.contains('\r') {
+		return '"' + cell.replace('"', '""') + '"'
+	}
+	return cell
+}
+
+fn json_escape_cell(s string) string {
+	return s.replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n').replace('\r',
+		'\\r').replace('\t', '\\t')
+}
+
 // table_to_csv formats table headers and rows as CSV.
 pub fn table_to_csv(headers []string, rows [][]string) string {
 	mut lines := []string{cap: rows.len + 1}
-	lines << headers.join(',')
+	mut h_cells := []string{cap: headers.len}
+	for h in headers {
+		h_cells << csv_escape_cell(h)
+	}
+	lines << h_cells.join(',')
 	for row in rows {
-		lines << row.join(',')
+		mut r_cells := []string{cap: row.len}
+		for c in row {
+			r_cells << csv_escape_cell(c)
+		}
+		lines << r_cells.join(',')
 	}
 	return lines.join('\n') + '\n'
 }
@@ -801,7 +878,7 @@ pub fn table_to_json(headers []string, rows [][]string) string {
 		mut pairs := []string{cap: headers.len}
 		for i, h in headers {
 			val := if i < row.len { row[i] } else { '' }
-			pairs << '"${h}": "${val}"'
+			pairs << '"${json_escape_cell(h)}": "${json_escape_cell(val)}"'
 		}
 		objs << '  {\n    ' + pairs.join(',\n    ') + '\n  }'
 	}

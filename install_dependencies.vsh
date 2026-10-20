@@ -412,15 +412,18 @@ fn main() {
 	all_deps := get_dependencies()
 	mut missing_deps := []Dependency{}
 	mut installed_count := 0
+	mut matched_count := 0
 	mut current_category := ''
 
 	for dep in all_deps {
-		if !include_optional && dep.optional {
+		if target_formula.len > 0 {
+			if dep.formula != target_formula {
+				continue
+			}
+		} else if !include_optional && dep.optional {
 			continue
 		}
-		if target_formula.len > 0 && dep.formula != target_formula {
-			continue
-		}
+		matched_count++
 
 		if dep.category != current_category {
 			current_category = dep.category
@@ -436,6 +439,11 @@ fn main() {
 			println('  ❌ ${dep.name:-24s} (${dep.formula})${opt_suffix} -> NOT INSTALLED (Used by: ${dep.studio_app})')
 			missing_deps << dep
 		}
+	}
+
+	if target_formula.len > 0 && matched_count == 0 {
+		eprintln('\n❌ Unknown formula: "${target_formula}". Run with --help or --check to view supported formulas.')
+		exit(1)
 	}
 
 	println('\n======================================================================')

@@ -71,4 +71,14 @@ fn test_sql_injection_defense() {
 		.where("title = 'What?' AND author = ?", "O'Connor")
 		.to_sql()
 	assert inlined == "SELECT id FROM questions WHERE title = 'What?' AND author = 'O''Connor'"
+
+	// Null byte stripping in identifier escaping
+	assert escape_identifier('col\x00"name') == '"col""name"'
+
+	// Inline query with question mark in comment or bracketed identifier
+	inlined_comment := select('id')
+		.from('questions')
+		.where('/* is this a ? */ [col?] = ?', 'yes')
+		.to_sql()
+	assert inlined_comment == "SELECT id FROM questions WHERE /* is this a ? */ [col?] = 'yes'"
 }

@@ -1,5 +1,6 @@
 module main
 
+import os
 import simplecli
 
 fn main() {
@@ -34,10 +35,55 @@ fn main() {
 		return
 	}
 
-	// Read metadata using ffprobe or mid3v2 / id3v2
+	title := app.get_flag_string('title')
+	artist := app.get_flag_string('artist')
+	album := app.get_flag_string('album')
+	year := app.get_flag_string('year')
+
+	if title.len > 0 || artist.len > 0 || album.len > 0 || year.len > 0 {
+		ext := os.file_ext(input_path)
+		tmp_out := '${input_path}.tagged_tmp${ext}'
+		mut ff_args := ['-y', '-i', input_path, '-c', 'copy']
+		if title.len > 0 {
+			ff_args << ['-metadata', 'title=${title}']
+		}
+		if artist.len > 0 {
+			ff_args << ['-metadata', 'artist=${artist}']
+		}
+		if album.len > 0 {
+			ff_args << ['-metadata', 'album=${album}']
+		}
+		if year.len > 0 {
+			ff_args << ['-metadata', 'date=${year}']
+		}
+		ff_args << tmp_out
+		app.info('Writing updated metadata tags to ${input_path}...')
+		ff_out, ff_code := app.exec_safe('ffmpeg', ff_args)
+		if ff_code == 0 {
+			os.mv(tmp_out, input_path) or {
+				os.rm(tmp_out) or {}
+				app.error('Failed to replace original file with tagged audio: ${err}')
+				return
+			}
+			app.success('Successfully updated audio metadata tags.')
+		} else {
+			os.rm(tmp_out) or {}
+			app.error('Failed to write metadata tags:\n${ff_out}')
+			return
+		}
+	}
+
+	// Read metadata using ffprobe
 	app.info('Inspecting audio tags for ${input_path}...')
-	out, _ :=
-		app.exec('ffprobe -v error -show_entries format_tags -of default=noprint_wrappers=1 "${input_path}"')
+	out, _ := app.exec_safe('ffprobe', [
+		'-v',
+		'error',
+		'-show_entries',
+		'format_tags',
+		'-of',
+		'default=noprint_wrappers=1',
+		input_path,
+	])
 	if out.trim_space().len > 0 {
 		println(out)
 	} else {
@@ -52,7 +98,14 @@ fn run_interactive(mut app simplecli.SimpleCli) {
 		app.warn('File does not exist.')
 		return
 	}
-	out, _ :=
-		app.exec('ffprobe -v error -show_entries format_tags -of default=noprint_wrappers=1 "${file_path}"')
+	out, _ := app.exec_safe('ffprobe', [
+		'-v',
+		'error',
+		'-show_entries',
+		'format_tags',
+		'-of',
+		'default=noprint_wrappers=1',
+		file_path,
+	])
 	println(out)
 }

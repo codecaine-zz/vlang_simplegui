@@ -213,6 +213,7 @@ fn main() {
 	concurrency := 6
 	println('Building in batches of ${concurrency} parallel tasks...')
 
+	mut failed_count := 0
 	for chunk_start := 0; chunk_start < demo_files.len; chunk_start += concurrency {
 		mut threads := []thread bool{}
 		chunk_end := if chunk_start + concurrency < demo_files.len {
@@ -225,15 +226,25 @@ fn main() {
 			file := demo_files[i]
 			path := os.join_path(demo_dir, file)
 			config := demo_maps[file] or {
-				base := file.replace('.v', '')
-				friendly_name :=
-					base.replace('_', ' ').split(' ').map(it[0..1].to_upper() + it[1..]).join(' ')
+				demo_stem := file.replace('.v', '')
+				friendly_name := demo_stem.split('_').filter(it.len > 0).map(it[0..1].to_upper() +
+					it[1..]).join(' ')
 				DemoConfig{friendly_name, 'icon.png'}
 			}
 			icon_path := os.join_path('resources', config.icon)
 			threads << spawn build_one(path, config.name, icon_path, i, demo_files.len)
 		}
-		threads.wait()
+		results := threads.wait()
+		for ok in results {
+			if !ok {
+				failed_count++
+			}
+		}
+	}
+
+	if failed_count > 0 {
+		eprintln('\n❌ ${failed_count} demo build(s) failed!')
+		exit(1)
 	}
 
 	println('\n🎉 All demo compilation runs completed!')

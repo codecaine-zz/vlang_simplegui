@@ -14,7 +14,7 @@ pub mut:
 // new_bitset creates a BitSet of the specified bit capacity.
 pub fn new_bitset(size int) BitSet {
 	return BitSet{
-		bf: bitfield.new(size)
+		bf: bitfield.new(if size < 0 { 0 } else { size })
 	}
 }
 
@@ -32,21 +32,33 @@ pub fn from_binary_string(s string) !BitSet {
 
 // set turns ON the bit at index.
 pub fn (mut b BitSet) set(index int) {
+	if index < 0 || index >= b.size() {
+		return
+	}
 	b.bf.set_bit(index)
 }
 
 // clear turns OFF the bit at index.
 pub fn (mut b BitSet) clear(index int) {
+	if index < 0 || index >= b.size() {
+		return
+	}
 	b.bf.clear_bit(index)
 }
 
 // toggle inverts the bit at index.
 pub fn (mut b BitSet) toggle(index int) {
+	if index < 0 || index >= b.size() {
+		return
+	}
 	b.bf.toggle_bit(index)
 }
 
 // get returns true if the bit at index is set (1), false otherwise.
 pub fn (b BitSet) get(index int) bool {
+	if index < 0 || index >= b.size() {
+		return false
+	}
 	return b.bf.get_bit(index) == 1
 }
 

@@ -85,7 +85,7 @@ pub fn parse_ipv6(addr string) ![]u8 {
 	if idx := s.index('::') {
 		h := s[..idx]
 		t := s[idx + 2..]
-		head := if h == '' { []u16{} } else { parse_groups(h.split(':'), t == '')! }
+		head := if h == '' { []u16{} } else { parse_groups(h.split(':'), false)! }
 		tail := if t == '' { []u16{} } else { parse_groups(t.split(':'), true)! }
 		if head.len + tail.len > 7 {
 			return error('invalid IPv6 address "${addr}"')
@@ -119,6 +119,9 @@ pub fn is_ipv6(s string) bool {
 }
 
 fn words_of(b []u8) []u16 {
+	if b.len < 16 {
+		return []u16{len: 8}
+	}
 	mut w := []u16{cap: 8}
 	for i := 0; i < 16; i += 2 {
 		w << (u16(b[i]) << 8) | u16(b[i + 1])
@@ -139,6 +142,9 @@ fn is_v4_mapped(b []u8) bool {
 }
 
 fn format_ipv6(b []u8) string {
+	if b.len < 16 {
+		return ''
+	}
 	if is_v4_mapped(b) {
 		return '::ffff:${b[12]}.${b[13]}.${b[14]}.${b[15]}'
 	}
@@ -204,6 +210,9 @@ pub fn ip_to_bytes(ip string) ![]u8 {
 pub fn bytes_to_ip(b []u8) string {
 	if b.len == 4 {
 		return '${b[0]}.${b[1]}.${b[2]}.${b[3]}'
+	}
+	if b.len != 16 {
+		return ''
 	}
 	return format_ipv6(b)
 }
@@ -386,10 +395,13 @@ const non_public_nets = [
 	'240.0.0.0/4',
 	'::/128',
 	'::1/128',
+	'::/96',
+	'64:ff9b::/96',
 	'64:ff9b:1::/48',
 	'100::/64',
 	'2001::/23',
 	'2001:db8::/32',
+	'2002::/16',
 	'fc00::/7',
 	'fe80::/10',
 	'ff00::/8',

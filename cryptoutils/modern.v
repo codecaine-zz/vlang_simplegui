@@ -105,6 +105,9 @@ pub fn hotp(secret []u8, counter u64, digits int) !string {
 // decode_totp_secret decodes a Base32 secret as shown by authenticator apps (spaces/padding/case tolerant).
 pub fn decode_totp_secret(secret string) ![]u8 {
 	mut clean := secret.to_upper().replace(' ', '').replace('-', '').trim_right('=')
+	if clean.len == 0 {
+		return error('empty TOTP secret')
+	}
 	for clean.len % 8 != 0 {
 		clean += '='
 	}
@@ -125,9 +128,13 @@ pub fn totp_now(secret_b32 string) !string {
 // verify_totp checks a code against the current time, tolerating `window` steps of clock drift
 // either side (1 is the common choice). Comparison is constant-time.
 pub fn verify_totp(secret_b32 string, code string, window int) bool {
+	if code.len != 6 {
+		return false
+	}
+	w := if window < 0 { 0 } else { window }
 	now := time.utc().unix()
-	for w in -window .. window + 1 {
-		expected := totp_at(secret_b32, now + i64(w) * 30, code.len) or { return false }
+	for step in -w .. w + 1 {
+		expected := totp_at(secret_b32, now + i64(step) * 30, 6) or { return false }
 		if secure_compare(expected, code) {
 			return true
 		}
@@ -185,7 +192,7 @@ pub fn pbkdf2_sha256(password string, salt []u8, iterations int, key_len int) ![
 // Additional digests & MACs
 // ---------------------------------------------------------------------------
 
-// sha1 returns the hex SHA-1 digest (legacy interop only: git object ids, HOTP; not collision resistant).
+// sha1_hex returns the hex SHA-1 digest (legacy interop only: git object ids, HOTP; not collision resistant).
 pub fn sha1_hex(s string) string {
 	return sha1.hexhash(s)
 }

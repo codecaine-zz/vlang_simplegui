@@ -5,33 +5,41 @@ import rand
 import json2
 import crypto.sha256
 
-// Saves a slice of structs to disk as JSON.
+$if macos {
+	#include <sys/clonefile.h>
+	#include <copyfile.h>
+}
+
+fn C.clonefile(src &char, dst &char, flags u32) int
+fn C.copyfile(from &char, to &char, state voidptr, flags u32) int
+
+// save_struct_array_to_file saves a slice of structs to disk as JSON.
 pub fn save_struct_array_to_file[T](path string, data []T) ! {
 	ensure_dir_exists(path) or { return err }
 	encoded := json2.encode(data)
 	os.write_file(path, encoded) or { return err }
 }
 
-// Loads a slice of structs from a JSON file back into memory.
+// load_struct_array_from_file loads a slice of structs from a JSON file back into memory.
 pub fn load_struct_array_from_file[T](path string) ![]T {
 	content := os.read_file(path) or { return err }
 	return json2.decode[[]T](content)
 }
 
-// Saves a single struct to disk as JSON.
+// save_struct_to_file saves a single struct to disk as JSON.
 pub fn save_struct_to_file[T](path string, data T) ! {
 	ensure_dir_exists(path) or { return err }
 	encoded := json2.encode(data)
 	os.write_file(path, encoded) or { return err }
 }
 
-// Loads a single struct from a JSON file.
+// load_struct_from_file loads a single struct from a JSON file.
 pub fn load_struct_from_file[T](path string) !T {
 	content := os.read_file(path) or { return err }
 	return json2.decode[T](content)
 }
 
-// Appends a single line to a text file, creating the file if needed.
+// append_line_to_file appends a single line to a text file, creating the file if needed.
 // Lines are newline-separated without a trailing newline. Uses O_APPEND, so cost is O(1) per call.
 pub fn append_line_to_file(path string, line string) ! {
 	ensure_dir_exists(path) or { return err }
@@ -47,31 +55,31 @@ pub fn append_line_to_file(path string, line string) ! {
 	}
 }
 
-// Writes a text file, creating parent directories automatically.
+// write_text_file writes a text file, creating parent directories automatically.
 pub fn write_text_file(path string, content string) ! {
 	ensure_dir_exists(path) or { return err }
 	os.write_file(path, content) or { return err }
 }
 
-// Reads a text file into memory.
+// read_text_file reads a text file into memory.
 pub fn read_text_file(path string) !string {
 	return os.read_file(path)
 }
 
-// Saves a map to disk as JSON for simple configuration or lookup data.
+// save_map_to_file saves a map to disk as JSON for simple configuration or lookup data.
 pub fn save_map_to_file[K, V](path string, data map[K]V) ! {
 	ensure_dir_exists(path) or { return err }
 	encoded := json2.encode(data)
 	os.write_file(path, encoded) or { return err }
 }
 
-// Loads a map from a JSON file into memory.
+// load_map_from_file loads a map from a JSON file into memory.
 pub fn load_map_from_file[K, V](path string) !map[K]V {
 	content := os.read_file(path) or { return err }
 	return json2.decode[map[K]V](content)
 }
 
-// Creates the parent directory for a file path when it does not exist.
+// ensure_dir_exists creates the parent directory for a file path when it does not exist.
 pub fn ensure_dir_exists(path string) ! {
 	dir := os.dir(path)
 	if dir.len > 0 {
@@ -79,13 +87,13 @@ pub fn ensure_dir_exists(path string) ! {
 	}
 }
 
-// Reads a file into a slice of lines for simple text processing.
+// read_lines_from_file reads a file into a slice of lines for simple text processing.
 pub fn read_lines_from_file(path string) ![]string {
 	content := os.read_file(path) or { return err }
 	return content.split_into_lines()
 }
 
-// Loads a simple key=value config file, overlaying values onto provided defaults.
+// load_config_from_file loads a simple key=value config file, overlaying values onto provided defaults.
 pub fn load_config_from_file(path string, defaults map[string]string) !map[string]string {
 	mut config := defaults.clone()
 	if !os.exists(path) {
@@ -118,20 +126,20 @@ pub fn load_config_from_file(path string, defaults map[string]string) !map[strin
 	return config
 }
 
-// Writes any JSON-serializable value to a file.
+// write_json_file writes any JSON-serializable value to a file.
 pub fn write_json_file[T](path string, data T) ! {
 	ensure_dir_exists(path) or { return err }
 	encoded := json2.encode(data)
 	os.write_file(path, encoded) or { return err }
 }
 
-// Reads a JSON file into a value of the requested type.
+// read_json_file reads a JSON file into a value of the requested type.
 pub fn read_json_file[T](path string) !T {
 	content := os.read_file(path) or { return err }
 	return json2.decode[T](content)
 }
 
-// Appends one JSON object as a new line in a newline-delimited JSON file.
+// append_json_line appends one JSON object as a new line in a newline-delimited JSON file.
 pub fn append_json_line[T](path string, data T) ! {
 	ensure_dir_exists(path) or { return err }
 	encoded := json2.encode(data)
@@ -141,6 +149,19 @@ pub fn append_json_line[T](path string, data T) ! {
 // copy_file copies a file from src to dst, creating parent directories for dst if needed.
 pub fn copy_file(src string, dst string) ! {
 	ensure_dir_exists(dst) or { return err }
+	$if macos {
+		if !os.is_link(src) {
+			if os.exists(dst) {
+				os.rm(dst) or {}
+			}
+			if C.clonefile(&char(src.str), &char(dst.str), 0) == 0 {
+				return
+			}
+			if C.copyfile(&char(src.str), &char(dst.str), unsafe { nil }, u32(1 << 24) | u32(15)) == 0 {
+				return
+			}
+		}
+	}
 	os.cp(src, dst) or { return err }
 }
 

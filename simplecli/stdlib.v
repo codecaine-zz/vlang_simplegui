@@ -250,7 +250,9 @@ pub fn (cli &SimpleCli) json_pretty(json_str string) string {
 	for k, v in m {
 		count++
 		comma := if count < m.len { ',' } else { '' }
-		sb.writeln('  "${k}": "${v}"${comma}')
+		esc_k := k.replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n').replace('\r', '\\r').replace('\t', '\\t')
+		esc_v := v.replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n').replace('\r', '\\r').replace('\t', '\\t')
+		sb.writeln('  "${esc_k}": "${esc_v}"${comma}')
 	}
 	sb.writeln('}')
 	return sb.str()
@@ -326,8 +328,16 @@ pub fn (cli &SimpleCli) validate_ip(ip_str string) bool {
 		return false
 	}
 	for p in parts {
+		if p.len == 0 || p.len > 3 || (p.len > 1 && p.starts_with('0')) {
+			return false
+		}
+		for c in p {
+			if !c.is_digit() {
+				return false
+			}
+		}
 		n := p.int()
-		if p.len == 0 || n < 0 || n > 255 || (p.len > 1 && p.starts_with('0')) {
+		if n < 0 || n > 255 {
 			return false
 		}
 	}
@@ -337,8 +347,16 @@ pub fn (cli &SimpleCli) validate_ip(ip_str string) bool {
 // validate_phone checks if a string is a valid international/national phone number.
 pub fn (cli &SimpleCli) validate_phone(phone string) bool {
 	clean :=
-		phone.replace(' ', '').replace('-', '').replace('(', '').replace(')', '').replace('+', '')
-	return clean.len >= 7 && clean.len <= 15 && clean.int() > 0
+		phone.replace(' ', '').replace('-', '').replace('(', '').replace(')', '').replace('+', '').replace('.', '')
+	if clean.len < 7 || clean.len > 15 {
+		return false
+	}
+	for c in clean {
+		if !c.is_digit() {
+			return false
+		}
+	}
+	return true
 }
 
 // validate_alphanumeric checks if text contains only letters and numbers.
@@ -537,6 +555,31 @@ pub fn (r SimpleRingBuffer[T]) len() int {
 	return r.items.len
 }
 
+// to_array returns all items in chronological order (oldest to newest).
+pub fn (r SimpleRingBuffer[T]) to_array() []T {
+	if r.items.len < r.capacity || r.head == 0 {
+		return r.items.clone()
+	}
+	mut out := []T{cap: r.items.len}
+	for i in 0 .. r.items.len {
+		idx := (r.head + i) % r.items.len
+		out << r.items[idx]
+	}
+	return out
+}
+
+// pop removes and returns the oldest element from the ring buffer.
+pub fn (mut r SimpleRingBuffer[T]) pop() ?T {
+	if r.items.len == 0 {
+		return none
+	}
+	ordered := r.to_array()
+	oldest := ordered[0]
+	r.items = ordered[1..].clone()
+	r.head = 0
+	return oldest
+}
+
 // SimpleMinHeap provides a lightweight min-heap priority queue of floats.
 pub struct SimpleMinHeap {
 pub mut:
@@ -653,7 +696,12 @@ pub fn (cli &SimpleCli) stats_mean(data []f64) f64 {
 
 // stats_median computes the median value of an array of floats.
 pub fn (cli &SimpleCli) stats_median(data []f64) f64 {
-	return stats.median(data)
+	if data.len == 0 {
+		return 0.0
+	}
+	mut sorted := data.clone()
+	sorted.sort()
+	return stats.median(sorted)
 }
 
 // stats_std_dev computes the sample standard deviation.

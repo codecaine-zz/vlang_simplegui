@@ -501,6 +501,7 @@ mut:
 	nodes []TNode
 }
 
+// CompileOptions configures template name and whitespace trimming when compiling a template.
 @[params]
 pub struct CompileOptions {
 pub:
@@ -835,12 +836,13 @@ fn (mut r Renderer) render_nodes(nodes []TNode) ! {
 // Views: a cached, thread-safe template loader rooted at a directory
 // ---------------------------------------------------------------------------
 
+// ViewConfig configures the template root directory, file extension, caching, and safety limits for Views.
 @[params]
 pub struct ViewConfig {
 pub:
 	root        string = 'views' // directory holding templates; includes can never escape it
 	ext         string = '.html' // default extension (`render('index')` loads `index.html`)
-	cache       bool   = true    // cache compiled templates (disable during development for live reload)
+	cache       bool   = true  // cache compiled templates (disable during development for live reload)
 	strict      bool // error on undefined variables instead of rendering ''
 	trim_blocks bool = true             // drop lines that contain only a control tag
 	max_depth   int  = 32               // include nesting limit (stops recursive includes)
@@ -874,14 +876,20 @@ fn validate_view_name(name string) ! {
 		return error('invalid template name "${name}"')
 	}
 	for seg in name.split('/') {
-		if seg == '..' {
-			return error('template name "${name}" may not contain `..`')
+		if seg == '.' || seg == '..' {
+			return error('template name "${name}" may not contain `.` or `..`')
 		}
 	}
 }
 
 fn (v &Views) normalize(name string) !string {
-	validate_view_name(name)!
+	if name.len == 0 || name.len > 1024 {
+		return error('invalid template name')
+	}
+	if name.contains('\0') || name.contains('\\') || name.starts_with('/')
+		|| (name.len > 1 && name[1] == `:`) {
+		return error('invalid template name "${name}"')
+	}
 	mut n := name
 	for n.starts_with('./') {
 		n = n[2..]
@@ -889,6 +897,7 @@ fn (v &Views) normalize(name string) !string {
 	if v.cfg.ext != '' && n.ends_with(v.cfg.ext) {
 		n = n[..n.len - v.cfg.ext.len]
 	}
+	validate_view_name(n)!
 	return n
 }
 

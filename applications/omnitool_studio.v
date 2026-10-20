@@ -998,7 +998,7 @@ fn main() {
 			// Execute test run
 			w.append_console('omni_console',
 				'[${get_now_str()}] Triggering command check for watchexec: ${cmd_to_run}...\n', 1)
-			sh_res := simplegui.exec_safe('sh', ['-c', 'cd "${ws}" && ${cmd_to_run}'])
+			sh_res := simplegui.exec_safe('sh', ['-c', 'cd ${simplegui.quote_path(ws)} && ${cmd_to_run}'])
 
 			mut out := '=== WATCHEXEC CONTINUOUS RUNNER (watchexec) ===\n'
 			out += 'Watch Scope: ${ws}\n'
@@ -1048,7 +1048,7 @@ fn main() {
 				'SUCCESS'
 			} else {
 				'ERROR'
-			}, 'Vitals')
+			} , 'Vitals')
 			w.set('lbl_status_bar', ' Status: wget2 download finished.')
 			w.toast(if res.exit_code == 0 { 'Download completed' } else { 'Download error' })
 			return
@@ -1125,10 +1125,15 @@ fn main() {
 
 			if action.contains('decompress') || action.contains('extract') {
 				dest_folder := os.join_path(ws, 'extracted')
-				state.last_cli_command = '${ouch_bin} decompress "${archive_name}" --dir "${dest_folder}"'
+				archive_path := if os.is_abs_path(archive_name) {
+					archive_name
+				} else {
+					os.join_path(ws, archive_name)
+				}
+				state.last_cli_command = '${ouch_bin} decompress "${archive_path}" --dir "${dest_folder}"'
 				res := simplegui.exec_safe(ouch_bin, [
 					'decompress',
-					archive_name,
+					archive_path,
 					'--dir',
 					dest_folder,
 				])

@@ -3,6 +3,7 @@ module main
 import simplegui
 import os
 import math
+import strconv
 import time
 
 // -------------------------------------------------------------
@@ -87,7 +88,7 @@ fn parse_numbers(input_text string) []f64 {
 		for word in words {
 			w := word.trim_space()
 			if w != '' {
-				val := w.f64()
+				val := strconv.atof64(w) or { continue }
 				if !math.is_nan(val) && !math.is_inf(val, 0) {
 					numbers << val
 				}
@@ -312,7 +313,11 @@ fn compute_two_sample_ttest(a []f64, b []f64, paired bool) TTestResult {
 
 fn approx_p_from_t(t f64, df int) f64 {
 	abs_t := math.abs(t)
-	z := abs_t
+	z := if df > 0 {
+		abs_t * (1.0 - 1.0 / (4.0 * f64(df))) / math.sqrt(1.0 + (abs_t * abs_t) / (2.0 * f64(df)))
+	} else {
+		abs_t
+	}
 	p_norm := 2.0 * (1.0 - (0.5 * (1.0 + math.erf(z / math.sqrt(2.0)))))
 	return math.max(0.00001, math.min(1.0, p_norm))
 }
@@ -1090,9 +1095,16 @@ fn main() {
 
 			mut pmf := 0.0
 			if k >= 0 && k <= n_trials {
-				log_comb := log_factorial(n_trials) - log_factorial(k) - log_factorial(n_trials - k)
-				pmf = math.exp(log_comb + f64(k) * math.log(p_prob) + f64(n_trials -
-					k) * math.log(1.0 - p_prob))
+				if p_prob <= 0.0 {
+					pmf = if k == 0 { 1.0 } else { 0.0 }
+				} else if p_prob >= 1.0 {
+					pmf = if k == n_trials { 1.0 } else { 0.0 }
+				} else {
+					log_comb := log_factorial(n_trials) - log_factorial(k) -
+						log_factorial(n_trials - k)
+					pmf = math.exp(log_comb + f64(k) * math.log(p_prob) + f64(n_trials -
+						k) * math.log(1.0 - p_prob))
+				}
 			}
 			exp_val := f64(n_trials) * p_prob
 			var_val := f64(n_trials) * p_prob * (1.0 - p_prob)

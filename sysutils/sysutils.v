@@ -5,12 +5,41 @@ import runtime
 import strings
 import time
 
+#include <sys/statvfs.h>
+$if macos {
+	#include <sys/sysctl.h>
+	#include <stdlib.h>
+}
+
+struct C.statvfs {
+	f_bsize  u64
+	f_frsize u64
+	f_blocks u64
+	f_bfree  u64
+	f_bavail u64
+}
+
+fn C.statvfs(path &char, buf &C.statvfs) int
+fn C.sysctlbyname(name &char, oldp voidptr, oldlenp &usize, newp voidptr, newlen usize) int
+fn C.getloadavg(loadavg &f64, nelem int) int
+
 // ============================================================================
 // Hardware Telemetry & Probing
 // ============================================================================
 
 // get_cpu_count returns the number of logical CPU cores available on the system.
 pub fn get_cpu_count() int {
+	nr := runtime.nr_cpus()
+	if nr > 0 {
+		return nr
+	}
+	$if macos {
+		mut ncpu := int(0)
+		mut sz := usize(sizeof(int))
+		if C.sysctlbyname(c'hw.ncpu', &ncpu, &sz, unsafe { nil }, 0) == 0 && ncpu > 0 {
+			return ncpu
+		}
+	}
 	res := os.execute('sysctl -n hw.ncpu')
 	if res.exit_code == 0 {
 		count := res.output.trim_space().int()
@@ -71,6 +100,10 @@ pub fn get_cpu_usage() f64 {
 // get_load_averages returns the 1-minute, 5-minute, and 15-minute system load averages.
 pub fn get_load_averages() (f64, f64, f64) {
 	$if macos {
+		mut loads := [3]f64{}
+		if C.getloadavg(&loads[0], 3) == 3 {
+			return loads[0], loads[1], loads[2]
+		}
 		res := os.execute('sysctl -n vm.loadavg')
 		if res.exit_code == 0 {
 			clean := res.output.replace('{', '').replace('}', '').trim_space()
@@ -93,12 +126,24 @@ pub fn get_load_averages() (f64, f64, f64) {
 // get_memory_stats returns (total_bytes, used_bytes, used_percent) for physical RAM.
 pub fn get_memory_stats() (u64, u64, f64) {
 	$if macos {
-		total_res := os.execute('sysctl -n hw.memsize')
-		total := if total_res.exit_code == 0 { total_res.output.trim_space().u64() } else { u64(0) }
+		mut memsize := u64(0)
+		mut sz := usize(sizeof(u64))
+		mut total := u64(0)
+		if C.sysctlbyname(c'hw.memsize', &memsize, &sz, unsafe { nil }, 0) == 0 && memsize > 0 {
+			total = memsize
+		} else {
+			total_res := os.execute('sysctl -n hw.memsize')
+			total = if total_res.exit_code == 0 { total_res.output.trim_space().u64() } else { u64(0) }
+		}
+		mut hw_page_size := u64(4096)
+		mut psz := usize(sizeof(u64))
+		if C.sysctlbyname(c'hw.pagesize', &hw_page_size, &psz, unsafe { nil }, 0) != 0 || hw_page_size == 0 {
+			hw_page_size = 4096
+		}
 		vm_res := os.execute('vm_stat')
 		if vm_res.exit_code == 0 && total > 0 {
 			mut free_pages := u64(0)
-			mut page_size := u64(4096)
+			mut page_size := hw_page_size
 			lines := vm_res.output.split_into_lines()
 			for line in lines {
 				if line.starts_with('Mach Virtual Memory Statistics') {
@@ -112,12 +157,8 @@ pub fn get_memory_stats() (u64, u64, f64) {
 							}
 						}
 					}
-				} else if line.contains('Pages free:') {
-					parts := line.split(':')
-					if parts.len == 2 {
-						free_pages += parts[1].replace('.', '').trim_space().u64()
-					}
-				} else if line.contains('Pages speculative:') {
+				} else if line.contains('Pages free:') || line.contains('Pages speculative:')
+					|| line.contains('Pages inactive:') {
 					parts := line.split(':')
 					if parts.len == 2 {
 						free_pages += parts[1].replace('.', '').trim_space().u64()
@@ -162,6 +203,19 @@ pub fn get_memory_stats() (u64, u64, f64) {
 	return u64(0), u64(0), 0.0
 }
 
+fn parse_swap_bytes(s string) u64 {
+	if s.ends_with('G') {
+		return u64(s[..s.len - 1].f64() * 1024.0 * 1024.0 * 1024.0)
+	}
+	if s.ends_with('M') {
+		return u64(s[..s.len - 1].f64() * 1024.0 * 1024.0)
+	}
+	if s.ends_with('K') {
+		return u64(s[..s.len - 1].f64() * 1024.0)
+	}
+	return u64(s.f64())
+}
+
 // get_swap_stats returns (total_bytes, used_bytes, used_percent) for swap memory.
 pub fn get_swap_stats() (u64, u64, f64) {
 	$if macos {
@@ -173,11 +227,9 @@ pub fn get_swap_stats() (u64, u64, f64) {
 			mut used := u64(0)
 			for i in 0 .. parts.len {
 				if parts[i] == 'total' && i + 2 < parts.len {
-					val := parts[i + 2].replace('M', '').replace('G', '').f64()
-					total = u64(val * 1024.0 * 1024.0)
+					total = parse_swap_bytes(parts[i + 2])
 				} else if parts[i] == 'used' && i + 2 < parts.len {
-					val := parts[i + 2].replace('M', '').replace('G', '').f64()
-					used = u64(val * 1024.0 * 1024.0)
+					used = parse_swap_bytes(parts[i + 2])
 				}
 			}
 			percent := if total > 0 { (f64(used) / f64(total)) * 100.0 } else { 0.0 }
@@ -190,6 +242,19 @@ pub fn get_swap_stats() (u64, u64, f64) {
 // get_disk_stats returns (total_bytes, used_bytes, used_percent) for the filesystem mounting path.
 pub fn get_disk_stats(path string) (u64, u64, f64) {
 	target := if path.len > 0 { path } else { '/' }
+	$if macos || linux {
+		mut st := C.statvfs{}
+		if C.statvfs(&char(target.str), &st) == 0 {
+			bsize := if st.f_frsize > 0 { st.f_frsize } else { st.f_bsize }
+			total := st.f_blocks * bsize
+			avail := st.f_bavail * bsize
+			if total > 0 {
+				used := if total >= avail { total - avail } else { u64(0) }
+				percent := (f64(used) / f64(total)) * 100.0
+				return total, used, percent
+			}
+		}
+	}
 	res := os.execute('df -k ${quote_arg(target)}')
 	if res.exit_code == 0 {
 		lines := res.output.trim_space().split_into_lines()
@@ -718,15 +783,15 @@ pub fn beep() {
 // notify displays an OS desktop notification banner with title and message.
 pub fn notify(title string, message string) ! {
 	$if macos {
-		safe_title := title.replace('"', '\\"')
-		safe_msg := message.replace('"', '\\"')
-		cmd := 'osascript -e \'display notification "${safe_msg}" with title "${safe_title}"\''
-		os.execute(cmd)
+		safe_title := title.replace('\\', '\\\\').replace('"', '\\"')
+		safe_msg := message.replace('\\', '\\\\').replace('"', '\\"')
+		script := 'display notification "${safe_msg}" with title "${safe_title}"'
+		exec_safe('osascript', ['-e', script])
 		return
 	}
 	$if linux {
 		if has_command('notify-send') {
-			exec_safe('notify-send', [title, message])
+			exec_safe('notify-send', ['--', title, message])
 			return
 		}
 	}

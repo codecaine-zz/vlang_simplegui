@@ -83,12 +83,14 @@ pub fn security_headers(cfg SecurityConfig) Handler {
 // Logger (morgan-like)
 // ---------------------------------------------------------------------------
 
+// LogFn is a callback signature for writing formatted request log lines.
 pub type LogFn = fn (line string)
 
 fn default_log(line string) {
 	println(line)
 }
 
+// LoggerConfig configures the output sink for the request logger middleware.
 @[params]
 pub struct LoggerConfig {
 pub:
@@ -115,6 +117,7 @@ fn fmt_ms(d time.Duration) string {
 // CORS
 // ---------------------------------------------------------------------------
 
+// CorsConfig configures Cross-Origin Resource Sharing (CORS) middleware headers and preflight behavior.
 @[params]
 pub struct CorsConfig {
 pub:
@@ -173,12 +176,14 @@ pub fn cors(cfg CorsConfig) Handler {
 // Rate limiting (fixed window, in-memory, thread-safe)
 // ---------------------------------------------------------------------------
 
+// KeyFn extracts a client bucket key (such as IP address) from a request Context for rate limiting.
 pub type KeyFn = fn (c &Context) string
 
 fn default_rate_key(c &Context) string {
 	return c.ip()
 }
 
+// RateLimitConfig configures fixed-window rate limiting middleware.
 @[params]
 pub struct RateLimitConfig {
 pub:
@@ -330,6 +335,7 @@ pub fn bearer_auth(verify fn (token string) bool) Handler {
 // Compression
 // ---------------------------------------------------------------------------
 
+// CompressConfig configures gzip response compression middleware.
 @[params]
 pub struct CompressConfig {
 pub:
@@ -339,7 +345,8 @@ pub:
 fn compressible(ct string) bool {
 	t := ct.all_before(';').trim_space().to_lower()
 	return t.starts_with('text/')
-		|| t in ['application/json', 'application/javascript', 'application/xml', 'image/svg+xml', 'application/manifest+json']
+		|| t in ['application/json', 'application/javascript', 'application/xml', 'image/svg+xml',
+			'application/manifest+json']
 		|| t.ends_with('+json') || t.ends_with('+xml')
 }
 
@@ -378,6 +385,7 @@ pub fn compress(cfg CompressConfig) Handler {
 // CSRF protection (signed double-submit tokens)
 // ---------------------------------------------------------------------------
 
+// CsrfConfig configures signed double-submit cookie CSRF protection middleware.
 @[params]
 pub struct CsrfConfig {
 pub:

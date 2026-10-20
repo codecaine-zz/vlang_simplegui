@@ -690,19 +690,12 @@ void window_order_back(main__WindowInfo *info);
 // Additional Window Control APIs
 void window_set_alpha(main__WindowInfo *info, double alpha);
 double window_get_alpha(main__WindowInfo *info);
-void window_set_min_size(main__WindowInfo *info, int width, int height);
 void window_get_min_size(main__WindowInfo *info, int *out_w, int *out_h);
-void window_set_max_size(main__WindowInfo *info, int width, int height);
 void window_get_max_size(main__WindowInfo *info, int *out_w, int *out_h);
 void window_set_collection_behavior(main__WindowInfo *info, const char *behavior);
-void window_set_has_shadow(main__WindowInfo *info, int shadow);
-int window_get_has_shadow(main__WindowInfo *info);
 void window_set_close_button_enabled(main__WindowInfo *info, int enabled);
 void window_set_minimize_button_enabled(main__WindowInfo *info, int enabled);
 void window_set_zoom_button_enabled(main__WindowInfo *info, int enabled);
-void window_set_title_visible(main__WindowInfo *info, int visible);
-int window_get_title_visible(main__WindowInfo *info);
-void window_shake(main__WindowInfo *info);
 void window_set_content_insets(main__WindowInfo *info, int top, int left, int bottom, int right);
 void window_set_tabbing_mode(main__WindowInfo *info, const char *mode);
 const char *window_get_tabbing_mode(main__WindowInfo *info);
@@ -746,10 +739,6 @@ void window_set_content_min_size(main__WindowInfo *info, int width, int height);
 void window_set_content_max_size(main__WindowInfo *info, int width, int height);
 void window_get_content_min_size(main__WindowInfo *info, int *out_w, int *out_h);
 void window_get_content_max_size(main__WindowInfo *info, int *out_w, int *out_h);
-
-// Window Movability
-void window_set_movable(main__WindowInfo *info, int movable);
-int window_get_movable(main__WindowInfo *info);
 
 // Tab Count
 int window_get_tab_count(main__WindowInfo *info);
@@ -904,4 +893,287 @@ double window_get_hdr_glow_box_intensity(main__WindowInfo *info, const char *nam
 
 void window_set_control_hdr_color(main__WindowInfo *info, const char *name, const char *property, double r, double g, double b, double a, double headroom);
 
+// 24 New RAD Studio, Analytics, Audio, Collaboration & Developer Controls
+// 1. Gantt Chart
+void *window_add_gantt_chart_control(main__WindowInfo *info, const char *name, const char *title, const char **task_names, const double *start_pcts, const double *duration_pcts, const double *progress_pcts, const char **hex_colors, int count, int height);
+void window_set_gantt_chart_tasks(main__WindowInfo *info, const char *name, const char **task_names, const double *start_pcts, const double *duration_pcts, const double *progress_pcts, const char **hex_colors, int count);
+
+// 2. Funnel Chart
+void *window_add_funnel_chart_control(main__WindowInfo *info, const char *name, const char *title, const char **stages, const double *values, const char **hex_colors, int count, int height);
+void window_set_funnel_chart_data(main__WindowInfo *info, const char *name, const char **stages, const double *values, int count);
+
+// 3. Candlestick Chart
+void *window_add_candlestick_chart_control(main__WindowInfo *info, const char *name, const char *symbol, const double *opens, const double *highs, const double *lows, const double *closes, int count, int height);
+void window_set_candlestick_chart_data(main__WindowInfo *info, const char *name, const double *opens, const double *highs, const double *lows, const double *closes, int count);
+
+// 4. Radar / Spider Chart
+void *window_add_radar_chart_control(main__WindowInfo *info, const char *name, const char *title, const char **axes, const double *values, int count, int size);
+void window_set_radar_chart_values(main__WindowInfo *info, const char *name, const double *values, int count);
+
+// 5. Bullet Chart
+void *window_add_bullet_chart_control(main__WindowInfo *info, const char *name, const char *title, const char *subtitle, double value, double target, double max_val);
+void window_set_bullet_chart_value(main__WindowInfo *info, const char *name, double value, double target);
+double window_get_bullet_chart_value(main__WindowInfo *info, const char *name);
+
+// 6. Waterfall Chart
+void *window_add_waterfall_chart_control(main__WindowInfo *info, const char *name, const char *title, const char **labels, const double *deltas, int count, int height);
+void window_set_waterfall_chart_data(main__WindowInfo *info, const char *name, const char **labels, const double *deltas, int count);
+
+// 7. Equalizer (Multi-Band Audio EQ)
+void *window_add_equalizer_control(main__WindowInfo *info, const char *name, const char *title, const char **freq_labels, const double *db_values, int count, int height);
+void window_set_equalizer_bands(main__WindowInfo *info, const char *name, const double *db_values, int count);
+const char *window_get_equalizer_bands(main__WindowInfo *info, const char *name);
+
+// 8. VU Meter (Stereo LED Level Meter)
+void *window_add_vu_meter_control(main__WindowInfo *info, const char *name, const char *title, double left_pct, double right_pct);
+void window_set_vu_meter_levels(main__WindowInfo *info, const char *name, double left_pct, double right_pct);
+double window_get_vu_meter_left(main__WindowInfo *info, const char *name);
+double window_get_vu_meter_right(main__WindowInfo *info, const char *name);
+
+// 9. XY Pad (2D Vector Controller)
+void *window_add_xy_pad_control(main__WindowInfo *info, const char *name, const char *title, double x_val, double y_val, int size);
+void window_set_xy_pad_position(main__WindowInfo *info, const char *name, double x_val, double y_val);
+double window_get_xy_pad_x(main__WindowInfo *info, const char *name);
+double window_get_xy_pad_y(main__WindowInfo *info, const char *name);
+
+// 10. Stopwatch / Lap Timer
+void *window_add_stopwatch_control(main__WindowInfo *info, const char *name, const char *title, int initial_seconds);
+void window_set_stopwatch_seconds(main__WindowInfo *info, const char *name, int seconds);
+int window_get_stopwatch_seconds(main__WindowInfo *info, const char *name);
+void window_reset_stopwatch(main__WindowInfo *info, const char *name);
+
+// 11. Chat / Conversation View
+void *window_add_chat_view_control(main__WindowInfo *info, const char *name, const char *placeholder, int height);
+void window_add_chat_message(main__WindowInfo *info, const char *name, const char *sender, const char *message, const char *timestamp, int is_outgoing);
+void window_clear_chat_view(main__WindowInfo *info, const char *name);
+int window_get_chat_message_count(main__WindowInfo *info, const char *name);
+
+// 12. Notification List / Inbox
+void *window_add_notification_list_control(main__WindowInfo *info, const char *name, const char *title, int height);
+void window_add_notification_item(main__WindowInfo *info, const char *name, const char *title, const char *message, const char *time_str, const char *level);
+void window_clear_notification_list(main__WindowInfo *info, const char *name);
+int window_get_notification_count(main__WindowInfo *info, const char *name);
+
+// 13. Pricing / Subscription Tier Card
+void *window_add_pricing_card_control(main__WindowInfo *info, const char *name, const char *plan_name, const char *price_text, const char *period_text, const char *badge_text, const char **features, int feature_count, const char *button_text);
+void window_set_pricing_card_price(main__WindowInfo *info, const char *name, const char *price_text, const char *period_text);
+
+// 14. Empty State Placeholder
+void *window_add_empty_state_control(main__WindowInfo *info, const char *name, const char *icon_text, const char *title, const char *subtitle, const char *button_text);
+void window_set_empty_state(main__WindowInfo *info, const char *name, const char *title, const char *subtitle);
+
+// 15. Skeleton Loader
+void *window_add_skeleton_loader_control(main__WindowInfo *info, const char *name, int lines, int height);
+void window_set_skeleton_active(main__WindowInfo *info, const char *name, int active);
+int window_get_skeleton_active(main__WindowInfo *info, const char *name);
+
+// 16. Comparison / Feature Matrix Card
+void *window_add_comparison_card_control(main__WindowInfo *info, const char *name, const char *left_title, const char *right_title, const char **features, const char **left_vals, const char **right_vals, int count);
+void window_set_comparison_card(main__WindowInfo *info, const char *name, const char *left_title, const char *right_title);
+
+// 17. Avatar Group / Overlapping Stack
+void *window_add_avatar_group_control(main__WindowInfo *info, const char *name, const char **initials, const char **hex_colors, int count, int max_visible, const char *caption);
+void window_set_avatar_group(main__WindowInfo *info, const char *name, const char **initials, int count, const char *caption);
+
+// 18. Checkout Steps / Connected Progress Bar
+void *window_add_checkout_steps_control(main__WindowInfo *info, const char *name, const char **steps, int count, int current_step);
+void window_set_checkout_step(main__WindowInfo *info, const char *name, int current_step);
+int window_get_checkout_step(main__WindowInfo *info, const char *name);
+
+// 19. Cron Expression Editor
+void *window_add_cron_editor_control(main__WindowInfo *info, const char *name, const char *expression);
+void window_set_cron_expression(main__WindowInfo *info, const char *name, const char *expression);
+const char *window_get_cron_expression(main__WindowInfo *info, const char *name);
+
+// 20. Regex Tester Bar
+void *window_add_regex_tester_control(main__WindowInfo *info, const char *name, const char *pattern, const char *test_text);
+void window_set_regex_pattern(main__WindowInfo *info, const char *name, const char *pattern);
+const char *window_get_regex_pattern(main__WindowInfo *info, const char *name);
+void window_set_regex_test_text(main__WindowInfo *info, const char *name, const char *test_text);
+int window_get_regex_match_count(main__WindowInfo *info, const char *name);
+
+// 21. Hex / Byte Inspector Viewer
+void *window_add_hex_viewer_control(main__WindowInfo *info, const char *name, const char *raw_data, int height);
+void window_set_hex_viewer_data(main__WindowInfo *info, const char *name, const char *raw_data);
+const char *window_get_hex_viewer_data(main__WindowInfo *info, const char *name);
+
+// 22. Password Strength Input
+void *window_add_password_strength_control(main__WindowInfo *info, const char *name, const char *value);
+void window_set_password_strength_value(main__WindowInfo *info, const char *name, const char *value);
+const char *window_get_password_strength_value(main__WindowInfo *info, const char *name);
+int window_get_password_strength_score(main__WindowInfo *info, const char *name);
+
+// 23. Signature Pad
+void *window_add_signature_pad_control(main__WindowInfo *info, const char *name, const char *label, int height);
+void window_clear_signature_pad(main__WindowInfo *info, const char *name);
+int window_has_signature(main__WindowInfo *info, const char *name);
+
+// 24. Number Spinner Pill
+void *window_add_number_spinner_control(main__WindowInfo *info, const char *name, int value, int min_val, int max_val, int step);
+void window_set_number_spinner_value(main__WindowInfo *info, const char *name, int value);
+int window_get_number_spinner_value(main__WindowInfo *info, const char *name);
+
+// 25. Codecaine File Manager Theme FX & Atmosphere Shaders + 3D Sculpted Folder Grid
+void window_apply_theme_fx(
+    main__WindowInfo *info,
+    const char *bg_color,
+    const char *font_color,
+    const char *accent_color,
+    const char *secondary_accent,
+    const char *card_bg_color,
+    const char *card_border_color,
+    const char *glow_color,
+    const char *glow_color2,
+    int glow_intensity,
+    int blur_radius,
+    int glass_opacity,
+    int corner_radius,
+    int border_width,
+    int border_opacity,
+    int grain,
+    int scanlines,
+    int vignette,
+    const char *atmosphere,
+    const char *ui_element_fx,
+    const char *backdrop_style,
+    int prism_edge,
+    int frosted_rim,
+    int inner_glow,
+    int is_dark);
+void window_set_theme_atmosphere(main__WindowInfo *info, const char *atmosphere, const char *glow_color, const char *glow_color2, int intensity);
+void *window_add_themed_folder_grid_control(
+    main__WindowInfo *info,
+    const char *name,
+    const char **titles,
+    const char **subtitles,
+    const char **folder_types,
+    const char **badges,
+    int count,
+    int columns,
+    int height);
+void window_set_themed_folder_grid_fx(
+    main__WindowInfo *info,
+    const char *name,
+    const char *ui_element_fx,
+    const char *icon_pack_style,
+    const char *accent_color,
+    const char *secondary_accent,
+    const char *card_bg,
+    const char *card_border,
+    int corner_radius,
+    int icon_glow);
+int window_get_themed_folder_grid_selected(main__WindowInfo *info, const char *name);
+void window_set_themed_folder_grid_selected(main__WindowInfo *info, const char *name, int index);
+void window_set_atmosphere_animated(main__WindowInfo *info, int enabled);
+void window_step_atmosphere_phase(main__WindowInfo *info, double delta);
+
+// 26. Master VFX Shader Canvas Viewport (4D Tesseract, Plasma Reactor, Synthwave Horizon, Neural Plexus, 3D Audio Spectrum, Black Hole)
+void *window_add_shader_canvas_control(main__WindowInfo *info, const char *name, const char *preset, int height);
+void window_set_shader_canvas_preset(main__WindowInfo *info, const char *name, const char *preset);
+const char *window_get_shader_canvas_preset(main__WindowInfo *info, const char *name);
+void window_set_shader_canvas_speed(main__WindowInfo *info, const char *name, double speed);
+void window_step_shader_canvas(main__WindowInfo *info, const char *name, double delta);
+
+// 27. Interactive Particle Physics & Fireworks Emitter Control
+void *window_add_particle_emitter_control(main__WindowInfo *info, const char *name, const char *effect_type, int particle_count, int height);
+void window_set_particle_emitter_type(main__WindowInfo *info, const char *name, const char *effect_type);
+const char *window_get_particle_emitter_type(main__WindowInfo *info, const char *name);
+void window_emit_particle_burst(main__WindowInfo *info, const char *name, double x, double y, int count);
+
+// 28. 3D Hologram Foil & Cyber HUD Showcase Card Control
+void *window_add_hologram_card_control(main__WindowInfo *info, const char *name, const char *title, const char *subtitle, const char *metric_value, const char *badge, const char *style, int height);
+void window_set_hologram_card_value(main__WindowInfo *info, const char *name, const char *metric_value, const char *badge);
+const char *window_get_hologram_card_value(main__WindowInfo *info, const char *name);
+
+// 29. Multi-Harmonic Glowing Waveform & Lissajous Synthesizer Control
+void *window_add_waveform_synthesizer_control(main__WindowInfo *info, const char *name, const char *wave_type, double frequency, double amplitude, int height);
+void window_set_waveform_synthesizer_params(main__WindowInfo *info, const char *name, const char *wave_type, double frequency, double amplitude);
+const char *window_get_waveform_synthesizer_type(main__WindowInfo *info, const char *name);
+
+// 30. Cyberpunk Chromatic Glitch & Neon Hero Banner Control
+void *window_add_glitch_banner_control(main__WindowInfo *info, const char *name, const char *title, const char *subtitle, const char *style, int height);
+void window_set_glitch_banner_text(main__WindowInfo *info, const char *name, const char *title, const char *subtitle);
+const char *window_get_glitch_banner_text(main__WindowInfo *info, const char *name);
+void window_trigger_glitch_pulse(main__WindowInfo *info, const char *name);
+
+// 31. Special-FX Control Animations (Neon Pulse, 3D Flip, Zero-G Float)
+void window_animate_control_pulse(main__WindowInfo *info, const char *name, const char *hex_color, int duration_ms);
+void window_animate_control_flip(main__WindowInfo *info, const char *name, int duration_ms);
+void window_animate_control_float(main__WindowInfo *info, const char *name, int enabled);
+
+// 32. Built-in Procedural Sound Effects & Audio Synthesizer Engine
+void window_play_sfx(const char *effect_name);
+void window_play_synth_tone(double freq_hz, int duration_ms, const char *wave_type, double volume);
+void window_play_piano_note(int midi_note, int duration_ms, const char *wave_type);
+void window_set_sfx_enabled(int enabled);
+int window_is_sfx_enabled(void);
+void window_set_sfx_volume(double volume);
+double window_get_sfx_volume(void);
+
+// 33. Expanded Special-FX Control Animations & Webview Enhancements
+void window_animate_control_bounce(main__WindowInfo *info, const char *name, double scale, int duration_ms);
+void window_animate_control_glitch(main__WindowInfo *info, const char *name, int duration_ms);
+void window_set_control_neon_glow(main__WindowInfo *info, const char *name, const char *hex_color, double radius, double opacity);
+void window_webview_load_url(main__WindowInfo *info, const char *name, const char *url);
+void window_webview_eval_js(main__WindowInfo *info, const char *name, const char *js_code);
+
+// 34. Qt 6 Smart House / Domotics Floorplan & IoT Room Controller
+void *window_add_smart_house_floorplan_control(main__WindowInfo *info, const char *name, const char *title, int active_mask, double total_kw, int battery_pct, int height);
+void window_set_smart_house_state(main__WindowInfo *info, const char *name, int active_mask, double total_kw, int battery_pct);
+int window_get_smart_house_active_mask(main__WindowInfo *info, const char *name);
+
+// 35. Qt 6 Smart Climate Thermostat & Environmental Dial
+void *window_add_smart_thermostat_control(main__WindowInfo *info, const char *name, const char *zone_name, double target_temp, double current_temp, int humidity, const char *mode, int size);
+void window_set_smart_thermostat(main__WindowInfo *info, const char *name, double target_temp, double current_temp, int humidity, const char *mode);
+double window_get_smart_thermostat_target(main__WindowInfo *info, const char *name);
+
+// 36. Qt 6 Automotive & Aerospace Digital Cockpit Cluster
+void *window_add_cockpit_cluster_control(main__WindowInfo *info, const char *name, double speed_mph, double rpm, const char *gear, int battery_pct, int height);
+void window_set_cockpit_telemetry(main__WindowInfo *info, const char *name, double speed_mph, double rpm, const char *gear, int battery_pct);
+double window_get_cockpit_speed(main__WindowInfo *info, const char *name);
+
+// 37. Visual Node Graph / Blueprint Shader & Logic Editor
+void *window_add_node_graph_control(main__WindowInfo *info, const char *name, const char *title, const char **node_titles, int count, int height);
+void window_set_node_graph_nodes(main__WindowInfo *info, const char *name, const char **node_titles, int count);
+int window_get_node_graph_selected(main__WindowInfo *info, const char *name);
+
+// 38. Interactive Piano / MIDI Synthesizer Studio Keyboard
+void *window_add_piano_keyboard_control(main__WindowInfo *info, const char *name, int active_midi_note, const char *wave_type, int height);
+void window_set_piano_active_note(main__WindowInfo *info, const char *name, int midi_note);
+int window_get_piano_active_note(main__WindowInfo *info, const char *name);
+
+// 39. 16-Step Pro Audio Drum & Synth Matrix Sequencer
+void *window_add_step_sequencer_control(main__WindowInfo *info, const char *name, const char *title, int bpm, unsigned int pattern_mask, int height);
+void window_set_step_sequencer_state(main__WindowInfo *info, const char *name, int bpm, unsigned int pattern_mask);
+unsigned int window_get_step_sequencer_pattern(main__WindowInfo *info, const char *name);
+
+// 40. Real-Time 3D Wireframe & Shaded Mesh Viewport (Smart House 3D, Icosahedron, Torus Knot, DNA Helix, Starfighter HUD)
+void *window_add_mesh_viewport_3d_control(main__WindowInfo *info, const char *name, const char *mesh_preset, int height);
+void window_set_mesh_viewport_preset(main__WindowInfo *info, const char *name, const char *mesh_preset);
+const char *window_get_mesh_viewport_preset(main__WindowInfo *info, const char *name);
+
+// 41. Sweeping Polar Radar, Sonar & RF Smith Scope
+void *window_add_polar_radar_sonar_control(main__WindowInfo *info, const char *name, const char *title, double sweep_speed, int target_count, int size);
+void window_set_polar_radar_params(main__WindowInfo *info, const char *name, double sweep_speed, int target_count);
+void window_ping_polar_radar(main__WindowInfo *info, const char *name);
+
+// 42. Digital Logic Analyzer & Bus Protocol Timing Scope
+void *window_add_logic_analyzer_control(main__WindowInfo *info, const char *name, const char *title, int sample_rate_mhz, int pattern_seed, int height);
+void window_set_logic_analyzer_seed(main__WindowInfo *info, const char *name, int pattern_seed);
+
+// 43. Sci-Fi Nixie Tube & Plasma Counter Display
+void *window_add_nixie_display_control(main__WindowInfo *info, const char *name, const char *title, const char *value_text, const char *tube_style, int height);
+void window_set_nixie_display_text(main__WindowInfo *info, const char *name, const char *value_text);
+const char *window_get_nixie_display_text(main__WindowInfo *info, const char *name);
+
+// 44. Sankey Energy & Data Flow Diagram
+void *window_add_sankey_chart_control(main__WindowInfo *info, const char *name, const char *title, const char **sources, const char **targets, const double *values, int count, int height);
+void window_set_sankey_chart_data(main__WindowInfo *info, const char *name, const char **sources, const char **targets, const double *values, int count);
+
+// 45. Studio Color Wheel & Vectorscope Harmonies
+void *window_add_color_wheel_control(main__WindowInfo *info, const char *name, const char *selected_hex, const char *harmony_mode, int size);
+void window_set_color_wheel_hex(main__WindowInfo *info, const char *name, const char *selected_hex);
+const char *window_get_color_wheel_hex(main__WindowInfo *info, const char *name);
+
 #endif
+

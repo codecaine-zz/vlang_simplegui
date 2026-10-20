@@ -10,8 +10,8 @@ const companies_b = ['Labs', 'Systems', 'Industries', 'Dynamics', 'Analytics', '
 	'Software']
 const streets = ['Main St', 'Oak Ave', 'Maple Dr', 'Cedar Ln', 'Pine Rd', 'Elm St', 'Lake View',
 	'Sunset Blvd']
-const cities = ['Springfield', 'Riverton', 'Fairview', 'Lakeside', 'Georgetown', 'Franklin',
-	'Clinton', 'Madison']
+const cities = ['Springfield', 'Riverton', 'Fairview', 'Lakeside', 'Georgetown', 'Franklin', 'Clinton',
+	'Madison']
 const country_codes = ['US', 'GB', 'DE', 'FR', 'JP', 'CA', 'AU', 'BR', 'IN', 'NL']
 const faker_words = ['lorem', 'ipsum', 'dolor', 'sit', 'amet', 'consectetur', 'adipiscing', 'elit',
 	'sed', 'do', 'eiusmod', 'tempor', 'incididunt', 'ut', 'labore', 'et', 'dolore', 'magna', 'aliqua']
@@ -77,14 +77,17 @@ pub fn (mut f Faker) shuffle_strings(items []string) []string {
 	return out
 }
 
+// first_name returns a pseudorandomly selected given name.
 pub fn (mut f Faker) first_name() string {
 	return f.pick_string(first_names)
 }
 
+// last_name returns a pseudorandomly selected surname.
 pub fn (mut f Faker) last_name() string {
 	return f.pick_string(last_names)
 }
 
+// full_name returns a pseudorandomly generated first and last name.
 pub fn (mut f Faker) full_name() string {
 	return '${f.first_name()} ${f.last_name()}'
 }
@@ -94,6 +97,7 @@ pub fn (mut f Faker) username() string {
 	return '${f.first_name().to_lower()}_${f.last_name().to_lower()}${f.int_between(1, 99)}'
 }
 
+// email returns a synthetic email address on a reserved example domain.
 pub fn (mut f Faker) email() string {
 	return '${f.first_name().to_lower()}.${f.last_name().to_lower()}${f.int_between(10, 999)}@${f.pick_string(domains)}'
 }
@@ -103,22 +107,27 @@ pub fn (mut f Faker) phone() string {
 	return '+1-${f.int_between(200, 999)}-555-01${f.int_between(0, 99):02}'
 }
 
+// company returns a synthetic two-word company name.
 pub fn (mut f Faker) company() string {
 	return '${f.pick_string(companies_a)} ${f.pick_string(companies_b)}'
 }
 
+// street_address returns a synthetic street number and street name.
 pub fn (mut f Faker) street_address() string {
 	return '${f.int_between(1, 9999)} ${f.pick_string(streets)}'
 }
 
+// city returns a pseudorandomly selected city name.
 pub fn (mut f Faker) city() string {
 	return f.pick_string(cities)
 }
 
+// country_code returns an ISO 3166-1 alpha-2 country code.
 pub fn (mut f Faker) country_code() string {
 	return f.pick_string(country_codes)
 }
 
+// zip_code returns a 5-digit US postal ZIP code string.
 pub fn (mut f Faker) zip_code() string {
 	return '${f.int_between(0, 99999):05}'
 }
@@ -174,6 +183,7 @@ pub fn (mut f Faker) hex_color() string {
 	return '#${f.int_between(0, 0xffffff):06x}'
 }
 
+// word returns a pseudorandomly selected lowercase word from the built-in vocabulary.
 pub fn (mut f Faker) word() string {
 	return f.pick_string(faker_words)
 }
@@ -189,6 +199,7 @@ pub fn (mut f Faker) sentence(n int) string {
 	return s[..1].to_upper() + s[1..] + '.'
 }
 
+// paragraph returns a paragraph composed of `sentences` space-separated sentences.
 pub fn (mut f Faker) paragraph(sentences int) string {
 	count := if sentences <= 0 { 3 } else { sentences }
 	mut out := []string{cap: count}
@@ -266,6 +277,9 @@ pub fn (mut f Faker) user() MockUser {
 
 // users returns n profiles with sequential ids starting at 1.
 pub fn (mut f Faker) users(n int) []MockUser {
+	if n <= 0 {
+		return []MockUser{}
+	}
 	mut out := []MockUser{cap: n}
 	for i in 0 .. n {
 		u := f.user()
@@ -281,36 +295,43 @@ pub fn (mut f Faker) users(n int) []MockUser {
 // Unseeded one-shot helpers
 // ---------------------------------------------------------------------------
 
+// mock_uuid returns a one-shot RFC 9562 version-4 UUID string.
 pub fn mock_uuid() string {
 	mut f := new_random_faker()
 	return f.uuid_v4()
 }
 
+// mock_ipv6 returns a one-shot IPv6 address in the documentation prefix 2001:db8::/32.
 pub fn mock_ipv6() string {
 	mut f := new_random_faker()
 	return f.ipv6()
 }
 
+// mock_mac returns a one-shot locally-administered unicast MAC address.
 pub fn mock_mac() string {
 	mut f := new_random_faker()
 	return f.mac()
 }
 
+// mock_company returns a one-shot synthetic company name.
 pub fn mock_company() string {
 	mut f := new_random_faker()
 	return f.company()
 }
 
+// mock_address returns a one-shot formatted street address, city, and ZIP code.
 pub fn mock_address() string {
 	mut f := new_random_faker()
 	return '${f.street_address()}, ${f.city()} ${f.zip_code()}'
 }
 
+// mock_credit_card returns a one-shot Luhn-valid 16-digit test credit card number.
 pub fn mock_credit_card() string {
 	mut f := new_random_faker()
 	return f.credit_card_number()
 }
 
+// mock_hex_color returns a one-shot `#rrggbb` hexadecimal color string.
 pub fn mock_hex_color() string {
 	mut f := new_random_faker()
 	return f.hex_color()

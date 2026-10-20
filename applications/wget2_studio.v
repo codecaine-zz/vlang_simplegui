@@ -193,9 +193,9 @@ fn main() {
 
 	// Open in Finder
 	win.on_click('btn_open_dir', fn (mut w simplegui.SimpleWindow) {
-		dir := w.get('txt_dest_dir').trim_space()
+		dir := simplegui.expand_tilde(w.get('txt_dest_dir'))
 		if dir != '' && os.is_dir(dir) {
-			os.execute('open ${os.quoted_path(dir)}')
+			os.execute('open ${simplegui.quote_path(dir)}')
 		} else {
 			os.execute('open .')
 		}
@@ -254,7 +254,7 @@ fn main() {
 			return
 		}
 
-		dest_dir := w.get('txt_dest_dir').trim_space()
+		dest_dir := simplegui.expand_tilde(w.get('txt_dest_dir'))
 		if dest_dir == '' {
 			w.alert('Destination Required', 'Please specify a save folder.')
 			return
@@ -281,15 +281,7 @@ fn main() {
 		mut raw_args := []string{}
 
 		// Save Directory
-		real_dest := if dest_dir.starts_with('~') {
-			dest_dir.replace('~', os.home_dir())
-		} else {
-			dest_dir
-		}
-		if !os.exists(real_dest) {
-			os.mkdir_all(real_dest) or {}
-		}
-		raw_args << ['-P', real_dest]
+		raw_args << ['-P', dest_dir]
 
 		// Threads
 		if threads_val != '' && threads_val != '1' {

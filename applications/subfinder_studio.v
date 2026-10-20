@@ -135,7 +135,7 @@ fn main() {
 		w.toast('⚡ Listing sources...')
 
 		go fn [mut w, subfinder] () {
-			res := os.execute('${subfinder} -ls')
+			res := simplegui.exec_safe(subfinder, ['-ls'])
 			w.run_on_main_thread(fn [res] (mut win_main simplegui.SimpleWindow) {
 				win_main.append_console('subfinder_console', res.output + '\n', 4)
 				win_main.set_status('Sources listed successfully.')

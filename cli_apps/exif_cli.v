@@ -32,10 +32,12 @@ fn main() {
 		return
 	}
 
+	q_in := simplecli.quote_path(input_path)
+
 	if app.get_flag_bool('strip') {
 		app.info('Stripping EXIF metadata for privacy...')
 		out, code :=
-			app.exec('exiftool -all= -overwrite_original "${input_path}" 2>/dev/null || sips -d all "${input_path}" 2>/dev/null')
+			app.exec('exiftool -all= -overwrite_original ${q_in} 2>/dev/null || sips -g all ${q_in} 2>/dev/null')
 		if code == 0 {
 			app.success('Successfully stripped EXIF metadata from: ${input_path}')
 		} else {
@@ -46,14 +48,14 @@ fn main() {
 
 	if app.get_flag_bool('gps') {
 		app.info('Extracting GPS coordinates...')
-		out, _ := app.exec('exiftool -GPSLatitude -GPSLongitude "${input_path}" 2>/dev/null')
+		out, _ := app.exec_safe('exiftool', ['-GPSLatitude', '-GPSLongitude', input_path])
 		println(out)
 		return
 	}
 
 	// Full metadata dump
 	app.info('Inspecting EXIF metadata...')
-	out, _ := app.exec('exiftool "${input_path}" 2>/dev/null || mdls "${input_path}" 2>/dev/null')
+	out, _ := app.exec('exiftool ${q_in} 2>/dev/null || mdls ${q_in} 2>/dev/null')
 	println(out)
 }
 
@@ -64,6 +66,7 @@ fn run_interactive(mut app simplecli.SimpleCli) {
 		app.warn('Image file does not exist.')
 		return
 	}
-	out, _ := app.exec('exiftool "${img}" 2>/dev/null || mdls "${img}"')
+	q_img := simplecli.quote_path(img)
+	out, _ := app.exec('exiftool ${q_img} 2>/dev/null || mdls ${q_img}')
 	println(out)
 }

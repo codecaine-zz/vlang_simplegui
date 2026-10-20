@@ -135,10 +135,14 @@ pub fn read_entry_bytes(zip_file string, entry_name string) ![]u8 {
 		z.close_entry()
 	}
 
-	sz := int(z.size())
-	if sz == 0 {
+	raw_sz := z.size()
+	if raw_sz == 0 {
 		return []u8{}
 	}
+	if raw_sz > u64(max_i32) {
+		return error('entry "${entry_name}" is too large to allocate (${raw_sz} bytes)')
+	}
+	sz := int(raw_sz)
 
 	mut buf := []u8{len: sz}
 	z.read_entry_buf(buf.data, sz)!

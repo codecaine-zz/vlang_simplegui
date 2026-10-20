@@ -35,7 +35,7 @@ fn main() {
 	win.end_row()
 
 	win.add_label('lbl_sub',
-		'Unified macOS Native Engineering Suite for Media, Security, Data, DevOps & Computing (45 Workstations)')
+		'Unified macOS Native Engineering Suite for Media, Security, Data, DevOps & Computing (46 Workstations)')
 
 	// -------------------------------------------------------------
 	// System Diagnostics Bar
@@ -169,6 +169,7 @@ fn main() {
 	win.add_button('btn_launch_disk', '💾 Disk Space')
 	win.add_button('btn_launch_launchd', '⏰ Launchd & Cron')
 	win.add_button('btn_launch_omnitool', '🛠️ Omnitool')
+	win.add_button('btn_launch_bundler', '📦 App Bundler')
 	win.end_row()
 
 	// Category 5: Mathematics, Science & Computation
@@ -243,6 +244,16 @@ fn main() {
 	win.on_change('dd_hub_theme', fn (mut w simplegui.SimpleWindow, selected string) {
 		w.set_theme(selected)
 		w.toast('Theme changed to ${selected}')
+	})
+
+	// Launch App Bundler Studio
+	win.on_click('btn_launch_bundler', fn (mut w simplegui.SimpleWindow) {
+		app_path := os.join_path(os.dir(@FILE), 'app_bundler_studio.v')
+		w.append_console('hub_log', '📦 Launching App Bundler Studio in background...\n', 1)
+		go fn [app_path] () {
+			simplegui.exec_safe('v', ['run', app_path])
+		}()
+		w.toast('App Bundler Studio launched!')
 	})
 
 	// Launch Text Editor

@@ -34,10 +34,11 @@ pub fn is_valid_identifier(name string) bool {
 	return true
 }
 
-// escape_string doubles single quotes according to SQL-92 / SQLite standards to escape literal values.
+// escape_string doubles single quotes according to SQL-92 / SQLite standards to escape literal values
+// and strips null bytes to prevent C-string truncation.
 // NOTE: Parameterized queries (? placeholders) should ALWAYS be preferred over string interpolation.
 pub fn escape_string(s string) string {
-	return s.replace("'", "''")
+	return s.replace('\x00', '').replace("'", "''")
 }
 
 // Helper function to create parent directories if path is a file path.
@@ -66,7 +67,7 @@ pub fn apply_secure_pragmas(mut db sqlite.DB) ! {
 
 // Connection & Database Management
 
-// Opens a SQLite database connection, creating parent directories automatically if needed,
+// open_db opens a SQLite database connection, creating parent directories automatically if needed,
 // and applies secure database PRAGMAs (foreign_keys=ON, trusted_schema=OFF, cell_size_check=ON).
 pub fn open_db(path string) !sqlite.DB {
 	ensure_db_dir(path) or { return err }
@@ -75,7 +76,7 @@ pub fn open_db(path string) !sqlite.DB {
 	return db
 }
 
-// Closes a SQLite database connection, releasing all associated resources.
+// close_db closes a SQLite database connection, releasing all associated resources.
 // Always call this when you are finished with a database — open file handles
 // prevent other processes from writing to the same file (especially on Windows).
 //
@@ -86,7 +87,7 @@ pub fn close_db(mut db sqlite.DB) ! {
 	db.close() or { return err }
 }
 
-// Returns the row ID of the most recent successful INSERT into the database.
+// last_insert_id returns the row ID of the most recent successful INSERT into the database.
 // Use this immediately after an INSERT to retrieve the auto-assigned primary key.
 // Returns 0 if no INSERT has been performed on this connection yet.
 //
@@ -98,32 +99,32 @@ pub fn last_insert_id(db sqlite.DB) i64 {
 	return db.last_insert_rowid()
 }
 
-// Executes a raw DDL/DML SQL query without expecting row returns.
+// exec_sql executes a raw DDL/DML SQL query without expecting row returns.
 // Caller is responsible for ensuring the query string contains no user-supplied data.
 // Use exec_sql_params for queries involving user input.
 pub fn exec_sql(mut db sqlite.DB, query string) ! {
 	db.exec(query) or { return err }
 }
 
-// Executes a parameterized DDL/DML SQL query using ? placeholders.
+// exec_sql_params executes a parameterized DDL/DML SQL query using ? placeholders.
 // Prevents SQL injection by delegating argument binding directly to the SQLite engine.
 pub fn exec_sql_params(mut db sqlite.DB, query string, params []string) ! {
 	db.exec_param_many(query, params) or { return err }
 }
 
-// Executes a parameterized SQL query with a single bound parameter.
+// exec_sql_param executes a parameterized SQL query with a single bound parameter.
 pub fn exec_sql_param(mut db sqlite.DB, query string, param string) ! {
 	db.exec_param(query, param) or { return err }
 }
 
-// Checks if a table exists in the database.
+// table_exists checks if a table exists in the database.
 pub fn table_exists(mut db sqlite.DB, table_name string) !bool {
 	rows := db.exec_param("SELECT name FROM sqlite_master WHERE type='table' AND name=?",
 		table_name) or { return err }
 	return rows.len > 0
 }
 
-// Returns a list of all non-system table names in the database.
+// get_table_names returns a list of all non-system table names in the database.
 pub fn get_table_names(mut db sqlite.DB) ![]string {
 	query := "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';"
 	rows := db.exec(query) or { return err }
@@ -136,7 +137,7 @@ pub fn get_table_names(mut db sqlite.DB) ![]string {
 	return names
 }
 
-// Returns the total row count for a table.
+// count_rows returns the total row count for a table.
 pub fn count_rows(mut db sqlite.DB, table_name string) !int {
 	// Identifiers cannot be parameterized; sanitize_identifier guards against injection.
 	tbl := sanitize_identifier(table_name)!
@@ -149,7 +150,7 @@ pub fn count_rows(mut db sqlite.DB, table_name string) !int {
 
 // Key-Value Store Helpers
 
-// Creates a standard key-value table (key TEXT PRIMARY KEY, val TEXT).
+// create_kv_table creates a standard key-value table (key TEXT PRIMARY KEY, val TEXT).
 pub fn create_kv_table(mut db sqlite.DB, table_name string) ! {
 	tbl := sanitize_identifier(table_name)!
 	db.exec('CREATE TABLE IF NOT EXISTS "${tbl}" (key TEXT PRIMARY KEY, val TEXT);') or {
@@ -157,7 +158,7 @@ pub fn create_kv_table(mut db sqlite.DB, table_name string) ! {
 	}
 }
 
-// Sets or updates a key-value pair in a key-value table.
+// set_kv sets or updates a key-value pair in a key-value table.
 pub fn set_kv(mut db sqlite.DB, table_name string, key string, val string) ! {
 	tbl := sanitize_identifier(table_name)!
 	// val is passed twice: once for INSERT and once for the ON CONFLICT UPDATE.
@@ -168,7 +169,7 @@ pub fn set_kv(mut db sqlite.DB, table_name string, key string, val string) ! {
 	]) or { return err }
 }
 
-// Gets the value for a key in a key-value table, returning an error if key is not found.
+// get_kv gets the value for a key in a key-value table, returning an error if key is not found.
 pub fn get_kv(mut db sqlite.DB, table_name string, key string) !string {
 	tbl := sanitize_identifier(table_name)!
 	rows := db.exec_param('SELECT val FROM "${tbl}" WHERE key = ?', key) or { return err }
@@ -178,13 +179,13 @@ pub fn get_kv(mut db sqlite.DB, table_name string, key string) !string {
 	return rows[0].vals[0]
 }
 
-// Deletes a key-value pair from a key-value table.
+// delete_kv deletes a key-value pair from a key-value table.
 pub fn delete_kv(mut db sqlite.DB, table_name string, key string) ! {
 	tbl := sanitize_identifier(table_name)!
 	db.exec_param('DELETE FROM "${tbl}" WHERE key = ?', key) or { return err }
 }
 
-// Retrieves all key-value pairs from a key-value table as a map.
+// get_all_kv retrieves all key-value pairs from a key-value table as a map.
 pub fn get_all_kv(mut db sqlite.DB, table_name string) !map[string]string {
 	tbl := sanitize_identifier(table_name)!
 	rows := db.exec('SELECT key, val FROM "${tbl}";') or { return err }
@@ -199,7 +200,7 @@ pub fn get_all_kv(mut db sqlite.DB, table_name string) !map[string]string {
 
 // Struct & JSON Document Store Helpers
 
-// Creates a JSON document store table (id TEXT PRIMARY KEY, json_data TEXT).
+// create_json_store creates a JSON document store table (id TEXT PRIMARY KEY, json_data TEXT).
 pub fn create_json_store(mut db sqlite.DB, table_name string) ! {
 	tbl := sanitize_identifier(table_name)!
 	db.exec('CREATE TABLE IF NOT EXISTS "${tbl}" (id TEXT PRIMARY KEY, json_data TEXT);') or {
@@ -207,7 +208,7 @@ pub fn create_json_store(mut db sqlite.DB, table_name string) ! {
 	}
 }
 
-// Saves a struct as a JSON document under a given ID.
+// save_struct saves a struct as a JSON document under a given ID.
 pub fn save_struct[T](mut db sqlite.DB, table_name string, id string, data T) ! {
 	tbl := sanitize_identifier(table_name)!
 	encoded := json2.encode(data)
@@ -219,7 +220,7 @@ pub fn save_struct[T](mut db sqlite.DB, table_name string, id string, data T) ! 
 	]) or { return err }
 }
 
-// Loads a struct from a JSON document by ID.
+// load_struct loads a struct from a JSON document by ID.
 pub fn load_struct[T](mut db sqlite.DB, table_name string, id string) !T {
 	tbl := sanitize_identifier(table_name)!
 	rows := db.exec_param('SELECT json_data FROM "${tbl}" WHERE id = ?', id) or { return err }
@@ -229,7 +230,7 @@ pub fn load_struct[T](mut db sqlite.DB, table_name string, id string) !T {
 	return json2.decode[T](rows[0].vals[0])
 }
 
-// Loads all struct records from a JSON document store table.
+// load_all_structs loads all struct records from a JSON document store table.
 pub fn load_all_structs[T](mut db sqlite.DB, table_name string) ![]T {
 	tbl := sanitize_identifier(table_name)!
 	rows := db.exec('SELECT json_data FROM "${tbl}";') or { return err }
@@ -243,7 +244,7 @@ pub fn load_all_structs[T](mut db sqlite.DB, table_name string) ![]T {
 	return result
 }
 
-// Deletes a struct document record by ID.
+// delete_struct deletes a struct document record by ID.
 pub fn delete_struct(mut db sqlite.DB, table_name string, id string) ! {
 	tbl := sanitize_identifier(table_name)!
 	db.exec_param('DELETE FROM "${tbl}" WHERE id = ?', id) or { return err }
@@ -251,7 +252,7 @@ pub fn delete_struct(mut db sqlite.DB, table_name string, id string) ! {
 
 // Dynamic Query & Batch Transaction Helpers
 
-// Executes a static SELECT query and returns rows as a list of column-name -> string-value maps.
+// query_maps executes a static SELECT query and returns rows as a list of column-name -> string-value maps.
 // Caller is responsible for ensuring the query string contains no user-supplied data.
 // Use query_maps_params when the query must include user values.
 pub fn query_maps(mut db sqlite.DB, query string) ![]map[string]string {
@@ -268,7 +269,7 @@ pub fn query_maps(mut db sqlite.DB, query string) ![]map[string]string {
 	return result
 }
 
-// Executes a parameterized SELECT query with ? placeholders and returns rows as maps.
+// query_maps_params executes a parameterized SELECT query with ? placeholders and returns rows as maps.
 // Use this variant whenever the query includes user-supplied values.
 pub fn query_maps_params(mut db sqlite.DB, query string, params []string) ![]map[string]string {
 	rows := db.exec_param_many(query, params) or { return err }
@@ -284,7 +285,7 @@ pub fn query_maps_params(mut db sqlite.DB, query string, params []string) ![]map
 	return result
 }
 
-// Executes a static query and returns the first row as a map, or an error if no rows are returned.
+// query_one_map executes a static query and returns the first row as a map, or an error if no rows are returned.
 // Caller is responsible for ensuring the query string contains no user-supplied data.
 // Use query_one_map_params when the query must include user values.
 pub fn query_one_map(mut db sqlite.DB, query string) !map[string]string {
@@ -295,7 +296,7 @@ pub fn query_one_map(mut db sqlite.DB, query string) !map[string]string {
 	return maps[0]
 }
 
-// Executes a parameterized query and returns the first row as a map.
+// query_one_map_params executes a parameterized query and returns the first row as a map.
 // Use this variant whenever the query includes user-supplied values.
 pub fn query_one_map_params(mut db sqlite.DB, query string, params []string) !map[string]string {
 	maps := query_maps_params(mut db, query, params) or { return err }
@@ -305,7 +306,7 @@ pub fn query_one_map_params(mut db sqlite.DB, query string, params []string) !ma
 	return maps[0]
 }
 
-// Executes multiple static SQL statements inside a single transaction with automatic rollback on error.
+// execute_batch executes multiple static SQL statements inside a single transaction with automatic rollback on error.
 // Statements must contain no user-supplied data. Use execute_batch_params for parameterized statements.
 pub fn execute_batch(mut db sqlite.DB, statements []string) ! {
 	db.exec('BEGIN TRANSACTION;') or { return err }
@@ -325,7 +326,7 @@ pub:
 	params []string
 }
 
-// Executes multiple parameterized SQL statements (each with its own params slice) inside a single
+// execute_batch_params executes multiple parameterized SQL statements (each with its own params slice) inside a single
 // transaction with automatic rollback on error.
 pub fn execute_batch_params(mut db sqlite.DB, statements []ParamStatement) ! {
 	db.exec('BEGIN TRANSACTION;') or { return err }
@@ -340,7 +341,7 @@ pub fn execute_batch_params(mut db sqlite.DB, statements []ParamStatement) ! {
 
 // ─── Schema / DDL Helpers ────────────────────────────────────────────────────
 
-// Drops a table from the database. Pass force: true to use DROP TABLE IF EXISTS
+// drop_table drops a table from the database. Pass force: true to use DROP TABLE IF EXISTS
 // (no error when the table is absent).
 pub fn drop_table(mut db sqlite.DB, table_name string, force bool) ! {
 	tbl := sanitize_identifier(table_name)!
@@ -351,20 +352,20 @@ pub fn drop_table(mut db sqlite.DB, table_name string, force bool) ! {
 	}
 }
 
-// Renames a table. Both names must pass identifier validation.
+// rename_table renames a table. Both names must pass identifier validation.
 pub fn rename_table(mut db sqlite.DB, old_name string, new_name string) ! {
 	old := sanitize_identifier(old_name)!
 	new_ := sanitize_identifier(new_name)!
 	db.exec('ALTER TABLE "${old}" RENAME TO "${new_}";') or { return err }
 }
 
-// Removes all rows from a table without dropping it (equivalent of TRUNCATE in SQLite).
+// clear_table removes all rows from a table without dropping it (equivalent of TRUNCATE in SQLite).
 pub fn clear_table(mut db sqlite.DB, table_name string) ! {
 	tbl := sanitize_identifier(table_name)!
 	db.exec('DELETE FROM "${tbl}";') or { return err }
 }
 
-// Returns the list of column names for a given table.
+// get_column_names returns the list of column names for a given table.
 pub fn get_column_names(mut db sqlite.DB, table_name string) ![]string {
 	tbl := sanitize_identifier(table_name)!
 	// PRAGMA table_info columns: cid, name, type, notnull, dflt_value, pk
@@ -378,13 +379,13 @@ pub fn get_column_names(mut db sqlite.DB, table_name string) ![]string {
 	return names
 }
 
-// Reports whether a column exists in a table.
+// column_exists reports whether a column exists in a table.
 pub fn column_exists(mut db sqlite.DB, table_name string, column_name string) !bool {
 	cols := get_column_names(mut db, table_name)!
 	return column_name in cols
 }
 
-// Returns a map of table_name -> row_count for every non-system table in the database.
+// table_row_counts returns a map of table_name -> row_count for every non-system table in the database.
 pub fn table_row_counts(mut db sqlite.DB) !map[string]int {
 	tables := get_table_names(mut db)!
 	mut result := map[string]int{}
@@ -396,20 +397,20 @@ pub fn table_row_counts(mut db sqlite.DB) !map[string]int {
 
 // ─── Extended Key-Value Helpers ───────────────────────────────────────────────
 
-// Reports whether a key exists in a key-value table.
+// kv_exists reports whether a key exists in a key-value table.
 pub fn kv_exists(mut db sqlite.DB, table_name string, key string) !bool {
 	tbl := sanitize_identifier(table_name)!
 	rows := db.exec_param('SELECT 1 FROM "${tbl}" WHERE key = ? LIMIT 1', key) or { return err }
 	return rows.len > 0
 }
 
-// Gets the value for a key from a key-value table, returning default_val when the key is absent.
+// get_kv_or gets the value for a key from a key-value table, returning default_val when the key is absent.
 // Never errors — the zero-friction read pattern for RAD.
 pub fn get_kv_or(mut db sqlite.DB, table_name string, key string, default_val string) string {
 	return get_kv(mut db, table_name, key) or { default_val }
 }
 
-// Increments an integer stored at key by amount. Creates the key starting at amount if absent.
+// increment_kv increments an integer stored at key by amount. Creates the key starting at amount if absent.
 // Returns the new value.
 pub fn increment_kv(mut db sqlite.DB, table_name string, key string, amount int) !int {
 	current := get_kv(mut db, table_name, key) or { '0' }
@@ -418,31 +419,31 @@ pub fn increment_kv(mut db sqlite.DB, table_name string, key string, amount int)
 	return new_val
 }
 
-// Deletes all key-value pairs from a table while keeping the table intact.
+// clear_kv deletes all key-value pairs from a table while keeping the table intact.
 pub fn clear_kv(mut db sqlite.DB, table_name string) ! {
 	clear_table(mut db, table_name)!
 }
 
 // ─── Extended JSON Document Store Helpers ────────────────────────────────────
 
-// Reports whether a document with the given ID exists in a JSON store table.
+// struct_exists reports whether a document with the given ID exists in a JSON store table.
 pub fn struct_exists(mut db sqlite.DB, table_name string, id string) !bool {
 	tbl := sanitize_identifier(table_name)!
 	rows := db.exec_param('SELECT 1 FROM "${tbl}" WHERE id = ? LIMIT 1', id) or { return err }
 	return rows.len > 0
 }
 
-// Returns the number of documents stored in a JSON store table.
+// count_structs returns the number of documents stored in a JSON store table.
 pub fn count_structs(mut db sqlite.DB, table_name string) !int {
 	return count_rows(mut db, table_name)
 }
 
-// Deletes all documents from a JSON store table while keeping the table intact.
+// delete_all_structs deletes all documents from a JSON store table while keeping the table intact.
 pub fn delete_all_structs(mut db sqlite.DB, table_name string) ! {
 	clear_table(mut db, table_name)!
 }
 
-// Returns every document ID stored in a JSON store table.
+// list_struct_ids returns every document ID stored in a JSON store table.
 pub fn list_struct_ids(mut db sqlite.DB, table_name string) ![]string {
 	tbl := sanitize_identifier(table_name)!
 	rows := db.exec('SELECT id FROM "${tbl}";') or { return err }
@@ -457,7 +458,7 @@ pub fn list_struct_ids(mut db sqlite.DB, table_name string) ![]string {
 
 // ─── Query Helpers ────────────────────────────────────────────────────────────
 
-// Executes a parameterized query and returns the first column of the first row as a string.
+// query_scalar executes a parameterized query and returns the first column of the first row as a string.
 // Ideal for scalar aggregates: COUNT, MAX, SUM, etc.
 //
 // Example:
@@ -470,7 +471,7 @@ pub fn query_scalar(mut db sqlite.DB, query string, params []string) !string {
 	return rows[0].vals[0]
 }
 
-// Executes a parameterized query and returns every value from the first column as a string slice.
+// query_column executes a parameterized query and returns every value from the first column as a string slice.
 // Useful for fetching a list of IDs, names, tags, etc.
 //
 // Example:
@@ -488,7 +489,7 @@ pub fn query_column(mut db sqlite.DB, query string, params []string) ![]string {
 
 // ─── Convenience Transaction Helper ──────────────────────────────────────────
 
-// Runs a closure inside a BEGIN / COMMIT transaction.
+// with_transaction runs a closure inside a BEGIN / COMMIT transaction.
 // If the closure returns an error the transaction is rolled back automatically.
 //
 // Example:
@@ -547,15 +548,47 @@ pub fn sanitize_sql_type(sql_type string) !string {
 	if parens != 0 {
 		return error('SQL type has unclosed parentheses: "${sql_type}"')
 	}
-	// Check balanced single quotes
+	// Check balanced single and double quotes
 	mut single_quotes := 0
+	mut double_quotes := 0
 	for ch in sql_type {
 		if ch == `'` {
 			single_quotes++
+		} else if ch == `"` {
+			double_quotes++
 		}
 	}
 	if single_quotes % 2 != 0 {
 		return error('SQL type has unclosed single quotes: "${sql_type}"')
+	}
+	if double_quotes % 2 != 0 {
+		return error('SQL type has unclosed double quotes: "${sql_type}"')
+	}
+	// Disallow SQL query/DDL/DML keywords outside of string literals (e.g. DEFAULT (SELECT ...))
+	forbidden := ['SELECT', 'FROM', 'WHERE', 'UNION', 'INSERT', 'UPDATE', 'DELETE', 'DROP', 'ALTER',
+		'CREATE', 'PRAGMA', 'ATTACH', 'DETACH', 'LOAD_EXTENSION']
+	mut in_sq := false
+	mut in_dq := false
+	mut token := []u8{}
+	for i := 0; i <= sql_type.len; i++ {
+		ch := if i < sql_type.len { sql_type[i] } else { u8(` `) }
+		if ch == `'` && !in_dq {
+			in_sq = !in_sq
+			continue
+		}
+		if ch == `"` && !in_sq {
+			in_dq = !in_dq
+			continue
+		}
+		if !in_sq && !in_dq && (ch.is_letter() || ch.is_digit() || ch == `_`) {
+			token << ch
+		} else if token.len > 0 {
+			word := token.bytestr().to_upper()
+			if word in forbidden {
+				return error('SQL type must not contain forbidden SQL keyword "${word}": "${sql_type}"')
+			}
+			token.clear()
+		}
 	}
 	return sql_type
 }
@@ -570,7 +603,7 @@ pub:
 	sql_type string
 }
 
-// Adds a single column to an existing table.
+// add_column adds a single column to an existing table.
 // Requires SQLite 3.1+ (universally available).
 //
 // Example:
@@ -582,7 +615,7 @@ pub fn add_column(mut db sqlite.DB, table_name string, col ColumnDef) ! {
 	db.exec('ALTER TABLE "${tbl}" ADD COLUMN "${col_name}" ${col_type};') or { return err }
 }
 
-// Adds multiple columns to an existing table in a single transaction.
+// add_columns adds multiple columns to an existing table in a single transaction.
 // Any invalid name or type causes all additions to be rolled back.
 pub fn add_columns(mut db sqlite.DB, table_name string, cols []ColumnDef) ! {
 	tbl := sanitize_identifier(table_name)!
@@ -604,7 +637,7 @@ pub fn add_columns(mut db sqlite.DB, table_name string, cols []ColumnDef) ! {
 	db.exec('COMMIT;') or { return err }
 }
 
-// Renames a column in a table.
+// rename_column renames a column in a table.
 // Requires SQLite 3.25.0+ (released 2018-09-15).
 //
 // Example:
@@ -616,7 +649,7 @@ pub fn rename_column(mut db sqlite.DB, table_name string, old_col string, new_co
 	db.exec('ALTER TABLE "${tbl}" RENAME COLUMN "${old}" TO "${new_}";') or { return err }
 }
 
-// Drops a single column from a table.
+// drop_column drops a single column from a table.
 // Requires SQLite 3.35.0+ (released 2021-03-12).
 //
 // Example:
@@ -627,7 +660,7 @@ pub fn drop_column(mut db sqlite.DB, table_name string, col_name string) ! {
 	db.exec('ALTER TABLE "${tbl}" DROP COLUMN "${col}";') or { return err }
 }
 
-// Drops multiple columns from a table inside a single transaction.
+// drop_columns drops multiple columns from a table inside a single transaction.
 // Requires SQLite 3.35.0+ (released 2021-03-12).
 // Any failure rolls back all column drops.
 pub fn drop_columns(mut db sqlite.DB, table_name string, col_names []string) ! {
@@ -646,7 +679,7 @@ pub fn drop_columns(mut db sqlite.DB, table_name string, col_names []string) ! {
 	db.exec('COMMIT;') or { return err }
 }
 
-// Returns full schema information for a table as a slice of maps with keys:
+// get_table_schema returns full schema information for a table as a slice of maps with keys:
 // "cid", "name", "type", "notnull", "dflt_value", "pk".
 // Useful for introspection and schema migrations.
 pub fn get_table_schema(mut db sqlite.DB, table_name string) ![]map[string]string {

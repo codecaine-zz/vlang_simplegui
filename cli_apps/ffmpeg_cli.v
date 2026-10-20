@@ -41,14 +41,21 @@ fn main() {
 
 	if app.get_flag_bool('probe') {
 		app.info('Inspecting media stream metadata...')
-		out, _ := app.exec('ffprobe -v error -show_format -show_streams "${input_path}"')
+		out, _ := app.exec_safe('ffprobe', [
+			'-v',
+			'error',
+			'-show_format',
+			'-show_streams',
+			input_path,
+		])
 		println(out)
 		return
 	}
 
+	audio_only := app.get_flag_bool('audio-only')
 	mut out_path := app.get_flag_string('output')
 	if out_path.len == 0 {
-		out_path = 'output_converted.mp4'
+		out_path = if audio_only { 'output_converted.mp3' } else { 'output_converted.mp4' }
 	}
 
 	mut args := ['-y', '-i', input_path]
@@ -63,7 +70,7 @@ fn main() {
 		args << ['-b:v', bitrate]
 	}
 
-	if app.get_flag_bool('audio-only') {
+	if audio_only {
 		args << ['-vn', '-acodec', 'libmp3lame']
 	}
 
@@ -103,7 +110,7 @@ fn run_interactive(mut app simplecli.SimpleCli) {
 			app.success('Rendered 720p to ${out}')
 		}
 		'Inspect Streams Metadata (ffprobe)' {
-			out, _ := app.exec('ffprobe -v error -show_format "${input}"')
+			out, _ := app.exec_safe('ffprobe', ['-v', 'error', '-show_format', input])
 			println(out)
 		}
 		else {

@@ -50,9 +50,23 @@ fn safe_url(u string, opts Options) string {
 	if !opts.safe_links {
 		return u
 	}
-	l := u.trim_space().to_lower()
+	mut stripped := []u8{cap: u.len}
+	for b in u {
+		if b > 0x20 && b != 0x7f {
+			stripped << b
+		}
+	}
+	l := stripped.bytestr().to_lower()
 	for bad in ['javascript:', 'vbscript:', 'data:', 'file:'] {
 		if l.starts_with(bad) {
+			return '#'
+		}
+	}
+	// Block HTML entity obfuscation in URL scheme prefix (e.g. &#106;avascript: or javascript&colon;)
+	colon_pos := l.index(':') or { -1 }
+	amp_pos := l.index('&') or { -1 }
+	if amp_pos != -1 && (colon_pos == -1 || amp_pos < colon_pos) {
+		if l.contains('&#') || l.contains('&colon') || l.contains('&tab') || l.contains('&newline') {
 			return '#'
 		}
 	}
@@ -122,7 +136,7 @@ pub fn inline(s string, opts Options) string {
 		}
 		// Hard line break: two+ spaces or backslash before newline
 		if c == `\n` {
-			if sb.len >= 2 && s[i - 1] == ` ` && i >= 2 && s[i - 2] == ` ` {
+			if sb.len >= 2 && i >= 2 && s[i - 1] == ` ` && s[i - 2] == ` ` {
 				sb.write_string('<br>\n')
 			} else {
 				sb.write_u8(`\n`)
@@ -438,7 +452,8 @@ fn render_blocks(lines []string, opts Options, mut sb strings.Builder, mut ids m
 						break
 					}
 					if nind > base_indent {
-						item << nx[base_indent + 2..].trim_right(' ')
+						cut := if nind >= base_indent + 2 { base_indent + 2 } else { nind }
+						item << nx[cut..].trim_right(' ')
 						i++
 						continue
 					}

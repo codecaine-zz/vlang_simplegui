@@ -81,7 +81,7 @@ pub fn validate_url(url string) bool {
 		return false
 	}
 	for c in trimmed {
-		if c <= 32 || c == 127 {
+		if c <= 32 || c == 127 || c == `\\` {
 			return false
 		}
 	}

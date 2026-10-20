@@ -93,19 +93,26 @@ pub fn histogram(arr []f64, bins int) []Bin {
 	if arr.len == 0 || bins <= 0 {
 		return []
 	}
-	mut lo := arr[0]
-	mut hi := arr[0]
-	for x in arr {
+	valid := arr.filter(!math.is_nan(it) && !math.is_inf(it, 0))
+	if valid.len == 0 {
+		return []
+	}
+	mut lo := valid[0]
+	mut hi := valid[0]
+	for x in valid {
 		lo = math.min(lo, x)
 		hi = math.max(hi, x)
 	}
 	if lo == hi {
-		return [Bin{lo, hi, arr.len}]
+		return [Bin{lo, hi, valid.len}]
 	}
 	w := (hi - lo) / f64(bins)
 	mut counts := []int{len: bins}
-	for x in arr {
+	for x in valid {
 		mut i := int((x - lo) / w)
+		if i < 0 {
+			i = 0
+		}
 		if i >= bins {
 			i = bins - 1
 		}
@@ -223,6 +230,9 @@ pub fn stats_incomplete_beta(x f64, a f64, b f64) f64 {
 
 // stats_t_cdf returns the Student-t cumulative distribution P(T <= t) with `df` degrees of freedom.
 pub fn stats_t_cdf(t f64, df f64) f64 {
+	if df <= 0 || math.is_nan(t) || math.is_nan(df) {
+		return math.nan()
+	}
 	x := df / (df + t * t)
 	tail := 0.5 * stats_incomplete_beta(x, df / 2, 0.5)
 	return if t >= 0 { 1 - tail } else { tail }

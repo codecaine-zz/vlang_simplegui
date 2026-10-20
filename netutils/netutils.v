@@ -240,7 +240,7 @@ pub fn read_framed_msg(mut conn net.TcpConn, max_size int) ![]u8 {
 
 // send_udp transmits a UDP packet to the given host and port.
 pub fn send_udp(host string, port int, data []u8) ! {
-	mut conn := net.dial_udp('${host}:${port}')!
+	mut conn := net.dial_udp(join_host_port(host, port))!
 	defer {
 		conn.close() or {}
 	}

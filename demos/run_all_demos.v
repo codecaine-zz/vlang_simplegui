@@ -29,7 +29,7 @@ fn main() {
 		print('[${i + 1:2}/${demo_files.len:2}] Running ${f:24} ... ')
 
 		t0 := time.now()
-		res := os.execute('v run ${full_path}')
+		res := os.execute('v run ${os.quoted_path(full_path)}')
 		elapsed := time.since(t0)
 
 		if res.exit_code == 0 {

@@ -93,7 +93,7 @@ mut:
 
 fn limit_cb(chunk []u8, userdata voidptr) int {
 	mut s := unsafe { &LimitSink(userdata) }
-	if s.buf.len + chunk.len > s.max {
+	if chunk.len > s.max - s.buf.len {
 		s.exceeded = true
 		return 0
 	}
@@ -106,6 +106,9 @@ fn limit_cb(chunk []u8, userdata voidptr) int {
 // and deflate are inflated in streamed chunks; for zstd the size declared in the
 // frame header is checked before any allocation.
 pub fn decompress_limited(algo CompressionAlgorithm, data []u8, max_bytes int) ![]u8 {
+	if max_bytes < 0 {
+		return error('max_bytes must be non-negative')
+	}
 	if algo == .zstd {
 		size := zstd_frame_content_size(data) or {
 			return error('zstd frame does not declare its size; refusing unbounded decompression')
@@ -113,7 +116,11 @@ pub fn decompress_limited(algo CompressionAlgorithm, data []u8, max_bytes int) !
 		if size > u64(max_bytes) {
 			return error('decompressed size ${size} exceeds the limit of ${max_bytes} bytes')
 		}
-		return zstd_decompress(data)
+		out := zstd_decompress(data)!
+		if out.len > max_bytes {
+			return error('decompressed data exceeds the limit of ${max_bytes} bytes')
+		}
+		return out
 	}
 	if algo == .deflate
 		&& (looks_like_zlib(data) || (data.len >= 2 && data[0] == 0x1f && data[1] == 0x8b)) {
@@ -134,7 +141,7 @@ pub fn decompress_limited(algo CompressionAlgorithm, data []u8, max_bytes int) !
 		else { deflate.decompress_with_callback(data, limit_cb, sink)! }
 	}
 
-	if sink.exceeded {
+	if sink.exceeded || sink.buf.len > max_bytes {
 		return error('decompressed data exceeds the limit of ${max_bytes} bytes')
 	}
 	return sink.buf

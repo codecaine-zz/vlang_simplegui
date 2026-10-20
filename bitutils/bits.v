@@ -241,11 +241,23 @@ pub fn (b BitSet) difference(other BitSet) BitSet {
 
 // jaccard returns |A∩B| / |A∪B| (1.0 when both are empty).
 pub fn (b BitSet) jaccard(other BitSet) f64 {
-	u := b.or_op(other).count_set()
-	if u == 0 {
+	max_len := if b.size() > other.size() { b.size() } else { other.size() }
+	mut inter := 0
+	mut uni := 0
+	for i in 0 .. max_len {
+		ba := b.get(i)
+		bo := other.get(i)
+		if ba && bo {
+			inter++
+		}
+		if ba || bo {
+			uni++
+		}
+	}
+	if uni == 0 {
 		return 1.0
 	}
-	return f64(b.and_op(other).count_set()) / f64(u)
+	return f64(inter) / f64(uni)
 }
 
 // to_bytes serializes the set (vlib bitfield byte layout).

@@ -328,15 +328,19 @@ mut:
 
 // new_union_find creates n singleton sets.
 pub fn new_union_find(n int) UnionFind {
+	sz := if n < 0 { 0 } else { n }
 	return UnionFind{
-		parent: []int{len: n, init: index}
-		rank:   []int{len: n}
-		sets:   n
+		parent: []int{len: sz, init: index}
+		rank:   []int{len: sz}
+		sets:   sz
 	}
 }
 
-// find returns the representative of x's set.
+// find returns the representative of x's set, or -1 if x is out of range.
 pub fn (mut u UnionFind) find(x int) int {
+	if x < 0 || x >= u.parent.len {
+		return -1
+	}
 	mut root := x
 	for u.parent[root] != root {
 		root = u.parent[root]
@@ -350,8 +354,11 @@ pub fn (mut u UnionFind) find(x int) int {
 	return root
 }
 
-// union merges the sets of a and b; returns false if already joined.
+// union merges the sets of a and b; returns false if already joined or out of range.
 pub fn (mut u UnionFind) union(a int, b int) bool {
+	if a < 0 || a >= u.parent.len || b < 0 || b >= u.parent.len {
+		return false
+	}
 	mut ra := u.find(a)
 	mut rb := u.find(b)
 	if ra == rb {
@@ -370,6 +377,9 @@ pub fn (mut u UnionFind) union(a int, b int) bool {
 
 // connected reports whether a and b are in the same set.
 pub fn (mut u UnionFind) connected(a int, b int) bool {
+	if a < 0 || a >= u.parent.len || b < 0 || b >= u.parent.len {
+		return false
+	}
 	return u.find(a) == u.find(b)
 }
 

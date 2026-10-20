@@ -311,9 +311,10 @@ fn main() {
 	win.begin_row('row_find')
 	win.add_label('lbl_find', 'Find (Pattern / Regex):')
 	win.add_input('txt_find', r'var\s+(\w+)\s*=')
-	win.set_control_width('txt_find', 460)
-	win.add_checkbox('chk_fixed_str', 'Fixed String Mode (-F)', false)
-	win.add_checkbox('chk_across', 'Across Lines (-A)', false)
+	win.set_control_width('txt_find', 420)
+	win.add_checkbox('chk_fixed_str', 'Fixed String (-F)', false)
+	win.add_checkbox('chk_multiline', 'Multi-Line (-f m)', false)
+	win.add_checkbox('chk_dotall', 'Dot Matches Newline (-f s)', false)
 	win.end_row()
 
 	// Row 2: Replace Field
@@ -406,14 +407,15 @@ fn main() {
 		sd := get_sd_bin()
 
 		is_fixed := win.get('chk_fixed_str') == 'true'
-		is_across := win.get('chk_across') == 'true'
+		is_multiline := win.get('chk_multiline') == 'true'
+		is_dotall := win.get('chk_dotall') == 'true'
 		is_case_i := win.get('chk_case_insens') == 'true'
 		is_word := win.get('chk_word_only') == 'true'
 
 		win.set_status('Running sd search and replace in background...')
 		win.toast('⚡ Running SD transformation...')
 
-		go fn [mut win, sd, find_str, repl_str, input_text, is_fixed, is_across, is_case_i, is_word] () {
+		go fn [mut win, sd, find_str, repl_str, input_text, is_fixed, is_multiline, is_dotall, is_case_i, is_word] () {
 			t0 := time.ticks()
 
 			tmp_in := os.join_path(os.temp_dir(), 'sd_studio_input_${time.ticks()}.txt')
@@ -421,9 +423,10 @@ fn main() {
 
 			mut raw_args := []string{}
 			if is_fixed { raw_args << '-F' }
-			if is_across { raw_args << '-A' }
-			if is_case_i || is_word {
+			if is_multiline || is_dotall || is_case_i || is_word {
 				mut f := ''
+				if is_multiline { f += 'm' }
+				if is_dotall { f += 's' }
 				if is_case_i { f += 'i' }
 				if is_word { f += 'w' }
 				raw_args << ['-f', f]
@@ -548,7 +551,8 @@ fn main() {
 				w.set('txt_find', r.find_pat)
 				w.set('txt_replace', r.replace_str)
 				w.set('chk_fixed_str', r.fixed_str.str())
-				w.set('chk_across', r.across.str())
+				w.set('chk_multiline', r.flags.contains('m').str())
+				w.set('chk_dotall', r.flags.contains('s').str())
 				w.set('chk_case_insens', r.flags.contains('i').str())
 				w.set('chk_word_only', r.flags.contains('w').str())
 				w.set('lbl_recipe_desc', 'ℹ️ ' + r.desc)
@@ -567,7 +571,8 @@ fn main() {
 				w.set('txt_find', r.find_pat)
 				w.set('txt_replace', r.replace_str)
 				w.set('chk_fixed_str', r.fixed_str.str())
-				w.set('chk_across', r.across.str())
+				w.set('chk_multiline', r.flags.contains('m').str())
+				w.set('chk_dotall', r.flags.contains('s').str())
 				w.set('chk_case_insens', r.flags.contains('i').str())
 				w.set('chk_word_only', r.flags.contains('w').str())
 				w.set('lbl_recipe_desc', 'ℹ️ ' + r.desc)
@@ -601,22 +606,24 @@ fn main() {
 
 		sd := get_sd_bin()
 		is_fixed := w.get('chk_fixed_str') == 'true'
-		is_across := w.get('chk_across') == 'true'
+		is_multiline := w.get('chk_multiline') == 'true'
+		is_dotall := w.get('chk_dotall') == 'true'
 		is_case_i := w.get('chk_case_insens') == 'true'
 		is_word := w.get('chk_word_only') == 'true'
 
 		w.set_status('Running batch replacement across folder...')
 		w.toast('⚡ Batch replacement running...')
 
-		go fn [mut w, sd, folder, find_str, repl_str, is_fixed, is_across, is_case_i, is_word] () {
+		go fn [mut w, sd, folder, find_str, repl_str, is_fixed, is_multiline, is_dotall, is_case_i, is_word] () {
 			files := os.walk_ext(folder, '')
 			mut modified := 0
 
 			mut base_args := []string{}
 			if is_fixed { base_args << '-F' }
-			if is_across { base_args << '-A' }
-			if is_case_i || is_word {
+			if is_multiline || is_dotall || is_case_i || is_word {
 				mut f := ''
+				if is_multiline { f += 'm' }
+				if is_dotall { f += 's' }
 				if is_case_i { f += 'i' }
 				if is_word { f += 'w' }
 				base_args << ['-f', f]

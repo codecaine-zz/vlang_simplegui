@@ -35,7 +35,7 @@ fn resolve_dns(mut app simplecli.SimpleCli, domain string, rec_type string) {
 	app.info('Resolving DNS records for "${domain}" (type: ${rec_type})...')
 	app.reset_timer()
 
-	out, code := app.exec('dig +short ${rec_type} ${domain}')
+	out, code := app.exec_safe('dig', ['+short', rec_type, domain])
 	if code == 0 && out.trim_space().len > 0 {
 		records := out.split_into_lines().filter(it.len > 0)
 		mut rows := [][]string{}
@@ -46,14 +46,16 @@ fn resolve_dns(mut app simplecli.SimpleCli, domain string, rec_type string) {
 		app.success('Resolved in ${app.elapsed_ms()} ms.')
 	} else {
 		// Fallback to nslookup
-		ns_out, _ := app.exec('nslookup -type=${rec_type} ${domain}')
+		ns_out, _ := app.exec_safe('nslookup', ['-type=${rec_type}', domain])
 		println(ns_out)
 	}
 }
 
 fn inspect_ssl(mut app simplecli.SimpleCli, domain string) {
 	app.info('Inspecting SSL/TLS certificate for ${domain}:443...')
-	cmd := 'openssl s_client -connect ${domain}:443 -servername ${domain} 2>/dev/null | openssl x509 -noout -dates -subject -issuer 2>/dev/null'
+	q_host := simplecli.quote_arg('${domain}:443')
+	q_dom := simplecli.quote_arg(domain)
+	cmd := 'echo | openssl s_client -connect ${q_host} -servername ${q_dom} 2>/dev/null | openssl x509 -noout -dates -subject -issuer 2>/dev/null'
 	out, code := app.exec(cmd)
 	if code == 0 && out.trim_space().len > 0 {
 		app.success('SSL Certificate Information:')

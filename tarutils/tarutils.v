@@ -223,7 +223,7 @@ fn parse_pax(payload []u8, mut out map[string]string) {
 	for pos < text.len {
 		sp := text.index_after(' ', pos) or { return }
 		rec_len := text[pos..sp].int()
-		if rec_len <= 0 || pos + rec_len > text.len {
+		if rec_len <= sp - pos + 1 || pos + rec_len > text.len {
 			return
 		}
 		rec := text[sp + 1..pos + rec_len].trim_right('\n')
@@ -239,12 +239,12 @@ fn parse_pax(payload []u8, mut out map[string]string) {
 // GNU long names (`L`/`K`) and GNU base-256 sizes; header checksums are verified.
 pub fn unpack_bytes(data []u8) ![]TarEntry {
 	mut entries := []TarEntry{}
-	mut offset := 0
+	mut offset := i64(0)
 	mut pax := map[string]string{}
 	mut gnu_name := ''
 	mut gnu_link := ''
-	for offset + 512 <= data.len {
-		block := data[offset..offset + 512]
+	for offset + 512 <= i64(data.len) {
+		block := data[int(offset)..int(offset + 512)]
 		if is_zero_block(block) {
 			break
 		}
@@ -272,13 +272,13 @@ pub fn unpack_bytes(data []u8) ![]TarEntry {
 				size = s.i64()
 			}
 		}
-		if size < 0 || i64(offset) + size > i64(data.len) {
+		if size < 0 || size > i64(max_i32) || offset + size > i64(data.len) {
 			return error('corrupted tar block size exceeds data length')
 		}
 		is_dir := typeflag == `5`
-		payload := if is_dir { []u8{} } else { data[offset..offset + int(size)] }
+		payload := if is_dir { []u8{} } else { data[int(offset)..int(offset + size)] }
 		if !is_dir {
-			offset += int(size) + (512 - (int(size) % 512)) % 512
+			offset += size + ((512 - (size % 512)) % 512)
 		}
 
 		match typeflag {
@@ -334,7 +334,7 @@ pub fn unpack_bytes(data []u8) ![]TarEntry {
 
 // is_safe_entry_path reports whether an archive entry name stays inside the
 // extraction directory: not empty, not absolute, no drive letter, no NUL byte and
-// no `..` component. Used to block "tar-slip" path traversal.
+// no `.` or `..` component. Used to block "tar-slip" path traversal.
 pub fn is_safe_entry_path(name string) bool {
 	if name.len == 0 || name.contains('\x00') {
 		return false
@@ -343,7 +343,7 @@ pub fn is_safe_entry_path(name string) bool {
 		return false
 	}
 	for part in name.replace('\\', '/').split('/') {
-		if part == '..' {
+		if part == '..' || part == '.' {
 			return false
 		}
 	}

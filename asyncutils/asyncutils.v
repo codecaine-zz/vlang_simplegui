@@ -87,6 +87,7 @@ pub fn parallel_filter[T](items []T, worker_count int, predicate fn (T) bool) []
 	return final_results
 }
 
+// worker_each executes `action` sequentially on each item in `chunk`.
 pub fn worker_each[T](chunk []T, action fn (T)) {
 	for item in chunk {
 		action(item)
@@ -156,6 +157,7 @@ pub fn (mut wg WaitGroup) wait() {
 // 3. Worker Pool
 // ============================================================================
 
+// TaskFn is a zero-argument function executed by a WorkerPool worker thread.
 pub type TaskFn = fn ()
 
 @[heap]

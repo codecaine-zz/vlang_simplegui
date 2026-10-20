@@ -310,8 +310,8 @@ pub fn parse_duration(s string) !time.Duration {
 			if unit_buf.len == 0 {
 				return error('unexpected character in duration: ${clean[i..i + 1]}')
 			}
-			if num_buf.len == 0 {
-				return error('missing numeric value before unit: ${unit_buf}')
+			if num_buf.len == 0 || num_buf == '.' || num_buf.count('.') > 1 {
+				return error('missing or invalid numeric value before unit: ${unit_buf}')
 			}
 			val := num_buf.f64()
 			num_buf = ''

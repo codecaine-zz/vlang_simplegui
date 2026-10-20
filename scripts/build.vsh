@@ -268,6 +268,11 @@ fn main() {
 
 	// 9. Generate Info.plist
 	println('📝 Generating Info.plist...')
+	safe_app_exe := app_exe.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+	safe_bundle_id := bundle_id_val.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+	safe_display_name := app_display_name.replace('&', '&amp;').replace('<', '&lt;').replace('>',
+		'&gt;')
+	safe_version := version_val.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
 	mut plist_content := '<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.txt">
 <plist version="1.0">
@@ -275,7 +280,7 @@ fn main() {
     <key>CFBundleDevelopmentRegion</key>
     <string>English</string>
     <key>CFBundleExecutable</key>
-    <string>${app_exe}</string>
+    <string>${safe_app_exe}</string>
 '
 	if icon_source != '' {
 		plist_content += '    <key>CFBundleIconFile</key>
@@ -283,19 +288,19 @@ fn main() {
 '
 	}
 	plist_content += '    <key>CFBundleIdentifier</key>
-    <string>${bundle_id_val}</string>
+    <string>${safe_bundle_id}</string>
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>
-    <string>${app_display_name}</string>
+    <string>${safe_display_name}</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
-    <string>${version_val}</string>
+    <string>${safe_version}</string>
     <key>CFBundleSignature</key>
     <string>\?\?\?\?</string>
     <key>CFBundleVersion</key>
-    <string>${version_val}</string>
+    <string>${safe_version}</string>
     <key>LSMinimumSystemVersion</key>
     <string>10.13.0</string>
     <key>NSHighResolutionCapable</key>

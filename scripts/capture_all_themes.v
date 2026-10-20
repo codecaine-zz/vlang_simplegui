@@ -7,7 +7,11 @@ import simplegui
 fn main() {
 	println('Starting Theme Showcase & Screenshot Generator...')
 
-	dest_dir := '/Users/codecaine/.gemini/antigravity-ide/brain/4e13a3db-4ce7-47de-a2d4-b2d1995544a0/scratch/themes'
+	dest_dir := if os.args.len > 1 {
+		os.args[1]
+	} else {
+		os.join_path(os.getwd(), 'screenshots', 'themes')
+	}
 	os.mkdir_all(dest_dir) or {}
 	os.mkdir_all('screenshots/themes') or {}
 

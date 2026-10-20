@@ -256,13 +256,12 @@ pub fn (c &TTLCache[T]) has(key string) bool {
 	return time.now().unix_nano() < entry.expires_at.unix_nano()
 }
 
-// delete removes a key from the cache, returning true if it existed.
+// delete removes a key from the cache, returning true if it existed and was not expired.
 pub fn (mut c TTLCache[T]) delete(key string) bool {
-	if key !in c.items {
-		return false
-	}
+	entry := c.items[key] or { return false }
+	expired := time.now().unix_nano() >= entry.expires_at.unix_nano()
 	c.items.delete(key)
-	return true
+	return !expired
 }
 
 // cleanup_expired sweeps the cache and purges all expired entries.
@@ -286,9 +285,16 @@ pub fn (mut c TTLCache[T]) clear() {
 	c.items.clear()
 }
 
-// len returns the count of items in the cache (including uncleaned expired items).
+// len returns the count of unexpired items in the cache.
 pub fn (c &TTLCache[T]) len() int {
-	return c.items.len
+	now_nano := time.now().unix_nano()
+	mut count := 0
+	for _, entry in c.items {
+		if now_nano < entry.expires_at.unix_nano() {
+			count++
+		}
+	}
+	return count
 }
 
 // get_or_set_ttl retrieves a cached value or executes fetcher to populate it if missing or expired.

@@ -105,7 +105,7 @@ fn main() {
 		conn := win.websocket_client(url, on_message_received) or {
 			fail_stamp := win.time_now()
 			win.set_text('stream_logs', win.get_text('stream_logs') + '\n[' + fail_stamp +
-				'] [Error]: Secure handshake failed: ' + err.msg())
+				'] [Error]: Secure handshake failed.')
 			win.alert('Connection Failed',
 				'Handshake or network endpoint is unreachable. (If offline, try: ws://127.0.0.1:30399)')
 			win.set_status('Websocket connection failed.')

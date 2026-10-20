@@ -448,7 +448,7 @@ fn main() {
 
 		go fn [mut w, mut state, cmd, target_dir] () {
 			t0 := time.ticks()
-			res := simplegui.exec_safe('sh', ['-c', 'cd "${target_dir}" && ${cmd} 2>&1'])
+			res := simplegui.exec_safe('sh', ['-c', 'cd ${simplegui.quote_path(target_dir)} && ${cmd} 2>&1'])
 			elapsed_ms := time.ticks() - t0
 
 			w.run_on_main_thread(fn [mut state, res, elapsed_ms, cmd, target_dir] (mut win_main simplegui.SimpleWindow) {

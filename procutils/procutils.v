@@ -1,8 +1,10 @@
 module procutils
 
 import os
+import strings
 import time
 
+// ProcessCommand represents an external command program and its argument list.
 pub struct ProcessCommand {
 pub:
 	program string
@@ -18,6 +20,7 @@ pub fn (c ProcessCommand) to_shell() string {
 	return parts.join(' ')
 }
 
+// ProcessResult holds the exit code, standard output, and standard error of a completed process.
 pub struct ProcessResult {
 pub:
 	exit_code int
@@ -25,6 +28,7 @@ pub:
 	stderr    string
 }
 
+// success returns true when the process exited with status code 0.
 pub fn (r ProcessResult) success() bool {
 	return r.exit_code == 0
 }
@@ -49,6 +53,23 @@ pub fn cmd(program string, args ...string) ProcessCommand {
 	}
 }
 
+fn drain_lines(rem string, chunk string, is_stderr bool, on_line fn (line string, is_stderr bool)) string {
+	if chunk.len == 0 {
+		return rem
+	}
+	mut cur := rem + chunk
+	for {
+		idx := cur.index('\n') or { break }
+		mut line := cur[..idx]
+		if line.ends_with('\r') {
+			line = line[..line.len - 1]
+		}
+		on_line(line, is_stderr)
+		cur = cur[idx + 1..]
+	}
+	return cur
+}
+
 // exec_stream executes a command while streaming output in real-time via callback
 pub fn exec_stream(program string, args []string, on_line fn (line string, is_stderr bool)) !ProcessResult {
 	mut p := os.new_process(program)
@@ -58,39 +79,56 @@ pub fn exec_stream(program string, args []string, on_line fn (line string, is_st
 
 	mut full_stdout := []string{}
 	mut full_stderr := []string{}
+	mut out_rem := ''
+	mut err_rem := ''
 
 	for p.is_alive() {
-		out_chunk := p.stdout_read()
-		if out_chunk.len > 0 {
-			full_stdout << out_chunk
-			for line in out_chunk.split_into_lines() {
-				on_line(line, false)
+		mut got := false
+		if p.is_pending(.stdout) {
+			out_chunk := p.stdout_read()
+			if out_chunk.len > 0 {
+				full_stdout << out_chunk
+				out_rem = drain_lines(out_rem, out_chunk, false, on_line)
+				got = true
 			}
 		}
-		err_chunk := p.stderr_read()
-		if err_chunk.len > 0 {
-			full_stderr << err_chunk
-			for line in err_chunk.split_into_lines() {
-				on_line(line, true)
+		if p.is_pending(.stderr) {
+			err_chunk := p.stderr_read()
+			if err_chunk.len > 0 {
+				full_stderr << err_chunk
+				err_rem = drain_lines(err_rem, err_chunk, true, on_line)
+				got = true
 			}
 		}
-		time.sleep(5 * time.millisecond)
+		if !got {
+			time.sleep(5 * time.millisecond)
+		}
 	}
 
 	// Slurp any trailing bytes remaining on the pipes
 	last_out := p.stdout_slurp()
 	if last_out.len > 0 {
 		full_stdout << last_out
-		for line in last_out.split_into_lines() {
-			on_line(line, false)
+		out_rem = drain_lines(out_rem, last_out, false, on_line)
+	}
+	if out_rem.len > 0 {
+		mut line := out_rem
+		if line.ends_with('\r') {
+			line = line[..line.len - 1]
 		}
+		on_line(line, false)
 	}
 	last_err := p.stderr_slurp()
 	if last_err.len > 0 {
 		full_stderr << last_err
-		for line in last_err.split_into_lines() {
-			on_line(line, true)
+		err_rem = drain_lines(err_rem, last_err, true, on_line)
+	}
+	if err_rem.len > 0 {
+		mut line := err_rem
+		if line.ends_with('\r') {
+			line = line[..line.len - 1]
 		}
+		on_line(line, true)
 	}
 
 	p.wait()
@@ -110,8 +148,19 @@ pub fn exec_with_timeout(program string, args []string, timeout_ms int) !Process
 	p.set_redirect_stdio()
 	p.run()
 
+	mut out := strings.new_builder(256)
+	mut errb := strings.new_builder(64)
 	start := time.now()
 	for p.is_alive() {
+		mut got := false
+		if p.is_pending(.stdout) {
+			out.write_string(p.stdout_read())
+			got = true
+		}
+		if p.is_pending(.stderr) {
+			errb.write_string(p.stderr_read())
+			got = true
+		}
 		elapsed := time.since(start).milliseconds()
 		if elapsed > timeout_ms {
 			p.signal_kill()
@@ -119,18 +168,20 @@ pub fn exec_with_timeout(program string, args []string, timeout_ms int) !Process
 			p.close()
 			return error('process ${program} exceeded timeout of ${timeout_ms}ms')
 		}
-		time.sleep(10 * time.millisecond)
+		if !got {
+			time.sleep(5 * time.millisecond)
+		}
 	}
 
-	out := p.stdout_slurp()
-	err := p.stderr_slurp()
+	out.write_string(p.stdout_slurp())
+	errb.write_string(p.stderr_slurp())
 	p.wait()
 	p.close()
 
 	return ProcessResult{
 		exit_code: p.code
-		stdout:    out
-		stderr:    err
+		stdout:    out.str()
+		stderr:    errb.str()
 	}
 }
 
@@ -147,7 +198,7 @@ pub fn pipeline(commands []ProcessCommand) !string {
 	pipeline_str := parts.join(' | ')
 
 	res := os.execute(pipeline_str)
-	if res.exit_code != 0 && res.output.len == 0 {
+	if res.exit_code != 0 {
 		return error('pipeline execution failed with code ${res.exit_code}')
 	}
 	return res.output

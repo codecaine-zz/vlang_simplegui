@@ -1,6 +1,24 @@
 module main
 
+import os
+import regex
 import simplecli
+
+fn run_sd_replace(mut app simplecli.SimpleCli, text string, find_pat string, replace_str string) string {
+	if app.command_exists('sd') {
+		tmp_file := os.join_path(os.temp_dir(), 'simplecli_sd_${os.getpid()}.txt')
+		os.write_file(tmp_file, text) or { return text.replace(find_pat, replace_str) }
+		defer {
+			os.rm(tmp_file) or {}
+		}
+		_, code := app.exec_safe('sd', [find_pat, replace_str, tmp_file])
+		if code == 0 {
+			return os.read_file(tmp_file) or { text.replace(find_pat, replace_str) }
+		}
+	}
+	mut re := regex.regex_opt(find_pat) or { return text.replace(find_pat, replace_str) }
+	return re.replace(text, replace_str)
+}
 
 fn main() {
 	mut app := simplecli.new_app('sd-cli', '1.0.0')
@@ -37,9 +55,17 @@ fn main() {
 			app.error('File not found: ${input_file}')
 			return
 		}
-		content := app.read_file(input_file)
-		modified := content.replace(find_pat, replace_str)
-		app.write_file(input_file, modified)
+		if app.command_exists('sd') {
+			out, code := app.exec_safe('sd', [find_pat, replace_str, input_file])
+			if code != 0 {
+				app.error('sd execution failed:\n${out}')
+				return
+			}
+		} else {
+			content := app.read_file(input_file)
+			modified := run_sd_replace(mut app, content, find_pat, replace_str)
+			app.write_file(input_file, modified)
+		}
 		app.success('Modified ${input_file} (replaced "${find_pat}" with "${replace_str}")')
 		return
 	}
@@ -49,7 +75,7 @@ fn main() {
 	} else {
 		'Welcome to development server on localhost:3000'
 	}
-	out := raw.replace(find_pat, replace_str)
+	out := run_sd_replace(mut app, raw, find_pat, replace_str)
 	app.success('Output:')
 	println(out)
 }
@@ -60,6 +86,6 @@ fn run_interactive(mut app simplecli.SimpleCli) {
 	find_str := app.prompt('Find text', 'http://localhost:8000')
 	replace_str := app.prompt('Replace text', 'https://api.vlang.io')
 
-	res := sample.replace(find_str, replace_str)
+	res := run_sd_replace(mut app, sample, find_str, replace_str)
 	app.success('Result:\n${res}')
 }

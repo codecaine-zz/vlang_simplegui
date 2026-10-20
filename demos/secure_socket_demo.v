@@ -205,7 +205,6 @@ fn main() {
 			client.tcp_conn.close() or {}
 			win.ws_client = unsafe { nil }
 		}
-		cleanup_certs()
 	})
 
 	// Message Send Handler
@@ -255,11 +254,21 @@ fn main() {
 	gui.run()
 }
 
+fn cert_key_path() string {
+	return os.join_path(os.temp_dir(), 'temp_server.key')
+}
+
+fn cert_crt_path() string {
+	return os.join_path(os.temp_dir(), 'temp_server.crt')
+}
+
 // generate_certs runs openssl to create a temporary self-signed certificate and key.
 fn generate_certs() ! {
 	println('Generating temporary self-signed SSL certificate...')
+	key_p := os.quoted_path(cert_key_path())
+	crt_p := os.quoted_path(cert_crt_path())
 	res :=
-		os.execute('openssl req -x509 -newkey rsa:2048 -keyout temp_server.key -out temp_server.crt -days 1 -nodes -subj "/CN=localhost"')
+		os.execute('openssl req -x509 -newkey rsa:2048 -keyout ${key_p} -out ${crt_p} -days 1 -nodes -subj "/CN=localhost"')
 	if res.exit_code != 0 {
 		return error('Failed to generate certs: ${res.output}')
 	}
@@ -268,15 +277,15 @@ fn generate_certs() ! {
 // cleanup_certs deletes the temporary certificate and key files.
 fn cleanup_certs() {
 	println('Cleaning up temporary certificate files...')
-	os.rm('temp_server.key') or {}
-	os.rm('temp_server.crt') or {}
+	os.rm(cert_key_path()) or {}
+	os.rm(cert_crt_path()) or {}
 }
 
 // run_secure_server starts the SSL server, accepts client connections, and echoes incoming payloads
 fn run_secure_server(port int) ! {
 	config := mbedtls.SSLConnectConfig{
-		cert:     'temp_server.crt'
-		cert_key: 'temp_server.key'
+		cert:     cert_crt_path()
+		cert_key: cert_key_path()
 		validate: false
 	}
 

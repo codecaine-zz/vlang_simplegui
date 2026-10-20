@@ -61,4 +61,5 @@ fn test_tcp_framing() {
 	res := read_framed_msg(mut client, 8192) or { panic(err) }
 	assert res.bytestr() == 'REPLY: test frame'
 	client.close() or {}
+	listener.close() or {}
 }

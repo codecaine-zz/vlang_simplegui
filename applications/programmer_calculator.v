@@ -575,6 +575,9 @@ fn main() {
 	win.add_input('txt_operand_y', '0x000000FF')
 	win.set_control_width('txt_operand_y', 200)
 	win.set_control_font_name('txt_operand_y', 'Menlo')
+	win.add_dropdown('dd_op_y', ['AND (&)', 'OR (|)', 'XOR (^)', 'ADD (+)', 'SUB (-)', 'MUL (*)'],
+		'AND (&)')
+	win.set_control_width('dd_op_y', 110)
 	win.add_button('btn_apply_y', 'Apply Y with Selected Op')
 	win.end_row()
 
@@ -735,6 +738,14 @@ fn main() {
 	sync_all_views := fn [mut state, append_ledger] (mut w simplegui.SimpleWindow, update_input bool) {
 		val := mask_value(state.current_val, state.word_size)
 		state.current_val = val
+
+		ws_label := match state.word_size {
+			.ws_qword { '64-bit QWORD (uint64)' }
+			.ws_dword { '32-bit DWORD (uint32)' }
+			.ws_word { '16-bit WORD (uint16)' }
+			.ws_byte { '8-bit BYTE (uint8)' }
+		}
+		w.set_text('dd_word_size', ws_label)
 
 		hex_str := format_hex_clean(val, state.word_size)
 		dec_u_str := '${val}'
@@ -969,9 +980,22 @@ fn main() {
 
 	win.on_click('btn_apply_y', fn [mut state, sync_all_views] (mut w simplegui.SimpleWindow) {
 		y := parse_any_radix(w.get('txt_operand_y')) or { 0 }
-		state.current_val = state.current_val & y
+		op := w.get('dd_op_y')
+		if op.contains('OR') && !op.contains('XOR') {
+			state.current_val = state.current_val | y
+		} else if op.contains('XOR') {
+			state.current_val = state.current_val ^ y
+		} else if op.contains('ADD') {
+			state.current_val = state.current_val + y
+		} else if op.contains('SUB') {
+			state.current_val = state.current_val - y
+		} else if op.contains('MUL') {
+			state.current_val = state.current_val * y
+		} else {
+			state.current_val = state.current_val & y
+		}
 		sync_all_views(mut w, true)
-		w.toast('Applied Y')
+		w.toast('Applied ${op} with Y')
 	})
 
 	// -------------------------------------------------------------

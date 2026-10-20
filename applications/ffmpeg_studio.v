@@ -27,8 +27,15 @@ fn get_ffprobe_bin() string {
 // Get video duration in seconds using ffprobe
 fn get_media_duration(file_path string) f64 {
 	ffprobe := get_ffprobe_bin()
-	cmd := '${ffprobe} -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${file_path}"'
-	res := os.execute(cmd)
+	res := simplegui.exec_safe(ffprobe, [
+		'-v',
+		'error',
+		'-show_entries',
+		'format=duration',
+		'-of',
+		'default=noprint_wrappers=1:nokey=1',
+		file_path,
+	])
 	if res.exit_code == 0 {
 		return res.output.trim_space().f64()
 	}
@@ -340,22 +347,23 @@ fn main() {
 		out_file := win.get('txt_output').trim_space()
 
 		if in_file == '' {
-			return '${ffmpeg} -i <input_file> <output_file>'
+			return '${simplegui.quote_arg(ffmpeg)} -i <input_file> <output_file>'
 		}
 
 		current_tab := win.get('tabs_mode')
-		mut cmd_parts := [ffmpeg, '-y', '-i', '"${in_file}"']
+		mut cmd_parts := [simplegui.quote_arg(ffmpeg), '-y', '-i', simplegui.quote_path(in_file)]
 
 		if current_tab.contains('Transcode') || current_tab == '' {
 			vcodec_sel := win.get('dd_vcodec')
+			hw_accel := win.get_bool('chk_hardware_accel')
 
 			if vcodec_sel.contains('Copy') {
 				cmd_parts << ['-c', 'copy']
 			} else {
 				if vcodec_sel.contains('H.264') {
-					cmd_parts << ['-c:v', 'libx264']
+					cmd_parts << ['-c:v', if hw_accel { 'h264_videotoolbox' } else { 'libx264' }]
 				} else if vcodec_sel.contains('H.265') {
-					cmd_parts << ['-c:v', 'libx265']
+					cmd_parts << ['-c:v', if hw_accel { 'hevc_videotoolbox' } else { 'libx265' }]
 				} else if vcodec_sel.contains('ProRes') {
 					cmd_parts << ['-c:v', 'prores_ks', '-profile:v', '3']
 				} else if vcodec_sel.contains('AV1') {
@@ -364,24 +372,29 @@ fn main() {
 					cmd_parts << ['-c:v', 'libvpx-vp9']
 				}
 
-				crf_sel := win.get('dd_crf')
-				if crf_sel.contains('18') {
-					cmd_parts << ['-crf', '18']
-				} else if crf_sel.contains('20') {
-					cmd_parts << ['-crf', '20']
-				} else if crf_sel.contains('28') {
-					cmd_parts << ['-crf', '28']
-				} else if crf_sel.contains('32') {
-					cmd_parts << ['-crf', '32']
-				} else {
-					cmd_parts << ['-crf', '23']
-				}
+				if !hw_accel || (!vcodec_sel.contains('H.264') && !vcodec_sel.contains('H.265')) {
+					crf_sel := win.get('dd_crf')
+					if crf_sel.contains('18') {
+						cmd_parts << ['-crf', '18']
+					} else if crf_sel.contains('20') {
+						cmd_parts << ['-crf', '20']
+					} else if crf_sel.contains('28') {
+						cmd_parts << ['-crf', '28']
+					} else if crf_sel.contains('32') {
+						cmd_parts << ['-crf', '32']
+					} else {
+						cmd_parts << ['-crf', '23']
+					}
 
-				preset_sel := win.get('dd_preset')
-				if preset_sel != '' {
-					cmd_parts << ['-preset', preset_sel]
+					preset_sel := win.get('dd_preset')
+					if preset_sel != '' {
+						cmd_parts << ['-preset', simplegui.quote_arg(preset_sel)]
+					}
 				}
-				cmd_parts << ['-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart']
+				cmd_parts << ['-c:a', 'aac', '-b:a', '192k']
+				if win.get_bool('chk_faststart') {
+					cmd_parts << ['-movflags', '+faststart']
+				}
 			}
 		} else if current_tab.contains('Target Size') {
 			target_preset := win.get('dd_target_preset')
@@ -398,8 +411,9 @@ fn main() {
 
 			dur := get_media_duration(in_file)
 			effective_dur := if dur > 0.0 { dur } else { 60.0 }
+			mute_target := win.get_bool('chk_mute_target')
 
-			audio_kbps := 128.0
+			audio_kbps := if mute_target { 0.0 } else { 128.0 }
 			total_kbits := target_mb * 8192.0
 			video_kbps := (total_kbits / effective_dur) - audio_kbps
 			v_rate := if video_kbps > 100.0 { int(video_kbps) } else { 200 }
@@ -407,8 +421,13 @@ fn main() {
 			buf_r := v_rate * 2
 
 			cmd_parts << ['-c:v', 'libx264', '-b:v', '${v_rate}k', '-maxrate', '${max_r}k', '-bufsize',
-				'${buf_r}k', '-preset', 'medium', '-c:a', 'aac', '-b:a', '128k', '-movflags',
-				'+faststart']
+				'${buf_r}k', '-preset', 'medium']
+			if mute_target {
+				cmd_parts << ['-an']
+			} else {
+				cmd_parts << ['-c:a', 'aac', '-b:a', '128k']
+			}
+			cmd_parts << ['-movflags', '+faststart']
 		} else if current_tab.contains('Audio') {
 			cmd_parts << ['-vn']
 			format_sel := win.get('dd_aformat')
@@ -439,6 +458,15 @@ fn main() {
 				cmd_parts << ['-c:a', 'aac', '-b:a', br]
 			}
 
+			chan_sel := win.get('dd_achannels')
+			if chan_sel.contains('Stereo') {
+				cmd_parts << ['-ac', '2']
+			} else if chan_sel.contains('Mono') {
+				cmd_parts << ['-ac', '1']
+			} else if chan_sel.contains('Surround') {
+				cmd_parts << ['-ac', '6']
+			}
+
 			mut af_filters := []string{}
 			vol_sel := win.get('dd_avolume')
 			if vol_sel.contains('125%') {
@@ -451,21 +479,30 @@ fn main() {
 				af_filters << 'volume=0.5'
 			}
 
-			af_filters << 'loudnorm=I=-16:TP=-1.5:LRA=11'
+			if win.get_bool('chk_afftdn') {
+				af_filters << 'afftdn'
+			}
+			if win.get_bool('chk_loudnorm') {
+				af_filters << 'loudnorm=I=-16:TP=-1.5:LRA=11'
+			}
 
 			if af_filters.len > 0 {
-				cmd_parts << ['-af', '"' + af_filters.join(',') + '"']
+				cmd_parts << ['-af', simplegui.quote_arg(af_filters.join(','))]
 			}
 		} else if current_tab.contains('Trim') {
 			start_t := win.get('txt_start_time').trim_space()
 			end_t := win.get('txt_end_time').trim_space()
 			if start_t != '' && start_t != '00:00:00' {
-				cmd_parts << ['-ss', start_t]
+				cmd_parts << ['-ss', simplegui.quote_arg(start_t)]
 			}
 			if end_t != '' {
-				cmd_parts << ['-t', end_t]
+				cmd_parts << ['-t', simplegui.quote_arg(end_t)]
 			}
-			cmd_parts << ['-c', 'copy']
+			if win.get_bool('chk_trim_fast') {
+				cmd_parts << ['-c', 'copy']
+			} else {
+				cmd_parts << ['-c:v', 'libx264', '-c:a', 'aac']
+			}
 		} else if current_tab.contains('Aspect') || current_tab.contains('Filters') {
 			scale_sel := win.get('dd_scale')
 			mut vf_filters := []string{}
@@ -499,19 +536,31 @@ fn main() {
 				vf_filters << 'hue=s=0'
 			}
 
+			if win.get_bool('chk_denoise') {
+				vf_filters << 'hqdn3d'
+			}
+
 			speed_sel := win.get('dd_speed')
 			if speed_sel.contains('0.5x') {
 				vf_filters << 'setpts=2.0*PTS'
-				cmd_parts << ['-filter:a', 'atempo=0.5']
+				if !win.get_bool('chk_mute_video') {
+					cmd_parts << ['-filter:a', 'atempo=0.5']
+				}
 			} else if speed_sel.contains('1.5x') {
 				vf_filters << 'setpts=0.666*PTS'
-				cmd_parts << ['-filter:a', 'atempo=1.5']
+				if !win.get_bool('chk_mute_video') {
+					cmd_parts << ['-filter:a', 'atempo=1.5']
+				}
 			} else if speed_sel.contains('2.0x') {
 				vf_filters << 'setpts=0.5*PTS'
-				cmd_parts << ['-filter:a', 'atempo=2.0']
+				if !win.get_bool('chk_mute_video') {
+					cmd_parts << ['-filter:a', 'atempo=2.0']
+				}
 			} else if speed_sel.contains('4.0x') {
 				vf_filters << 'setpts=0.25*PTS'
-				cmd_parts << ['-filter:a', 'atempo=2.0,atempo=2.0']
+				if !win.get_bool('chk_mute_video') {
+					cmd_parts << ['-filter:a', simplegui.quote_arg('atempo=2.0,atempo=2.0')]
+				}
 			}
 
 			fps_sel := win.get('dd_fps')
@@ -524,16 +573,21 @@ fn main() {
 			}
 
 			if vf_filters.len > 0 {
-				cmd_parts << ['-vf', '"' + vf_filters.join(',') + '"']
+				cmd_parts << ['-vf', simplegui.quote_arg(vf_filters.join(','))]
 			}
-			cmd_parts << ['-c:v', 'libx264', '-crf', '22', '-c:a', 'aac']
+			cmd_parts << ['-c:v', 'libx264', '-crf', '22']
+			if win.get_bool('chk_mute_video') {
+				cmd_parts << ['-an']
+			} else {
+				cmd_parts << ['-c:a', 'aac']
+			}
 		} else if current_tab.contains('Frame') || current_tab.contains('Storyboard') {
 			t_stamp := win.get('txt_thumb_time').trim_space()
 			sb_mode := win.get('dd_storyboard')
 
 			if sb_mode.contains('Single Frame') {
-				cmd_parts = [ffmpeg, '-y', '-ss', t_stamp, '-i', '"${in_file}"', '-vframes', '1',
-					'-q:v', '2']
+				cmd_parts = [simplegui.quote_arg(ffmpeg), '-y', '-ss', simplegui.quote_arg(t_stamp), '-i',
+					simplegui.quote_path(in_file), '-vframes', '1', '-q:v', '2']
 			} else {
 				grid_tile := if sb_mode.contains('3x3') {
 					'3x3'
@@ -542,8 +596,9 @@ fn main() {
 				} else {
 					'4x4'
 				}
-				cmd_parts = [ffmpeg, '-y', '-i', '"${in_file}"', '-vf',
-					'"fps=1/10,scale=320:-1,tile=${grid_tile}"', '-vframes', '1']
+				cmd_parts = [simplegui.quote_arg(ffmpeg), '-y', '-i', simplegui.quote_path(in_file),
+					'-vf', simplegui.quote_arg('fps=1/10,scale=320:-1,tile=${grid_tile}'), '-vframes',
+					'1']
 			}
 		} else if current_tab.contains('GIF') {
 			gif_fps := if win.get('dd_gif_fps').contains('24') {
@@ -567,11 +622,22 @@ fn main() {
 				'480'
 			}
 
-			cmd_parts << ['-vf',
-				'"fps=${gif_fps},scale=${gif_w}:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse"']
+			cmd_parts << [
+				'-vf',
+				simplegui.quote_arg('fps=${gif_fps},scale=${gif_w}:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse'),
+			]
+			if win.get_bool('chk_gif_loop') {
+				cmd_parts << ['-loop', '0']
+			} else {
+				cmd_parts << ['-loop', '-1']
+			}
 		}
 
-		target_out := if out_file != '' { '"${out_file}"' } else { '"output.mp4"' }
+		target_out := if out_file != '' {
+			simplegui.quote_path(out_file)
+		} else {
+			simplegui.quote_path('output.mp4')
+		}
 		cmd_parts << target_out
 		return cmd_parts.join(' ')
 	}

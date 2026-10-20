@@ -79,7 +79,22 @@ pub fn run_command(bin string, args []string, opts RunOptions) !CommandResult {
 			break
 		}
 	}
-	if !timed_out {
+	if timed_out {
+		for p.is_pending(.stdout) {
+			chunk := p.stdout_read()
+			if chunk.len == 0 {
+				break
+			}
+			out.write_string(chunk)
+		}
+		for p.is_pending(.stderr) {
+			chunk := p.stderr_read()
+			if chunk.len == 0 {
+				break
+			}
+			errb.write_string(chunk)
+		}
+	} else {
 		out.write_string(p.stdout_slurp())
 		errb.write_string(p.stderr_slurp())
 	}
