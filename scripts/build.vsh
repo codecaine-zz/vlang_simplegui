@@ -70,7 +70,7 @@ fn main() {
 	} else if os.exists('main.v') {
 		'main.v'
 	} else {
-		'demos/main.v'
+		'demos/every_macos_control_demo.v'
 	}
 	if !os.exists(entry_file) {
 		eprintln('❌ Entry file not found: ${entry_file}')

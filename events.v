@@ -158,6 +158,20 @@ pub fn (win &SimpleWindow) on_any_event(callback AnyEventCallback) &SimpleWindow
 
 // dispatch_event dispatches an event by name to registered handlers and observers.
 pub fn (win &SimpleWindow) dispatch_event(name string, event_name string, value string) bool {
+	dispatch_key := '${name.to_lower()}:${event_name}'
+	if win.dispatching_events[dispatch_key] {
+		return false
+	}
+	unsafe {
+		mut w := &SimpleWindow(win)
+		w.dispatching_events[dispatch_key] = true
+	}
+	defer {
+		unsafe {
+			mut w := &SimpleWindow(win)
+			w.dispatching_events.delete(dispatch_key)
+		}
+	}
 	if win.debug_mode {
 		println('[simplegui DEBUG] Dispatching Event: "${event_name}" on Control: "${name}" (Value: "${value}")')
 		win.set_status('[DEBUG] ${event_name} on "${name}" -> "${value}"')

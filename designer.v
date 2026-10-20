@@ -683,10 +683,6 @@ fn escape_html_attr(s string) string {
 		'&quot;').replace("'", '&#39;')
 }
 
-fn escape_html(s string) string {
-	return escape_html_attr(s)
-}
-
 // generate_html_code generates a standalone semantic HTML5 and modern CSS webpage from a FormSpec layout.
 pub fn generate_html_code(spec FormSpec) string {
 	mut sb := strings.new_builder(4096)

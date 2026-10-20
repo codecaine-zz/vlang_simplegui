@@ -137,6 +137,7 @@ mut:
 	wizard_pages                 map[string][]string
 	wizard_steps                 map[string]int
 	crud_bindings                map[string][]string
+	dispatching_events           map[string]bool
 pub mut:
 	ws_client       voidptr = unsafe { nil }
 	state_store     map[string]string

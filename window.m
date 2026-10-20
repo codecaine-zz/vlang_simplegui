@@ -200,7 +200,7 @@ extern BOOL vlang_is_window_valid(void *win_ptr);
     _columns = (cols > 0) ? cols : 1;
     _spacing = spc;
     _currentChildCount = 0;
-    _rowStacks = [NSMutableArray array];
+    _rowStacks = [[NSMutableArray alloc] init];
     
     [self setTranslatesAutoresizingMaskIntoConstraints:NO];
     [self setWantsLayer:YES];
@@ -1413,8 +1413,8 @@ static NSColor *colorFromHexString(NSString *hexString) {
   self = [super initWithFrame:frameRect];
   if (self) {
     _values = [[NSMutableArray alloc] init];
-    _lineColor = [NSColor colorWithRed:0.2 green:0.55 blue:0.95 alpha:1.0];
-    _fillColor = [NSColor colorWithRed:0.2 green:0.55 blue:0.95 alpha:0.15];
+    _lineColor = [[NSColor colorWithRed:0.2 green:0.55 blue:0.95 alpha:1.0] retain];
+    _fillColor = [[NSColor colorWithRed:0.2 green:0.55 blue:0.95 alpha:0.15] retain];
   }
   return self;
 }
@@ -20075,8 +20075,8 @@ const char *window_get_browser_path(main__WindowInfo *info, const char *name) {
 @implementation ActivityRingsView
 - (instancetype)initWithFrame:(NSRect)frame {
   if (self = [super initWithFrame:frame]) {
-    _percentages = [NSMutableArray array];
-    _ringColors = [NSMutableArray array];
+    _percentages = [[NSMutableArray alloc] init];
+    _ringColors = [[NSMutableArray alloc] init];
   }
   return self;
 }
@@ -24205,6 +24205,60 @@ static void sgRunOnMainSync(void (^block)(void)) {
   }
 }
 
+static NSFont *sgMonoFont(CGFloat size, NSFontWeight weight) {
+  static NSMutableDictionary *cache = nil;
+  if (!cache) cache = [[NSMutableDictionary alloc] init];
+  NSString *key = [NSString stringWithFormat:@"m_%.1f_%.2f", size, (double)weight];
+  NSFont *f = cache[key];
+  if (!f) {
+    f = [NSFont monospacedSystemFontOfSize:size weight:weight];
+    if (!f) f = [NSFont userFixedPitchFontOfSize:size];
+    if (!f) f = [NSFont systemFontOfSize:size];
+    if (!f) f = [NSFont labelFontOfSize:12.0];
+    if (f) cache[key] = f;
+  }
+  return f;
+}
+
+static NSFont *sgMonoDigitFont(CGFloat size, NSFontWeight weight) {
+  static NSMutableDictionary *cache = nil;
+  if (!cache) cache = [[NSMutableDictionary alloc] init];
+  NSString *key = [NSString stringWithFormat:@"d_%.1f_%.2f", size, (double)weight];
+  NSFont *f = cache[key];
+  if (!f) {
+    f = [NSFont monospacedDigitSystemFontOfSize:size weight:weight];
+    if (!f) f = [NSFont monospacedSystemFontOfSize:size weight:weight];
+    if (!f) f = [NSFont systemFontOfSize:size];
+    if (!f) f = [NSFont labelFontOfSize:12.0];
+    if (f) cache[key] = f;
+  }
+  return f;
+}
+
+static NSFont *sgSysFont(CGFloat size, NSFontWeight weight) {
+  static NSMutableDictionary *cache = nil;
+  if (!cache) cache = [[NSMutableDictionary alloc] init];
+  NSString *key = [NSString stringWithFormat:@"s_%.1f_%.2f", size, (double)weight];
+  NSFont *f = cache[key];
+  if (!f) {
+    f = [NSFont systemFontOfSize:size weight:weight];
+    if (!f) f = [NSFont systemFontOfSize:size];
+    if (!f) f = [NSFont labelFontOfSize:12.0];
+    if (f) cache[key] = f;
+  }
+  return f;
+}
+
+static NSDictionary *sgTextAttrs(NSFont *font, NSColor *color, NSParagraphStyle *para) {
+  NSMutableDictionary *d = [NSMutableDictionary dictionaryWithCapacity:3];
+  NSFont *f = font ?: sgSysFont(11.0, NSFontWeightRegular);
+  NSColor *c = color ?: [NSColor whiteColor];
+  if (f) [d setObject:f forKey:NSFontAttributeName];
+  if (c) [d setObject:c forKey:NSForegroundColorAttributeName];
+  if (para) [d setObject:para forKey:NSParagraphStyleAttributeName];
+  return d;
+}
+
 // 1. Gantt Chart View
 @interface SGGanttChartView : NSView
 @property (nonatomic, copy) NSString *chartTitle;
@@ -26852,10 +26906,7 @@ int window_get_number_spinner_value(main__WindowInfo *info, const char *name) {
 
     // Layer E: Semantic Emblem inside 3D Folder Front Flap
     NSString *emblem = [self emblemForType:ftype];
-    NSDictionary *embAttrs = @{
-      NSFontAttributeName: [NSFont boldSystemFontOfSize:11.0],
-      NSForegroundColorAttributeName: [NSColor whiteColor]
-    };
+    NSDictionary *embAttrs = sgTextAttrs(sgSysFont(11.0, NSFontWeightBold), [NSColor whiteColor], nil);
     [emblem drawInRect:NSMakeRect(iconX + 10, iconY + 14, 28, 16) withAttributes:embAttrs];
 
     // 4. Holiday / Tier Corner Crest Pill Badge
@@ -26867,10 +26918,7 @@ int window_get_number_spinner_value(main__WindowInfo *info, const char *name) {
       [[semColor colorWithAlphaComponent:0.55] setStroke];
       pillPath.lineWidth = 0.8;
       [pillPath stroke];
-      NSDictionary *bAttrs = @{
-        NSFontAttributeName: [NSFont boldSystemFontOfSize:10.5],
-        NSForegroundColorAttributeName: semColor
-      };
+      NSDictionary *bAttrs = sgTextAttrs(sgSysFont(10.5, NSFontWeightBold), semColor, nil);
       [badge drawInRect:NSMakeRect(pillRect.origin.x + 4, pillRect.origin.y + 1, 18, 16) withAttributes:bAttrs];
     }
 
@@ -26878,17 +26926,11 @@ int window_get_number_spinner_value(main__WindowInfo *info, const char *name) {
     BOOL cardIsDark = isDarkColor(bg);
     NSColor *titleCol = cardIsDark ? [NSColor colorWithWhite:0.98 alpha:1.0] : [NSColor colorWithSRGBRed:0.08 green:0.09 blue:0.11 alpha:1.0];
     NSColor *subCol = cardIsDark ? [NSColor colorWithWhite:0.76 alpha:0.94] : [NSColor colorWithSRGBRed:0.30 green:0.32 blue:0.36 alpha:0.95];
-    NSDictionary *titleAttrs = @{
-      NSFontAttributeName: [NSFont boldSystemFontOfSize:12.5],
-      NSForegroundColorAttributeName: titleCol
-    };
+    NSDictionary *titleAttrs = sgTextAttrs(sgSysFont(12.5, NSFontWeightBold), titleCol, nil);
     [title drawInRect:NSMakeRect(iconX + 50, cellRect.origin.y + 11, MAX(40, cellW - 76), 18) withAttributes:titleAttrs];
 
     if (sub.length > 0) {
-      NSDictionary *subAttrs = @{
-        NSFontAttributeName: [NSFont systemFontOfSize:10.5],
-        NSForegroundColorAttributeName: subCol
-      };
+      NSDictionary *subAttrs = sgTextAttrs(sgSysFont(10.5, NSFontWeightRegular), subCol, nil);
       [sub drawInRect:NSMakeRect(iconX + 50, cellRect.origin.y + 29, MAX(40, cellW - 72), 16) withAttributes:subAttrs];
     }
 
@@ -27215,12 +27257,13 @@ void window_set_themed_folder_grid_selected(main__WindowInfo *info, const char *
     _phase = 0.85;
     _speed = 1.0;
     __unsafe_unretained typeof(self) weakSelf = self;
-    _timer = [NSTimer timerWithTimeInterval:0.033 repeats:YES block:^(NSTimer * _Nonnull t) {
+    _timer = [NSTimer timerWithTimeInterval:0.05 repeats:YES block:^(NSTimer * _Nonnull t) {
       SGShaderCanvasView *s = weakSelf;
-      if (!s || s.isHiddenOrHasHiddenAncestor || !s.window || !(s.window.occlusionState & NSWindowOcclusionStateVisible)) return;
+      if (!s || s.isHiddenOrHasHiddenAncestor || !s.window || !(s.window.occlusionState & NSWindowOcclusionStateVisible) || NSIsEmptyRect(s.visibleRect)) return;
       s.phase += 0.048 * s.speed;
       [s setNeedsDisplay:YES];
     }];
+    _timer.tolerance = 0.015;
     [[NSRunLoop mainRunLoop] addTimer:_timer forMode:NSRunLoopCommonModes];
   }
   return self;
@@ -27486,15 +27529,9 @@ void window_set_themed_folder_grid_selected(main__WindowInfo *info, const char *
 
   // HUD Telemetry Overlay & Border
   NSString *hudLabel = [NSString stringWithFormat:@"SHADER // %@  [60 FPS METAL/CG]", [self.preset uppercaseString]];
-  [hudLabel drawAtPoint:NSMakePoint(12, b.size.height - 22) withAttributes:@{
-    NSFontAttributeName: [NSFont monospacedSystemFontOfSize:10.0 weight:NSFontWeightBold],
-    NSForegroundColorAttributeName: [g1 colorWithAlphaComponent:0.92]
-  }];
+  [hudLabel drawAtPoint:NSMakePoint(12, b.size.height - 22) withAttributes:sgTextAttrs(sgMonoFont(10.0, NSFontWeightBold), [g1 colorWithAlphaComponent:0.92], nil)];
   NSString *hintLabel = @"Click viewport to cycle VFX shader preset";
-  [hintLabel drawAtPoint:NSMakePoint(12, 8) withAttributes:@{
-    NSFontAttributeName: [NSFont systemFontOfSize:9.5 weight:NSFontWeightMedium],
-    NSForegroundColorAttributeName: [[NSColor whiteColor] colorWithAlphaComponent:0.55]
-  }];
+  [hintLabel drawAtPoint:NSMakePoint(12, 8) withAttributes:sgTextAttrs(sgSysFont(9.5, NSFontWeightMedium), [[NSColor whiteColor] colorWithAlphaComponent:0.55], nil)];
 
   [NSGraphicsContext restoreGraphicsState];
   [[g1 colorWithAlphaComponent:0.55] setStroke];
@@ -27618,13 +27655,14 @@ void window_step_shader_canvas(main__WindowInfo *info, const char *name, double 
     _burstAge = 0.35;
     _burstCenter = NSMakePoint(0.5, 0.5);
     __unsafe_unretained typeof(self) weakSelf = self;
-    _timer = [NSTimer timerWithTimeInterval:0.033 repeats:YES block:^(NSTimer * _Nonnull t) {
+    _timer = [NSTimer timerWithTimeInterval:0.05 repeats:YES block:^(NSTimer * _Nonnull t) {
       SGParticleEmitterView *s = weakSelf;
-      if (!s || s.isHiddenOrHasHiddenAncestor || !s.window || !(s.window.occlusionState & NSWindowOcclusionStateVisible)) return;
+      if (!s || s.isHiddenOrHasHiddenAncestor || !s.window || !(s.window.occlusionState & NSWindowOcclusionStateVisible) || NSIsEmptyRect(s.visibleRect)) return;
       s.phase += 0.05;
       s.burstAge = fmod(s.burstAge + 0.025, 1.0);
       [s setNeedsDisplay:YES];
     }];
+    _timer.tolerance = 0.015;
     [[NSRunLoop mainRunLoop] addTimer:_timer forMode:NSRunLoopCommonModes];
   }
   return self;
@@ -27701,10 +27739,7 @@ void window_step_shader_canvas(main__WindowInfo *info, const char *name, double 
   }
 
   NSString *lbl = [NSString stringWithFormat:@"PARTICLE FX // %@ (%d ACTIVE)", [self.effectType uppercaseString], count];
-  [lbl drawAtPoint:NSMakePoint(12, b.size.height - 22) withAttributes:@{
-    NSFontAttributeName: [NSFont monospacedSystemFontOfSize:10.0 weight:NSFontWeightBold],
-    NSForegroundColorAttributeName: [g2 colorWithAlphaComponent:0.92]
-  }];
+  [lbl drawAtPoint:NSMakePoint(12, b.size.height - 22) withAttributes:sgTextAttrs(sgMonoFont(10.0, NSFontWeightBold), [g2 colorWithAlphaComponent:0.92], nil)];
   [NSGraphicsContext restoreGraphicsState];
   [[g2 colorWithAlphaComponent:0.52] setStroke];
   clip.lineWidth = 1.4;
@@ -27856,29 +27891,17 @@ void window_emit_particle_burst(main__WindowInfo *info, const char *name, double
     NSRect badgeRect = NSMakeRect(16, 12, MIN(130, self.badgeText.length * 7.5 + 16), 20);
     [[g1 colorWithAlphaComponent:0.20] setFill];
     [[NSBezierPath bezierPathWithRoundedRect:badgeRect xRadius:6.0 yRadius:6.0] fill];
-    [self.badgeText drawInRect:NSMakeRect(22, 14, badgeRect.size.width - 10, 16) withAttributes:@{
-      NSFontAttributeName: [NSFont monospacedSystemFontOfSize:9.5 weight:NSFontWeightBold],
-      NSForegroundColorAttributeName: g1
-    }];
+    [self.badgeText drawInRect:NSMakeRect(22, 14, badgeRect.size.width - 10, 16) withAttributes:sgTextAttrs(sgMonoFont(9.5, NSFontWeightBold), g1, nil)];
   }
 
   BOOL dark = isDarkColor(bg);
   NSColor *titleCol = dark ? [NSColor whiteColor] : [NSColor blackColor];
   NSColor *subCol = dark ? [NSColor colorWithWhite:0.78 alpha:1.0] : [NSColor colorWithWhite:0.28 alpha:1.0];
 
-  [self.cardTitle drawInRect:NSMakeRect(16, 36, b.size.width - 96, 18) withAttributes:@{
-    NSFontAttributeName: [NSFont systemFontOfSize:11.5 weight:NSFontWeightSemibold],
-    NSForegroundColorAttributeName: subCol
-  }];
-  [self.metricValue drawInRect:NSMakeRect(16, 54, b.size.width - 96, 30) withAttributes:@{
-    NSFontAttributeName: [NSFont monospacedDigitSystemFontOfSize:22.0 weight:NSFontWeightHeavy],
-    NSForegroundColorAttributeName: titleCol
-  }];
+  [self.cardTitle drawInRect:NSMakeRect(16, 36, b.size.width - 96, 18) withAttributes:sgTextAttrs(sgSysFont(11.5, NSFontWeightSemibold), subCol, nil)];
+  [self.metricValue drawInRect:NSMakeRect(16, 54, b.size.width - 96, 30) withAttributes:sgTextAttrs(sgMonoDigitFont(22.0, NSFontWeightHeavy), titleCol, nil)];
   if (self.cardSubtitle.length > 0) {
-    [self.cardSubtitle drawInRect:NSMakeRect(16, 84, b.size.width - 96, 16) withAttributes:@{
-      NSFontAttributeName: [NSFont systemFontOfSize:10.5 weight:NSFontWeightMedium],
-      NSForegroundColorAttributeName: g2
-    }];
+    [self.cardSubtitle drawInRect:NSMakeRect(16, 84, b.size.width - 96, 16) withAttributes:sgTextAttrs(sgSysFont(10.5, NSFontWeightMedium), g2, nil)];
   }
 }
 @end
@@ -27960,12 +27983,13 @@ const char *window_get_hologram_card_value(main__WindowInfo *info, const char *n
     _amplitude = 0.78;
     _phase = 0.6;
     __unsafe_unretained typeof(self) weakSelf = self;
-    _timer = [NSTimer timerWithTimeInterval:0.033 repeats:YES block:^(NSTimer * _Nonnull t) {
+    _timer = [NSTimer timerWithTimeInterval:0.05 repeats:YES block:^(NSTimer * _Nonnull t) {
       SGWaveformSynthView *s = weakSelf;
-      if (!s || s.isHiddenOrHasHiddenAncestor || !s.window || !(s.window.occlusionState & NSWindowOcclusionStateVisible)) return;
+      if (!s || s.isHiddenOrHasHiddenAncestor || !s.window || !(s.window.occlusionState & NSWindowOcclusionStateVisible) || NSIsEmptyRect(s.visibleRect)) return;
       s.phase += 0.06;
       [s setNeedsDisplay:YES];
     }];
+    _timer.tolerance = 0.015;
     [[NSRunLoop mainRunLoop] addTimer:_timer forMode:NSRunLoopCommonModes];
   }
   return self;
@@ -28023,10 +28047,7 @@ const char *window_get_hologram_card_value(main__WindowInfo *info, const char *n
   }
 
   NSString *hud = [NSString stringWithFormat:@"SYNTH // %@ | %.1f Hz | AMP %.0f%%", [self.waveType uppercaseString], self.frequency, self.amplitude * 100.0];
-  [hud drawAtPoint:NSMakePoint(12, b.size.height - 20) withAttributes:@{
-    NSFontAttributeName: [NSFont monospacedSystemFontOfSize:9.5 weight:NSFontWeightBold],
-    NSForegroundColorAttributeName: [g1 colorWithAlphaComponent:0.90]
-  }];
+  [hud drawAtPoint:NSMakePoint(12, b.size.height - 20) withAttributes:sgTextAttrs(sgMonoFont(9.5, NSFontWeightBold), [g1 colorWithAlphaComponent:0.90], nil)];
   [[g1 colorWithAlphaComponent:0.45] setStroke];
   clip.lineWidth = 1.2;
   [clip stroke];
@@ -28121,29 +28142,17 @@ const char *window_get_waveform_synthesizer_type(main__WindowInfo *info, const c
   [wash drawInBezierPath:box angle:12.0];
 
   // Chromatic Aberration Split Text (Cyan Left + Magenta Right + Crisp Foreground)
-  NSFont *heroFont = [NSFont systemFontOfSize:20.0 weight:NSFontWeightBlack];
+  NSFont *heroFont = sgSysFont(20.0, NSFontWeightBlack);
   CGFloat gx = self.glitchOffset != 0.0 ? self.glitchOffset : 2.2;
   NSString *t = self.bannerTitle ?: @"CODECAINE FX ENGINE";
 
-  [t drawInRect:NSMakeRect(18 - gx, 12, b.size.width - 36, 28) withAttributes:@{
-    NSFontAttributeName: heroFont,
-    NSForegroundColorAttributeName: [g1 colorWithAlphaComponent:0.78]
-  }];
-  [t drawInRect:NSMakeRect(18 + gx, 13, b.size.width - 36, 28) withAttributes:@{
-    NSFontAttributeName: heroFont,
-    NSForegroundColorAttributeName: [g2 colorWithAlphaComponent:0.78]
-  }];
+  [t drawInRect:NSMakeRect(18 - gx, 12, b.size.width - 36, 28) withAttributes:sgTextAttrs(heroFont, [g1 colorWithAlphaComponent:0.78], nil)];
+  [t drawInRect:NSMakeRect(18 + gx, 13, b.size.width - 36, 28) withAttributes:sgTextAttrs(heroFont, [g2 colorWithAlphaComponent:0.78], nil)];
   BOOL dark = isDarkColor(bg);
-  [t drawInRect:NSMakeRect(18, 12, b.size.width - 36, 28) withAttributes:@{
-    NSFontAttributeName: heroFont,
-    NSForegroundColorAttributeName: dark ? [NSColor whiteColor] : [NSColor blackColor]
-  }];
+  [t drawInRect:NSMakeRect(18, 12, b.size.width - 36, 28) withAttributes:sgTextAttrs(heroFont, dark ? [NSColor whiteColor] : [NSColor blackColor], nil)];
 
   if (self.bannerSubtitle.length > 0) {
-    [self.bannerSubtitle drawInRect:NSMakeRect(18, 40, b.size.width - 36, 18) withAttributes:@{
-      NSFontAttributeName: [NSFont monospacedSystemFontOfSize:10.5 weight:NSFontWeightSemibold],
-      NSForegroundColorAttributeName: g1
-    }];
+    [self.bannerSubtitle drawInRect:NSMakeRect(18, 40, b.size.width - 36, 18) withAttributes:sgTextAttrs(sgMonoFont(10.5, NSFontWeightSemibold), g1, nil)];
   }
 
   // Horizontal Laser Underline + Glitch Slice Bars
@@ -28602,12 +28611,13 @@ void window_webview_eval_js(main__WindowInfo *info, const char *name, const char
     _batteryPct = 88;
     _phase = 0.0;
     __unsafe_unretained typeof(self) weakSelf = self;
-    _timer = [NSTimer timerWithTimeInterval:0.04 repeats:YES block:^(NSTimer * _Nonnull t) {
+    _timer = [NSTimer timerWithTimeInterval:0.05 repeats:YES block:^(NSTimer * _Nonnull t) {
       SGSmartHouseFloorplanView *s = weakSelf;
-      if (!s || s.isHiddenOrHasHiddenAncestor || !s.window || !(s.window.occlusionState & NSWindowOcclusionStateVisible)) return;
+      if (!s || s.isHiddenOrHasHiddenAncestor || !s.window || !(s.window.occlusionState & NSWindowOcclusionStateVisible) || NSIsEmptyRect(s.visibleRect)) return;
       s.phase += 0.06;
       [s setNeedsDisplay:YES];
     }];
+    _timer.tolerance = 0.015;
     [[NSRunLoop mainRunLoop] addTimer:_timer forMode:NSRunLoopCommonModes];
   }
   return self;
@@ -28632,10 +28642,7 @@ void window_webview_eval_js(main__WindowInfo *info, const char *name, const char
   // Top Domotics Telemetry Header Bar
   NSString *hdr = [NSString stringWithFormat:@"🏠 %@   |   ☀️ SOLAR +6.4 kW   |   ⚡ LOAD %.1f kW   |   🔋 POWERWALL %d%%   |   🛡️ ARMED",
                    self.houseTitle, self.totalKw, self.batteryPct];
-  [hdr drawInRect:NSMakeRect(14, 8, b.size.width - 28, 18) withAttributes:@{
-    NSFontAttributeName: [NSFont monospacedSystemFontOfSize:10.0 weight:NSFontWeightBold],
-    NSForegroundColorAttributeName: g1
-  }];
+  [hdr drawInRect:NSMakeRect(14, 8, b.size.width - 28, 18) withAttributes:sgTextAttrs(sgMonoFont(10.0, NSFontWeightBold), g1, nil)];
 
   NSArray<NSString *> *rooms = @[@"LIVING LOUNGE", @"MASTER SUITE", @"KITCHEN LAB", @"EV GARAGE BAY", @"AI SERVER VAULT", @"SOLAR ATRIUM"];
   NSArray<NSString *> *temps = @[@"71.5°F • 42% RH", @"68.0°F • SLEEP", @"72.0°F • INDUCTION", @"CHARGING • 11.5 kW", @"64.2°F • LIQUID COOL", @"74.8°F • UV DOME"];
@@ -28673,22 +28680,13 @@ void window_webview_eval_js(main__WindowInfo *info, const char *name, const char
     }
 
     NSString *rTitle = [NSString stringWithFormat:@"%@ %@", icons[i], rooms[i]];
-    [rTitle drawInRect:NSMakeRect(rRect.origin.x + 10, rRect.origin.y + 8, rRect.size.width - 36, 16) withAttributes:@{
-      NSFontAttributeName: [NSFont systemFontOfSize:11.0 weight:NSFontWeightBold],
-      NSForegroundColorAttributeName: isOn ? [NSColor whiteColor] : [NSColor colorWithWhite:0.55 alpha:1.0]
-    }];
+    [rTitle drawInRect:NSMakeRect(rRect.origin.x + 10, rRect.origin.y + 8, rRect.size.width - 36, 16) withAttributes:sgTextAttrs(sgSysFont(11.0, NSFontWeightBold), isOn ? [NSColor whiteColor] : [NSColor colorWithWhite:0.55 alpha:1.0], nil)];
 
-    [temps[i] drawInRect:NSMakeRect(rRect.origin.x + 10, rRect.origin.y + 26, rRect.size.width - 20, 14) withAttributes:@{
-      NSFontAttributeName: [NSFont monospacedSystemFontOfSize:9.5 weight:NSFontWeightMedium],
-      NSForegroundColorAttributeName: isOn ? roomCol : [NSColor colorWithWhite:0.45 alpha:1.0]
-    }];
+    [temps[i] drawInRect:NSMakeRect(rRect.origin.x + 10, rRect.origin.y + 26, rRect.size.width - 20, 14) withAttributes:sgTextAttrs(sgMonoFont(9.5, NSFontWeightMedium), isOn ? roomCol : [NSColor colorWithWhite:0.45 alpha:1.0], nil)];
 
     if (rowH >= 56.0) {
       NSString *statusStr = isOn ? @"⚡ ACTIVE • CLICK TO TOGGLE" : @"○ STANDBY • ECO SLEEP";
-      [statusStr drawInRect:NSMakeRect(rRect.origin.x + 10, NSMaxY(rRect) - 18, rRect.size.width - 20, 14) withAttributes:@{
-        NSFontAttributeName: [NSFont systemFontOfSize:9.0 weight:NSFontWeightSemibold],
-        NSForegroundColorAttributeName: isOn ? [[NSColor whiteColor] colorWithAlphaComponent:0.82] : [NSColor colorWithWhite:0.40 alpha:1.0]
-      }];
+      [statusStr drawInRect:NSMakeRect(rRect.origin.x + 10, NSMaxY(rRect) - 18, rRect.size.width - 20, 14) withAttributes:sgTextAttrs(sgSysFont(9.0, NSFontWeightSemibold), isOn ? [[NSColor whiteColor] colorWithAlphaComponent:0.82] : [NSColor colorWithWhite:0.40 alpha:1.0], nil)];
     }
   }
 
@@ -28840,25 +28838,13 @@ int window_get_smart_house_active_mask(main__WindowInfo *info, const char *name)
   NSMutableParagraphStyle *pCenter = [[[NSMutableParagraphStyle alloc] init] autorelease];
   pCenter.alignment = NSTextAlignmentCenter;
 
-  [self.zoneName drawInRect:NSMakeRect(center.x - radius, center.y + radius * 0.34, radius * 2, 16) withAttributes:@{
-    NSFontAttributeName: [NSFont systemFontOfSize:9.5 weight:NSFontWeightBold],
-    NSForegroundColorAttributeName: g1,
-    NSParagraphStyleAttributeName: pCenter
-  }];
+  [self.zoneName drawInRect:NSMakeRect(center.x - radius, center.y + radius * 0.34, radius * 2, 16) withAttributes:sgTextAttrs(sgSysFont(9.5, NSFontWeightBold), g1, pCenter)];
 
   NSString *tempStr = [NSString stringWithFormat:@"%.1f°", self.targetTemp];
-  [tempStr drawInRect:NSMakeRect(center.x - radius, center.y - 16, radius * 2, 32) withAttributes:@{
-    NSFontAttributeName: [NSFont monospacedDigitSystemFontOfSize:24.0 weight:NSFontWeightBlack],
-    NSForegroundColorAttributeName: [NSColor whiteColor],
-    NSParagraphStyleAttributeName: pCenter
-  }];
+  [tempStr drawInRect:NSMakeRect(center.x - radius, center.y - 16, radius * 2, 32) withAttributes:sgTextAttrs(sgMonoDigitFont(24.0, NSFontWeightBlack), [NSColor whiteColor], pCenter)];
 
   NSString *subStr = [NSString stringWithFormat:@"NOW %.1f° • 💧%d%% • %@", self.currentTemp, self.humidity, [self.hvacMode uppercaseString]];
-  [subStr drawInRect:NSMakeRect(8, 8, b.size.width - 16, 16) withAttributes:@{
-    NSFontAttributeName: [NSFont monospacedSystemFontOfSize:9.0 weight:NSFontWeightSemibold],
-    NSForegroundColorAttributeName: g2,
-    NSParagraphStyleAttributeName: pCenter
-  }];
+  [subStr drawInRect:NSMakeRect(8, 8, b.size.width - 16, 16) withAttributes:sgTextAttrs(sgMonoFont(9.0, NSFontWeightSemibold), g2, pCenter)];
 
   [[g1 colorWithAlphaComponent:0.50] setStroke];
   card.lineWidth = 1.4;
@@ -28961,14 +28947,6 @@ double window_get_smart_thermostat_target(main__WindowInfo *info, const char *na
     _gear = @"S+";
     _batteryPct = 92;
     _phase = 0.0;
-    __unsafe_unretained typeof(self) weakSelf = self;
-    _timer = [NSTimer timerWithTimeInterval:0.033 repeats:YES block:^(NSTimer * _Nonnull t) {
-      SGCockpitClusterView *s = weakSelf;
-      if (!s || s.isHiddenOrHasHiddenAncestor || !s.window || !(s.window.occlusionState & NSWindowOcclusionStateVisible)) return;
-      s.phase += 0.08;
-      [s setNeedsDisplay:YES];
-    }];
-    [[NSRunLoop mainRunLoop] addTimer:_timer forMode:NSRunLoopCommonModes];
   }
   return self;
 }
@@ -29009,16 +28987,8 @@ double window_get_smart_thermostat_target(main__WindowInfo *info, const char *na
   [rpmNeedle lineToPoint:NSMakePoint(leftDial.x + cos(rpmRad) * (dialR - 4.0), leftDial.y + sin(rpmRad) * (dialR - 4.0))];
   rpmNeedle.lineWidth = 2.6;
   [rpmNeedle stroke];
-  [[NSString stringWithFormat:@"%.1f", self.rpm] drawInRect:NSMakeRect(leftDial.x - dialR, leftDial.y - 12, dialR * 2, 24) withAttributes:@{
-    NSFontAttributeName: [NSFont monospacedDigitSystemFontOfSize:18.0 weight:NSFontWeightBlack],
-    NSForegroundColorAttributeName: [NSColor whiteColor],
-    NSParagraphStyleAttributeName: pCenter
-  }];
-  [@"x1000 RPM" drawInRect:NSMakeRect(leftDial.x - dialR, leftDial.y - dialR + 8, dialR * 2, 14) withAttributes:@{
-    NSFontAttributeName: [NSFont monospacedSystemFontOfSize:8.5 weight:NSFontWeightBold],
-    NSForegroundColorAttributeName: g2,
-    NSParagraphStyleAttributeName: pCenter
-  }];
+  [[NSString stringWithFormat:@"%.1f", self.rpm] drawInRect:NSMakeRect(leftDial.x - dialR, leftDial.y - 12, dialR * 2, 24) withAttributes:sgTextAttrs(sgMonoDigitFont(18.0, NSFontWeightBlack), [NSColor whiteColor], pCenter)];
+  [@"x1000 RPM" drawInRect:NSMakeRect(leftDial.x - dialR, leftDial.y - dialR + 8, dialR * 2, 14) withAttributes:sgTextAttrs(sgMonoFont(8.5, NSFontWeightBold), g2, pCenter)];
 
   // Center ADAS Corridor & Gear Telemetry
   CGFloat midX = NSMidX(b);
@@ -29030,16 +29000,8 @@ double window_get_smart_thermostat_target(main__WindowInfo *info, const char *na
     lane.lineWidth = 2.0;
     [lane stroke];
   }
-  [[NSString stringWithFormat:@"GEAR [%@]", self.gear] drawInRect:NSMakeRect(midX - 65, b.size.height - 28, 130, 18) withAttributes:@{
-    NSFontAttributeName: [NSFont monospacedSystemFontOfSize:11.0 weight:NSFontWeightBlack],
-    NSForegroundColorAttributeName: g1,
-    NSParagraphStyleAttributeName: pCenter
-  }];
-  [[NSString stringWithFormat:@"🔋 %d%% • ADAS LOCK", self.batteryPct] drawInRect:NSMakeRect(midX - 75, 8, 150, 16) withAttributes:@{
-    NSFontAttributeName: [NSFont monospacedSystemFontOfSize:9.5 weight:NSFontWeightBold],
-    NSForegroundColorAttributeName: g2,
-    NSParagraphStyleAttributeName: pCenter
-  }];
+  [[NSString stringWithFormat:@"GEAR [%@]", self.gear ?: @"S+"] drawInRect:NSMakeRect(midX - 65, b.size.height - 28, 130, 18) withAttributes:sgTextAttrs(sgMonoFont(11.0, NSFontWeightBlack), g1, pCenter)];
+  [[NSString stringWithFormat:@"🔋 %d%% • ADAS LOCK", self.batteryPct] drawInRect:NSMakeRect(midX - 75, 8, 150, 16) withAttributes:sgTextAttrs(sgMonoFont(9.5, NSFontWeightBold), g2, pCenter)];
 
   // Right Dial: Digital Speedometer
   [[g1 colorWithAlphaComponent:0.22] setStroke];
@@ -29054,16 +29016,8 @@ double window_get_smart_thermostat_target(main__WindowInfo *info, const char *na
   [spdNeedle lineToPoint:NSMakePoint(rightDial.x + cos(spdRad) * (dialR - 4.0), rightDial.y + sin(spdRad) * (dialR - 4.0))];
   spdNeedle.lineWidth = 2.6;
   [spdNeedle stroke];
-  [[NSString stringWithFormat:@"%.0f", self.speedMph] drawInRect:NSMakeRect(rightDial.x - dialR, rightDial.y - 12, dialR * 2, 24) withAttributes:@{
-    NSFontAttributeName: [NSFont monospacedDigitSystemFontOfSize:19.0 weight:NSFontWeightBlack],
-    NSForegroundColorAttributeName: [NSColor whiteColor],
-    NSParagraphStyleAttributeName: pCenter
-  }];
-  [@"MPH // TELEMETRY" drawInRect:NSMakeRect(rightDial.x - dialR, rightDial.y - dialR + 8, dialR * 2, 14) withAttributes:@{
-    NSFontAttributeName: [NSFont monospacedSystemFontOfSize:8.5 weight:NSFontWeightBold],
-    NSForegroundColorAttributeName: g1,
-    NSParagraphStyleAttributeName: pCenter
-  }];
+  [[NSString stringWithFormat:@"%.0f", self.speedMph] drawInRect:NSMakeRect(rightDial.x - dialR, rightDial.y - 12, dialR * 2, 24) withAttributes:sgTextAttrs(sgMonoDigitFont(19.0, NSFontWeightBlack), [NSColor whiteColor], pCenter)];
+  [@"MPH // TELEMETRY" drawInRect:NSMakeRect(rightDial.x - dialR, rightDial.y - dialR + 8, dialR * 2, 14) withAttributes:sgTextAttrs(sgMonoFont(8.5, NSFontWeightBold), g1, pCenter)];
 
   [[g1 colorWithAlphaComponent:0.52] setStroke];
   card.lineWidth = 1.4;
@@ -29162,12 +29116,13 @@ double window_get_cockpit_speed(main__WindowInfo *info, const char *name) {
     _selectedIndex = 1;
     _phase = 0.0;
     __unsafe_unretained typeof(self) weakSelf = self;
-    _timer = [NSTimer timerWithTimeInterval:0.035 repeats:YES block:^(NSTimer * _Nonnull t) {
+    _timer = [NSTimer timerWithTimeInterval:0.05 repeats:YES block:^(NSTimer * _Nonnull t) {
       SGNodeGraphView *s = weakSelf;
-      if (!s || s.isHiddenOrHasHiddenAncestor || !s.window || !(s.window.occlusionState & NSWindowOcclusionStateVisible)) return;
+      if (!s || s.isHiddenOrHasHiddenAncestor || !s.window || !(s.window.occlusionState & NSWindowOcclusionStateVisible) || NSIsEmptyRect(s.visibleRect)) return;
       s.phase = fmod(s.phase + 0.03, 1.0);
       [s setNeedsDisplay:YES];
     }];
+    _timer.tolerance = 0.015;
     [[NSRunLoop mainRunLoop] addTimer:_timer forMode:NSRunLoopCommonModes];
   }
   return self;
@@ -29198,10 +29153,7 @@ double window_get_cockpit_speed(main__WindowInfo *info, const char *name) {
     }
   }
 
-  [self.graphTitle drawInRect:NSMakeRect(14, 7, b.size.width - 28, 16) withAttributes:@{
-    NSFontAttributeName: [NSFont monospacedSystemFontOfSize:9.5 weight:NSFontWeightBold],
-    NSForegroundColorAttributeName: g1
-  }];
+  [self.graphTitle drawInRect:NSMakeRect(14, 7, b.size.width - 28, 16) withAttributes:sgTextAttrs(sgMonoFont(9.5, NSFontWeightBold), g1, nil)];
 
   int nCount = (int)MIN(6, MAX(1, self.nodeTitles.count));
   CGFloat availW = b.size.width - 32.0;
@@ -29259,16 +29211,10 @@ double window_get_cockpit_speed(main__WindowInfo *info, const char *name) {
     [[nc colorWithAlphaComponent:(sel ? 0.55 : 0.28)] setFill];
     [[NSBezierPath bezierPathWithRoundedRect:hdrRect xRadius:8.0 yRadius:8.0] fill];
 
-    [self.nodeTitles[i] drawInRect:NSMakeRect(nr.origin.x + 8, nr.origin.y + 3, nr.size.width - 14, 15) withAttributes:@{
-      NSFontAttributeName: [NSFont systemFontOfSize:10.0 weight:NSFontWeightBold],
-      NSForegroundColorAttributeName: [NSColor whiteColor]
-    }];
+    [self.nodeTitles[i] drawInRect:NSMakeRect(nr.origin.x + 8, nr.origin.y + 3, nr.size.width - 14, 15) withAttributes:sgTextAttrs(sgSysFont(10.0, NSFontWeightBold), [NSColor whiteColor], nil)];
 
     NSString *pinInfo = (i == nCount - 1) ? @"⬅ IN: vec4_color" : @"OUT: float4 ➡";
-    [pinInfo drawInRect:NSMakeRect(nr.origin.x + 8, nr.origin.y + 28, nr.size.width - 14, 14) withAttributes:@{
-      NSFontAttributeName: [NSFont monospacedSystemFontOfSize:8.5 weight:NSFontWeightMedium],
-      NSForegroundColorAttributeName: nc
-    }];
+    [pinInfo drawInRect:NSMakeRect(nr.origin.x + 8, nr.origin.y + 28, nr.size.width - 14, 14) withAttributes:sgTextAttrs(sgMonoFont(8.5, NSFontWeightMedium), nc, nil)];
 
     [[nc colorWithAlphaComponent:(sel ? 1.0 : 0.45)] setStroke];
     np.lineWidth = sel ? 2.2 : 1.1;
@@ -29381,10 +29327,7 @@ int window_get_node_graph_selected(main__WindowInfo *info, const char *name) {
   double freq = 440.0 * pow(2.0, ((double)self.activeMidiNote - 69.0) / 12.0);
   NSString *hdr = [NSString stringWithFormat:@"🎹 STUDIO MIDI SYNTHESIZER // NOTE: MIDI %d (%.1f Hz) • WAVE: %@ • CLICK KEYS TO PLAY AUDIO",
                    self.activeMidiNote, freq, [self.waveType uppercaseString]];
-  [hdr drawInRect:NSMakeRect(12, 6, b.size.width - 24, 16) withAttributes:@{
-    NSFontAttributeName: [NSFont monospacedSystemFontOfSize:9.5 weight:NSFontWeightBold],
-    NSForegroundColorAttributeName: g1
-  }];
+  [hdr drawInRect:NSMakeRect(12, 6, b.size.width - 24, 16) withAttributes:sgTextAttrs(sgMonoFont(9.5, NSFontWeightBold), g1, nil)];
 
   int whiteOffsets[14] = {0, 2, 4, 5, 7, 9, 11, 12, 14, 16, 17, 19, 21, 23};
   CGFloat keyTop = 26.0;
@@ -29522,10 +29465,11 @@ int window_get_piano_active_note(main__WindowInfo *info, const char *name) {
     __unsafe_unretained typeof(self) weakSelf = self;
     _timer = [NSTimer timerWithTimeInterval:0.14 repeats:YES block:^(NSTimer * _Nonnull t) {
       SGStepSequencerView *s = weakSelf;
-      if (!s || s.isHiddenOrHasHiddenAncestor || !s.window || !(s.window.occlusionState & NSWindowOcclusionStateVisible)) return;
+      if (!s || s.isHiddenOrHasHiddenAncestor || !s.window || !(s.window.occlusionState & NSWindowOcclusionStateVisible) || NSIsEmptyRect(s.visibleRect)) return;
       s.playheadStep = (s.playheadStep + 1) % 16;
       [s setNeedsDisplay:YES];
     }];
+    _timer.tolerance = 0.025;
     [[NSRunLoop mainRunLoop] addTimer:_timer forMode:NSRunLoopCommonModes];
   }
   return self;
@@ -29548,10 +29492,7 @@ int window_get_piano_active_note(main__WindowInfo *info, const char *name) {
   [card fill];
 
   NSString *hdr = [NSString stringWithFormat:@"🎛️ %@   |   BPM: %d   |   STEP: %02d/16   |   CLICK PADS TO TOGGLE", self.seqTitle, self.bpm, self.playheadStep + 1];
-  [hdr drawInRect:NSMakeRect(12, 6, b.size.width - 24, 16) withAttributes:@{
-    NSFontAttributeName: [NSFont monospacedSystemFontOfSize:9.5 weight:NSFontWeightBold],
-    NSForegroundColorAttributeName: g1
-  }];
+  [hdr drawInRect:NSMakeRect(12, 6, b.size.width - 24, 16) withAttributes:sgTextAttrs(sgMonoFont(9.5, NSFontWeightBold), g1, nil)];
 
   NSArray<NSString *> *tracks = @[@"808 KICK", @"SNARE", @"HI-HAT", @"SYNTH"];
   CGFloat leftPad = 68.0;
@@ -29562,10 +29503,7 @@ int window_get_piano_active_note(main__WindowInfo *info, const char *name) {
   CGFloat rowH = gridH / 4.0;
 
   for (int r = 0; r < 4; r++) {
-    [tracks[r] drawInRect:NSMakeRect(10, topY + r * rowH + (rowH - 13) * 0.5, leftPad - 12, 14) withAttributes:@{
-      NSFontAttributeName: [NSFont monospacedSystemFontOfSize:9.0 weight:NSFontWeightBold],
-      NSForegroundColorAttributeName: (r % 2 == 0) ? g1 : g2
-    }];
+    [tracks[r] drawInRect:NSMakeRect(10, topY + r * rowH + (rowH - 13) * 0.5, leftPad - 12, 14) withAttributes:sgTextAttrs(sgMonoFont(9.0, NSFontWeightBold), (r % 2 == 0) ? g1 : g2, nil)];
     for (int c = 0; c < 16; c++) {
       int bitIdx = (r * 8 + (c % 8)) % 32;
       BOOL isLit = ((self.patternMask >> bitIdx) & 1) != 0 || ((r + c) % 4 == 0 && (self.patternMask & (1u << (c % 16))));
@@ -29675,12 +29613,13 @@ unsigned int window_get_step_sequencer_pattern(main__WindowInfo *info, const cha
     _angleY = 0.65;
     _angleX = 0.38;
     __unsafe_unretained typeof(self) weakSelf = self;
-    _timer = [NSTimer timerWithTimeInterval:0.033 repeats:YES block:^(NSTimer * _Nonnull t) {
+    _timer = [NSTimer timerWithTimeInterval:0.05 repeats:YES block:^(NSTimer * _Nonnull t) {
       SGMeshViewport3DView *s = weakSelf;
-      if (!s || s.isHiddenOrHasHiddenAncestor || !s.window || !(s.window.occlusionState & NSWindowOcclusionStateVisible)) return;
+      if (!s || s.isHiddenOrHasHiddenAncestor || !s.window || !(s.window.occlusionState & NSWindowOcclusionStateVisible) || NSIsEmptyRect(s.visibleRect)) return;
       s.angleY += 0.032;
       [s setNeedsDisplay:YES];
     }];
+    _timer.tolerance = 0.015;
     [[NSRunLoop mainRunLoop] addTimer:_timer forMode:NSRunLoopCommonModes];
   }
   return self;
@@ -29779,10 +29718,7 @@ unsigned int window_get_step_sequencer_pattern(main__WindowInfo *info, const cha
   }
 
   NSString *hud = [NSString stringWithFormat:@"3D CAD MESH // %@  [CLICK TO CYCLE MODEL]", [self.meshPreset uppercaseString]];
-  [hud drawAtPoint:NSMakePoint(12, b.size.height - 20) withAttributes:@{
-    NSFontAttributeName: [NSFont monospacedSystemFontOfSize:9.5 weight:NSFontWeightBold],
-    NSForegroundColorAttributeName: g1
-  }];
+  [hud drawAtPoint:NSMakePoint(12, b.size.height - 20) withAttributes:sgTextAttrs(sgMonoFont(9.5, NSFontWeightBold), g1, nil)];
 
   [[g1 colorWithAlphaComponent:0.50] setStroke];
   card.lineWidth = 1.4;
@@ -29873,12 +29809,13 @@ const char *window_get_mesh_viewport_preset(main__WindowInfo *info, const char *
     _targetCount = 5;
     _sweepAngle = 45.0;
     __unsafe_unretained typeof(self) weakSelf = self;
-    _timer = [NSTimer timerWithTimeInterval:0.033 repeats:YES block:^(NSTimer * _Nonnull t) {
+    _timer = [NSTimer timerWithTimeInterval:0.05 repeats:YES block:^(NSTimer * _Nonnull t) {
       SGPolarRadarSonarView *s = weakSelf;
-      if (!s || s.isHiddenOrHasHiddenAncestor || !s.window || !(s.window.occlusionState & NSWindowOcclusionStateVisible)) return;
+      if (!s || s.isHiddenOrHasHiddenAncestor || !s.window || !(s.window.occlusionState & NSWindowOcclusionStateVisible) || NSIsEmptyRect(s.visibleRect)) return;
       s.sweepAngle = fmod(s.sweepAngle + 3.5 * MAX(0.2, s.sweepSpeed), 360.0);
       [s setNeedsDisplay:YES];
     }];
+    _timer.tolerance = 0.015;
     [[NSRunLoop mainRunLoop] addTimer:_timer forMode:NSRunLoopCommonModes];
   }
   return self;
@@ -29945,10 +29882,7 @@ const char *window_get_mesh_viewport_preset(main__WindowInfo *info, const char *
     [[NSBezierPath bezierPathWithOvalInRect:NSMakeRect(tp.x - 2.8, tp.y - 2.8, 5.6, 5.6)] fill];
   }
 
-  [self.radarTitle drawAtPoint:NSMakePoint(10, b.size.height - 19) withAttributes:@{
-    NSFontAttributeName: [NSFont monospacedSystemFontOfSize:9.0 weight:NSFontWeightBold],
-    NSForegroundColorAttributeName: g1
-  }];
+  [self.radarTitle drawAtPoint:NSMakePoint(10, b.size.height - 19) withAttributes:sgTextAttrs(sgMonoFont(9.0, NSFontWeightBold), g1, nil)];
 
   [[g1 colorWithAlphaComponent:0.50] setStroke];
   card.lineWidth = 1.4;
@@ -30038,10 +29972,7 @@ void window_ping_polar_radar(main__WindowInfo *info, const char *name) {
   [card fill];
 
   NSString *hdr = [NSString stringWithFormat:@"📟 %@   |   SAMPLE RATE: %d MHz   |   BUS: SPI/I2C DECODE [0xA5 • ACK]", self.scopeTitle, self.sampleRateMhz];
-  [hdr drawInRect:NSMakeRect(12, 6, b.size.width - 24, 15) withAttributes:@{
-    NSFontAttributeName: [NSFont monospacedSystemFontOfSize:9.5 weight:NSFontWeightBold],
-    NSForegroundColorAttributeName: g1
-  }];
+  [hdr drawInRect:NSMakeRect(12, 6, b.size.width - 24, 15) withAttributes:sgTextAttrs(sgMonoFont(9.5, NSFontWeightBold), g1, nil)];
 
   NSArray<NSString *> *chNames = @[@"SYS_CLK", @"SPI_MOSI", @"SPI_MISO", @"IRQ_SYNC"];
   CGFloat leftX = 74.0;
@@ -30052,10 +29983,7 @@ void window_ping_polar_radar(main__WindowInfo *info, const char *name) {
 
   for (int ch = 0; ch < 4; ch++) {
     NSColor *cc = (ch % 2 == 0) ? g1 : g2;
-    [chNames[ch] drawInRect:NSMakeRect(10, topY + ch * rowH + 2, leftX - 12, 14) withAttributes:@{
-      NSFontAttributeName: [NSFont monospacedSystemFontOfSize:9.0 weight:NSFontWeightBold],
-      NSForegroundColorAttributeName: cc
-    }];
+    [chNames[ch] drawInRect:NSMakeRect(10, topY + ch * rowH + 2, leftX - 12, 14) withAttributes:sgTextAttrs(sgMonoFont(9.0, NSFontWeightBold), cc, nil)];
 
     NSBezierPath *wf = [NSBezierPath bezierPath];
     CGFloat highY = topY + ch * rowH + 4.0;
@@ -30150,10 +30078,7 @@ void window_set_logic_analyzer_seed(main__WindowInfo *info, const char *name, in
   [[NSColor colorWithSRGBRed:0.05 green:0.03 blue:0.04 alpha:0.96] setFill];
   [card fill];
 
-  [self.nixieTitle drawInRect:NSMakeRect(12, 5, b.size.width - 24, 14) withAttributes:@{
-    NSFontAttributeName: [NSFont monospacedSystemFontOfSize:9.0 weight:NSFontWeightBold],
-    NSForegroundColorAttributeName: [glowCol colorWithAlphaComponent:0.88]
-  }];
+  [self.nixieTitle drawInRect:NSMakeRect(12, 5, b.size.width - 24, 14) withAttributes:sgTextAttrs(sgMonoFont(9.0, NSFontWeightBold), [glowCol colorWithAlphaComponent:0.88], nil)];
 
   NSString *txt = self.valueText.length > 0 ? self.valueText : @"10:42:59";
   int len = (int)MIN(10, txt.length);
@@ -30170,18 +30095,10 @@ void window_set_logic_analyzer_seed(main__WindowInfo *info, const char *name, in
     [tube fill];
 
     // Unlit ghost cathode '8'
-    [@"8" drawInRect:NSMakeRect(tr.origin.x, tr.origin.y + (tubeH - 28) * 0.5, tubeW, 30) withAttributes:@{
-      NSFontAttributeName: [NSFont monospacedDigitSystemFontOfSize:22.0 weight:NSFontWeightHeavy],
-      NSForegroundColorAttributeName: [[NSColor whiteColor] colorWithAlphaComponent:0.07],
-      NSParagraphStyleAttributeName: pCenter
-    }];
+    [@"8" drawInRect:NSMakeRect(tr.origin.x, tr.origin.y + (tubeH - 28) * 0.5, tubeW, 30) withAttributes:sgTextAttrs(sgMonoDigitFont(22.0, NSFontWeightHeavy), [[NSColor whiteColor] colorWithAlphaComponent:0.07], pCenter)];
 
     // Lit neon cathode character
-    [ch drawInRect:NSMakeRect(tr.origin.x, tr.origin.y + (tubeH - 28) * 0.5, tubeW, 30) withAttributes:@{
-      NSFontAttributeName: [NSFont monospacedDigitSystemFontOfSize:22.0 weight:NSFontWeightHeavy],
-      NSForegroundColorAttributeName: glowCol,
-      NSParagraphStyleAttributeName: pCenter
-    }];
+    [ch drawInRect:NSMakeRect(tr.origin.x, tr.origin.y + (tubeH - 28) * 0.5, tubeW, 30) withAttributes:sgTextAttrs(sgMonoDigitFont(22.0, NSFontWeightHeavy), glowCol, pCenter)];
 
     [[glowCol colorWithAlphaComponent:0.45] setStroke];
     tube.lineWidth = 1.2;
@@ -30276,10 +30193,7 @@ const char *window_get_nixie_display_text(main__WindowInfo *info, const char *na
   [bg setFill];
   [card fill];
 
-  [self.chartTitle drawInRect:NSMakeRect(12, 6, b.size.width - 24, 16) withAttributes:@{
-    NSFontAttributeName: [NSFont monospacedSystemFontOfSize:9.5 weight:NSFontWeightBold],
-    NSForegroundColorAttributeName: g1
-  }];
+  [self.chartTitle drawInRect:NSMakeRect(12, 6, b.size.width - 24, 16) withAttributes:sgTextAttrs(sgMonoFont(9.5, NSFontWeightBold), g1, nil)];
 
   int cnt = (int)MIN(self.sources.count, MIN(self.targets.count, self.values.count));
   if (cnt <= 0) return;
@@ -30302,15 +30216,9 @@ const char *window_get_nixie_display_text(main__WindowInfo *info, const char *na
     rib.lineWidth = MAX(4.0, rowH * 0.48);
     [rib stroke];
 
-    [self.sources[i] drawInRect:NSMakeRect(12, y0 - 8, leftX - 16, 16) withAttributes:@{
-      NSFontAttributeName: [NSFont systemFontOfSize:10.0 weight:NSFontWeightBold],
-      NSForegroundColorAttributeName: [NSColor whiteColor]
-    }];
+    [self.sources[i] drawInRect:NSMakeRect(12, y0 - 8, leftX - 16, 16) withAttributes:sgTextAttrs(sgSysFont(10.0, NSFontWeightBold), [NSColor whiteColor], nil)];
     NSString *tLbl = [NSString stringWithFormat:@"%@ (%.1f)", self.targets[i], [self.values[i] doubleValue]];
-    [tLbl drawInRect:NSMakeRect(rightX + 8, y0 - 8, 114, 16) withAttributes:@{
-      NSFontAttributeName: [NSFont monospacedSystemFontOfSize:9.5 weight:NSFontWeightSemibold],
-      NSForegroundColorAttributeName: rc
-    }];
+    [tLbl drawInRect:NSMakeRect(rightX + 8, y0 - 8, 114, 16) withAttributes:sgTextAttrs(sgMonoFont(9.5, NSFontWeightSemibold), rc, nil)];
   }
 
   [[g1 colorWithAlphaComponent:0.50] setStroke];
@@ -30424,10 +30332,7 @@ void window_set_sankey_chart_data(main__WindowInfo *info, const char *name, cons
   [tri stroke];
 
   NSString *lbl = [NSString stringWithFormat:@"🎨 %@ • %@", self.selectedHex, [self.harmonyMode uppercaseString]];
-  [lbl drawAtPoint:NSMakePoint(12, 8) withAttributes:@{
-    NSFontAttributeName: [NSFont monospacedSystemFontOfSize:9.5 weight:NSFontWeightBold],
-    NSForegroundColorAttributeName: [NSColor whiteColor]
-  }];
+  [lbl drawAtPoint:NSMakePoint(12, 8) withAttributes:sgTextAttrs(sgMonoFont(9.5, NSFontWeightBold), [NSColor whiteColor], nil)];
 
   [[g1 colorWithAlphaComponent:0.50] setStroke];
   card.lineWidth = 1.4;
