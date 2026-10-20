@@ -2516,6 +2516,138 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
   }
 }
 
+typedef struct {
+  float time;
+  float aspect;
+  float hdrGain;
+  float pad;
+} SGMetalUniforms;
+
+@interface SGMetalPBRRenderer : NSObject <MTKViewDelegate>
+@property (nonatomic, strong) id<MTLDevice> device;
+@property (nonatomic, strong) id<MTLCommandQueue> commandQueue;
+@property (nonatomic, strong) id<MTLRenderPipelineState> pipelineState;
+@property (nonatomic, assign) float time;
+@property (nonatomic, assign) float hdrGain;
+- (instancetype)initWithDevice:(id<MTLDevice>)dev pixelFormat:(MTLPixelFormat)fmt hdr:(BOOL)isHdr;
+@end
+
+@implementation SGMetalPBRRenderer
+- (instancetype)initWithDevice:(id<MTLDevice>)dev pixelFormat:(MTLPixelFormat)fmt hdr:(BOOL)isHdr {
+  self = [super init];
+  if (self && dev) {
+    _device = [dev retain];
+    _commandQueue = [dev newCommandQueue];
+    _time = 0.0f;
+    _hdrGain = isHdr ? 1.85f : 1.0f;
+    NSString *msl =
+      @"#include <metal_stdlib>\n"
+      "using namespace metal;\n"
+      "struct Uniforms { float time; float aspect; float hdrGain; float pad; };\n"
+      "struct VSOut { float4 pos [[position]]; float2 uv; };\n"
+      "vertex VSOut sg_vs(uint vid [[vertex_id]]) {\n"
+      "  float2 p = float2((vid << 1) & 2, vid & 2);\n"
+      "  VSOut o; o.pos = float4(p * 2.0 - 1.0, 0.0, 1.0); o.uv = p * 2.0 - 1.0; return o;\n"
+      "}\n"
+      "float2 mapScene(float3 p, float t) {\n"
+      "  float floorD = p.y + 0.85;\n"
+      "  float2 res = float2(floorD, 1.0);\n"
+      "  float3 cPos = p - float3(0.0, 0.12 * sin(t * 1.7), 0.0);\n"
+      "  float sMain = length(cPos) - 0.62;\n"
+      "  if (sMain < res.x) res = float2(sMain, 2.0);\n"
+      "  for (int i = 0; i < 4; i++) {\n"
+      "    float ang = t * 1.1 + float(i) * 1.5707963;\n"
+      "    float3 op = p - float3(cos(ang) * 1.25, -0.15 + 0.25 * sin(t * 2.2 + float(i)), sin(ang) * 1.25);\n"
+      "    float d = length(op) - 0.28;\n"
+      "    if (d < res.x) res = float2(d, 3.0 + float(i));\n"
+      "  }\n"
+      "  return res;\n"
+      "}\n"
+      "float3 calcNormal(float3 p, float t) {\n"
+      "  float2 e = float2(0.002, -0.002);\n"
+      "  return normalize(e.xyy * mapScene(p + e.xyy, t).x + e.yyx * mapScene(p + e.yyx, t).x +\n"
+      "                   e.yxy * mapScene(p + e.yxy, t).x + e.xxx * mapScene(p + e.xxx, t).x);\n"
+      "}\n"
+      "float softShadow(float3 ro, float3 rd, float t) {\n"
+      "  float res = 1.0; float h = 0.04;\n"
+      "  for (int i = 0; i < 20; i++) {\n"
+      "    float d = mapScene(ro + rd * h, t).x;\n"
+      "    if (d < 0.001) return 0.0;\n"
+      "    res = min(res, 10.0 * d / h);\n"
+      "    h += clamp(d, 0.02, 0.25);\n"
+      "  }\n"
+      "  return clamp(res, 0.0, 1.0);\n"
+      "}\n"
+      "fragment float4 sg_fs(VSOut in [[stage_in]], constant Uniforms &u [[buffer(0)]]) {\n"
+      "  float2 uv = float2(in.uv.x * u.aspect, in.uv.y);\n"
+      "  float3 ro = float3(0.0, 0.45, 2.85);\n"
+      "  float3 rd = normalize(float3(uv, -1.55));\n"
+      "  float3 sky = mix(float3(0.04, 0.07, 0.14), float3(0.01, 0.02, 0.05), clamp(uv.y * 0.5 + 0.5, 0.0, 1.0));\n"
+      "  float tHit = 0.0; float mat = -1.0;\n"
+      "  for (int i = 0; i < 56; i++) {\n"
+      "    float2 h = mapScene(ro + rd * tHit, u.time);\n"
+      "    if (h.x < 0.0015 || tHit > 12.0) { if (h.x < 0.0015) mat = h.y; break; }\n"
+      "    tHit += h.x;\n"
+      "  }\n"
+      "  float3 col = sky;\n"
+      "  if (mat > 0.0) {\n"
+      "    float3 pos = ro + rd * tHit;\n"
+      "    float3 nor = calcNormal(pos, u.time);\n"
+      "    float3 lig = normalize(float3(1.4, 2.2, 1.6));\n"
+      "    float dif = clamp(dot(nor, lig), 0.0, 1.0) * softShadow(pos + nor * 0.01, lig, u.time);\n"
+      "    float3 hal = normalize(lig - rd);\n"
+      "    float spe = pow(clamp(dot(nor, hal), 0.0, 1.0), 48.0);\n"
+      "    float fre = pow(clamp(1.0 + dot(nor, rd), 0.0, 1.0), 3.0);\n"
+      "    float3 base = float3(0.12, 0.65, 0.98);\n"
+      "    if (mat < 1.5) {\n"
+      "      float chk = fmod(floor(pos.x * 2.5) + floor(pos.z * 2.5), 2.0);\n"
+      "      base = (abs(chk) < 0.5) ? float3(0.08, 0.11, 0.18) : float3(0.04, 0.06, 0.10);\n"
+      "    } else if (mat < 2.5) {\n"
+      "      base = float3(0.85, 0.90, 0.98);\n"
+      "    } else if (mat < 3.5) { base = float3(0.05, 0.88, 0.78); }\n"
+      "    else if (mat < 4.5) { base = float3(0.98, 0.28, 0.52); }\n"
+      "    else if (mat < 5.5) { base = float3(0.45, 0.35, 0.98); }\n"
+      "    else { base = float3(0.98, 0.68, 0.18); }\n"
+      "    col = base * (0.18 + 0.82 * dif) + float3(1.0, 0.97, 0.92) * spe * 1.35 * u.hdrGain + float3(0.15, 0.75, 1.0) * fre * 0.55;\n"
+      "    col = mix(col, sky, 1.0 - exp(-0.025 * tHit * tHit));\n"
+      "  }\n"
+      "  col = pow(max(col, 0.0), float3(0.88));\n"
+      "  return float4(col, 1.0);\n"
+      "}\n";
+    NSError *err = nil;
+    id<MTLLibrary> lib = [dev newLibraryWithSource:msl options:nil error:&err];
+    if (lib) {
+      MTLRenderPipelineDescriptor *pd = [[[MTLRenderPipelineDescriptor alloc] init] autorelease];
+      pd.vertexFunction = [[lib newFunctionWithName:@"sg_vs"] autorelease];
+      pd.fragmentFunction = [[lib newFunctionWithName:@"sg_fs"] autorelease];
+      pd.colorAttachments[0].pixelFormat = fmt;
+      _pipelineState = [dev newRenderPipelineStateWithDescriptor:pd error:&err];
+      [lib release];
+    }
+  }
+  return self;
+}
+- (void)mtkView:(MTKView *)view drawableSizeWillChange:(CGSize)size {}
+- (void)drawInMTKView:(MTKView *)view {
+  if (!view.window || !(view.window.occlusionState & NSWindowOcclusionStateVisible) || NSIsEmptyRect(view.visibleRect)) return;
+  if (!_pipelineState || !_commandQueue) return;
+  MTLRenderPassDescriptor *rpd = view.currentRenderPassDescriptor;
+  id<CAMetalDrawable> drawable = view.currentDrawable;
+  if (!rpd || !drawable) return;
+  _time += 0.028f;
+  CGSize sz = view.drawableSize;
+  SGMetalUniforms u = { _time, (sz.height > 1.0f ? (float)(sz.width / sz.height) : 1.5f), _hdrGain, 0.0f };
+  id<MTLCommandBuffer> cb = [_commandQueue commandBuffer];
+  id<MTLRenderCommandEncoder> enc = [cb renderCommandEncoderWithDescriptor:rpd];
+  [enc setRenderPipelineState:_pipelineState];
+  [enc setFragmentBytes:&u length:sizeof(u) atIndex:0];
+  [enc drawPrimitives:MTLPrimitiveTypeTriangle vertexStart:0 vertexCount:3];
+  [enc endEncoding];
+  [cb presentDrawable:drawable];
+  [cb commit];
+}
+@end
+
 @implementation AppDelegate
 - (instancetype)initWithParams:(main__WindowParams)params {
   self = [super init];
@@ -2794,11 +2926,9 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
       modButton.baseTextColor = getContrastColor(self.currentAccentColor);
       [modButton updateVisuals];
     } else if (self.currentCardBackgroundColor && !objc_getAssociatedObject(modButton, "sg_explicit_bg")) {
-      modButton.baseBackgroundColor = [self.currentCardBackgroundColor colorWithAlphaComponent:0.92];
-      if (self.currentCardBorderColor) {
-        modButton.layer.borderWidth = 1.0;
-        modButton.layer.borderColor = self.currentCardBorderColor.CGColor;
-      }
+      modButton.baseBackgroundColor = [self.currentCardBackgroundColor colorWithAlphaComponent:0.88];
+      modButton.layer.borderWidth = 0.8;
+      modButton.layer.borderColor = [[NSColor colorWithCalibratedWhite:1.0 alpha:0.16] CGColor];
       [modButton updateVisuals];
     }
   }
@@ -3452,8 +3582,17 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
 }
 
 - (NSView *)makeMTKViewWithName:(NSString *)name {
-  MTKView *mtkView = [[MTKView alloc] initWithFrame:NSZeroRect device:MTLCreateSystemDefaultDevice()];
+  id<MTLDevice> dev = MTLCreateSystemDefaultDevice();
+  MTKView *mtkView = [[MTKView alloc] initWithFrame:NSZeroRect device:dev];
   mtkView.colorPixelFormat = MTLPixelFormatBGRA8Unorm;
+  mtkView.preferredFramesPerSecond = 30;
+  mtkView.wantsLayer = YES;
+  mtkView.layer.cornerRadius = 10.0;
+  mtkView.layer.masksToBounds = YES;
+  mtkView.framebufferOnly = NO;
+  SGMetalPBRRenderer *renderer = [[[SGMetalPBRRenderer alloc] initWithDevice:dev pixelFormat:MTLPixelFormatBGRA8Unorm hdr:NO] autorelease];
+  objc_setAssociatedObject(mtkView, "sg_metal_renderer", renderer, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  mtkView.delegate = renderer;
   [self makeStretchableView:mtkView minimumWidth:320];
   [mtkView.heightAnchor constraintEqualToConstant:300].active = YES;
   
@@ -3463,9 +3602,14 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
 }
 
 - (NSView *)makeHDRMTKViewWithName:(NSString *)name {
-  MTKView *mtkView = [[MTKView alloc] initWithFrame:NSZeroRect device:MTLCreateSystemDefaultDevice()];
+  id<MTLDevice> dev = MTLCreateSystemDefaultDevice();
+  MTKView *mtkView = [[MTKView alloc] initWithFrame:NSZeroRect device:dev];
   mtkView.colorPixelFormat = MTLPixelFormatRGBA16Float;
+  mtkView.preferredFramesPerSecond = 30;
   mtkView.wantsLayer = YES;
+  mtkView.layer.cornerRadius = 10.0;
+  mtkView.layer.masksToBounds = YES;
+  mtkView.framebufferOnly = NO;
   if ([mtkView.layer isKindOfClass:[CAMetalLayer class]]) {
     CAMetalLayer *metalLayer = (CAMetalLayer *)mtkView.layer;
     metalLayer.device = mtkView.device;
@@ -3477,6 +3621,9 @@ static void applyStyleToView(NSView *view, NSColor *backgroundColor, NSColor *fo
     }
     metalLayer.pixelFormat = MTLPixelFormatRGBA16Float;
   }
+  SGMetalPBRRenderer *renderer = [[[SGMetalPBRRenderer alloc] initWithDevice:dev pixelFormat:MTLPixelFormatRGBA16Float hdr:YES] autorelease];
+  objc_setAssociatedObject(mtkView, "sg_metal_renderer", renderer, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  mtkView.delegate = renderer;
   [self makeStretchableView:mtkView minimumWidth:320];
   [mtkView.heightAnchor constraintEqualToConstant:300].active = YES;
   
@@ -26427,270 +26574,47 @@ int window_get_number_spinner_value(main__WindowInfo *info, const char *name) {
   CGFloat intensity = MIN(1.0, MAX(0.0, self.glowIntensity / 100.0));
   double ph = self.phase;
 
-  // 1. Triple-bloom volumetric radial & diagonal ambient light wash
+  // 1. Multi-stop Apple VisionOS / Spatial Glass Volumetric Light Blooms
   if (intensity > 0.02) {
-    CGFloat ox = 0.08 * sin(ph * 0.7);
-    CGFloat oy = 0.08 * cos(ph * 0.5);
-    NSGradient *rad1 = [[[NSGradient alloc] initWithStartingColor:[g1 colorWithAlphaComponent:0.34 * intensity]
+    CGFloat ox = 0.08 * sin(ph * 0.55);
+    CGFloat oy = 0.08 * cos(ph * 0.42);
+    NSGradient *rad1 = [[[NSGradient alloc] initWithStartingColor:[g1 colorWithAlphaComponent:0.20 * intensity]
                                                       endingColor:[g1 colorWithAlphaComponent:0.0]] autorelease];
-    [rad1 drawInRect:b relativeCenterPosition:NSMakePoint(-0.52 + ox, 0.52 + oy)];
-    NSGradient *rad2 = [[[NSGradient alloc] initWithStartingColor:[g2 colorWithAlphaComponent:0.30 * intensity]
+    [rad1 drawInRect:b relativeCenterPosition:NSMakePoint(-0.48 + ox, 0.52 + oy)];
+    NSGradient *rad2 = [[[NSGradient alloc] initWithStartingColor:[g2 colorWithAlphaComponent:0.16 * intensity]
                                                       endingColor:[g2 colorWithAlphaComponent:0.0]] autorelease];
-    [rad2 drawInRect:b relativeCenterPosition:NSMakePoint(0.54 - ox, -0.46 - oy)];
-    NSGradient *rad3 = [[[NSGradient alloc] initWithStartingColor:[g1 colorWithAlphaComponent:0.14 * intensity]
-                                                      endingColor:[g2 colorWithAlphaComponent:0.0]] autorelease];
-    [rad3 drawInRect:b relativeCenterPosition:NSMakePoint(0.0, 0.65)];
+    [rad2 drawInRect:b relativeCenterPosition:NSMakePoint(0.52 - ox, -0.46 - oy)];
+    NSGradient *rad3 = [[[NSGradient alloc] initWithStartingColor:[[NSColor colorWithSRGBRed:0.35 green:0.55 blue:0.98 alpha:1.0] colorWithAlphaComponent:0.12 * intensity]
+                                                      endingColor:[NSColor clearColor]] autorelease];
+    [rad3 drawInRect:b relativeCenterPosition:NSMakePoint(0.0, 0.58)];
   }
 
-  // 2. Backdrop 3D Perspective Synthwave Horizon Grid / Tactical Circuit Grid
-  NSString *bd = [self.backdropStyle lowercaseString] ?: @"frosted";
+  // 2. Soft Out-of-Focus Volumetric Bokeh Orbs (Depth-of-Field Spatial Ambience)
   NSString *atmo = [self.atmosphere lowercaseString] ?: @"none";
-  if ([bd isEqualToString:@"grid"] || [bd isEqualToString:@"synthwave"] || [bd isEqualToString:@"circuit"] || [atmo isEqualToString:@"cyber_rain"] || [atmo isEqualToString:@"m4_raytrace_prism"]) {
-    // Upper subtle technical blueprint grid
-    [[g1 colorWithAlphaComponent:0.055] setStroke];
-    CGFloat step = [bd isEqualToString:@"synthwave"] ? 36.0 : 30.0;
-    for (CGFloat x = 0; x < b.size.width; x += step) {
-      NSBezierPath *p = [NSBezierPath bezierPath];
-      [p moveToPoint:NSMakePoint(x, 0)];
-      [p lineToPoint:NSMakePoint(x, b.size.height)];
-      p.lineWidth = 0.5;
-      [p stroke];
-    }
-    for (CGFloat y = 0; y < b.size.height; y += step) {
-      NSBezierPath *p = [NSBezierPath bezierPath];
-      [p moveToPoint:NSMakePoint(0, y)];
-      [p lineToPoint:NSMakePoint(b.size.width, y)];
-      p.lineWidth = 0.5;
-      [p stroke];
-    }
-
-    // 3D Vanishing-Point Perspective Floor Grid in lower 38% of window
-    CGFloat horizonY = b.size.height * 0.36;
-    NSPoint vanishPt = NSMakePoint(NSMidX(b), horizonY);
-    [[g2 colorWithAlphaComponent:0.13] setStroke];
-    for (int ray = -10; ray <= 10; ray++) {
-      NSBezierPath *rayPath = [NSBezierPath bezierPath];
-      [rayPath moveToPoint:vanishPt];
-      [rayPath lineToPoint:NSMakePoint(NSMidX(b) + ray * (b.size.width * 0.12), 0)];
-      rayPath.lineWidth = 0.8;
-      [rayPath stroke];
-    }
-    CGFloat zOffset = fmod(ph * 0.18, 1.0);
-    for (int row = 1; row <= 8; row++) {
-      CGFloat t = pow(((row - 1 + zOffset) / 8.0), 1.65);
-      CGFloat y = horizonY * (1.0 - t);
-      [[g1 colorWithAlphaComponent:0.06 + 0.14 * t] setStroke];
-      NSBezierPath *hLine = [NSBezierPath bezierPath];
-      [hLine moveToPoint:NSMakePoint(0, y)];
-      [hLine lineToPoint:NSMakePoint(b.size.width, y)];
-      hLine.lineWidth = 0.7 + t * 0.8;
-      [hLine stroke];
-    }
-  }
-
-  // 3. Multi-Layer Master Codecaine Atmosphere Shaders
   if (![atmo isEqualToString:@"none"] && atmo.length > 0) {
-    if ([atmo isEqualToString:@"aurora"] || [atmo isEqualToString:@"nebula"] || [atmo isEqualToString:@"plasma_storm"]) {
-      // Twinkling background starfield + 5-band volumetric sine-wave aurora curtains
-      for (int s = 0; s < 28; s++) {
-        CGFloat sx = fmod((s * 137.5 + 19.0), b.size.width);
-        CGFloat sy = fmod((s * 89.3 + 43.0), b.size.height);
-        CGFloat tw = 0.15 + 0.25 * (0.5 + 0.5 * sin(ph * 2.0 + s));
-        [[NSColor colorWithWhite:1.0 alpha:tw] setFill];
-        CGFloat ssz = (s % 4 == 0) ? 3.0 : 1.8;
-        [[NSBezierPath bezierPathWithOvalInRect:NSMakeRect(sx, sy, ssz, ssz)] fill];
-      }
-      for (int band = 0; band < 5; band++) {
-        NSBezierPath *ribbon = [NSBezierPath bezierPath];
-        CGFloat baseY = b.size.height * (0.32 + band * 0.13);
-        CGFloat wave1 = 48.0 * sin(ph + band * 0.9);
-        CGFloat wave2 = 42.0 * cos(ph * 0.8 + band * 1.3);
-        [ribbon moveToPoint:NSMakePoint(0, baseY + wave1 * 0.4)];
-        [ribbon curveToPoint:NSMakePoint(b.size.width, baseY + (band % 2 == 0 ? 38 : -32) + wave2 * 0.4)
-               controlPoint1:NSMakePoint(b.size.width * 0.33, baseY + 65 + wave1)
-               controlPoint2:NSMakePoint(b.size.width * 0.66, baseY - 55 + wave2)];
-        NSColor *rc = (band % 2 == 0) ? g1 : g2;
-        [[rc colorWithAlphaComponent:0.11] setStroke];
-        ribbon.lineWidth = 32.0 - band * 4.0;
-        [ribbon stroke];
-        [[rc colorWithAlphaComponent:0.22] setStroke];
-        ribbon.lineWidth = 8.0;
-        [ribbon stroke];
-        [[[NSColor whiteColor] colorWithAlphaComponent:0.18] setStroke];
-        ribbon.lineWidth = 1.4;
-        [ribbon stroke];
-      }
-    } else if ([atmo isEqualToString:@"tactical_hud"] || [atmo isEqualToString:@"tesseract_4d"] || [atmo isEqualToString:@"m4_raytrace_prism"] || [atmo isEqualToString:@"supernova"]) {
-      NSPoint center = NSMakePoint(NSMidX(b), NSMidY(b));
-      // Concentric astrolabe / raytrace prism rings with chromatic offset
-      for (int r = 1; r <= 4; r++) {
-        CGFloat rad = MIN(b.size.width, b.size.height) * (0.11 * r);
-        [[g1 colorWithAlphaComponent:0.14] setStroke];
-        NSBezierPath *ring1 = [NSBezierPath bezierPathWithOvalInRect:NSMakeRect(center.x - rad - 1.5, center.y - rad, rad * 2, rad * 2)];
-        ring1.lineWidth = (r == 2) ? 1.6 : 1.0;
-        [ring1 stroke];
-
-        [[g2 colorWithAlphaComponent:0.12] setStroke];
-        NSBezierPath *ring2 = [NSBezierPath bezierPathWithOvalInRect:NSMakeRect(center.x - rad + 1.5, center.y - rad, rad * 2, rad * 2)];
-        ring2.lineWidth = 1.0;
-        [ring2 stroke];
-      }
-      // 4D Projected Tesseract Wireframe in center backdrop
-      CGFloat scale = MIN(b.size.width, b.size.height) * 0.22;
-      NSPoint outerPts[8];
-      NSPoint innerPts[8];
-      for (int v = 0; v < 8; v++) {
-        double vx = (v & 1) ? 1.0 : -1.0;
-        double vy = (v & 2) ? 1.0 : -1.0;
-        double vz = (v & 4) ? 1.0 : -1.0;
-        double angY = 0.55 + ph * 0.6;
-        double angX = 0.38 + ph * 0.35;
-        double rx = vx * cos(angY) - vz * sin(angY);
-        double rz = vx * sin(angY) + vz * cos(angY);
-        double ry = vy * cos(angX) - rz * sin(angX);
-        double rz2 = vy * sin(angX) + rz * cos(angX);
-        double perspOuter = 1.0 / (2.8 - rz2 * 0.35);
-        double perspInner = 0.52 / (2.8 - rz2 * 0.35);
-        outerPts[v] = NSMakePoint(center.x + rx * scale * perspOuter, center.y + ry * scale * perspOuter);
-        innerPts[v] = NSMakePoint(center.x + rx * scale * perspInner, center.y + ry * scale * perspInner);
-      }
-      int edges[12][2] = {{0,1},{2,3},{4,5},{6,7},{0,2},{1,3},{4,6},{5,7},{0,4},{1,5},{2,6},{3,7}};
-      [[g1 colorWithAlphaComponent:0.16] setStroke];
-      for (int e = 0; e < 12; e++) {
-        NSBezierPath *ep = [NSBezierPath bezierPath];
-        [ep moveToPoint:outerPts[edges[e][0]]];
-        [ep lineToPoint:outerPts[edges[e][1]]];
-        ep.lineWidth = 1.1;
-        [ep stroke];
-      }
-      [[g2 colorWithAlphaComponent:0.18] setStroke];
-      for (int e = 0; e < 12; e++) {
-        NSBezierPath *ep = [NSBezierPath bezierPath];
-        [ep moveToPoint:innerPts[edges[e][0]]];
-        [ep lineToPoint:innerPts[edges[e][1]]];
-        ep.lineWidth = 1.0;
-        [ep stroke];
-      }
-      [[[NSColor whiteColor] colorWithAlphaComponent:0.12] setStroke];
-      for (int v = 0; v < 8; v++) {
-        NSBezierPath *cp = [NSBezierPath bezierPath];
-        [cp moveToPoint:outerPts[v]];
-        [cp lineToPoint:innerPts[v]];
-        cp.lineWidth = 0.8;
-        [cp stroke];
-      }
-    } else if ([atmo isEqualToString:@"matrix"] || [atmo isEqualToString:@"katakana_gold"] || [atmo isEqualToString:@"cyber_rain"]) {
-      for (int i = 0; i < 32; i++) {
-        CGFloat px = fmod((i * 59.0 + 14.0), b.size.width);
-        CGFloat speed = 28.0 + (i % 5) * 14.0;
-        CGFloat rawY = fmod((i * 89.0 + 25.0 - ph * speed), b.size.height);
-        if (rawY < 0) rawY += b.size.height;
-        CGFloat tailLen = 54.0 + (i % 4) * 18.0;
-        NSColor *col = (i % 3 == 0) ? g2 : g1;
-        NSGradient *rainGrad = [[NSGradient alloc] initWithStartingColor:[col colorWithAlphaComponent:0.32]
-                                                             endingColor:[col colorWithAlphaComponent:0.0]];
-        [rainGrad drawInRect:NSMakeRect(px - 1.0, rawY, 2.2, MIN(tailLen, b.size.height - rawY)) angle:90.0];
-        // Glowing droplet head
-        [[[NSColor whiteColor] colorWithAlphaComponent:0.45] setFill];
-        [[NSBezierPath bezierPathWithOvalInRect:NSMakeRect(px - 1.8, rawY - 1.8, 3.6, 3.6)] fill];
-      }
-    } else if ([atmo isEqualToString:@"snow"] || [atmo isEqualToString:@"blizzard"] || [atmo isEqualToString:@"diamond_dust"]) {
-      int count = [atmo isEqualToString:@"blizzard"] ? 54 : 36;
-      for (int i = 0; i < count; i++) {
-        CGFloat px = fmod((i * 97.3 + 23.0 + sin(ph + i) * 12.0), b.size.width);
-        if (px < 0) px += b.size.width;
-        CGFloat py = fmod((i * 61.7 + 19.0 - ph * 18.0), b.size.height);
-        if (py < 0) py += b.size.height;
-        CGFloat sz = (i % 3 == 0) ? 4.5 : 2.5;
-        [[NSColor colorWithWhite:1.0 alpha:(i % 2 == 0 ? 0.36 : 0.20)] setFill];
-        [[NSBezierPath bezierPathWithOvalInRect:NSMakeRect(px, py, sz, sz)] fill];
-      }
-    } else if ([atmo isEqualToString:@"embers"] || [atmo isEqualToString:@"dragon_forge"] || [atmo isEqualToString:@"solar_flare"] || [atmo isEqualToString:@"fireflies"]) {
-      for (int i = 0; i < 36; i++) {
-        CGFloat px = fmod((i * 83.1 + 41.0 + sin(ph * 1.2 + i) * 14.0), b.size.width);
-        if (px < 0) px += b.size.width;
-        CGFloat py = fmod((i * 53.9 + 13.0 + ph * 22.0), b.size.height);
-        CGFloat sz = (i % 4 == 0) ? 5.5 : 3.2;
-        NSColor *c = (i % 2 == 0) ? g1 : g2;
-        [[c colorWithAlphaComponent:0.14] setFill];
-        [[NSBezierPath bezierPathWithOvalInRect:NSMakeRect(px - sz, py - sz, sz * 3.0, sz * 3.0)] fill];
-        [[c colorWithAlphaComponent:0.42] setFill];
-        [[NSBezierPath bezierPathWithOvalInRect:NSMakeRect(px, py, sz, sz)] fill];
-      }
-    } else if ([atmo isEqualToString:@"autumn_leaves"] || [atmo isEqualToString:@"sakura"]) {
-      for (int i = 0; i < 28; i++) {
-        CGFloat px = fmod((i * 109.0 + 31.0 + sin(ph + i) * 16.0), b.size.width);
-        if (px < 0) px += b.size.width;
-        CGFloat py = fmod((i * 71.0 + 17.0 - ph * 15.0), b.size.height);
-        if (py < 0) py += b.size.height;
-        NSColor *c = (i % 2 == 0) ? g1 : g2;
-        [[c colorWithAlphaComponent:0.28] setFill];
-        [[NSBezierPath bezierPathWithRoundedRect:NSMakeRect(px, py, 9, 5.5) xRadius:2.8 yRadius:2.8] fill];
-      }
-    } else if ([atmo isEqualToString:@"cinema_bokeh"] || [atmo isEqualToString:@"hollow_mist"] || [atmo isEqualToString:@"starfield"]) {
-      NSPoint pts[22];
-      for (int i = 0; i < 22; i++) {
-        CGFloat px = fmod((i * 113.0 + 29.0 + cos(ph * 0.6 + i) * 10.0), b.size.width);
-        if (px < 0) px += b.size.width;
-        CGFloat py = fmod((i * 79.0 + 37.0 + sin(ph * 0.6 + i) * 10.0), b.size.height);
-        if (py < 0) py += b.size.height;
-        pts[i] = NSMakePoint(px, py);
-        CGFloat sz = 18.0 + (i % 4) * 12.0;
-        NSColor *c = (i % 2 == 0) ? g1 : g2;
-        [[c colorWithAlphaComponent:0.09] setFill];
-        [[NSBezierPath bezierPathWithOvalInRect:NSMakeRect(px - sz * 0.5, py - sz * 0.5, sz, sz)] fill];
-        [[c colorWithAlphaComponent:0.35] setFill];
-        [[NSBezierPath bezierPathWithOvalInRect:NSMakeRect(px - 2.0, py - 2.0, 4.0, 4.0)] fill];
-      }
-      // Constellation plexus lines
-      [[g1 colorWithAlphaComponent:0.09] setStroke];
-      for (int i = 0; i < 22; i++) {
-        for (int j = i + 1; j < 22; j++) {
-          CGFloat dx = pts[i].x - pts[j].x;
-          CGFloat dy = pts[i].y - pts[j].y;
-          if (dx * dx + dy * dy < 180.0 * 180.0) {
-            NSBezierPath *ln = [NSBezierPath bezierPath];
-            [ln moveToPoint:pts[i]];
-            [ln lineToPoint:pts[j]];
-            ln.lineWidth = 0.7;
-            [ln stroke];
-          }
-        }
-      }
+    for (int i = 0; i < 12; i++) {
+      CGFloat px = fmod((i * 157.0 + 64.0 + cos(ph * 0.35 + i * 0.9) * 28.0), b.size.width);
+      if (px < 0) px += b.size.width;
+      CGFloat py = fmod((i * 113.0 + 48.0 + sin(ph * 0.30 + i * 1.1) * 24.0), b.size.height);
+      if (py < 0) py += b.size.height;
+      CGFloat r = 42.0 + (i % 4) * 28.0;
+      NSColor *orbCol = (i % 2 == 0) ? g1 : g2;
+      NSGradient *orbGrad = [[[NSGradient alloc] initWithStartingColor:[orbCol colorWithAlphaComponent:0.065]
+                                                           endingColor:[orbCol colorWithAlphaComponent:0.0]] autorelease];
+      [orbGrad drawInRect:NSMakeRect(px - r, py - r, r * 2.0, r * 2.0) relativeCenterPosition:NSZeroPoint];
     }
   }
 
-  // 4. CRT Scanlines overlay
-  if (self.scanlines) {
-    [[NSColor colorWithWhite:0.0 alpha:0.13] setStroke];
-    for (CGFloat y = 0; y < b.size.height; y += 3.0) {
-      NSBezierPath *line = [NSBezierPath bezierPath];
-      [line moveToPoint:NSMakePoint(0, y)];
-      [line lineToPoint:NSMakePoint(b.size.width, y)];
-      line.lineWidth = 1.0;
-      [line stroke];
-    }
-  }
-
-  // 5. Screen-edge Vignette
-  if (self.vignette > 0) {
-    CGFloat vigAlpha = MIN(0.55, self.vignette / 110.0);
-    [[NSColor colorWithWhite:0.0 alpha:vigAlpha * 0.45] setStroke];
-    NSBezierPath *framePath = [NSBezierPath bezierPathWithRect:NSInsetRect(b, 2.0, 2.0)];
-    framePath.lineWidth = 8.0;
-    [framePath stroke];
-  }
-
-  // 6. Top & Bottom Prism Edge dispersion + Corner Tactical Reticles
+  // 3. Subtle Specular Top Glass Edge Highlight
   if (self.prismEdge) {
     NSGradient *prism = [[[NSGradient alloc] initWithColors:@[
       [g1 colorWithAlphaComponent:0.0],
-      [g1 colorWithAlphaComponent:0.90],
-      [g2 colorWithAlphaComponent:0.90],
+      [[NSColor whiteColor] colorWithAlphaComponent:0.25],
+      [g1 colorWithAlphaComponent:0.45],
+      [g2 colorWithAlphaComponent:0.45],
       [g2 colorWithAlphaComponent:0.0]
     ]] autorelease];
-    [prism drawInRect:NSMakeRect(0, b.size.height - 2.5, b.size.width, 2.5) angle:0.0];
-    [prism drawInRect:NSMakeRect(0, 0, b.size.width, 2.0) angle:180.0];
+    [prism drawInRect:NSMakeRect(0, b.size.height - 1.5, b.size.width, 1.5) angle:0.0];
   }
 }
 @end
@@ -27237,12 +27161,41 @@ void window_set_themed_folder_grid_selected(main__WindowInfo *info, const char *
 }
 
 // ============================================================================
-// 26. Master VFX Shader Canvas Viewport (SGShaderCanvasView)
+// 26. Master VFX Shader Canvas Viewport (SGShaderCanvasView) + PBR 3D Helpers
 // ============================================================================
+static void sgDrawPBRSphere(NSPoint center, CGFloat radius, NSColor *baseColor, CGFloat specIntensity) {
+  if (radius <= 0.5) return;
+  NSColor *safeBase = baseColor ?: [NSColor colorWithSRGBRed:0.15 green:0.75 blue:0.98 alpha:1.0];
+  NSColor *darkEdge = [safeBase blendedColorWithFraction:0.72 ofColor:[NSColor blackColor]] ?: [NSColor blackColor];
+  NSColor *brightCore = [safeBase blendedColorWithFraction:0.38 ofColor:[NSColor whiteColor]] ?: safeBase;
+
+  // Ambient drop glow / contact shadow
+  [[safeBase colorWithAlphaComponent:0.22] setFill];
+  [[NSBezierPath bezierPathWithOvalInRect:NSMakeRect(center.x - radius * 1.25, center.y - radius * 1.25, radius * 2.5, radius * 2.5)] fill];
+
+  NSRect sphereRect = NSMakeRect(center.x - radius, center.y - radius, radius * 2.0, radius * 2.0);
+  NSGradient *bodyGrad = [[[NSGradient alloc] initWithColors:@[brightCore, safeBase, darkEdge]] autorelease];
+  [bodyGrad drawInBezierPath:[NSBezierPath bezierPathWithOvalInRect:sphereRect] relativeCenterPosition:NSMakePoint(-0.32, 0.34)];
+
+  if (specIntensity > 0.05 && radius >= 2.5) {
+    CGFloat specR = radius * 0.42;
+    NSPoint specPt = NSMakePoint(center.x - radius * 0.30, center.y + radius * 0.32);
+    NSGradient *specGrad = [[[NSGradient alloc] initWithStartingColor:[NSColor colorWithWhite:1.0 alpha:MIN(0.95, 0.85 * specIntensity)]
+                                                          endingColor:[NSColor colorWithWhite:1.0 alpha:0.0]] autorelease];
+    [specGrad drawInRect:NSMakeRect(specPt.x - specR, specPt.y - specR, specR * 2.0, specR * 2.0) relativeCenterPosition:NSZeroPoint];
+  }
+}
+
 @interface SGShaderCanvasView : NSView
 @property (nonatomic, copy) NSString *preset;
 @property (nonatomic, assign) double phase;
 @property (nonatomic, assign) double speed;
+@property (nonatomic, assign) double camYaw;
+@property (nonatomic, assign) double camPitch;
+@property (nonatomic, assign) double velYaw;
+@property (nonatomic, assign) double velPitch;
+@property (nonatomic, assign) NSPoint lastDragPt;
+@property (nonatomic, assign) BOOL didDrag;
 @property (nonatomic, strong) NSTimer *timer;
 @property (nonatomic, assign) AppDelegate *appDelegate;
 @property (nonatomic, copy) NSString *controlName;
@@ -27256,14 +27209,22 @@ void window_set_themed_folder_grid_selected(main__WindowInfo *info, const char *
     _preset = @"tesseract_4d";
     _phase = 0.85;
     _speed = 1.0;
+    _camYaw = 0.55;
+    _camPitch = 0.38;
+    _velYaw = 0.018;
+    _velPitch = 0.006;
     __unsafe_unretained typeof(self) weakSelf = self;
-    _timer = [NSTimer timerWithTimeInterval:0.05 repeats:YES block:^(NSTimer * _Nonnull t) {
+    _timer = [NSTimer timerWithTimeInterval:0.04 repeats:YES block:^(NSTimer * _Nonnull t) {
       SGShaderCanvasView *s = weakSelf;
       if (!s || s.isHiddenOrHasHiddenAncestor || !s.window || !(s.window.occlusionState & NSWindowOcclusionStateVisible) || NSIsEmptyRect(s.visibleRect)) return;
-      s.phase += 0.048 * s.speed;
+      s.phase += 0.042 * s.speed;
+      s.camYaw += s.velYaw;
+      s.camPitch = MIN(1.2, MAX(-1.2, s.camPitch + s.velPitch));
+      s.velYaw = s.velYaw * 0.96 + 0.014 * 0.04 * s.speed;
+      s.velPitch *= 0.94;
       [s setNeedsDisplay:YES];
     }];
-    _timer.tolerance = 0.015;
+    _timer.tolerance = 0.012;
     [[NSRunLoop mainRunLoop] addTimer:_timer forMode:NSRunLoopCommonModes];
   }
   return self;
@@ -27277,276 +27238,190 @@ void window_set_themed_folder_grid_selected(main__WindowInfo *info, const char *
   NSRect b = self.bounds;
   if (b.size.width <= 4 || b.size.height <= 4) return;
   AppDelegate *del = self.appDelegate;
-  NSColor *g1 = del.currentGlowColor ?: (del.currentAccentColor ?: [NSColor colorWithSRGBRed:0.00 green:0.96 blue:0.83 alpha:1.0]);
-  NSColor *g2 = del.currentGlowColor2 ?: (del.currentSecondaryAccentColor ?: [NSColor colorWithSRGBRed:1.00 green:0.16 blue:0.52 alpha:1.0]);
-  NSColor *bg = del.currentCardBackgroundColor ?: [NSColor colorWithSRGBRed:0.03 green:0.04 blue:0.08 alpha:0.95];
+  NSColor *g1 = del.currentGlowColor ?: (del.currentAccentColor ?: [NSColor colorWithSRGBRed:0.15 green:0.82 blue:0.98 alpha:1.0]);
+  NSColor *g2 = del.currentGlowColor2 ?: (del.currentSecondaryAccentColor ?: [NSColor colorWithSRGBRed:0.62 green:0.38 blue:0.98 alpha:1.0]);
 
-  NSBezierPath *clip = [NSBezierPath bezierPathWithRoundedRect:b xRadius:12.0 yRadius:12.0];
+  NSBezierPath *clip = [NSBezierPath bezierPathWithRoundedRect:b xRadius:14.0 yRadius:14.0];
   [NSGraphicsContext saveGraphicsState];
   [clip addClip];
 
-  // Deep viewport background + dual radial nebula glow
-  [[bg colorWithAlphaComponent:0.94] setFill];
-  NSRectFill(b);
-  NSGradient *radA = [[[NSGradient alloc] initWithStartingColor:[g1 colorWithAlphaComponent:0.25] endingColor:[NSColor clearColor]] autorelease];
-  [radA drawInRect:b relativeCenterPosition:NSMakePoint(-0.35, 0.35)];
-  NSGradient *radB = [[[NSGradient alloc] initWithStartingColor:[g2 colorWithAlphaComponent:0.25] endingColor:[NSColor clearColor]] autorelease];
-  [radB drawInRect:b relativeCenterPosition:NSMakePoint(0.35, -0.35)];
+  // Studio PBR Environment Sky & Horizon Reflection Floor
+  NSGradient *skyGrad = [[[NSGradient alloc] initWithColors:@[
+    [NSColor colorWithSRGBRed:0.02 green:0.03 blue:0.07 alpha:1.0],
+    [NSColor colorWithSRGBRed:0.05 green:0.08 blue:0.16 alpha:1.0],
+    [NSColor colorWithSRGBRed:0.03 green:0.04 blue:0.09 alpha:1.0]
+  ]] autorelease];
+  [skyGrad drawInRect:b angle:90.0];
 
-  NSPoint center = NSMakePoint(NSMidX(b), NSMidY(b));
+  NSGradient *radA = [[[NSGradient alloc] initWithStartingColor:[g1 colorWithAlphaComponent:0.26] endingColor:[NSColor clearColor]] autorelease];
+  [radA drawInRect:b relativeCenterPosition:NSMakePoint(-0.35 + 0.15 * sin(self.phase), 0.35)];
+  NSGradient *radB = [[[NSGradient alloc] initWithStartingColor:[g2 colorWithAlphaComponent:0.24] endingColor:[NSColor clearColor]] autorelease];
+  [radB drawInRect:b relativeCenterPosition:NSMakePoint(0.35, -0.35 + 0.15 * cos(self.phase))];
+
+  NSPoint center = NSMakePoint(NSMidX(b), NSMidY(b) + 4.0);
   double ph = self.phase;
   NSString *pr = [self.preset lowercaseString] ?: @"tesseract_4d";
 
-  if ([pr containsString:@"plasma"] || [pr containsString:@"reactor"]) {
-    // Tokamak Fusion Plasma Reactor Core
-    for (int r = 1; r <= 5; r++) {
-      CGFloat rad = MIN(b.size.width, b.size.height) * (0.08 * r);
-      NSColor *rc = (r % 2 == 0) ? g1 : g2;
-      [[rc colorWithAlphaComponent:0.22] setStroke];
-      NSBezierPath *oval = [NSBezierPath bezierPathWithOvalInRect:NSMakeRect(center.x - rad, center.y - rad, rad * 2, rad * 2)];
-      oval.lineWidth = (r == 3) ? 2.5 : 1.2;
+  // Perspective Reflective Studio Floor Shadow
+  NSGradient *floorShadow = [[[NSGradient alloc] initWithStartingColor:[[NSColor blackColor] colorWithAlphaComponent:0.55]
+                                                           endingColor:[NSColor clearColor]] autorelease];
+  [floorShadow drawInRect:NSMakeRect(center.x - b.size.width * 0.32, 12.0, b.size.width * 0.64, 28.0) relativeCenterPosition:NSZeroPoint];
+
+  if ([pr containsString:@"plasma"] || [pr containsString:@"reactor"] || [pr containsString:@"black_hole"] || [pr containsString:@"singularity"]) {
+    // Volumetric Magnetic Containment Rings + 3D Orbiting Plasma Orbs
+    CGFloat maxR = MIN(b.size.width, b.size.height) * 0.36;
+    for (int ring = 3; ring >= 1; ring--) {
+      CGFloat rw = maxR * (0.55 + ring * 0.16);
+      CGFloat rh = rw * (0.38 + 0.12 * sin(self.camPitch + ring));
+      NSColor *rc = (ring % 2 == 0) ? g1 : g2;
+      [[rc colorWithAlphaComponent:0.35] setStroke];
+      NSBezierPath *oval = [NSBezierPath bezierPathWithOvalInRect:NSMakeRect(center.x - rw, center.y - rh, rw * 2, rh * 2)];
+      oval.lineWidth = 4.5 - ring * 0.8;
       [oval stroke];
     }
-    // 14 Plasma Lightning Filaments
-    for (int f = 0; f < 14; f++) {
-      double baseAng = (f * M_PI * 2.0 / 14.0) + ph * (f % 2 == 0 ? 0.6 : -0.4);
-      CGFloat maxR = MIN(b.size.width, b.size.height) * 0.42;
-      NSBezierPath *bolt = [NSBezierPath bezierPath];
-      [bolt moveToPoint:center];
-      for (int seg = 1; seg <= 5; seg++) {
-        CGFloat frac = seg / 5.0;
-        double jitter = 0.14 * sin(ph * 3.2 + f * 1.9 + seg * 2.1);
-        NSPoint pt = NSMakePoint(center.x + cos(baseAng + jitter) * maxR * frac,
-                                center.y + sin(baseAng + jitter) * maxR * frac);
-        [bolt lineToPoint:pt];
-      }
-      NSColor *bc = (f % 2 == 0) ? g1 : g2;
-      [[bc colorWithAlphaComponent:0.45] setStroke];
-      bolt.lineWidth = 3.2;
-      [bolt stroke];
-      [[[NSColor whiteColor] colorWithAlphaComponent:0.85] setStroke];
-      bolt.lineWidth = 1.1;
-      [bolt stroke];
-    }
-    // Glowing reactor core sphere
-    NSGradient *coreGrad = [[[NSGradient alloc] initWithStartingColor:[NSColor whiteColor] endingColor:[g1 colorWithAlphaComponent:0.0]] autorelease];
-    [coreGrad drawInRect:NSMakeRect(center.x - 26, center.y - 26, 52, 52) relativeCenterPosition:NSZeroPoint];
-  } else if ([pr containsString:@"synthwave"] || [pr containsString:@"horizon"] || [pr containsString:@"outrun"]) {
-    // 3D Synthwave Outrun Sunset + Wireframe Mountains + Perspective Grid
-    CGFloat horizonY = b.size.height * 0.44;
-    // Retro Segmented Neon Sun
-    CGFloat sunR = MIN(b.size.width, b.size.height) * 0.28;
-    NSRect sunRect = NSMakeRect(center.x - sunR, horizonY - sunR * 0.25, sunR * 2, sunR * 2);
-    NSGradient *sunGrad = [[[NSGradient alloc] initWithStartingColor:g2 endingColor:g1] autorelease];
-    NSBezierPath *sunOval = [NSBezierPath bezierPathWithOvalInRect:sunRect];
-    [sunGrad drawInBezierPath:sunOval angle:90.0];
-    // Horizontal scanline slice cutouts across lower half of sun
-    [[bg colorWithAlphaComponent:0.94] setFill];
-    for (int sl = 0; sl < 6; sl++) {
-      CGFloat sy = horizonY - sunR * 0.15 + sl * (sunR * 0.14);
-      NSRectFill(NSMakeRect(center.x - sunR - 2, sy, sunR * 2 + 4, 2.0 + sl * 0.7));
-    }
-    // Wireframe Mountain Range along Horizon
-    NSBezierPath *mtn = [NSBezierPath bezierPath];
-    [mtn moveToPoint:NSMakePoint(0, horizonY)];
-    int peaks = 16;
-    for (int pk = 0; pk <= peaks; pk++) {
-      CGFloat px = (b.size.width * pk) / peaks;
-      CGFloat py = horizonY + ((pk % 2 == 1) ? (14.0 + (pk % 3) * 12.0) : 2.0);
-      [mtn lineToPoint:NSMakePoint(px, py)];
-    }
-    [mtn lineToPoint:NSMakePoint(b.size.width, horizonY)];
-    [mtn closePath];
-    [[bg colorWithAlphaComponent:0.95] setFill];
-    [mtn fill];
-    [[g1 colorWithAlphaComponent:0.85] setStroke];
-    mtn.lineWidth = 1.5;
-    [mtn stroke];
-
-    // 3D Perspective Scrolling Grid below Horizon
-    [[g2 colorWithAlphaComponent:0.42] setStroke];
-    for (int ray = -12; ray <= 12; ray++) {
-      NSBezierPath *rp = [NSBezierPath bezierPath];
-      [rp moveToPoint:NSMakePoint(center.x, horizonY)];
-      [rp lineToPoint:NSMakePoint(center.x + ray * (b.size.width * 0.11), 0)];
-      rp.lineWidth = 1.0;
-      [rp stroke];
-    }
-    CGFloat zOff = fmod(ph * 0.25, 1.0);
-    for (int row = 1; row <= 8; row++) {
-      CGFloat t = pow(((row - 1 + zOff) / 8.0), 1.6);
-      CGFloat y = horizonY * (1.0 - t);
-      [[g1 colorWithAlphaComponent:0.20 + 0.60 * t] setStroke];
-      NSBezierPath *hl = [NSBezierPath bezierPath];
-      [hl moveToPoint:NSMakePoint(0, y)];
-      [hl lineToPoint:NSMakePoint(b.size.width, y)];
-      hl.lineWidth = 0.8 + t * 1.2;
-      [hl stroke];
+    sgDrawPBRSphere(center, maxR * 0.42, [pr containsString:@"black_hole"] ? [NSColor colorWithSRGBRed:0.08 green:0.10 blue:0.18 alpha:1.0] : g1, 1.0);
+    for (int i = 0; i < 8; i++) {
+      double ang = ph * 1.4 + i * (M_PI / 4.0) + self.camYaw;
+      double depth = sin(ang);
+      CGFloat ox = center.x + cos(ang) * maxR * 0.85;
+      CGFloat oy = center.y + depth * maxR * 0.34 * cos(self.camPitch);
+      CGFloat orbR = (6.5 + depth * 2.5);
+      sgDrawPBRSphere(NSMakePoint(ox, oy), orbR, (i % 2 == 0) ? g2 : g1, 0.95);
     }
   } else if ([pr containsString:@"spectrum"] || [pr containsString:@"audio"]) {
-    // 3D Mirrored 48-Band Neon FFT Audio Spectrum Analyzer
-    int bands = 48;
-    CGFloat padX = 18.0;
+    // 3D Glossy Cylinder Equalizer Pillars with Real-Time Floor Reflections
+    int bands = 28;
+    CGFloat padX = 22.0;
     CGFloat availW = b.size.width - padX * 2.0;
-    CGFloat barW = MAX(3.0, (availW / bands) - 3.0);
-    CGFloat midY = b.size.height * 0.42;
+    CGFloat barW = MAX(5.0, (availW / bands) - 4.0);
+    CGFloat baseLine = b.size.height * 0.34;
     for (int i = 0; i < bands; i++) {
-      double wave = fabs(sin(ph * 1.8 + i * 0.24) * cos(ph * 0.9 - i * 0.15));
-      CGFloat h = MAX(6.0, wave * (b.size.height * 0.46));
+      double wave = fabs(sin(ph * 2.1 + i * 0.28 + self.camYaw) * cos(ph * 1.1 - i * 0.19));
+      CGFloat h = MAX(10.0, wave * (b.size.height * 0.48));
       CGFloat bx = padX + i * (availW / bands);
       NSColor *barCol = (i % 2 == 0) ? g1 : g2;
-      // Upper main FFT bar
-      NSGradient *bGrad = [[NSGradient alloc] initWithStartingColor:[barCol colorWithAlphaComponent:0.95]
-                                                        endingColor:[barCol colorWithAlphaComponent:0.30]];
-      NSBezierPath *upBar = [NSBezierPath bezierPathWithRoundedRect:NSMakeRect(bx, midY, barW, h) xRadius:2.0 yRadius:2.0];
-      [bGrad drawInBezierPath:upBar angle:270.0];
-      // Floating Peak-Hold Cap
-      [[NSColor whiteColor] setFill];
-      NSRectFill(NSMakeRect(bx, midY + h + 3.0, barW, 2.0));
-      // Lower Mirrored Reflection
-      [[barCol colorWithAlphaComponent:0.22] setFill];
-      [[NSBezierPath bezierPathWithRoundedRect:NSMakeRect(bx, MAX(4.0, midY - h * 0.45), barW, h * 0.42) xRadius:1.5 yRadius:1.5] fill];
-    }
-  } else if ([pr containsString:@"black_hole"] || [pr containsString:@"singularity"]) {
-    // Gargantua Black Hole Accretion Disk & Relativistic Jets
-    CGFloat diskW = MIN(b.size.width * 0.72, 340.0);
-    CGFloat diskH = MIN(b.size.height * 0.26, 64.0);
-    // Gravitational Lensing Upper & Lower Halo Rings
-    for (int l = 0; l < 4; l++) {
-      CGFloat r = (diskH * 0.78) + l * 6.0;
-      NSColor *lc = (l % 2 == 0) ? g1 : g2;
-      [[lc colorWithAlphaComponent:0.45 - l * 0.08] setStroke];
-      NSBezierPath *lens = [NSBezierPath bezierPathWithOvalInRect:NSMakeRect(center.x - r, center.y - r, r * 2, r * 2)];
-      lens.lineWidth = 2.5;
-      [lens stroke];
-    }
-    // Event Horizon Pitch-Black Sphere
-    CGFloat ehR = diskH * 0.68;
-    [[NSColor blackColor] setFill];
-    [[NSBezierPath bezierPathWithOvalInRect:NSMakeRect(center.x - ehR, center.y - ehR, ehR * 2, ehR * 2)] fill];
-    [[[NSColor whiteColor] colorWithAlphaComponent:0.90] setStroke];
-    NSBezierPath *photon = [NSBezierPath bezierPathWithOvalInRect:NSMakeRect(center.x - ehR, center.y - ehR, ehR * 2, ehR * 2)];
-    photon.lineWidth = 1.6;
-    [photon stroke];
-    // Tilted Relativistic Accretion Disk Ellipses
-    for (int d = 0; d < 5; d++) {
-      CGFloat w = diskW * (0.65 + d * 0.09);
-      CGFloat h = diskH * (0.45 + d * 0.09);
-      NSColor *dc = (d % 2 == 0) ? g1 : g2;
-      [[dc colorWithAlphaComponent:0.55 - d * 0.08] setStroke];
-      NSBezierPath *disk = [NSBezierPath bezierPathWithOvalInRect:NSMakeRect(center.x - w * 0.5, center.y - h * 0.5, w, h)];
-      disk.lineWidth = 2.2;
-      [disk stroke];
-    }
-  } else if ([pr containsString:@"neural"] || [pr containsString:@"plexus"]) {
-    // Interactive Neural Plexus Constellation Network
-    NSPoint nodes[26];
-    for (int i = 0; i < 26; i++) {
-      CGFloat nx = 24.0 + fmod(i * 97.0 + sin(ph * 0.8 + i) * 26.0, MAX(60.0, b.size.width - 48.0));
-      if (nx < 24.0) nx += (b.size.width - 48.0);
-      CGFloat ny = 20.0 + fmod(i * 67.0 + cos(ph * 0.7 + i * 1.3) * 22.0, MAX(40.0, b.size.height - 40.0));
-      if (ny < 20.0) ny += (b.size.height - 40.0);
-      nodes[i] = NSMakePoint(nx, ny);
-    }
-    for (int i = 0; i < 26; i++) {
-      for (int j = i + 1; j < 26; j++) {
-        CGFloat dx = nodes[i].x - nodes[j].x;
-        CGFloat dy = nodes[i].y - nodes[j].y;
-        CGFloat distSq = dx * dx + dy * dy;
-        if (distSq < 150.0 * 150.0) {
-          CGFloat alpha = (1.0 - sqrt(distSq) / 150.0) * 0.55;
-          [[(i % 2 == 0 ? g1 : g2) colorWithAlphaComponent:alpha] setStroke];
-          NSBezierPath *syn = [NSBezierPath bezierPath];
-          [syn moveToPoint:nodes[i]];
-          [syn lineToPoint:nodes[j]];
-          syn.lineWidth = 1.2;
-          [syn stroke];
-        }
-      }
-    }
-    for (int i = 0; i < 26; i++) {
-      NSColor *nc = (i % 2 == 0) ? g1 : g2;
-      [[nc colorWithAlphaComponent:0.30] setFill];
-      [[NSBezierPath bezierPathWithOvalInRect:NSMakeRect(nodes[i].x - 7, nodes[i].y - 7, 14, 14)] fill];
-      [[NSColor whiteColor] setFill];
-      [[NSBezierPath bezierPathWithOvalInRect:NSMakeRect(nodes[i].x - 2.5, nodes[i].y - 2.5, 5, 5)] fill];
+      NSColor *topCol = [barCol blendedColorWithFraction:0.45 ofColor:[NSColor whiteColor]] ?: barCol;
+      NSGradient *bGrad = [[[NSGradient alloc] initWithColors:@[topCol, barCol, [barCol blendedColorWithFraction:0.55 ofColor:[NSColor blackColor]]]] autorelease];
+      NSBezierPath *upBar = [NSBezierPath bezierPathWithRoundedRect:NSMakeRect(bx, baseLine, barW, h) xRadius:barW * 0.45 yRadius:barW * 0.45];
+      [bGrad drawInBezierPath:upBar angle:0.0];
+      // Specular floating orb cap
+      sgDrawPBRSphere(NSMakePoint(bx + barW * 0.5, baseLine + h + 6.0), barW * 0.42, topCol, 1.0);
+      // Floor reflection
+      NSGradient *refGrad = [[[NSGradient alloc] initWithStartingColor:[barCol colorWithAlphaComponent:0.32] endingColor:[NSColor clearColor]] autorelease];
+      NSBezierPath *refBar = [NSBezierPath bezierPathWithRoundedRect:NSMakeRect(bx, MAX(4.0, baseLine - h * 0.42), barW, h * 0.38) xRadius:barW * 0.4 yRadius:barW * 0.4];
+      [refGrad drawInBezierPath:refBar angle:270.0];
     }
   } else {
-    // Default Flagship: 4D Rotating Hypercube (Tesseract) + Astrolabe Rings
-    for (int r = 1; r <= 3; r++) {
-      CGFloat rad = MIN(b.size.width, b.size.height) * (0.14 * r);
-      [[(r % 2 == 1 ? g1 : g2) colorWithAlphaComponent:0.22] setStroke];
-      NSBezierPath *ring = [NSBezierPath bezierPathWithOvalInRect:NSMakeRect(center.x - rad, center.y - rad, rad * 2, rad * 2)];
-      ring.lineWidth = 1.2;
-      [ring stroke];
-    }
+    // Default Flagship: Solid-Shaded 3D PBR Crystal Polyhedron + Orbiting Specular Spheres
     CGFloat scale = MIN(b.size.width, b.size.height) * 0.34;
-    NSPoint outerPts[8];
-    NSPoint innerPts[8];
-    for (int v = 0; v < 8; v++) {
-      double vx = (v & 1) ? 1.0 : -1.0;
-      double vy = (v & 2) ? 1.0 : -1.0;
-      double vz = (v & 4) ? 1.0 : -1.0;
-      double angY = ph * 0.75;
-      double angX = 0.45 + ph * 0.42;
-      double rx = vx * cos(angY) - vz * sin(angY);
-      double rz = vx * sin(angY) + vz * cos(angY);
-      double ry = vy * cos(angX) - rz * sin(angX);
-      double rz2 = vy * sin(angX) + rz * cos(angX);
-      double pOut = 1.0 / (2.5 - rz2 * 0.38);
-      double pIn = 0.50 / (2.5 - rz2 * 0.38);
-      outerPts[v] = NSMakePoint(center.x + rx * scale * pOut, center.y + ry * scale * pOut);
-      innerPts[v] = NSMakePoint(center.x + rx * scale * pIn, center.y + ry * scale * pIn);
+    double ay = self.camYaw;
+    double ax = self.camPitch;
+    double rawV[6][3] = {
+      { 0.0,  1.05,  0.0}, // Top apex 0
+      { 0.0, -1.05,  0.0}, // Bottom apex 1
+      { 1.0,  0.0,   0.0}, // +X 2
+      { 0.0,  0.0,   1.0}, // +Z 3
+      {-1.0,  0.0,   0.0}, // -X 4
+      { 0.0,  0.0,  -1.0}  // -Z 5
+    };
+    double tv[6][3];
+    NSPoint pv[6];
+    for (int i = 0; i < 6; i++) {
+      double vx = rawV[i][0], vy = rawV[i][1], vz = rawV[i][2];
+      double rx = vx * cos(ay) - vz * sin(ay);
+      double rz = vx * sin(ay) + vz * cos(ay);
+      double ry = vy * cos(ax) - rz * sin(ax);
+      double rz2 = vy * sin(ax) + rz * cos(ax);
+      tv[i][0] = rx; tv[i][1] = ry; tv[i][2] = rz2;
+      double p = 1.0 / (2.6 - rz2 * 0.42);
+      pv[i] = NSMakePoint(center.x + rx * scale * p * 1.45, center.y + ry * scale * p * 1.45);
     }
-    int edges[12][2] = {{0,1},{2,3},{4,5},{6,7},{0,2},{1,3},{4,6},{5,7},{0,4},{1,5},{2,6},{3,7}};
-    [[g1 colorWithAlphaComponent:0.85] setStroke];
-    for (int e = 0; e < 12; e++) {
-      NSBezierPath *ep = [NSBezierPath bezierPath];
-      [ep moveToPoint:outerPts[edges[e][0]]];
-      [ep lineToPoint:outerPts[edges[e][1]]];
-      ep.lineWidth = 2.0;
-      [ep stroke];
+    int faces[8][3] = {
+      {0, 2, 3}, {0, 3, 4}, {0, 4, 5}, {0, 5, 2},
+      {1, 3, 2}, {1, 4, 3}, {1, 5, 4}, {1, 2, 5}
+    };
+    int order[8] = {0,1,2,3,4,5,6,7};
+    double fz[8];
+    for (int f = 0; f < 8; f++) {
+      fz[f] = (tv[faces[f][0]][2] + tv[faces[f][1]][2] + tv[faces[f][2]][2]) / 3.0;
     }
-    [[g2 colorWithAlphaComponent:0.88] setStroke];
-    for (int e = 0; e < 12; e++) {
-      NSBezierPath *ep = [NSBezierPath bezierPath];
-      [ep moveToPoint:innerPts[edges[e][0]]];
-      [ep lineToPoint:innerPts[edges[e][1]]];
-      ep.lineWidth = 1.6;
-      [ep stroke];
+    for (int i = 0; i < 7; i++) {
+      for (int j = i + 1; j < 8; j++) {
+        if (fz[order[i]] > fz[order[j]]) { int tmp = order[i]; order[i] = order[j]; order[j] = tmp; }
+      }
     }
-    [[[NSColor whiteColor] colorWithAlphaComponent:0.55] setStroke];
-    for (int v = 0; v < 8; v++) {
-      NSBezierPath *cp = [NSBezierPath bezierPath];
-      [cp moveToPoint:outerPts[v]];
-      [cp lineToPoint:innerPts[v]];
-      cp.lineWidth = 1.1;
-      [cp stroke];
-      [[NSColor whiteColor] setFill];
-      [[NSBezierPath bezierPathWithOvalInRect:NSMakeRect(outerPts[v].x - 3.0, outerPts[v].y - 3.0, 6.0, 6.0)] fill];
+    for (int idx = 0; idx < 8; idx++) {
+      int f = order[idx];
+      int i0 = faces[f][0], i1 = faces[f][1], i2 = faces[f][2];
+      double ux = tv[i1][0] - tv[i0][0], uy = tv[i1][1] - tv[i0][1], uz = tv[i1][2] - tv[i0][2];
+      double wx = tv[i2][0] - tv[i0][0], wy = tv[i2][1] - tv[i0][1], wz = tv[i2][2] - tv[i0][2];
+      double nx = uy * wz - uz * wy, ny = uz * wx - ux * wz, nz = ux * wy - uy * wx;
+      double nLen = sqrt(nx*nx + ny*ny + nz*nz);
+      if (nLen > 1e-5) { nx /= nLen; ny /= nLen; nz /= nLen; }
+      double ndotl = MAX(0.15, (nx * 0.45 + ny * 0.65 + nz * 0.60));
+      double spec = pow(MAX(0.0, nz), 16.0);
+      NSColor *baseCol = (f < 4) ? g1 : g2;
+      NSColor *litCol = [baseCol blendedColorWithFraction:(1.0 - ndotl) * 0.68 ofColor:[NSColor blackColor]] ?: baseCol;
+      if (spec > 0.08) {
+        litCol = [litCol blendedColorWithFraction:MIN(0.75, spec * 0.85) ofColor:[NSColor whiteColor]] ?: litCol;
+      }
+      NSBezierPath *fp = [NSBezierPath bezierPath];
+      [fp moveToPoint:pv[i0]]; [fp lineToPoint:pv[i1]]; [fp lineToPoint:pv[i2]]; [fp closePath];
+      [[litCol colorWithAlphaComponent:0.86] setFill];
+      [fp fill];
+      [[[NSColor whiteColor] colorWithAlphaComponent:0.35] setStroke];
+      fp.lineWidth = 1.0;
+      [fp stroke];
+    }
+    // 5 Orbiting 3D PBR Satellites
+    for (int s = 0; s < 5; s++) {
+      double sa = ph * 1.3 + s * (M_PI * 2.0 / 5.0) - ay * 0.6;
+      CGFloat sx = center.x + cos(sa) * scale * 1.18;
+      CGFloat sy = center.y + sin(sa) * scale * 0.44;
+      CGFloat sr = 6.5 + sin(sa) * 2.2;
+      sgDrawPBRSphere(NSMakePoint(sx, sy), sr, (s % 2 == 0) ? g1 : g2, 1.0);
     }
   }
 
-  // HUD Telemetry Overlay & Border
-  NSString *hudLabel = [NSString stringWithFormat:@"SHADER // %@  [60 FPS METAL/CG]", [self.preset uppercaseString]];
-  [hudLabel drawAtPoint:NSMakePoint(12, b.size.height - 22) withAttributes:sgTextAttrs(sgMonoFont(10.0, NSFontWeightBold), [g1 colorWithAlphaComponent:0.92], nil)];
-  NSString *hintLabel = @"Click viewport to cycle VFX shader preset";
-  [hintLabel drawAtPoint:NSMakePoint(12, 8) withAttributes:sgTextAttrs(sgSysFont(9.5, NSFontWeightMedium), [[NSColor whiteColor] colorWithAlphaComponent:0.55], nil)];
+  // Modern Frosted Glass HUD Pill
+  NSRect hudPill = NSMakeRect(10, b.size.height - 28, MIN(b.size.width - 20, 320), 20);
+  [[[NSColor blackColor] colorWithAlphaComponent:0.42] setFill];
+  [[NSBezierPath bezierPathWithRoundedRect:hudPill xRadius:6.0 yRadius:6.0] fill];
+  NSString *hudLabel = [NSString stringWithFormat:@"PBR 3D SHADER // %@ • DRAG TO ORBIT", [self.preset uppercaseString]];
+  [hudLabel drawAtPoint:NSMakePoint(16, b.size.height - 24) withAttributes:sgTextAttrs(sgMonoFont(9.5, NSFontWeightBold), [[NSColor whiteColor] colorWithAlphaComponent:0.92], nil)];
 
   [NSGraphicsContext restoreGraphicsState];
-  [[g1 colorWithAlphaComponent:0.55] setStroke];
-  clip.lineWidth = 1.4;
+  [[[NSColor whiteColor] colorWithAlphaComponent:0.18] setStroke];
+  clip.lineWidth = 1.0;
   [clip stroke];
 }
 - (void)mouseDown:(NSEvent *)event {
-  NSArray<NSString *> *presets = @[@"tesseract_4d", @"plasma_reactor", @"synthwave_horizon", @"audio_spectrum_3d", @"black_hole_singularity", @"neural_plexus"];
-  NSUInteger idx = [presets indexOfObject:[self.preset lowercaseString]];
-  NSString *nextPreset = presets[(idx == NSNotFound) ? 0 : ((idx + 1) % presets.count)];
-  self.preset = nextPreset;
-  self.phase += 0.6;
+  self.lastDragPt = [self convertPoint:event.locationInWindow fromView:nil];
+  self.didDrag = NO;
+}
+- (void)mouseDragged:(NSEvent *)event {
+  NSPoint pt = [self convertPoint:event.locationInWindow fromView:nil];
+  CGFloat dx = pt.x - self.lastDragPt.x;
+  CGFloat dy = pt.y - self.lastDragPt.y;
+  if (fabs(dx) > 1.0 || fabs(dy) > 1.0) self.didDrag = YES;
+  self.velYaw = dx * 0.014;
+  self.velPitch = -dy * 0.012;
+  self.camYaw += self.velYaw;
+  self.camPitch = MIN(1.2, MAX(-1.2, self.camPitch + self.velPitch));
+  self.lastDragPt = pt;
   [self setNeedsDisplay:YES];
-  if (self.winPtr && self.controlName) {
-    vlang_dispatch_event(self.winPtr, [self.controlName UTF8String], "change", [nextPreset UTF8String]);
+}
+- (void)mouseUp:(NSEvent *)event {
+  if (!self.didDrag) {
+    NSArray<NSString *> *presets = @[@"tesseract_4d", @"plasma_reactor", @"audio_spectrum_3d", @"black_hole_singularity"];
+    NSUInteger idx = [presets indexOfObject:[self.preset lowercaseString]];
+    NSString *nextPreset = presets[(idx == NSNotFound) ? 0 : ((idx + 1) % presets.count)];
+    self.preset = nextPreset;
+    self.velYaw = 0.06;
+    [self setNeedsDisplay:YES];
+    if (self.winPtr && self.controlName) {
+      vlang_dispatch_event(self.winPtr, [self.controlName UTF8String], "change", [nextPreset UTF8String]);
+    }
   }
 }
 @end
@@ -27631,38 +27506,183 @@ void window_step_shader_canvas(main__WindowInfo *info, const char *name, double 
 }
 
 // ============================================================================
-// 27. Interactive Particle Physics & Fireworks Emitter Control (SGParticleEmitterView)
+// 27. Real-Time Newtonian Rigid-Body & Fluid Sphere Physics Engine (SGParticleEmitterView)
 // ============================================================================
-@interface SGParticleEmitterView : NSView
+typedef struct {
+  double x, y;
+  double vx, vy;
+  double radius;
+  double mass;
+  double restitution;
+  int colorIdx;
+} SGPhysBody;
+
+#define SG_MAX_PHYS_BODIES 48
+
+@interface SGParticleEmitterView : NSView {
+  SGPhysBody _bodies[SG_MAX_PHYS_BODIES];
+  BOOL _physInitialized;
+}
 @property (nonatomic, copy) NSString *effectType;
 @property (nonatomic, assign) int particleCount;
 @property (nonatomic, assign) double phase;
 @property (nonatomic, assign) NSPoint burstCenter;
 @property (nonatomic, assign) double burstAge;
+@property (nonatomic, assign) BOOL cursorActive;
+@property (nonatomic, assign) NSPoint cursorPt;
 @property (nonatomic, strong) NSTimer *timer;
 @property (nonatomic, assign) AppDelegate *appDelegate;
 @property (nonatomic, copy) NSString *controlName;
 @property (nonatomic, assign) void *winPtr;
+- (void)resetPhysicsBodies:(NSRect)b;
+- (void)stepPhysics:(double)dt bounds:(NSRect)b;
+- (void)applyBlastAt:(NSPoint)pt strength:(double)strength;
 @end
 
 @implementation SGParticleEmitterView
+- (void)resetPhysicsBodies:(NSRect)b {
+  CGFloat w = MAX(200.0, b.size.width);
+  CGFloat h = MAX(120.0, b.size.height);
+  for (int i = 0; i < SG_MAX_PHYS_BODIES; i++) {
+    double h1 = fabs(fmod(sin((i + 1) * 12.9898) * 43758.5453, 1.0));
+    double h2 = fabs(fmod(sin((i + 1) * 78.2330) * 28461.3291, 1.0));
+    double ang = h1 * M_PI * 2.0;
+    double spd = 65.0 + h2 * 145.0;
+    _bodies[i].radius = 4.6 + (i % 4) * 2.1;
+    _bodies[i].mass = _bodies[i].radius * _bodies[i].radius;
+    _bodies[i].restitution = 0.80 + (i % 3) * 0.06;
+    _bodies[i].x = 20.0 + h1 * MAX(60.0, w - 40.0);
+    _bodies[i].y = 16.0 + h2 * MAX(45.0, h - 50.0);
+    _bodies[i].vx = cos(ang) * spd;
+    _bodies[i].vy = sin(ang) * spd + 35.0;
+    _bodies[i].colorIdx = i % 3;
+  }
+  _physInitialized = YES;
+}
+- (void)applyBlastAt:(NSPoint)pt strength:(double)strength {
+  for (int i = 0; i < SG_MAX_PHYS_BODIES; i++) {
+    double dx = _bodies[i].x - pt.x;
+    double dy = _bodies[i].y - pt.y;
+    double dist = sqrt(dx * dx + dy * dy);
+    if (dist < 1.0) { dx = cos(i); dy = sin(i); dist = 1.0; }
+    double falloff = strength / (18.0 + dist * 0.65);
+    _bodies[i].vx += (dx / dist) * falloff;
+    _bodies[i].vy += (dy / dist) * falloff + 95.0;
+  }
+}
+- (void)stepPhysics:(double)dt bounds:(NSRect)b {
+  if (b.size.width <= 20 || b.size.height <= 20) return;
+  if (!_physInitialized) [self resetPhysicsBodies:b];
+  int count = MIN(SG_MAX_PHYS_BODIES, MAX(16, self.particleCount));
+  NSString *eff = [self.effectType lowercaseString] ?: @"supernova_burst";
+  BOOL isVortex = ([eff containsString:@"vortex"] || [eff containsString:@"galaxy"] || [eff containsString:@"orbital"]);
+  CGFloat floorY = 14.0;
+  CGFloat ceilY = b.size.height - 26.0;
+  CGFloat leftX = 10.0;
+  CGFloat rightX = b.size.width - 10.0;
+  NSPoint center = NSMakePoint(b.size.width * self.burstCenter.x, b.size.height * self.burstCenter.y);
+
+  double totalKinetic = 0.0;
+  for (int i = 0; i < count; i++) {
+    if (isVortex) {
+      double dx = center.x - _bodies[i].x;
+      double dy = center.y - _bodies[i].y;
+      double d = sqrt(dx * dx + dy * dy) + 8.0;
+      // Orbital central gravity + tangential vortex swirl
+      _bodies[i].vx += (dx / d) * 260.0 * dt - (dy / d) * 180.0 * dt;
+      _bodies[i].vy += (dy / d) * 260.0 * dt + (dx / d) * 180.0 * dt;
+      _bodies[i].vx *= 0.988;
+      _bodies[i].vy *= 0.988;
+    } else {
+      // Real Newtonian gravity + aerodynamic drag
+      _bodies[i].vy -= 320.0 * dt;
+      _bodies[i].vx *= 0.994;
+      _bodies[i].vy *= 0.994;
+    }
+
+    if (self.cursorActive) {
+      double dx = self.cursorPt.x - _bodies[i].x;
+      double dy = self.cursorPt.y - _bodies[i].y;
+      double d = sqrt(dx * dx + dy * dy) + 6.0;
+      _bodies[i].vx += (dx / d) * 520.0 * dt;
+      _bodies[i].vy += (dy / d) * 520.0 * dt;
+    }
+
+    _bodies[i].x += _bodies[i].vx * dt;
+    _bodies[i].y += _bodies[i].vy * dt;
+
+    double r = _bodies[i].radius;
+    if (_bodies[i].y - r < floorY) {
+      _bodies[i].y = floorY + r;
+      _bodies[i].vy = -_bodies[i].vy * _bodies[i].restitution;
+      _bodies[i].vx *= 0.94;
+    } else if (_bodies[i].y + r > ceilY) {
+      _bodies[i].y = ceilY - r;
+      _bodies[i].vy = -_bodies[i].vy * _bodies[i].restitution;
+    }
+    if (_bodies[i].x - r < leftX) {
+      _bodies[i].x = leftX + r;
+      _bodies[i].vx = -_bodies[i].vx * _bodies[i].restitution;
+    } else if (_bodies[i].x + r > rightX) {
+      _bodies[i].x = rightX - r;
+      _bodies[i].vx = -_bodies[i].vx * _bodies[i].restitution;
+    }
+    totalKinetic += (_bodies[i].vx * _bodies[i].vx + _bodies[i].vy * _bodies[i].vy);
+  }
+
+  // Elastic Sphere-to-Sphere Collision Solver (Momentum Conservation)
+  for (int i = 0; i < count; i++) {
+    for (int j = i + 1; j < count; j++) {
+      double dx = _bodies[j].x - _bodies[i].x;
+      double dy = _bodies[j].y - _bodies[i].y;
+      double minDist = _bodies[i].radius + _bodies[j].radius;
+      double distSq = dx * dx + dy * dy;
+      if (distSq < minDist * minDist && distSq > 1e-4) {
+        double dist = sqrt(distSq);
+        double nx = dx / dist;
+        double ny = dy / dist;
+        double overlap = (minDist - dist) * 0.5;
+        _bodies[i].x -= nx * overlap;
+        _bodies[i].y -= ny * overlap;
+        _bodies[j].x += nx * overlap;
+        _bodies[j].y += ny * overlap;
+        double kx = _bodies[i].vx - _bodies[j].vx;
+        double ky = _bodies[i].vy - _bodies[j].vy;
+        double p = 2.0 * (nx * kx + ny * ky) / (_bodies[i].mass + _bodies[j].mass);
+        double e = 0.85;
+        _bodies[i].vx -= p * _bodies[j].mass * nx * e;
+        _bodies[i].vy -= p * _bodies[j].mass * ny * e;
+        _bodies[j].vx += p * _bodies[i].mass * nx * e;
+        _bodies[j].vy += p * _bodies[i].mass * ny * e;
+      }
+    }
+  }
+
+  // Auto-impulse fountain jet when kinetic energy settles so simulation stays lively
+  if (!isVortex && totalKinetic / MAX(1, count) < 1800.0) {
+    [self applyBlastAt:NSMakePoint(b.size.width * 0.5, floorY + 10.0) strength:260.0];
+    self.burstAge = 0.05;
+  }
+}
 - (instancetype)initWithFrame:(NSRect)frameRect {
   self = [super initWithFrame:frameRect];
   if (self) {
     _effectType = @"supernova_burst";
-    _particleCount = 64;
+    _particleCount = 36;
     _phase = 1.2;
     _burstAge = 0.35;
     _burstCenter = NSMakePoint(0.5, 0.5);
+    _physInitialized = NO;
     __unsafe_unretained typeof(self) weakSelf = self;
-    _timer = [NSTimer timerWithTimeInterval:0.05 repeats:YES block:^(NSTimer * _Nonnull t) {
+    _timer = [NSTimer timerWithTimeInterval:0.035 repeats:YES block:^(NSTimer * _Nonnull t) {
       SGParticleEmitterView *s = weakSelf;
       if (!s || s.isHiddenOrHasHiddenAncestor || !s.window || !(s.window.occlusionState & NSWindowOcclusionStateVisible) || NSIsEmptyRect(s.visibleRect)) return;
-      s.phase += 0.05;
-      s.burstAge = fmod(s.burstAge + 0.025, 1.0);
+      s.phase += 0.04;
+      s.burstAge = MIN(1.0, s.burstAge + 0.03);
+      [s stepPhysics:0.035 bounds:s.bounds];
       [s setNeedsDisplay:YES];
     }];
-    _timer.tolerance = 0.015;
+    _timer.tolerance = 0.010;
     [[NSRunLoop mainRunLoop] addTimer:_timer forMode:NSRunLoopCommonModes];
   }
   return self;
@@ -27675,86 +27695,108 @@ void window_step_shader_canvas(main__WindowInfo *info, const char *name, double 
   [super drawRect:dirtyRect];
   NSRect b = self.bounds;
   if (b.size.width <= 4 || b.size.height <= 4) return;
+  if (!_physInitialized) [self resetPhysicsBodies:b];
   AppDelegate *del = self.appDelegate;
-  NSColor *g1 = del.currentGlowColor ?: (del.currentAccentColor ?: [NSColor colorWithSRGBRed:1.0 green:0.16 blue:0.52 alpha:1.0]);
-  NSColor *g2 = del.currentGlowColor2 ?: (del.currentSecondaryAccentColor ?: [NSColor colorWithSRGBRed:0.0 green:0.96 blue:0.83 alpha:1.0]);
-  NSColor *bg = del.currentCardBackgroundColor ?: [NSColor colorWithSRGBRed:0.04 green:0.03 blue:0.09 alpha:0.95];
+  NSColor *g1 = del.currentGlowColor ?: (del.currentAccentColor ?: [NSColor colorWithSRGBRed:0.15 green:0.85 blue:0.98 alpha:1.0]);
+  NSColor *g2 = del.currentGlowColor2 ?: (del.currentSecondaryAccentColor ?: [NSColor colorWithSRGBRed:0.98 green:0.32 blue:0.60 alpha:1.0]);
+  NSColor *g3 = [NSColor colorWithSRGBRed:0.55 green:0.42 blue:0.98 alpha:1.0];
 
-  NSBezierPath *clip = [NSBezierPath bezierPathWithRoundedRect:b xRadius:12.0 yRadius:12.0];
+  NSBezierPath *clip = [NSBezierPath bezierPathWithRoundedRect:b xRadius:14.0 yRadius:14.0];
   [NSGraphicsContext saveGraphicsState];
   [clip addClip];
 
-  [[bg colorWithAlphaComponent:0.94] setFill];
-  NSRectFill(b);
+  NSGradient *bgGrad = [[[NSGradient alloc] initWithColors:@[
+    [NSColor colorWithSRGBRed:0.02 green:0.03 blue:0.07 alpha:1.0],
+    [NSColor colorWithSRGBRed:0.05 green:0.07 blue:0.14 alpha:1.0]
+  ]] autorelease];
+  [bgGrad drawInRect:b angle:90.0];
+
+  // Reflective Physics Floor Plane
+  CGFloat floorY = 14.0;
+  NSGradient *floorGrad = [[[NSGradient alloc] initWithStartingColor:[g1 colorWithAlphaComponent:0.18]
+                                                         endingColor:[NSColor clearColor]] autorelease];
+  [floorGrad drawInRect:NSMakeRect(0, 0, b.size.width, floorY + 8.0) angle:90.0];
+  [[[NSColor whiteColor] colorWithAlphaComponent:0.18] setStroke];
+  NSBezierPath *fl = [NSBezierPath bezierPath];
+  [fl moveToPoint:NSMakePoint(8, floorY)];
+  [fl lineToPoint:NSMakePoint(b.size.width - 8, floorY)];
+  fl.lineWidth = 1.0;
+  [fl stroke];
 
   NSPoint origin = NSMakePoint(b.size.width * self.burstCenter.x, b.size.height * self.burstCenter.y);
-  int count = MIN(140, MAX(16, self.particleCount));
-  NSString *eff = [self.effectType lowercaseString] ?: @"supernova_burst";
-  double ph = self.phase;
+  int count = MIN(SG_MAX_PHYS_BODIES, MAX(16, self.particleCount));
 
-  // Shockwave ring
-  CGFloat shockR = self.burstAge * MIN(b.size.width, b.size.height) * 0.55;
-  [[g1 colorWithAlphaComponent:(1.0 - self.burstAge) * 0.45] setStroke];
-  NSBezierPath *shock = [NSBezierPath bezierPathWithOvalInRect:NSMakeRect(origin.x - shockR, origin.y - shockR, shockR * 2, shockR * 2)];
-  shock.lineWidth = 2.0;
-  [shock stroke];
-
-  for (int i = 0; i < count; i++) {
-    double seed = i * 1.61803398875;
-    double angle = (i * M_PI * 2.0 / count) + sin(seed) * 0.4;
-    CGFloat px = 0, py = 0;
-    if ([eff containsString:@"vortex"] || [eff containsString:@"galaxy"]) {
-      double armAngle = angle + ph * 0.9 + (i % 4) * 0.45;
-      CGFloat dist = (0.12 + 0.82 * ((double)(i % 24) / 24.0)) * MIN(b.size.width, b.size.height) * 0.46;
-      px = origin.x + cos(armAngle) * dist;
-      py = origin.y + sin(armAngle) * dist * 0.68;
-    } else if ([eff containsString:@"fountain"] || [eff containsString:@"sparks"]) {
-      double t = fmod(ph * 0.45 + (double)i / count, 1.0);
-      double vx = cos(angle) * b.size.width * 0.36;
-      double vy = (0.65 + 0.35 * sin(seed)) * b.size.height * 0.75;
-      px = origin.x + vx * t;
-      py = 14.0 + vy * t - 0.5 * (b.size.height * 0.85) * t * t;
-    } else {
-      // Supernova / Fireworks radial burst with velocity trails
-      double t = fmod(self.burstAge + (i % 5) * 0.12, 1.0);
-      CGFloat radius = (0.12 + 0.88 * pow(t, 0.72)) * MIN(b.size.width, b.size.height) * 0.48;
-      px = origin.x + cos(angle + ph * 0.15) * radius;
-      py = origin.y + sin(angle + ph * 0.15) * radius;
-      // Trail line
-      CGFloat tailR = MAX(0.0, radius - 16.0);
-      NSPoint tailPt = NSMakePoint(origin.x + cos(angle + ph * 0.15) * tailR, origin.y + sin(angle + ph * 0.15) * tailR);
-      NSColor *tc = (i % 2 == 0) ? g1 : g2;
-      [[tc colorWithAlphaComponent:0.55] setStroke];
-      NSBezierPath *tr = [NSBezierPath bezierPath];
-      [tr moveToPoint:tailPt];
-      [tr lineToPoint:NSMakePoint(px, py)];
-      tr.lineWidth = 1.8;
-      [tr stroke];
-    }
-    NSColor *pc = (i % 2 == 0) ? g1 : g2;
-    [[pc colorWithAlphaComponent:0.28] setFill];
-    [[NSBezierPath bezierPathWithOvalInRect:NSMakeRect(px - 6, py - 6, 12, 12)] fill];
-    [[NSColor whiteColor] setFill];
-    [[NSBezierPath bezierPathWithOvalInRect:NSMakeRect(px - 2.2, py - 2.2, 4.4, 4.4)] fill];
+  // Expanding Acoustic Shockwave Ring
+  if (self.burstAge < 0.95) {
+    CGFloat shockR = self.burstAge * MIN(b.size.width, b.size.height) * 0.58;
+    [[g1 colorWithAlphaComponent:(1.0 - self.burstAge) * 0.45] setStroke];
+    NSBezierPath *shock = [NSBezierPath bezierPathWithOvalInRect:NSMakeRect(origin.x - shockR, origin.y - shockR, shockR * 2, shockR * 2)];
+    shock.lineWidth = 2.2;
+    [shock stroke];
   }
 
-  NSString *lbl = [NSString stringWithFormat:@"PARTICLE FX // %@ (%d ACTIVE)", [self.effectType uppercaseString], count];
-  [lbl drawAtPoint:NSMakePoint(12, b.size.height - 22) withAttributes:sgTextAttrs(sgMonoFont(10.0, NSFontWeightBold), [g2 colorWithAlphaComponent:0.92], nil)];
+  for (int i = 0; i < count; i++) {
+    CGFloat px = _bodies[i].x;
+    CGFloat py = _bodies[i].y;
+    CGFloat r = _bodies[i].radius;
+    NSColor *pc = (_bodies[i].colorIdx == 0) ? g1 : ((_bodies[i].colorIdx == 1) ? g2 : g3);
+
+    // Motion-blur velocity vector ribbon
+    CGFloat tx = px - _bodies[i].vx * 0.045;
+    CGFloat ty = py - _bodies[i].vy * 0.045;
+    [[pc colorWithAlphaComponent:0.38] setStroke];
+    NSBezierPath *tr = [NSBezierPath bezierPath];
+    [tr moveToPoint:NSMakePoint(tx, ty)];
+    [tr lineToPoint:NSMakePoint(px, py)];
+    tr.lineWidth = r * 0.85;
+    tr.lineCapStyle = NSLineCapStyleRound;
+    [tr stroke];
+
+    // Floor contact reflection shadow when near floor
+    if (py - floorY < 42.0) {
+      CGFloat sAlpha = (1.0 - (py - floorY) / 42.0) * 0.35;
+      [[pc colorWithAlphaComponent:sAlpha] setFill];
+      [[NSBezierPath bezierPathWithOvalInRect:NSMakeRect(px - r * 1.1, floorY - 2.5, r * 2.2, 5.0)] fill];
+    }
+
+    // 3D Ray-Traced Glossy Sphere
+    sgDrawPBRSphere(NSMakePoint(px, py), r, pc, 1.0);
+  }
+
+  NSRect hudPill = NSMakeRect(10, b.size.height - 26, MIN(b.size.width - 20, 260), 19);
+  [[[NSColor blackColor] colorWithAlphaComponent:0.42] setFill];
+  [[NSBezierPath bezierPathWithRoundedRect:hudPill xRadius:6.0 yRadius:6.0] fill];
+  NSString *lbl = [NSString stringWithFormat:@"PHYSICS // %@ • CLICK/DRAG", [self.effectType uppercaseString]];
+  [lbl drawAtPoint:NSMakePoint(15, b.size.height - 22) withAttributes:sgTextAttrs(sgMonoFont(8.8, NSFontWeightBold), [[NSColor whiteColor] colorWithAlphaComponent:0.92], nil)];
+
   [NSGraphicsContext restoreGraphicsState];
-  [[g2 colorWithAlphaComponent:0.52] setStroke];
-  clip.lineWidth = 1.4;
+  [[[NSColor whiteColor] colorWithAlphaComponent:0.18] setStroke];
+  clip.lineWidth = 1.0;
   [clip stroke];
 }
 - (void)mouseDown:(NSEvent *)event {
   NSPoint pt = [self convertPoint:event.locationInWindow fromView:nil];
   if (self.bounds.size.width > 1 && self.bounds.size.height > 1) {
     self.burstCenter = NSMakePoint(pt.x / self.bounds.size.width, pt.y / self.bounds.size.height);
-    self.burstAge = 0.05;
+    self.burstAge = 0.04;
+    self.cursorActive = YES;
+    self.cursorPt = pt;
+    [self applyBlastAt:pt strength:340.0];
     [self setNeedsDisplay:YES];
     if (self.winPtr && self.controlName) {
       vlang_dispatch_event(self.winPtr, [self.controlName UTF8String], "click", [self.effectType UTF8String]);
     }
   }
+}
+- (void)mouseDragged:(NSEvent *)event {
+  NSPoint pt = [self convertPoint:event.locationInWindow fromView:nil];
+  self.cursorActive = YES;
+  self.cursorPt = pt;
+  self.burstCenter = NSMakePoint(pt.x / MAX(1.0, self.bounds.size.width), pt.y / MAX(1.0, self.bounds.size.height));
+  [self setNeedsDisplay:YES];
+}
+- (void)mouseUp:(NSEvent *)event {
+  self.cursorActive = NO;
 }
 @end
 
@@ -27818,9 +27860,12 @@ void window_emit_particle_burst(main__WindowInfo *info, const char *name, double
     NSView *v = delegate.controlsByName[key];
     if ([v isKindOfClass:[SGParticleEmitterView class]]) {
       SGParticleEmitterView *pe = (SGParticleEmitterView *)v;
-      pe.burstCenter = NSMakePoint(MIN(0.9, MAX(0.1, x)), MIN(0.9, MAX(0.1, y)));
+      double nx = MIN(0.9, MAX(0.1, x));
+      double ny = MIN(0.9, MAX(0.1, y));
+      pe.burstCenter = NSMakePoint(nx, ny);
       if (count > 0) pe.particleCount = count;
-      pe.burstAge = 0.05;
+      pe.burstAge = 0.04;
+      [pe applyBlastAt:NSMakePoint(pe.bounds.size.width * nx, pe.bounds.size.height * ny) strength:320.0];
       [pe setNeedsDisplay:YES];
     }
   });
@@ -28795,20 +28840,36 @@ int window_get_smart_house_active_mask(main__WindowInfo *info, const char *name)
   AppDelegate *del = self.appDelegate;
   NSColor *g1 = del.currentGlowColor ?: (del.currentAccentColor ?: [NSColor colorWithSRGBRed:0.0 green:0.96 blue:0.83 alpha:1.0]);
   NSColor *g2 = del.currentGlowColor2 ?: (del.currentSecondaryAccentColor ?: [NSColor colorWithSRGBRed:1.0 green:0.35 blue:0.16 alpha:1.0]);
-  NSColor *bg = del.currentCardBackgroundColor ?: [NSColor colorWithSRGBRed:0.05 green:0.07 blue:0.12 alpha:0.96];
 
-  NSBezierPath *card = [NSBezierPath bezierPathWithRoundedRect:NSInsetRect(b, 1, 1) xRadius:14.0 yRadius:14.0];
-  [bg setFill];
-  [card fill];
+  NSBezierPath *card = [NSBezierPath bezierPathWithRoundedRect:NSInsetRect(b, 1, 1) xRadius:16.0 yRadius:16.0];
+  NSGradient *cardGrad = [[[NSGradient alloc] initWithColors:@[
+    [NSColor colorWithSRGBRed:0.08 green:0.10 blue:0.16 alpha:0.98],
+    [NSColor colorWithSRGBRed:0.03 green:0.04 blue:0.08 alpha:0.98]
+  ]] autorelease];
+  [cardGrad drawInBezierPath:card angle:-90.0];
 
-  NSPoint center = NSMakePoint(NSMidX(b), NSMidY(b) - 4.0);
-  CGFloat radius = MIN(b.size.width, b.size.height) * 0.38;
+  NSPoint center = NSMakePoint(NSMidX(b), NSMidY(b) + 2.0);
+  CGFloat radius = MIN(b.size.width, b.size.height) * 0.37;
 
-  // Outer Bezel Ring
-  [[g1 colorWithAlphaComponent:0.18] setStroke];
-  NSBezierPath *bezel = [NSBezierPath bezierPathWithOvalInRect:NSMakeRect(center.x - radius - 8, center.y - radius - 8, (radius + 8) * 2, (radius + 8) * 2)];
-  bezel.lineWidth = 2.0;
-  [bezel stroke];
+  // 3D Brushed Titanium Outer Bezel Ring with Drop Shadow
+  [[[NSColor blackColor] colorWithAlphaComponent:0.55] setFill];
+  [[NSBezierPath bezierPathWithOvalInRect:NSMakeRect(center.x - radius - 10, center.y - radius - 13, (radius + 10) * 2, (radius + 10) * 2)] fill];
+
+  NSBezierPath *outerMetal = [NSBezierPath bezierPathWithOvalInRect:NSMakeRect(center.x - radius - 9, center.y - radius - 9, (radius + 9) * 2, (radius + 9) * 2)];
+  NSGradient *metalGrad = [[[NSGradient alloc] initWithColorsAndLocations:
+    [NSColor colorWithSRGBRed:0.36 green:0.40 blue:0.48 alpha:1.0], 0.0,
+    [NSColor colorWithSRGBRed:0.14 green:0.17 blue:0.22 alpha:1.0], 0.5,
+    [NSColor colorWithSRGBRed:0.26 green:0.30 blue:0.38 alpha:1.0], 1.0, nil] autorelease];
+  [metalGrad drawInBezierPath:outerMetal angle:-65.0];
+  [[[NSColor whiteColor] colorWithAlphaComponent:0.28] setStroke];
+  outerMetal.lineWidth = 1.0;
+  [outerMetal stroke];
+
+  // Recessed Dark Glass Dial Well
+  NSBezierPath *well = [NSBezierPath bezierPathWithOvalInRect:NSMakeRect(center.x - radius - 2, center.y - radius - 2, (radius + 2) * 2, (radius + 2) * 2)];
+  NSGradient *wellGrad = [[[NSGradient alloc] initWithStartingColor:[NSColor colorWithSRGBRed:0.07 green:0.10 blue:0.16 alpha:1.0]
+                                                        endingColor:[NSColor colorWithSRGBRed:0.02 green:0.03 blue:0.06 alpha:1.0]] autorelease];
+  [wellGrad drawInBezierPath:well relativeCenterPosition:NSMakePoint(-0.15, 0.20)];
 
   // 48 Radial Tick Marks around 270-degree dial (from 225 deg down to -45 deg)
   double normTarget = MIN(1.0, MAX(0.0, (self.targetTemp - 55.0) / 35.0));
@@ -28818,51 +28879,82 @@ int window_get_smart_house_active_mask(main__WindowInfo *info, const char *name)
     double deg = 225.0 - frac * 270.0;
     double rad = deg * M_PI / 180.0;
     BOOL lit = (i <= activeTicks);
-    NSColor *tc = lit ? (frac > 0.6 ? g2 : g1) : [[NSColor whiteColor] colorWithAlphaComponent:0.16];
+    NSColor *tc = lit ? (frac > 0.58 ? g2 : g1) : [[NSColor whiteColor] colorWithAlphaComponent:0.14];
     [tc setStroke];
-    CGFloat rIn = radius - 5.0;
-    CGFloat rOut = radius + (i % 6 == 0 ? 5.0 : 2.0);
+    CGFloat rIn = radius - 6.0;
+    CGFloat rOut = radius - (i % 6 == 0 ? 0.0 : 2.2);
     NSBezierPath *tk = [NSBezierPath bezierPath];
     [tk moveToPoint:NSMakePoint(center.x + cos(rad) * rIn, center.y + sin(rad) * rIn)];
     [tk lineToPoint:NSMakePoint(center.x + cos(rad) * rOut, center.y + sin(rad) * rOut)];
-    tk.lineWidth = lit ? 2.2 : 1.2;
+    tk.lineWidth = lit ? 2.2 : 1.1;
     [tk stroke];
   }
 
-  // Center Glass Dial Face
-  NSBezierPath *innerFace = [NSBezierPath bezierPathWithOvalInRect:NSMakeRect(center.x - radius + 10, center.y - radius + 10, (radius - 10) * 2, (radius - 10) * 2)];
-  [[[NSColor blackColor] colorWithAlphaComponent:0.42] setFill];
-  [innerFace fill];
+  // 3D Glowing Setpoint Thumb Sphere on the Dial Ring
+  double setDeg = 225.0 - normTarget * 270.0;
+  double setRad = setDeg * M_PI / 180.0;
+  NSPoint thumbPt = NSMakePoint(center.x + cos(setRad) * (radius - 3.0), center.y + sin(setRad) * (radius - 3.0));
+  sgDrawPBRSphere(thumbPt, 5.2, (normTarget > 0.58 ? g2 : g1), 1.0);
+
+  // Center Sapphire Glass Dome Lens
+  CGFloat innerR = radius - 11.0;
+  NSBezierPath *innerFace = [NSBezierPath bezierPathWithOvalInRect:NSMakeRect(center.x - innerR, center.y - innerR, innerR * 2, innerR * 2)];
+  NSGradient *lensGrad = [[[NSGradient alloc] initWithStartingColor:[(normTarget > 0.58 ? g2 : g1) colorWithAlphaComponent:0.18]
+                                                        endingColor:[NSColor colorWithSRGBRed:0.01 green:0.02 blue:0.05 alpha:0.95]] autorelease];
+  [lensGrad drawInBezierPath:innerFace relativeCenterPosition:NSMakePoint(0.0, -0.25)];
+
+  // Sapphire Dome Top Specular Reflection Arc
+  NSBezierPath *specArc = [NSBezierPath bezierPathWithOvalInRect:NSMakeRect(center.x - innerR * 0.72, center.y + innerR * 0.15, innerR * 1.44, innerR * 0.70)];
+  NSGradient *specGrad = [[[NSGradient alloc] initWithStartingColor:[[NSColor whiteColor] colorWithAlphaComponent:0.20]
+                                                        endingColor:[[NSColor whiteColor] colorWithAlphaComponent:0.0]] autorelease];
+  [specGrad drawInBezierPath:specArc angle:-90.0];
 
   // Zone & Mode Readout
   NSMutableParagraphStyle *pCenter = [[[NSMutableParagraphStyle alloc] init] autorelease];
   pCenter.alignment = NSTextAlignmentCenter;
 
-  [self.zoneName drawInRect:NSMakeRect(center.x - radius, center.y + radius * 0.34, radius * 2, 16) withAttributes:sgTextAttrs(sgSysFont(9.5, NSFontWeightBold), g1, pCenter)];
+  [self.zoneName drawInRect:NSMakeRect(center.x - innerR, center.y + innerR * 0.30, innerR * 2, 14) withAttributes:sgTextAttrs(sgSysFont(8.5, NSFontWeightBold), g1, pCenter)];
 
   NSString *tempStr = [NSString stringWithFormat:@"%.1f°", self.targetTemp];
-  [tempStr drawInRect:NSMakeRect(center.x - radius, center.y - 16, radius * 2, 32) withAttributes:sgTextAttrs(sgMonoDigitFont(24.0, NSFontWeightBlack), [NSColor whiteColor], pCenter)];
+  [tempStr drawInRect:NSMakeRect(center.x - innerR, center.y - 14, innerR * 2, 30) withAttributes:sgTextAttrs(sgMonoDigitFont(22.0, NSFontWeightBlack), [NSColor whiteColor], pCenter)];
 
   NSString *subStr = [NSString stringWithFormat:@"NOW %.1f° • 💧%d%% • %@", self.currentTemp, self.humidity, [self.hvacMode uppercaseString]];
-  [subStr drawInRect:NSMakeRect(8, 8, b.size.width - 16, 16) withAttributes:sgTextAttrs(sgMonoFont(9.0, NSFontWeightSemibold), g2, pCenter)];
+  [subStr drawInRect:NSMakeRect(6, 6, b.size.width - 12, 14) withAttributes:sgTextAttrs(sgMonoFont(8.5, NSFontWeightSemibold), [[NSColor whiteColor] colorWithAlphaComponent:0.78], pCenter)];
 
-  [[g1 colorWithAlphaComponent:0.50] setStroke];
-  card.lineWidth = 1.4;
+  [[[NSColor whiteColor] colorWithAlphaComponent:0.16] setStroke];
+  card.lineWidth = 1.0;
   [card stroke];
 }
-- (void)mouseDown:(NSEvent *)event {
-  NSPoint pt = [self convertPoint:event.locationInWindow fromView:nil];
-  if (pt.x > NSMidX(self.bounds)) {
-    self.targetTemp = MIN(90.0, self.targetTemp + 1.0);
+- (void)updateTempFromPoint:(NSPoint)pt playSound:(BOOL)playSound {
+  NSPoint center = NSMakePoint(NSMidX(self.bounds), NSMidY(self.bounds) + 2.0);
+  double dx = pt.x - center.x;
+  double dy = pt.y - center.y;
+  if (hypot(dx, dy) > 12.0) {
+    double deg = atan2(dy, dx) * 180.0 / M_PI;
+    // Map angle from 225..-45 onto 0..1
+    double rel = 225.0 - deg;
+    while (rel < 0.0) rel += 360.0;
+    while (rel >= 360.0) rel -= 360.0;
+    double norm = MIN(1.0, MAX(0.0, rel / 270.0));
+    self.targetTemp = round((55.0 + norm * 35.0) * 2.0) * 0.5;
   } else {
-    self.targetTemp = MAX(55.0, self.targetTemp - 1.0);
+    if (pt.x > center.x) self.targetTemp = MIN(90.0, self.targetTemp + 1.0);
+    else self.targetTemp = MAX(55.0, self.targetTemp - 1.0);
   }
-  window_play_sfx("thermostat_tick");
+  if (playSound) window_play_sfx("thermostat_tick");
   [self setNeedsDisplay:YES];
   if (self.winPtr && self.controlName) {
     NSString *vStr = [NSString stringWithFormat:@"%.1f", self.targetTemp];
     vlang_dispatch_event(self.winPtr, [self.controlName UTF8String], "change", [vStr UTF8String]);
   }
+}
+- (void)mouseDown:(NSEvent *)event {
+  NSPoint pt = [self convertPoint:event.locationInWindow fromView:nil];
+  [self updateTempFromPoint:pt playSound:YES];
+}
+- (void)mouseDragged:(NSEvent *)event {
+  NSPoint pt = [self convertPoint:event.locationInWindow fromView:nil];
+  [self updateTempFromPoint:pt playSound:NO];
 }
 @end
 
@@ -28925,10 +29017,16 @@ double window_get_smart_thermostat_target(main__WindowInfo *info, const char *na
 
 // ============================================================================
 // 36. Qt 6 Automotive & Aerospace Digital Cockpit Cluster (SGCockpitClusterView)
+//     Upgraded: 2nd-Order Hooke's Law Spring-Damper Needle Physics, 3D Brushed
+//     Titanium Bezels, Sapphire-Glass Dials & Perspective ADAS Road Radar
 // ============================================================================
 @interface SGCockpitClusterView : NSView
 @property (nonatomic, assign) double speedMph;
+@property (nonatomic, assign) double targetSpeedMph;
+@property (nonatomic, assign) double speedVel;
 @property (nonatomic, assign) double rpm;
+@property (nonatomic, assign) double targetRpm;
+@property (nonatomic, assign) double rpmVel;
 @property (nonatomic, copy) NSString *gear;
 @property (nonatomic, assign) int batteryPct;
 @property (nonatomic, assign) double phase;
@@ -28942,11 +29040,36 @@ double window_get_smart_thermostat_target(main__WindowInfo *info, const char *na
 - (instancetype)initWithFrame:(NSRect)frameRect {
   self = [super initWithFrame:frameRect];
   if (self) {
-    _speedMph = 142.0;
-    _rpm = 6.8;
+    _speedMph = 118.0;
+    _targetSpeedMph = 142.0;
+    _speedVel = 65.0;
+    _rpm = 5.2;
+    _targetRpm = 6.8;
+    _rpmVel = 4.2;
     _gear = @"S+";
     _batteryPct = 92;
     _phase = 0.0;
+    __unsafe_unretained typeof(self) weakSelf = self;
+    _timer = [NSTimer timerWithTimeInterval:0.04 repeats:YES block:^(NSTimer * _Nonnull t) {
+      SGCockpitClusterView *s = weakSelf;
+      if (!s || s.isHiddenOrHasHiddenAncestor || !s.window || !(s.window.occlusionState & NSWindowOcclusionStateVisible) || NSIsEmptyRect(s.visibleRect)) return;
+      double dt = 0.04;
+      // 2nd-order underdamped Hooke's Law spring-damper physics for mechanical needle inertia & overshoot
+      double kSpring = 28.0;
+      double damping = 0.84;
+      s.speedVel = (s.speedVel + (s.targetSpeedMph - s.speedMph) * kSpring * dt) * damping;
+      s.speedMph = MAX(0.0, MIN(220.0, s.speedMph + s.speedVel * dt));
+
+      // Subtle engine idle/rev harmonic micro-vibration + spring physics
+      double harmonic = sin(s.phase * 9.0) * 0.06;
+      s.rpmVel = (s.rpmVel + (s.targetRpm + harmonic - s.rpm) * (kSpring * 1.15) * dt) * damping;
+      s.rpm = MAX(0.8, MIN(9.0, s.rpm + s.rpmVel * dt));
+
+      s.phase += dt * (1.2 + s.speedMph / 65.0);
+      [s setNeedsDisplay:YES];
+    }];
+    _timer.tolerance = 0.01;
+    [[NSRunLoop mainRunLoop] addTimer:_timer forMode:NSRunLoopCommonModes];
   }
   return self;
 }
@@ -28954,85 +29077,205 @@ double window_get_smart_thermostat_target(main__WindowInfo *info, const char *na
   [_timer invalidate];
   [super dealloc];
 }
+- (void)drawSapphireDialAt:(NSPoint)center radius:(CGFloat)dialR normVal:(double)normVal accent:(NSColor *)accent redline:(NSColor *)redline valStr:(NSString *)valStr unitStr:(NSString *)unitStr maxLabel:(int)maxStep {
+  // Outer Drop Shadow
+  [[[NSColor blackColor] colorWithAlphaComponent:0.65] setFill];
+  [[NSBezierPath bezierPathWithOvalInRect:NSMakeRect(center.x - dialR - 6, center.y - dialR - 9, (dialR + 6) * 2, (dialR + 6) * 2)] fill];
+
+  // 3D Brushed Titanium Bezel Ring
+  NSBezierPath *bezel = [NSBezierPath bezierPathWithOvalInRect:NSMakeRect(center.x - dialR - 5, center.y - dialR - 5, (dialR + 5) * 2, (dialR + 5) * 2)];
+  NSGradient *bezelGrad = [[[NSGradient alloc] initWithColorsAndLocations:
+    [NSColor colorWithSRGBRed:0.38 green:0.42 blue:0.50 alpha:1.0], 0.0,
+    [NSColor colorWithSRGBRed:0.12 green:0.14 blue:0.19 alpha:1.0], 0.5,
+    [NSColor colorWithSRGBRed:0.28 green:0.32 blue:0.40 alpha:1.0], 1.0, nil] autorelease];
+  [bezelGrad drawInBezierPath:bezel angle:-55.0];
+  [[[NSColor whiteColor] colorWithAlphaComponent:0.28] setStroke];
+  bezel.lineWidth = 1.0;
+  [bezel stroke];
+
+  // Recessed Carbon-Sapphire Dial Face
+  NSBezierPath *face = [NSBezierPath bezierPathWithOvalInRect:NSMakeRect(center.x - dialR, center.y - dialR, dialR * 2, dialR * 2)];
+  NSGradient *faceGrad = [[[NSGradient alloc] initWithStartingColor:[NSColor colorWithSRGBRed:0.08 green:0.11 blue:0.18 alpha:1.0]
+                                                        endingColor:[NSColor colorWithSRGBRed:0.02 green:0.03 blue:0.06 alpha:1.0]] autorelease];
+  [faceGrad drawInBezierPath:face relativeCenterPosition:NSMakePoint(0.0, 0.15)];
+
+  // 32 Precision Radial Ticks & LED Arc Segments (210 deg to -30 deg = 240 deg sweep)
+  int totalTicks = 32;
+  int litTicks = (int)round(MIN(1.0, MAX(0.0, normVal)) * totalTicks);
+  for (int i = 0; i <= totalTicks; i++) {
+    double frac = (double)i / (double)totalTicks;
+    double deg = 210.0 - frac * 240.0;
+    double rad = deg * M_PI / 180.0;
+    BOOL isMajor = (i % 4 == 0);
+    BOOL isLit = (i <= litTicks);
+    NSColor *tc = (frac > 0.78) ? redline : accent;
+    if (!isLit) tc = [[NSColor whiteColor] colorWithAlphaComponent:(isMajor ? 0.35 : 0.14)];
+
+    CGFloat rOut = dialR - 3.0;
+    CGFloat rIn = dialR - (isMajor ? 10.5 : 6.5);
+    NSBezierPath *tk = [NSBezierPath bezierPath];
+    [tk moveToPoint:NSMakePoint(center.x + cos(rad) * rIn, center.y + sin(rad) * rIn)];
+    [tk lineToPoint:NSMakePoint(center.x + cos(rad) * rOut, center.y + sin(rad) * rOut)];
+    tk.lineWidth = isMajor ? 2.2 : 1.2;
+    [tc setStroke];
+    [tk stroke];
+  }
+
+  // Curved Top Sapphire Specular Reflection
+  NSBezierPath *glassArc = [NSBezierPath bezierPathWithOvalInRect:NSMakeRect(center.x - dialR * 0.76, center.y + dialR * 0.12, dialR * 1.52, dialR * 0.74)];
+  NSGradient *glassGrad = [[[NSGradient alloc] initWithStartingColor:[[NSColor whiteColor] colorWithAlphaComponent:0.16]
+                                                         endingColor:[[NSColor whiteColor] colorWithAlphaComponent:0.0]] autorelease];
+  [glassGrad drawInBezierPath:glassArc angle:-90.0];
+
+  // Digital Center Readout (Positioned cleanly below central hub cap)
+  NSMutableParagraphStyle *pCenter = [[[NSMutableParagraphStyle alloc] init] autorelease];
+  pCenter.alignment = NSTextAlignmentCenter;
+  [valStr drawInRect:NSMakeRect(center.x - dialR, center.y - dialR * 0.62, dialR * 2, 22) withAttributes:sgTextAttrs(sgMonoDigitFont(16.5, NSFontWeightBlack), [NSColor whiteColor], pCenter)];
+  [unitStr drawInRect:NSMakeRect(center.x - dialR, center.y - dialR + 6, dialR * 2, 12) withAttributes:sgTextAttrs(sgMonoFont(7.5, NSFontWeightBold), [accent colorWithAlphaComponent:0.92], pCenter)];
+
+  // Tapered Glowing 3D Needle + Shadow
+  double needleDeg = 210.0 - MIN(1.0, MAX(0.0, normVal)) * 240.0;
+  double needleRad = needleDeg * M_PI / 180.0;
+  double perpRad = needleRad + M_PI_2;
+  NSPoint tip = NSMakePoint(center.x + cos(needleRad) * (dialR - 5.0), center.y + sin(needleRad) * (dialR - 5.0));
+  NSPoint tail = NSMakePoint(center.x - cos(needleRad) * 9.0, center.y - sin(needleRad) * 9.0);
+
+  NSBezierPath *needle = [NSBezierPath bezierPath];
+  [needle moveToPoint:NSMakePoint(tail.x + cos(perpRad) * 2.4, tail.y + sin(perpRad) * 2.4)];
+  [needle lineToPoint:tip];
+  [needle lineToPoint:NSMakePoint(tail.x - cos(perpRad) * 2.4, tail.y - sin(perpRad) * 2.4)];
+  [needle closePath];
+
+  NSColor *needleCol = (normVal > 0.78) ? redline : accent;
+  [[needleCol colorWithAlphaComponent:0.35] setStroke];
+  needle.lineWidth = 4.0;
+  [needle stroke];
+  [[NSColor whiteColor] setFill];
+  [needle fill];
+
+  // 3D Brushed Center Hub Cap
+  sgDrawPBRSphere(center, 6.5, [NSColor colorWithSRGBRed:0.25 green:0.30 blue:0.38 alpha:1.0], 0.95);
+}
 - (void)drawRect:(NSRect)dirtyRect {
   [super drawRect:dirtyRect];
   NSRect b = self.bounds;
   if (b.size.width <= 10 || b.size.height <= 10) return;
   AppDelegate *del = self.appDelegate;
   NSColor *g1 = del.currentGlowColor ?: (del.currentAccentColor ?: [NSColor colorWithSRGBRed:0.0 green:0.96 blue:0.83 alpha:1.0]);
-  NSColor *g2 = del.currentGlowColor2 ?: (del.currentSecondaryAccentColor ?: [NSColor colorWithSRGBRed:1.0 green:0.16 blue:0.52 alpha:1.0]);
-  NSColor *bg = del.currentCardBackgroundColor ?: [NSColor colorWithSRGBRed:0.03 green:0.05 blue:0.10 alpha:0.96];
+  NSColor *g2 = del.currentGlowColor2 ?: (del.currentSecondaryAccentColor ?: [NSColor colorWithSRGBRed:1.0 green:0.22 blue:0.42 alpha:1.0]);
 
-  NSBezierPath *card = [NSBezierPath bezierPathWithRoundedRect:NSInsetRect(b, 1, 1) xRadius:14.0 yRadius:14.0];
-  [bg setFill];
-  [card fill];
+  NSBezierPath *card = [NSBezierPath bezierPathWithRoundedRect:NSInsetRect(b, 1, 1) xRadius:16.0 yRadius:16.0];
+  NSGradient *bgGrad = [[[NSGradient alloc] initWithColors:@[
+    [NSColor colorWithSRGBRed:0.07 green:0.09 blue:0.15 alpha:0.98],
+    [NSColor colorWithSRGBRed:0.02 green:0.03 blue:0.07 alpha:0.98]
+  ]] autorelease];
+  [bgGrad drawInBezierPath:card angle:-90.0];
 
-  CGFloat dialR = MIN(b.size.height * 0.38, b.size.width * 0.18);
-  NSPoint leftDial = NSMakePoint(b.size.width * 0.22, NSMidY(b) - 4.0);
-  NSPoint rightDial = NSMakePoint(b.size.width * 0.78, NSMidY(b) - 4.0);
+  CGFloat dialR = MIN(b.size.height * 0.40, b.size.width * 0.19);
+  NSPoint leftDial = NSMakePoint(b.size.width * 0.21, NSMidY(b) - 1.0);
+  NSPoint rightDial = NSMakePoint(b.size.width * 0.79, NSMidY(b) - 1.0);
 
-  NSMutableParagraphStyle *pCenter = [[[NSMutableParagraphStyle alloc] init] autorelease];
-  pCenter.alignment = NSTextAlignmentCenter;
-
-  // Left Dial: RPM Tachometer
-  [[g2 colorWithAlphaComponent:0.22] setStroke];
-  NSBezierPath *lRing = [NSBezierPath bezierPathWithOvalInRect:NSMakeRect(leftDial.x - dialR, leftDial.y - dialR, dialR * 2, dialR * 2)];
-  lRing.lineWidth = 5.0;
-  [lRing stroke];
-  double rpmAngle = 210.0 - MIN(1.0, MAX(0.0, self.rpm / 9.0)) * 240.0;
-  double rpmRad = rpmAngle * M_PI / 180.0;
-  [[g2 colorWithAlphaComponent:0.95] setStroke];
-  NSBezierPath *rpmNeedle = [NSBezierPath bezierPath];
-  [rpmNeedle moveToPoint:leftDial];
-  [rpmNeedle lineToPoint:NSMakePoint(leftDial.x + cos(rpmRad) * (dialR - 4.0), leftDial.y + sin(rpmRad) * (dialR - 4.0))];
-  rpmNeedle.lineWidth = 2.6;
-  [rpmNeedle stroke];
-  [[NSString stringWithFormat:@"%.1f", self.rpm] drawInRect:NSMakeRect(leftDial.x - dialR, leftDial.y - 12, dialR * 2, 24) withAttributes:sgTextAttrs(sgMonoDigitFont(18.0, NSFontWeightBlack), [NSColor whiteColor], pCenter)];
-  [@"x1000 RPM" drawInRect:NSMakeRect(leftDial.x - dialR, leftDial.y - dialR + 8, dialR * 2, 14) withAttributes:sgTextAttrs(sgMonoFont(8.5, NSFontWeightBold), g2, pCenter)];
-
-  // Center ADAS Corridor & Gear Telemetry
+  // Center 3D Perspective ADAS Highway & LiDAR Corridor
   CGFloat midX = NSMidX(b);
-  [[g1 colorWithAlphaComponent:0.45] setStroke];
+  CGFloat roadBotY = 24.0;
+  CGFloat roadTopY = b.size.height - 32.0;
+  NSBezierPath *roadPoly = [NSBezierPath bezierPath];
+  [roadPoly moveToPoint:NSMakePoint(midX - 54.0, roadBotY)];
+  [roadPoly lineToPoint:NSMakePoint(midX + 54.0, roadBotY)];
+  [roadPoly lineToPoint:NSMakePoint(midX + 14.0, roadTopY)];
+  [roadPoly lineToPoint:NSMakePoint(midX - 14.0, roadTopY)];
+  [roadPoly closePath];
+  NSGradient *roadGrad = [[[NSGradient alloc] initWithStartingColor:[g1 colorWithAlphaComponent:0.20]
+                                                        endingColor:[g1 colorWithAlphaComponent:0.02]] autorelease];
+  [roadGrad drawInBezierPath:roadPoly angle:90.0];
+
+  // Glowing Perspective Lane Rails
+  [[g1 colorWithAlphaComponent:0.65] setStroke];
   for (int side = -1; side <= 1; side += 2) {
     NSBezierPath *lane = [NSBezierPath bezierPath];
-    [lane moveToPoint:NSMakePoint(midX + side * 46.0, 18.0)];
-    [lane lineToPoint:NSMakePoint(midX + side * 14.0, b.size.height - 34.0)];
+    [lane moveToPoint:NSMakePoint(midX + side * 54.0, roadBotY)];
+    [lane lineToPoint:NSMakePoint(midX + side * 14.0, roadTopY)];
     lane.lineWidth = 2.0;
     [lane stroke];
   }
-  [[NSString stringWithFormat:@"GEAR [%@]", self.gear ?: @"S+"] drawInRect:NSMakeRect(midX - 65, b.size.height - 28, 130, 18) withAttributes:sgTextAttrs(sgMonoFont(11.0, NSFontWeightBlack), g1, pCenter)];
-  [[NSString stringWithFormat:@"🔋 %d%% • ADAS LOCK", self.batteryPct] drawInRect:NSMakeRect(midX - 75, 8, 150, 16) withAttributes:sgTextAttrs(sgMonoFont(9.5, NSFontWeightBold), g2, pCenter)];
 
-  // Right Dial: Digital Speedometer
-  [[g1 colorWithAlphaComponent:0.22] setStroke];
-  NSBezierPath *rRing = [NSBezierPath bezierPathWithOvalInRect:NSMakeRect(rightDial.x - dialR, rightDial.y - dialR, dialR * 2, dialR * 2)];
-  rRing.lineWidth = 5.0;
-  [rRing stroke];
-  double spdAngle = 210.0 - MIN(1.0, MAX(0.0, self.speedMph / 220.0)) * 240.0;
-  double spdRad = spdAngle * M_PI / 180.0;
-  [[g1 colorWithAlphaComponent:0.95] setStroke];
-  NSBezierPath *spdNeedle = [NSBezierPath bezierPath];
-  [spdNeedle moveToPoint:rightDial];
-  [spdNeedle lineToPoint:NSMakePoint(rightDial.x + cos(spdRad) * (dialR - 4.0), rightDial.y + sin(spdRad) * (dialR - 4.0))];
-  spdNeedle.lineWidth = 2.6;
-  [spdNeedle stroke];
-  [[NSString stringWithFormat:@"%.0f", self.speedMph] drawInRect:NSMakeRect(rightDial.x - dialR, rightDial.y - 12, dialR * 2, 24) withAttributes:sgTextAttrs(sgMonoDigitFont(19.0, NSFontWeightBlack), [NSColor whiteColor], pCenter)];
-  [@"MPH // TELEMETRY" drawInRect:NSMakeRect(rightDial.x - dialR, rightDial.y - dialR + 8, dialR * 2, 14) withAttributes:sgTextAttrs(sgMonoFont(8.5, NSFontWeightBold), g1, pCenter)];
+  // Scrolling Center Dashed Divider (speed-linked phase)
+  for (int seg = 0; seg < 5; seg++) {
+    double t0 = fmod((seg / 5.0) + self.phase * 0.35, 1.0);
+    double t1 = MIN(1.0, t0 + 0.11);
+    // Perspective non-linear depth mapping
+    double p0 = t0 * t0;
+    double p1 = t1 * t1;
+    CGFloat y0 = roadTopY - p0 * (roadTopY - roadBotY);
+    CGFloat y1 = roadTopY - p1 * (roadTopY - roadBotY);
+    [[[NSColor whiteColor] colorWithAlphaComponent:(0.20 + p0 * 0.65)] setStroke];
+    NSBezierPath *dash = [NSBezierPath bezierPath];
+    [dash moveToPoint:NSMakePoint(midX, y0)];
+    [dash lineToPoint:NSMakePoint(midX, y1)];
+    dash.lineWidth = 1.2 + p0 * 1.8;
+    [dash stroke];
+  }
 
-  [[g1 colorWithAlphaComponent:0.52] setStroke];
-  card.lineWidth = 1.4;
+  // ADAS Radar Distance Arcs & Lead Vehicle Silhouette
+  for (int r = 0; r < 3; r++) {
+    CGFloat ry = roadBotY + 26.0 + r * 14.0;
+    CGFloat rw = 34.0 - r * 7.0;
+    NSBezierPath *arc = [NSBezierPath bezierPath];
+    [arc appendBezierPathWithArcWithCenter:NSMakePoint(midX, ry) radius:rw startAngle:65.0 endAngle:115.0];
+    [[g2 colorWithAlphaComponent:(0.75 - r * 0.2)] setStroke];
+    arc.lineWidth = 1.6;
+    [arc stroke];
+  }
+
+  NSMutableParagraphStyle *pCenter = [[[NSMutableParagraphStyle alloc] init] autorelease];
+  pCenter.alignment = NSTextAlignmentCenter;
+  [[NSString stringWithFormat:@"GEAR [%@] • SPRING TELEMETRY", self.gear ?: @"S+"] drawInRect:NSMakeRect(midX - 90, b.size.height - 24, 180, 16) withAttributes:sgTextAttrs(sgMonoFont(9.5, NSFontWeightBlack), g1, pCenter)];
+  [[NSString stringWithFormat:@"🔋 %d%% • CLICK/DRAG TO REV", self.batteryPct] drawInRect:NSMakeRect(midX - 85, 6, 170, 15) withAttributes:sgTextAttrs(sgMonoFont(8.8, NSFontWeightBold), [[NSColor whiteColor] colorWithAlphaComponent:0.82], pCenter)];
+
+  // Left Dial: RPM Tachometer (with spring-damped needle)
+  [self drawSapphireDialAt:leftDial
+                    radius:dialR
+                   normVal:(self.rpm / 9.0)
+                    accent:g1
+                   redline:g2
+                    valStr:[NSString stringWithFormat:@"%.1f", self.rpm]
+                   unitStr:@"x1000 RPM"
+                  maxLabel:9];
+
+  // Right Dial: Digital Speedometer (with spring-damped needle)
+  [self drawSapphireDialAt:rightDial
+                    radius:dialR
+                   normVal:(self.speedMph / 220.0)
+                    accent:g1
+                   redline:g2
+                    valStr:[NSString stringWithFormat:@"%.0f", self.speedMph]
+                   unitStr:@"MPH // VEL"
+                  maxLabel:220];
+
+  [[[NSColor whiteColor] colorWithAlphaComponent:0.16] setStroke];
+  card.lineWidth = 1.0;
   [card stroke];
 }
 - (void)mouseDown:(NSEvent *)event {
-  self.speedMph = fmod(self.speedMph + 24.0, 215.0);
-  if (self.speedMph < 35.0) self.speedMph = 65.0;
-  self.rpm = MIN(8.8, 2.2 + (self.speedMph / 215.0) * 6.5);
+  NSPoint pt = [self convertPoint:event.locationInWindow fromView:nil];
+  double normX = MIN(1.0, MAX(0.15, pt.x / MAX(1.0, self.bounds.size.width)));
+  self.targetSpeedMph = 45.0 + normX * 168.0;
+  self.speedVel += 120.0; // Turbo spring kick for realistic needle overshoot
+  self.targetRpm = MIN(8.8, 2.0 + normX * 6.8);
+  self.rpmVel += 8.5;
   window_play_sfx("engine_rev");
   [self setNeedsDisplay:YES];
   if (self.winPtr && self.controlName) {
-    NSString *sVal = [NSString stringWithFormat:@"%.0f", self.speedMph];
+    NSString *sVal = [NSString stringWithFormat:@"%.0f", self.targetSpeedMph];
     vlang_dispatch_event(self.winPtr, [self.controlName UTF8String], "change", [sVal UTF8String]);
   }
+}
+- (void)mouseDragged:(NSEvent *)event {
+  NSPoint pt = [self convertPoint:event.locationInWindow fromView:nil];
+  double normX = MIN(1.0, MAX(0.10, pt.x / MAX(1.0, self.bounds.size.width)));
+  self.targetSpeedMph = 30.0 + normX * 185.0;
+  self.targetRpm = MIN(8.9, 1.8 + normX * 7.0);
+  [self setNeedsDisplay:YES];
 }
 @end
 
@@ -29044,8 +29287,12 @@ void *window_add_cockpit_cluster_control(main__WindowInfo *info, const char *nam
   __block SGCockpitClusterView *view = nil;
   sgRunOnMainSync(^{
     view = [[SGCockpitClusterView alloc] initWithFrame:NSMakeRect(0, 0, 460, h)];
-    view.speedMph = speed_mph;
-    view.rpm = rpm;
+    view.speedMph = speed_mph * 0.82;
+    view.targetSpeedMph = speed_mph;
+    view.speedVel = 55.0;
+    view.rpm = rpm * 0.82;
+    view.targetRpm = rpm;
+    view.rpmVel = 3.5;
     view.gear = nsstring(gear ?: "S+");
     view.batteryPct = battery_pct;
     view.appDelegate = delegate;
@@ -29069,8 +29316,10 @@ void window_set_cockpit_telemetry(main__WindowInfo *info, const char *name, doub
     NSView *v = delegate.controlsByName[key];
     if ([v isKindOfClass:[SGCockpitClusterView class]]) {
       SGCockpitClusterView *cc = (SGCockpitClusterView *)v;
-      cc.speedMph = speed_mph;
-      cc.rpm = rpm;
+      cc.targetSpeedMph = speed_mph;
+      cc.speedVel += (speed_mph - cc.speedMph) * 1.4;
+      cc.targetRpm = rpm;
+      cc.rpmVel += (rpm - cc.rpm) * 1.6;
       cc.gear = gStr;
       cc.batteryPct = battery_pct;
       [cc setNeedsDisplay:YES];
@@ -29086,7 +29335,7 @@ double window_get_cockpit_speed(main__WindowInfo *info, const char *name) {
   sgRunOnMainSync(^{
     NSView *v = delegate.controlsByName[key];
     if ([v isKindOfClass:[SGCockpitClusterView class]]) {
-      res = [(SGCockpitClusterView *)v speedMph];
+      res = [(SGCockpitClusterView *)v targetSpeedMph];
     }
   });
   return res;
@@ -29094,8 +29343,15 @@ double window_get_cockpit_speed(main__WindowInfo *info, const char *name) {
 
 // ============================================================================
 // 37. Visual Node Graph / Blueprint Shader & Logic Editor (SGNodeGraphView)
+//     Upgraded: Interactive Draggable Nodes + Catenary Spring-Sag Cable Physics
 // ============================================================================
-@interface SGNodeGraphView : NSView
+@interface SGNodeGraphView : NSView {
+  NSPoint _nodeOffset[6];
+  double _cableSag[6];
+  double _cableSagVel[6];
+  int _dragIdx;
+  NSPoint _dragStartPt;
+}
 @property (nonatomic, copy) NSString *graphTitle;
 @property (nonatomic, strong) NSArray<NSString *> *nodeTitles;
 @property (nonatomic, assign) int selectedIndex;
@@ -29111,18 +29367,30 @@ double window_get_cockpit_speed(main__WindowInfo *info, const char *name) {
 - (instancetype)initWithFrame:(NSRect)frameRect {
   self = [super initWithFrame:frameRect];
   if (self) {
-    _graphTitle = @"BLUEPRINT NODE GRAPH // SHADER & IOT PIPELINE";
+    _graphTitle = @"BLUEPRINT NODE GRAPH // DRAG NODES • SPRING CABLE PHYSICS";
     _nodeTitles = [@[@"Time Uniform", @"4D Rotor Matrix", @"Audio FFT Band", @"PBR Master Output"] retain];
     _selectedIndex = 1;
     _phase = 0.0;
+    _dragIdx = -1;
+    for (int i = 0; i < 6; i++) {
+      _nodeOffset[i] = NSMakePoint(0.0, 0.0);
+      _cableSag[i] = 16.0;
+      _cableSagVel[i] = (i % 2 == 0) ? 35.0 : -35.0;
+    }
     __unsafe_unretained typeof(self) weakSelf = self;
-    _timer = [NSTimer timerWithTimeInterval:0.05 repeats:YES block:^(NSTimer * _Nonnull t) {
+    _timer = [NSTimer timerWithTimeInterval:0.04 repeats:YES block:^(NSTimer * _Nonnull t) {
       SGNodeGraphView *s = weakSelf;
       if (!s || s.isHiddenOrHasHiddenAncestor || !s.window || !(s.window.occlusionState & NSWindowOcclusionStateVisible) || NSIsEmptyRect(s.visibleRect)) return;
-      s.phase = fmod(s.phase + 0.03, 1.0);
+      s.phase = fmod(s.phase + 0.025, 1.0);
+      // Catenary cable spring-damper physics (Hooke's law toward natural gravity sag = 14px)
+      for (int i = 0; i < 6; i++) {
+        double restSag = 14.0;
+        s->_cableSagVel[i] = (s->_cableSagVel[i] + (restSag - s->_cableSag[i]) * 38.0 * 0.04) * 0.86;
+        s->_cableSag[i] += s->_cableSagVel[i] * 0.04;
+      }
       [s setNeedsDisplay:YES];
     }];
-    _timer.tolerance = 0.015;
+    _timer.tolerance = 0.012;
     [[NSRunLoop mainRunLoop] addTimer:_timer forMode:NSRunLoopCommonModes];
   }
   return self;
@@ -29132,108 +29400,170 @@ double window_get_cockpit_speed(main__WindowInfo *info, const char *name) {
   [_nodeTitles release];
   [super dealloc];
 }
+- (NSRect)rectForNode:(int)i total:(int)nCount {
+  NSRect b = self.bounds;
+  CGFloat availW = b.size.width - 32.0;
+  CGFloat nodeW = MIN(142.0, (availW - (nCount - 1) * 18.0) / nCount);
+  CGFloat nodeH = MIN(76.0, b.size.height - 44.0);
+  CGFloat nx = 16.0 + i * (nodeW + (availW - nCount * nodeW) / MAX(1, nCount - 1)) + _nodeOffset[i].x;
+  CGFloat ny = 30.0 + ((i % 2 == 1) ? 14.0 : 2.0) + _nodeOffset[i].y;
+  nx = MIN(b.size.width - nodeW - 8.0, MAX(8.0, nx));
+  ny = MIN(b.size.height - nodeH - 6.0, MAX(24.0, ny));
+  return NSMakeRect(nx, ny, nodeW, nodeH);
+}
 - (void)drawRect:(NSRect)dirtyRect {
   [super drawRect:dirtyRect];
   NSRect b = self.bounds;
   if (b.size.width <= 10 || b.size.height <= 10) return;
   AppDelegate *del = self.appDelegate;
   NSColor *g1 = del.currentGlowColor ?: (del.currentAccentColor ?: [NSColor colorWithSRGBRed:0.0 green:0.96 blue:0.83 alpha:1.0]);
-  NSColor *g2 = del.currentGlowColor2 ?: (del.currentSecondaryAccentColor ?: [NSColor colorWithSRGBRed:1.0 green:0.16 blue:0.52 alpha:1.0]);
-  NSColor *bg = del.currentCardBackgroundColor ?: [NSColor colorWithSRGBRed:0.03 green:0.05 blue:0.09 alpha:0.96];
+  NSColor *g2 = del.currentGlowColor2 ?: (del.currentSecondaryAccentColor ?: [NSColor colorWithSRGBRed:1.0 green:0.22 blue:0.52 alpha:1.0]);
 
-  NSBezierPath *card = [NSBezierPath bezierPathWithRoundedRect:NSInsetRect(b, 1, 1) xRadius:12.0 yRadius:12.0];
-  [bg setFill];
-  [card fill];
+  NSBezierPath *card = [NSBezierPath bezierPathWithRoundedRect:NSInsetRect(b, 1, 1) xRadius:14.0 yRadius:14.0];
+  NSGradient *bgGrad = [[[NSGradient alloc] initWithColors:@[
+    [NSColor colorWithSRGBRed:0.06 green:0.08 blue:0.14 alpha:0.98],
+    [NSColor colorWithSRGBRed:0.02 green:0.03 blue:0.07 alpha:0.98]
+  ]] autorelease];
+  [bgGrad drawInBezierPath:card angle:90.0];
 
-  // Blueprint Dot Grid
-  [[g1 colorWithAlphaComponent:0.12] setFill];
-  for (CGFloat x = 18; x < b.size.width - 12; x += 22) {
-    for (CGFloat y = 28; y < b.size.height - 10; y += 22) {
-      NSRectFill(NSMakeRect(x, y, 1.5, 1.5));
+  // Subtle Spatial Blueprint Dot Grid
+  [[[NSColor whiteColor] colorWithAlphaComponent:0.08] setFill];
+  for (CGFloat x = 18; x < b.size.width - 12; x += 20) {
+    for (CGFloat y = 28; y < b.size.height - 10; y += 20) {
+      NSRectFill(NSMakeRect(x, y, 1.4, 1.4));
     }
   }
 
-  [self.graphTitle drawInRect:NSMakeRect(14, 7, b.size.width - 28, 16) withAttributes:sgTextAttrs(sgMonoFont(9.5, NSFontWeightBold), g1, nil)];
+  NSString *hdr = [NSString stringWithFormat:@"%@  [DRAG NODES TO BOUNCE CABLES]", self.graphTitle];
+  [hdr drawInRect:NSMakeRect(14, 6, b.size.width - 28, 16) withAttributes:sgTextAttrs(sgMonoFont(9.2, NSFontWeightBold), g1, nil)];
 
   int nCount = (int)MIN(6, MAX(1, self.nodeTitles.count));
-  CGFloat availW = b.size.width - 32.0;
-  CGFloat nodeW = MIN(135.0, (availW - (nCount - 1) * 18.0) / nCount);
-  CGFloat nodeH = MIN(74.0, b.size.height - 46.0);
-
   NSPoint outPins[6];
   NSPoint inPins[6];
   NSRect nodeRects[6];
 
   for (int i = 0; i < nCount; i++) {
-    CGFloat nx = 16.0 + i * (nodeW + (availW - nCount * nodeW) / MAX(1, nCount - 1));
-    CGFloat ny = 32.0 + ((i % 2 == 1) ? 14.0 : 2.0);
-    nodeRects[i] = NSMakeRect(nx, ny, nodeW, nodeH);
-    inPins[i] = NSMakePoint(nx, ny + nodeH * 0.55);
-    outPins[i] = NSMakePoint(nx + nodeW, ny + nodeH * 0.55);
+    nodeRects[i] = [self rectForNode:i total:nCount];
+    inPins[i] = NSMakePoint(nodeRects[i].origin.x, nodeRects[i].origin.y + nodeRects[i].size.height * 0.56);
+    outPins[i] = NSMakePoint(NSMaxX(nodeRects[i]), nodeRects[i].origin.y + nodeRects[i].size.height * 0.56);
   }
 
-  // Draw glowing cubic Bezier wires & streaming data pulse orbs
+  // Draw Catenary Spring-Physics Bezier Patch Cables & 3D Streaming Energy Spheres
   for (int i = 0; i < nCount - 1; i++) {
     NSPoint p0 = outPins[i];
     NSPoint p3 = inPins[i + 1];
-    CGFloat dx = (p3.x - p0.x) * 0.5;
-    NSPoint p1 = NSMakePoint(p0.x + dx, p0.y);
-    NSPoint p2 = NSMakePoint(p3.x - dx, p3.y);
+    CGFloat dx = MAX(28.0, fabs(p3.x - p0.x) * 0.48);
+    CGFloat sag = _cableSag[i];
+    NSPoint p1 = NSMakePoint(p0.x + dx, p0.y + sag);
+    NSPoint p2 = NSMakePoint(p3.x - dx, p3.y + sag);
 
     NSColor *wc = (i % 2 == 0) ? g1 : g2;
-    [[wc colorWithAlphaComponent:0.75] setStroke];
     NSBezierPath *wire = [NSBezierPath bezierPath];
     [wire moveToPoint:p0];
     [wire curveToPoint:p3 controlPoint1:p1 controlPoint2:p2];
-    wire.lineWidth = 2.2;
+
+    // Outer cable bloom
+    [[wc colorWithAlphaComponent:0.24] setStroke];
+    wire.lineWidth = 6.0;
     [wire stroke];
 
-    // Animated Data Packet along Bezier curve
+    // Core insulated cable
+    [[wc colorWithAlphaComponent:0.88] setStroke];
+    wire.lineWidth = 2.4;
+    [wire stroke];
+
+    // 3D PBR Energy Sphere Packet traveling along Catenary Bezier
     double t = fmod(self.phase + i * 0.28, 1.0);
     double u = 1.0 - t;
     CGFloat px = u*u*u*p0.x + 3*u*u*t*p1.x + 3*u*t*t*p2.x + t*t*t*p3.x;
     CGFloat py = u*u*u*p0.y + 3*u*u*t*p1.y + 3*u*t*t*p2.y + t*t*t*p3.y;
-    [[NSColor whiteColor] setFill];
-    [[NSBezierPath bezierPathWithOvalInRect:NSMakeRect(px - 3.5, py - 3.5, 7.0, 7.0)] fill];
+    sgDrawPBRSphere(NSMakePoint(px, py), 4.8, wc, 1.0);
   }
 
-  // Draw Nodes
+  // Draw Spatial Glass Nodes with 3D Metallic Pin Sockets
   for (int i = 0; i < nCount; i++) {
     NSRect nr = nodeRects[i];
     BOOL sel = (i == self.selectedIndex);
     NSColor *nc = (i % 2 == 0) ? g1 : g2;
-    NSBezierPath *np = [NSBezierPath bezierPathWithRoundedRect:nr xRadius:8.0 yRadius:8.0];
-    [[[NSColor colorWithSRGBRed:0.07 green:0.10 blue:0.17 alpha:0.95] colorWithAlphaComponent:0.95] setFill];
-    [np fill];
+
+    // Node drop shadow
+    [[[NSColor blackColor] colorWithAlphaComponent:0.45] setFill];
+    [[NSBezierPath bezierPathWithRoundedRect:NSOffsetRect(nr, 0, 3.0) xRadius:9.0 yRadius:9.0] fill];
+
+    NSBezierPath *np = [NSBezierPath bezierPathWithRoundedRect:nr xRadius:9.0 yRadius:9.0];
+    NSGradient *nodeGrad = [[[NSGradient alloc] initWithColors:@[
+      [NSColor colorWithSRGBRed:0.11 green:0.15 blue:0.24 alpha:0.96],
+      [NSColor colorWithSRGBRed:0.05 green:0.07 blue:0.13 alpha:0.96]
+    ]] autorelease];
+    [nodeGrad drawInBezierPath:np angle:90.0];
 
     // Node Header Bar
-    NSRect hdrRect = NSMakeRect(nr.origin.x, nr.origin.y, nr.size.width, 20.0);
-    [[nc colorWithAlphaComponent:(sel ? 0.55 : 0.28)] setFill];
-    [[NSBezierPath bezierPathWithRoundedRect:hdrRect xRadius:8.0 yRadius:8.0] fill];
+    NSRect hdrRect = NSMakeRect(nr.origin.x, nr.origin.y, nr.size.width, 21.0);
+    [[nc colorWithAlphaComponent:(sel ? 0.52 : 0.26)] setFill];
+    [[NSBezierPath bezierPathWithRoundedRect:hdrRect xRadius:9.0 yRadius:9.0] fill];
 
     [self.nodeTitles[i] drawInRect:NSMakeRect(nr.origin.x + 8, nr.origin.y + 3, nr.size.width - 14, 15) withAttributes:sgTextAttrs(sgSysFont(10.0, NSFontWeightBold), [NSColor whiteColor], nil)];
 
-    NSString *pinInfo = (i == nCount - 1) ? @"⬅ IN: vec4_color" : @"OUT: float4 ➡";
-    [pinInfo drawInRect:NSMakeRect(nr.origin.x + 8, nr.origin.y + 28, nr.size.width - 14, 14) withAttributes:sgTextAttrs(sgMonoFont(8.5, NSFontWeightMedium), nc, nil)];
+    NSString *pinInfo = (i == nCount - 1) ? @"⬅ IN: bsdf_ lobes" : @"OUT: radiance4 ➡";
+    [pinInfo drawInRect:NSMakeRect(nr.origin.x + 8, nr.origin.y + 28, nr.size.width - 14, 14) withAttributes:sgTextAttrs(sgMonoFont(8.5, NSFontWeightSemibold), [nc colorWithAlphaComponent:0.92], nil)];
 
-    [[nc colorWithAlphaComponent:(sel ? 1.0 : 0.45)] setStroke];
-    np.lineWidth = sel ? 2.2 : 1.1;
+    NSString *latInfo = [NSString stringWithFormat:@"%.2f ms • FP16", 0.12 + i * 0.08];
+    [latInfo drawInRect:NSMakeRect(nr.origin.x + 8, nr.origin.y + 46, nr.size.width - 14, 13) withAttributes:sgTextAttrs(sgMonoFont(8.0, NSFontWeightRegular), [[NSColor whiteColor] colorWithAlphaComponent:0.55], nil)];
+
+    [[nc colorWithAlphaComponent:(sel ? 0.95 : 0.38)] setStroke];
+    np.lineWidth = sel ? 2.0 : 1.0;
     [np stroke];
+
+    // 3D Metallic Pin Sockets
+    if (i > 0) sgDrawPBRSphere(inPins[i], 4.2, nc, 0.9);
+    if (i < nCount - 1) sgDrawPBRSphere(outPins[i], 4.2, nc, 0.9);
   }
 
-  [[g1 colorWithAlphaComponent:0.50] setStroke];
-  card.lineWidth = 1.4;
+  [[[NSColor whiteColor] colorWithAlphaComponent:0.16] setStroke];
+  card.lineWidth = 1.0;
   [card stroke];
 }
 - (void)mouseDown:(NSEvent *)event {
+  NSPoint pt = [self convertPoint:event.locationInWindow fromView:nil];
   int nCount = (int)MIN(6, MAX(1, self.nodeTitles.count));
-  self.selectedIndex = (self.selectedIndex + 1) % nCount;
+  _dragIdx = -1;
+  for (int i = nCount - 1; i >= 0; i--) {
+    if (NSPointInRect(pt, [self rectForNode:i total:nCount])) {
+      _dragIdx = i;
+      _dragStartPt = pt;
+      self.selectedIndex = i;
+      break;
+    }
+  }
+  if (_dragIdx < 0) {
+    self.selectedIndex = (self.selectedIndex + 1) % nCount;
+  }
+  // Excite catenary cable springs when clicked
+  for (int i = 0; i < nCount; i++) {
+    _cableSagVel[i] += (i % 2 == 0) ? 75.0 : -65.0;
+  }
   window_play_sfx("cyber_click");
   [self setNeedsDisplay:YES];
   if (self.winPtr && self.controlName) {
     NSString *selName = self.nodeTitles[self.selectedIndex];
     vlang_dispatch_event(self.winPtr, [self.controlName UTF8String], "change", [selName UTF8String]);
   }
+}
+- (void)mouseDragged:(NSEvent *)event {
+  if (_dragIdx < 0 || _dragIdx >= 6) return;
+  NSPoint pt = [self convertPoint:event.locationInWindow fromView:nil];
+  CGFloat dx = pt.x - _dragStartPt.x;
+  CGFloat dy = pt.y - _dragStartPt.y;
+  _nodeOffset[_dragIdx].x += dx;
+  _nodeOffset[_dragIdx].y += dy;
+  _dragStartPt = pt;
+  // Transfer drag impulse into connected cable catenary springs
+  _cableSagVel[_dragIdx] += dy * 3.5;
+  if (_dragIdx > 0) _cableSagVel[_dragIdx - 1] += dy * 3.5;
+  [self setNeedsDisplay:YES];
+}
+- (void)mouseUp:(NSEvent *)event {
+  _dragIdx = -1;
 }
 @end
 
@@ -29300,6 +29630,7 @@ int window_get_node_graph_selected(main__WindowInfo *info, const char *name) {
 
 // ============================================================================
 // 38. Interactive Piano / MIDI Synthesizer Studio Keyboard (SGPianoKeyboardView)
+//     Upgraded: 3D Sculpted Ivory & Ebony Keys, Keybed Shadows & Glissando Drag
 // ============================================================================
 @interface SGPianoKeyboardView : NSView
 @property (nonatomic, assign) int activeMidiNote;
@@ -29317,38 +29648,59 @@ int window_get_node_graph_selected(main__WindowInfo *info, const char *name) {
   if (b.size.width <= 10 || b.size.height <= 10) return;
   AppDelegate *del = self.appDelegate;
   NSColor *g1 = del.currentGlowColor ?: (del.currentAccentColor ?: [NSColor colorWithSRGBRed:0.0 green:0.96 blue:0.83 alpha:1.0]);
-  NSColor *g2 = del.currentGlowColor2 ?: (del.currentSecondaryAccentColor ?: [NSColor colorWithSRGBRed:1.0 green:0.16 blue:0.52 alpha:1.0]);
-  NSColor *bg = del.currentCardBackgroundColor ?: [NSColor colorWithSRGBRed:0.04 green:0.05 blue:0.09 alpha:0.98];
+  NSColor *g2 = del.currentGlowColor2 ?: (del.currentSecondaryAccentColor ?: [NSColor colorWithSRGBRed:1.0 green:0.22 blue:0.52 alpha:1.0]);
 
-  NSBezierPath *card = [NSBezierPath bezierPathWithRoundedRect:NSInsetRect(b, 1, 1) xRadius:10.0 yRadius:10.0];
-  [bg setFill];
-  [card fill];
+  NSBezierPath *card = [NSBezierPath bezierPathWithRoundedRect:NSInsetRect(b, 1, 1) xRadius:12.0 yRadius:12.0];
+  NSGradient *bgGrad = [[[NSGradient alloc] initWithColors:@[
+    [NSColor colorWithSRGBRed:0.07 green:0.09 blue:0.15 alpha:0.98],
+    [NSColor colorWithSRGBRed:0.02 green:0.03 blue:0.06 alpha:0.98]
+  ]] autorelease];
+  [bgGrad drawInBezierPath:card angle:90.0];
 
   double freq = 440.0 * pow(2.0, ((double)self.activeMidiNote - 69.0) / 12.0);
-  NSString *hdr = [NSString stringWithFormat:@"🎹 STUDIO MIDI SYNTHESIZER // NOTE: MIDI %d (%.1f Hz) • WAVE: %@ • CLICK KEYS TO PLAY AUDIO",
+  NSString *hdr = [NSString stringWithFormat:@"🎹 3D STUDIO SYNTHESIZER // MIDI %d (%.1f Hz) • WAVE: %@ • CLICK/SLIDE KEYS",
                    self.activeMidiNote, freq, [self.waveType uppercaseString]];
-  [hdr drawInRect:NSMakeRect(12, 6, b.size.width - 24, 16) withAttributes:sgTextAttrs(sgMonoFont(9.5, NSFontWeightBold), g1, nil)];
+  [hdr drawInRect:NSMakeRect(12, 5, b.size.width - 24, 15) withAttributes:sgTextAttrs(sgMonoFont(9.2, NSFontWeightBold), g1, nil)];
 
   int whiteOffsets[14] = {0, 2, 4, 5, 7, 9, 11, 12, 14, 16, 17, 19, 21, 23};
-  CGFloat keyTop = 26.0;
+  CGFloat keyTop = 25.0;
   CGFloat keyH = b.size.height - keyTop - 8.0;
   CGFloat whiteW = (b.size.width - 20.0) / 14.0;
 
-  // Draw 14 White Keys (2 Octaves C4..B5)
+  // Plush Red Velvet Keybed Strip at Top of Keys
+  [[[NSColor colorWithSRGBRed:0.65 green:0.08 blue:0.18 alpha:0.85] colorWithAlphaComponent:0.85] setFill];
+  NSRectFill(NSMakeRect(10.0, keyTop - 2.5, b.size.width - 20.0, 3.0));
+
+  // Draw 14 3D Sculpted Ivory White Keys (2 Octaves C4..B5)
   for (int i = 0; i < 14; i++) {
     int midi = 60 + whiteOffsets[i];
     BOOL active = (midi == self.activeMidiNote);
-    NSRect kr = NSMakeRect(10.0 + i * whiteW, keyTop, whiteW - 2.0, keyH);
-    NSBezierPath *kp = [NSBezierPath bezierPathWithRoundedRect:kr xRadius:4.0 yRadius:4.0];
+    CGFloat pressY = active ? 2.0 : 0.0;
+    NSRect kr = NSMakeRect(10.0 + i * whiteW + 0.8, keyTop + pressY, whiteW - 2.2, keyH - pressY);
+    NSBezierPath *kp = [NSBezierPath bezierPathWithRoundedRect:kr xRadius:4.5 yRadius:4.5];
+
     if (active) {
-      [g1 setFill];
+      NSGradient *actGrad = [[[NSGradient alloc] initWithColors:@[
+        [NSColor colorWithSRGBRed:0.82 green:0.96 blue:1.0 alpha:1.0],
+        [g1 colorWithAlphaComponent:0.88]
+      ]] autorelease];
+      [actGrad drawInBezierPath:kp angle:90.0];
     } else {
-      [[NSColor colorWithWhite:0.94 alpha:1.0] setFill];
+      NSGradient *ivoryGrad = [[[NSGradient alloc] initWithColorsAndLocations:
+        [NSColor colorWithWhite:0.86 alpha:1.0], 0.0,
+        [NSColor colorWithWhite:0.98 alpha:1.0], 0.15,
+        [NSColor colorWithWhite:0.93 alpha:1.0], 0.88,
+        [NSColor colorWithWhite:0.76 alpha:1.0], 1.0, nil] autorelease];
+      [ivoryGrad drawInBezierPath:kp angle:90.0];
     }
-    [kp fill];
+
+    // 3D Bottom Front Lip Bevel
+    NSRect lipRect = NSMakeRect(kr.origin.x + 1.0, NSMaxY(kr) - 5.0, kr.size.width - 2.0, 4.0);
+    [[[NSColor blackColor] colorWithAlphaComponent:(active ? 0.25 : 0.14)] setFill];
+    [[NSBezierPath bezierPathWithRoundedRect:lipRect xRadius:2.0 yRadius:2.0] fill];
   }
 
-  // Draw 10 Black Keys
+  // Draw 10 3D Satin-Ebony Black Keys with Drop Shadows & Chamfer Highlights
   int blackAfterWhite[10] = {0, 1, 3, 4, 5, 7, 8, 10, 11, 12};
   int blackOffsets[10] = {1, 3, 6, 8, 10, 13, 15, 18, 20, 22};
   CGFloat blackW = whiteW * 0.62;
@@ -29357,34 +29709,75 @@ int window_get_node_graph_selected(main__WindowInfo *info, const char *name) {
     int midi = 60 + blackOffsets[j];
     BOOL active = (midi == self.activeMidiNote);
     CGFloat bx = 10.0 + (blackAfterWhite[j] + 1) * whiteW - blackW * 0.5;
-    NSRect br = NSMakeRect(bx, keyTop, blackW, blackH);
-    NSBezierPath *bp = [NSBezierPath bezierPathWithRoundedRect:br xRadius:3.0 yRadius:3.0];
+    NSRect br = NSMakeRect(bx, keyTop, blackW, blackH + (active ? 1.5 : 0.0));
+
+    // Drop Shadow onto White Keys
+    [[[NSColor blackColor] colorWithAlphaComponent:0.42] setFill];
+    [[NSBezierPath bezierPathWithRoundedRect:NSOffsetRect(br, 2.0, 3.0) xRadius:3.5 yRadius:3.5] fill];
+
+    NSBezierPath *bp = [NSBezierPath bezierPathWithRoundedRect:br xRadius:3.5 yRadius:3.5];
     if (active) {
-      [g2 setFill];
+      NSGradient *bAct = [[[NSGradient alloc] initWithColors:@[g2, [NSColor colorWithSRGBRed:0.18 green:0.06 blue:0.24 alpha:1.0]]] autorelease];
+      [bAct drawInBezierPath:bp angle:90.0];
     } else {
-      [[NSColor colorWithSRGBRed:0.08 green:0.09 blue:0.13 alpha:1.0] setFill];
+      NSGradient *ebonyGrad = [[[NSGradient alloc] initWithColorsAndLocations:
+        [NSColor colorWithSRGBRed:0.20 green:0.22 blue:0.28 alpha:1.0], 0.0,
+        [NSColor colorWithSRGBRed:0.07 green:0.08 blue:0.11 alpha:1.0], 0.75,
+        [NSColor colorWithSRGBRed:0.16 green:0.18 blue:0.24 alpha:1.0], 1.0, nil] autorelease];
+      [ebonyGrad drawInBezierPath:bp angle:90.0];
     }
-    [bp fill];
-    [[g1 colorWithAlphaComponent:0.45] setStroke];
-    bp.lineWidth = 1.0;
-    [bp stroke];
+
+    // Top 3D Specular Chamfer on Black Key
+    NSRect chamfer = NSInsetRect(br, 2.2, 2.0);
+    chamfer.size.height -= 4.0;
+    [[[NSColor whiteColor] colorWithAlphaComponent:(active ? 0.35 : 0.14)] setStroke];
+    [[NSBezierPath bezierPathWithRoundedRect:chamfer xRadius:2.0 yRadius:2.0] stroke];
   }
 
-  [[g1 colorWithAlphaComponent:0.50] setStroke];
-  card.lineWidth = 1.4;
+  [[[NSColor whiteColor] colorWithAlphaComponent:0.16] setStroke];
+  card.lineWidth = 1.0;
   [card stroke];
+}
+- (int)midiNoteAtPoint:(NSPoint)pt {
+  CGFloat keyTop = 25.0;
+  CGFloat keyH = self.bounds.size.height - keyTop - 8.0;
+  CGFloat whiteW = (self.bounds.size.width - 20.0) / 14.0;
+  // First check black keys (top 60% of keyboard)
+  int blackAfterWhite[10] = {0, 1, 3, 4, 5, 7, 8, 10, 11, 12};
+  int blackOffsets[10] = {1, 3, 6, 8, 10, 13, 15, 18, 20, 22};
+  CGFloat blackW = whiteW * 0.62;
+  CGFloat blackH = keyH * 0.60;
+  for (int j = 0; j < 10; j++) {
+    CGFloat bx = 10.0 + (blackAfterWhite[j] + 1) * whiteW - blackW * 0.5;
+    if (NSPointInRect(pt, NSMakeRect(bx, keyTop, blackW, blackH))) {
+      return 60 + blackOffsets[j];
+    }
+  }
+  int idx = MIN(13, MAX(0, (int)((pt.x - 10.0) / whiteW)));
+  int whiteOffsets[14] = {0, 2, 4, 5, 7, 9, 11, 12, 14, 16, 17, 19, 21, 23};
+  return 60 + whiteOffsets[idx];
 }
 - (void)mouseDown:(NSEvent *)event {
   NSPoint pt = [self convertPoint:event.locationInWindow fromView:nil];
-  CGFloat whiteW = (self.bounds.size.width - 20.0) / 14.0;
-  int idx = MIN(13, MAX(0, (int)((pt.x - 10.0) / whiteW)));
-  int whiteOffsets[14] = {0, 2, 4, 5, 7, 9, 11, 12, 14, 16, 17, 19, 21, 23};
-  self.activeMidiNote = 60 + whiteOffsets[idx];
+  self.activeMidiNote = [self midiNoteAtPoint:pt];
   window_play_piano_note(self.activeMidiNote, 260, [self.waveType UTF8String]);
   [self setNeedsDisplay:YES];
   if (self.winPtr && self.controlName) {
     NSString *nStr = [NSString stringWithFormat:@"%d", self.activeMidiNote];
     vlang_dispatch_event(self.winPtr, [self.controlName UTF8String], "change", [nStr UTF8String]);
+  }
+}
+- (void)mouseDragged:(NSEvent *)event {
+  NSPoint pt = [self convertPoint:event.locationInWindow fromView:nil];
+  int note = [self midiNoteAtPoint:pt];
+  if (note != self.activeMidiNote) {
+    self.activeMidiNote = note;
+    window_play_piano_note(self.activeMidiNote, 180, [self.waveType UTF8String]);
+    [self setNeedsDisplay:YES];
+    if (self.winPtr && self.controlName) {
+      NSString *nStr = [NSString stringWithFormat:@"%d", self.activeMidiNote];
+      vlang_dispatch_event(self.winPtr, [self.controlName UTF8String], "change", [nStr UTF8String]);
+    }
   }
 }
 @end
@@ -29593,12 +29986,19 @@ unsigned int window_get_step_sequencer_pattern(main__WindowInfo *info, const cha
 }
 
 // ============================================================================
-// 40. Real-Time 3D Wireframe & Shaded Mesh Viewport (SGMeshViewport3DView)
+// 40. Real-Time 3D Solid-Shaded PBR & CAD Mesh Viewport (SGMeshViewport3DView)
+//     Upgraded: Depth-Sorted Painter's Algorithm Solid Polygon Shading,
+//     Blinn-Phong Lighting, 3D PBR Spheres & Rotational Inertia Orbit Physics
 // ============================================================================
 @interface SGMeshViewport3DView : NSView
 @property (nonatomic, copy) NSString *meshPreset;
 @property (nonatomic, assign) double angleY;
 @property (nonatomic, assign) double angleX;
+@property (nonatomic, assign) double velY;
+@property (nonatomic, assign) double velX;
+@property (nonatomic, assign) BOOL dragging;
+@property (nonatomic, assign) NSPoint lastMousePt;
+@property (nonatomic, assign) NSPoint downMousePt;
 @property (nonatomic, strong) NSTimer *timer;
 @property (nonatomic, assign) AppDelegate *appDelegate;
 @property (nonatomic, copy) NSString *controlName;
@@ -29611,15 +30011,23 @@ unsigned int window_get_step_sequencer_pattern(main__WindowInfo *info, const cha
   if (self) {
     _meshPreset = @"smart_house_3d";
     _angleY = 0.65;
-    _angleX = 0.38;
+    _angleX = 0.34;
+    _velY = 0.032;
+    _velX = 0.0;
     __unsafe_unretained typeof(self) weakSelf = self;
-    _timer = [NSTimer timerWithTimeInterval:0.05 repeats:YES block:^(NSTimer * _Nonnull t) {
+    _timer = [NSTimer timerWithTimeInterval:0.04 repeats:YES block:^(NSTimer * _Nonnull t) {
       SGMeshViewport3DView *s = weakSelf;
       if (!s || s.isHiddenOrHasHiddenAncestor || !s.window || !(s.window.occlusionState & NSWindowOcclusionStateVisible) || NSIsEmptyRect(s.visibleRect)) return;
-      s.angleY += 0.032;
+      if (!s.dragging) {
+        s.angleY += s.velY;
+        s.angleX = MAX(-1.0, MIN(1.0, s.angleX + s.velX));
+        // Rotational inertia damping back toward gentle cruise spin
+        s.velY = s.velY * 0.94 + 0.026 * 0.06;
+        s.velX *= 0.90;
+      }
       [s setNeedsDisplay:YES];
     }];
-    _timer.tolerance = 0.015;
+    _timer.tolerance = 0.012;
     [[NSRunLoop mainRunLoop] addTimer:_timer forMode:NSRunLoopCommonModes];
   }
   return self;
@@ -29634,104 +30042,216 @@ unsigned int window_get_step_sequencer_pattern(main__WindowInfo *info, const cha
   if (b.size.width <= 10 || b.size.height <= 10) return;
   AppDelegate *del = self.appDelegate;
   NSColor *g1 = del.currentGlowColor ?: (del.currentAccentColor ?: [NSColor colorWithSRGBRed:0.0 green:0.96 blue:0.83 alpha:1.0]);
-  NSColor *g2 = del.currentGlowColor2 ?: (del.currentSecondaryAccentColor ?: [NSColor colorWithSRGBRed:1.0 green:0.16 blue:0.52 alpha:1.0]);
-  NSColor *bg = del.currentCardBackgroundColor ?: [NSColor colorWithSRGBRed:0.03 green:0.05 blue:0.10 alpha:0.96];
+  NSColor *g2 = del.currentGlowColor2 ?: (del.currentSecondaryAccentColor ?: [NSColor colorWithSRGBRed:1.0 green:0.22 blue:0.52 alpha:1.0]);
 
-  NSBezierPath *card = [NSBezierPath bezierPathWithRoundedRect:NSInsetRect(b, 1, 1) xRadius:12.0 yRadius:12.0];
-  [bg setFill];
-  [card fill];
+  NSBezierPath *card = [NSBezierPath bezierPathWithRoundedRect:NSInsetRect(b, 1, 1) xRadius:14.0 yRadius:14.0];
+  NSGradient *bgGrad = [[[NSGradient alloc] initWithColors:@[
+    [NSColor colorWithSRGBRed:0.07 green:0.10 blue:0.17 alpha:0.98],
+    [NSColor colorWithSRGBRed:0.02 green:0.03 blue:0.07 alpha:0.98]
+  ]] autorelease];
+  [bgGrad drawInBezierPath:card angle:-90.0];
 
   NSPoint center = NSMakePoint(NSMidX(b), NSMidY(b) - 4.0);
-  CGFloat scale = MIN(b.size.width, b.size.height) * 0.34;
+  CGFloat scale = MIN(b.size.width, b.size.height) * 0.35;
   NSString *pr = [self.meshPreset lowercaseString] ?: @"smart_house_3d";
 
-  auto NSPoint (^proj3D)(double, double, double) = ^NSPoint(double vx, double vy, double vz) {
-    double rx = vx * cos(self.angleY) - vz * sin(self.angleY);
-    double rz = vx * sin(self.angleY) + vz * cos(self.angleY);
-    double ry = vy * cos(self.angleX) - rz * sin(self.angleX);
-    double rz2 = vy * sin(self.angleX) + rz * cos(self.angleX);
-    double p = 1.0 / (2.8 - rz2 * 0.45);
-    return NSMakePoint(center.x + rx * scale * p * 1.6, center.y + ry * scale * p * 1.6);
+  // Ground Ambient Occlusion & Volumetric Glow Shadow
+  NSRect groundOval = NSMakeRect(center.x - scale * 1.15, 12.0, scale * 2.30, scale * 0.42);
+  NSGradient *groundGrad = [[[NSGradient alloc] initWithStartingColor:[g1 colorWithAlphaComponent:0.22]
+                                                          endingColor:[g1 colorWithAlphaComponent:0.0]] autorelease];
+  [groundGrad drawInBezierPath:[NSBezierPath bezierPathWithOvalInRect:groundOval] relativeCenterPosition:NSMakePoint(0.0, 0.0)];
+
+  double cy = cos(self.angleY), sy = sin(self.angleY);
+  double cx = cos(self.angleX), sx = sin(self.angleX);
+
+  auto void (^xform3D)(double, double, double, double *, double *, double *, NSPoint *) = ^(double vx, double vy, double vz, double *ox, double *oy, double *oz, NSPoint *outPt) {
+    double rx = vx * cy - vz * sy;
+    double rz = vx * sy + vz * cy;
+    double ry = vy * cx - rz * sx;
+    double rz2 = vy * sx + rz * cx;
+    if (ox) *ox = rx;
+    if (oy) *oy = ry;
+    if (oz) *oz = rz2;
+    if (outPt) {
+      double p = 1.0 / (2.7 - rz2 * 0.45);
+      *outPt = NSMakePoint(center.x + rx * scale * p * 1.65, center.y + ry * scale * p * 1.65);
+    }
   };
 
   if ([pr containsString:@"dna"] || [pr containsString:@"helix"]) {
-    for (int i = 0; i < 20; i++) {
-      double y = -1.0 + (i / 19.0) * 2.0;
-      double th = i * 0.45;
-      NSPoint pA = proj3D(cos(th) * 0.75, y, sin(th) * 0.75);
-      NSPoint pB = proj3D(cos(th + M_PI) * 0.75, y, sin(th + M_PI) * 0.75);
-      [[(i % 2 == 0 ? g1 : g2) colorWithAlphaComponent:0.75] setStroke];
-      NSBezierPath *rung = [NSBezierPath bezierPath];
-      [rung moveToPoint:pA];
-      [rung lineToPoint:pB];
-      rung.lineWidth = 1.8;
-      [rung stroke];
-      [[g1 colorWithAlphaComponent:0.95] setFill];
-      [[NSBezierPath bezierPathWithOvalInRect:NSMakeRect(pA.x - 3, pA.y - 3, 6, 6)] fill];
-      [[g2 colorWithAlphaComponent:0.95] setFill];
-      [[NSBezierPath bezierPathWithOvalInRect:NSMakeRect(pB.x - 3, pB.y - 3, 6, 6)] fill];
+    typedef struct { double z; NSPoint pt; CGFloat rad; int strand; NSPoint matePt; BOOL drawRung; } SGDnaNode;
+    SGDnaNode nodes[36];
+    int nNodes = 0;
+    for (int i = 0; i < 18; i++) {
+      double y = -0.95 + (i / 17.0) * 1.90;
+      double th = i * 0.48;
+      double xA, yA, zA, xB, yB, zB;
+      NSPoint pA, pB;
+      xform3D(cos(th) * 0.72, y, sin(th) * 0.72, &xA, &yA, &zA, &pA);
+      xform3D(cos(th + M_PI) * 0.72, y, sin(th + M_PI) * 0.72, &xB, &yB, &zB, &pB);
+      nodes[nNodes++] = (SGDnaNode){ zA, pA, (CGFloat)(5.2 + zA * 1.6), 0, pB, YES };
+      nodes[nNodes++] = (SGDnaNode){ zB, pB, (CGFloat)(5.2 + zB * 1.6), 1, pA, NO };
+    }
+    // Depth sort back-to-front
+    for (int i = 0; i < nNodes - 1; i++) {
+      for (int j = i + 1; j < nNodes; j++) {
+        if (nodes[i].z > nodes[j].z) {
+          SGDnaNode tmp = nodes[i];
+          nodes[i] = nodes[j];
+          nodes[j] = tmp;
+        }
+      }
+    }
+    for (int i = 0; i < nNodes; i++) {
+      if (nodes[i].drawRung) {
+        NSBezierPath *rung = [NSBezierPath bezierPath];
+        [rung moveToPoint:nodes[i].pt];
+        [rung lineToPoint:nodes[i].matePt];
+        [[[NSColor whiteColor] colorWithAlphaComponent:0.42] setStroke];
+        rung.lineWidth = 2.6;
+        [rung stroke];
+      }
+      sgDrawPBRSphere(nodes[i].pt, MAX(3.2, nodes[i].rad), (nodes[i].strand == 0 ? g1 : g2), 1.0);
     }
   } else if ([pr containsString:@"torus"] || [pr containsString:@"sphere"]) {
-    for (int ring = 0; ring < 14; ring++) {
-      double u = (ring * M_PI * 2.0) / 14.0;
-      NSBezierPath *rp = [NSBezierPath bezierPath];
-      for (int s = 0; s <= 20; s++) {
-        double v = (s * M_PI * 2.0) / 20.0;
-        double rMaj = 0.72 + 0.28 * cos(v);
-        NSPoint pt = proj3D(rMaj * cos(u), 0.35 * sin(v), rMaj * sin(u));
-        if (s == 0) [rp moveToPoint:pt];
-        else [rp lineToPoint:pt];
+    // 3D Solid-Shaded Trefoil Torus Knot of 56 Depth-Sorted PBR Spheres
+    typedef struct { double z; NSPoint pt; CGFloat rad; double uFrac; } SGTorusSphere;
+    SGTorusSphere spheres[56];
+    for (int i = 0; i < 56; i++) {
+      double t = (i * M_PI * 2.0) / 56.0;
+      double r = 0.62 + 0.28 * cos(3.0 * t);
+      double vx = r * cos(2.0 * t);
+      double vy = 0.42 * sin(3.0 * t);
+      double vz = r * sin(2.0 * t);
+      double ox, oy, oz;
+      NSPoint pt;
+      xform3D(vx, vy, vz, &ox, &oy, &oz, &pt);
+      spheres[i] = (SGTorusSphere){ oz, pt, (CGFloat)(7.5 + oz * 2.4), (double)i / 56.0 };
+    }
+    for (int i = 0; i < 55; i++) {
+      for (int j = i + 1; j < 56; j++) {
+        if (spheres[i].z > spheres[j].z) {
+          SGTorusSphere tmp = spheres[i];
+          spheres[i] = spheres[j];
+          spheres[j] = tmp;
+        }
       }
-      [[(ring % 2 == 0 ? g1 : g2) colorWithAlphaComponent:0.68] setStroke];
-      rp.lineWidth = 1.4;
-      [rp stroke];
+    }
+    for (int i = 0; i < 56; i++) {
+      double blend = 0.5 + 0.5 * sin(spheres[i].uFrac * M_PI * 4.0);
+      NSColor *sc = [g1 blendedColorWithFraction:blend ofColor:g2] ?: g1;
+      sgDrawPBRSphere(spheres[i].pt, MAX(4.0, spheres[i].rad), sc, 1.0);
     }
   } else {
-    // 3D Architectural Smart House Wireframe (Walls + Pitched Solar Roof + Glowing Interior Core)
-    double verts[10][3] = {
-      {-0.9, -0.6, -0.7}, {0.9, -0.6, -0.7}, {0.9, -0.6, 0.7}, {-0.9, -0.6, 0.7}, // Floor 0..3
-      {-0.9,  0.2, -0.7}, {0.9,  0.2, -0.7}, {0.9,  0.2, 0.7}, {-0.9,  0.2, 0.7}, // Eaves 4..7
-      {-0.9,  0.85, 0.0}, {0.9,  0.85, 0.0}                                        // Roof Ridge 8..9
+    // 3D Solid-Shaded Architectural Villa & Solar Roof (Painter's Algorithm + Blinn-Phong Normals)
+    double rawV[10][3] = {
+      {-0.88, -0.58, -0.68}, {0.88, -0.58, -0.68}, {0.88, -0.58, 0.68}, {-0.88, -0.58, 0.68}, // Floor 0..3
+      {-0.88,  0.22, -0.68}, {0.88,  0.22, -0.68}, {0.88,  0.22, 0.68}, {-0.88,  0.22, 0.68}, // Eaves 4..7
+      {-0.88,  0.84,  0.00}, {0.88,  0.84,  0.00}                                             // Ridge 8..9
     };
+    double tv[10][3];
     NSPoint pts[10];
-    for (int i = 0; i < 10; i++) pts[i] = proj3D(verts[i][0], verts[i][1], verts[i][2]);
-    int edges[19][2] = {
-      {0,1},{1,2},{2,3},{3,0}, // Base
-      {4,5},{5,6},{6,7},{7,4}, // Eaves
-      {0,4},{1,5},{2,6},{3,7}, // Columns
-      {4,8},{7,8},{5,9},{6,9},{8,9}, // Pitched Roof
-      {0,2},{4,6} // Structural cross-beams
-    };
-    for (int e = 0; e < 19; e++) {
-      NSColor *ec = (e >= 12) ? g2 : g1;
-      [[ec colorWithAlphaComponent:0.86] setStroke];
-      NSBezierPath *ep = [NSBezierPath bezierPath];
-      [ep moveToPoint:pts[edges[e][0]]];
-      [ep lineToPoint:pts[edges[e][1]]];
-      ep.lineWidth = (e >= 12) ? 2.2 : 1.6;
-      [ep stroke];
-    }
     for (int i = 0; i < 10; i++) {
-      [[NSColor whiteColor] setFill];
-      [[NSBezierPath bezierPathWithOvalInRect:NSMakeRect(pts[i].x - 2.8, pts[i].y - 2.8, 5.6, 5.6)] fill];
+      xform3D(rawV[i][0], rawV[i][1], rawV[i][2], &tv[i][0], &tv[i][1], &tv[i][2], &pts[i]);
+    }
+    // 9 Quad/Triangle Faces (4 walls, 1 floor, 2 roof slopes, 2 roof gables)
+    int faces[9][4] = {
+      {0, 1, 2, 3}, // Floor slab
+      {0, 1, 5, 4}, // Back wall
+      {2, 3, 7, 6}, // Front glass wall
+      {1, 2, 6, 5}, // Right wall
+      {3, 0, 4, 7}, // Left wall
+      {4, 5, 9, 8}, // Back solar roof slope
+      {6, 7, 8, 9}, // Front solar roof slope
+      {4, 7, 8, 8}, // Left gable triangle
+      {6, 5, 9, 9}  // Right gable triangle
+    };
+    typedef struct { int idx; double zAvg; double nx; double ny; double nz; } SGHFace;
+    SGHFace order[9];
+    for (int f = 0; f < 9; f++) {
+      int i0 = faces[f][0], i1 = faces[f][1], i2 = faces[f][2], i3 = faces[f][3];
+      double zAvg = (tv[i0][2] + tv[i1][2] + tv[i2][2] + tv[i3][2]) * 0.25;
+      double ux = tv[i1][0] - tv[i0][0], uy = tv[i1][1] - tv[i0][1], uz = tv[i1][2] - tv[i0][2];
+      double wx = tv[i2][0] - tv[i0][0], wy = tv[i2][1] - tv[i0][1], wz = tv[i2][2] - tv[i0][2];
+      double nx = uy * wz - uz * wy;
+      double ny = uz * wx - ux * wz;
+      double nz = ux * wy - uy * wx;
+      double len = sqrt(nx*nx + ny*ny + nz*nz);
+      if (len > 1e-5) { nx /= len; ny /= len; nz /= len; }
+      order[f] = (SGHFace){ f, zAvg, nx, ny, nz };
+    }
+    for (int i = 0; i < 8; i++) {
+      for (int j = i + 1; j < 9; j++) {
+        if (order[i].zAvg > order[j].zAvg) {
+          SGHFace tmp = order[i];
+          order[i] = order[j];
+          order[j] = tmp;
+        }
+      }
+    }
+    for (int k = 0; k < 9; k++) {
+      int f = order[k].idx;
+      NSBezierPath *fp = [NSBezierPath bezierPath];
+      [fp moveToPoint:pts[faces[f][0]]];
+      [fp lineToPoint:pts[faces[f][1]]];
+      [fp lineToPoint:pts[faces[f][2]]];
+      if (faces[f][3] != faces[f][2]) [fp lineToPoint:pts[faces[f][3]]];
+      [fp closePath];
+
+      double diff = fabs(order[k].nx * (-0.38) + order[k].ny * 0.65 + order[k].nz * 0.65);
+      double spec = pow(MAX(0.0, fabs(order[k].nz)), 12.0);
+      BOOL isRoof = (f >= 5);
+      NSColor *baseCol = isRoof ? g2 : g1;
+      NSColor *litCol = [baseCol blendedColorWithFraction:MIN(0.82, diff * 0.55 + spec * 0.45) ofColor:[NSColor whiteColor]] ?: baseCol;
+      [[litCol colorWithAlphaComponent:(isRoof ? 0.86 : 0.62)] setFill];
+      [fp fill];
+
+      [[[NSColor whiteColor] colorWithAlphaComponent:(0.35 + spec * 0.45)] setStroke];
+      fp.lineWidth = isRoof ? 1.6 : 1.1;
+      [fp stroke];
     }
   }
 
-  NSString *hud = [NSString stringWithFormat:@"3D CAD MESH // %@  [CLICK TO CYCLE MODEL]", [self.meshPreset uppercaseString]];
-  [hud drawAtPoint:NSMakePoint(12, b.size.height - 20) withAttributes:sgTextAttrs(sgMonoFont(9.5, NSFontWeightBold), g1, nil)];
+  NSRect hudPill = NSMakeRect(10, b.size.height - 26, MIN(b.size.width - 20, 260), 19);
+  [[[NSColor blackColor] colorWithAlphaComponent:0.45] setFill];
+  [[NSBezierPath bezierPathWithRoundedRect:hudPill xRadius:5.0 yRadius:5.0] fill];
+  NSString *hud = [NSString stringWithFormat:@"3D PBR // %@ • DRAG ORBIT", [self.meshPreset uppercaseString]];
+  [hud drawAtPoint:NSMakePoint(15, b.size.height - 22) withAttributes:sgTextAttrs(sgMonoFont(8.8, NSFontWeightBold), [[NSColor whiteColor] colorWithAlphaComponent:0.92], nil)];
 
-  [[g1 colorWithAlphaComponent:0.50] setStroke];
-  card.lineWidth = 1.4;
+  [[[NSColor whiteColor] colorWithAlphaComponent:0.16] setStroke];
+  card.lineWidth = 1.0;
   [card stroke];
 }
 - (void)mouseDown:(NSEvent *)event {
-  NSArray<NSString *> *presets = @[@"smart_house_3d", @"dna_double_helix", @"torus_knot"];
-  NSUInteger idx = [presets indexOfObject:[self.meshPreset lowercaseString]];
-  self.meshPreset = presets[(idx == NSNotFound) ? 0 : ((idx + 1) % presets.count)];
-  window_play_sfx("quantum_warp");
+  NSPoint pt = [self convertPoint:event.locationInWindow fromView:nil];
+  self.dragging = YES;
+  self.lastMousePt = pt;
+  self.downMousePt = pt;
+}
+- (void)mouseDragged:(NSEvent *)event {
+  NSPoint pt = [self convertPoint:event.locationInWindow fromView:nil];
+  double dx = pt.x - self.lastMousePt.x;
+  double dy = pt.y - self.lastMousePt.y;
+  self.angleY += dx * 0.015;
+  self.angleX = MAX(-1.1, MIN(1.1, self.angleX + dy * 0.015));
+  self.velY = dx * 0.012;
+  self.velX = dy * 0.010;
+  self.lastMousePt = pt;
   [self setNeedsDisplay:YES];
-  if (self.winPtr && self.controlName) {
-    vlang_dispatch_event(self.winPtr, [self.controlName UTF8String], "change", [self.meshPreset UTF8String]);
+}
+- (void)mouseUp:(NSEvent *)event {
+  NSPoint pt = [self convertPoint:event.locationInWindow fromView:nil];
+  self.dragging = NO;
+  if (hypot(pt.x - self.downMousePt.x, pt.y - self.downMousePt.y) < 6.0) {
+    NSArray<NSString *> *presets = @[@"smart_house_3d", @"dna_double_helix", @"torus_knot"];
+    NSUInteger idx = [presets indexOfObject:[self.meshPreset lowercaseString]];
+    self.meshPreset = presets[(idx == NSNotFound) ? 0 : ((idx + 1) % presets.count)];
+    self.velY = 0.08;
+    window_play_sfx("quantum_warp");
+    [self setNeedsDisplay:YES];
+    if (self.winPtr && self.controlName) {
+      vlang_dispatch_event(self.winPtr, [self.controlName UTF8String], "change", [self.meshPreset UTF8String]);
+    }
   }
 }
 @end

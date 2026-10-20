@@ -1533,25 +1533,25 @@ pub fn get_theme(theme_name string) Theme {
 				tier:             'ultra'
 				tier_label:       'Extreme Shader Showcase'
 				target_hardware:  'Apple M4 Max / M4 Ultra / Flagship GPU Uncapped'
-				background_color: '#04020a'
-				font_color:       '#ffffff'
-				accent_color:     '#f43f5e'
-				secondary_accent: '#22d3ee'
-				card_background:  '#0e0720'
-				card_border:      'rgba(244, 63, 94, 0.68)'
+				background_color: '#050811'
+				font_color:       '#f8fafc'
+				accent_color:     '#00f5d4'
+				secondary_accent: '#6366f1'
+				card_background:  '#0b1120'
+				card_border:      'rgba(56, 189, 248, 0.34)'
 				description:      'The pinnacle 3099 singularity showcase: dual-coronal plasma storm, raytraced prism dispersion, and full holographic HUD'
 				is_dark:          true
 				fx:               ThemeFx{
 					glow:           true
-					glow_color:     '#f43f5e'
-					glow_color2:    '#22d3ee'
+					glow_color:     '#00f5d4'
+					glow_color2:    '#6366f1'
 					glow_intensity: 100
 					blur:           32
-					glass:          62
+					glass:          78
 					radius:         16
-					grain:          20
-					scanlines:      true
-					vignette:       40
+					grain:          0
+					scanlines:      false
+					vignette:       28
 					backdrop_style: 'aurora'
 					atmosphere:     'm4_raytrace_prism'
 					ui_element_fx:  'crystal_prism'

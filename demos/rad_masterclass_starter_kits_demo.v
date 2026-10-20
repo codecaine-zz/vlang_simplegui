@@ -748,15 +748,34 @@ fn main() {
 	// ========================================================================
 	init_step := state.steps[0]
 	win.group('grp_starter_studio', 'RAD Copy-and-Paste Starter Kit Code Studio (100% Standalone Runnable V File)', fn [init_step] (mut w simplegui.SimpleWindow) {
-		w.add_label('lbl_active_title', '${init_step.title}  —  [${init_step.filename}]').bold(true).font_size(15)
+		w.add_vertical_spacer(8)
+		w.add_label('lbl_active_title', '${init_step.title}  —  [${init_step.filename}]').bold(true).font_size(14)
 		w.add_label('lbl_active_summary', init_step.summary).font_size(12)
 		w.add_label('lbl_active_apis', '🔧 Key APIs: ${init_step.key_apis}   |   ▶️ Run: ${init_step.run_cmd}').font_size(11)
 
 		w.begin_row('row_code_views')
-		w.add_code_editor('mc_starter_editor', init_step.starter_v, 220).width(680)
+		w.add_code_editor('mc_starter_editor', init_step.starter_v, 175).width(680)
 		w.add_code_studio('mc_code_studio', init_step.filename, 'Vlang Starter Kit', init_step.starter_v)
 		w.end_row()
 	})
+
+	// ========================================================================
+	// LIVE 3D PBR SHADER, RIGID-BODY SPHERE PHYSICS & SPRING COCKPIT DECK
+	// ========================================================================
+	win.begin_row('row_s10')
+	win.add_shader_canvas('s10_shader', 'tesseract_4d', 170).width(320)
+	win.add_particle_emitter('s10_particles', 'supernova_burst', 64, 170).width(320)
+	win.add_mesh_viewport_3d('s10_mesh', 'smart_house_3d', 170).width(280)
+	win.add_cockpit_cluster('s10_cockpit', 176.0, 7.5, 'S+', 91, 170).width(420)
+	win.end_row()
+
+	win.begin_row('row_s10_audio')
+	win.add_piano_keyboard('s10_piano', 64, 'cyber_lead', 125)
+	win.add_step_sequencer('s10_seq', '16-STEP SEQUENCER', 128, 0xB5AD6B5A, 125)
+	win.add_smart_house_floorplan('s10_house', 'QT 6 SMART RESIDENCE', 0x3F, 5.6, 95, 125)
+	win.add_button('s10_btn_sfx', '🔊 Play Synth Chord')
+	win.add_button('s10_btn_copy', '📋 Copy Step 10 Starter Kit')
+	win.end_row()
 
 	// ========================================================================
 	// LIVE INTERACTIVE SANDBOXES IN EXACT APP-BUILDING ORDER (STEPS 1 -> 12)
@@ -923,19 +942,13 @@ fn main() {
 	// --- STEP 10: God-Mode 4D Shaders, Smart House, Cockpit & Synth Audio ---
 	win.add_section_header(
 		'sec_step_10',
-		'Step 10 Live Sandbox · God-Mode 4D VFX Shaders, Qt 6 Smart House, Cockpit & PCM Synth Audio',
-		'Add 4D procedural shaders, smart home domotics, automotive clusters, and polyphonic audio synthesis',
+		'Step 10 Live Sandbox · Draggable Spring-Cable Node Graph, Sapphire Thermostat & LiDAR Sonar',
+		'Drag nodes to bounce catenary cables, rotate the 3D thermostat dial, or ping the 360° sonar radar',
 	)
-	win.begin_row('row_s10')
-	win.add_shader_canvas('s10_shader', 'tesseract_4d', 165)
-	win.add_smart_house_floorplan('s10_house', 'QT 6 SMART RESIDENCE', 0x3F, 5.6, 95, 165)
-	win.add_cockpit_cluster('s10_cockpit', 176.0, 7.5, 'S+', 91, 165)
-	win.end_row()
-	win.begin_row('row_s10_audio')
-	win.add_piano_keyboard('s10_piano', 64, 'cyber_lead', 125)
-	win.add_step_sequencer('s10_seq', '16-STEP SEQUENCER', 128, 0xB5AD6B5A, 125)
-	win.add_button('s10_btn_sfx', '🔊 Play Synth Chord')
-	win.add_button('s10_btn_copy', '📋 Copy Step 10 Starter Kit')
+	win.begin_row('row_s10_lower')
+	win.add_node_graph('s10_nodes', 'SHADER & IOT BLUEPRINT PIPELINE', ['Sensor Input', '4D Transform', 'Bloom Pass', 'HDMI 2.1 Out'], 155)
+	win.add_smart_thermostat('s10_thermo', 'STUDIO CLIMATE ZONE', 71.5, 70.0, 44, 'AUTO-ECO', 155)
+	win.add_polar_radar_sonar('s10_sonar', '360° LIDAR & RF SONAR', 1.5, 6, 155)
 	win.end_row()
 
 	// --- STEP 11 & 12: Complete SaaS Workstation & One-Click .app Packaging ---

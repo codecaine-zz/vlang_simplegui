@@ -95,11 +95,59 @@ fn main() {
 
 	win.begin_row('row_top_deck')
 	win.add_badge('bdg_total', '150+ NATIVE CONTROLS', 'success')
-	win.add_badge('bdg_frameworks', 'AppKit · WebKit · PDFKit · AVKit · Metal · MapKit', 'info')
+	win.add_badge('bdg_frameworks', 'Metal 3 PBR · Rigid-Body Physics · Spring Telemetry · AppKit', 'info')
 	win.add_theme_menu('omni_theme_menu', 'Omega Pantheon 3099 Singularity')
-	win.add_button('btn_top_toast', '🔔 Toast Banner')
+	win.add_button('btn_phys_blast', '💥 Physics Shockwave')
+	win.add_button('btn_phys_rev', '🏎️ Rev Spring Cockpit')
+	win.add_button('btn_phys_mesh', '🧊 Cycle 3D Solid Mesh')
 	win.add_button('btn_top_sfx', '🔊 Play Synth Chord')
+	win.add_button('btn_top_toast', '🔔 Toast Banner')
 	win.end_row()
+
+	// ========================================================================
+	// HERO DECK · Real-Time 3D PBR Shaders, Rigid-Body Sphere Physics, Solid 3D
+	//             Mesh Orbit, Spring-Damped Sapphire Cockpit & Draggable Nodes
+	// ========================================================================
+	win.add_section_header(
+		'sec_13_god_mode_vfx',
+		'Interactive 3D PBR Shaders, Rigid-Body Sphere Physics, Sapphire-Glass Spring Cockpit & Synth Studio',
+		'Drag 3D Crystal & Solid Meshes to Orbit · Click/Drag Physics Arena for Gravity & Collisions · Drag Cockpit to Rev Spring Needles · Drag Node Graph Cables',
+	)
+
+	win.begin_row('row_vfx_shaders_particles')
+	win.add_shader_canvas('vfx_shader', 'tesseract_4d', 185).width(480)
+	win.add_particle_emitter('vfx_particles', 'supernova_burst', 72, 185).width(520)
+	win.add_mesh_viewport_3d('vfx_mesh_3d', 'smart_house_3d', 185).width(460)
+	win.add_shader_canvas('vfx_shader_plasma', 'plasma_storm', 185).width(460)
+	win.end_row()
+
+	win.begin_row('row_vfx_cockpit_radar_nixie')
+	win.add_cockpit_cluster('vfx_cockpit', 184.0, 7.8, 'S+', 94, 180).width(660)
+	win.add_smart_thermostat('vfx_thermostat', 'LIVING STUDIO ZONE', 71.5, 70.0, 44, 'AUTO-ECO', 180).width(360)
+	win.add_polar_radar_sonar('vfx_sonar', '360° LIDAR & RF SONAR SWEEP', 1.5, 7, 180).width(360)
+	win.add_smart_house_floorplan('vfx_house_plan', 'QT 6 SMART RESIDENCE MATRIX', 0x3F, 6.4, 98, 180).width(540)
+	win.end_row()
+
+	win.begin_row('row_vfx_music_nodes_logic')
+	win.add_node_graph('vfx_node_graph', 'SHADER & IOT BLUEPRINT PIPELINE', ['Sensor Input', '4D Transform', 'Bloom Pass', 'HDMI 2.1 Out'], 145).width(700)
+	win.add_piano_keyboard('vfx_piano', 64, 'cyber_lead', 145).width(640)
+	win.add_step_sequencer('vfx_sequencer', '16-STEP DRUM & SYNTH MATRIX', 128, 0xB5AD6B5A, 145).width(580)
+	win.end_row()
+
+	win.begin_row('row_vfx_smart_house')
+	win.add_waveform_synthesizer('vfx_wave_synth', 'harmonic_chord', 440.0, 0.85, 135).width(520)
+	win.add_hologram_card('vfx_hologram', 'QUANTUM CORE', '3D PBR Ray-Marching', '120.0 FPS', 'EDR-MAX', 'iridescent_foil', 135).width(440)
+	win.add_nixie_display('vfx_nixie', 'ATOMIC CHRONO & LOAD', '064.80 kW', 'amber_tube', 92).width(420)
+	win.add_logic_analyzer('vfx_logic_scope', 'SPI / I2C / CAN-BUS TIMING', 500, 9, 135).width(520)
+	win.end_row()
+
+	win.add_glitch_banner(
+		'vfx_glitch_banner',
+		'METAL 3 PBR · RIGID-BODY SPHERE PHYSICS · SPRING TELEMETRY · 44.1KHZ SYNTH',
+		'INTERACTIVE 3D CAMERA ORBIT + ELASTIC COLLISIONS + HOOKE SPRING GAUGES',
+		'cyber_glitch',
+		72,
+	)
 
 	// ========================================================================
 	// SECTION 1 · Native macOS System Panels, Dialogs, File Pickers, Speech & Haptics
@@ -789,54 +837,11 @@ fn main() {
 	win.end_row()
 
 	// ========================================================================
-	// SECTION 13 · God-Mode 4D VFX, Qt 6 Smart House, Digital Cockpit & Synth Studio
-	// ========================================================================
-	win.add_section_header(
-		'sec_13_god_mode_vfx',
-		'13. God-Mode 4D VFX Shaders, Particle Physics, Qt 6 Smart House, Digital Cockpit & MIDI Synth',
-		'Glitch Banner · 4D Shader Canvas · Particle Emitter · Hologram Card · Waveform Synth · Smart House · Thermostat · 3D Mesh · Cockpit · Sonar · Piano · Sequencer · Node Graph · Logic Scope · Nixie',
-	)
-
-	win.add_glitch_banner(
-		'vfx_glitch_banner',
-		'4D HYPER-SHADER · QT 6 SMART DOMOTICS · DIGITAL COCKPIT · POLYPHONIC PCM SYNTH',
-		'REAL-TIME 30 FPS PROCEDURAL ATMOSPHERE + INTERACTIVE HARDWARE TELEMETRY',
-		'cyber_glitch',
-		72,
-	)
-
-	win.begin_row('row_vfx_shaders_particles')
-	win.add_shader_canvas('vfx_shader', 'tesseract_4d', 165)
-	win.add_particle_emitter('vfx_particles', 'supernova_burst', 72, 165)
-	win.add_hologram_card('vfx_hologram', 'QUANTUM CORE', '4D Rotor Projection', '120.0 FPS', 'EDR-MAX', 'iridescent_foil', 150)
-	win.add_waveform_synthesizer('vfx_wave_synth', 'harmonic_chord', 440.0, 0.85, 150)
-	win.end_row()
-
-	win.begin_row('row_vfx_smart_house')
-	win.add_smart_house_floorplan('vfx_house_plan', 'QT 6 SMART RESIDENCE MATRIX', 0x3F, 6.4, 98, 175)
-	win.add_smart_thermostat('vfx_thermostat', 'LIVING STUDIO ZONE', 71.5, 70.0, 44, 'AUTO-ECO', 175)
-	win.add_mesh_viewport_3d('vfx_mesh_3d', 'smart_house_3d', 175)
-	win.end_row()
-
-	win.begin_row('row_vfx_cockpit_radar_nixie')
-	win.add_cockpit_cluster('vfx_cockpit', 184.0, 7.8, 'S+', 94, 165)
-	win.add_polar_radar_sonar('vfx_sonar', '360° LIDAR & RF SONAR SWEEP', 1.5, 7, 165)
-	win.add_nixie_display('vfx_nixie', 'ATOMIC CHRONO & LOAD', '064.80 kW', 'amber_tube', 92)
-	win.end_row()
-
-	win.begin_row('row_vfx_music_nodes_logic')
-	win.add_piano_keyboard('vfx_piano', 64, 'cyber_lead', 130)
-	win.add_step_sequencer('vfx_sequencer', '16-STEP DRUM & SYNTH MATRIX', 128, 0xB5AD6B5A, 130)
-	win.add_node_graph('vfx_node_graph', 'SHADER & IOT BLUEPRINT PIPELINE', ['Sensor Input', '4D Transform', 'Bloom Pass', 'HDMI 2.1 Out'], 135)
-	win.add_logic_analyzer('vfx_logic_scope', 'SPI / I2C / CAN-BUS TIMING', 500, 9, 135)
-	win.end_row()
-
-	// ========================================================================
-	// SECTION 14 · Layout Containers, Glass Box, Split View, Nav Rail & RAD Form/Labeled Builders
+	// SECTION 13 · Layout Containers, Glass Box, Split View, Nav Rail & RAD Form/Labeled Builders
 	// ========================================================================
 	win.add_section_header(
 		'sec_14_containers_forms',
-		'14. Layout Containers (Tabs, GroupBox, GlassBox, Accordion, ScrollView, SplitView, NavRail) & All Form/Labeled Builders',
+		'13. Layout Containers (Tabs, GroupBox, GlassBox, Accordion, ScrollView, SplitView, NavRail) & All Form/Labeled Builders',
 		'NSTabView · NSBox · NSVisualEffectView GlassBox · Collapsible · Accordion · NSScrollView · NSSplitView · Sidebar NavRail · add_form_* · add_labeled_*',
 	)
 
@@ -940,6 +945,30 @@ fn main() {
 		w.set_theme(val)
 		w.play_sfx('quantum_warp')
 		w.set_status('Theme switched to: ${val}')
+	})
+	win.on_click('btn_phys_blast', fn (mut w simplegui.SimpleWindow) {
+		w.play_sfx('supernova_boom')
+		w.emit_particle_burst('vfx_particles', 0.5, 0.35, 72)
+		w.set_status('Physics Engine: Triggered 3D rigid-body shockwave impulse + sphere collision solver!')
+	})
+	win.on_click('btn_phys_rev', fn (mut w simplegui.SimpleWindow) {
+		cur := w.get_cockpit_speed('vfx_cockpit')
+		next_spd := if cur > 190.0 { 88.0 } else { 212.0 }
+		next_rpm := if cur > 190.0 { 4.2 } else { 8.6 }
+		w.set_cockpit_telemetry('vfx_cockpit', next_spd, next_rpm, 'S+', 94)
+		w.play_sfx('engine_rev')
+		w.set_status('Cockpit Physics: Hooke spring-damper needle impulse -> ${next_spd:.0f} MPH (${next_rpm:.1f}k RPM)')
+	})
+	win.on_click('btn_phys_mesh', fn (mut w simplegui.SimpleWindow) {
+		cur := w.get_mesh_viewport_preset('vfx_mesh_3d')
+		next_m := match cur {
+			'smart_house_3d' { 'dna_double_helix' }
+			'dna_double_helix' { 'torus_knot' }
+			else { 'smart_house_3d' }
+		}
+		w.set_mesh_viewport_preset('vfx_mesh_3d', next_m)
+		w.play_sfx('quantum_warp')
+		w.set_status('3D PBR Mesh Engine: Switched depth-sorted solid model to ${next_m}')
 	})
 	win.on_click('btn_top_toast', fn (mut w simplegui.SimpleWindow) {
 		w.toast_success('Native macOS toast banner active!')
