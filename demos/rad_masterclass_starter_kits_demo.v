@@ -18,14 +18,14 @@ import simplegui
 
 struct StarterKitStep {
 pub:
-	step_num    int
-	id          string
-	title       string
-	filename    string
-	summary     string
-	key_apis    string
-	run_cmd     string
-	starter_v   string
+	step_num  int
+	id        string
+	title     string
+	filename  string
+	summary   string
+	key_apis  string
+	run_cmd   string
+	starter_v string
 }
 
 fn get_masterclass_steps() []StarterKitStep {
@@ -645,9 +645,9 @@ fn main() {
 
 struct MasterclassState {
 pub mut:
-	steps        []StarterKitStep
-	current_idx  int
-	is_updating  bool
+	steps       []StarterKitStep
+	current_idx int
+	is_updating bool
 }
 
 fn load_step_into_studio(mut win simplegui.SimpleWindow, mut state MasterclassState, idx int) {
@@ -802,7 +802,8 @@ fn main() {
 		'Organize your UI into navigable panes before adding business logic',
 	)
 	win.begin_row('row_s02')
-	win.add_chip_group('s02_tabs', ['1. Row Layout', '2. Multi-Column Grid', '3. Split Pane', '4. Vibrancy GlassBox'], '1. Row Layout')
+	win.add_chip_group('s02_tabs', ['1. Row Layout', '2. Multi-Column Grid', '3. Split Pane',
+		'4. Vibrancy GlassBox'], '1. Row Layout')
 	win.add_stat_card('s02_card_1', 'Active Layout Engine', 'NSStackView + Grid', 'Auto-Constraint', 'info')
 	win.add_stat_card('s02_card_2', 'Vibrancy Material', 'NSVisualEffectView', 'HUD Blur', 'success')
 	win.add_button('s02_btn_copy', '📋 Copy Step 2 Starter Kit')
@@ -817,7 +818,8 @@ fn main() {
 	win.add_form_field('Developer Name', 's03_name', 'Ada Lovelace')
 	win.add_form_password_strength('API Secret Key', 's03_secret', 'Mac0S#Native!2026')
 	win.add_form_masked_input('Contact Phone', 's03_phone', '(###) ###-####', '(415) 555-0142')
-	win.add_form_dropdown('App Category', 's03_cat', ['Developer Tools', 'Finance & Trading', 'Audio & Media', 'Smart Home IoT'], 'Developer Tools')
+	win.add_form_dropdown('App Category', 's03_cat', ['Developer Tools', 'Finance & Trading',
+		'Audio & Media', 'Smart Home IoT'], 'Developer Tools')
 	win.add_form_switch('Auto-Save', 's03_autosave', 'Persist form state automatically', true)
 	win.begin_row('row_s03_btns')
 	win.add_button('s03_btn_validate', '✅ Validate & Submit Form')
@@ -853,12 +855,16 @@ fn main() {
 		['11', 'SaaS Workstation', 'Full Production App', 'Ready'],
 	]).width(620).height(150)
 	win.add_browser_view('s05_browser', 150)
-	win.set_browser_column_items('s05_browser', 0, ['1. Foundation', '2. Forms & Events', '3. Data & Charts', '4. VFX & Ship'])
-	win.set_browser_column_items('s05_browser', 1, ['step01_window.v', 'step02_layout.v', 'step03_forms.v', 'step04_events.v'])
-	win.set_browser_column_items('s05_browser', 2, ['Copy to Clipboard', 'Save .v File', 'Build .app Bundle'])
+	win.set_browser_column_items('s05_browser', 0, ['1. Foundation', '2. Forms & Events',
+		'3. Data & Charts', '4. VFX & Ship'])
+	win.set_browser_column_items('s05_browser', 1, ['step01_window.v', 'step02_layout.v',
+		'step03_forms.v', 'step04_events.v'])
+	win.set_browser_column_items('s05_browser', 2, ['Copy to Clipboard', 'Save .v File',
+		'Build .app Bundle'])
 	win.end_row()
 
-	win.add_kanban_board('s05_kanban', ['1. Design UI', '2. Wire Events', '3. Connect Data', '4. Ship .app'], 175)
+	win.add_kanban_board('s05_kanban', ['1. Design UI', '2. Wire Events', '3. Connect Data',
+		'4. Ship .app'], 175)
 	win.kanban_add_card('s05_kanban', 0, 'Pick Theme & Layout', 'Step 1 & Step 2 kits', 'UI')
 	win.kanban_add_card('s05_kanban', 1, 'Add Form & Callbacks', 'Step 3 & Step 4 kits', 'Logic')
 	win.kanban_add_card('s05_kanban', 2, 'Mount CRUD Grid & Charts', 'Step 5 & Step 7 kits', 'Data')
@@ -906,7 +912,8 @@ fn main() {
 		simplegui.GanttTask{ name: '2. Data & Charts', start_pct: 0.3, duration_pct: 0.4, progress_pct: 1.0, color: '#3b82f6' },
 		simplegui.GanttTask{ name: '3. Bundle .app', start_pct: 0.65, duration_pct: 0.35, progress_pct: 1.0, color: '#a855f7' },
 	], 160)
-	win.add_sankey_chart('s07_sankey', 'Starter Kit Architecture Flow', ['V Source', 'SimpleGUI API', 'Clang ObjC'], ['AppKit UI', 'Metal 3 GPU', 'macOS .app'], [40.0, 35.0, 25.0], 160)
+	win.add_sankey_chart('s07_sankey', 'Starter Kit Architecture Flow', ['V Source', 'SimpleGUI API',
+		'Clang ObjC'], ['AppKit UI', 'Metal 3 GPU', 'macOS .app'], [40.0, 35.0, 25.0], 160)
 	win.end_row()
 
 	// --- STEP 8: Developer IDE Workstation ---
@@ -946,7 +953,8 @@ fn main() {
 		'Drag nodes to bounce catenary cables, rotate the 3D thermostat dial, or ping the 360° sonar radar',
 	)
 	win.begin_row('row_s10_lower')
-	win.add_node_graph('s10_nodes', 'SHADER & IOT BLUEPRINT PIPELINE', ['Sensor Input', '4D Transform', 'Bloom Pass', 'HDMI 2.1 Out'], 155)
+	win.add_node_graph('s10_nodes', 'SHADER & IOT BLUEPRINT PIPELINE', ['Sensor Input', '4D Transform',
+		'Bloom Pass', 'HDMI 2.1 Out'], 155)
 	win.add_smart_thermostat('s10_thermo', 'STUDIO CLIMATE ZONE', 71.5, 70.0, 44, 'AUTO-ECO', 155)
 	win.add_polar_radar_sonar('s10_sonar', '360° LIDAR & RF SONAR', 1.5, 6, 155)
 	win.end_row()
@@ -959,7 +967,11 @@ fn main() {
 	)
 	win.begin_row('row_s11')
 	win.add_user_profile_card('s11_profile', 'preview.png', 'RAD Masterclass', '@simplegui_rad', '12 Complete Starter Kits', 'Copy any step above or export all 12 .v files in one click.', true, 'Copy Kit')
-	win.add_pricing_card('s11_pricing', 'Production Ready', '12 Kits', '/ included', 'COPY & PASTE', ['Self-Contained module main', 'Zero External Dependencies', 'Compiles to Native ARM64 .app'], 'Export All')
+	win.add_pricing_card('s11_pricing', 'Production Ready', '12 Kits', '/ included', 'COPY & PASTE', [
+		'Self-Contained module main',
+		'Zero External Dependencies',
+		'Compiles to Native ARM64 .app',
+	], 'Export All')
 	win.add_signature_pad('s11_sig', 'Sign Off Release Build', 125)
 	win.end_row()
 

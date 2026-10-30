@@ -586,8 +586,8 @@ fn main() {
 			sb_mode := win.get('dd_storyboard')
 
 			if sb_mode.contains('Single Frame') {
-				cmd_parts = [simplegui.quote_arg(ffmpeg), '-y', '-ss', simplegui.quote_arg(t_stamp), '-i',
-					simplegui.quote_path(in_file), '-vframes', '1', '-q:v', '2']
+				cmd_parts = [simplegui.quote_arg(ffmpeg), '-y', '-ss', simplegui.quote_arg(t_stamp),
+					'-i', simplegui.quote_path(in_file), '-vframes', '1', '-q:v', '2']
 			} else {
 				grid_tile := if sb_mode.contains('3x3') {
 					'3x3'

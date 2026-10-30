@@ -1385,8 +1385,8 @@ fn test_rad_struct_reflection_crud_wizard_undo_commands_and_designer() {
 	// 5. Command Registry
 	win.register_command('app.deploy', 'Deploy Production Cluster', 'Cmd+Shift+D',
 		'Deploys active build to cluster', fn (mut w simplegui.SimpleWindow) {
-		w.set_text('crud_role', 'Deployed')
-	})
+			w.set_text('crud_role', 'Deployed')
+		})
 	cmds := win.list_commands()
 	assert cmds.len == 1
 	assert cmds[0].id == 'app.deploy'
@@ -1440,5 +1440,3 @@ fn test_rad_struct_reflection_crud_wizard_undo_commands_and_designer() {
 	generated_v := simplegui.generate_v_code(spec)
 	assert generated_v.contains('import simplegui')
 }
-
-

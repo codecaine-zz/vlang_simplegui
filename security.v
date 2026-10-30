@@ -100,4 +100,3 @@ pub fn sanitize_filename(name string) string {
 	}
 	return s
 }
-

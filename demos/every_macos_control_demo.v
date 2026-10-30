@@ -129,7 +129,12 @@ fn main() {
 	win.end_row()
 
 	win.begin_row('row_vfx_music_nodes_logic')
-	win.add_node_graph('vfx_node_graph', 'SHADER & IOT BLUEPRINT PIPELINE', ['Sensor Input', '4D Transform', 'Bloom Pass', 'HDMI 2.1 Out'], 145).width(700)
+	win.add_node_graph('vfx_node_graph', 'SHADER & IOT BLUEPRINT PIPELINE', [
+		'Sensor Input',
+		'4D Transform',
+		'Bloom Pass',
+		'HDMI 2.1 Out',
+	], 145).width(700)
 	win.add_piano_keyboard('vfx_piano', 64, 'cyber_lead', 145).width(640)
 	win.add_step_sequencer('vfx_sequencer', '16-STEP DRUM & SYNTH MATRIX', 128, 0xB5AD6B5A, 145).width(580)
 	win.end_row()
@@ -251,8 +256,10 @@ fn main() {
 	win.add_image_button('btn_sf_symbol', 'sparkles', 'SF Symbol Button')
 	win.add_help_button('btn_ns_help')
 	win.add_link('lnk_repo', '🔗 V SimpleGUI GitHub', 'https://github.com/codecaine-zz/vlang_simplegui')
-	win.add_pull_down('btn_pulldown', 'Pull-Down Menu…', ['Export JSON', 'Export CSV', 'Generate V Code', 'Print View'])
-	win.add_split_button('btn_split', 'Deploy Build', ['Deploy Staging', 'Deploy Production', 'Build .app Bundle'])
+	win.add_pull_down('btn_pulldown', 'Pull-Down Menu…', ['Export JSON', 'Export CSV',
+		'Generate V Code', 'Print View'])
+	win.add_split_button('btn_split', 'Deploy Build', ['Deploy Staging', 'Deploy Production',
+		'Build .app Bundle'])
 	win.end_row()
 
 	win.begin_row('row_toggles_all')
@@ -319,7 +326,8 @@ fn main() {
 
 	win.begin_row('row_dropdown_combo_seg')
 	win.add_dropdown('sel_dropdown', ['macOS Sequoia', 'macOS Sonoma', 'macOS Ventura', 'macOS Monterey'], 'macOS Sequoia')
-	win.add_combo_box('sel_combobox', ['Metal 3', 'CoreGraphics', 'CoreAnimation', 'QuartzCore', 'AVFoundation'], 'Metal 3')
+	win.add_combo_box('sel_combobox', ['Metal 3', 'CoreGraphics', 'CoreAnimation', 'QuartzCore',
+		'AVFoundation'], 'Metal 3')
 	win.add_segmented_control('sel_segmented', ['Inspector', 'Canvas', 'Shader', 'Code'], 'Inspector')
 	win.add_icon_segments('sel_icon_seg', ['house', 'cpu', 'paintbrush', 'terminal', 'gear'], 'cpu')
 	win.add_mode_control('sel_mode_ctrl', 'Pro')
@@ -329,7 +337,10 @@ fn main() {
 	win.add_pill_toggle('sel_pill_toggle', ['Realtime', 'Buffered', 'Offline'], 0)
 	win.add_tab_pills('sel_tab_pills', ['All Controls', 'AppKit', 'Frameworks', 'VFX'], 'All Controls')
 	win.add_chip_group('sel_chip_group', ['Swift', 'Objective-C', 'V Language', 'C99'], 'V Language')
-	win.add_filter_chips('sel_filter_chips', ['GPU Accelerated', 'Retina 6K', 'HDR10', 'Zero-Alloc'], ['GPU Accelerated', 'Retina 6K'], true)
+	win.add_filter_chips('sel_filter_chips', ['GPU Accelerated', 'Retina 6K', 'HDR10', 'Zero-Alloc'], [
+		'GPU Accelerated',
+		'Retina 6K',
+	], true)
 	win.end_row()
 
 	win.begin_row('row_dates_calendars')
@@ -342,9 +353,11 @@ fn main() {
 	win.begin_row('row_calendar_and_colors')
 	win.add_calendar('ctrl_calendar', '2026-10-20')
 	win.add_color_well('col_well', '#00F5D4')
-	win.add_color_grid('col_grid', ['#00F5D4', '#3B82F6', '#A855F7', '#EC4899', '#EF4444', '#F59E0B', '#10B981', '#6366F1'])
+	win.add_color_grid('col_grid', ['#00F5D4', '#3B82F6', '#A855F7', '#EC4899', '#EF4444', '#F59E0B',
+		'#10B981', '#6366F1'])
 	win.add_color_palette('col_palette', ['#0EA5E9', '#8B5CF6', '#F43F5E', '#14B8A6', '#F97316'], '#0EA5E9')
-	win.add_color_swatch_panel('col_swatch_panel', ['#1E293B', '#334155', '#38BDF8', '#C084FC', '#4ADE80'], '#38BDF8')
+	win.add_color_swatch_panel('col_swatch_panel', ['#1E293B', '#334155', '#38BDF8', '#C084FC',
+		'#4ADE80'], '#38BDF8')
 	win.add_color_wheel('col_wheel_studio', '#00F5D4', 'TRIADIC', 150)
 	win.end_row()
 
@@ -368,7 +381,13 @@ fn main() {
 
 	win.begin_row('row_score_breakdown')
 	win.add_rating_breakdown('rt_breakdown', 4.9, 2840, [88.0, 9.0, 2.0, 0.7, 0.3])
-	win.add_score_card('rt_score_card', 'App Store Developer Rating', 4.92, 4120, [0.90, 0.07, 0.02, 0.01, 0.0])
+	win.add_score_card('rt_score_card', 'App Store Developer Rating', 4.92, 4120, [
+		0.90,
+		0.07,
+		0.02,
+		0.01,
+		0.0,
+	])
 	win.end_row()
 
 	win.add_progress_indicator('prog_linear', 78).width(1300)
@@ -424,11 +443,13 @@ fn main() {
 
 	win.begin_row('row_crumbs_tags_page')
 	win.add_breadcrumbs('nav_crumbs', ['macOS', 'AppKit', 'SimpleGUI', 'EveryControlDemo'])
-	win.add_tag_cloud('nav_tag_cloud', ['#AppKit', '#Metal3', '#WebKit', '#PDFKit', '#AVKit', '#MapKit', '#Vlang'])
+	win.add_tag_cloud('nav_tag_cloud', ['#AppKit', '#Metal3', '#WebKit', '#PDFKit', '#AVKit', '#MapKit',
+		'#Vlang'])
 	win.add_pagination('nav_pagination', 12, 3)
 	win.end_row()
 
-	win.add_wizard_stepper('stp_wizard', ['1. Window', '2. Layout', '3. Controls', '4. Events', '5. Package .app'], 3)
+	win.add_wizard_stepper('stp_wizard', ['1. Window', '2. Layout', '3. Controls', '4. Events',
+		'5. Package .app'], 3)
 	win.add_step_tracker('stp_tracker', ['Init Cocoa', 'Mount Views', 'Bind Callbacks', 'Start RunLoop'], 3)
 	win.add_checkout_steps('stp_checkout', ['Select Kit', 'Customize Theme', 'Generate V', 'Ship Binary'], 2)
 
@@ -442,8 +463,13 @@ fn main() {
 	)
 
 	win.begin_row('row_list_transfer_prop')
-	win.add_list_box('dv_listbox', ['NSTextField', 'NSButton', 'NSSlider', 'NSTableView', 'NSOutlineView', 'NSBrowser', 'WKWebView', 'MTKView']).width(240).height(150)
-	win.add_transfer_list('dv_transfer', ['MapKit', 'PDFKit', 'AVKit', 'QuickLook'], ['AppKit', 'MetalKit', 'CoreAudio'])
+	win.add_list_box('dv_listbox', ['NSTextField', 'NSButton', 'NSSlider', 'NSTableView',
+		'NSOutlineView', 'NSBrowser', 'WKWebView', 'MTKView']).width(240).height(150)
+	win.add_transfer_list('dv_transfer', ['MapKit', 'PDFKit', 'AVKit', 'QuickLook'], [
+		'AppKit',
+		'MetalKit',
+		'CoreAudio',
+	])
 	win.add_property_grid('dv_prop_grid', {
 		'Framework':  'Cocoa / AppKit'
 		'Compiler':   'V 0.5.2 Native'
@@ -484,16 +510,20 @@ fn main() {
 	])
 
 	win.add_browser_view('dv_browser', 170)
-	win.set_browser_column_items('dv_browser', 0, ['AppKit Controls', 'Apple Frameworks', 'Developer Tools', '4D VFX Suite'])
-	win.set_browser_column_items('dv_browser', 1, ['Text & Inputs', 'Buttons & Toggles', 'Tables & Trees', 'System Panels'])
-	win.set_browser_column_items('dv_browser', 2, ['NSTextField', 'NSSearchField', 'NSTokenField', 'NSPathControl'])
+	win.set_browser_column_items('dv_browser', 0, ['AppKit Controls', 'Apple Frameworks',
+		'Developer Tools', '4D VFX Suite'])
+	win.set_browser_column_items('dv_browser', 1, ['Text & Inputs', 'Buttons & Toggles',
+		'Tables & Trees', 'System Panels'])
+	win.set_browser_column_items('dv_browser', 2, ['NSTextField', 'NSSearchField', 'NSTokenField',
+		'NSPathControl'])
 
 	win.add_column_browser('dv_col_browser')
 	win.end_row()
 
 	win.begin_row('row_collection_folders')
 	win.add_collection_view('dv_collection', 110, 44).width(440).height(130)
-	win.set_collection_items('dv_collection', ['AppKit', 'Metal', 'WebKit', 'PDFKit', 'AVKit', 'MapKit', 'CoreAudio', 'IOKit'])
+	win.set_collection_items('dv_collection', ['AppKit', 'Metal', 'WebKit', 'PDFKit', 'AVKit',
+		'MapKit', 'CoreAudio', 'IOKit'])
 
 	win.add_themed_folder_grid('dv_folder_grid', [
 		simplegui.FolderTileItem{
@@ -775,12 +805,14 @@ fn main() {
 	win.set_chart_data('cht_area', [24.0, 38.0, 32.0, 54.0, 49.0, 72.0, 68.0, 88.0, 81.0, 96.0])
 	win.add_sparkline('cht_sparkline', [12.0, 19.0, 15.0, 28.0, 24.0, 39.0, 45.0, 41.0, 58.0, 64.0], 80)
 	win.add_donut_chart('cht_donut', 'Native Coverage', 100.0)
-	win.add_radar_chart('cht_radar', 'Engine Benchmark', ['Speed', 'Safety', 'UX', 'Native', 'VFX', 'Audio'], [98.0, 94.0, 96.0, 100.0, 95.0, 92.0], 160)
+	win.add_radar_chart('cht_radar', 'Engine Benchmark', ['Speed', 'Safety', 'UX', 'Native', 'VFX',
+		'Audio'], [98.0, 94.0, 96.0, 100.0, 95.0, 92.0], 160)
 	win.end_row()
 
 	win.begin_row('row_charts_mid')
 	win.add_bullet_chart('cht_bullet', 'Frame Budget', 'Target < 8.3ms (120Hz)', 4.2, 8.3, 16.6)
-	win.add_waterfall_chart('cht_waterfall', 'Revenue Bridge ($K)', ['Q1 Base', 'Enterprise', 'Cloud', 'Churn', 'Q2 Net'], [120.0, 65.0, 42.0, -18.0, 209.0], 155)
+	win.add_waterfall_chart('cht_waterfall', 'Revenue Bridge ($K)', ['Q1 Base', 'Enterprise', 'Cloud',
+		'Churn', 'Q2 Net'], [120.0, 65.0, 42.0, -18.0, 209.0], 155)
 	win.add_funnel_chart(
 		'cht_funnel',
 		'Developer Adoption Funnel',
@@ -825,7 +857,8 @@ fn main() {
 	win.add_activity_heatmap('cht_heatmap', 'GitHub Commit Activity (20 Weeks)', 20, heatmap_matrix)
 
 	win.begin_row('row_pro_audio')
-	win.add_audio_waveform('aud_waveform', [0.2, 0.5, 0.85, 0.4, 0.95, 0.7, 0.3, 0.88, 0.62, 0.91, 0.45, 0.76], 120)
+	win.add_audio_waveform('aud_waveform', [0.2, 0.5, 0.85, 0.4, 0.95, 0.7, 0.3, 0.88, 0.62, 0.91,
+		0.45, 0.76], 120)
 	win.add_equalizer(
 		'aud_eq',
 		'8-Band Mastering Equalizer (dB)',
@@ -856,7 +889,8 @@ fn main() {
 	win.group('cnt_group_box', 'NSBox Group Container (win.group)', fn (mut w simplegui.SimpleWindow) {
 		w.add_tabs('cnt_tabs', ['Tab 1: Overview', 'Tab 2: Inspector', 'Tab 3: Diagnostics'])
 		w.add_collapsible_section('cnt_collapsible', 'Collapsible Section Header (Click to Toggle)', true)
-		w.add_accordion_group('cnt_accordion', ['1. Architecture Overview', '2. Memory & ARC Details', '3. Packaging Options'], 0)
+		w.add_accordion_group('cnt_accordion', ['1. Architecture Overview', '2. Memory & ARC Details',
+			'3. Packaging Options'], 0)
 	})
 
 	win.begin_glass_box('cnt_glass_box', 'hud')
@@ -927,7 +961,7 @@ fn main() {
 			w.ping_polar_radar('vfx_sonar')
 			w.toast_success('Pulsed 4D shaders, particle emitter & sonar radar!')
 		}
-		'📋 Copy Run Command':       fn (mut w simplegui.SimpleWindow) {
+		'📋 Copy Run Command':      fn (mut w simplegui.SimpleWindow) {
 			w.copy_to_clipboard('v run demos/every_macos_control_demo.v')
 			w.toast_info('Copied `v run demos/every_macos_control_demo.v` to clipboard!')
 		}
@@ -1005,7 +1039,11 @@ fn main() {
 		}
 	})
 	win.on_click('btn_choice_dlg', fn (mut w simplegui.SimpleWindow) {
-		idx := w.choice_dialog('Select Rendering Tier', 'Choose GPU profile:', ['Low Power', 'Balanced Glass', 'Ultra 4D Metal'])
+		idx := w.choice_dialog('Select Rendering Tier', 'Choose GPU profile:', [
+			'Low Power',
+			'Balanced Glass',
+			'Ultra 4D Metal',
+		])
 		w.set_status('Choice dialog index: ${idx}')
 	})
 	win.on_click('btn_open_file', fn (mut w simplegui.SimpleWindow) {

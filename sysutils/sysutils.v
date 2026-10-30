@@ -6,6 +6,7 @@ import strings
 import time
 
 #include <sys/statvfs.h>
+
 $if macos {
 	#include <sys/sysctl.h>
 	#include <stdlib.h>
@@ -133,7 +134,11 @@ pub fn get_memory_stats() (u64, u64, f64) {
 			total = memsize
 		} else {
 			total_res := os.execute('sysctl -n hw.memsize')
-			total = if total_res.exit_code == 0 { total_res.output.trim_space().u64() } else { u64(0) }
+			total = if total_res.exit_code == 0 {
+				total_res.output.trim_space().u64()
+			} else {
+				u64(0)
+			}
 		}
 		mut hw_page_size := u64(4096)
 		mut psz := usize(sizeof(u64))

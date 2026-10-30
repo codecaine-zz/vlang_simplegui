@@ -401,8 +401,8 @@ fn test_query_maps_params_and_query_one_map_params() {
 	// query_maps_params — filter by department
 	rows := query_maps_params(mut db,
 		'SELECT name, salary FROM employees WHERE dept = ? ORDER BY salary DESC', [
-		'Eng',
-	]) or { panic(err) }
+			'Eng',
+		]) or { panic(err) }
 	assert rows.len == 2
 	assert rows[0]['name'] == 'Alice'
 	assert rows[1]['name'] == 'Bob'

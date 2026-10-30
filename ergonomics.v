@@ -3467,4 +3467,3 @@ pub fn (win &SimpleWindow) list_commands() []CommandEntry {
 	}
 	return out
 }
-

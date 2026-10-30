@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [ main, master ]
 
+permissions:
+  contents: write
+
 jobs:
   build-and-test:
     runs-on: macos-latest
@@ -36,7 +39,7 @@ jobs:
       - name: Setup SimpleGUI Module
         run: |
           mkdir -p ~/.vmodules/simplegui
-          cp -r *.v *.m *.h v.mod ~/.vmodules/simplegui/
+          cp -r *.v *.m *.h *.html v.mod resources ~/.vmodules/simplegui/
 
       - name: Run Tests
         run: VJOBS=1 v test tests/

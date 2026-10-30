@@ -1,7 +1,6 @@
 module compressutils
 
-const test_text =
-	'The V programming language is designed to be simple, readable, fast, and secure. ' +
+const test_text = 'The V programming language is designed to be simple, readable, fast, and secure. ' +
 	'This text is repeated multiple times to ensure sufficient compressibility across algorithms. ' +
 	'The V programming language is designed to be simple, readable, fast, and secure. ' +
 	'This text is repeated multiple times to ensure sufficient compressibility across algorithms.'

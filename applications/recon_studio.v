@@ -145,28 +145,28 @@ fn main() {
 				sections << '=== PUBLIC EMAIL & METADATA FOOTPRINT: ${host} ==='
 				sections << '\n[1] Mail Exchange (MX) Servers:\n' +
 					if mx_res.output.trim_space() != '' {
-					mx_res.output.trim_space()
-				} else {
-					'(none)'
-				}
+						mx_res.output.trim_space()
+					} else {
+						'(none)'
+					}
 				sections << '\n[2] Domain TXT & SPF Records:\n' +
 					if txt_res.output.trim_space() != '' {
-					txt_res.output.trim_space()
-				} else {
-					'(none)'
-				}
+						txt_res.output.trim_space()
+					} else {
+						'(none)'
+					}
 				sections << '\n[3] DMARC Policy (_dmarc.${host}):\n' +
 					if dmarc_res.output.trim_space() != '' {
-					dmarc_res.output.trim_space()
-				} else {
-					'(none)'
-				}
+						dmarc_res.output.trim_space()
+					} else {
+						'(none)'
+					}
 				sections << '\n[4] Security Contact Metadata (/.well-known/security.txt):\n' +
 					if sec_res.output.trim_space() != '' && !sec_res.output.contains('<html') {
-					sec_res.output.trim_space()
-				} else {
-					'(no security.txt published)'
-				}
+						sec_res.output.trim_space()
+					} else {
+						'(no security.txt published)'
+					}
 				output_str = sections.join('\n')
 			} else {
 				res := simplegui.exec_safe(whois_bin, [target])

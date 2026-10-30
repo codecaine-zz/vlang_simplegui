@@ -139,14 +139,14 @@ fn test_calc_cli_execution() {
 	assert os.exists(app_path)
 
 	// Test 1: Single value display with octal
-	res := os.execute('${os.quoted_path(exe)} run ${os.quoted_path(app_path)} --val 10')
+	res := os.exec([exe, 'run', app_path, '--val', '10'])
 	assert res.exit_code == 0
 	assert res.output.contains('0xA')
 	assert res.output.contains('0o12')
 	assert res.output.contains('Popcount (Set Bits)')
 
 	// Test 2: Bitwise AND operation
-	res_and := os.execute('${os.quoted_path(exe)} run ${os.quoted_path(app_path)} --val 0xFF --op AND --val2 0x0F')
+	res_and := os.exec([exe, 'run', app_path, '--val', '0xFF', '--op', 'AND', '--val2', '0x0F'])
 	assert res_and.exit_code == 0
 	assert res_and.output.contains('Bitwise Operation: AND')
 	assert res_and.output.contains('0xF')

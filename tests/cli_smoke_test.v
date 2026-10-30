@@ -45,8 +45,7 @@ fn test_representative_cli_help_smoke() {
 		full_path := os.join_path(cli_dir, target)
 		assert os.exists(full_path), 'Target ${target} must exist'
 
-		cmd := '${os.quoted_path(vexe)} run ${os.quoted_path(full_path)} --help'
-		res := os.execute(cmd)
+		res := os.exec([vexe, 'run', full_path, '--help'])
 		assert res.exit_code == 0, 'Failed running --help for ${target}: ${res.output}'
 		assert res.output.to_lower().contains('usage:'), 'Help output for ${target} must contain "usage:"'
 		assert res.output.contains('--help'), 'Help output for ${target} must document --help'
@@ -58,8 +57,7 @@ fn test_representative_cli_version_smoke() {
 	full_path := os.join_path(repo_root, 'cli_apps', 'calc_cli.v')
 	vexe := os.getenv_opt('VEXE') or { @VEXE }
 
-	cmd := '${os.quoted_path(vexe)} run ${os.quoted_path(full_path)} --version'
-	res := os.execute(cmd)
+	res := os.exec([vexe, 'run', full_path, '--version'])
 	assert res.exit_code == 0, 'Failed running --version: ${res.output}'
 	assert res.output.contains('calc-cli v'), 'Expected version output to contain "calc-cli v"'
 }

@@ -177,4 +177,3 @@ pub fn save_file_picker_with_name(default_filename string, allowed_extensions st
 		allowed_extensions.str)
 	return consume_c_str(res)
 }
-

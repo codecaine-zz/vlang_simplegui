@@ -1005,8 +1005,7 @@ pub fn (cli &SimpleCli) diff_text(old_text string, new_text string) string {
 			b.write_string('  ${cli.green(line_num + pad + ' +')} ${cli.green(new_lines[i])}\n')
 		}
 	}
-	summary := '  ${cli.dim('───')} ${cli.green('+' + additions.str() + ' additions')}, ${cli.red(
-		'-' + deletions.str() + ' deletions')} ${cli.dim('───')}\n'
+	summary := '  ${cli.dim('───')} ${cli.green('+' + additions.str() + ' additions')}, ${cli.red('-' + deletions.str() + ' deletions')} ${cli.dim('───')}\n'
 	b.write_string(summary)
 	return b.str()
 }
@@ -1563,11 +1562,9 @@ pub fn (mut p Pipeline) run() bool {
 		step_dur := time.since(step_start).milliseconds()
 
 		if ok {
-			print('\r  ${p.cli.green('✓')} [${i + 1}/${p.steps.len}] ${step.name} ${p.cli.dim(
-				'(' + step_dur.str() + ' ms)')}\n')
+			print('\r  ${p.cli.green('✓')} [${i + 1}/${p.steps.len}] ${step.name} ${p.cli.dim('(' + step_dur.str() + ' ms)')}\n')
 		} else {
-			print('\r  ${p.cli.red('✖')} [${i + 1}/${p.steps.len}] ${step.name} ${p.cli.red('[FAILED]')} ${p.cli.dim(
-				'(' + step_dur.str() + ' ms)')}\n')
+			print('\r  ${p.cli.red('✖')} [${i + 1}/${p.steps.len}] ${step.name} ${p.cli.red('[FAILED]')} ${p.cli.dim('(' + step_dur.str() + ' ms)')}\n')
 			all_ok = false
 			break
 		}
